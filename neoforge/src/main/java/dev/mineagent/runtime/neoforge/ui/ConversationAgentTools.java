@@ -55,6 +55,7 @@ public final class ConversationAgentTools {
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     var value=failure==null?receipt:Map.<String,Object>of("status","UNKNOWN","error","AGENT_TOOL_OUTCOME_UNKNOWN");
                     ConversationInteractionSmokeServer.observe(tool,args,value);
+                    ConversationRuntimeItemSmokeServer.observe(tool,value);
                     try{String encoded=JSON.writeValueAsString(Map.of("owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args,"receipt",value));CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,1,encoded);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((written,writeError)->s.execute(()->{if(writeError!=null||failure!=null)result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));else result.complete(value);}));}
                     catch(Exception writeError){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));}
                 }));
@@ -68,7 +69,7 @@ public final class ConversationAgentTools {
         if(tool.equals("inspect_blueprints"))return inspectBlueprints(p,args,permit);
         if(tool.equals("inspect_commands")){keys(args,"prefix");if(!args.path("prefix").isTextual()||args.path("prefix").asText().length()>2048)throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");return inspectCommands(p,args.path("prefix").asText(),permit);}
         Map<String,Object> value=switch(tool){
-            case "inspect_capabilities"->{keys(args);yield Map.of("readyTools",ConversationTools.NAMES,"canModifyItems",itemPermission(p),"webEnabled",Boolean.parseBoolean(MineAgentRuntimeServices.config(p.level().getServer()).snapshot().values().getOrDefault("web.enabled","true")),"pending",Map.of("create_blueprint","Read-only exported NBT adapter available for local singleplayer owner; Create runtime and schematicannon not verified","host_command","Separate local approval/execution adapter pending","dynamic_item_registry","Hot item definitions/behaviors pending; new FML registry IDs are not hot-loaded","seed_map","Only actual local world inspection currently available","settings_and_music","Client settings and background audio tool adapter pending","chat_memory_write","Preference/persona UI exists; natural-language write adapter pending","memory_expiry","Realtime memory TTL and automatic expiry adapter pending"));}
+            case "inspect_capabilities"->{keys(args);yield Map.of("readyTools",ConversationTools.NAMES,"canModifyItems",itemPermission(p),"webEnabled",Boolean.parseBoolean(MineAgentRuntimeServices.config(p.level().getServer()).snapshot().values().getOrDefault("web.enabled","true")),"pending",Map.of("create_blueprint","Read-only exported NBT adapter available for local singleplayer owner; Create runtime and schematicannon not verified","host_command","Separate local approval/execution adapter pending","dynamic_item_registry","Signed HOT package item carrier supports generated colored geometry and item.use/restyle; charging/throwing and hot FML registry IDs are not implemented","seed_map","Only actual local world inspection currently available","settings_and_music","Client settings and background audio tool adapter pending","chat_memory_write","Preference/persona UI exists; natural-language write adapter pending","memory_expiry","Realtime memory TTL and automatic expiry adapter pending"));}
             case "inspect_player"->{keys(args,"section","offset");yield player(p,text(args,"section",32),args.has("offset")?number(args,"offset",0,100000):0);}
             case "inspect_registry"->{keys(args,"kind","query","offset");yield registry(p,text(args,"kind",24),args.path("query").asText(""),args.has("offset")?number(args,"offset",0,100000):0);}
             case "inspect_world"->{keys(args);var rules=p.level().getGameRules();var result=new LinkedHashMap<String,Object>();result.put("mods",net.neoforged.fml.ModList.get().getMods().stream().limit(128).map(m->Map.of("id",m.getModId(),"version",m.getVersion().toString())).toList());result.put("minecraftVersion",net.minecraft.SharedConstants.getCurrentVersion().name());result.put("dimension",p.level().dimension().identifier().toString());result.put("gameTime",p.level().getGameTime());result.put("keep_inventory",rules.get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY));result.put("pvp",rules.get(net.minecraft.world.level.gamerules.GameRules.PVP));result.put("position",List.of(p.getX(),p.getY(),p.getZ()));result.put("biome",p.level().getBiome(p.blockPosition()).unwrapKey().map(k->k.identifier().toString()).orElse("unknown"));result.put("seed",p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)?p.level().getSeed():"PERMISSION_REQUIRED");result.put("mapScope","Current observed position only; not a generated world map");result.put("availableCommandRoots",p.level().getServer().getCommands().getDispatcher().getRoot().getChildren().stream().filter(n->n.canUse(p.createCommandSourceStack())).map(n->n.getName()).filter(n->!n.equals("ai")).sorted().toList());yield result;}
@@ -106,10 +107,29 @@ public final class ConversationAgentTools {
             case "quick_move_container"->{return ConversationNativeInteractions.quickMove(p,agent,operation,a);}
             case "close_container"->{return ConversationNativeInteractions.closeMenu(p,agent,a);}
             case "run_game_command"->{keys(a,"command");return command(p,text(a,"command",2048),permit);}
+            case "generate_content_package"->{keys(a,"prompt");return generateContent(p,agent,operation,text(a,"prompt",4096),permit);}
             case "start_world_task"->{keys(a,"prompt");var task=ServerTaskStart.start(p,operation,agent,text(a,"prompt",4096),0,false);result=Map.of("status","TASK_STARTED_NOT_COMPLETED","taskId",task.taskId(),"state",task.status());}
             case "request_player_control"->{keys(a,"prompt");dev.mineagent.runtime.neoforge.task.PlayerBodyAgent.submit(p,agent,text(a,"prompt",4096));result=Map.of("status","PLAN_REQUESTED_NOT_EXECUTED","localApprovalRequired",true);}
             default->throw new IllegalArgumentException("AGENT_TOOL_UNKNOWN");
         }return CompletableFuture.completedFuture(result);
+    }
+    private static CompletableFuture<Map<String,Object>> generateContent(ServerPlayer p,UUID agent,UUID operation,String prompt,BooleanSupplier permit){
+        var server=p.level().getServer();var runtime=ServerPackageRuntime.get(server);if(!runtime.mayGenerate(p.getUUID(),agent))throw new SecurityException("AGENT_PACKAGE_PERMISSION");
+        var result=new CompletableFuture<Map<String,Object>>();var level=p.level();
+        try{
+            runtime.submit(p,agent,operation,prompt,"WORLD_CONTENT");
+            WORK.computeIfAbsent(server,k->new ArrayList<>()).add(new Work(){final long deadline=System.nanoTime()+java.time.Duration.ofMinutes(10).toNanos();
+                public void cancel(){try{if(runtime.generation(p.getUUID(),operation).filter(j->j.state().equals("GENERATING")).isPresent())runtime.cancel(p.getUUID(),operation);}catch(Exception ignored){}result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));}
+                public boolean tick(){
+                    if(!current(p,permit)||p.level()!=level||!runtime.mayGenerate(p.getUUID(),agent)||System.nanoTime()>deadline){cancel();return true;}
+                    var job=runtime.generation(p.getUUID(),operation).orElseThrow();if(job.state().equals("GENERATING"))return false;
+                    if(!job.state().equals("PUBLISHED")){result.completeExceptionally(new IllegalStateException("AGENT_PACKAGE_GENERATION_"+job.state()));return true;}
+                    var pack=runtime.ownedPackage(p.getUUID(),job.packageId(),job.packageRevision()).orElseThrow();
+                    result.complete(Map.of("status","PUBLISHED_AWAITING_PLAYER_APPROVAL","packageId",pack.packageId(),"name",pack.name(),"revision",pack.revision(),"activationMode",pack.activationMode(),"executed",false,"nextStep","F2包目录选择该包，审查后明确启用；需要重载/重启则遵循所示生命周期"));return true;
+                }
+            });
+        }catch(Exception unknown){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN",unknown));}
+        return result;
     }
     private static CompletableFuture<Map<String,Object>> inspectCommands(ServerPlayer p,String value,BooleanSupplier permit){
         String prefix=value.startsWith("/")?value.substring(1):value;

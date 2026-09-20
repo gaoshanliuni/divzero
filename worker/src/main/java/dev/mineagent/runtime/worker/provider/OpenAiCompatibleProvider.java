@@ -22,6 +22,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
 
     @Override
     public ModelResponse complete(ModelRequest request) {
+        if(request.capability()==dev.mineagent.runtime.api.model.ModelCapability.CODING&&officialDeepSeek())return stream(request,ignored->{});
         ToolCompletion completion = completeWithTools(request, java.util.List.of());
         if (completion.text().isBlank()) {
             throw new ProviderRequestException(0, "响应缺少 choices[0].message.content");
@@ -126,7 +127,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         var body = mapper.createObjectNode();
         body.put("model", model);
         body.put("stream", true);
-        if(!tools.isEmpty())configureConversationThinking(baseUri,model,body);
+        configureConversationThinking(baseUri,model,body);
         var message = body.putArray("messages").addObject();
         message.put("role", "user");
         content(message,request);
@@ -211,6 +212,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         }
     }
 
+    private boolean officialDeepSeek(){return "https".equalsIgnoreCase(baseUri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(baseUri.getHost())&&"deepseek-flash".equals(model);}
     static void configureConversationThinking(URI uri,String model,com.fasterxml.jackson.databind.node.ObjectNode body){
         // Explicit user preference; do not send DeepSeek-only parameters to unrelated Providers.
         if("https".equalsIgnoreCase(uri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(uri.getHost())&&"deepseek-flash".equals(model)){

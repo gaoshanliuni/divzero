@@ -98,7 +98,7 @@ public final class RuntimePackageOutputParser {
         if(node==null||node.isNull())return null;
         var root=object(node,"nativeCompatibility");requireOnly(root,Set.of("schema","targets"),"nativeCompatibility");
         if(!root.path("schema").isInt()||root.path("schema").intValue()!=1)throw invalid("NATIVE_COMPATIBILITY_INVALID","schema must be 1");
-        var targets=object(root.get("targets"),"nativeCompatibility.targets");requireOnly(targets,Set.of("SERVER","CLIENT"),"nativeCompatibility.targets");
+        var targets=object(root.get("targets"),"nativeCompatibility.targets");allowOnly(targets,Set.of("SERVER","CLIENT"),"nativeCompatibility.targets");
         for(var e:targets.properties()){
             var target=object(e.getValue(),"native target");requireOnly(target,Set.of("minecraft","loader","loaderVersion","namespace","javaFeature","requiredMods"),"native target");
             for(String key:List.of("minecraft","loader","loaderVersion","namespace"))text(target,key,128);
@@ -303,14 +303,19 @@ public final class RuntimePackageOutputParser {
         return object;
     }
 
-    private static void requireOnly(ObjectNode object, Set<String> allowed, String context) {
+    private static void allowOnly(ObjectNode object, Set<String> allowed, String context) {
         object.fieldNames().forEachRemaining(field -> {
             if (!allowed.contains(field)) {
                 throw invalid("PACKAGE_OUTPUT_INVALID", "unknown " + context + " field: " + field);
             }
         });
+    }
+
+    private static void requireOnly(ObjectNode object, Set<String> allowed, String context) {
+        allowOnly(object,allowed,context);
         for (String field : allowed) {
-            if (!field.equals("migrationEntrypointId") && !object.has(field)) {
+            boolean optional=field.equals("migrationEntrypointId")||context.equals("manifest")&&field.equals("nativeCompatibility");
+            if (!optional && !object.has(field)) {
                 throw invalid("PACKAGE_OUTPUT_INVALID", "missing " + context + " field: " + field);
             }
         }

@@ -71,6 +71,10 @@ public final class MineAgentRegistries {
             DATA_COMPONENTS.registerComponentType("creation_origin", builder -> builder
                     .persistent(com.mojang.serialization.Codec.STRING)
                     .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8));
+    public static final DeferredHolder<net.minecraft.core.component.DataComponentType<?>,net.minecraft.core.component.DataComponentType<String>> RUNTIME_ITEM_BINDING =
+            DATA_COMPONENTS.registerComponentType("runtime_item_binding",builder->builder.persistent(com.mojang.serialization.Codec.STRING).networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8));
+    public static final DeferredItem<dev.mineagent.runtime.neoforge.content.RuntimeItem> RUNTIME_ITEM = ITEMS.registerItem(
+            "runtime_item",dev.mineagent.runtime.neoforge.content.RuntimeItem::new,properties->properties.stacksTo(64));
     public static final DeferredItem<Item> AGENT_BLADE = ITEMS.registerSimpleItem(
             "agent_blade", properties -> properties
                     .sword(net.minecraft.world.item.ToolMaterial.DIAMOND, 4.0F, -2.2F)

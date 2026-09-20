@@ -665,6 +665,7 @@ tasks.register('runProductionJointAppearance', JavaExec) {
     systemProperty 'mineagent.conversationAgentReal', providers.gradleProperty('conversationAgentReal').orElse('false').get()
     systemProperty 'mineagent.conversationAgentScenario', providers.gradleProperty('conversationAgentScenario').orElse('').get()
     systemProperty 'mineagent.conversationAgentCallBudget', providers.gradleProperty('conversationAgentCallBudget').orElse('').get()
+    systemProperty 'mineagent.conversationAgentItemArtifact', providers.gradleProperty('conversationAgentItemArtifact').orElse('').get()
     systemProperty 'mineagent.conversationAgentBlueprint', providers.gradleProperty('conversationAgentBlueprint').orElse('').get()
     systemProperty 'mineagent.conversationAgentProviderDb', providers.gradleProperty('conversationAgentProviderDb').orElse('').get()
     systemProperty 'mineagent.playerBodySmoke', providers.gradleProperty('playerBodySmoke').orElse('false').get()

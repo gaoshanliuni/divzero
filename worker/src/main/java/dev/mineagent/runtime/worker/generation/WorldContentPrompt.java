@@ -32,6 +32,12 @@ public final class WorldContentPrompt {
         physics 可省略（静态），或完整写 {dynamic:true,mass:1,gravity:0.04,restitution:0.7,drag:0.99}；重力按20Hz服务端Tick，gravity/restitution/drag为0..1，mass>0且<=10000。最大速度4块/Tick，Native AABB 扫掠碰撞有界分步，不把它描述成任意刚体引擎。
         texture 可省略（原生白底乘顶点颜色），或指向真实 PNG。PNG 文件<=1MiB，尺寸<=1024×1024。没有有效 PNG 时使用几何颜色，不能虚构合法图片字节。
         content.object(partKey) 获取本实例已加载的实际实体；entity.velocity(vx,vy,vz) 设置有界速度；entity.spring(worldX,worldY,worldZ,stiffness,damping) 增加到世界坐标固定锚点的弹簧约束，后两参数0..1；clearSpring() 清除。位置可读 getX()/getY()/getZ()，setYRot(degrees) 改视觉朝向，轴对齐碰撞箱不旋转。
+        通用 HOT 物品：content.giveItem(partKey,modelPath,count,displayName) 给本实例 Owner 背包真实物品栈，返回实际插入数，0..count；count=1..64。主体只有 mineagent_runtime:runtime_item 通用 Registry 载体，独立包提供模型/脚本，不是原版物品改名，更不是新 FML Registry ID。
+        生成/发布包不会执行脚本；instance.create 只有在玩家已明确批准启用时才执行。用户要求批准后给予物品时，应在 instance.create 调用 giveItem 一次；不要漏掉发放，也不要等待不存在的额外“外部执行器发放”接口。
+        同实例相同 partKey 只发放一次；重复相同参数返回已记录插入数，不再次给予。背包不足不丢地上、不自动重试。恢复回调不要新发放，旧物品随原生存档持久化，恢复后仍绑定原实例/包。
+        物品模型仍是上述 RuntimeMesh JSON，路径属于本定义 COMMON/CLIENT 资源；当前物品只支持几何颜色，不能含 texture，原始模型最多8192 UTF-8 bytes、2048顶点/三角形。顶点 x/z 在[-0.5,0.5]，y在[0,1]；collision/physics仍按模型格式写，物品本身不因此获得刚体物理。可自由生成 boxes/vertices/triangles，不能拿旧固定演示物品顶替。
+        on('item.use',function(event){...}) 是实际手持物品右键事件。event.part()、event.player()、event.operationId() 可读取；content.state读写记录本实例状态。event.restyle('models/other.json','新名称') 只修改这次本人实际手持的同一栈模型与名称，另一个模型也须本定义声明且满足物品限制，保留数量/其它组件。可据状态切换外观/交互逻辑，无需注册新Item或重载资源。
+        物品行为来自生成的 Rhino handler，不是固定玩法模板；停用/失效包后旧物品仍保存且可渲染，但不调用脚本。当前未提供通用蓄力/投掷/拾回物理，也不保证任意新Registry物品可HOT创建。不要生成假的成功消息代替真实item.use或restyle。
         content.objectCount() 只计算真实加载且匹配绑定的物件。新区块/实体可能尚未可查询，周期回调应先核对 objectCount，不用空引用假称已操作；创建回调可直接使用 createObject 的返回实体。
         on('object.interact',function(event){...}) 是实际 Native 玩家主手交互的定向事件，event.part() 和 event.player() 是真实 partKey/ServerPlayer，event.operationId() 是本次 Native 交互 UUID；不是网页点击回读。sharedTransact 的操作键在该回调内自动绑定此 UUID，同一次回调重用相同键仍去重，后续真实点击不与初始化或上一次点击共用 activation 根。事件回调沿用25ms普通预算，不能调用生命周期专用预算或等待模型。
         重启获准恢复时 createObject 用相同 partKey/modelPath/初始偏移绑定已有 UUID，不新建或重置运动状态；缺失或未知对象不自动重放创建。物件和几何/物理不依赖 WebGUI timer。停用清理JS并冻结物件，不静默删除世界实体；任意原生副作用仍需显式清理。

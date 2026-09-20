@@ -11,6 +11,7 @@
   "key.mineagent_runtime.toggle_workspace": "显示/隐藏 MineAgent 主界面",
   "key.category.mineagent_runtime.control_center": "MineAgent Runtime",
   "key.categories.mineagent_runtime.control_center": "MineAgent Runtime",
+  "item.mineagent_runtime.runtime_item": "运行时物品",
   "item.mineagent_runtime.basketball": "篮球",
   "block.mineagent_runtime.basketball_hoop": "篮球架",
   "entity.mineagent_runtime.basketball": "篮球",

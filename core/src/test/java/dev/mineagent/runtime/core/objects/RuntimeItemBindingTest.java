@@ -1,0 +1,11 @@
+package dev.mineagent.runtime.core.objects;
+import org.junit.jupiter.api.Test;
+import java.util.UUID;
+import static org.junit.jupiter.api.Assertions.*;
+class RuntimeItemBindingTest {
+    private static final String MODEL="{\"version\":1,\"boxes\":[{\"from\":[-0.1,0,-0.1],\"to\":[0.1,0.8,0.1],\"color\":\"#32bbbb\"}],\"collision\":[-0.1,0,-0.1,0.1,0.8,0.1]}";
+    private RuntimeItemBinding binding(String source){return RuntimeItemBinding.create(UUID.randomUUID(),UUID.randomUUID(),"key","a".repeat(64),"models/key.json",source);}
+    @Test void roundtripRetainsWorldInstanceGeometryAndNoExecutableInput(){var value=binding(MODEL);assertEquals(value,RuntimeItemBinding.parse(value.encode()));assertFalse(value.mesh().triangles().isEmpty());assertThrows(IllegalArgumentException.class,()->RuntimeItemBinding.parse(value.encode()+"{}"));assertThrows(IllegalArgumentException.class,()->RuntimeItemBinding.parse(value.encode().replace("models/key.json","../server/main.js")));}
+    @Test void forgedHashUnknownFieldsAndDuplicateKeysFail(){var value=binding(MODEL);assertThrows(IllegalArgumentException.class,()->RuntimeItemBinding.parse(value.encode().replace(value.assetHash(),"b".repeat(64))));assertThrows(IllegalArgumentException.class,()->RuntimeItemBinding.parse(value.encode().replaceFirst("\\{","{\"execute\":true,")));assertThrows(IllegalArgumentException.class,()->RuntimeItemBinding.parse(value.encode().replaceFirst("\\{","{\"part\":\"other\",")));}
+    @Test void geometryHasIndependentInventorySizeAndByteLimits(){assertThrows(IllegalArgumentException.class,()->binding(MODEL.replace("0.8","2.0")));assertThrows(IllegalArgumentException.class,()->binding(MODEL+" ".repeat(8192)));assertThrows(IllegalArgumentException.class,()->binding(MODEL.replace("\"version\":1","\"version\":1,\"texture\":\"models/private.png\"")));}
+}
