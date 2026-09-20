@@ -1,0 +1,45 @@
+name: 功能建议
+description: 为 DivZero 提出功能想法或使用体验改进建议。
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎分享想法！请先搜索已有 Issues，查看是否已有相似建议。
+        本表单用于收集建议，不代表功能已经实现或确定了发布时间。
+        此 Issue 将公开可见，请勿附带 API Key、访问令牌、私人聊天记录或其他个人信息。
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 使用场景与问题
+      description: 你希望在什么场景使用这个功能？目前遇到了什么限制或不便？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 希望实现的功能
+      description: 请描述期望的交互方式、AI 行为或最终效果。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案
+      description: 是否已有其他做法？它们有哪些不足？
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: 补充说明
+      description: 可补充适用的游戏环境、相关 Mod、示例或草图；附加材料请先脱敏。
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy-check
+    attributes:
+      label: 提交前检查
+      options:
+        - label: 我已检查正文及附件，确认没有公开密钥、访问令牌、密码或其他私人信息。
+          required: true
