@@ -1,0 +1,23 @@
+{
+  "screen.mineagent_runtime.control_center": "MineAgent 控制中心",
+  "screen.mineagent_runtime.section_pending": "该页面正在按 M0–M8 纵向切片接入服务端功能。",
+  "screen.mineagent_runtime.server_authoritative": "所有设置由服务端校验并以版本化事务保存。",
+  "screen.mineagent_runtime.agent_name": "AI 玩家名称",
+  "screen.mineagent_runtime.create_agent": "创建 AI 玩家",
+  "screen.mineagent_runtime.save_provider": "保存 Provider 设置",
+  "screen.mineagent_runtime.creator_prompt": "描述要生成或修改的内容",
+  "screen.mineagent_runtime.creator_submit": "提交给 Coder",
+  "key.mineagent_runtime.open_control_center": "打开 MineAgent 控制中心",
+  "key.mineagent_runtime.toggle_workspace": "显示/隐藏 MineAgent 主界面",
+  "key.category.mineagent_runtime.control_center": "MineAgent Runtime",
+  "key.categories.mineagent_runtime.control_center": "MineAgent Runtime",
+  "item.mineagent_runtime.basketball": "篮球",
+  "block.mineagent_runtime.basketball_hoop": "篮球架",
+  "entity.mineagent_runtime.basketball": "篮球",
+  "block.mineagent_runtime.automation_console": "MineAgent 自动化控制台",
+  "block.mineagent_runtime.runtime_crystal": "运行时水晶",
+  "item.mineagent_runtime.agent_blade": "Agent 之刃",
+  "item.mineagent_runtime.sentinel_summoner": "哨兵召唤核心",
+  "entity.mineagent_runtime.sentinel_boss": "MineAgent 哨兵",
+  "block.mineagent_runtime.media_screen": "MineAgent 媒体屏幕"
+}

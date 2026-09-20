@@ -1,0 +1,42 @@
+/* Cosmetics only. Private pixels stay opaque; game composition supplies translucency.
+   Mark semantic artwork/legends data-mineagent-colors="preserve" to keep their authored palette. */
+html[data-mineagent-theme="glass-sage"] { color-scheme:dark; --ma-text:#f0f2e9; --ma-muted:#b4beb2; --ma-accent:#c0ceab; --ma-line:rgba(218,231,211,.20); --ma-surface:rgba(34,42,36,.88); --ma-raised:rgba(49,60,45,.84); --ma-error:#edb2a5; --ma-warning:#e2c58d; --ma-success:#bdd6a5; }
+html[data-mineagent-theme="glass-sage"], html[data-mineagent-theme="glass-sage"] body { background-color: #1b201e !important; color:var(--ma-text) !important; }
+html[data-mineagent-theme="glass-sage"] :where(main,section,article,aside,fieldset,dialog,[role="dialog"],[popover],.card,.panel,.surface,.modal,.toast,.tooltip):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:var(--ma-surface) !important; border-color:var(--ma-line) !important; color:var(--ma-text) !important; }
+html[data-mineagent-theme="glass-sage"] :where(dialog,[popover])::backdrop { background:rgba(12,20,15,.48); }
+html[data-mineagent-theme="glass-sage"] :where(h1,h2,h3,h4,h5,h6):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:var(--ma-text) !important; text-shadow:0 1px 2px rgba(8,13,10,.25); }
+html[data-mineagent-theme="glass-sage"] :where(label,legend,summary,p,li,dt,dd,output,pre,code):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:var(--ma-text) !important; }
+html[data-mineagent-theme="glass-sage"] :where(input,textarea,select,button):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:var(--ma-text) !important; border-color:var(--ma-line) !important; border-radius:8px; accent-color:var(--ma-accent); }
+html[data-mineagent-theme="glass-sage"] :where(input:not([type="checkbox"]):not([type="radio"]),textarea,select):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:rgba(15,22,17,.84) !important; }
+html[data-mineagent-theme="glass-sage"] :is(input[readonly],textarea[readonly]):not(:disabled):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:rgba(40,49,40,.72) !important; border-style:dashed; }
+html[data-mineagent-theme="glass-sage"] button:not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:rgba(86,107,79,.35) !important; }
+html[data-mineagent-theme="glass-sage"] button:not(:disabled):not([aria-disabled="true"]):hover:not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:rgba(118,141,98,.43) !important; }
+html[data-mineagent-theme="glass-sage"] :where(button,input,select,textarea,a,summary,[tabindex]):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *):focus-visible { outline:2px solid #c0ceab !important; outline-offset:2px; }
+html[data-mineagent-theme="glass-sage"] :where(input,textarea):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *)::placeholder { color:#a5b09f; }
+html[data-mineagent-theme="glass-sage"] :where(table,thead,tbody,tr,th,td,canvas):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { border-color:var(--ma-line) !important; }
+html[data-mineagent-theme="glass-sage"] :where(table,tbody,tr,td):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:var(--ma-surface) !important; color:var(--ma-text) !important; }
+html[data-mineagent-theme="glass-sage"] :where(caption):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:var(--ma-muted) !important; }
+html[data-mineagent-theme="glass-sage"] :where(th,thead):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:rgba(64,79,56,.28) !important; color:#dce5cf !important; }
+html[data-mineagent-theme="glass-sage"] a:not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:#cfdfb7; text-underline-offset:3px; }
+html[data-mineagent-theme="glass-sage"] :where(.muted,small):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:var(--ma-muted) !important; }
+html[data-mineagent-theme="glass-sage"] :is([aria-pressed="true"],[aria-selected="true"]):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:rgba(112,139,86,.42) !important; border-color:rgba(193,216,159,.75) !important; box-shadow:inset 3px 0 #c0ceab; }
+html[data-mineagent-theme="glass-sage"] :is(button:disabled,input:disabled,textarea:disabled,select:disabled,[aria-disabled="true"]):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:rgba(58,65,56,.46) !important; color:#acb7a5 !important; border-color:rgba(190,201,182,.15) !important; cursor:not-allowed; }
+html[data-mineagent-theme="glass-sage"] :where([role="alert"],.error,.error :where(p,span,small)):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:var(--ma-error) !important; }
+html[data-mineagent-theme="glass-sage"] :where(.warning,.warning :where(p,span,small)):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:var(--ma-warning) !important; }
+html[data-mineagent-theme="glass-sage"] :where(.success,.success :where(p,span,small)):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:var(--ma-success) !important; }
+html[data-mineagent-theme="glass-sage"] [aria-invalid="true"]:not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { border-color:var(--ma-error) !important; }
+/* Label fragments inherit the actual selected/disabled control color, not old light-page ink.
+   Never select image/vector/canvas descendants or semantic color-preserving regions. */
+html[data-mineagent-theme="glass-sage"] :is(button,[role="button"],[role="tab"]) :where(span,small,strong,em,b,i,code):not(svg *,[data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:inherit !important; }
+html[data-mineagent-theme="glass-sage"] { scrollbar-color:rgba(187,207,168,.46) rgba(18,25,19,.24); scrollbar-width:thin; }
+@media (forced-colors:active) {
+html[data-mineagent-theme="glass-sage"] { --ma-text:CanvasText; --ma-muted:CanvasText; --ma-surface:Canvas; }
+html[data-mineagent-theme="glass-sage"], html[data-mineagent-theme="glass-sage"] body { background-color:Canvas !important; color:CanvasText !important; }
+html[data-mineagent-theme="glass-sage"] :where(main,section,article,aside,fieldset,dialog,[role="dialog"],[popover],.card,.panel,.surface,.modal,.toast,.tooltip):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:Canvas !important; color:CanvasText !important; border-color:CanvasText !important; }
+html[data-mineagent-theme="glass-sage"] :where(h1,h2,h3,h4,h5,h6,label,legend,summary,p,li,dt,dd,output,pre,code,.muted,small,[role="alert"],.error,.warning,.success):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:CanvasText !important; }
+html[data-mineagent-theme="glass-sage"] :where(input,textarea,select,button):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:ButtonFace !important; color:ButtonText !important; border-color:ButtonText !important; }
+html[data-mineagent-theme="glass-sage"] :is(input[readonly],textarea[readonly]):not(:disabled):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:Canvas !important; color:CanvasText !important; }
+html[data-mineagent-theme="glass-sage"] :is(button:disabled,input:disabled,textarea:disabled,select:disabled,[aria-disabled="true"]):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { color:GrayText !important; border-color:GrayText !important; }
+html[data-mineagent-theme="glass-sage"] :is([aria-pressed="true"],[aria-selected="true"]):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *) { background-color:Highlight !important; color:HighlightText !important; box-shadow:none; }
+html[data-mineagent-theme="glass-sage"] :where(button,input,select,textarea,a,summary,[tabindex]):not([data-mineagent-colors="preserve"],[data-mineagent-colors="preserve"] *):focus-visible { outline-color:Highlight !important; }
+}

@@ -1,0 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api project(':api')
+    implementation project(':core')
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
+}

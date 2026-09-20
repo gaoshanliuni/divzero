@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "mineagent_runtime:basketball_hoop",
+    "mineagent_runtime:automation_console",
+    "mineagent_runtime:runtime_crystal",
+    "mineagent_runtime:media_screen"
+  ]
+}

@@ -1,0 +1,46 @@
+package dev.mineagent.runtime.neoforge.compile;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.mineagent.runtime.core.compile.*;
+import dev.mineagent.runtime.core.packages.*;
+import dev.mineagent.runtime.neoforge.MineAgentRuntimeServices;
+import dev.mineagent.runtime.neoforge.ui.ServerPackageRuntime;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+/** Opt-in, no-input real-FML probe for transform/live capture and optional overlay compile/link/start. */
+@EventBusSubscriber(modid="mineagent_runtime")
+public final class NativeLiveSmokeServer {
+    private static final ObjectMapper JSON=new ObjectMapper();private static boolean finished;
+    private record Prepared(NativeCoderContext selection,NativeCoderContext.Snapshot context,String className,String entry,String source,JavaDependencyGraph dependencies){}
+    private NativeLiveSmokeServer(){}
+    @SubscribeEvent public static void started(ServerStartedEvent event)throws Exception {
+        if(!Boolean.getBoolean("mineagent.nativeLiveSmoke")||finished)return;finished=true;var server=event.getServer();Path root=server.getServerDirectory().resolve("native-live-smoke");Files.createDirectories(root);Files.deleteIfExists(root.resolve("result.json"));Files.deleteIfExists(root.resolve("failure.json"));
+        try{
+            var state=NativeLiveClassAccess.state();require(state.transformingLoaderAvailable(),"NATIVE_SMOKE_FML_LOADER");require(state.transformAccessAvailable(),"NATIVE_SMOKE_TRANSFORM_ACCESS");String transformName="net.minecraft.server.MinecraftServer";byte[] raw;try(var in=Objects.requireNonNull(FMLLoader.getCurrent().getCurrentClassLoader().getResourceAsStream(transformName.replace('.','/')+".class"))){raw=in.readAllBytes();}var transformed=NativeLiveClassAccess.transformed(transformName);require(transformed.className().equals(transformName)&&transformed.provenance().equals("FML_TRANSFORM_PIPELINE_PREDEFINE"),"NATIVE_SMOKE_TRANSFORM_PROVENANCE");require(!Arrays.equals(raw,transformed.bytes()),"NATIVE_SMOKE_TRANSFORM_UNCHANGED");var result=new LinkedHashMap<String,Object>();result.put("state",state);result.put("class",transformName);result.put("rawHash",RuntimePackageCanonicalizer.sha256(raw));result.put("rawBytes",raw.length);result.put("transformedHash",RuntimePackageCanonicalizer.sha256(transformed.bytes()));result.put("transformedBytes",transformed.bytes().length);result.put("transformAudit",transformed.audit());
+            if(state.instrumentationAvailable()){require(state.retransformSupported(),"NATIVE_SMOKE_RETRANSFORM");String liveName=NativeLiveClassAccess.class.getName();var page=NativeLiveClassAccess.loaded(liveName,0);var loaded=page.classes().stream().filter(v->v.className().equals(liveName)).findFirst().orElseThrow(()->new IllegalStateException("NATIVE_SMOKE_LOADED_CLASS"));require(loaded.modifiable(),"NATIVE_SMOKE_CLASS_NOT_MODIFIABLE");var live=NativeLiveClassAccess.live(loaded.token());require(live.className().equals(liveName)&&live.provenance().equals("JVM_RETRANSFORM_LIVE_DEFINITION"),"NATIVE_SMOKE_LIVE_PROVENANCE");result.put("status","REAL_FML_TRANSFORM_AND_LIVE_CAPTURE_VERIFIED");result.put("loaded",loaded);result.put("liveHash",RuntimePackageCanonicalizer.sha256(live.bytes()));result.put("liveBytes",live.bytes().length);}
+            else{require(!state.error().isBlank(),"NATIVE_SMOKE_INSTRUMENTATION_ERROR_MISSING");result.put("status","REAL_FML_TRANSFORM_VERIFIED_INSTRUMENTATION_EXPLICITLY_UNAVAILABLE");result.put("liveUnavailable",state.error());}
+            result.put("systemInputInjected",false);result.put("providerCalls",0);result.put("fullV1",false);
+            if(!Boolean.getBoolean("mineagent.nativeOverlayCompileSmoke")){finish(server,root,result);return;}
+            var content=ServerPackageRuntime.get(server).worldContent();CompletableFuture.supplyAsync(()->prepare(server,content,transformed)).thenCompose(prepared->MineAgentRuntimeServices.worker(server).compileJavaWorkspace(prepared.className(),prepared.entry(),Map.of(prepared.entry(),prepared.source()),prepared.dependencies(),prepared.selection(),prepared.context(),server::isRunning).thenApply(response->Map.entry(prepared,response))).orTimeout(180,TimeUnit.SECONDS).whenComplete((completed,failure)->server.execute(()->{
+                try{if(failure!=null)throw new IllegalStateException("NATIVE_OVERLAY_COMPILE_SMOKE_FAILED",failure);verifyLoaded(server,result,completed.getKey(),completed.getValue());finish(server,root,result);}catch(Exception error){fail(server,root,error);}
+            }));
+        }catch(Exception failure){fail(server,root,failure);throw failure;}
+    }
+    private static Prepared prepare(net.minecraft.server.MinecraftServer server,dev.mineagent.runtime.core.content.ContentAddressedStore content,NativeLiveClassAccess.Captured transformed){
+        try{
+            var raw=NativeCompilationEnvironment.capture(content,server::isRunning);String module="minecraft",name=transformed.className();byte[] original=raw.snapshot().classBytes(content,module,name);var stored=content.put(transformed.bytes());var overlay=new NativeCoderContext.Overlay(module,name,stored.sha256(),stored.sha256(),RuntimePackageCanonicalizer.sha256(original),transformed.provenance(),NativeLiveClassAccess.state().processEpoch(),transformed.loaderKind(),"","",transformed.audit());var selection=new NativeCoderContext(raw.hash(),raw.snapshot().environment().fingerprint(),raw.snapshot().physicalSide(),raw.snapshot().mappingStatus(),List.of(),List.of(),List.of(),List.of(overlay));var context=selection.capture(raw.snapshot(),content,server::isRunning);require(!context.compilationSnapshot().isEmpty(),"NATIVE_OVERLAY_COMPILE_SNAPSHOT");String className="dev.mineagent.smoke.OverlayExtension",entry="dev/mineagent/smoke/OverlayExtension.java",source="package dev.mineagent.smoke; import java.util.Map; import dev.mineagent.runtime.scripting.javaext.RuntimeExtension; public final class OverlayExtension implements RuntimeExtension { public Object start(Map<String,Object> bindings){ return \"OVERLAY_LINKED:\"+bindings.get(\"marker\"); } }";return new Prepared(selection,context,className,entry,source,JavaDependencyGraph.empty(UUID.randomUUID()));
+        }catch(Exception failure){throw new CompletionException(failure);}
+    }
+    private static void verifyLoaded(net.minecraft.server.MinecraftServer server,Map<String,Object> result,Prepared prepared,dev.mineagent.runtime.api.worker.WorkerEnvelope response)throws Exception {
+        require(response.type().equals("java.compile.result")&&Boolean.TRUE.equals(response.payload().get("success")),"NATIVE_OVERLAY_COMPILE_REJECTED");var compile=(Map<?,?>)response.payload().get("compileContext");require(prepared.context().compilationSnapshot().equals(Objects.toString(compile.get("nativeClasspath"),"")),"NATIVE_OVERLAY_COMPILE_CLASSPATH");String artifact=Objects.toString(response.payload().get("sha256"),"");Path path=MineAgentRuntimeServices.worker(server).contentPath(artifact);NativeCompilationSnapshot.verifyReceipt(path,prepared.className(),RuntimePackageCanonicalizer.sha256(prepared.source()),prepared.context().compilationSnapshot(),prepared.dependencies().receiptHash());UUID scope=UUID.randomUUID();var manager=MineAgentRuntimeServices.javaExtensions(server);try{manager.pin(scope,prepared.dependencies());var loaded=manager.load(scope,path,artifact,prepared.className(),Map.of("marker","REAL_START"),prepared.dependencies(),Map.of());require(loaded.activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.HOT_RUNTIME&&Objects.equals(loaded.startResult(),"OVERLAY_LINKED:REAL_START"),"NATIVE_OVERLAY_LINK_START");result.put("overlayCompilationSnapshot",prepared.context().compilationSnapshot());result.put("artifact",artifact);result.put("activationMode",loaded.activationMode());result.put("startResult",loaded.startResult());result.put("status","REAL_FML_OVERLAY_COMPILE_LINK_START_STOP_VERIFIED");require(manager.unload(scope),"NATIVE_OVERLAY_STOP");result.put("unloaded",true);}catch(Exception failure){manager.releaseBeforeStart(scope);throw failure;}
+    }
+    private static void finish(net.minecraft.server.MinecraftServer server,Path root,Map<String,Object> result)throws Exception {Files.deleteIfExists(root.resolve("failure.json"));Files.writeString(root.resolve("result.json"),JSON.writeValueAsString(result));server.halt(false);}
+    private static void fail(net.minecraft.server.MinecraftServer server,Path root,Throwable failure){try{var chain=new ArrayList<String>();for(int i=0;failure!=null&&i<16;i++,failure=failure.getCause())chain.add(failure.toString());Files.deleteIfExists(root.resolve("result.json"));Files.writeString(root.resolve("failure.json"),JSON.writeValueAsString(Map.of("errors",chain,"state",NativeLiveClassAccess.state(),"systemInputInjected",false,"providerCalls",0)));}catch(Exception ignored){}server.halt(false);}
+    private static void require(boolean value,String code){if(!value)throw new IllegalStateException(code);}
+}

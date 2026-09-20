@@ -1,0 +1,50 @@
+plugins {
+    id 'base'
+}
+
+allprojects {
+    group = mod_group_id
+    version = mod_version
+
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://maven.saps.dev/releases' }
+    }
+}
+
+subprojects {
+    plugins.withType(JavaPlugin).configureEach {
+        java {
+            toolchain.languageVersion = JavaLanguageVersion.of(25)
+            withSourcesJar()
+        }
+
+        tasks.withType(JavaCompile).configureEach {
+            options.encoding = 'UTF-8'
+            options.release = 25
+            options.compilerArgs.addAll '-Xlint:deprecation', '-Xlint:unchecked'
+        }
+
+        tasks.withType(Test).configureEach {
+            useJUnitPlatform()
+            jvmArgs '--enable-native-access=ALL-UNNAMED'
+            testLogging {
+                events 'failed', 'skipped'
+                exceptionFormat 'full'
+            }
+        }
+
+        dependencies {
+            testImplementation platform("org.junit:junit-bom:${junit_version}")
+            testImplementation 'org.junit.jupiter:junit-jupiter'
+            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        }
+    }
+}
+
+tasks.register('ci') {
+    group = 'verification'
+    description = 'Builds the source snapshot and runs its included offline tests; not a V1 acceptance gate.'
+    dependsOn subprojects.collect { it.tasks.matching { task -> task.name == 'build' } }
+}

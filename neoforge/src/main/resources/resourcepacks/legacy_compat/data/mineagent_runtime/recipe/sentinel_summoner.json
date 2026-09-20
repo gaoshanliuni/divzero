@@ -1,0 +1,5 @@
+{
+  "type":"minecraft:crafting_shaped","category":"misc","pattern":[" C ","CEC"," C "],
+  "key":{"C":"mineagent_runtime:runtime_crystal","E":"minecraft:ender_eye"},
+  "result":{"id":"mineagent_runtime:sentinel_summoner","count":1}
+}

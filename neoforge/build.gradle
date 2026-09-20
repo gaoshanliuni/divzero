@@ -1,0 +1,840 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version "${moddev_version}"
+    id 'idea'
+}
+
+// Immutable upstream release IDs (the old mcef-keksuccino slug now returns 404).
+repositories {
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+configurations { webguiLocked }
+
+def webguiArtifacts = [
+        'tDw1xQja-SVU4eUap.jar': 'fd7feec4c60b74c9c6fc0d831fa0599267a2204353b9958e36649351a90dd7b0',
+        'bQhBuv7x-h38n5aI0.jar': '7043d21c4deaf4149401aa4d1761b73ca63386874c0c5ce1fa80d6ae601e65d0'
+]
+tasks.register('verifyWebGuiDependencies') {
+    group = 'verification'
+    inputs.files(configurations.webguiLocked)
+    inputs.property('hashes', webguiArtifacts)
+    doLast {
+        def hashes = inputs.properties['hashes']
+        def jars = inputs.files.files
+        if (jars.size() != hashes.size()) throw new GradleException('Unexpected WebGUI dependency set')
+        jars.each { jar ->
+            def actual = java.security.MessageDigest.getInstance('SHA-256').digest(jar.bytes).encodeHex().toString()
+            if (hashes[jar.name] != actual) throw new GradleException("WebGUI integrity mismatch: ${jar.name}")
+            logger.lifecycle("WebGUI dependency verified: ${jar.name} ${actual}")
+        }
+    }
+}
+tasks.named('compileJava') { dependsOn 'verifyWebGuiDependencies' }
+tasks.register('verifyProductionUiParser') {
+    group = 'verification'
+    dependsOn tasks.named('jar')
+    inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    doLast {
+        new java.util.zip.ZipFile(inputs.files.singleFile).withCloseable { zip ->
+            def entry = zip.getEntry('META-INF/jarjar/jsoup-1.18.3.jar')
+            if (entry == null) throw new GradleException('MISSING_PRODUCTION_UI_PARSER: Jsoup must be visible to the game/server classloader, not only the child Worker')
+            def hash = java.security.MessageDigest.getInstance('SHA-256').digest(zip.getInputStream(entry).bytes).encodeHex().toString()
+            if (hash != '5be1ccd3228ae5fd6eed1bd6d827bac2bc65b91c20e9957d16ea65f739f15302') throw new GradleException('PRODUCTION_UI_PARSER_HASH_MISMATCH')
+            logger.lifecycle("PRODUCTION_UI_PARSER_VERIFIED=${hash}")
+        }
+    }
+}
+tasks.named('check') { dependsOn 'verifyProductionUiParser' }
+
+base {
+    archivesName = mod_id
+}
+
+sourceSets.main.resources {
+    srcDir('src/generated/resources')
+    exclude '**/*.bbmodel'
+    exclude 'src/generated/**/.cache'
+}
+
+neoForge {
+    version = project.neo_version
+
+    runs {
+        configureEach {
+            systemProperty 'mineagent.legacyFixtureContent', providers.gradleProperty('legacyFixtureContent').getOrElse('false')
+        }
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+        cleanContentBoundaryServer {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run-clean-content-boundary')
+            systemProperty 'mineagent.cleanContentBoundarySmoke', 'true'
+            systemProperty 'mineagent.contentBoundaryRestart', providers.gradleProperty('contentBoundaryRestart').getOrElse('false')
+        }
+        smokeClient {
+            client()
+            gameDirectory = file('run-smoke-client')
+            systemProperty 'mineagent.clientSmokeTest', 'true'
+        }
+        webGuiSmokeClient {
+            client()
+            gameDirectory = file('run-webgui-smoke')
+            programArguments.addAll(providers.gradleProperty('themeControlsSmoke').getOrElse('false') == 'true'
+                    ? ['--width=1800', '--height=1200'] : ['--width=1280', '--height=800'])
+            systemProperty 'mineagent.webguiSmokeTest', 'true'
+            systemProperty 'mineagent.textureRetirementSmoke', providers.gradleProperty('textureRetirementSmoke').getOrElse('false')
+            systemProperty 'mineagent.themeControlsSmoke', providers.gradleProperty('themeControlsSmoke').getOrElse('false')
+            systemProperty 'mineagent.themeFixture', rootProject.file('test-fixtures/webgui/theme-controls.html').absolutePath
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        webGuiSmokeServer {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run-webgui-server')
+            systemProperty 'mineagent.smokeTest', 'true'
+        }
+        uiSessionSmokeClient {
+            client()
+            gameDirectory = file('run-ui-session-smoke')
+            programArguments.addAll '--width=1280', '--height=800', '--quickPlaySingleplayer=UiSessionSmoke'
+            systemProperty 'mineagent.uiSessionSmokeTest', 'true'
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        decisionFlowSmokeClient {
+            client()
+            gameDirectory = file('run-ui-session-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiSessionSmoke'
+            systemProperty 'mineagent.decisionFlowSmoke', 'true'
+            systemProperty 'mineagent.decisionFlowResume', providers.gradleProperty('decisionFlowResume').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        liveUiSmokeClient {
+            client()
+            gameDirectory = file('run-live-ui-smoke')
+            programArguments.addAll '--width=1440', '--height=900', '--quickPlaySingleplayer=LiveUiSmoke'
+            systemProperty 'mineagent.liveUiSmokeTest', 'true'
+            systemProperty 'mineagent.liveUiBase', rootProject.layout.buildDirectory.dir('live-ui').get().asFile.absolutePath
+            systemProperty 'mineagent.liveUiConfig', rootProject.file('neoforge/run-v1-live-model/mineagent-runtime-data/runtime.db').absolutePath
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        packageDeliverySmokeClient {
+            client()
+            gameDirectory = file('run-package-delivery-smoke')
+            programArguments.addAll '--width=1440', '--height=900', '--quickPlaySingleplayer=PackageDeliverySmoke'
+            systemProperty 'mineagent.packageDeliverySmoke', 'true'
+            systemProperty 'mineagent.packageDeliveryResume', providers.gradleProperty('packageDeliveryResume').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        worldContentSmokeClient {
+            client()
+            gameDirectory = file('run-package-delivery-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=PackageDeliverySmoke'
+            systemProperty 'mineagent.worldContentSmoke', 'true'
+            systemProperty 'mineagent.worldContentResume', providers.gradleProperty('worldContentResume').getOrElse('')
+            systemProperty 'mineagent.worldContentVerifyRestart', providers.gradleProperty('worldContentVerifyRestart').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        worldRestoreSmokeClient {
+            client()
+            gameDirectory = file('run-package-delivery-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=PackageDeliverySmoke'
+            systemProperty 'mineagent.worldRestoreSmoke', 'true'
+            systemProperty 'mineagent.worldRestoreStage', providers.gradleProperty('worldRestoreStage').getOrElse('seed')
+            systemProperty 'mineagent.worldRestoreCheckpoint', providers.gradleProperty('worldRestoreCheckpoint').getOrElse('')
+            systemProperty 'mineagent.worldRestoreResume', providers.gradleProperty('worldRestoreResume').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        worldActionSmokeClient {
+            client()
+            gameDirectory = file('run-package-delivery-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=PackageDeliverySmoke'
+            systemProperty 'mineagent.worldActionSmoke', 'true'
+            systemProperty 'mineagent.worldActionPlan', providers.gradleProperty('worldActionPlan').getOrElse('')
+            systemProperty 'mineagent.worldActionRestart', providers.gradleProperty('worldActionRestart').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        worldPackageTaskSmokeClient {
+            client()
+            gameDirectory = file('run-package-delivery-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=PackageDeliverySmoke'
+            systemProperty 'mineagent.worldPackageTaskSmoke', 'true'
+            systemProperty 'mineagent.worldPackageTaskResume', providers.gradleProperty('worldPackageTaskResume').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        craftingUseSmokeClient {
+            client()
+            gameDirectory = file('run-package-delivery-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=PackageDeliverySmoke'
+            systemProperty 'mineagent.craftingUseSmoke', 'true'
+            systemProperty 'mineagent.craftingUseReplay', providers.gradleProperty('craftingUseReplay').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        scoreUiSmokeClient {
+            client()
+            gameDirectory = file('run-score-ui-smoke')
+            programArguments.addAll '--width=1440', '--height=900', '--quickPlaySingleplayer=ScoreUiSmoke'
+            systemProperty 'mineagent.scoreUiSmoke', 'true'
+            systemProperty 'mineagent.scoreUiResume', providers.gradleProperty('scoreUiResume').getOrElse('')
+            systemProperty 'mineagent.scoreUiAgent', providers.gradleProperty('scoreUiAgent').getOrElse('false')
+            systemProperty 'mineagent.scoreUiInterrupt', providers.gradleProperty('scoreUiInterrupt').getOrElse('false')
+            systemProperty 'mineagent.scoreUiTakeover', providers.gradleProperty('scoreUiTakeover').getOrElse('false')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        multiWindowInputSmokeClient {
+            client()
+            gameDirectory = file('run-score-ui-smoke')
+            programArguments.addAll '--width=1920', '--height=1080', '--quickPlaySingleplayer=ScoreUiSmoke'
+            systemProperty 'mineagent.multiWindowInputSmoke', 'true'
+            systemProperty 'mineagent.multiWindowResume', providers.gradleProperty('scoreUiResume').getOrElse('')
+            systemProperty 'mineagent.multiWindowPointer', providers.gradleProperty('multiWindowPointer').getOrElse('false')
+            systemProperty 'mineagent.multiWindowEarlyHide', providers.gradleProperty('multiWindowEarlyHide').getOrElse('false')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        takeoverResumeSmokeClient {
+            client()
+            gameDirectory = file('run-score-ui-smoke')
+            programArguments.addAll '--width=1440', '--height=900', '--quickPlaySingleplayer=ScoreUiSmoke'
+            systemProperty 'mineagent.takeoverResumeSmoke', 'true'
+            systemProperty 'mineagent.takeoverResumeView', providers.gradleProperty('takeoverResumeView').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        uiToolSmokeClient {
+            client()
+            gameDirectory = file('run-ui-tools-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiToolsSmoke'
+            systemProperty 'mineagent.scoreUiSmoke', 'true'
+            systemProperty 'mineagent.scoreUiAgent', 'true'
+            systemProperty 'mineagent.uiToolSmoke', 'true'
+            systemProperty 'mineagent.captureSmoke', providers.gradleProperty('uiCaptureSmoke').getOrElse('false')
+            systemProperty 'mineagent.captureAgentSmoke', providers.gradleProperty('captureAgentSmoke').getOrElse('false')
+            systemProperty 'mineagent.scoreUiResume', providers.gradleProperty('scoreUiResume').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        uiCoordinateSmokeClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.scoreUiSmoke', 'true'
+            systemProperty 'mineagent.scoreUiAgent', 'true'
+            systemProperty 'mineagent.uiCoordinateSmoke', 'true'
+            systemProperty 'mineagent.coordinatePerturb', providers.gradleProperty('coordinatePerturb').getOrElse('')
+            systemProperty 'mineagent.captureAgentSmoke', 'true'
+            systemProperty 'mineagent.scoreUiResume', providers.gradleProperty('scoreUiResume').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        uiPatchSmokeClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.uiPatchSmoke', 'true'
+            systemProperty 'mineagent.uiPatchResumeToken', providers.gradleProperty('uiPatchResumeToken').getOrElse('')
+            systemProperty 'mineagent.uiPatchAutoSwap', providers.gradleProperty('uiPatchAutoSwap').getOrElse('false')
+            systemProperty 'mineagent.uiPatchIncompatible', providers.gradleProperty('uiPatchIncompatible').getOrElse('false')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        scoreHudSmokeClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.scoreHudSmoke', 'true'
+            systemProperty 'mineagent.scoreHudRenewSmoke', providers.gradleProperty('scoreHudRenew').getOrElse('false')
+            systemProperty 'mineagent.scoreHudResume', providers.gradleProperty('scoreHudResume').getOrElse('')
+            systemProperty 'mineagent.hudPersistencePhase', providers.gradleProperty('hudPersistencePhase').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        worldBoardSmokeClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.worldBoardSmoke', 'true'
+            systemProperty 'mineagent.worldBoardPackage', providers.gradleProperty('worldBoardPackage').getOrElse('f5459b29-505c-4f1d-9704-4da58b67bcb6')
+            systemProperty 'mineagent.worldBoardResume', providers.gradleProperty('worldBoardResume').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        containerSmokeClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1800', '--height=1100', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.containerSmoke', 'true'
+            systemProperty 'mineagent.containerResume', providers.gradleProperty('containerResume').getOrElse('')
+            systemProperty 'mineagent.containerActions', providers.gradleProperty('containerActions').getOrElse('false')
+            systemProperty 'mineagent.containerLongDrag', providers.gradleProperty('containerLongDrag').getOrElse('false')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        agentContainerSmokeClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1800', '--height=1100', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.agentContainerSmoke', 'true'
+            systemProperty 'mineagent.agentContainerPatch', providers.gradleProperty('agentContainerPatch').getOrElse('false')
+            systemProperty 'mineagent.agentContainerFar', providers.gradleProperty('agentContainerFar').getOrElse('false')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        uiRevisionRecoveryClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.takeoverResumeSmoke', 'true'
+            systemProperty 'mineagent.takeoverResumeReadOnly', 'true'
+            systemProperty 'mineagent.takeoverResumeDraft', '人工改版草稿'
+            systemProperty 'mineagent.takeoverResumeView', providers.gradleProperty('takeoverResumeView').getOrElse('')
+            systemProperty 'mineagent.takeoverResumeOldDocument', providers.gradleProperty('takeoverResumeOldDocument').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        genericUiToolSmokeClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.genericUiToolSmoke', 'true'
+            systemProperty 'mineagent.genericUiPatchPackage', providers.gradleProperty('genericUiPatchPackage').getOrElse('')
+            systemProperty 'mineagent.genericUiPatchRevision', providers.gradleProperty('genericUiPatchRevision').getOrElse('0')
+            systemProperty 'mineagent.genericUiStateRepair', providers.gradleProperty('genericUiStateRepair').getOrElse('false')
+            systemProperty 'mineagent.genericUiStateProbe', providers.gradleProperty('genericUiStateProbe').getOrElse('false')
+            systemProperty 'mineagent.genericUiResumeToken', providers.gradleProperty('genericUiResumeToken').getOrElse('')
+            systemProperty 'mineagent.genericUiResumeOperation', providers.gradleProperty('genericUiResumeOperation').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        pageOnlyAgentSmokeClient {
+            client()
+            gameDirectory = file('run-ui-coordinate-smoke')
+            programArguments.addAll '--width=1600', '--height=1000', '--quickPlaySingleplayer=UiCoordinateSmoke'
+            systemProperty 'mineagent.pageOnlyAgentSmoke', 'true'
+            systemProperty 'mineagent.captureAgentSmoke', 'true'
+            systemProperty 'mineagent.pageAgentPackage', providers.gradleProperty('pageAgentPackage').getOrElse('')
+            systemProperty 'mineagent.pageAgentRevision', providers.gradleProperty('pageAgentRevision').getOrElse('0')
+            systemProperty 'mineagent.pageAgentAlready', providers.gradleProperty('pageAgentAlready').getOrElse('false')
+            systemProperty 'mineagent.pageAgentPersistence', providers.gradleProperty('pageAgentPersistence').getOrElse('false')
+            systemProperty 'mineagent.pageAgentRestoreToken', providers.gradleProperty('pageAgentRestoreToken').getOrElse('')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        integratedSmokeClient {
+            client()
+            gameDirectory = file('run-smoke-integrated')
+            programArgument '--quickPlaySingleplayer=SmokeWorld'
+            programArgument "--quickPlayPath=${file('run-smoke-integrated/quickplay.log').absolutePath}"
+            systemProperty 'mineagent.clientSmokeTest', 'true'
+            systemProperty 'mineagent.integratedSmokeTest', 'true'
+            systemProperty 'mineagent.smokeTest', 'true'
+        }
+        smokeMultiplayerServer {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run-smoke-multiplayer-server')
+            systemProperty 'mineagent.multiplayerSmokeServer', 'true'
+        }
+        uiMultiplayerServer {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run-ui-multiplayer/server')
+            systemProperty 'mineagent.uiMultiplayerServer', 'true'
+        }
+        contentDeliveryServer {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file(providers.gradleProperty('contentDeliveryRoot').getOrElse('run-content-delivery/unconfigured') + '/server')
+            systemProperty 'mineagent.deliverySmokeServer', 'true'
+            systemProperty 'mineagent.feedbackSmoke', providers.gradleProperty('contentFeedbackSmoke').getOrElse('false')
+            systemProperty 'mineagent.feedbackWakeSmoke', providers.gradleProperty('contentFeedbackWake').getOrElse('false')
+            systemProperty 'mineagent.feedbackWakeCancel', providers.gradleProperty('contentFeedbackWakeCancel').getOrElse('false')
+            systemProperty 'mineagent.feedbackData', providers.gradleProperty('contentFeedbackData').getOrElse('false')
+            systemProperty 'mineagent.feedbackRestartStage', providers.gradleProperty('feedbackRestartStage').getOrElse('')
+            systemProperty 'mineagent.feedbackRestartBoundary', providers.gradleProperty('feedbackRestartBoundary').getOrElse('afterPlan')
+            systemProperty 'mineagent.bootstrapKeySmoke', 'true'
+            systemProperty 'mineagent.feedbackApplication', providers.gradleProperty('feedbackApplicationMode').getOrElse('')
+            systemProperty 'mineagent.workerHealthSmoke', providers.gradleProperty('workerHealthSmoke').getOrElse('false')
+            systemProperty 'mineagent.generationRepairSmoke', providers.gradleProperty('generationRepairSmoke').getOrElse('false')
+            systemProperty 'mineagent.deliveryGoalSmoke', providers.gradleProperty('deliveryGoalSmoke').getOrElse('false')
+            systemProperty 'mineagent.feedbackReacceptSmoke', providers.gradleProperty('feedbackReacceptSmoke').getOrElse('false')
+            systemProperty 'mineagent.clientCodeDeliverySmoke', providers.gradleProperty('clientCodeDeliverySmoke').getOrElse('false')
+        }
+        contentDeliveryClientA {
+            client()
+            gameDirectory = file(providers.gradleProperty('contentDeliveryRoot').getOrElse('run-content-delivery/unconfigured') + '/a/game')
+            programArguments.addAll '--username=DeliveryA', "--quickPlayMultiplayer=127.0.0.1:${providers.gradleProperty('contentDeliveryPort').getOrElse('25593')}", '--width=1600', '--height=1000'
+            systemProperty 'mineagent.deliverySmokeRole', 'A'
+            systemProperty 'mineagent.feedbackSmoke', providers.gradleProperty('contentFeedbackSmoke').getOrElse('false')
+            systemProperty 'mineagent.feedbackWakeSmoke', providers.gradleProperty('contentFeedbackWake').getOrElse('false')
+            systemProperty 'mineagent.feedbackWakeCancel', providers.gradleProperty('contentFeedbackWakeCancel').getOrElse('false')
+            systemProperty 'mineagent.feedbackData', providers.gradleProperty('contentFeedbackData').getOrElse('false')
+            systemProperty 'mineagent.feedbackRestartStage', providers.gradleProperty('feedbackRestartStage').getOrElse('')
+            systemProperty 'mineagent.feedbackRestartBoundary', providers.gradleProperty('feedbackRestartBoundary').getOrElse('afterPlan')
+            systemProperty 'mineagent.bootstrapKeySmoke', 'true'
+            systemProperty 'mineagent.feedbackApplication', providers.gradleProperty('feedbackApplicationMode').getOrElse('')
+            systemProperty 'mineagent.workerHealthSmoke', providers.gradleProperty('workerHealthSmoke').getOrElse('false')
+            systemProperty 'mineagent.generationRepairSmoke', providers.gradleProperty('generationRepairSmoke').getOrElse('false')
+            systemProperty 'mineagent.deliveryGoalSmoke', providers.gradleProperty('deliveryGoalSmoke').getOrElse('false')
+            systemProperty 'mineagent.feedbackReacceptSmoke', providers.gradleProperty('feedbackReacceptSmoke').getOrElse('false')
+            systemProperty 'mineagent.clientCodeDeliverySmoke', providers.gradleProperty('clientCodeDeliverySmoke').getOrElse('false')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        contentDeliveryClientB {
+            client()
+            gameDirectory = file(providers.gradleProperty('contentDeliveryRoot').getOrElse('run-content-delivery/unconfigured') + '/b/game')
+            programArguments.addAll '--username=DeliveryB', "--quickPlayMultiplayer=127.0.0.1:${providers.gradleProperty('contentDeliveryPort').getOrElse('25593')}", '--width=1600', '--height=1000'
+            systemProperty 'mineagent.deliverySmokeRole', 'B'
+            systemProperty 'mineagent.feedbackSmoke', providers.gradleProperty('contentFeedbackSmoke').getOrElse('false')
+            systemProperty 'mineagent.feedbackWakeSmoke', providers.gradleProperty('contentFeedbackWake').getOrElse('false')
+            systemProperty 'mineagent.feedbackWakeCancel', providers.gradleProperty('contentFeedbackWakeCancel').getOrElse('false')
+            systemProperty 'mineagent.feedbackData', providers.gradleProperty('contentFeedbackData').getOrElse('false')
+            systemProperty 'mineagent.clientCodeDeliverySmoke', providers.gradleProperty('clientCodeDeliverySmoke').getOrElse('false')
+            systemProperty 'mineagent.feedbackRestartStage', providers.gradleProperty('feedbackRestartStage').getOrElse('')
+            systemProperty 'mineagent.feedbackRestartBoundary', providers.gradleProperty('feedbackRestartBoundary').getOrElse('afterPlan')
+            systemProperty 'mineagent.bootstrapKeySmoke', 'true'
+            systemProperty 'mineagent.feedbackApplication', providers.gradleProperty('feedbackApplicationMode').getOrElse('')
+            systemProperty 'mineagent.workerHealthSmoke', providers.gradleProperty('workerHealthSmoke').getOrElse('false')
+            systemProperty 'mineagent.generationRepairSmoke', providers.gradleProperty('generationRepairSmoke').getOrElse('false')
+            systemProperty 'mineagent.deliveryGoalSmoke', providers.gradleProperty('deliveryGoalSmoke').getOrElse('false')
+            systemProperty 'mineagent.feedbackReacceptSmoke', providers.gradleProperty('feedbackReacceptSmoke').getOrElse('false')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        sharedMultiplayerServer {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file(providers.gradleProperty('sharedMultiplayerRoot').getOrElse('run-shared-multiplayer/unconfigured') + '/server')
+            systemProperty 'mineagent.sharedMultiplayerServer', 'true'
+        }
+        sharedMultiplayerClientA {
+            client()
+            gameDirectory = file(providers.gradleProperty('sharedMultiplayerRoot').getOrElse('run-shared-multiplayer/unconfigured') + '/a/game')
+            programArguments.addAll '--username=SharedA', "--quickPlayMultiplayer=127.0.0.1:${providers.gradleProperty('sharedMultiplayerPort').getOrElse('25591')}", '--width=1600', '--height=1000'
+            systemProperty 'mineagent.sharedMultiplayerRole', 'A'
+            systemProperty 'mineagent.sharedMultiplayerPort', providers.gradleProperty('sharedMultiplayerPort').getOrElse('25591')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        sharedMultiplayerClientB {
+            client()
+            gameDirectory = file(providers.gradleProperty('sharedMultiplayerRoot').getOrElse('run-shared-multiplayer/unconfigured') + '/b/game')
+            programArguments.addAll '--username=SharedB', "--quickPlayMultiplayer=127.0.0.1:${providers.gradleProperty('sharedMultiplayerPort').getOrElse('25591')}", '--width=1600', '--height=1000'
+            systemProperty 'mineagent.sharedMultiplayerRole', 'B'
+            systemProperty 'mineagent.sharedMultiplayerPort', providers.gradleProperty('sharedMultiplayerPort').getOrElse('25591')
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        taskAuthorityServer {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file(providers.gradleProperty('taskAuthorityRoot').getOrElse('run-task-authority/unconfigured') + '/server')
+            systemProperty 'mineagent.taskAuthorityServer', 'true'
+        }
+        taskAuthorityClient {
+            client()
+            gameDirectory = file(providers.gradleProperty('taskAuthorityRoot').getOrElse('run-task-authority/unconfigured') + '/client/game')
+            programArguments.addAll '--username=AuthUser', '--quickPlayMultiplayer=127.0.0.1:25587', '--width=1600', '--height=1000'
+            systemProperty 'mineagent.taskAuthorityClient', 'true'
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        uiWorldSwitchServerOne {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run-ui-world-switch/server-one')
+            systemProperty 'mineagent.uiWorldSwitchServer', '1'
+        }
+        uiWorldSwitchServerTwo {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run-ui-world-switch/server-two')
+            systemProperty 'mineagent.uiWorldSwitchServer', '2'
+            systemProperty 'mineagent.uiWorldSwitchSignal', file('run-ui-world-switch/server-two-ready.flag').absolutePath
+        }
+        uiWorldSwitchClient {
+            client()
+            gameDirectory = file('run-ui-world-switch/client/game')
+            programArguments.addAll '--username=UiMultiA', '--quickPlayMultiplayer=127.0.0.1:25589', '--width=1440', '--height=1000'
+            systemProperty 'mineagent.uiWorldSwitchClient', 'true'
+            systemProperty 'mineagent.uiWorldSwitchSignal', file('run-ui-world-switch/server-two-ready.flag').absolutePath
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        uiMultiplayerClientA {
+            client()
+            gameDirectory = file('run-ui-multiplayer/a/game')
+            programArguments.addAll '--username=UiMultiA', '--quickPlayMultiplayer=127.0.0.1:25579', '--width=1280', '--height=800'
+            systemProperty 'mineagent.uiMultiplayerRole', 'A'
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        uiMultiplayerClientB {
+            client()
+            gameDirectory = file('run-ui-multiplayer/b/game')
+            programArguments.addAll '--username=UiMultiB', '--quickPlayMultiplayer=127.0.0.1:25579', '--width=1280', '--height=800'
+            systemProperty 'mineagent.uiMultiplayerRole', 'B'
+            systemProperty 'mcef.java.cef.commit', 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1'
+        }
+        smokeMultiplayerClientA {
+            client()
+            gameDirectory = file('run-smoke-multiplayer-client-a')
+            programArgument '--username=ClientA'
+            programArgument '--quickPlayMultiplayer=127.0.0.1:25565'
+            systemProperty 'mineagent.clientSmokeTest', 'true'
+            systemProperty 'mineagent.multiplayerSmokeClient', 'true'
+        }
+        smokeMultiplayerClientB {
+            client()
+            gameDirectory = file('run-smoke-multiplayer-client-b')
+            programArgument '--username=ClientB'
+            programArgument '--quickPlayMultiplayer=127.0.0.1:25565'
+            systemProperty 'mineagent.clientSmokeTest', 'true'
+            systemProperty 'mineagent.multiplayerSmokeClient', 'true'
+        }
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+        smokeServer {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run-smoke-server')
+            systemProperty 'mineagent.smokeTest', 'true'
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+        data {
+            clientData()
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources').absolutePath, '--existing', file('src/main/resources').absolutePath
+        }
+        configureEach {
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+// Keep JUnit on the ordinary test runner while exposing the same mapped game API used by main.
+sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
+
+def integratedSmokeOptions = layout.projectDirectory.file('run-smoke-integrated/options.txt')
+def integratedSmokeWorldLock = layout.projectDirectory.file('run-smoke-integrated/saves/SmokeWorld/session.lock')
+tasks.named('runIntegratedSmokeClient').configure {
+    doFirst {
+        def options = integratedSmokeOptions.asFile
+        if (options.exists()) {
+            options.text = options.getText('UTF-8').replace('onboardAccessibility:true', 'onboardAccessibility:false')
+        }
+        java.nio.file.Files.deleteIfExists(integratedSmokeWorldLock.asFile.toPath())
+    }
+}
+
+
+['A', 'B'].each { suffix ->
+    def optionsFile = layout.projectDirectory.file("run-smoke-multiplayer-client-${suffix.toLowerCase()}/options.txt")
+    tasks.named("runSmokeMultiplayerClient${suffix}").configure {
+        doFirst {
+            def options = optionsFile.asFile
+            options.parentFile.mkdirs()
+            if (!options.exists()) {
+                options.setText('onboardAccessibility:false\nstartedCleanly:true\n', 'UTF-8')
+            } else {
+                options.text = options.getText('UTF-8').replace('onboardAccessibility:true', 'onboardAccessibility:false')
+            }
+        }
+    }
+}
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+}
+
+// Dedicated-server profile: WebGUI common channels are required; only MCEF/Chromium is client-only.
+if (project.hasProperty('webguiServerOnly')) {
+    configurations.runtimeClasspath.exclude group: 'maven.modrinth', module: 'bQhBuv7x'
+}
+// Network-capable dedicated profile: retain WebGUI's required common channels, never install client-only MCEF.
+if (project.hasProperty('webguiDedicated')) {
+    configurations.runtimeClasspath.exclude group: 'maven.modrinth', module: 'bQhBuv7x'
+}
+
+dependencies {
+    implementation('maven.modrinth:tDw1xQja:SVU4eUap') { transitive = false }
+    implementation('maven.modrinth:bQhBuv7x:h38n5aI0') { transitive = false }
+    webguiLocked('maven.modrinth:tDw1xQja:SVU4eUap') { transitive = false }
+    webguiLocked('maven.modrinth:bQhBuv7x:h38n5aI0') { transitive = false }
+    implementation project(':api')
+    implementation project(':core')
+    implementation project(':agent')
+    implementation project(':scripting')
+    implementation project(':client')
+    implementation project(':integrations:ysm')
+    implementation project(':worker')
+    implementation 'javazoom:jlayer:1.0.1'
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
+
+    jarJar "dev.latvian.mods:rhino:${rhino_version}"
+    jarJar "org.xerial:sqlite-jdbc:${sqlite_jdbc_version}"
+    jarJar "com.fasterxml.jackson.core:jackson-annotations:${jackson_version.substring(0, jackson_version.lastIndexOf('.'))}"
+    jarJar "com.fasterxml.jackson.core:jackson-core:${jackson_version}"
+    jarJar "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
+    jarJar "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson_version}"
+    jarJar 'javazoom:jlayer:[1.0.1]'
+    jarJar 'org.jsoup:jsoup:[1.18.3]'
+
+    if (project.hasProperty('ysmJar')) {
+        localRuntime files(project.property('ysmJar'))
+    }
+}
+
+def embeddedProjects = [
+        project(':api'), project(':core'), project(':agent'), project(':scripting'),
+        project(':client'), project(':integrations:ysm'), project(':worker')
+]
+
+tasks.named('jar', Jar).configure {
+    dependsOn embeddedProjects.collect { it.tasks.named('classes') }
+    from embeddedProjects.findAll { it != project(':worker') }.collect { it.sourceSets.main.output }
+    from(project(':worker').sourceSets.main.output) {
+        // The managed Worker JAR owns these large resources. Do not duplicate them in the outer Mod JAR.
+        exclude 'META-INF/mineagent/tools/**'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    def replacements = [
+            minecraft_version: minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version: neo_version,
+            mod_id: mod_id,
+            mod_name: mod_name,
+            mod_license: mod_license,
+            mod_version: mod_version
+    ]
+    inputs.properties replacements
+    expand replacements
+    from 'src/main/templates'
+    into layout.buildDirectory.dir('generated/sources/modMetadata')
+}
+
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.named('processResources').configure {
+    dependsOn project(':worker').tasks.named('fatJar')
+    // FML's dev Mod module cannot see sibling project resources through Class.getResource.
+    // Copy the same authored client resources that the release JAR embeds, not a test-only replacement.
+    from(project(':client').layout.projectDirectory.dir('src/main/resources'))
+    from(project(':worker').tasks.named('fatJar')) {
+        into 'META-INF/mineagent/worker'
+        rename { 'mineagent-worker.jar' }
+    }
+}
+
+def productionYsmJar = providers.gradleProperty('ysmJar')
+def productionJavaHome = providers.environmentVariable('JAVA_HOME')
+def productionVersionDir = rootProject.projectDir.parentFile
+def productionMinecraftRoot = productionVersionDir.parentFile.parentFile
+def productionYsmGameDir = file('run-production-ysm-smoke')
+def productionSmokeWorld = rootProject.file('test-fixtures/ysm/SmokeWorld')
+def productionModJar = tasks.named('jar', Jar).flatMap { it.archiveFile }
+def jointProductionDirectory = file('run-production-webgui-ysm')
+def jointWebGuiJar = rootProject.file('build/webgui-runtime/webgui-neoforge-1.6.2+mc26.1.2.jar')
+def jointMcefJar = rootProject.file('build/webgui-runtime/mcef_neoforge_2.2.0_MC_26.1.1.jar')
+def jointNativeArchive = rootProject.file('build/webgui-runtime/windows_amd64.tar.gz')
+def jointWithoutYsm = providers.gradleProperty('jointWithoutYsm').map { it == 'true' }.orElse(false)
+
+tasks.register('runProductionJointAppearance', JavaExec) {
+    group = 'verification'
+    dependsOn tasks.named('jar'), project(':worker').tasks.named('classes')
+    dependsOn tasks.named('verifyProductionUiParser')
+    classpath = project(':worker').sourceSets.main.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.smoke.ProductionJointAppearanceLauncher'
+    systemProperty 'mineagent.bodySurvivalSmoke', providers.gradleProperty('bodySurvivalSmoke').orElse('false').get()
+    systemProperty 'mineagent.settingsSmoke', providers.gradleProperty('settingsSmoke').orElse('false').get()
+    systemProperty 'mineagent.agentManagementSmoke', providers.gradleProperty('agentManagementSmoke').orElse('false').get()
+    systemProperty 'mineagent.nativeApiSmoke', providers.gradleProperty('nativeApiSmoke').orElse('false').get()
+    systemProperty 'mineagent.nativeApiCoderSmoke', providers.gradleProperty('nativeApiCoderSmoke').orElse('false').get()
+    systemProperty 'mineagent.resourcePackSmoke', providers.gradleProperty('resourcePackSmoke').orElse('false').get()
+    systemProperty 'mineagent.clientScriptSmoke', providers.gradleProperty('clientScriptSmoke').orElse('false').get()
+    systemProperty 'mineagent.clientJavaSmoke', providers.gradleProperty('clientJavaSmoke').orElse('false').get()
+    systemProperty 'mineagent.clientDependencySmoke', providers.gradleProperty('clientDependencySmoke').orElse('false').get()
+    systemProperty 'mineagent.clientStudioSmoke', providers.gradleProperty('clientStudioSmoke').orElse('false').get()
+    systemProperty 'mineagent.packageAssetSmoke', providers.gradleProperty('packageAssetSmoke').orElse('false').get()
+    systemProperty 'mineagent.conversationAgentSmoke', providers.gradleProperty('conversationAgentSmoke').orElse('false').get()
+    systemProperty 'mineagent.conversationAgentReal', providers.gradleProperty('conversationAgentReal').orElse('false').get()
+    systemProperty 'mineagent.conversationAgentScenario', providers.gradleProperty('conversationAgentScenario').orElse('').get()
+    systemProperty 'mineagent.conversationAgentCallBudget', providers.gradleProperty('conversationAgentCallBudget').orElse('').get()
+    systemProperty 'mineagent.conversationAgentBlueprint', providers.gradleProperty('conversationAgentBlueprint').orElse('').get()
+    systemProperty 'mineagent.conversationAgentProviderDb', providers.gradleProperty('conversationAgentProviderDb').orElse('').get()
+    systemProperty 'mineagent.playerBodySmoke', providers.gradleProperty('playerBodySmoke').orElse('false').get()
+    systemProperty 'mineagent.desktopWindowsSmoke', providers.gradleProperty('desktopWindowsSmoke').orElse('false').get()
+    systemProperty 'mineagent.desktopWindowsRenderer', providers.gradleProperty('desktopWindowsRenderer').orElse('').get()
+    systemProperty 'mineagent.nativeMentionSmoke', providers.gradleProperty('nativeMentionSmoke').orElse('false').get()
+    systemProperty 'mineagent.bootUpgradeSmoke', providers.gradleProperty('bootUpgradeSmoke').orElse('false').get()
+    systemProperty 'mineagent.bootDependencySmoke', providers.gradleProperty('bootDependencySmoke').orElse('false').get()
+    systemProperty 'mineagent.bodyRecoverySmoke', providers.gradleProperty('bodyRecoverySmoke').orElse('false').get()
+    systemProperty 'mineagent.appearanceChoiceSmoke', providers.gradleProperty('appearanceChoiceSmoke').orElse('false').get()
+    systemProperty 'mineagent.appearanceRecoverySmoke', providers.gradleProperty('appearanceRecoverySmoke').orElse('false').get()
+    systemProperty 'mineagent.appearanceAgentSmoke', providers.gradleProperty('appearanceAgentSmoke').orElse('false').get()
+    systemProperty 'mineagent.runtimeObjectSmoke', providers.gradleProperty('runtimeObjectSmoke').orElse('false').get()
+    systemProperty 'mineagent.worldUiSmoke', providers.gradleProperty('worldUiSmoke').orElse('false').get()
+    systemProperty 'mineagent.sharedStateSmoke', providers.gradleProperty('sharedStateSmoke').orElse('false').get()
+    systemProperty 'mineagent.workspaceSmoke', providers.gradleProperty('workspaceSmoke').orElse('false').get()
+    systemProperty 'mineagent.viewSettingsSmoke', providers.gradleProperty('viewSettingsSmoke').orElse('false').get()
+    systemProperty 'mineagent.viewSettingsPaintSmoke', providers.gradleProperty('viewSettingsPaintSmoke').orElse('false').get()
+    systemProperty 'mineagent.nativeAtlasSmoke', providers.gradleProperty('nativeAtlasSmoke').orElse('false').get()
+    systemProperty 'mineagent.nativePopupLegacySmoke', providers.gradleProperty('nativePopupLegacySmoke').orElse('false').get()
+    systemProperty 'mineagent.nativePopupSmoke', providers.gradleProperty('nativePopupSmoke').orElse('false').get()
+    systemProperty 'mineagent.nativeAtlasInputSmoke', providers.gradleProperty('nativeAtlasInputSmoke').orElse('false').get()
+    systemProperty 'mineagent.objectDirectorySmoke', providers.gradleProperty('objectDirectorySmoke').orElse('false').get()
+    systemProperty 'mineagent.audienceSmoke', providers.gradleProperty('audienceSmoke').orElse('false').get()
+    systemProperty 'mineagent.eventSmoke', providers.gradleProperty('eventSmoke').orElse('false').get()
+    systemProperty 'mineagent.sharedAgentSmoke', providers.gradleProperty('sharedAgentSmoke').orElse('false').get()
+    systemProperty 'mineagent.scheduleSmoke', providers.gradleProperty('scheduleSmoke').orElse('false').get()
+    systemProperty 'mineagent.opacityPersistenceSmoke', providers.gradleProperty('opacityPersistenceSmoke').orElse('false').get()
+    systemProperty 'mineagent.livePlacementSmoke', providers.gradleProperty('livePlacementSmoke').orElse('').get()
+    systemProperty 'mineagent.livePlacementModel', providers.gradleProperty('livePlacementModel').orElse('').get()
+    systemProperty 'mineagent.livePlacementProviderDb', providers.gradleProperty('livePlacementProviderDb').orElse('').get()
+    systemProperty 'mineagent.worldMoveSmoke', providers.gradleProperty('worldMoveSmoke').orElse('false').get()
+    systemProperty 'mineagent.worldUiModelSmoke', providers.gradleProperty('worldUiModelSmoke').orElse('false').get()
+    systemProperty 'mineagent.worldUiFailureSmoke', providers.gradleProperty('worldUiFailureSmoke').orElse('false').get()
+    systemProperty 'mineagent.worldUiModel', providers.gradleProperty('worldUiModel').orElse('').get()
+    systemProperty 'mineagent.worldUiFixture', rootProject.file('test-fixtures/webgui/world-object.html').absolutePath
+    systemProperty 'mineagent.worldUiAgentSmoke', providers.gradleProperty('worldUiAgentSmoke').orElse('false').get()
+    systemProperty 'mineagent.personaSmoke', providers.gradleProperty('personaSmoke').orElse('false').get()
+    systemProperty 'mineagent.conversationSmoke', providers.gradleProperty('conversationSmoke').orElse('false').get()
+    systemProperty 'mineagent.conversationNativeSmoke', providers.gradleProperty('conversationNativeSmoke').orElse('false').get()
+    systemProperty 'mineagent.conversationSummarySmoke', providers.gradleProperty('conversationSummarySmoke').orElse('false').get()
+    systemProperty 'mineagent.conversationSummaryFailureMode', providers.gradleProperty('conversationSummaryFailureMode').orElse('').get()
+    systemProperty 'mineagent.worldUiAgentCancelMode', providers.gradleProperty('worldUiAgentCancelMode').orElse('').get()
+    systemProperty 'mineagent.worldUiAgentModel', providers.gradleProperty('worldUiAgentModel').orElse('').get()
+    systemProperty 'mineagent.worldUiAgentFixture', rootProject.file('test-fixtures/webgui/world-agent.html').absolutePath
+    systemProperty 'mineagent.worldPatchProfile', providers.gradleProperty('worldPatchProfile').orElse('').get()
+    systemProperty 'mineagent.worldPatchVerifyOnly', providers.gradleProperty('worldPatchVerifyOnly').orElse('false').get()
+    systemProperty 'mineagent.worldPatchGeneration', providers.gradleProperty('worldPatchGeneration').orElse('').get()
+    systemProperty 'mineagent.worldUiRepairProfile', providers.gradleProperty('worldUiRepairProfile').orElse('').get()
+    systemProperty 'mineagent.worldUiRepairGeneration', providers.gradleProperty('worldUiRepairGeneration').orElse('').get()
+    systemProperty 'mineagent.worldUiRepairModel', providers.gradleProperty('worldUiRepairModel').orElse('').get()
+    systemProperty 'mineagent.worldUiRepairRaw', providers.gradleProperty('worldUiRepairRaw').orElse('').get()
+    systemProperty 'mineagent.worldUiRepairVerifyOnly', providers.gradleProperty('worldUiRepairVerifyOnly').orElse('false').get()
+    systemProperty 'mineagent.worldUiRepairPrevious', providers.gradleProperty('worldUiRepairPrevious').orElse('').get()
+    systemProperty 'mineagent.worldPackageObjectSmoke', providers.gradleProperty('worldPackageObjectSmoke').orElse('false').get()
+    systemProperty 'mineagent.appearanceAgentProviderDb', providers.gradleProperty('appearanceAgentProviderDb').orElse('').get()
+    doFirst {
+        if ((!jointWithoutYsm.get() && !productionYsmJar.isPresent()) || !productionJavaHome.isPresent()) throw new GradleException('Pinned ysmJar and JAVA_HOME are required')
+        setArgs([productionMinecraftRoot.absolutePath, productionVersionDir.absolutePath, jointProductionDirectory.absolutePath,
+                 productionModJar.get().asFile.absolutePath, jointWithoutYsm.get() ? 'ABSENT' : new File(productionYsmJar.get()).absolutePath, productionJavaHome.get(), productionSmokeWorld.absolutePath,
+                 jointWebGuiJar.absolutePath, jointMcefJar.absolutePath, jointNativeArchive.absolutePath])
+    }
+}
+
+tasks.register('runProductionYsmSmoke', JavaExec) {
+    group = 'verification'
+    description = 'Builds the Mod and runs the pinned YSM in a real FancyModLoader CLIENT in PROD.'
+    dependsOn tasks.named('jar'), project(':worker').tasks.named('classes')
+    classpath = project(':worker').sourceSets.main.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.smoke.ProductionYsmSmokeLauncher'
+    doFirst {
+        if (!productionYsmJar.isPresent()) {
+            throw new GradleException('Pass the pinned YSM path with -PysmJar=<path>')
+        }
+        if (!productionJavaHome.isPresent() || productionJavaHome.get().isBlank()) {
+            throw new GradleException('JAVA_HOME must point to the locked Java 25 runtime')
+        }
+        setArgs([
+                productionMinecraftRoot.absolutePath,
+                productionVersionDir.absolutePath,
+                productionYsmGameDir.absolutePath,
+                productionModJar.get().asFile.absolutePath,
+                new File(productionYsmJar.get()).absolutePath,
+                productionJavaHome.get(),
+                productionSmokeWorld.absolutePath
+        ])
+    }
+}
+
+def productionYsmServerDist = providers.gradleProperty('ysmServerDist')
+        .orElse(file('run-production-server-dist').absolutePath)
+def productionYsmMultiplayerRoot = file('run-production-ysm-multiplayer')
+
+tasks.register('runProductionYsmDedicatedSmoke', JavaExec) {
+    group = 'verification'
+    description = 'Runs the pinned YSM against an official NeoForge DEDICATED_SERVER in PROD distribution.'
+    dependsOn tasks.named('jar'), project(':worker').tasks.named('classes')
+    classpath = project(':worker').sourceSets.main.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.smoke.ProductionYsmDedicatedSmokeLauncher'
+    doFirst {
+        if (!productionYsmJar.isPresent()) {
+            throw new GradleException('Pass the pinned YSM path with -PysmJar=<path>')
+        }
+        if (!productionJavaHome.isPresent() || productionJavaHome.get().isBlank()) {
+            throw new GradleException('JAVA_HOME must point to the locked Java 25 runtime')
+        }
+        setArgs([
+                new File(productionYsmServerDist.get()).absolutePath,
+                productionModJar.get().asFile.absolutePath,
+                new File(productionYsmJar.get()).absolutePath,
+                productionJavaHome.get()
+        ])
+    }
+}
+
+tasks.register('runProductionYsmMultiplayerSmoke', JavaExec) {
+    group = 'verification'
+    description = 'Runs two real production YSM clients plus reconnect against the production server distribution.'
+    dependsOn tasks.named('jar'), project(':worker').tasks.named('classes')
+    classpath = project(':worker').sourceSets.main.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.smoke.ProductionYsmMultiplayerSmokeLauncher'
+    doFirst {
+        if (!productionYsmJar.isPresent()) {
+            throw new GradleException('Pass the pinned YSM path with -PysmJar=<path>')
+        }
+        if (!productionJavaHome.isPresent() || productionJavaHome.get().isBlank()) {
+            throw new GradleException('JAVA_HOME must point to the locked Java 25 runtime')
+        }
+        setArgs([
+                productionMinecraftRoot.absolutePath,
+                productionVersionDir.absolutePath,
+                new File(productionYsmServerDist.get()).absolutePath,
+                productionYsmMultiplayerRoot.absolutePath,
+                productionModJar.get().asFile.absolutePath,
+                new File(productionYsmJar.get()).absolutePath,
+                productionJavaHome.get()
+        ])
+    }
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+// These test tasks require a fresh, explicitly prepared profile and the correct physical side.
+def sharedMultiConfigured = providers.gradleProperty('sharedMultiplayerRoot').isPresent()
+def sharedMultiServerSide = providers.gradleProperty('webguiServerOnly').isPresent() || providers.gradleProperty('webguiDedicated').isPresent()
+tasks.matching { it.name in ['runSharedMultiplayerServer', 'runSharedMultiplayerClientA', 'runSharedMultiplayerClientB'] }.configureEach {
+    def needsServer = name == 'runSharedMultiplayerServer'
+    doFirst {
+        if (!sharedMultiConfigured || needsServer != sharedMultiServerSide) {
+            throw new GradleException('SHARED_MULTIPLAYER_EXPLICIT_PROFILE_AND_SIDE_REQUIRED')
+        }
+    }
+}
+
+def contentDeliveryConfigured = providers.gradleProperty('contentDeliveryRoot').isPresent()
+tasks.matching { it.name in ['runContentDeliveryServer', 'runContentDeliveryClientA', 'runContentDeliveryClientB'] }.configureEach {
+    def needsServer = name == 'runContentDeliveryServer'
+    doFirst {
+        if (!contentDeliveryConfigured || needsServer != sharedMultiServerSide) throw new GradleException('CONTENT_DELIVERY_EXPLICIT_PROFILE_AND_SIDE_REQUIRED')
+    }
+}

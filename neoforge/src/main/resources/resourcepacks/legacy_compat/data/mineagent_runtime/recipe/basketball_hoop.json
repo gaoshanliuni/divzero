@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": ["III", " IO", " I "],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "O": "minecraft:orange_wool"
+  },
+  "result": { "id": "mineagent_runtime:basketball_hoop", "count": 1 }
+}

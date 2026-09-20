@@ -1,0 +1,61 @@
+package dev.mineagent.runtime.core.persistence;
+
+import java.sql.*;
+import java.util.*;
+
+/** Metadata-only retention over original runtime records. Called under SqliteRuntimeRepository's monitor. */
+public final class TaskRetention {
+    public static final int MAX_HOT=4096,MAX_RETAINED=131072;
+    public static final long MAX_TASK_BYTES=256L*1024*1024,MAX_START_BYTES=32L*1024*1024;
+    private static final String SCOPES="'tasks','task_start_requests','task_replan_sources'";
+    private TaskRetention(){}
+    public record Usage(long hot,long archived,long total,long payloadBytes,int maximumHot,int maximumRetained,long maximumTaskBytes){}
+
+    static void initialize(Connection db,UUID world)throws SQLException{
+        try(var statement=db.createStatement()){statement.execute("BEGIN IMMEDIATE");try{
+            statement.execute("CREATE TABLE IF NOT EXISTS mineagent_task_index_v1(world TEXT NOT NULL,id TEXT NOT NULL,owner TEXT NOT NULL,agent TEXT NOT NULL,state TEXT NOT NULL,revision INTEGER NOT NULL,updated_at INTEGER NOT NULL,archived INTEGER NOT NULL,payload_bytes INTEGER NOT NULL,has_plan INTEGER NOT NULL,PRIMARY KEY(world,id))");
+            statement.execute("CREATE INDEX IF NOT EXISTS mineagent_task_owner_history_v1 ON mineagent_task_index_v1(world,owner,updated_at DESC,id)");
+            statement.execute("CREATE INDEX IF NOT EXISTS mineagent_task_state_history_v1 ON mineagent_task_index_v1(world,archived,state)");
+            statement.execute("CREATE TABLE IF NOT EXISTS mineagent_task_usage_v1(world TEXT NOT NULL,namespace TEXT NOT NULL,row_count INTEGER NOT NULL,payload_bytes INTEGER NOT NULL,PRIMARY KEY(world,namespace))");
+            // Aggregate existing bytes once per world/namespace, never deserialize historical tasks on each write.
+            statement.execute("INSERT INTO mineagent_task_usage_v1 SELECT world_id,namespace,COUNT(*),COALESCE(SUM(length(CAST(payload AS BLOB))),0) FROM mineagent_runtime_records r WHERE namespace IN ("+SCOPES+") AND NOT EXISTS(SELECT 1 FROM mineagent_task_usage_v1 u WHERE u.world=r.world_id AND u.namespace=r.namespace) GROUP BY world_id,namespace ON CONFLICT(world,namespace) DO NOTHING");
+            String terminal="CASE WHEN NEW.namespace='tasks' AND NEW.deleted=0 THEN json_extract(NEW.payload,'$.status') IN ('COMPLETED','CANCELLED') ELSE 1 END";
+            String project="INSERT INTO mineagent_task_index_v1(world,id,owner,agent,state,revision,updated_at,archived,payload_bytes,has_plan) VALUES(NEW.world_id,NEW.record_id,json_extract(NEW.payload,'$.ownerPlayerId'),json_extract(NEW.payload,'$.agentId'),json_extract(NEW.payload,'$.status'),NEW.revision,NEW.updated_at,CASE WHEN "+terminal+" THEN 1 ELSE 0 END,length(CAST(NEW.payload AS BLOB)),EXISTS(SELECT 1 FROM json_each(NEW.payload,'$.steps') WHERE json_extract(value,'$.stepId') IN ('plan','replan'))) ON CONFLICT(world,id) DO UPDATE SET owner=excluded.owner,agent=excluded.agent,state=excluded.state,revision=excluded.revision,updated_at=excluded.updated_at,archived=excluded.archived,payload_bytes=excluded.payload_bytes,has_plan=excluded.has_plan;";
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_index_insert_v1 AFTER INSERT ON mineagent_runtime_records WHEN NEW.namespace='tasks' AND NEW.deleted=0 BEGIN "+project+" END");
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_index_update_v1 AFTER UPDATE ON mineagent_runtime_records WHEN NEW.namespace='tasks' AND NEW.deleted=0 BEGIN "+project+" END");
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_index_tombstone_v1 AFTER UPDATE ON mineagent_runtime_records WHEN NEW.namespace='tasks' AND NEW.deleted=1 BEGIN UPDATE mineagent_task_index_v1 SET state='DELETED',archived=1,revision=NEW.revision,updated_at=NEW.updated_at,payload_bytes=length(CAST(NEW.payload AS BLOB)) WHERE world=NEW.world_id AND id=NEW.record_id; END");
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_index_delete_v1 AFTER DELETE ON mineagent_runtime_records WHEN OLD.namespace='tasks' BEGIN DELETE FROM mineagent_task_index_v1 WHERE world=OLD.world_id AND id=OLD.record_id; END");
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_usage_insert_v1 AFTER INSERT ON mineagent_runtime_records WHEN NEW.namespace IN ("+SCOPES+") BEGIN INSERT INTO mineagent_task_usage_v1 VALUES(NEW.world_id,NEW.namespace,1,length(CAST(NEW.payload AS BLOB))) ON CONFLICT(world,namespace) DO UPDATE SET row_count=row_count+1,payload_bytes=payload_bytes+length(CAST(NEW.payload AS BLOB)); END");
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_usage_update_v1 AFTER UPDATE OF payload ON mineagent_runtime_records WHEN NEW.namespace IN ("+SCOPES+") BEGIN UPDATE mineagent_task_usage_v1 SET payload_bytes=payload_bytes+length(CAST(NEW.payload AS BLOB))-length(CAST(OLD.payload AS BLOB)) WHERE world=NEW.world_id AND namespace=NEW.namespace; END");
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_usage_delete_v1 AFTER DELETE ON mineagent_runtime_records WHEN OLD.namespace IN ("+SCOPES+") BEGIN UPDATE mineagent_task_usage_v1 SET row_count=row_count-1,payload_bytes=payload_bytes-length(CAST(OLD.payload AS BLOB)) WHERE world=OLD.world_id AND namespace=OLD.namespace; END");
+            String byteLimit="CASE WHEN NEW.namespace='task_start_requests' THEN "+MAX_START_BYTES+" ELSE "+MAX_TASK_BYTES+" END";
+            String currentBytes="COALESCE((SELECT payload_bytes FROM mineagent_task_usage_v1 WHERE world=NEW.world_id AND namespace=NEW.namespace),0)";
+            String hotRequests="SELECT COUNT(*) FROM mineagent_runtime_records r LEFT JOIN mineagent_task_index_v1 i ON i.world=r.world_id AND i.id=r.record_id WHERE r.world_id=NEW.world_id AND r.namespace=NEW.namespace AND (i.id IS NULL OR i.archived=0)";
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_retained_insert_v1 BEFORE INSERT ON mineagent_runtime_records WHEN NEW.namespace IN ("+SCOPES+") BEGIN SELECT CASE WHEN COALESCE((SELECT row_count FROM mineagent_task_usage_v1 WHERE world=NEW.world_id AND namespace=NEW.namespace),0)>="+MAX_RETAINED+" THEN RAISE(ABORT,'TASK_RETAINED_ROW_BUDGET') END; SELECT CASE WHEN "+currentBytes+"+length(CAST(NEW.payload AS BLOB))>"+byteLimit+" THEN RAISE(ABORT,'TASK_RETAINED_BYTE_BUDGET') END; SELECT CASE WHEN NEW.namespace='tasks' AND NEW.deleted=0 AND NOT("+terminal+") AND (SELECT COUNT(*) FROM mineagent_task_index_v1 WHERE world=NEW.world_id AND archived=0)>="+MAX_HOT+" THEN RAISE(ABORT,'TASK_ACTIVE_BUDGET') END; SELECT CASE WHEN NEW.namespace!='tasks' AND ("+hotRequests+")>="+MAX_HOT+" AND NOT EXISTS(SELECT 1 FROM mineagent_task_index_v1 WHERE world=NEW.world_id AND id=NEW.record_id AND archived=1) THEN RAISE(ABORT,'TASK_START_LEDGER_FULL') END; END");
+            // A full byte budget must not prevent revocation/cancellation/completion metadata from settling.
+            String stopping="CASE WHEN NEW.namespace='tasks' AND NEW.deleted=0 THEN json_extract(NEW.payload,'$.status') IN ('PAUSED','CANCELLED','COMPLETED') AND length(CAST(NEW.payload AS BLOB))<=length(CAST(OLD.payload AS BLOB))+4096 ELSE 0 END";
+            statement.execute("CREATE TRIGGER IF NOT EXISTS mineagent_task_retained_update_v1 BEFORE UPDATE OF payload ON mineagent_runtime_records WHEN NEW.namespace IN ("+SCOPES+") BEGIN SELECT CASE WHEN "+currentBytes+"+length(CAST(NEW.payload AS BLOB))-length(CAST(OLD.payload AS BLOB))>"+byteLimit+" AND length(CAST(NEW.payload AS BLOB))>length(CAST(OLD.payload AS BLOB)) AND NOT("+stopping+") THEN RAISE(ABORT,'TASK_RETAINED_BYTE_BUDGET') END; SELECT CASE WHEN NEW.namespace='tasks' AND NEW.deleted=0 AND NOT("+terminal+") AND EXISTS(SELECT 1 FROM mineagent_task_index_v1 WHERE world=NEW.world_id AND id=NEW.record_id AND archived=1) AND (SELECT COUNT(*) FROM mineagent_task_index_v1 WHERE world=NEW.world_id AND archived=0)>="+MAX_HOT+" THEN RAISE(ABORT,'TASK_ACTIVE_BUDGET') END; END");
+            try(var query=db.prepareStatement("INSERT INTO mineagent_task_index_v1 SELECT r.world_id,r.record_id,json_extract(r.payload,'$.ownerPlayerId'),json_extract(r.payload,'$.agentId'),json_extract(r.payload,'$.status'),r.revision,r.updated_at,CASE WHEN json_extract(r.payload,'$.status') IN ('COMPLETED','CANCELLED') THEN 1 ELSE 0 END,length(CAST(r.payload AS BLOB)),EXISTS(SELECT 1 FROM json_each(r.payload,'$.steps') WHERE json_extract(value,'$.stepId') IN ('plan','replan')) FROM mineagent_runtime_records r WHERE r.world_id=? AND r.namespace='tasks' AND r.deleted=0 AND NOT EXISTS(SELECT 1 FROM mineagent_task_index_v1 i WHERE i.world=r.world_id AND i.id=r.record_id)")){query.setString(1,world.toString());query.executeUpdate();}
+            statement.execute("COMMIT");
+        }catch(SQLException|RuntimeException failure){try{statement.execute("ROLLBACK");}catch(SQLException rollback){failure.addSuppressed(rollback);}throw failure;}}
+    }
+
+    private static String filter(String state,String archive){
+        if(!Set.of("ALL","RUNNING","PAUSED","WAITING_FOR_PLAYER","FAILED","COMPLETED","CANCELLED").contains(state)||!Set.of("ALL","ACTIVE","ARCHIVED").contains(archive))throw new IllegalArgumentException("TASK_HISTORY_FILTER");
+        return (state.equals("ALL")?"":" AND i.state='"+state+"'")+(archive.equals("ALL")?"":" AND i.archived="+(archive.equals("ARCHIVED")?1:0));
+    }
+    static List<RuntimeRecord> page(Connection db,UUID world,UUID owner,String state,String archive,int offset,int limit,Set<UUID> worldTasks)throws SQLException{
+        if(offset<0||limit<1||limit>256||worldTasks!=null&&worldTasks.size()>MAX_RETAINED)throw new IllegalArgumentException("TASK_HISTORY_PAGE");
+        String condition=filter(state,archive)+(owner==null?"":" AND i.owner=?");String worldIndex="";if(worldTasks!=null)try(var query=db.prepareStatement("SELECT 1 FROM sqlite_master WHERE type='table' AND name='mineagent_world_action_index_v1'");var rows=query.executeQuery()){if(rows.next())worldIndex=" OR EXISTS(SELECT 1 FROM mineagent_world_action_index_v1 w WHERE w.world=i.world AND w.owner=i.owner AND w.task=i.id)";}if(worldTasks!=null)condition+=" AND (i.has_plan=1"+worldIndex+(worldTasks.isEmpty()?"":" OR i.id IN ("+"SELECT value FROM json_each(?)"+")")+")";
+        var records=new ArrayList<RuntimeRecord>();try(var query=db.prepareStatement("SELECT r.record_id,r.revision,r.payload,r.updated_at FROM mineagent_task_index_v1 i JOIN mineagent_runtime_records r ON r.world_id=i.world AND r.record_id=i.id AND r.namespace='tasks' WHERE i.world=? AND r.deleted=0"+condition+" ORDER BY i.updated_at DESC,i.id LIMIT ? OFFSET ?")){
+            int index=1;query.setString(index++,world.toString());if(owner!=null)query.setString(index++,owner.toString());if(worldTasks!=null&&!worldTasks.isEmpty())query.setString(index++,"[\""+String.join("\",\"",worldTasks.stream().map(UUID::toString).sorted().toList())+"\"]");query.setInt(index++,limit);query.setInt(index,offset);
+            try(var rows=query.executeQuery()){while(rows.next())records.add(new RuntimeRecord(world,"tasks",rows.getString(1),rows.getLong(2),rows.getString(3),rows.getLong(4),false));}
+        }return List.copyOf(records);
+    }
+    static long count(Connection db,UUID world,UUID owner,String state,String archive)throws SQLException{
+        String condition=filter(state,archive)+(owner==null?"":" AND i.owner=?");try(var query=db.prepareStatement("SELECT COUNT(*) FROM mineagent_task_index_v1 i WHERE i.world=? AND i.state!='DELETED'"+condition)){query.setString(1,world.toString());if(owner!=null)query.setString(2,owner.toString());try(var rows=query.executeQuery()){return rows.next()?rows.getLong(1):0;}}
+    }
+    static Usage usage(Connection db,UUID world,UUID owner)throws SQLException{
+        try(var query=db.prepareStatement("SELECT COUNT(*),COALESCE(SUM(archived),0),COALESCE(SUM(payload_bytes),0) FROM mineagent_task_index_v1 WHERE world=? AND owner=? AND state!='DELETED'")){query.setString(1,world.toString());query.setString(2,owner.toString());try(var rows=query.executeQuery()){if(!rows.next())throw new SQLException("TASK_RETENTION_USAGE_UNAVAILABLE");long total=rows.getLong(1),archive=rows.getLong(2);return new Usage(total-archive,archive,total,rows.getLong(3),MAX_HOT,MAX_RETAINED,MAX_TASK_BYTES);}}
+    }
+}

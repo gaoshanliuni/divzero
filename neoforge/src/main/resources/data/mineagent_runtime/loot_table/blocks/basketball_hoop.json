@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:block",
+  "pools": [{
+    "rolls": 1,
+    "entries": [{ "type": "minecraft:item", "name": "mineagent_runtime:basketball_hoop" }],
+    "conditions": [{ "condition": "minecraft:survives_explosion" }]
+  }],
+  "random_sequence": "mineagent_runtime:blocks/basketball_hoop"
+}

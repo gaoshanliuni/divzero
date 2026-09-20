@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.mineagent.runtime.neoforge.mixin",
+  "plugin": "dev.mineagent.runtime.neoforge.mixin.MineAgentMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": ["WebGuiFakeViewerMixin", "ContainerScreenOpenMixin", "ContainerQuickCraftAccess"],
+  "injectors": { "defaultRequire": 1 }
+}

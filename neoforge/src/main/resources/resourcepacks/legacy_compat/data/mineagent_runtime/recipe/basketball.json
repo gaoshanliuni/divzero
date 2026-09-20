@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [" L ", "LSL", " L "],
+  "key": {
+    "L": "minecraft:leather",
+    "S": "minecraft:slime_ball"
+  },
+  "result": { "id": "mineagent_runtime:basketball", "count": 2 }
+}

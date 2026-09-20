@@ -1,0 +1,15 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "dev.mineagent.runtime.neoforge.mixin",
+  "plugin": "dev.mineagent.runtime.neoforge.mixin.MineAgentMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "client.AvatarRendererMixin",
+    "client.PinnedYsmAlternateRendererMixin",
+    "client.PinnedYsmRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

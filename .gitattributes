@@ -1,0 +1,12 @@
+# Disable autocrlf on generated files, they always generate with LF
+# Add any extra files or paths here to make git stop saying they
+# are changed when only line endings change.
+src/generated/**/.cache/* text eol=lf
+src/generated/**/*.json text eol=lf
+scripting/src/main/resources/dev/mineagent/runtime/scripting/preflight/acorn-8.15.0.js text eol=lf
+
+# Public snapshot manifests use stable LF text on every checkout.
+* text=auto eol=lf
+*.jar binary
+*.png binary
+*.ogg binary

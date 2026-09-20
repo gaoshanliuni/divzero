@@ -1,0 +1,5 @@
+{
+  "type":"minecraft:crafting_shaped","category":"redstone","pattern":["GGG","GRG","III"],
+  "key":{"G":"minecraft:tinted_glass","R":"minecraft:redstone","I":"minecraft:iron_ingot"},
+  "result":{"id":"mineagent_runtime:media_screen","count":1}
+}

@@ -1,0 +1,58 @@
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/**/out/
+
+.run/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.eclipse/
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/**/bin/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### Minecraft Modding ###
+run/
+!**/src/**/run/
+**/src/generated/**/.cache/
+repo/
+!**/src/**/repo/
+
+### MineAgent Runtime ###
+**/run-*/
+**/logs/
+**/crash-reports/
+**/config/mineagent-runtime-secrets.toml
+**/config/mineagent_runtime-secrets.toml
+mineagent-runtime-data/
+.superpowers/
+third-party/cache/
+
+# Python development caches
+__pycache__/
+*.pyc
+
+# Optional pinned media dependencies are prepared locally, never committed.
+worker/src/main/resources/META-INF/mineagent/tools/*.exe
+worker/src/main/resources/META-INF/mineagent/tools/*.zip

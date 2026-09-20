@@ -1,0 +1,33 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.mineagent.runtime.neoforge.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "client.PlayerControlKeyAccess",
+    "client.PlayerBodyMouseMixin",
+    "client.PlayerBodyFocusMixin",
+    "client.PlayerBodyLevelMixin",
+    "client.ChatSuggestionsAccess",
+    "client.AgentMentionSuggestionsMixin",
+    "client.ResourceReloadAccess",
+    "client.ResourceReloadOutcomeMixin",
+    "client.McefFrameBoundaryMixin",
+    "client.McefPaintAccess",
+    "client.McefPopupMixin",
+    "client.McefPopupScreenPointMixin",
+    "client.McefPaintBoundaryMixin",
+    "client.WorkspaceKeyboardMixin",
+    "client.WorkspaceKeyboardAccess",
+    "client.WorkspaceMouseAccess",
+    "client.WebGuiDefaultBridgeMixin",
+    "client.WebGuiCefStartupMixin",
+    "client.McefCaptureTextureMixin",
+    "client.McefTextureLifetimeMixin",
+    "client.McefTextureViewLifetimeMixin",
+    "client.McefRetirementShutdownMixin",
+    "client.WebGuiTranslucencyMixin",
+    "client.WorldBoardTextAccess"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}

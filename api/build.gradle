@@ -1,0 +1,8 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // Matches the annotations already used transitively by jackson-databind 2.22.2.
+    compileOnlyApi 'com.fasterxml.jackson.core:jackson-annotations:2.22'
+}

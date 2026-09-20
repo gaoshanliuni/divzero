@@ -12,7 +12,7 @@ DivZero（除零）是一个正在开发中的 Minecraft AI Mod。
 
 ## 项目状态
 
-本仓库当前用于项目介绍与公开发布准备。各版本实际支持的功能、Minecraft 版本、Mod 加载器与依赖要求，以对应的 [Release 说明](https://github.com/gaoshanliuni/divzero/releases)为准。
+本仓库已加入 `0.1.0-SNAPSHOT` 开发版源码快照，可按 [源码构建与功能范围](docs/SOURCE_SNAPSHOT.md) 构建；它不是完整 V1，也不代表已创建正式 Release。各版本实际支持的功能、Minecraft 版本、Mod 加载器与依赖要求，以对应的 [Release 说明](https://github.com/gaoshanliuni/divzero/releases)为准。
 
 下文描述的是项目愿景，不代表所有功能都已实现或已经公开发布。
 

@@ -1,0 +1,47 @@
+package dev.mineagent.runtime.neoforge.client.chat;
+import com.google.gson.*;
+import dev.mineagent.runtime.neoforge.ui.ConversationAgentSmokeServer;
+import dev.mineagent.runtime.neoforge.client.webui.*;
+import net.minecraft.client.Minecraft;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.*;
+import java.nio.file.*;
+import java.util.*;
+@EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
+public final class ConversationAgentSmokeClient {
+    private static final boolean REAL=Boolean.getBoolean("mineagent.conversationAgentReal"),RULES_ONLY=REAL&&System.getProperty("mineagent.conversationAgentScenario","").equals("rules");
+    private static int ticks,phase,parts;private static boolean finished,streaming,longEnd,busy;private static final StringBuilder nativeText=new StringBuilder();private static JsonObject probe;
+    private static Path root(){return Minecraft.getInstance().gameDirectory.toPath().resolve("conversation-agent-smoke");}
+    public static void accept(JsonObject value){probe=value;}
+    private static void require(boolean v,String code){if(!v)throw new IllegalStateException(code);}
+    @SubscribeEvent public static void chat(ClientChatReceivedEvent.System e){if(!Boolean.getBoolean("mineagent.conversationAgentSmoke"))return;String text=e.getMessage().getString(),prefix="[工具助手] ";if(text.startsWith(prefix)){String part=text.substring(prefix.length());if(part.length()>240||!part.isEmpty()&&(Character.isHighSurrogate(part.charAt(part.length()-1))||Character.isLowSurrogate(part.charAt(0))))ConversationAgentSmokeServer.failure="CHAT_AGENT_NATIVE_SEGMENT";nativeText.append(part);parts++;if(ConversationAgentSmokeServer.pending)streaming=true;if(text.contains("LONG_REPLY_END"))longEnd=true;}}
+    private static void script(String code){var h=WebGuiHostAdapter.INSTANCE;h.browser().executeJavaScript("(()=>{"+code+"})();",h.browser().getURL(),0);}
+    private static void poll(){script("window.mineagentQuery({request:JSON.stringify({channel:'conversationAgentProbe',agents:[...document.querySelectorAll('#chat-agent option')].map(n=>n.value),conversations:[...document.querySelectorAll('#conversation-list option')].map(n=>n.value),selected:document.querySelector('#conversation-list')?.value||'',disabled:document.querySelector('#chat-draft')?.disabled??true,history:document.querySelector('#chat-history')?.textContent||'',status:document.querySelector('#conversation-status')?.textContent||'',voiceVisible:(document.querySelector('#conversation-voice-controls')?.getBoundingClientRect().height||0)>0,historyHeight:document.querySelector('#chat-history')?.clientHeight||0,route:document.querySelector('#conversation-native-route')?.checked??false,moreOpen:document.querySelector('#conversation-more')?.open??false,asrVisible:!!document.querySelector('#conversation-speech')}),persistent:false,onSuccess(){},onFailure(){}});");}
+    private static void screenshot(){busy=true;net.minecraft.client.Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget(),img->{try(img){img.writeToFile(root().resolve("compact-f2.png"));}catch(Exception e){ConversationAgentSmokeServer.failure=e.toString();}finally{busy=false;}});}
+    @SubscribeEvent public static void tick(ClientTickEvent.Post e)throws Exception{if(!Boolean.getBoolean("mineagent.conversationAgentSmoke")||finished)return;if(dev.mineagent.runtime.neoforge.ui.ConversationBuildSmokeServer.active()){ConversationBuildSmokeClient.tick();return;}var mc=Minecraft.getInstance();ticks++;
+        try{Files.createDirectories(root());if(ticks%40==0)Files.writeString(root().resolve("progress.json"),new Gson().toJson(Map.of("phase",phase,"parts",parts,"verified",ConversationAgentSmokeServer.verified,"probe",probe==null?new JsonObject():probe)));if(!ConversationAgentSmokeServer.failure.isEmpty())throw new IllegalStateException("CHAT_AGENT_SCENARIO_FAILED_"+phase+" "+ConversationAgentSmokeServer.failure);if(ticks>(REAL?13000:3200))throw new IllegalStateException("CHAT_AGENT_TIMEOUT_"+phase);if(mc.player==null||!ConversationAgentSmokeServer.ready)return;
+            if(phase==0&&RULES_ONLY){mc.player.connection.sendChat("@工具助手 打开死亡不掉落并关闭PVP。");phase=7;}
+            if(phase==0){mc.player.connection.sendChat("@工具助手 帮我给手里的剑附魔锋利三级，名字改成晨光。");phase=1;}
+            if(phase==1&&ConversationAgentSmokeServer.verified>=1&&ConversationAgentSmokeServer.negative&&(REAL?parts>0:longEnd)){if(!REAL)require(streaming&&nativeText.length()>4096&&parts>16,"CHAT_AGENT_STREAM_NOT_OBSERVED");Files.writeString(root().resolve("native-stream.json"),new Gson().toJson(Map.of("receivedChars",nativeText.length(),"parts",parts,"receivedWhileGenerating",streaming,"noTruncation",longEnd)));WebGuiHostAdapter.INSTANCE.open();phase=2;}
+            var host=WebGuiHostAdapter.INSTANCE;if(phase>=2&&phase<=9&&host.ready()&&UiClientSessions.current()!=null&&ticks%10==0)poll();
+            if(phase==2&&probe!=null&&probe.getAsJsonArray("agents").toString().contains(ConversationAgentSmokeServer.agent.toString())){script("const s=document.querySelector('#chat-agent');s.value='"+ConversationAgentSmokeServer.agent+"';s.dispatchEvent(new Event('change'));");phase=3;}
+            if(phase==3&&probe.getAsJsonArray("conversations").toString().contains(ConversationAgentSmokeServer.conversation.toString())){script("const s=document.querySelector('#conversation-list');s.value='"+ConversationAgentSmokeServer.conversation+"';s.dispatchEvent(new Event('change'));");phase=4;}
+            if(phase==4&&!probe.get("disabled").getAsBoolean()&&probe.get("selected").getAsString().equals(ConversationAgentSmokeServer.conversation.toString())){script("const s=document.querySelector('#chat-draft');s.value='给我一把新的钻石剑，锋利五级。';s.dispatchEvent(new Event('input',{bubbles:true}));[...document.querySelectorAll('[data-view-id=runtime-chat] button')].find(n=>n.textContent==='发送').click();");phase=5;}
+            if(phase==5&&ConversationAgentSmokeServer.verified>=2&&(REAL?!probe.get("disabled").getAsBoolean():probe.get("history").getAsString().contains("已给你一把锋利 V"))){require(!probe.get("moreOpen").getAsBoolean()&&!probe.get("asrVisible").getAsBoolean()&&!probe.get("voiceVisible").getAsBoolean()&&probe.get("historyHeight").getAsInt()>=140,"CHAT_AGENT_F2_NOT_COMPACT");Files.writeString(root().resolve("f2.json"),probe.toString());screenshot();phase=6;}
+            if(phase==6&&!busy){script("const r=document.querySelector('#conversation-native-route');r.checked=true;r.dispatchEvent(new Event('change'));");phase=9;}
+            if(phase==9&&probe.get("route").getAsBoolean()){host.hideWorkspace();mc.player.connection.sendChat("打开死亡不掉落并关闭PVP。");phase=7;}
+            if(REAL&&phase==7&&ConversationAgentSmokeServer.verified>=3){
+                var receipts=new ArrayList<JsonElement>();Path audit=mc.gameDirectory.toPath().resolve("real-provider-audit");
+                try(var files=Files.list(audit)){for(var file:files.filter(p->p.getFileName().toString().endsWith("-completed.json")).sorted().toList())receipts.add(JsonParser.parseString(Files.readString(file)));}
+                require(!receipts.isEmpty()&&receipts.size()<=24,"CHAT_AGENT_REAL_RECEIPTS");
+                for(var receipt:receipts){var r=receipt.getAsJsonObject();require(r.get("endpoint").getAsString().equals("https://api.deepseek.com/v1/chat/completions")&&r.get("requestedModel").getAsString().equals("deepseek-flash")&&!r.get("responseModel").getAsString().isBlank(),"CHAT_AGENT_REAL_IDENTITY");}
+                Files.writeString(root().resolve("result.json"),new Gson().toJson(Map.of("status","DEEPSEEK_SCENARIOS_NATIVE_VERIFIED","scenarios",RULES_ONLY?List.of("game_rules"):List.of("held_item","new_item","game_rules"),"realProviderCalls",receipts.size(),"providerReceipts",receipts,"gameRuleReadback",true,"nativeSegments",parts)));
+                finished=true;host.close();dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");mc.stop();return;
+            }
+            if(phase==7&&ConversationAgentSmokeServer.verified>=3){mc.player.connection.sendChat("@工具助手 帮我找附近的钻石，没有就扩大范围。");phase=8;}
+            if(phase==8&&ConversationAgentSmokeServer.verified>=4&&nativeText.toString().contains("扩大范围后找到了钻石矿")){Files.writeString(root().resolve("result.json"),new Gson().toJson(Map.of("status","CONVERSATION_AGENT_NATIVE_VERIFIED","ordinaryChatTools",true,"nativeStreamingSplit",true,"f2Entry",true,"heldItemDirectMutation",true,"newEnchantedItem",true,"gameRuleReadback",true,"scanExpanded",true,"staleItemRejected",true,"paidCalls",0)));finished=true;host.close();dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");mc.stop();}
+        }catch(Exception failure){finished=true;Files.writeString(root().resolve("failure.json"),new Gson().toJson(Map.of("phase",phase,"error",failure.toString(),"probe",probe==null?new JsonObject():probe)));WebGuiHostAdapter.INSTANCE.close();mc.stop();}
+    }
+}

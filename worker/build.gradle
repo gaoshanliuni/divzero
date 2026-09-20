@@ -1,0 +1,94 @@
+plugins {
+    id 'application'
+}
+
+configurations { uiPatchParserLocked }
+
+dependencies {
+    implementation project(':api')
+    implementation project(':core')
+    implementation project(':agent')
+    implementation project(':scripting')
+    implementation 'org.jsoup:jsoup:1.18.3'
+    uiPatchParserLocked 'org.jsoup:jsoup:1.18.3'
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson_version}"
+}
+
+tasks.register('verifyUiPatchParserDependency') {
+    group = 'verification'
+    inputs.files(configurations.uiPatchParserLocked)
+    doLast {
+        def files = inputs.files.files
+        if (files.size() != 1) throw new GradleException('Unexpected HTML parser dependency set')
+        def hash = java.security.MessageDigest.getInstance('SHA-256').digest(files.first().bytes).encodeHex().toString()
+        if (hash != '5be1ccd3228ae5fd6eed1bd6d827bac2bc65b91c20e9957d16ea65f739f15302') throw new GradleException('Jsoup integrity mismatch')
+    }
+}
+tasks.named('compileJava') { dependsOn 'verifyUiPatchParserDependency' }
+
+application {
+    mainClass = 'dev.mineagent.runtime.worker.WorkerMain'
+}
+
+tasks.named('sourcesJar', Jar).configure {
+    exclude 'META-INF/mineagent/tools/**'
+}
+
+tasks.register('fatJar', Jar) {
+    archiveClassifier = 'all'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+    }
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+tasks.register('runEdgeTtsLiveProbe', JavaExec) {
+    group = 'verification'
+    description = 'Runs an explicit live Edge TTS probe; not part of offline CI.'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.tts.EdgeTtsLiveProbe'
+    args layout.buildDirectory.file('live-probe/edge-tts.mp3').get().asFile.absolutePath
+}
+
+tasks.register('runLiveUiGeneration', JavaExec) {
+    group = 'verification'
+    description = 'Explicit real-model package generation; uses only the ignored isolated live-model configuration.'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.generation.LiveUiPackageProbe'
+    args rootProject.file('neoforge/run-v1-live-model/mineagent-runtime-data/runtime.db').absolutePath,
+            rootProject.layout.buildDirectory.dir('live-ui').get().asFile.absolutePath
+}
+
+tasks.register('repairLiveUiCanonical', JavaExec) {
+    group = 'verification'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.generation.RepairLiveCanonicalProbe'
+    args rootProject.layout.buildDirectory.dir('live-ui').get().asFile.absolutePath
+}
+
+
+tasks.register('prepareFeedbackApplicationProfile', JavaExec) {
+    group = 'verification'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.smoke.FeedbackApplicationProfile'
+    args providers.gradleProperty('feedbackApplicationProviderDb').getOrElse(''), providers.gradleProperty('contentDeliveryRoot').getOrElse(''), 'deepseek-flash'
+}
+
+// Explicit network probe; not part of offline tests and never calls a model.
+tasks.register('runWebResearchProbe', JavaExec) {
+    group = 'verification'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.worker.web.WebResearchCli'
+    systemProperty 'java.net.useSystemProxies', 'true'
+    args providers.gradleProperty('webAction').getOrElse('search'), providers.gradleProperty('webValue').getOrElse('Twilight Forest Lich boss')
+}

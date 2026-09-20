@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "mineagent_runtime:block/basketball_hoop" }
+  }
+}

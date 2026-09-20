@@ -1,0 +1,66 @@
+package dev.mineagent.runtime.scripting.studio;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.mineagent.runtime.api.packages.CodeDraft;
+import dev.mineagent.runtime.core.persistence.SqliteRuntimeRepository;
+import java.time.Clock;
+import dev.mineagent.runtime.core.packages.JavaDependencyGraph;
+import java.util.*;
+
+/** Durable at-most-once publication attempts. Compiling a JAR is not evidence that it was loaded by Minecraft. */
+public final class JavaPublicationJournal {
+    private static final String NS="java_publications_v1";
+    private static final Set<String> ACTIVE=Set.of("COMPILING","COMPILED","STARTING","START_RETURNED","STOPPING");
+    private static final Set<String> STATES=Set.of("COMPILING","COMPILED","STARTING","START_RETURNED","PUBLISHED","COMPILE_FAILED","CANCELLED","INTERRUPTED","STAGED_NOT_ACTIVATED","OUTCOME_UNKNOWN","STOPPING","STOP_RETURNED","STOP_UNKNOWN","NOT_LOADED_THIS_PROCESS");
+    public record Record(UUID id,UUID world,UUID owner,UUID draft,long draftRevision,UUID task,long taskRevision,UUID packageId,String sourceHash,String className,String state,String artifact,String activationMode,String error,long revision,long updatedAt,boolean uncertain,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY) String nativeClasspath,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY) String runtimePackageHash,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY) List<String> diagnostics,@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL) JavaDependencyGraph dependencies){
+        public Record(UUID id,UUID world,UUID owner,UUID draft,long draftRevision,UUID task,long taskRevision,UUID packageId,String sourceHash,String className,String state,String artifact,String activationMode,String error,long revision,long updatedAt,boolean uncertain,String nativeClasspath,String runtimePackageHash,List<String> diagnostics){this(id,world,owner,draft,draftRevision,task,taskRevision,packageId,sourceHash,className,state,artifact,activationMode,error,revision,updatedAt,uncertain,nativeClasspath,runtimePackageHash,diagnostics,null);}
+        public Record(UUID id,UUID world,UUID owner,UUID draft,long draftRevision,UUID task,long taskRevision,UUID packageId,String sourceHash,String className,String state,String artifact,String activationMode,String error,long revision,long updatedAt,boolean uncertain,String nativeClasspath,String runtimePackageHash){this(id,world,owner,draft,draftRevision,task,taskRevision,packageId,sourceHash,className,state,artifact,activationMode,error,revision,updatedAt,uncertain,nativeClasspath,runtimePackageHash,List.of());}
+        public Record(UUID id,UUID world,UUID owner,UUID draft,long draftRevision,UUID task,long taskRevision,UUID packageId,String sourceHash,String className,String state,String artifact,String activationMode,String error,long revision,long updatedAt,boolean uncertain,String nativeClasspath){this(id,world,owner,draft,draftRevision,task,taskRevision,packageId,sourceHash,className,state,artifact,activationMode,error,revision,updatedAt,uncertain,nativeClasspath,"");}
+        public Record(UUID id,UUID world,UUID owner,UUID draft,long draftRevision,UUID task,long taskRevision,UUID packageId,String sourceHash,String className,String state,String artifact,String activationMode,String error,long revision,long updatedAt,boolean uncertain){this(id,world,owner,draft,draftRevision,task,taskRevision,packageId,sourceHash,className,state,artifact,activationMode,error,revision,updatedAt,uncertain,"");}
+        public Record{if(dependencies!=null&&!dependencies.root().equals(packageId))throw new IllegalArgumentException("JAVA_DEPENDENCY_RECORD");diagnostics=diagnostics==null?List.of():List.copyOf(diagnostics);if(diagnostics.size()>20||diagnostics.stream().anyMatch(v->v.length()>800))throw new IllegalArgumentException("JAVA_DIAGNOSTIC_LIMIT");runtimePackageHash=runtimePackageHash==null?"":runtimePackageHash;if(!runtimePackageHash.matches("(?:[a-f0-9]{64})?"))throw new IllegalArgumentException("JAVA_PACKAGE_RECEIPT");nativeClasspath=nativeClasspath==null?"":nativeClasspath;if(!nativeClasspath.matches("(?:[a-f0-9]{64})?"))throw new IllegalArgumentException("JAVA_CLASSPATH_RECEIPT");uncertain=uncertain||Set.of("OUTCOME_UNKNOWN","STOP_UNKNOWN").contains(state);}
+    }
+    public record Prepared(Record record,boolean dispatch){}
+    private final SqliteRuntimeRepository repo;private final UUID world;private final Clock clock;private final ObjectMapper json=new ObjectMapper();
+    private final Map<UUID,Record> records=new LinkedHashMap<>();
+    public JavaPublicationJournal(SqliteRuntimeRepository repo,UUID world,Clock clock)throws Exception{
+        this.repo=repo;this.world=world;this.clock=clock;
+        for(var row:repo.list(world,NS)){var r=json.readValue(row.payload(),Record.class);if(!r.world().equals(world)||r.revision()!=row.revision()||!r.id().toString().equals(row.recordId())||!STATES.contains(r.state()))throw new IllegalStateException("JAVA_PUBLICATION_RECORD");records.put(r.id(),r);}
+        for(var r:List.copyOf(records.values()))if(ACTIVE.contains(r.state()))finish(r.id(),r.state().equals("STOPPING")?"STOP_UNKNOWN":Set.of("STARTING","START_RETURNED").contains(r.state())?"OUTCOME_UNKNOWN":"INTERRUPTED",r.artifact(),r.activationMode(),"SERVER_RESTARTED_NOT_REPLAYED");
+    }
+    public synchronized Prepared prepare(CodeDraft draft,String className)throws Exception{return prepare(draft,className,null,"");}
+    public synchronized Prepared prepare(CodeDraft draft,String className,JavaDependencyGraph dependencies)throws Exception{return prepare(draft,className,dependencies,"");}
+    public synchronized Prepared prepare(CodeDraft draft,String className,JavaDependencyGraph dependencies,String nativeClasspath)throws Exception{
+        if(dependencies!=null&&(!dependencies.root().equals(draft.packageId())||!dependencies.required().equals(draft.dependencies())))throw new IllegalStateException("JAVA_DEPENDENCY_SOURCE_CHANGED");
+        if(dependencies==null&&!draft.dependencies().isEmpty())throw new IllegalStateException("JAVA_DEPENDENCY_MISSING");
+        if(!draft.worldId().equals(world)||!className.matches("[A-Za-z_$][A-Za-z0-9_$.]{0,255}")||nativeClasspath==null||!nativeClasspath.matches("(?:[a-f0-9]{64})?"))throw new IllegalArgumentException("JAVA_PUBLICATION_CONTEXT");
+        UUID id=UUID.nameUUIDFromBytes(("java-publish|"+world+"|"+draft.draftId()+"|"+draft.revision()+"|"+draft.taskRevision()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String hash=dev.mineagent.runtime.core.packages.CodeDraftSources.fingerprint(draft);
+        var old=records.get(id);if(old!=null){if(!old.owner().equals(draft.ownerPlayerId())||!old.packageId().equals(draft.packageId())||!old.task().equals(draft.taskId())||!old.sourceHash().equals(hash)||!old.className().equals(className)||!Objects.equals(old.dependencies(),dependencies)||!nativeClasspath.isEmpty()&&!old.nativeClasspath().equals(nativeClasspath))throw new IllegalStateException("JAVA_PUBLICATION_REUSED");return new Prepared(old,false);}
+        if(records.values().stream().anyMatch(r->r.task().equals(draft.taskId())&&r.uncertain()))throw new IllegalStateException("JAVA_PREVIOUS_OUTCOME_UNKNOWN");
+        if(records.values().stream().anyMatch(r->r.task().equals(draft.taskId())&&ACTIVE.contains(r.state())))throw new IllegalStateException("JAVA_PUBLICATION_BUSY");
+        if(records.size()>=4096)throw new IllegalStateException("JAVA_PUBLICATION_LEDGER_FULL");
+        var record=new Record(id,world,draft.ownerPlayerId(),draft.draftId(),draft.revision(),draft.taskId(),draft.taskRevision(),draft.packageId(),hash,className,"COMPILING","","","",1,clock.millis(),false,nativeClasspath,"",List.of(),dependencies);
+        if(!repo.compareAndSet(world,NS,id.toString(),0,json.writeValueAsString(record),clock.millis()).accepted())throw new IllegalStateException("JAVA_PUBLICATION_CAS");records.put(id,record);return new Prepared(record,true);
+    }
+    public synchronized List<Record> forPackage(UUID owner,UUID pkg){return records.values().stream().filter(r->r.owner().equals(owner)&&r.packageId().equals(pkg)).sorted(Comparator.comparingLong(Record::updatedAt).reversed()).toList();}
+    public synchronized void bindRuntimePackage(UUID id,String hash)throws Exception {var old=get(id);if(!hash.matches("[a-f0-9]{64}")||!old.state().equals("COMPILING"))throw new IllegalStateException("JAVA_PACKAGE_RECEIPT");if(!old.runtimePackageHash().isEmpty()){if(!old.runtimePackageHash().equals(hash))throw new IllegalStateException("JAVA_PACKAGE_RECEIPT");return;}
+        var next=new Record(old.id(),world,old.owner(),old.draft(),old.draftRevision(),old.task(),old.taskRevision(),old.packageId(),old.sourceHash(),old.className(),old.state(),old.artifact(),old.activationMode(),old.error(),old.revision()+1,clock.millis(),old.uncertain(),old.nativeClasspath(),hash,old.diagnostics(),old.dependencies());if(!repo.compareAndSet(world,NS,id.toString(),old.revision(),json.writeValueAsString(next),clock.millis()).accepted())throw new IllegalStateException("JAVA_PUBLICATION_CAS");records.put(id,next);
+    }
+    public synchronized void recordDiagnostics(UUID id,List<String> diagnostics)throws Exception{var old=get(id);if(!old.state().equals("COMPILING"))throw new IllegalStateException("JAVA_PUBLICATION_TRANSITION");var next=new Record(old.id(),world,old.owner(),old.draft(),old.draftRevision(),old.task(),old.taskRevision(),old.packageId(),old.sourceHash(),old.className(),old.state(),old.artifact(),old.activationMode(),old.error(),old.revision()+1,clock.millis(),old.uncertain(),old.nativeClasspath(),old.runtimePackageHash(),diagnostics,old.dependencies());if(!repo.compareAndSet(world,NS,id.toString(),old.revision(),json.writeValueAsString(next),clock.millis()).accepted())throw new IllegalStateException("JAVA_PUBLICATION_CAS");records.put(id,next);}
+    public synchronized Record get(UUID id){return Optional.ofNullable(records.get(id)).orElseThrow(()->new IllegalStateException("JAVA_PUBLICATION_MISSING"));}
+    public synchronized Optional<Record> latest(UUID draft){return records.values().stream().filter(r->r.draft().equals(draft)).max(Comparator.comparingLong(Record::draftRevision));}
+    public synchronized void bindClasspath(UUID id,String hash)throws Exception{
+        var old=get(id);if(hash==null||!hash.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("JAVA_CLASSPATH_RECEIPT");if(!old.nativeClasspath().isEmpty()){if(!old.nativeClasspath().equals(hash))throw new IllegalStateException("JAVA_CLASSPATH_CHANGED");return;}if(!old.state().equals("COMPILING"))throw new IllegalStateException("JAVA_PUBLICATION_TRANSITION");
+        var next=new Record(old.id(),world,old.owner(),old.draft(),old.draftRevision(),old.task(),old.taskRevision(),old.packageId(),old.sourceHash(),old.className(),old.state(),old.artifact(),old.activationMode(),old.error(),old.revision()+1,clock.millis(),old.uncertain(),hash,old.runtimePackageHash(),old.diagnostics(),old.dependencies());
+        if(!repo.compareAndSet(world,NS,id.toString(),old.revision(),json.writeValueAsString(next),clock.millis()).accepted())throw new IllegalStateException("JAVA_PUBLICATION_CAS");records.put(id,next);
+    }
+    public synchronized Record finish(UUID id,String state,String artifact,String activationMode,String error)throws Exception{
+        var old=get(id);if(!STATES.contains(state)||artifact==null||!artifact.matches("(?:[a-f0-9]{64})?")||activationMode==null||!Set.of("","HOT_RUNTIME","RESOURCE_RELOAD","DATA_RELOAD","WORLD_REOPEN","BOOT_EXTENSION").contains(activationMode)||error==null||!error.matches("[A-Z0-9_]{0,80}"))throw new IllegalArgumentException("JAVA_PUBLICATION_RESULT");
+        boolean stopping=state.equals("STOPPING")&&Set.of("PUBLISHED","OUTCOME_UNKNOWN").contains(old.state());
+        if(!ACTIVE.contains(old.state())&&!stopping)return old;
+        boolean allowed=switch(state){case "STOPPING"->stopping;case "STOP_RETURNED","STOP_UNKNOWN","NOT_LOADED_THIS_PROCESS"->old.state().equals("STOPPING");case "COMPILED"->old.state().equals("COMPILING");case "STARTING"->old.state().equals("COMPILED");case "START_RETURNED"->old.state().equals("STARTING");case "PUBLISHED"->old.state().equals("START_RETURNED");case "STAGED_NOT_ACTIVATED"->old.state().equals("COMPILED");default->!state.equals("COMPILING");};
+        if(!allowed)throw new IllegalStateException("JAVA_PUBLICATION_TRANSITION");
+        var next=new Record(old.id(),world,old.owner(),old.draft(),old.draftRevision(),old.task(),old.taskRevision(),old.packageId(),old.sourceHash(),old.className(),state,artifact,activationMode,error,old.revision()+1,clock.millis(),old.uncertain(),old.nativeClasspath(),old.runtimePackageHash(),old.diagnostics(),old.dependencies());
+        if(!repo.compareAndSet(world,NS,id.toString(),old.revision(),json.writeValueAsString(next),clock.millis()).accepted())throw new IllegalStateException("JAVA_PUBLICATION_CAS");records.put(id,next);return next;
+    }
+}

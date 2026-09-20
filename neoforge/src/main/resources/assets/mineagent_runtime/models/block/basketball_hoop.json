@@ -1,0 +1,40 @@
+{
+  "textures": {
+    "particle": "minecraft:block/iron_block",
+    "backboard": "minecraft:block/white_concrete",
+    "metal": "minecraft:block/iron_block",
+    "rim": "minecraft:block/orange_concrete"
+  },
+  "elements": [
+    { "from": [0, 6, 14], "to": [16, 16, 16], "faces": {
+      "north": { "texture": "#backboard" }, "south": { "texture": "#backboard" },
+      "east": { "texture": "#backboard" }, "west": { "texture": "#backboard" },
+      "up": { "texture": "#backboard" }, "down": { "texture": "#backboard" }
+    }},
+    { "from": [7, 0, 14], "to": [9, 6, 16], "faces": {
+      "north": { "texture": "#metal" }, "south": { "texture": "#metal" },
+      "east": { "texture": "#metal" }, "west": { "texture": "#metal" },
+      "up": { "texture": "#metal" }, "down": { "texture": "#metal" }
+    }},
+    { "from": [2, 5, 2], "to": [14, 6, 3], "faces": {
+      "north": { "texture": "#rim" }, "south": { "texture": "#rim" },
+      "east": { "texture": "#rim" }, "west": { "texture": "#rim" },
+      "up": { "texture": "#rim" }, "down": { "texture": "#rim" }
+    }},
+    { "from": [2, 5, 13], "to": [14, 6, 14], "faces": {
+      "north": { "texture": "#rim" }, "south": { "texture": "#rim" },
+      "east": { "texture": "#rim" }, "west": { "texture": "#rim" },
+      "up": { "texture": "#rim" }, "down": { "texture": "#rim" }
+    }},
+    { "from": [2, 5, 3], "to": [3, 6, 13], "faces": {
+      "north": { "texture": "#rim" }, "south": { "texture": "#rim" },
+      "east": { "texture": "#rim" }, "west": { "texture": "#rim" },
+      "up": { "texture": "#rim" }, "down": { "texture": "#rim" }
+    }},
+    { "from": [13, 5, 3], "to": [14, 6, 13], "faces": {
+      "north": { "texture": "#rim" }, "south": { "texture": "#rim" },
+      "east": { "texture": "#rim" }, "west": { "texture": "#rim" },
+      "up": { "texture": "#rim" }, "down": { "texture": "#rim" }
+    }}
+  ]
+}

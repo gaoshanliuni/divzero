@@ -1,0 +1,7 @@
+{
+  "screen.mineagent_runtime.control_center": "MineAgent Control Center",
+  "key.mineagent_runtime.open_control_center": "Open MineAgent workspace",
+  "key.mineagent_runtime.toggle_workspace": "Toggle MineAgent workspace",
+  "key.category.mineagent_runtime.control_center": "MineAgent Runtime",
+  "key.categories.mineagent_runtime.control_center": "MineAgent Runtime"
+}

@@ -1,0 +1,13 @@
+package dev.mineagent.runtime.core.shared;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.*;
+
+public record SharedSubscriptionFilter(SharedStateTarget target,long schemaVersion,Set<String> keys,List<SharedStateTransaction.Condition> when,long afterRevision){
+    public SharedSubscriptionFilter(SharedStateTarget target,long schemaVersion,Set<String> keys,List<SharedStateTransaction.Condition> when){this(target,schemaVersion,keys,when,0);}
+    public SharedSubscriptionFilter{Objects.requireNonNull(target);keys=Collections.unmodifiableSet(new TreeSet<>(keys));when=List.copyOf(when);if(target.namespace().isEmpty()||schemaVersion<1||schemaVersion>1_000_000||keys.isEmpty()||keys.size()>8||when.size()>8||afterRevision<0||afterRevision>SharedJson.SAFE_INTEGER)throw new IllegalArgumentException("SHARED_SUBSCRIPTION_FILTER");keys.forEach(SharedJson::name);for(var c:when)if(!keys.contains(c.key()))throw new IllegalArgumentException("SHARED_CONDITION_KEY_NOT_WATCHED");}
+    public static SharedSubscriptionFilter parse(JsonNode n){var target=SharedStateTarget.parse(n,true);if(!n.path("keys").isArray()||!n.path("when").isArray())throw new IllegalArgumentException("SHARED_FILTER_ARRAY");var keys=new TreeSet<String>();for(var key:n.get("keys"))if(!key.isTextual()||!keys.add(SharedJson.name(key.asText())))throw new IllegalArgumentException("SHARED_FILTER_KEYS");var conditions=new ArrayList<SharedStateTransaction.Condition>();for(var c:n.get("when")){SharedJson.keys(c,Set.of("key","test","value"),Set.of("key","test"));String test=SharedJson.text(c,"test","");if(!Set.of("ABSENT","EXISTS","EQ","LT","LTE","GT","GTE").contains(test)||c.has("value")==Set.of("ABSENT","EXISTS").contains(test))throw new IllegalArgumentException("SHARED_FILTER_CONDITION");conditions.add(new SharedStateTransaction.Condition(SharedJson.name(SharedJson.text(c,"key","")),test,c.has("value")?SharedJson.canonical(c.get("value"),0):null));}return new SharedSubscriptionFilter(target,SharedJson.integer(n,"schema_version",-1),keys,conditions);}
+    public SharedSubscriptionFilter after(long revision){return new SharedSubscriptionFilter(target,schemaVersion,keys,when,revision);}
+    public Map<String,Object> wire(){var n=new LinkedHashMap<>(target.wire());n.put("schema_version",schemaVersion);n.put("keys",keys);n.put("when",when.stream().map(c->{var v=new LinkedHashMap<String,Object>();v.put("key",c.key());v.put("test",c.test());if(c.value()!=null)v.put("value",c.value());return v;}).toList());return n;}
+    public boolean matches(SharedStateStore.Snapshot snapshot){if(snapshot.schemaVersion()!=schemaVersion)return false;for(var c:when)if(!SharedStateStore.matches(snapshot.values().get(c.key()),c))return false;return true;}
+}

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MineAgent · WebGUI</title><link rel="stylesheet" href="shell.css"><script type="module" src="shell.mjs"></script></head>
+<body>
+  <nav id="dock" aria-label="桌面工具栏">
+    <strong>MineAgent</strong>
+    <button id="open-chat">对话</button><button id="open-agents">AI 管理</button><button id="open-generation">创造</button><button id="open-tasks">任务</button><button id="open-decisions">待决定 (0)</button><button id="open-windows">窗口</button>
+    <details id="more-menu"><summary>更多</summary><div id="more-panel" aria-label="更多工具">
+      <section><h2>AI 与自动化</h2><button id="open-persona">人设</button><button id="open-appearance">外观</button><button id="open-preferences">长期偏好</button><button id="open-events">事件与订阅</button><button id="open-schedules">定时与条件</button></section>
+      <section><h2>内容与资源</h2><button id="open-package-catalog">包目录</button><button id="open-package-assets">跨世界资产</button><button id="open-resource-packs">本机资源包</button><button id="open-client-scripts">本机 CLIENT 原生代码</button><button id="open-boot-extensions">启动扩展</button></section>
+      <section><h2>记录与收件</h2><button id="open-task-history">任务历史</button><button id="open-generation-history">生成历史</button><button id="open-deliveries">收件箱</button><button id="open-feedback-history">我的反馈</button><button id="open-sent-content">已发内容</button></section>
+      <section><h2>高级与设置</h2><button id="open-java-studio">Code Studio</button><button id="open-native-api">Native API</button><button id="open-server-settings">配置与权限</button><button id="open-renderer-settings">界面设置</button><button id="open-status">宿主状态</button></section>
+    </div></details>
+    <button id="release">返回游戏 · Esc</button><button id="setup-notice" hidden>设置</button><span id="status" role="status">连接宿主…</span>
+  </nav>
+  <main id="windows" aria-label="独立窗口"></main>
+  <nav id="decision-page-tools" aria-label="选择问题分页" hidden><button id="decision-prev" aria-label="上一页选择">‹</button><span id="decision-page-label"></span><button id="decision-next" aria-label="下一页选择">›</button><select id="decision-entry" aria-label="选择本页问题"></select></nav>
+  <footer id="minimized" aria-label="窗口任务栏"></footer>
+</body></html>
