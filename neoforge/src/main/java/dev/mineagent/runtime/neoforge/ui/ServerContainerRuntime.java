@@ -1,6 +1,4 @@
 package dev.mineagent.runtime.neoforge.ui;
-import com.google.gson.*;
-import com.mojang.serialization.JsonOps;
 import dev.mineagent.runtime.api.ui.ContainerProtocol;
 import dev.mineagent.runtime.api.ui.ContainerProtocol.*;
 import dev.mineagent.runtime.api.ui.UiProtocol.*;
@@ -11,7 +9,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.*;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.*;
 import java.util.*;
 
@@ -23,20 +20,7 @@ public final class ServerContainerRuntime implements AutoCloseable {
         Lease(ServerPlayer viewer,ServerPlayer actor,UUID pkg,long revision,BlockPos pos){this.viewer=viewer;this.actor=actor;this.level=actor.level();this.pkg=pkg;this.revision=revision;this.pos=pos;this.blockEntity=actor.level().getBlockEntity(pos);this.menu=actor.containerMenu;transaction=new ContainerTransaction(this,2048);}
         public boolean valid(){return server.isSameThread()&&server.isRunning()&&server.getPlayerList().getPlayer(actor.getUUID())==actor&&actor.isAlive()&&!actor.isSpectator()
                 &&server.getPlayerList().getPlayer(viewer.getUUID())==viewer&&System.currentTimeMillis()<expires&&actor.level()==level&&actor.containerMenu==menu&&actor.level().getBlockEntity(pos)==blockEntity&&menu.stillValid(actor)&&ServerPackageRuntime.get(server).ownedPackage(viewer.getUUID(),pkg,revision).isPresent();}
-        public Raw capture(){
-            var slots=new ArrayList<ContainerProtocol.Slot>();var digest=new StringBuilder();int budget=0;
-            for(int i=0;i<menu.slots.size();i++){var slot=menu.getSlot(i);var item=item(slot.getItem());digest.append(i).append(':').append(item.fingerprint()).append(';');budget+=item.name().length();
-                slots.add(new ContainerProtocol.Slot(i,slot.x,slot.y,slot.container==actor.getInventory()?"player":"container",slot.isActive(),slot.mayPickup(actor),item));}
-            var carried=item(menu.getCarried());digest.append("cursor:").append(carried.fingerprint());
-            for(int i=0;i<actor.getInventory().getContainerSize();i++)digest.append('|').append(item(actor.getInventory().getItem(i)).fingerprint());
-            if(budget>12000)throw new IllegalStateException("CONTAINER_STATE_BUDGET");
-            return new Raw(menu.containerId,menu.getStateId(),BuiltInRegistries.MENU.getKey(menu.getType()).toString(),actor.getUUID().toString(),slots,carried,sha(digest.toString()));
-        }
-        private Item item(ItemStack stack){
-            if(stack.isEmpty())return Item.empty();var encoded=ItemStack.CODEC.encodeStart(actor.registryAccess().createSerializationContext(JsonOps.INSTANCE),stack).getOrThrow();
-            String canonical=canonical(encoded).toString();if(canonical.length()>65536)throw new IllegalStateException("CONTAINER_ITEM_BUDGET");String name=stack.getHoverName().getString();
-            return new Item(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),name.substring(0,Math.min(512,name.length())),stack.getCount(),stack.getMaxStackSize(),sha(canonical));
-        }
+        public Raw capture(){return NativeContainerSnapshot.capture(actor,menu);}
         public void execute(Action action){
             if(action.kind().equals("CLICK")){
                 if(action.slot()!=-999&&(action.slot()<0||action.slot()>=menu.slots.size()))throw new IllegalArgumentException("CONTAINER_SLOT");
@@ -88,6 +72,4 @@ public final class ServerContainerRuntime implements AutoCloseable {
     public void closePackage(UUID pkg){for(var l:List.copyOf(leases.values()))if(l.pkg.equals(pkg))close(l.id);}
     public void tick(){for(var l:List.copyOf(leases.values()))if(!l.valid())close(l.id);}
     @Override public void close(){for(var id:List.copyOf(leases.keySet()))close(id);}
-    private static String sha(String value){try{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));}catch(java.security.NoSuchAlgorithmException e){throw new IllegalStateException(e);}}
-    private static JsonElement canonical(JsonElement value){if(value.isJsonObject()){var out=new JsonObject();value.getAsJsonObject().keySet().stream().sorted().forEach(k->out.add(k,canonical(value.getAsJsonObject().get(k))));return out;}if(value.isJsonArray()){var out=new JsonArray();for(var item:value.getAsJsonArray())out.add(canonical(item));return out;}return value;}
 }
