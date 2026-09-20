@@ -34,7 +34,7 @@ public final class RuntimeItemRenderer implements SpecialModelRenderer<RuntimeMe
         var mesh=CACHE.get(raw);if(mesh!=null)return mesh;
         var binding=RuntimeItem.binding(stack);if(binding==null)return null;mesh=binding.mesh();if(CACHE.size()>=32)CACHE.remove(CACHE.keySet().iterator().next());CACHE.put(raw,mesh);return mesh;
     }
-    @Override public void getExtents(Consumer<Vector3fc> output){output.accept(new Vector3f(0,0,0));output.accept(new Vector3f(1,1,1));}
+    @Override public void getExtents(Consumer<Vector3fc> output){for(int x=0;x<=1;x++)for(int y=0;y<=1;y++)for(int z=0;z<=1;z++)output.accept(new Vector3f(x,y,z));}
     @Override public void submit(RuntimeMesh mesh,PoseStack poses,SubmitNodeCollector collector,int light,int overlay,boolean foil,int outline){
         if(mesh==null)return;
         if(!textureReady){var image=new com.mojang.blaze3d.platform.NativeImage(1,1,false);image.setPixel(0,0,-1);Minecraft.getInstance().getTextureManager().register(WHITE,new net.minecraft.client.renderer.texture.DynamicTexture(()->"Runtime item color surface",image));textureReady=true;}

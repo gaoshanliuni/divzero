@@ -55,6 +55,8 @@ public final class MineAgentRegistries {
             );
     public static final DeferredHolder<EntityType<?>, EntityType<dev.mineagent.runtime.neoforge.content.RuntimeObjectEntity>> RUNTIME_OBJECT =
             ENTITIES.registerEntityType("runtime_object",dev.mineagent.runtime.neoforge.content.RuntimeObjectEntity::new,MobCategory.MISC,builder->builder.sized(1,1).clientTrackingRange(8).updateInterval(1));
+    public static final DeferredHolder<EntityType<?>,EntityType<dev.mineagent.runtime.neoforge.content.RuntimeThrownItemEntity>> RUNTIME_THROWN_ITEM =
+            ENTITIES.registerEntityType("runtime_thrown_item",dev.mineagent.runtime.neoforge.content.RuntimeThrownItemEntity::new,MobCategory.MISC,builder->builder.sized(.5F,.5F).clientTrackingRange(8).updateInterval(1));
     public static final DeferredBlock<AutomationConsoleBlock> AUTOMATION_CONSOLE = BLOCKS.registerBlock(
             "automation_console", AutomationConsoleBlock::new,
             properties -> properties.strength(4.0F).requiresCorrectToolForDrops()

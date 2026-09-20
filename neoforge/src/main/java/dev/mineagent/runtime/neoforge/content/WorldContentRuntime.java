@@ -30,6 +30,7 @@ public final class WorldContentRuntime implements AutoCloseable {
     // addFreshEntity may defer query visibility until the end of the current entity tick.
     // Keep real carrier references for collision admission only, never for object()/verifiedObjects().
     private final Map<UUID,RuntimeObjectEntity> pendingObjectSpawns=new LinkedHashMap<>();
+    private final Map<UUID,RuntimeThrownItemEntity> flights=new LinkedHashMap<>();
     public record ObjectPart(UUID entity,String model,String hash,double dx,double dy,double dz,String state){}
     public record ObjectInteraction(String part,ServerPlayer player,UUID operationId){public ObjectInteraction(String part,ServerPlayer player){this(part,player,UUID.randomUUID());}}
     private record InteractionOrigin(ServerPlayer actor,RuntimeObjectEntity object,dev.mineagent.runtime.api.task.ManagedTask task,dev.mineagent.runtime.core.shared.SharedStateStore.Provenance provenance){}
@@ -188,27 +189,50 @@ public final class WorldContentRuntime implements AutoCloseable {
             return action.get();
         }finally{interactionOrigin=previous;}
     }
-    public record ItemPart(String model,String name,int requested,int inserted,String state){}
+    public record ItemPart(String model,String name,int requested,int inserted,String state,int chargeTicks){public ItemPart(String model,String name,int requested,int inserted,String state){this(model,name,requested,inserted,state,0);}}
     public final class ItemUse {
-        private final InstanceHost host;private final ServerPlayer player;private final net.minecraft.world.InteractionHand hand;private final net.minecraft.world.item.ItemStack stack;private final String part;private final UUID operation;
-        private ItemUse(InstanceHost host,ServerPlayer player,net.minecraft.world.InteractionHand hand,String part,UUID operation){this.host=host;this.player=player;this.hand=hand;this.stack=player.getItemInHand(hand);this.part=part;this.operation=operation;}
+        private final InstanceHost host;private final ServerPlayer player;private final net.minecraft.world.InteractionHand hand;private final net.minecraft.world.item.ItemStack stack;private final String part;private final UUID operation;private final int usedTicks;private boolean live=true,throwAttempted;
+        private ItemUse(InstanceHost host,ServerPlayer player,net.minecraft.world.InteractionHand hand,String part,UUID operation,int usedTicks){this.host=host;this.player=player;this.hand=hand;this.stack=player.getItemInHand(hand);this.part=part;this.operation=operation;this.usedTicks=usedTicks;}
         public ServerPlayer player(){return player;}public String part(){return part;}public UUID operationId(){return operation;}
+        public int usedTicks(){if(usedTicks<0)throw new IllegalStateException("ITEM_RELEASE_REQUIRED");return usedTicks;}
+        public double charge(){var binding=RuntimeItem.binding(stack);if(binding==null)throw new IllegalStateException("RUNTIME_ITEM_CHANGED");return dev.mineagent.runtime.core.objects.ItemThrowMath.charge(usedTicks(),binding.chargeTicks());}
+        public RuntimeThrownItemEntity throwItem(double speed,double lift)throws Exception{
+            host.currentInstance();host.writable();if(!live||throwAttempted||usedTicks<0||player.getItemInHand(hand)!=stack||!itemActive(player,stack))throw new IllegalStateException("ITEM_RELEASE_CHANGED_OR_USED");
+            var direction=player.getLookAngle();var motion=dev.mineagent.runtime.core.objects.ItemThrowMath.launch(direction.x,direction.y,direction.z,speed,lift);var b=RuntimeItem.binding(stack);
+            flights.values().removeIf(e->e.isRemoved());if(flights.size()>=128||flights.values().stream().filter(f->player.getUUID().equals(f.thrower())).count()>=32)throw new IllegalStateException("ITEM_FLIGHT_BUDGET");
+            var entity=new RuntimeThrownItemEntity(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_THROWN_ITEM.get(),player.level());entity.prepare(stack.copyWithCount(1),player.getUUID(),usedTicks,motion);
+            var position=player.getEyePosition().add(direction.scale(1.0)).add(0,-b.mesh().collision().height()/2,0);entity.setPos(position.x,position.y,position.z);
+            var bounds=entity.getBoundingBox();checkPosition(player.level(),BlockPos.containing(bounds.minX,bounds.minY,bounds.minZ));checkPosition(player.level(),BlockPos.containing(bounds.maxX,bounds.maxY,bounds.maxZ));var path=player.level().clip(new net.minecraft.world.level.ClipContext(player.getEyePosition(),position,net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,player));if(path.getType()!=net.minecraft.world.phys.HitResult.Type.MISS||!player.level().noCollision(entity))throw new IllegalStateException("ITEM_THROW_OBSTRUCTED");
+            throwAttempted=true;flights.put(entity.getUUID(),entity);
+            try{if(!player.level().addFreshEntity(entity)){flights.remove(entity.getUUID());throw new IllegalStateException("ITEM_THROW_SPAWN_REJECTED");}
+                if(player.getItemInHand(hand)!=stack||stack.isEmpty()||!itemActive(player,stack)){entity.discard();throw new IllegalStateException("ITEM_THROW_STACK_CHANGED");}
+                stack.shrink(1);entity.transferred();player.inventoryMenu.broadcastFullState();return entity;
+            }catch(Exception unknown){throw new IllegalStateException("ITEM_THROW_OUTCOME_UNKNOWN",unknown);}
+        }
         public void restyle(String modelPath,String name)throws Exception{
             host.currentInstance();host.writable();if(player.getItemInHand(hand)!=stack||!itemActive(player,stack))throw new IllegalStateException("RUNTIME_ITEM_CHANGED");
             var binding=host.itemBinding(part,modelPath);itemName(name);stack.set(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_ITEM_BINDING.get(),binding.encode());stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal(name));player.inventoryMenu.broadcastFullState();
         }
     }
     public boolean itemActive(ServerPlayer player,net.minecraft.world.item.ItemStack stack){
-        requireThread();var binding=RuntimeItem.binding(stack);if(binding==null||!binding.world().equals(MineAgentRuntimeServices.worldId(server))||!player.isAlive()||player.isSpectator())return false;
-        var host=hosts.get(binding.instance());if(host==null||host.phase!=Phase.ACTIVE||host.level!=player.level()||!host.current())return false;
-        try{var saved=host.currentInstance().state().get("_item."+binding.part());return saved!=null&&json.readValue(saved,ItemPart.class).state().equals("ACTIVE")&&host.itemBinding(binding.part(),binding.modelPath()).equals(binding);}catch(Exception invalid){return false;}
+        requireThread();var binding=RuntimeItem.binding(stack);if(binding==null||!binding.world().equals(MineAgentRuntimeServices.worldId(server))||!player.isAlive()||player.isSpectator()||server.getPlayerList().getPlayer(player.getUUID())!=player)return false;
+        return itemBindingActive(player.level(),binding);
     }
-    public boolean useItem(ServerPlayer player,net.minecraft.world.InteractionHand hand){
+    private boolean itemBindingActive(ServerLevel level,dev.mineagent.runtime.core.objects.RuntimeItemBinding binding){
+        if(binding==null||!binding.world().equals(MineAgentRuntimeServices.worldId(server)))return false;
+        var host=hosts.get(binding.instance());if(host==null||host.phase!=Phase.ACTIVE||host.level!=level||!host.current())return false;
+        try{var i=host.currentInstance();var saved=i.state().get("_item."+binding.part());if(saved==null)return false;var part=json.readValue(saved,ItemPart.class);var pack=packages.worldLibrary().get(i.packageId()).orElseThrow();return part.state().equals("ACTIVE")&&part.chargeTicks()==binding.chargeTicks()&&pack.canonicalSha256().equals(binding.packageHash())&&model(pack,pack.definitions().get(i.definitionId()),binding.modelPath()).sha256().equals(binding.assetHash());}catch(Exception invalid){return false;}
+    }
+    public boolean flightActive(RuntimeThrownItemEntity flight){requireThread();flights.values().removeIf(e->e.isRemoved());if(flight.isRemoved()||!(flight.level() instanceof ServerLevel level)||!itemBindingActive(level,flight.binding()))return false;if(!flights.containsKey(flight.getUUID())&&flights.size()>=128)return false;return flights.putIfAbsent(flight.getUUID(),flight)==null||flights.get(flight.getUUID())==flight;}
+    public boolean useItem(ServerPlayer player,net.minecraft.world.InteractionHand hand){return itemEvent(player,hand,-1);}
+    public boolean releaseItem(ServerPlayer player,net.minecraft.world.InteractionHand hand,int used){if(!player.isUsingItem()||used<0||used>dev.mineagent.runtime.core.objects.ItemThrowMath.USE_DURATION)return false;var binding=RuntimeItem.binding(player.getItemInHand(hand));return binding!=null&&binding.chargeTicks()>0&&itemEvent(player,hand,used);}
+    private boolean itemEvent(ServerPlayer player,net.minecraft.world.InteractionHand hand,int used){
         requireThread();if(!itemActive(player,player.getItemInHand(hand)))return false;var binding=RuntimeItem.binding(player.getItemInHand(hand));var host=hosts.get(binding.instance());
         var oldPlayer=host.uiPlayer;var oldEntity=host.uiEntity;var oldPrincipal=host.sharedPrincipal;var oldOperation=host.sharedOperation;var oldOrigin=host.sharedOrigin;UUID operation=UUID.randomUUID();
         host.uiPlayer=player;host.uiEntity=null;host.sharedPrincipal=player;host.sharedOperation=operation;host.sharedOrigin=dev.mineagent.runtime.core.shared.SharedStateStore.Provenance.NONE;
-        try{return scripts.fireTo(binding.instance(),"item.use",new ItemUse(host,player,hand,binding.part(),operation));}
-        finally{host.uiPlayer=oldPlayer;host.uiEntity=oldEntity;host.sharedPrincipal=oldPrincipal;host.sharedOperation=oldOperation;host.sharedOrigin=oldOrigin;player.inventoryMenu.broadcastFullState();}
+        var event=new ItemUse(host,player,hand,binding.part(),operation,used);
+        try{return scripts.fireTo(binding.instance(),used<0?"item.use":"item.release",event);}
+        finally{event.live=false;host.uiPlayer=oldPlayer;host.uiEntity=oldEntity;host.sharedPrincipal=oldPrincipal;host.sharedOperation=oldOperation;host.sharedOrigin=oldOrigin;player.inventoryMenu.broadcastFullState();}
     }
     private static void itemName(String name){if(name==null||name.isBlank()||name.length()>128||name.codePoints().anyMatch(Character::isISOControl))throw new IllegalArgumentException("RUNTIME_ITEM_NAME");}
     public boolean interactObject(RuntimeObjectEntity entity,ServerPlayer player){
@@ -544,21 +568,24 @@ public final class WorldContentRuntime implements AutoCloseable {
             var state=new LinkedHashMap<>(current.state());state.put(key,value);save(current,state);return true;
         }
         public int blockCount(){var instance=currentInstance();int count=0;try{for(var e:instance.state().entrySet())if(e.getKey().startsWith("_block.")){var block=json.readTree(e.getValue());var pos=new BlockPos(block.path("x").asInt(),block.path("y").asInt(),block.path("z").asInt());if(level.getChunkSource().hasChunk(pos.getX()>>4,pos.getZ()>>4)&&net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock()).toString().equals(block.path("block").asText()))count++;}}catch(Exception e){throw new IllegalStateException("WORLD_BLOCK_RECORD",e);}return count;}
-        private dev.mineagent.runtime.core.objects.RuntimeItemBinding itemBinding(String part,String modelPath)throws Exception{
+        private dev.mineagent.runtime.core.objects.RuntimeItemBinding itemBinding(String part,String modelPath)throws Exception{var value=currentInstance().state().get("_item."+part);return itemBinding(part,modelPath,value==null?0:json.readValue(value,ItemPart.class).chargeTicks());}
+        private dev.mineagent.runtime.core.objects.RuntimeItemBinding itemBinding(String part,String modelPath,int chargeTicks)throws Exception{
             var instance=currentInstance();var pack=packages.worldLibrary().get(instance.packageId()).orElseThrow();var bundle=model(pack,pack.definitions().get(instance.definitionId()),modelPath);
             var bytes=bundle.bytes();int size=java.nio.ByteBuffer.wrap(bytes).getInt();if(bundle.texture().length!=0||size>dev.mineagent.runtime.core.objects.RuntimeItemBinding.MAX_SOURCE)throw new IllegalArgumentException("RUNTIME_ITEM_MODEL_BUDGET");
-            return dev.mineagent.runtime.core.objects.RuntimeItemBinding.create(MineAgentRuntimeServices.worldId(server),instance.instanceId(),part,pack.canonicalSha256(),modelPath,new String(bytes,4,size,java.nio.charset.StandardCharsets.UTF_8));
+            return dev.mineagent.runtime.core.objects.RuntimeItemBinding.create(MineAgentRuntimeServices.worldId(server),instance.instanceId(),part,pack.canonicalSha256(),modelPath,new String(bytes,4,size,java.nio.charset.StandardCharsets.UTF_8),chargeTicks);
         }
         /** One durable issuance per part. Full inventories return partial counts; unknown issuance never replays. */
-        public int giveItem(String part,String modelPath,int count,String name)throws Exception{
-            var current=currentInstance();writable();itemName(name);if(count<1||count>64)throw new IllegalArgumentException("RUNTIME_ITEM_COUNT");var binding=itemBinding(part,modelPath);
-            var prior=current.state().get("_item."+part);if(prior!=null){var old=json.readValue(prior,ItemPart.class);if(!old.model().equals(modelPath)||!old.name().equals(name)||old.requested()!=count)throw new IllegalStateException("RUNTIME_ITEM_PART_REUSED");if(!old.state().equals("ACTIVE"))throw new IllegalStateException("RUNTIME_ITEM_OUTCOME_UNKNOWN");return old.inserted();}
+        public int giveItem(String part,String modelPath,int count,String name)throws Exception{return give(part,modelPath,count,name,0);}
+        public int giveChargedItem(String part,String modelPath,int count,String name,int chargeTicks)throws Exception{if(chargeTicks<1||chargeTicks>200)throw new IllegalArgumentException("RUNTIME_ITEM_CHARGE_BOUNDS");return give(part,modelPath,count,name,chargeTicks);}
+        private int give(String part,String modelPath,int count,String name,int chargeTicks)throws Exception{
+            var current=currentInstance();writable();itemName(name);if(count<1||count>64)throw new IllegalArgumentException("RUNTIME_ITEM_COUNT");var binding=itemBinding(part,modelPath,chargeTicks);
+            var prior=current.state().get("_item."+part);if(prior!=null){var old=json.readValue(prior,ItemPart.class);if(!old.model().equals(modelPath)||!old.name().equals(name)||old.requested()!=count||old.chargeTicks()!=chargeTicks)throw new IllegalStateException("RUNTIME_ITEM_PART_REUSED");if(!old.state().equals("ACTIVE"))throw new IllegalStateException("RUNTIME_ITEM_OUTCOME_UNKNOWN");return old.inserted();}
             if(phase==Phase.RESTORING)throw new IllegalStateException("RESTORE_CANNOT_GIVE_ITEM");
             if(current.state().keySet().stream().filter(k->k.startsWith("_item.")).count()>=32||instances.all().stream().flatMap(i->i.state().keySet().stream()).filter(k->k.startsWith("_item.")).count()>=128)throw new IllegalStateException("RUNTIME_ITEM_BUDGET");
             var owner=server.getPlayerList().getPlayer(activation.owner());if(owner==null||!owner.isAlive()||owner.level()!=level)throw new IllegalStateException("RUNTIME_ITEM_OWNER_UNAVAILABLE");
             var stack=new net.minecraft.world.item.ItemStack(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_ITEM.get(),count);stack.set(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_ITEM_BINDING.get(),binding.encode());stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal(name));
-            var state=new LinkedHashMap<>(current.state());state.put("_item."+part,json.writeValueAsString(new ItemPart(modelPath,name,count,0,"PREPARING")));save(current,state);
-            owner.getInventory().add(stack);int inserted=count-stack.getCount();owner.inventoryMenu.broadcastFullState();current=currentInstance();state=new LinkedHashMap<>(current.state());state.put("_item."+part,json.writeValueAsString(new ItemPart(modelPath,name,count,inserted,"ACTIVE")));save(current,state);return inserted;
+            var state=new LinkedHashMap<>(current.state());state.put("_item."+part,json.writeValueAsString(new ItemPart(modelPath,name,count,0,"PREPARING",chargeTicks)));save(current,state);
+            owner.getInventory().add(stack);int inserted=count-stack.getCount();owner.inventoryMenu.broadcastFullState();current=currentInstance();state=new LinkedHashMap<>(current.state());state.put("_item."+part,json.writeValueAsString(new ItemPart(modelPath,name,count,inserted,"ACTIVE",chargeTicks)));save(current,state);return inserted;
         }
         public RuntimeObjectEntity createObject(String partKey,String modelPath,double dx,double dy,double dz)throws Exception{
             var instance=currentInstance();writable();if(partKey==null||!partKey.matches("[A-Za-z0-9_.-]{1,64}"))throw new IllegalArgumentException("OBJECT_PART_KEY");for(double value:new double[]{dx,dy,dz})if(!Double.isFinite(value)||Math.abs(value)>32)throw new IllegalArgumentException("OBJECT_PART_POSITION");

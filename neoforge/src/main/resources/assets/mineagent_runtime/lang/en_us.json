@@ -1,4 +1,5 @@
 {
+  "entity.mineagent_runtime.runtime_thrown_item": "Runtime Thrown Item",
   "item.mineagent_runtime.runtime_item": "Runtime Item",
   "screen.mineagent_runtime.control_center": "MineAgent Control Center",
   "key.mineagent_runtime.open_control_center": "Open MineAgent workspace",

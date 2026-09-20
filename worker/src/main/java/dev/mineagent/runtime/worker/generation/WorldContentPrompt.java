@@ -37,7 +37,11 @@ public final class WorldContentPrompt {
         同实例相同 partKey 只发放一次；重复相同参数返回已记录插入数，不再次给予。背包不足不丢地上、不自动重试。恢复回调不要新发放，旧物品随原生存档持久化，恢复后仍绑定原实例/包。
         物品模型仍是上述 RuntimeMesh JSON，路径属于本定义 COMMON/CLIENT 资源；当前物品只支持几何颜色，不能含 texture，原始模型最多8192 UTF-8 bytes、2048顶点/三角形。顶点 x/z 在[-0.5,0.5]，y在[0,1]；collision/physics仍按模型格式写，物品本身不因此获得刚体物理。可自由生成 boxes/vertices/triangles，不能拿旧固定演示物品顶替。
         on('item.use',function(event){...}) 是实际手持物品右键事件。event.part()、event.player()、event.operationId() 可读取；content.state读写记录本实例状态。event.restyle('models/other.json','新名称') 只修改这次本人实际手持的同一栈模型与名称，另一个模型也须本定义声明且满足物品限制，保留数量/其它组件。可据状态切换外观/交互逻辑，无需注册新Item或重载资源。
-        物品行为来自生成的 Rhino handler，不是固定玩法模板；停用/失效包后旧物品仍保存且可渲染，但不调用脚本。当前未提供通用蓄力/投掷/拾回物理，也不保证任意新Registry物品可HOT创建。不要生成假的成功消息代替真实item.use或restyle。
+        蓄力物品用 content.giveChargedItem(partKey,modelPath,count,displayName,chargeTicks)，chargeTicks=1..200（服务端Tick，40=两秒满蓄力）；持久化、一次发放规则与giveItem相同。按住原生使用键开始蓄力，松开后触发 on('item.release',function(event){...})；离散giveItem仍走item.use，两个事件不混同。
+        item.release 的 event.usedTicks() 是服务端测到的时长；event.charge() 是时长/chargeTicks并封顶1。event.throwItem(speed,lift) 在该release回调内最多一次，把当前手持栈的实际一件转为可碰撞/拾回实体，返回 RuntimeThrownItemEntity；不是复制一件视觉球，不额外give物品，创造模式也转移这一件。speed>0且<=3，lift在[-1,1]，Native以玩家此刻朝向构造速度；根据charge计算力度由生成脚本决定。不要用自行setDeltaMovement或give模拟投掷。
+        可投掷模型必须有 physics.dynamic=true，collision三个尺寸<=1；所有物品顶点仍限制在前述单位范围。gravity/restitution/drag等采用模型定义，Native用实际世界AABB有界扫掠/反弹。返回实体可读getX/getY/getZ、previousX/previousY/previousZ（该Tick运动前坐标）、getDeltaMovement、getUUID、isRemoved、collisions、usedTicks、launchSpeed、transferState。空洞球框与计分逻辑由独立包按真实轨迹编写，不由主体硬编码篮球玩法。
+        投出后延迟40Tick，原投掷者的实际身体碰到实体才将原件放回背包；满背包则保留在地面。当前仅原投掷者可拾回，不实现任意Mod的ItemEntity专用pickup事件。停用后物理冻结，不执行脚本，但仍能由原投掷者碰撞取回。切换手持、死亡、菜单冲突或包失效取消蓄力，不自动重放投掷。不要在restore中重新投掷或重新发放。
+        物品行为来自生成的 Rhino handler，不是固定玩法模板；停用/失效包后旧物品仍保存且可渲染，但不调用脚本。不保证任意新Registry物品可HOT创建。不要生成假的成功消息代替真实item.use/item.release/restyle。
         content.objectCount() 只计算真实加载且匹配绑定的物件。新区块/实体可能尚未可查询，周期回调应先核对 objectCount，不用空引用假称已操作；创建回调可直接使用 createObject 的返回实体。
         on('object.interact',function(event){...}) 是实际 Native 玩家主手交互的定向事件，event.part() 和 event.player() 是真实 partKey/ServerPlayer，event.operationId() 是本次 Native 交互 UUID；不是网页点击回读。sharedTransact 的操作键在该回调内自动绑定此 UUID，同一次回调重用相同键仍去重，后续真实点击不与初始化或上一次点击共用 activation 根。事件回调沿用25ms普通预算，不能调用生命周期专用预算或等待模型。
         重启获准恢复时 createObject 用相同 partKey/modelPath/初始偏移绑定已有 UUID，不新建或重置运动状态；缺失或未知对象不自动重放创建。物件和几何/物理不依赖 WebGUI timer。停用清理JS并冻结物件，不静默删除世界实体；任意原生副作用仍需显式清理。
