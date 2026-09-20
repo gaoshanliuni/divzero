@@ -1,2 +1,57 @@
-# divzero
-除零 · DivZero — An AI-powered Minecraft mod for survival, building, and creation. 世界未定义，创造不设限。
+# 除零 · DivZero
+
+> 不是计算错误，是世界尚未定义。
+
+**世界未定义，创造不设限。**
+
+DivZero（除零）是一个正在开发中的 Minecraft AI Mod。
+
+我们希望 AI 不只是聊天窗口里的助手，而是能够进入 Minecraft 世界，理解环境、执行任务，与你一起生存、建造，并创造新的玩法。
+
+*An AI-powered Minecraft mod for survival, building, and creation.*
+
+## 项目状态
+
+本仓库当前用于项目介绍与公开发布准备。各版本实际支持的功能、Minecraft 版本、Mod 加载器与依赖要求，以对应的 [Release 说明](https://github.com/gaoshanliuni/divzero/releases)为准。
+
+下文描述的是项目愿景，不代表所有功能都已实现或已经公开发布。
+
+## 项目愿景
+
+用自然语言表达想法，让 AI 将它变成世界中的行动与创造。
+
+- **生存伙伴**：理解环境，协助探索、收集资源与完成任务。
+- **创造助手**：根据你的想法建造建筑、设计场景，参与世界的创造。
+- **玩法拓展**：创造可复用的物品、对象与交互玩法，让世界拥有更多可能。
+
+DivZero 的目标是让 AI 同时成为你的游戏伙伴和创造助手。
+
+## 关于这个名字
+
+DivZero 来自 **Division by Zero**，即除以零。
+
+在通常的算术中，`1/0` 没有定义。在这里，“未定义”意味着世界还有等待被创造的可能。
+
+## 关于本仓库
+
+本仓库是 DivZero 的**公开发布仓库**，用于提供正式公开的版本源码、使用文档、更新说明和 Mod 下载。
+
+日常开发在独立的私密仓库中进行。本仓库的代码仅在维护者决定发布版本时更新，不实时同步开发中的代码、实验性功能或私密仓库的完整提交历史；项目介绍与反馈文档可以独立维护。
+
+每个公开源码版本对应一份经过整理和检查的**源码快照**，在本仓库保留独立的版本提交历史。
+
+发布原则与检查清单见 [公开发布说明](docs/PUBLISHING.md)。
+
+## 版本与下载
+
+前往 [Releases](https://github.com/gaoshanliuni/divzero/releases) 查看可用版本、Mod `.jar` 下载、安装说明和更新记录。如果列表为空，表示尚无公开 Release。
+
+安装前，请确认对应版本说明中的 Minecraft 版本、加载器版本、依赖项与配置要求。不要将本仓库的源码压缩包当作可直接安装的 Mod 文件。
+
+## 问题反馈
+
+欢迎通过 [Issues](https://github.com/gaoshanliuni/divzero/issues/new/choose) 提交问题和功能建议。
+
+报告问题时，请附上 DivZero 版本、Minecraft 版本、加载器及其版本、复现步骤与相关日志。反馈模板会引导你填写这些信息。
+
+**请勿公开 API Key、访问令牌、密码、真实账号配置、私人聊天记录或其他个人信息。** 上传日志、截图、配置或存档前，请先检查并删除敏感内容。
