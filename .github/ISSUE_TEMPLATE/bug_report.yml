@@ -1,0 +1,76 @@
+name: 问题反馈
+description: 报告 DivZero 的错误、崩溃或异常行为。
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请先搜索已有 Issues，尽量避免重复报告。
+        此 Issue 将公开可见。请删除日志、截图和配置中的 API Key、访问令牌、密码、私人聊天记录及其他个人信息。
+  - type: input
+    id: divzero-version
+    attributes:
+      label: DivZero 版本
+      description: 填写正在使用的版本号；项目文档问题可填写“不适用”。
+    validations:
+      required: true
+  - type: input
+    id: minecraft-version
+    attributes:
+      label: Minecraft 版本
+      description: 填写具体版本；项目文档问题可填写“不适用”。
+    validations:
+      required: true
+  - type: input
+    id: loader-version
+    attributes:
+      label: 加载器及版本
+      description: 填写实际使用的加载器名称及具体版本，不代表所有加载器均受支持。
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: 运行环境
+      description: 请说明操作系统、Java 版本、单人或多人环境，以及可能相关的其他 Mod 和依赖版本。
+    validations:
+      required: false
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 实际发生了什么
+      description: 描述错误、崩溃或异常行为，以及出现频率。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 写出从启动游戏到出现问题的具体步骤；无法稳定复现时请注明。
+      placeholder: |
+        1. 启动游戏并进入世界
+        2. 执行某个操作
+        3. 出现某个错误
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 预期行为
+      description: 你预期应该发生什么？
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 已脱敏的日志与补充材料
+      description: 可粘贴相关错误片段或附上经过检查的日志、截图。不要上传未经检查的完整配置、存档或聊天记录。
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy-check
+    attributes:
+      label: 提交前检查
+      options:
+        - label: 我已检查正文及附件，确认没有公开密钥、访问令牌、密码或其他私人信息。
+          required: true
