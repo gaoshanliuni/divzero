@@ -3059,8 +3059,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/host/HostCommandScreen.java",
-      "sha256": "106eb56a859914cb6048a7bb2701d0b4857ccd537cf5bba11529cf1db3bd620c",
-      "bytes": 3880
+      "sha256": "c99e0a1176c3d7d567993cc3092a55136c463d2d9f13d0596dd205a7f2452fd8",
+      "bytes": 3900
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/media/MediaScreenRenderState.java",
