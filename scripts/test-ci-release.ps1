@@ -2,6 +2,33 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+# Reproduce PowerShell REST array semantics without network writes or credentials.
+& {
+    $tokens=$null; $errors=$null
+    $ast=[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'publish-ci-release.ps1'),[ref]$tokens,[ref]$errors)
+    $function=$ast.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-Assets'},$true)
+    . ([scriptblock]::Create($function.Extent.Text))
+    $api='https://example.invalid';$headers=@{}
+    function Invoke-RestMethod {
+        param($Uri,$Headers,$TimeoutSec)
+        $data = switch ($mode) {
+            'empty' { @() }
+            'single' { [pscustomobject]@{name='one.jar'} }
+            'paged' {
+                if ($Uri.EndsWith('page=1')) { 1..100 | ForEach-Object { [pscustomobject]@{name="$_ .jar"} } }
+                else { [pscustomobject]@{name='last.jar'} }
+            }
+        }
+        Write-Output -NoEnumerate ([object[]]@($data))
+    }
+    foreach ($case in @(@{mode='empty';count=0},@{mode='single';count=1},@{mode='paged';count=101})) {
+        $mode=$case.mode
+        $result=@(Get-Assets 42)
+        if ($result.Count -ne $case.count) { throw "REST_ARRAY_TEST_FAILED: $mode count=$($result.Count)" }
+        foreach ($asset in $result) { if (-not $asset.PSObject.Properties['name']) { throw 'REST_ARRAY_WAS_NOT_FLATTENED' } }
+        Write-Output "REST_ARRAY_TEST_PASSED=$mode"
+    }
+}
 $fixture = Join-Path $root ('build/ci-release-test-' + [Guid]::NewGuid().ToString('N'))
 foreach ($dir in @('scripts','docs/licenses','neoforge/build/libs')) { New-Item -ItemType Directory -Path (Join-Path $fixture $dir) -Force | Out-Null }
 foreach ($script in @('get-release-versions.ps1','package-ci-artifact.ps1','stage-browser-dependencies.ps1','publish-ci-release.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $script) -Destination (Join-Path $fixture "scripts/$script") }

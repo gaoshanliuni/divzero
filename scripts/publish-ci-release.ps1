@@ -82,7 +82,16 @@ function Get-Optional([string]$Url) {
     catch { if ($null -ne $_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) { return $null }; throw }
 }
 function Get-Assets([long]$ReleaseId) {
-    $all=@();for($page=1;$page -le 10;$page++){$part=@(Invoke-RestMethod -Uri "$api/releases/$ReleaseId/assets?per_page=100&page=$page" -Headers $headers -TimeoutSec 60);$all+=$part;if($part.Count -lt 100){return $all}};throw 'RELEASE_TOO_MANY_ASSETS'
+    $all = @()
+    for ($page=1; $page -le 10; $page++) {
+        # Invoke-RestMethod emits a JSON array as one pipeline object. Assign first,
+        # then normalize, so an empty GitHub array is zero assets, not one array asset.
+        $response = Invoke-RestMethod -Uri "$api/releases/$ReleaseId/assets?per_page=100&page=$page" -Headers $headers -TimeoutSec 60
+        $part = @($response)
+        $all += $part
+        if ($part.Count -lt 100) { return $all }
+    }
+    throw 'RELEASE_TOO_MANY_ASSETS'
 }
 function Check-Tag {
     $ref=Get-Optional "$api/git/ref/tags/$tag"
