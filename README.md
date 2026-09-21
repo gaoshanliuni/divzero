@@ -48,6 +48,10 @@ DivZero 来自 **Division by Zero**，即除以零。
 
 安装前，请确认对应版本说明中的 Minecraft 版本、加载器版本、依赖项与配置要求。不要将本仓库的源码压缩包当作可直接安装的 Mod 文件。
 
+## 自动构建 JAR
+
+公开源码推送后会运行 [Build JAR](https://github.com/gaoshanliuni/divzero/actions/workflows/build-jar.yml)。登录 GitHub，在成功运行的 **Artifacts** 中下载 JAR 与 SHA-256；也可手动触发构建。产物保留 7 天，属于测试构建，不代替正式 Release。详见 [自动编译说明](docs/BUILD_JAR.md)。
+
 ## 问题反馈
 
 欢迎通过 [Issues](https://github.com/gaoshanliuni/divzero/issues/new/choose) 提交问题和功能建议。
