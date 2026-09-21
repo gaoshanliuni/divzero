@@ -13,13 +13,14 @@ import java.util.*;
 /** Live generation acceptance. Requires an explicit hash-bound local approval after source inspection. */
 public final class ConversationRuntimeItemSmokeServer {
     private static final ObjectMapper JSON=new ObjectMapper();
-    public static volatile boolean ready,itemReady,used,clientCaptured,verified;
+    public static volatile boolean ready,itemReady,used,clientCaptured,verified,observedModeling;
+    public static boolean spherical(){return Set.of("runtime_throw_sphere","runtime_throw_sphere_saved").contains(System.getProperty("mineagent.conversationAgentScenario",""));}
     public static volatile String failure="";
     public static volatile UUID agent;
     private static UUID packId,activation,instance;private static String firstHash,usesKey;
     private static int phase;private static final List<String> mutations=new ArrayList<>();
     public static boolean throwing(){return System.getProperty("mineagent.conversationAgentScenario","").startsWith("runtime_throw");}
-    public static boolean saved(){return Set.of("runtime_item_saved","runtime_throw_saved").contains(System.getProperty("mineagent.conversationAgentScenario",""));}
+    public static boolean saved(){return Set.of("runtime_item_saved","runtime_throw_saved","runtime_throw_sphere_saved").contains(System.getProperty("mineagent.conversationAgentScenario",""));}
     public static boolean active(){return Boolean.getBoolean("mineagent.conversationAgentReal")&&(throwing()||saved()||System.getProperty("mineagent.conversationAgentScenario","").equals("runtime_item"));}
     public static void observe(String tool,Map<String,Object> result){if(!active())return;mutations.add(tool);if(tool.equals("generate_content_package")&&result.containsKey("packageId"))packId=UUID.fromString(result.get("packageId").toString());}
     private static Path root(MinecraftServer s)throws Exception{return Files.createDirectories(s.getServerDirectory().resolve("runtime-item-smoke"));}
@@ -34,6 +35,7 @@ public final class ConversationRuntimeItemSmokeServer {
                 else {var store=ServerConversations.get(s).store();var list=store.list(p.getUUID(),agent,"ALL","",0,20).conversations();if(list.isEmpty())return;var c=list.getFirst();if(c.messageCount()<2||!c.activeOperation().isEmpty())return;
                 var context=store.context(p.getUUID(),agent,c.conversationId(),null).orElseThrow();save(s,"conversation",context);
                 if(!context.requestState().equals("COMPLETE")||packId==null||mutations.size()!=1||!mutations.getFirst().equals("generate_content_package"))throw new IllegalStateException("RUNTIME_ITEM_CHAT_GENERATION_FAILED");}
+                if(spherical()&&!saved()&&!observedModeling)throw new IllegalStateException("MODELING_CAPABILITY_NOT_DISCOVERED");
                 var pack=packages.worldLibrary().get(packId).orElseThrow();if(pack.activationMode()!=ActivationMode.HOT_RUNTIME||pack.definitions().size()!=1||pack.definitions().values().iterator().next().kind()!=RuntimeDefinitionKind.ITEM)throw new IllegalStateException("RUNTIME_ITEM_PACKAGE_KIND");
                 var beforeInventory=new ArrayList<Object>();for(int slot=0;slot<p.getInventory().getContainerSize();slot++){var stack=p.getInventory().getItem(slot);if(stack.is(MineAgentRegistries.RUNTIME_ITEM.get()))throw new IllegalStateException("RUNTIME_ITEM_EXECUTED_WITHOUT_APPROVAL");if(!stack.isEmpty())beforeInventory.add(Map.of("slot",slot,"item",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),"count",stack.getCount()));}
                 if(!runtime.list(p.getUUID()).isEmpty())throw new IllegalStateException("RUNTIME_ITEM_EXECUTED_WITHOUT_APPROVAL");

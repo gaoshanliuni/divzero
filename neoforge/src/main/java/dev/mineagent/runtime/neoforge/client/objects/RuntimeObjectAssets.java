@@ -48,7 +48,7 @@ public final class RuntimeObjectAssets {
         try{
             var bundle=RuntimeModelBundle.decode(waiting.bytes.toByteArray(),p.hash());byte[] png=bundle.texture();
             if(png.length==0){image=new NativeImage(1,1,false);image.setPixel(0,0,-1);}else image=NativeImage.read(new ByteArrayInputStream(png));
-            if(image.getWidth()>1024||image.getHeight()>1024)throw new IllegalStateException("OBJECT_TEXTURE_DIMENSIONS");long bytes=bundle.size()+4L*image.getWidth()*image.getHeight()+20L*bundle.mesh().vertices().size()+16L*bundle.mesh().triangles().size();
+            if(image.getWidth()>1024||image.getHeight()>1024)throw new IllegalStateException("OBJECT_TEXTURE_DIMENSIONS");long bytes=bundle.size()+4L*image.getWidth()*image.getHeight()+32L*bundle.mesh().vertices().size()+16L*bundle.mesh().triangles().size();
             if(loaded.size()>=64||memory+bytes>64L*1024*1024)throw new IllegalStateException("OBJECT_GPU_BUDGET");
             Identifier texture=Identifier.fromNamespaceAndPath("mineagent_runtime","objects/"+p.hash());Minecraft.getInstance().getTextureManager().register(texture,new DynamicTexture(()->"Runtime object "+p.hash(),image));image=null;
             loaded.put(p.hash(),new Entry(new Asset(bundle.mesh(),texture,bytes),ticks));memory+=bytes;pending.remove(p.hash());

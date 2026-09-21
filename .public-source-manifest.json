@@ -1589,8 +1589,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "cba22ee73e9eccc60f1d7d897fc011bcba3c1b3ebe4bcf7d00371ed649b8d6ee",
-      "bytes": 14694
+      "sha256": "f648fafea114a4d328816ab7379513320fa051f9dd9d438990f42c04b72d0b47",
+      "bytes": 16001
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/NativeChatSegments.java",
@@ -1823,19 +1823,29 @@
       "bytes": 1127
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/objects/ModelGeometryTools.java",
+      "sha256": "c1b6972619d684c58f3cfa7ac9ba3a038457504bdd8b7911c32ceb79636d8927",
+      "bytes": 5135
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/ObjectPhysics.java",
       "sha256": "c90d13f2fe9bc90852343be8cb37fecba8c9f81acec0e28592ea414c910495d8",
       "bytes": 1738
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/objects/ParametricMeshes.java",
+      "sha256": "706e797ea9b53fa37f6f79855162588a949bd2d7137b5f328ed252e9307fc138",
+      "bytes": 5315
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/RuntimeItemBinding.java",
-      "sha256": "fd7700c36fd4b3a66821d185d5e0f4eaae4e647b42c5d681439b47b522bc5a1c",
-      "bytes": 3241
+      "sha256": "37d2e54a5da7723c8e4e7da57c4a69607759000b959c859bbd4414ffd4cbabca",
+      "bytes": 3282
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/RuntimeMesh.java",
-      "sha256": "399d695937c732f966741dc2ffc3fdf57f4d9317d03ddf3f1bc9e67d96545b32",
-      "bytes": 6635
+      "sha256": "482de96b339dff4b0ae4b0599965251c9d28d57a441700bc53b05212004b3c6e",
+      "bytes": 8600
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/RuntimeModelBundle.java",
@@ -2599,8 +2609,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationToolsTest.java",
-      "sha256": "fe3a6d74d4661d020714584076df0ec734267353fc896721e3b09a2e4d41051c",
-      "bytes": 2889
+      "sha256": "6c6094cd2efd714e0b4ceadf95cd550d98cd998c9c64327266f1ee253bab8127",
+      "bytes": 3068
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/ItemThrowMathTest.java",
@@ -2613,9 +2623,19 @@
       "bytes": 1494
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/objects/ParametricMeshesTest.java",
+      "sha256": "f2779043eb8c9649142b04d1a1bad8f3fcf200a8a4fbb30f9dae8a2776749076",
+      "bytes": 5287
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeItemBindingTest.java",
       "sha256": "e3189073dd5c38461976b8e1efdccda47183e68a7f28157b68c1ee10440dce68",
       "bytes": 2416
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeModelBundleTest.java",
+      "sha256": "68ea9145abee733c975f13f8c332bb833fda9a121f1d45b9109ea1aaec4d9e99",
+      "bytes": 1471
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/ContainerTransactionTest.java",
@@ -2624,8 +2644,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "7b0906bfc8c1679c64d7ac21bc8db97ba7db887648d665e797094256c5a4839b",
-      "bytes": 4612
+      "sha256": "86fd995551636891145252367523e60c8058b4694828d014ca85b297a8732aa6",
+      "bytes": 5025
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -2939,8 +2959,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/ConversationThrowItemSmokeClient.java",
-      "sha256": "bd4f8a661a23cadc44b9b70ef717fa754e6a389b6b615f96c729c7b9e743d5b0",
-      "bytes": 3732
+      "sha256": "61aa4ecda22faf11085feb918224250209f2d24675fc12dfc17c84ebf0bb1d82",
+      "bytes": 5020
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/NativeAgentChat.java",
@@ -2951,6 +2971,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/NativeMentionSmokeClient.java",
       "sha256": "9478a6d7d2024a446f1a99a047718f9590bfed86b766d9c337dad77fe9f3b5c2",
       "bytes": 6717
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/SphereModelPreviewScreen.java",
+      "sha256": "f2a1f2fb6753f0fe0d9b237a522caae590bf98ba36c66a96ba9097be24c3d2d4",
+      "bytes": 1826
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/media/MediaScreenRenderState.java",
@@ -2969,23 +2994,23 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeItemRenderer.java",
-      "sha256": "a4618edd491c233586012a85fae105d6fe65141d64d7c5cabf4f5d3c4714a779",
-      "bytes": 4091
+      "sha256": "e43c02c6abc5d2244518e0190227ca103c72734ba659dd7290e8d34058252c74",
+      "bytes": 4154
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeObjectAssets.java",
-      "sha256": "b602b36a5ec469b94e754ce806f6fcb866c55e259c9f8fc569eba94ecb5d6d90",
+      "sha256": "0f7f9b8d8edc94debad651858460a11cfcbcdc3917c710d6fcfa5db76293371d",
       "bytes": 5885
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeObjectRenderer.java",
-      "sha256": "dcdcb5ec8b3e3746bd25fc3ced747bf688b005eb4bbb542a095fecd0bd681733",
-      "bytes": 3018
+      "sha256": "60ed92986f90ac254199bcd0e10c4f359b83328cdc8f2c4b2bfbf3aa79a1ed5d",
+      "bytes": 3081
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeThrownItemRenderer.java",
-      "sha256": "e3677099297b9045f3aba98b3ad40022516f7fbed8b0b5a77512300f9675f571",
-      "bytes": 1639
+      "sha256": "4afb817c9308e8a92911f38e82c585e24ba5ff4e311fa8ddb42666b697e4136f",
+      "bytes": 2292
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/screen/ControlCenterScreen.java",
@@ -4209,8 +4234,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "5c1cf9e9bfe9be0c1854ee429a81ee169a63b4c5fb9aafbab8c5775600c0c4da",
-      "bytes": 38736
+      "sha256": "d1be8519c8d5dec8683000be38d46e151637eecfff2d6e8732f685cb7d6850e2",
+      "bytes": 39199
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationBuildSmokeServer.java",
@@ -4234,8 +4259,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationRuntimeItemSmokeServer.java",
-      "sha256": "9f2f52aaa41ae05efd70ad687c72968d1124dfcc95bccc4a59fb909205353ff5",
-      "bytes": 10578
+      "sha256": "250d243fd7a6112f01f9810990242bb2e269414c6b3dfea6339af9c03bc24237",
+      "bytes": 10933
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationSmokeServer.java",
@@ -4244,8 +4269,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationThrowItemSmokeServer.java",
-      "sha256": "473c52ed17fc0a0caac2833f8389bd4a1a712acea98c46da1a02ca52a6e16039",
-      "bytes": 6641
+      "sha256": "fd2ca4cb64cba2b8afb434cea293674f47db5095ef5b56271883c7b2b330524e",
+      "bytes": 7180
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreateBlueprintReader.java",
@@ -5114,8 +5139,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldContentPrompt.java",
-      "sha256": "be1a828fd725848c8b5bfe0d3830cbc286725073b1af591df079f5e3781fae41",
-      "bytes": 18864
+      "sha256": "b642818ed1df583446f31192f0884da1c348401571ed0e6a7a42ed276424fd58",
+      "bytes": 21178
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldPackagePatchBuilder.java",
@@ -5414,8 +5439,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/smoke/ProductionJointAppearanceLauncher.java",
-      "sha256": "7b8c9b0b4fc8e40748b64a762252f75a4c0b79c2ef208608a8b5ad062693aad8",
-      "bytes": 79301
+      "sha256": "ee520f34f43e6dbfb3a424c2130bb2bc5d0c9958780d4d6405126550f1194a26",
+      "bytes": 79440
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/smoke/ProductionUiPatchProbe.java",

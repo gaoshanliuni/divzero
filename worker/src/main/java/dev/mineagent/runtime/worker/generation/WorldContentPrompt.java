@@ -4,7 +4,7 @@ public final class WorldContentPrompt {
     private WorldContentPrompt(){}
     public static String build(String request){return """
         为 Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25 的 MineAgent Runtime 生成独立世界内容。
-        只输出严格 JSON 对象，根字段 manifest、files，不要 Markdown；没有成品模板和失败回退。
+        只输出严格 JSON 对象，根字段 manifest、files，两者同级；files[i].content 必须是正确转义的JSON字符串，包含的模型JSON引号也需转义，检查括号/引号完整，不要Markdown；没有成品模板和失败回退。
         manifest 仅允许 name、version、type、activationMode、permissions、entrypoints、definitions、dependencies、nativeCompatibility 这9个字段。HOT_RUNTIME/DATA_RELOAD/WORLD_REOPEN 的 nativeCompatibility 必须有 {schema:1,targets:{SERVER:{minecraft,loader,loaderVersion,namespace,javaFeature,requiredMods:{}}}}；RESOURCE_RELOAD 使用下文的 CLIENT 目标契约，不要求虚构 SERVER 入口。各字符串/数字版本来自实际 SERVER 环境，requiredMods 只填实际需要的 Mod 与准确版本，不能用 latest、* 或范围；含 COMMON/CLIENT 原生 JS 的包还须有 CLIENT 目标，ui/ 浏览器 JS 不需要 CLIENT 原生声明。网页入口放 manifest.entrypoints.ui，不能新增 manifest.ui/hud/feedback/viewSettings。
         type 按需求选择 CONTENT、FEATURE、SKILL、ADAPTER、EXTENSION。permissions 包含 RUN_CODE，无依赖时 dependencies={}。
         activationMode 必须如实选择 HOT_RUNTIME、RESOURCE_RELOAD、DATA_RELOAD、WORLD_REOPEN、BOOT_EXTENSION；HOT_RUNTIME 走实例执行器，DATA_RELOAD 走真实 Vanilla 数据包安装与重载；WORLD_REOPEN 走明确暂存与重开后原生 Registry/维度消费。需要重载/重启的功能必须明确声明，不得伪报 HOT_RUNTIME 或模拟生效。
@@ -27,15 +27,20 @@ public final class WorldContentPrompt {
         content.blockCount() 是当前仍与实际原版方块匹配的受管块数，不是模型声明成功。
         通用 3D 世界物件：content.createObject(partKey,modelPath,dx,dy,dz) 从本定义声明的模型资源创建 RuntimeObjectEntity，返回真实 Native 实体；最多32件/实例、128件/世界，偏移绝对值<=32。
         模型 JSON 文件 side=COMMON、mediaType=application/json；其路径必须列入 definition.resourcePaths。可选 texture PNG 也必须是 COMMON/CLIENT 的 image/png 资源且列入 resourcePaths。不能读 SERVER 源码作为可公开模型。
-        模型严格 JSON version=1；collision 为[-width/2,0,-depth/2,width/2,height,depth/2]，各尺寸0.05..32。这是独立轴对齐碰撞箱，不是三角形精确碰撞；空心通道应拆成多个受管物件，不伪称一个大包围盒有洞。
+        模型严格 JSON version=1（旧几何）或version=2（参数化几何/显式法线）；collision 为[-width/2,0,-depth/2,width/2,height,depth/2]，各尺寸0.05..32。这是独立轴对齐碰撞箱，不是三角形精确碰撞；空心通道应拆成多个受管物件，不伪称一个大包围盒有洞。
         几何可混用 boxes:[{from:[x,y,z],to:[x,y,z],color:'#RRGGBB'}]（最多128盒）与 vertices:[[x,y,z,u,v],...]、triangles:[[a,b,c,'#RRGGBB'],...]。坐标绝对值<=32，最多4096顶点/8192三角形，不允许退化三角形；color 也可用 #AARRGGBB。
+        对需要接近真球/光滑圆环的需求，必须优先使用 version=2 的 primitives 数组，由数学算法生成正确网格与解析平滑法线，不能改用分层boxes或手工猜三角形索引来冒充球体。这是通用数学几何，不是固定篮球成品或玩法模板。
+        sphere 项准确字段：{type:"sphere",center:[cx,cy,cz],radius:r,segments:64,rings:32,color:"#RRGGBB",smooth:true}。center/radius/color必填；segments 8..96（默认64），rings 4..48（默认32），smooth可省略默认true。普通球推荐64×32（2017顶点/3968三角形，最大三角面内缩约半径的0.25%以内），不要要求玩家手输分段数。radius是半径，不是直径；y从centerY-radius到centerY+radius。物品球建议centerY接近radius并留少量装饰余量；不要一面把centerY设0.5，一面把collision高度写成直径0.4，使图形漂在碰撞盒上方。
+        torus 项准确字段：{type:"torus",center:[cx,cy,cz],majorRadius:R,minorRadius:r,axis:"y",segments:64,tubeSegments:8,color:"#RRGGBB",smooth:true}。center/两半径/color必填；0<minorRadius<majorRadius，axis为x/y/z表示圆环中心轴，默认y。tubeSegments 4..48默认8，segments同sphere。可用于环形装饰、细表面环带，不能把torus的外包AABB说成物理空心球框。
+        模型总展开预算4096顶点/8192三角形，对raw、boxes、所有primitives累加，超限拒绝；不能每个primitive分别取满预算。一个64×32球加三个64×8细圆环可落在总预算内。装饰圆环略露出球面时，必须给centerY留出余量，避免物品几何穿出y=0；collision也按总体尺寸合理声明，保持独立AABB的事实。
+        v2同样可混用boxes与自由vertices/triangles。自由顶点可用[x,y,z,u,v]保留平面法线，或[x,y,z,u,v,nx,ny,nz]使用归一化后显式法线。smooth=false可有意保留低多边形效果，但用户要求圆润球面时应为true。不要加入材质shader脚本或任何未声明的primitive字段。
         physics 可省略（静态），或完整写 {dynamic:true,mass:1,gravity:0.04,restitution:0.7,drag:0.99}；重力按20Hz服务端Tick，gravity/restitution/drag为0..1，mass>0且<=10000。最大速度4块/Tick，Native AABB 扫掠碰撞有界分步，不把它描述成任意刚体引擎。
         texture 可省略（原生白底乘顶点颜色），或指向真实 PNG。PNG 文件<=1MiB，尺寸<=1024×1024。没有有效 PNG 时使用几何颜色，不能虚构合法图片字节。
         content.object(partKey) 获取本实例已加载的实际实体；entity.velocity(vx,vy,vz) 设置有界速度；entity.spring(worldX,worldY,worldZ,stiffness,damping) 增加到世界坐标固定锚点的弹簧约束，后两参数0..1；clearSpring() 清除。位置可读 getX()/getY()/getZ()，setYRot(degrees) 改视觉朝向，轴对齐碰撞箱不旋转。
         通用 HOT 物品：content.giveItem(partKey,modelPath,count,displayName) 给本实例 Owner 背包真实物品栈，返回实际插入数，0..count；count=1..64。主体只有 mineagent_runtime:runtime_item 通用 Registry 载体，独立包提供模型/脚本，不是原版物品改名，更不是新 FML Registry ID。
         生成/发布包不会执行脚本；instance.create 只有在玩家已明确批准启用时才执行。用户要求批准后给予物品时，应在 instance.create 调用 giveItem 一次；不要漏掉发放，也不要等待不存在的额外“外部执行器发放”接口。
         同实例相同 partKey 只发放一次；重复相同参数返回已记录插入数，不再次给予。背包不足不丢地上、不自动重试。恢复回调不要新发放，旧物品随原生存档持久化，恢复后仍绑定原实例/包。
-        物品模型仍是上述 RuntimeMesh JSON，路径属于本定义 COMMON/CLIENT 资源；当前物品只支持几何颜色，不能含 texture，原始模型最多8192 UTF-8 bytes、2048顶点/三角形。顶点 x/z 在[-0.5,0.5]，y在[0,1]；collision/physics仍按模型格式写，物品本身不因此获得刚体物理。可自由生成 boxes/vertices/triangles，不能拿旧固定演示物品顶替。
+        物品模型仍是上述 RuntimeMesh JSON，路径属于本定义 COMMON/CLIENT 资源；当前物品只支持几何颜色，不能含 texture，原始模型最多8192 UTF-8 bytes，参数化展开后总计最多4096顶点/8192三角形。顶点 x/z 在[-0.5,0.5]，y在[0,1]；collision/physics仍按模型格式写，物品本身不因此获得刚体物理。可自由组合primitives/boxes/vertices/triangles；圆球优先sphere而非boxes，不能拿旧固定演示物品顶替。
         on('item.use',function(event){...}) 是实际手持物品右键事件。event.part()、event.player()、event.operationId() 可读取；content.state读写记录本实例状态。event.restyle('models/other.json','新名称') 只修改这次本人实际手持的同一栈模型与名称，另一个模型也须本定义声明且满足物品限制，保留数量/其它组件。可据状态切换外观/交互逻辑，无需注册新Item或重载资源。
         蓄力物品用 content.giveChargedItem(partKey,modelPath,count,displayName,chargeTicks)，chargeTicks=1..200（服务端Tick，40=两秒满蓄力）；持久化、一次发放规则与giveItem相同。按住原生使用键开始蓄力，松开后触发 on('item.release',function(event){...})；离散giveItem仍走item.use，两个事件不混同。
         item.release 的 event.usedTicks() 是服务端测到的时长；event.charge() 是时长/chargeTicks并封顶1。event.throwItem(speed,lift) 在该release回调内最多一次，把当前手持栈的实际一件转为可碰撞/拾回实体，返回 RuntimeThrownItemEntity；不是复制一件视觉球，不额外give物品，创造模式也转移这一件。speed>0且<=3，lift在[-1,1]，Native以玩家此刻朝向构造速度；根据charge计算力度由生成脚本决定。不要用自行setDeltaMovement或give模拟投掷。

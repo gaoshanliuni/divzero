@@ -47,5 +47,5 @@ public final class RuntimeItemRenderer implements SpecialModelRenderer<RuntimeMe
             }
         });poses.popPose();if(Boolean.getBoolean("mineagent.conversationAgentSmoke"))rendered++;
     }
-    private static void vertex(VertexConsumer b,PoseStack.Pose pose,int light,int overlay,RuntimeMesh.Vertex v,int color,float x,float y,float z){b.addVertex(pose,v.x(),v.y(),v.z()).setColor(color).setUv(v.u(),v.v()).setOverlay(overlay).setLight(light).setNormal(pose,x,y,z);}
+    private static void vertex(VertexConsumer b,PoseStack.Pose pose,int light,int overlay,RuntimeMesh.Vertex v,int color,float x,float y,float z){b.addVertex(pose,v.x(),v.y(),v.z()).setColor(color).setUv(v.u(),v.v()).setOverlay(overlay).setLight(light).setNormal(pose,v.hasNormal()?v.nx():x,v.hasNormal()?v.ny():y,v.hasNormal()?v.nz():z);}
 }
