@@ -81,6 +81,12 @@ WebGUI [上游源码](https://github.com/mc-webgui/webgui/tree/v1.6.2)，MCEF [�
 标准版不包含可选 yt-dlp/FFmpeg；with-media 为手动选择的多媒体版。
 本流程只证明编译、打包及所列测试通过，不代替真实模型或游戏内完整验收。
 "@
+# Keep legacy fixture tests unchanged; real builds with the checked-in offline
+# lock must stage and verify the offline attachments before publication.
+if (Test-Path -LiteralPath (Join-Path $root 'gradle/mcef-offline.lock.json')) {
+    if (-not $info.PSObject.Properties['offlineMcef']) { throw 'RELEASE_OFFLINE_MCEF_NOT_STAGED' }
+    $notes = & (Join-Path $PSScriptRoot 'format-offline-release-notes.ps1') -OriginalNotes $notes -BuildInfo $info -Checksums $manifest
+}
 if ($DryRun) { Write-Output "RELEASE_DRY_RUN_TAG=$tag"; Write-Output "RELEASE_TITLE=$title"; Write-Output $notes; Write-Output "VERIFIED_FILES=$($files.Count)"; return }
 if (-not $env:GH_TOKEN) { throw 'RELEASE_TOKEN_MISSING' }
 $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28';'User-Agent'='DivZero automatic development releases'}

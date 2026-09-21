@@ -1,0 +1,84 @@
+// Compile against the fixed MCEF Offline release; keep the old webguiLocked
+// configuration solely for verification of the optional online-release attachment.
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+
+def lock = new JsonSlurper().parse(rootProject.file('gradle/mcef-offline.lock.json'))
+def owner = 'gaoshanliuni/MCEF-Offline'
+def offlineGroup = 'io.github.gaoshanliuni.mcef-offline'
+if (lock.repository != owner || !(lock.tag ==~ /offline-2\.2\.0-[a-f0-9]{12}-r[0-9]+-a[0-9]+/) ||
+        !(lock.sourceCommit ==~ /[a-f0-9]{40}/) || lock.jcefCommit != 'eaeb3d4370aa3526ee237ad1981ad59af3de4dd1') {
+    throw new GradleException('MCEF_OFFLINE_RELEASE_LOCK_INVALID')
+}
+
+def target = project(':neoforge')
+target.afterEvaluate { p ->
+    def old = p.configurations.implementation.dependencies.findAll {
+        it.group == 'maven.modrinth' && it.name == 'bQhBuv7x'
+    }
+    if (old.size() != 1 || old[0].version != 'h38n5aI0') {
+        throw new GradleException('MCEF_UPSTREAM_BASELINE_CHANGED_REVIEW_OFFLINE_LOCK')
+    }
+    p.configurations.implementation.dependencies.removeAll(old)
+    p.repositories.exclusiveContent {
+        forRepository {
+            ivy {
+                name = 'Pinned MCEF Offline GitHub Release'
+                url = "https://github.com/${owner}/releases/download"
+                patternLayout { artifact('[revision]/[artifact].[ext]') }
+                metadataSources { artifact() }
+            }
+        }
+        filter { includeGroup offlineGroup }
+    }
+    def locked = p.configurations.create('mcefOfflineLocked') {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+    def records = [lock.api]
+    def notation = { item -> "${offlineGroup}:${item.file.substring(0, item.file.length()-4)}:${lock.tag}" }
+    p.dependencies.add('compileOnly', notation(lock.api)) { transitive = false }
+    p.dependencies.add(locked.name, notation(lock.api)) { transitive = false }
+    if (!p.hasProperty('webguiServerOnly') && !p.hasProperty('webguiDedicated')) {
+        def os = System.getProperty('os.name').toLowerCase(Locale.ROOT)
+        def arch = System.getProperty('os.arch').toLowerCase(Locale.ROOT)
+        def family = os.startsWith('windows') ? 'windows' : os.startsWith('mac') ? 'macos' : os.startsWith('linux') ? 'linux' : 'unsupported'
+        def cpu = arch in ['amd64','x86_64'] ? 'amd64' : arch in ['aarch64','arm64'] ? 'arm64' : 'unsupported'
+        def platform = p.providers.gradleProperty('mcefOfflinePlatform').getOrElse("${family}_${cpu}")
+        def runtime = lock.platforms[platform]
+        if (runtime == null) throw new GradleException("MCEF_OFFLINE_PLATFORM_UNSUPPORTED: ${platform}")
+        records.add(runtime)
+        p.dependencies.add('runtimeOnly', notation(runtime)) { transitive = false }
+        p.dependencies.add(locked.name, notation(runtime)) { transitive = false }
+    }
+    def hashes = records.collectEntries { item ->
+        if (!(item.file ==~ /mcef-offline-neoforge-[a-z0-9_]+\.jar/) || !(item.sha256 ==~ /[a-f0-9]{64}/)) {
+            throw new GradleException('MCEF_OFFLINE_ARTIFACT_LOCK_INVALID')
+        }
+        [(item.file): item.sha256]
+    }
+    def check = p.tasks.register('verifyMcefOfflineDependencies') {
+        group = 'verification'
+        inputs.files(locked)
+        inputs.property('hashes', hashes)
+        doLast {
+            def artifacts = locked.resolvedConfiguration.resolvedArtifacts
+            if (artifacts.size() != hashes.size()) throw new GradleException('MCEF_OFFLINE_DEPENDENCY_SET_MISMATCH')
+            artifacts.each { artifact ->
+                def jar = artifact.file
+                def expectedName = artifact.moduleVersion.id.name + '.jar'
+                def digest = MessageDigest.getInstance('SHA-256')
+                jar.withInputStream { input ->
+                    byte[] buffer = new byte[65536]
+                    int count
+                    while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count)
+                }
+                def actual = digest.digest().encodeHex().toString()
+                if (hashes[expectedName] != actual) throw new GradleException("MCEF_OFFLINE_HASH_MISMATCH: ${jar.name}")
+                logger.lifecycle("MCEF_OFFLINE_VERIFIED=${expectedName} ${actual}")
+            }
+        }
+    }
+    p.tasks.named('compileJava') { dependsOn check }
+    p.tasks.named('check') { dependsOn check }
+}

@@ -25,7 +25,7 @@ jobs:
   build:
     name: Java 25 / NeoForge JAR
     runs-on: windows-2025
-    timeout-minutes: 40
+    timeout-minutes: 50
     defaults:
       run:
         shell: pwsh
@@ -73,6 +73,13 @@ jobs:
         id: package
         run: ./scripts/package-ci-artifact.ps1 -Variant $env:BUILD_VARIANT
 
+      - name: Add pinned platform offline MCEF attachments and verify the full release
+        run: |
+          ./scripts/stage-offline-mcef.ps1
+          $commit = (& git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'SOURCE_COMMIT_LOOKUP_FAILED' }
+          ./scripts/publish-ci-release.ps1 -Commit $commit -Variant $env:BUILD_VARIANT -AssetDirectory build/ci-artifacts -DryRun
+
       - name: Transfer verified files to the release job
         id: artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -100,7 +107,7 @@ jobs:
     needs: build
     if: github.repository == 'gaoshanliuni/divzero' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: windows-2025
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
       contents: write
       actions: read

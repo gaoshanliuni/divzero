@@ -48,3 +48,5 @@ tasks.register('ci') {
     description = 'Builds the source snapshot and runs its included offline tests; not a V1 acceptance gate.'
     dependsOn subprojects.collect { it.tasks.matching { task -> task.name == 'build' } }
 }
+
+apply from: 'gradle/mcef-offline.gradle'
