@@ -164,7 +164,11 @@ if ($release.draft) {
 }
 Check-Tag
 if ($release.draft -or -not $release.prerelease) { throw 'RELEASE_NOT_PUBLISHED_AS_PRERELEASE' }
-foreach ($asset in $actual) { Check-PublishedDownload $asset }
+# Draft asset URLs use GitHub's temporary untagged reference. Refresh after
+# publication before checking the final public attachment addresses.
+$publishedAssets = @(Get-Assets $release.id)
+if ($publishedAssets.Count -ne $files.Count) { throw 'RELEASE_PUBLIC_ASSET_SET_INCOMPLETE' }
+foreach ($asset in $publishedAssets) { Check-PublishedDownload $asset }
 Write-Output "RELEASE_URL=$($release.html_url)"
 if ($env:GITHUB_OUTPUT) { "release-url=$($release.html_url)" >> $env:GITHUB_OUTPUT }
 if ($env:GITHUB_STEP_SUMMARY) { "## DivZero 独立文件下载`n[打开 Releases 下载 JAR]($($release.html_url))`n未上传整合 ZIP；已校验 $($files.Count) 个独立附件。" >> $env:GITHUB_STEP_SUMMARY }
