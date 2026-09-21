@@ -22,7 +22,7 @@ target.afterEvaluate { p ->
     p.configurations.implementation.dependencies.removeAll(old)
     p.repositories.exclusiveContent {
         forRepository {
-            ivy {
+            p.repositories.ivy {
                 name = 'Pinned MCEF Offline GitHub Release'
                 url = "https://github.com/${owner}/releases/download"
                 patternLayout { artifact('[revision]/[artifact].[ext]') }
