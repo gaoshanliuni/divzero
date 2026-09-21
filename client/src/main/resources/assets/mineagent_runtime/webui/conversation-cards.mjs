@@ -4,7 +4,7 @@ import {conversationContextLines,conversationBudgetError,modelReceiptText}from '
 import {createConversationImporter}from './conversation-import.mjs';
 import {createConversationVoice}from './conversation-voice.mjs';
 import {createConversationSpeech}from './conversation-speech.mjs';
-export function createConversationCards({send,persist,report}){
+export function createConversationCards({send,persist,report,openApiSettings}){
  const state=new ConversationState(),mutations=new Map();let root=null,listEpoch=0,listCursor=0,pageBefore=0,pageNext=0,pageBack=[],signature='',polling=false,lastPoll=0,focus=null,lastFocusRenew=0;
  let summaryPinned=false,summaryFingerprint='',summaryReadEpoch=0;
  let contextPinned=null,contextFingerprint='',contextReadEpoch=0,selectionPending=false;
@@ -75,7 +75,7 @@ export function createConversationCards({send,persist,report}){
    const status=add('p','选择或新建对话',root);status.id='conversation-status';status.setAttribute('role','status');
    const context=add('details',null,root);context.id='conversation-context';context.className='settings-group';add('summary','请求详情',context);add('p','',context).className='muted';add('div',null,context).id='conversation-context-body';contextFingerprint='';drawContext(null);
    const summary=add('details',null,root);summary.id='conversation-summary';const summaryTitle=add('summary','摘要',summary);summaryTitle.id='conversation-summary-title';add('div',null,summary).id='conversation-summary-body';summary.addEventListener('toggle',async()=>{if(!summary.open||summaryPinned||!state.selected)return;const stamp=state.capture(),summaryToken=++summaryReadEpoch;try{const r=await request('summary',{agentId:stamp.agentId,conversationId:stamp.conversationId});if(summaryToken===summaryReadEpoch&&!summaryPinned&&state.current(stamp))drawSummary(r.state);}catch(e){notice(e.message);}});
-   const extra=add('details',null,root);extra.id='conversation-more';add('summary','更多',extra);extra.append(management,routing,context,summary,root.querySelector('#conversation-voice-controls'));
+   const extra=add('details',null,root);extra.id='conversation-more';add('summary','更多',extra);if(openApiSettings){const api=add('button','API 设置',extra);api.id='conversation-api-settings';api.onclick=openApiSettings;}extra.append(management,routing,context,summary,root.querySelector('#conversation-voice-controls'));
    const pager=add('div',null,root);pager.className='actions';pager.append(stop);const older=add('button','更早消息',pager);older.id='conversation-older';older.disabled=true;older.onclick=()=>{if(polling||!pageNext)return;pageBack.push(pageBefore);pageBefore=pageNext;signature='';page();};const newer=add('button','较新消息',pager);newer.id='conversation-newer';newer.disabled=true;newer.onclick=()=>{if(polling||!pageBack.length)return;pageBefore=pageBack.pop();signature='';page();};const history=add('div',null,root);history.id='chat-history';history.dataset.persistentConversation='true';list();if(state.selected)select(state.selected.conversationId);
  }
  setInterval(()=>{if(root?.isConnected&&state.selected&&Date.now()-lastPoll>1200){lastPoll=Date.now();page();}if(focus&&root?.isConnected&&Date.now()-lastFocusRenew>20000){lastFocusRenew=Date.now();request('focus',{...focus,requestId:crypto.randomUUID()}).catch(e=>notice(e.message));}},400);

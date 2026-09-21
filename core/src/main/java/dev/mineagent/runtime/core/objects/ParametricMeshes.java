@@ -8,7 +8,7 @@ import dev.mineagent.runtime.core.objects.RuntimeMesh.*;
 final class ParametricMeshes {
     private ParametricMeshes(){}
     static void append(JsonNode p,List<Vertex> vertices,List<Triangle> triangles){
-        String type=p.path("type").asText();boolean sphere=type.equals("sphere");
+        String type=p.path("type").asText();if(BasicMeshes.TYPES.contains(type)){BasicMeshes.append(p,vertices,triangles);return;}boolean sphere=type.equals("sphere");
         if(!sphere&&!type.equals("torus"))throw new IllegalArgumentException("MESH_PRIMITIVE_TYPE");
         RuntimeMesh.keys(p,sphere?Set.of("type","center","radius","segments","rings","color","smooth"):Set.of("type","center","majorRadius","minorRadius","segments","tubeSegments","axis","color","smooth"));
         RuntimeMesh.arraySize(p.path("center"),3);double[] center=new double[3];for(int i=0;i<3;i++)center[i]=RuntimeMesh.number(p.path("center").get(i),-32,32);
