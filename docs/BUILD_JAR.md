@@ -13,7 +13,7 @@
 
 ## 分文件下载，无需解压整合包
 
-在 Releases 选择对应开发版本，分别下载三个运行时 JAR：
+在 Releases 选择对应开发版本，向下滚动到 **Assets（资源）**，展开附件列表，分别下载三个运行时 JAR。正文只列文件名，不再拼接下载直链：
 
 1. `mineagent_runtime-<版本>-<构建类型>-<提交号>.jar`：DivZero 主模组。
 2. `webgui-neoforge-1.6.2+mc26.1.2.jar`：WebGUI。
@@ -39,7 +39,7 @@ Release 标题、正文和构建信息自动读取本次公开源码的 `gradle.
 
 每次构建使用独立标签 `ci-v<Mod版本>-mc<游戏版本>-<提交号>-<类型>-r<运行ID>-a<构建次数>`。同一 Mod 版本的开发提交用源码 SHA 区分，不移动既有标签、不覆盖正式 Release。重跑已成功发布的同次发布 job 仅核验，不改附件。
 
-发布顺序为：创建本构建专属 draft → 逐文件上传 → 核对附件集合/大小/服务器提供的 digest → 公开为 Pre-release。中途失败保留 draft，不让用户下载不完整发布；重新运行失败的发布 job 可恢复。发布 job 仅持有本仓库的临时 `GITHUB_TOKEN`，构建 job 为只读权限；第三方 Actions 固定到 commit。
+发布顺序为：创建本构建专属 draft → 逐文件上传 → 核对附件集合/大小/服务器提供的 digest → 公开为 Pre-release → 使用 GitHub 返回的真实附件地址逐项检查公共下载 HTTP 200（不携带 Token）。上传阶段中途失败保留 draft，不让用户下载不完整发布；重新运行失败的发布 job 可恢复。公开后的下载检查失败会使 job 报错；不会删除已发布附件或假称未发布，重跑仅再次核验。发布 job 仅持有本仓库的临时 `GITHUB_TOKEN`，构建 job 为只读权限；第三方 Actions 固定到 commit。
 
 ## 可选多媒体版与边界
 

@@ -29,6 +29,32 @@ $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
         Write-Output "REST_ARRAY_TEST_PASSED=$mode"
     }
 }
+# Download reachability is a read-only check. Simulate 200/404/network failure
+# locally; the actual workflow must additionally check the real public assets.
+& {
+    $tokens=$null; $errors=$null
+    $ast=[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'publish-ci-release.ps1'),[ref]$tokens,[ref]$errors)
+    $function=$ast.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Check-PublishedDownload'},$true)
+    . ([scriptblock]::Create($function.Extent.Text))
+    $repo='gaoshanliuni/divzero';$tag='test-only'
+    function Invoke-WebRequest {
+        param($Uri,$Method,[switch]$SkipHttpErrorCheck,$TimeoutSec)
+        if ($Method -ne 'Head' -or $args.Count) { throw 'UNEXPECTED_DOWNLOAD_CHECK_PARAMETERS' }
+        if ($mode -eq 'network') { throw 'simulated offline' }
+        [pscustomobject]@{StatusCode=[int]$mode}
+    }
+    function Start-Sleep { param($Seconds) }
+    $asset=[pscustomobject]@{name='test.jar';browser_download_url="https://github.com/$repo/releases/download/$tag/test.jar"}
+    foreach ($mode in @('200','404','network')) {
+        $rejected=$false
+        try { Check-PublishedDownload $asset | Out-Null } catch {
+            if ($_.Exception.Message -notlike 'RELEASE_PUBLIC_DOWNLOAD_FAILED:*') { throw }
+            $rejected=$true
+        }
+        if (($mode -eq '200') -eq $rejected) { throw "DOWNLOAD_CHECK_TEST_FAILED: $mode" }
+        Write-Output "PUBLIC_DOWNLOAD_TEST_PASSED=$mode"
+    }
+}
 $fixture = Join-Path $root ('build/ci-release-test-' + [Guid]::NewGuid().ToString('N'))
 foreach ($dir in @('scripts','docs/licenses','neoforge/build/libs')) { New-Item -ItemType Directory -Path (Join-Path $fixture $dir) -Force | Out-Null }
 foreach ($script in @('get-release-versions.ps1','package-ci-artifact.ps1','stage-browser-dependencies.ps1','publish-ci-release.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $script) -Destination (Join-Path $fixture "scripts/$script") }
@@ -56,6 +82,8 @@ try {
     $publish=Join-Path $fixture 'scripts/publish-ci-release.ps1'
     $result=& $publish -Commit $commit -AssetDirectory $assets -DryRun
     if (-not ($result -match 'RELEASE_TITLE=DivZero .* · Minecraft ') -or -not ($result -match 'VERIFIED_FILES=12')) { throw 'DRY_RUN_SUMMARY_MISSING' }
+    $notes=$result -join "`n"
+    if ($notes -notmatch '下载附件（Assets）' -or $notes -match 'https://github.com/[^ ]+/releases/download/') { throw 'RELEASE_NOTES_MUST_USE_ASSETS_SECTION' }
     $result | Where-Object { $_ -match '^(RELEASE_TITLE|VERIFIED_FILES)=' }
     Expect-Failure 'CI_ARTIFACT_DIRECTORY_NOT_EMPTY' { & (Join-Path $fixture 'scripts/package-ci-artifact.ps1') -Commit $commit }
     Expect-Failure 'RELEASE_ASSET_PATH_BOUNDARY' { & $publish -Commit $commit -AssetDirectory $fixture -DryRun }

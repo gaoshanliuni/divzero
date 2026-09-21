@@ -56,10 +56,18 @@ $marker
 自动构建的测试版本，不是完整 V1 正式发行。
 源码：[$short](https://github.com/$repo/commit/$Commit) · [构建记录](https://github.com/$repo/actions/runs/$run)
 
-### 客户端安装：分别下载这三个 JAR，放入 mods
-- [DivZero 主模组](https://github.com/$repo/releases/download/$tag/$([Uri]::EscapeDataString([string]$info.jar)))
-- [WebGUI 1.6.2+mc26.1.2](https://github.com/$repo/releases/download/$tag/webgui-neoforge-1.6.2%2Bmc26.1.2.jar)
-- [MCEF 2.2.0](https://github.com/$repo/releases/download/$tag/mcef_neoforge_2.2.0_MC_26.1.1.jar)
+### 下载附件（Assets）
+
+**安装包已作为本 Release 的附件上传。请向下滚动到 Assets（资源），展开后分别下载以下三个 JAR。**
+正文不提供另行拼接的下载超链接；直接使用 GitHub 附件区的下载按钮。
+
+| 必装附件文件名 | 用途 |
+| --- | --- |
+| $($info.jar) | DivZero 主模组 |
+| webgui-neoforge-1.6.2+mc26.1.2.jar | WebGUI |
+| mcef_neoforge_2.2.0_MC_26.1.1.jar | MCEF |
+
+下载后将以上三个文件放入客户端 mods。**不要把名称带 sources 的开发源码 JAR 放入 mods。**
 
 请使用上述 Minecraft / NeoForge / Java 版本；不代表支持其它 Minecraft 版本。关闭游戏后，在备份过的测试实例替换旧版同 Mod；不要同时放入多个版本。
 MCEF 的原始文件名标注 MC26.1.1，本项目锁定并测试的兼容工件就是这一版；不修改上游 JAR。
@@ -92,6 +100,25 @@ function Get-Assets([long]$ReleaseId) {
         if ($part.Count -lt 100) { return $all }
     }
     throw 'RELEASE_TOO_MANY_ASSETS'
+}
+function Check-PublishedDownload($Asset) {
+    # Use GitHub's returned attachment URL, not a handcrafted link. Never send
+    # the workflow token to this public request or the redirected download CDN.
+    $url = [string]$Asset.browser_download_url
+    if (-not $url.StartsWith("https://github.com/$repo/releases/download/$tag/",[StringComparison]::Ordinal)) { throw 'RELEASE_PUBLIC_DOWNLOAD_URL_INVALID' }
+    $lastStatus = 'unavailable'
+    for ($try=1; $try -le 4; $try++) {
+        try {
+            $response = Invoke-WebRequest -Uri $url -Method Head -SkipHttpErrorCheck -TimeoutSec 60
+            $lastStatus = [string]$response.StatusCode
+            if ([int]$response.StatusCode -eq 200) {
+                Write-Output "PUBLIC_ATTACHMENT_HTTP_200=$($Asset.name)"
+                return
+            }
+        } catch { $lastStatus = 'network-error' }
+        if ($try -lt 4) { Start-Sleep -Seconds (2 * $try) }
+    }
+    throw "RELEASE_PUBLIC_DOWNLOAD_FAILED: $($Asset.name) status=$lastStatus"
 }
 function Check-Tag {
     $ref=Get-Optional "$api/git/ref/tags/$tag"
@@ -137,6 +164,7 @@ if ($release.draft) {
 }
 Check-Tag
 if ($release.draft -or -not $release.prerelease) { throw 'RELEASE_NOT_PUBLISHED_AS_PRERELEASE' }
+foreach ($asset in $actual) { Check-PublishedDownload $asset }
 Write-Output "RELEASE_URL=$($release.html_url)"
 if ($env:GITHUB_OUTPUT) { "release-url=$($release.html_url)" >> $env:GITHUB_OUTPUT }
 if ($env:GITHUB_STEP_SUMMARY) { "## DivZero 独立文件下载`n[打开 Releases 下载 JAR]($($release.html_url))`n未上传整合 ZIP；已校验 $($files.Count) 个独立附件。" >> $env:GITHUB_STEP_SUMMARY }
