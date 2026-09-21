@@ -77,6 +77,12 @@ public final class RuntimePackageOutputParser {
             });
             List<RuntimeDefinition> definitions = definitions(
                     manifest.get("definitions"), entrypoints, filesByPath.keySet());
+            if(activationMode==ActivationMode.HOT_RUNTIME)for(var file:files){
+                if(!file.path().startsWith("models/")||!file.path().endsWith(".json"))continue;
+                var model=mapper.readTree(file.content());if(!model.has("collision")&&!model.has("primitives")&&!model.has("boxes")&&!model.has("vertices"))continue;
+                try{dev.mineagent.runtime.core.objects.RuntimeMesh.parse(new String(file.content(),StandardCharsets.UTF_8));}
+                catch(IllegalArgumentException bad){throw invalid("MODEL_GEOMETRY_INVALID",file.path()+": expected bounded RuntimeMesh, collision=[-w/2,0,-d/2,w/2,h,d/2], offset belongs in createObject, not collision; invalid/overbudget geometry cannot be published");}
+            }
             var settings=filesByPath.get(dev.mineagent.runtime.core.ui.UiViewSettings.PATH);
             if(settings!=null){
                 if(settings.side()!=RuntimeResourceSide.CLIENT||!settings.mediaType().equals("application/json"))throw invalid("UI_VIEW_SETTINGS_RESOURCE","View settings must be a CLIENT JSON resource");

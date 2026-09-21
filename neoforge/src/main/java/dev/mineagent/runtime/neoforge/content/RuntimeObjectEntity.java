@@ -31,9 +31,9 @@ public final class RuntimeObjectEntity extends Entity {
     @Override public EntityDimensions getDimensions(Pose pose){return header==null?super.getDimensions(pose):EntityDimensions.scalable((float)Math.max(header.collision().width(),header.collision().depth()),(float)header.collision().height());}
     @Override public void setPos(double x,double y,double z){super.setPos(x,y,z);bounds();}
     private void bounds(){if(header!=null){var b=header.collision();setBoundingBox(new AABB(getX()-b.width()/2,getY(),getZ()-b.depth()/2,getX()+b.width()/2,getY()+b.height(),getZ()+b.depth()/2));}}
-    @Override public boolean isPickable(){return header!=null&&isAlive();}
+    @Override public boolean isPickable(){return header!=null&&!header.collision().nonSolid()&&isAlive();}
     @Override public boolean isPushable(){return false;}
-    @Override public boolean canBeCollidedWith(Entity other){return header!=null&&isAlive();}
+    @Override public boolean canBeCollidedWith(Entity other){return header!=null&&!header.collision().nonSolid()&&isAlive();}
     @Override public boolean hurtServer(ServerLevel level,net.minecraft.world.damagesource.DamageSource source,float amount){return false;}
     @Override public InterpolationHandler getInterpolation(){return interpolation;}
     public void velocity(double x,double y,double z){var v=ObjectPhysics.limit(new ObjectPhysics.Motion(x,y,z));setDeltaMovement(v.x(),v.y(),v.z());needsSync=true;}

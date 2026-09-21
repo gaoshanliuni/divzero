@@ -11,6 +11,7 @@ final class ConversationRuntimeItemSmokeClient {
     private static String firstHash;
     private static void capture(Path target){captureBusy=true;net.minecraft.client.Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget(),image->{try(image){image.writeToFile(target);}catch(Exception e){ConversationRuntimeItemSmokeServer.failure=e.toString();}finally{captureBusy=false;}});}
     static void tick()throws Exception{
+        if(ConversationRuntimeItemSmokeServer.basketball()){ConversationBasketballSmokeClient.tick();return;}
         if(ConversationRuntimeItemSmokeServer.throwing()){ConversationThrowItemSmokeClient.tick();return;}
         if(done)return;var mc=Minecraft.getInstance();Path root=Files.createDirectories(mc.gameDirectory.toPath().resolve("runtime-item-smoke"));ticks++;
         try{

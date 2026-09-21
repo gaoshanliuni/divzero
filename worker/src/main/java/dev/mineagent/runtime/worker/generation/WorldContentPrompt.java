@@ -47,6 +47,10 @@ public final class WorldContentPrompt {
         可投掷模型必须有 physics.dynamic=true，collision三个尺寸<=1；所有物品顶点仍限制在前述单位范围。gravity/restitution/drag等采用模型定义，Native用实际世界AABB有界扫掠/反弹。返回实体可读getX/getY/getZ、previousX/previousY/previousZ（该Tick运动前坐标）、getDeltaMovement、getUUID、isRemoved、collisions、usedTicks、launchSpeed、transferState。空洞球框与计分逻辑由独立包按真实轨迹编写，不由主体硬编码篮球玩法。
         投出后延迟40Tick，原投掷者的实际身体碰到实体才将原件放回背包；满背包则保留在地面。当前仅原投掷者可拾回，不实现任意Mod的ItemEntity专用pickup事件。停用后物理冻结，不执行脚本，但仍能由原投掷者碰撞取回。切换手持、死亡、菜单冲突或包失效取消蓄力，不自动重放投掷。不要在restore中重新投掷或重新发放。
         物品行为来自生成的 Rhino handler，不是固定玩法模板；停用/失效包后旧物品仍保存且可渲染，但不调用脚本。不保证任意新Registry物品可HOT创建。不要生成假的成功消息代替真实item.use/item.release/restyle。
+        v2世界模型可写 collisionMode:"none"，仅静态视觉不挡玩家/投掷物，collision仍声明可见范围用于渲染；none载体不截获准星点击；默认"solid"保持旧AABB碰撞。物品模型禁止none。空心球框可用none的圆环视觉，加围绕洞的多个小solid物件实现边沿碰撞；不得使用堵洞的整体solid包围盒。相邻solid物件不要重叠，最多32件，篮板/立柱和圆环避开已有块及玩家身体。
+        content.flyingItems(partKey) 返回本实例该物品当前加载的真实飞行实体Java List（size()/get(i)）；可在tick内查询，不重新生成飞行物。
+        flight.crossedDownwardCircle(worldX,planeY,worldZ,innerRadius) 只读本Tick实际分步轨迹：整个球的AABB顶部向下越过水平平面且四角在圆形洞内才为true；向上/擦边/从下方不命中。flight.motionTick() 为轨迹Tick；flight.throwerName() 是投掷时持久记录的原玩家计分板名称，直接作为awardScoreOnce的holder，不维护/删除临时owner映射导致第二次穿圈holder变成未知。此函数不计分。生成脚本必须调用下述awardScoreOnce用飞行UUID持久去重，一次投掷最多计一次，不能用当前位置接近篮框、计时器、调用次数代替实际入框。
+        通用Native计分板：content.createScoreboard(key,title) 创建本实例专属dummy objective（返回实际内部名），相同key/title重复验证旧板不重置，最多4个；content.showScoreboard(key) 显示到全服原生sidebar（会替换当前sidebar，请符合用户需求）；content.setScore(key,holder,value) 设置绝对整数；content.score(key,holder) 读实际分数。title/holder为1..64字符，key同state。不得猜Minecraft原生Scoreboard API。事件计分必须用 content.awardScoreOnce(key,holder,eventId,delta)：同一eventId/holder/delta只累计一次，原子持久事件回执+总分后投影原生分数；重启createScoreboard验证旧板时自动恢复绝对总分。以flight.getUUID().toString()为eventId，本次得分规则自行定义delta。最多512不同事件/32行，容量满明确拒绝不丢去重历史。使用此接口后不可混用setScore；新游戏可创建新实例。不需要每Tick把UUID列表写进state。不要每Tick反复写DB/计分板，只有变化才写，恢复调用createScoreboard/showScoreboard，不重发物品。
         content.objectCount() 只计算真实加载且匹配绑定的物件。新区块/实体可能尚未可查询，周期回调应先核对 objectCount，不用空引用假称已操作；创建回调可直接使用 createObject 的返回实体。
         on('object.interact',function(event){...}) 是实际 Native 玩家主手交互的定向事件，event.part() 和 event.player() 是真实 partKey/ServerPlayer，event.operationId() 是本次 Native 交互 UUID；不是网页点击回读。sharedTransact 的操作键在该回调内自动绑定此 UUID，同一次回调重用相同键仍去重，后续真实点击不与初始化或上一次点击共用 activation 根。事件回调沿用25ms普通预算，不能调用生命周期专用预算或等待模型。
         重启获准恢复时 createObject 用相同 partKey/modelPath/初始偏移绑定已有 UUID，不新建或重置运动状态；缺失或未知对象不自动重放创建。物件和几何/物理不依赖 WebGUI timer。停用清理JS并冻结物件，不静默删除世界实体；任意原生副作用仍需显式清理。
@@ -60,6 +64,7 @@ public final class WorldContentPrompt {
         on('instance.restore',function(){...}) 在重启获准恢复时运行；必须保留已有状态，不清零，不重新创建世界块。可以检查已有块、恢复连接或记录恢复次数。
         on('tick',function(tick){...}) 注册在顶层，函数体内照常访问 Native API；tick 在创建/恢复成功后继续调度。函数体内仍是完整 Rhino/Java 互操作，没有有限玩法模板。
         辅助模块也必须满足纯注册顶层；需要 require 时放进生命周期回调。至少明确注册 instance.create 和 instance.restore，即使恢复回调只验证已有状态。
+        发布前最后核对：collision第二项必须0，x/z关于0对称，世界/圆周偏移只放createObject参数。圆环centerY>=minorRadius，用创建dy校正离地平面。多个solid物件同样不能互相重叠：立柱应在篮板后方，篮板后表面与立柱前表面留间距；环边沿不能伸入篮板/立柱，环中心通道需容纳球的AABB四角。不要在实例原点正上方放完整实心盒挡洞。所有受管位置相对instance，避免其它玩家。
         需求：
         """+WorldUiContract.TEXT+SharedStateContract.TEXT+ScriptEventContract.TEXT+ScriptScheduleContract.TEXT+SchedulePushContract.TEXT+FeedbackContract.TEXT+FeedbackContract.SERVER_TEXT+"\n用户需求：\n"+request;}
 }

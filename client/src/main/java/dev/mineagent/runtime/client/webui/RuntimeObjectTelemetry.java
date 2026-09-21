@@ -4,5 +4,5 @@ import java.util.Map;
 public final class RuntimeObjectTelemetry {
     private RuntimeObjectTelemetry(){}
     public static boolean enabled(){return enabled(System.getProperties());}
-    public static boolean enabled(Map<?,?> flags){for(String name:new String[]{"mineagent.runtimeObjectSmoke","mineagent.worldPackageObjectSmoke","mineagent.worldPatchSmoke","mineagent.worldUiSmoke","mineagent.worldUiModelSmoke","mineagent.worldUiRepairSmoke","mineagent.worldUiAgentSmoke"})if(Boolean.parseBoolean(String.valueOf(flags.get(name))))return true;return false;}
+    public static boolean enabled(Map<?,?> flags){for(String name:new String[]{"mineagent.conversationAgentSmoke","mineagent.runtimeObjectSmoke","mineagent.worldPackageObjectSmoke","mineagent.worldPatchSmoke","mineagent.worldUiSmoke","mineagent.worldUiModelSmoke","mineagent.worldUiRepairSmoke","mineagent.worldUiAgentSmoke"})if(Boolean.parseBoolean(String.valueOf(flags.get(name))))return true;return false;}
 }

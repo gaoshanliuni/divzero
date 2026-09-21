@@ -56,6 +56,13 @@ public class RuntimePackageOutputParserTest {
         }
     }
 
+    @Test void rejectsMalformedRuntimeGeometryBeforePublicationButKeepsNonMeshJson()throws Exception{
+        var json=new ObjectMapper();var root=json.readTree(output("model-validation","item",RuntimeDefinitionKind.ITEM,"'safe';").replace("assets/model.json","models/model.json"));
+        var file=(com.fasterxml.jackson.databind.node.ObjectNode)root.path("files").get(1);
+        String good="{\"version\":2,\"boxes\":[{\"from\":[-0.1,0,-0.1],\"to\":[0.1,0.2,0.1],\"color\":\"#ffffff\"}],\"collision\":[-0.1,0,-0.1,0.1,0.2,0.1]}";
+        file.put("content",good);file.put("sha256",RuntimePackageCanonicalizer.sha256(good));parser.parse(root.toString());
+        String invalid=good.replace("[-0.1,0,-0.1,0.1,0.2,0.1]","[-0.1,0.3,-0.1,0.1,0.5,0.1]");file.put("content",invalid);file.put("sha256",RuntimePackageCanonicalizer.sha256(invalid));assertEquals("MODEL_GEOMETRY_INVALID",assertThrows(PackageOutputException.class,()->parser.parse(root.toString())).code());
+    }
     public static String output(String name, String displayName, RuntimeDefinitionKind kind, String script)
             throws Exception {
         UUID definitionId = UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));

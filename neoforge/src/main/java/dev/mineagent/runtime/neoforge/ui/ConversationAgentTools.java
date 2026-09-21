@@ -63,7 +63,7 @@ public final class ConversationAgentTools {
         }catch(Exception invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid)));}
     }
     private static CompletableFuture<Map<String,Object>> read(ServerPlayer p,String tool,JsonNode args,BooleanSupplier permit)throws Exception{
-        if(tool.equals("scan_blocks"))return scan(p,args,permit);
+        if(tool.equals("scan_blocks"))return scan(p,args,permit).thenApply(result->{ConversationDiamondSmokeServer.observe(result);return result;});
         if(tool.equals("web_search")||tool.equals("read_web_page"))return web(p,tool,args,permit);
         if(tool.equals("inspect_blocks"))return inspectBlocks(p,args,permit);
         if(tool.equals("inspect_blueprints"))return inspectBlueprints(p,args,permit);
