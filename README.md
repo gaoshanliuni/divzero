@@ -50,7 +50,7 @@ DivZero 来自 **Division by Zero**，即除以零。
 
 ## 自动构建 JAR
 
-公开源码推送后会运行 [Build JAR](https://github.com/gaoshanliuni/divzero/actions/workflows/build-jar.yml)。登录 GitHub，在成功运行的 **Artifacts** 中下载 JAR 与 SHA-256；也可手动触发构建。产物保留 7 天，属于测试构建，不代替正式 Release。详见 [自动编译说明](docs/BUILD_JAR.md)。
+公开 `main` 推送后会运行 [Build JAR](https://github.com/gaoshanliuni/divzero/actions/workflows/build-jar.yml)，成功后自动发布到 [Releases](https://github.com/gaoshanliuni/divzero/releases)，标注 **Mod 版本和支持的 Minecraft 版本**。主模组、WebGUI、MCEF 按独立 JAR 下载，无需整合 ZIP；另附 SHA-256、许可证和构建信息。自动版本均为开发预发布，不代表正式 V1；PR 只构建、不发布。详见 [自动编译说明](docs/BUILD_JAR.md)。
 
 ## 问题反馈
 

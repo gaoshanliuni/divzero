@@ -13,7 +13,7 @@ on:
         type: boolean
         default: false
 
-# Public-source build only: no repository writes, releases, model keys or private sync.
+# Build code with read-only permissions; only the guarded publish job can write Releases.
 permissions:
   contents: read
 
@@ -29,6 +29,9 @@ jobs:
     defaults:
       run:
         shell: pwsh
+    outputs:
+      artifact-name: ${{ steps.package.outputs.artifact-name }}
+      variant: ${{ steps.package.outputs.variant }}
     env:
       CI: 'true'
       BUILD_VARIANT: ${{ github.event_name == 'workflow_dispatch' && inputs.include_media_tools && 'with-media' || 'standard' }}
@@ -52,6 +55,9 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           dependency-graph: disabled
 
+      - name: Test release packaging and version guards
+        run: ./scripts/test-ci-release.ps1
+
       - name: Prepare optional pinned media tools
         if: github.event_name == 'workflow_dispatch' && inputs.include_media_tools
         run: ./scripts/prepare-media-tools.ps1
@@ -63,27 +69,19 @@ jobs:
           & ./gradlew.bat :neoforge:jar :neoforge:verifyProductionUiParser :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath build/ci-logs/gradle.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Package verified JAR and checksum
+      - name: Stage separate runtime JARs, licenses and checksums
         id: package
         run: ./scripts/package-ci-artifact.ps1 -Variant $env:BUILD_VARIANT
 
-      - name: Upload installable JAR
+      - name: Transfer verified files to the release job
         id: artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: divzero-${{ env.BUILD_VARIANT }}-${{ steps.package.outputs.short-sha }}
+          name: ${{ steps.package.outputs.artifact-name }}
           path: build/ci-artifacts/*
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
-
-      - name: Add download link to run summary
-        env:
-          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
-        run: |
-          "## DivZero JAR" >> $env:GITHUB_STEP_SUMMARY
-          "[Download JAR + SHA256SUMS + build information]($env:ARTIFACT_URL)" >> $env:GITHUB_STEP_SUMMARY
-          "Variant: $env:BUILD_VARIANT. This is a CI build, not a formal Release or full in-game acceptance." >> $env:GITHUB_STEP_SUMMARY
 
       - name: Upload diagnostics if the build failed
         if: failure()
@@ -96,3 +94,34 @@ jobs:
             **/build/reports/tests/test/**
           if-no-files-found: ignore
           retention-days: 7
+
+  publish:
+    name: Publish separate Release assets
+    needs: build
+    if: github.repository == 'gaoshanliuni/divzero' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: windows-2025
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out trusted main workflow scripts
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Download this build's verified files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.build.outputs.artifact-name }}
+          path: build/release-assets
+      - name: Publish an immutable development prerelease
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_COMMIT: ${{ github.sha }}
+          BUILD_VARIANT: ${{ needs.build.outputs.variant }}
+        run: ./scripts/publish-ci-release.ps1 -Commit $env:SOURCE_COMMIT -Variant $env:BUILD_VARIANT
