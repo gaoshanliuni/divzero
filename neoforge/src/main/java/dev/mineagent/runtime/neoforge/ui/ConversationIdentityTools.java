@@ -1,0 +1,32 @@
+package dev.mineagent.runtime.neoforge.ui;
+import com.fasterxml.jackson.databind.*;
+import dev.mineagent.runtime.api.agent.AgentDefinition;
+import dev.mineagent.runtime.api.config.ConfigPatch;
+import dev.mineagent.runtime.core.agent.BuiltinAgentSkins;
+import dev.mineagent.runtime.neoforge.MineAgentRuntimeServices;
+import dev.mineagent.runtime.neoforge.network.*;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.network.PacketDistributor;
+import java.util.*;
+@EventBusSubscriber(modid="mineagent_runtime")
+public final class ConversationIdentityTools {
+    private static final ObjectMapper JSON=new ObjectMapper();
+    private ConversationIdentityTools(){}
+    private static AgentDefinition agent(ServerPlayer p,UUID id){var def=MineAgentRuntimeServices.bodies(p.level().getServer()).definitions().stream().filter(a->a.agentId().equals(id)).findFirst().orElseThrow();if(!dev.mineagent.runtime.core.agent.AgentPersonaService.mayEdit(def,p.getUUID(),false))throw new SecurityException("AGENT_IDENTITY_OWNER_REQUIRED");return def;}
+    public static Map<String,Object> persona(ServerPlayer p,UUID id)throws Exception{var def=agent(p,id);return Map.of("agent",def.displayName(),"persona",MineAgentRuntimeServices.personas(p.level().getServer()).read(def,p.getUUID(),false),"scope","CURRENT_CONVERSATION_AGENT_ONLY");}
+    public static Map<String,Object> setPersona(ServerPlayer p,UUID id,UUID operation,long revision,String text)throws Exception{var def=agent(p,id);var result=MineAgentRuntimeServices.personas(p.level().getServer()).save(def,p.getUUID(),false,operation,revision,text);return Map.of("status",result.accepted()?"APPLIED":"REJECTED","error",result.code(),"persona",result.persona(),"takesEffect","NEXT_MODEL_ROUND_AND_FUTURE_CONVERSATIONS","worldAuthorityGranted",false);}
+    private static String prefix(UUID agent){return "agent."+agent+".";}
+    public static Map<String,Object> appearance(ServerPlayer p,UUID id){agent(p,id);var s=p.level().getServer();var v=MineAgentRuntimeServices.config(s).snapshot().values();String pre=prefix(id);var out=new LinkedHashMap<String,Object>();out.put("vanillaRevision",Long.parseLong(v.getOrDefault(pre+"skinRevision","0")));out.put("vanillaSkin",v.getOrDefault(pre+"vanillaSkin",""));out.put("vanillaChoices",BuiltinAgentSkins.catalog());out.put("ysm",MineAgentNetwork.readAppearanceFromUi(p,id));out.put("customSkinImport","Use player to copy current player skin; arbitrary PNG/URL import is not provided by this tool");return out;}
+    public static Map<String,Object> setAppearance(ServerPlayer p,UUID id,UUID op,JsonNode a)throws Exception{
+        agent(p,id);var server=p.level().getServer();String kind=a.path("kind").asText(),pre=prefix(id);var config=MineAgentRuntimeServices.config(server);long expected=a.path("expected_revision").longValue();
+        if(kind.equals("ysm")){var choice=dev.mineagent.runtime.core.task.AppearanceToolArguments.parse(JSON.createObjectNode().put("model",a.path("model").asText()).put("texture",a.path("texture").asText("")).put("animation",a.path("animation").asText("")).put("expected_revision",expected),"expected_revision");var result=MineAgentNetwork.applyAppearanceFromUi(new MineAgentPayloads.AppearanceCommand(id.toString(),choice.get("model"),choice.get("texture"),choice.get("animation"),expected,op.toString()),p);if(result.accepted()){var snapshot=config.snapshot();if(!config.apply(new ConfigPatch(snapshot.revision(),Map.of(pre+"vanillaSkin","")),true).accepted())throw new IllegalStateException("AGENT_APPEARANCE_OUTCOME_UNKNOWN");broadcast(server);}return Map.of("status",result.accepted()?"APPLIED":"REJECTED","native",result,"observed",appearance(p,id));}
+        if(!kind.equals("vanilla")||!BuiltinAgentSkins.valid(a.path("skin").asText()))throw new IllegalArgumentException("AGENT_SKIN_CHOICE");var before=config.snapshot();if(Long.parseLong(before.values().getOrDefault(pre+"skinRevision","0"))!=expected)throw new IllegalStateException("AGENT_SKIN_STALE");
+        var bridge=new dev.mineagent.runtime.neoforge.integration.NeoForgeYsmRuntimeBridge(server);if(bridge.runtimeAvailable()){var ysm=MineAgentNetwork.readAppearanceFromUi(p,id);if(!bridge.availableModels().contains("default"))throw new IllegalStateException("AGENT_VANILLA_YSM_RESET_UNAVAILABLE");var r=MineAgentNetwork.applyAppearanceFromUi(new MineAgentPayloads.AppearanceCommand(id.toString(),"default","","",((Number)ysm.get("revision")).longValue(),op.toString()),p);if(!r.accepted())return Map.of("status","REJECTED","error",r.errorCode());}
+        var now=config.snapshot();var result=config.apply(new ConfigPatch(now.revision(),Map.of(pre+"vanillaSkin",a.path("skin").asText(),pre+"skinPlayer",p.getUUID().toString(),pre+"skinWorld",MineAgentRuntimeServices.worldId(server).toString(),pre+"skinRevision",Long.toString(Math.addExact(expected,1)))),true);if(!result.accepted())throw new IllegalStateException("AGENT_APPEARANCE_OUTCOME_UNKNOWN");broadcast(server);return Map.of("status","APPLIED","observed",appearance(p,id),"renderConfirmation","CLIENT_NATIVE_SKIN_PROJECTION_NOT_SERVER_RENDER");
+    }
+    private static void broadcast(net.minecraft.server.MinecraftServer server){var values=MineAgentRuntimeServices.config(server).snapshot().values();var out=new LinkedHashMap<UUID,AgentSkinPayload.Selection>();for(var def:MineAgentRuntimeServices.bodies(server).definitions()){String pre=prefix(def.agentId()),skin=values.getOrDefault(pre+"vanillaSkin","");if(BuiltinAgentSkins.valid(skin)&&MineAgentRuntimeServices.worldId(server).toString().equals(values.get(pre+"skinWorld")))try{out.put(def.agentId(),new AgentSkinPayload.Selection(skin,UUID.fromString(values.get(pre+"skinPlayer")),Long.parseLong(values.getOrDefault(pre+"skinRevision","0"))));}catch(Exception invalid){throw new IllegalStateException("AGENT_SKIN_STATE_INVALID");}}var payload=new AgentSkinPayload(out);for(var viewer:server.getPlayerList().getPlayers())if(!(viewer instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer))PacketDistributor.sendToPlayer(viewer,payload);}
+    @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){if(event.getServer().getTickCount()%40!=0||!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(event.getServer()))return;broadcast(event.getServer());}
+}

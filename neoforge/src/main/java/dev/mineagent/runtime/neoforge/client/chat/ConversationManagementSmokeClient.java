@@ -1,0 +1,18 @@
+package dev.mineagent.runtime.neoforge.client.chat;
+import dev.mineagent.runtime.neoforge.ui.ConversationManagementSmokeServer;
+import net.minecraft.client.Minecraft;
+import java.util.*;
+import java.nio.file.*;
+final class ConversationManagementSmokeClient {
+    private static int ticks,sent,wait;private static boolean done,captured,watching;private static volatile boolean busy;
+    static void tick()throws Exception{if(done)return;var mc=Minecraft.getInstance();ticks++;Path root=Files.createDirectories(mc.gameDirectory.toPath().resolve("management-smoke"));try{if(!ConversationManagementSmokeServer.failure.isEmpty())throw new IllegalStateException(ConversationManagementSmokeServer.failure);if(ticks>18000)throw new IllegalStateException("MANAGEMENT_TIMEOUT");if(mc.player==null||!ConversationManagementSmokeServer.ready)return;var id=ConversationManagementSmokeServer.agent;var body=mc.level.getPlayerByUUID(id);if(body==null)return;
+        if(sent==0&&ConversationManagementSmokeServer.saved())sent=1;
+        if(sent==0){sent=1;mc.player.connection.sendChat(ConversationManagementSmokeServer.ysm()?"@工具助手 请通过对话更换你自己的YSM外观：先读当前目录，从实际可用模型中选择一种并应用，纹理和动画采用默认；不要修改我的身体或背包，也不要下载安装。":"@工具助手 把你的人设永久设为星际向导，回答以银河开头，简洁友善。给我60秒速度二级，隐藏粒子，保留其它Buff；把你自己的普通皮肤换成Alex标准手臂。请实际读取、修改并核对，不用命令文字冒充完成。");}
+        if(ConversationManagementSmokeServer.ysm()){if(ConversationManagementSmokeServer.verified<1)return;if(!watching){watching=true;dev.mineagent.runtime.neoforge.client.ysm.YsmRenderObserver.expect(id);}var state=dev.mineagent.runtime.neoforge.client.ysm.YsmRenderObserver.snapshot();if(state.ysmCalls()<5||state.clientState().filter(v->v.renderReady()&&v.modelId().equals(ConversationManagementSmokeServer.ysmModel)).isEmpty()||++wait<40)return;finish(mc,root,Map.of("status","YSM_CHAT_NATIVE_CLIENT_OBSERVED","model",state.clientState().orElseThrow().modelId(),"texture",state.clientState().orElseThrow().textureId(),"renderReady",state.clientState().orElseThrow().renderReady(),"ysmDraws",state.ysmCalls(),"savedOriginalArguments",ConversationManagementSmokeServer.saved()));return;}
+        if(sent==1&&ConversationManagementSmokeServer.verified>=1){if(!(body instanceof net.minecraft.client.player.AbstractClientPlayer player)||!player.getSkin().body().texturePath().toString().contains("player/wide/alex"))return;if(!captured){captured=true;busy=true;net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(),image->{try(image){image.writeToFile(root.resolve("vanilla-skin.png"));}catch(Exception e){ConversationManagementSmokeServer.failure=e.toString();}finally{busy=false;}});}if(busy)return;sent=2;mc.player.connection.sendChat("@工具助手 现在按你刚保存的人设，用一句话介绍自己。");}
+        if(sent==2&&ConversationManagementSmokeServer.verified>=2){sent=3;mc.player.connection.sendChat("@工具助手 把我当前的速度效果改成30秒一级，保持隐藏粒子，不动抗火等其它效果；改完读取核对。");}
+        if(sent==3&&ConversationManagementSmokeServer.verified>=3){sent=4;mc.player.connection.sendChat("@工具助手 只移除我的速度效果，先读再改再核对，保留其它Buff。");}
+        if(sent==4&&ConversationManagementSmokeServer.verified>=4)finish(mc,root,Map.of("status","DIALOGUE_MANAGEMENT_NATIVE_CLIENT_VERIFIED","skin",((net.minecraft.client.player.AbstractClientPlayer)body).getSkin().body().texturePath().toString()));
+    }catch(Exception e){done=true;Files.writeString(root.resolve("client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",e.toString(),"sent",sent)));mc.stop();}}
+    private static void finish(Minecraft mc,Path root,Object result)throws Exception{Files.writeString(root.resolve("client.json"),new com.google.gson.Gson().toJson(result));done=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");mc.stop();}
+}

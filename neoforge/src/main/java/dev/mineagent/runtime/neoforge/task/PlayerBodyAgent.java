@@ -51,7 +51,7 @@ public final class PlayerBodyAgent {
     public static void submit(ServerPlayer p,UUID agent,String prompt)throws Exception{
         var s=p.level().getServer();if(!s.isSameThread()||!ServerTaskStart.allowed(p,agent)||p.isSpectator()||p.isPassenger())throw new SecurityException("PLAYER_BODY_PERMISSION");
         if(prompt==null||prompt.isBlank()||prompt.length()>4096)throw new IllegalArgumentException("PLAYER_BODY_PROMPT");
-        var prior=jobs(s).get(p.getUUID());if(prior!=null&&LIVE.contains(prior.state))throw new IllegalStateException("PLAYER_BODY_BUSY");
+        if(AutonomousPlayerAgent.active(p))throw new IllegalStateException("PLAYER_BODY_BUSY");var prior=jobs(s).get(p.getUUID());if(prior!=null&&LIVE.contains(prior.state))throw new IllegalStateException("PLAYER_BODY_BUSY");
         String name=MineAgentRuntimeServices.bodies(s).definitions().stream().filter(a->a.agentId().equals(agent)).findFirst().orElseThrow().displayName();var j=new Job(p,agent,name,prompt);jobs(s).put(p.getUUID(),j);
         String context=context(p,prompt);say(p,"正在生成本人身体操作计划（调用当前模型）。不会自动启动；可用 /ai body stop 取消。请暂时保持位置和朝向。");
         save(j).whenComplete((v,failure)->s.execute(()->{
@@ -71,7 +71,7 @@ public final class PlayerBodyAgent {
         return PlayerControlPlan.instructions()+"\n当前真实玩家状态（不是独立AI身体）："+JSON.writeValueAsString(Map.of("dimension",p.level().dimension().identifier().toString(),"position",List.of(p.getX(),p.getY(),p.getZ()),"yaw",p.getYRot(),"pitch",p.getXRot(),"health",p.getHealth(),"hotbar",hotbar,"nearbyBlocks",nearby))+"\n仅生成一次短操作序列；不能保证寻路或任务完成。LOOK按ticks逐步相对旋转。ATTACK/USE为真实左/右键，可能挖掘、攻击、放置或使用当前物品。\n请求："+prompt;
     }
     public static int review(ServerPlayer p,UUID operation){var j=jobs(p.level().getServer()).get(p.getUUID());if(j==null||!j.operation.equals(operation)||!j.state.equals("REVIEW")||!current(j)){say(p,"没有有效待审计划；旧计划不会重放。");return 0;}PacketDistributor.sendToPlayer(p,new PlayerBodyPayloads.Offer(j.operation,j.world,p.getUUID(),j.dimension,j.name,j.encoded));return 1;}
-    public static int stop(ServerPlayer p){var j=jobs(p.level().getServer()).get(p.getUUID());if(j!=null&&LIVE.contains(j.state))finish(j,"STOPPED","USER_STOP");else say(p,"当前没有接管操作。");return 1;}
+    public static int stop(ServerPlayer p){if(AutonomousPlayerAgent.stopForPlayer(p))return 1;var j=jobs(p.level().getServer()).get(p.getUUID());if(j!=null&&LIVE.contains(j.state))finish(j,"STOPPED","USER_STOP");else say(p,"当前没有接管操作。");return 1;}
     public static int status(ServerPlayer p){say(p,observe(p).toString());return 1;}
     public static void decide(ServerPlayer p,PlayerBodyPayloads.Decision d){
         var j=jobs(p.level().getServer()).get(p.getUUID());if(j==null||j.player!=p||!j.operation.equals(d.operation()))return;

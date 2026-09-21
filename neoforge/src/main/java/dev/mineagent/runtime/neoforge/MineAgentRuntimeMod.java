@@ -581,7 +581,7 @@ public final class MineAgentRuntimeMod {
             var target=targets.getFirst();String message=mentions.getFirst().message();
             if(message.isBlank()){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI] 已选择 "+target.displayName()+"；请在名字后输入消息。"));return;}
             if(message.matches("^(?:接管|控制身体)[ ：:].*")){
-                try{dev.mineagent.runtime.neoforge.task.PlayerBodyAgent.submit(player,target.agentId(),message.replaceFirst("^(?:接管|控制身体)[ ：:]+", ""));}
+                try{dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.submit(player,target.agentId(),java.util.UUID.randomUUID(),message.replaceFirst("^(?:接管|控制身体)[ ：:]+", ""));}
                 catch(Exception failure){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI 接管] 请求未开始；请检查当前权限、是否已有计划或正在乘坐载具。"));}return;
             }
             if(message.matches("^(?:指令|命令)[ ：:].*")){

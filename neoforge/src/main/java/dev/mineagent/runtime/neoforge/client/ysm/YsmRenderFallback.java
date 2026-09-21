@@ -67,6 +67,7 @@ public final class YsmRenderFallback {
             SubmitNodeCollector collector,
             CameraRenderState cameraState
     ) {
+        if(dev.mineagent.runtime.neoforge.client.AgentSkinClient.selected(state.id))return false;
         if (gate == Gate.UNCHECKED) {
             initialize();
         }

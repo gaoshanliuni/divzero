@@ -175,6 +175,10 @@ public final class MineAgentNetwork {
             context.reply(new MineAgentPayloads.AgentNames(payload.request(),MineAgentRuntimeServices.worldId(server),names));
         }));
         registrar.playToClient(MineAgentPayloads.AgentNames.TYPE,MineAgentPayloads.AgentNames.CODEC,(payload,context)->{var connection=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.chat.NativeAgentChat.accept(payload,connection));});
+        registrar.playToClient(AgentSkinPayload.TYPE,AgentSkinPayload.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.AgentSkinClient.accept(payload,wire));});
+        registrar.playToServer(AutonomyPayloads.Input.TYPE,AutonomyPayloads.Input.CODEC,(payload,context)->serverWork(context,()->dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.input((ServerPlayer)context.player(),payload)));
+        registrar.playToClient(AutonomyPayloads.Offer.TYPE,AutonomyPayloads.Offer.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.body.AutonomousBodyClient.offer(payload,wire));});
+        registrar.playToClient(AutonomyPayloads.Frame.TYPE,AutonomyPayloads.Frame.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.body.AutonomousBodyClient.frame(payload,wire));});
         registrar.playToServer(PlayerBodyPayloads.Decision.TYPE,PlayerBodyPayloads.Decision.CODEC,(payload,context)->serverWork(context,()->dev.mineagent.runtime.neoforge.task.PlayerBodyAgent.decide((ServerPlayer)context.player(),payload)));
         registrar.playToClient(PlayerBodyPayloads.Offer.TYPE,PlayerBodyPayloads.Offer.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.body.PlayerBodyControlClient.offer(payload,wire));});
         registrar.playToClient(PlayerBodyPayloads.Signal.TYPE,PlayerBodyPayloads.Signal.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->{dev.mineagent.runtime.neoforge.client.body.PlayerBodySmokeClient.signal(payload,wire);dev.mineagent.runtime.neoforge.client.body.PlayerBodyControlClient.signal(payload,wire);});});
@@ -1818,7 +1822,7 @@ public final class MineAgentNetwork {
         result.put("model",values.getOrDefault(prefix+"model",""));result.put("texture",values.getOrDefault(prefix+"texture",""));result.put("animation",values.getOrDefault(prefix+"animation",""));
         result.put("diagnostic",bridge.diagnosticCode());result.put("runtimeAvailable",bridge.runtimeAvailable());result.put("version",bridge.version());result.put("checksumVerified",bridge.checksumVerified());
         result.put("models",models.stream().limit(128).toList());result.put("catalogTruncated",models.size()>128);result.put("nativeSelection",bridge.currentSelection(agentId).map(v->java.util.Map.of("model",v.modelId(),"texture",v.textureId(),"animation",v.animationId())).orElse(java.util.Map.of()));
-        result.put("unloadRequiresRestart",true);return result;
+        result.put("modelCount",models.size());result.put("selectionChangeRequiresRestart",false);result.put("unloadRequiresRestart",true);result.put("restartMeaning","Only uninstalling YSM itself requires a restart; changing selection is hot-applied");return result;
     }
     private static dev.mineagent.runtime.api.agent.AgentDefinition taskAppearanceAuthority(net.minecraft.server.MinecraftServer server,dev.mineagent.runtime.api.task.ManagedTask task){
         if(!server.isSameThread()||!MineAgentRuntimeServices.worldId(server).equals(task.worldId())||!dev.mineagent.runtime.core.task.TaskResultFence.current(task,MineAgentRuntimeServices.tasks(server).get(task.taskId()).orElse(null)))throw new IllegalStateException("STALE_TASK");
@@ -1918,6 +1922,8 @@ public final class MineAgentNetwork {
                         "ysm",
                         bridge.version()));
         boolean accepted = outcome.accepted();
+        if(accepted){var skinConfig=MineAgentRuntimeServices.config(server);var skinSnapshot=skinConfig.snapshot();String skinPrefix="agent."+agentId+".";if(!skinSnapshot.values().getOrDefault(skinPrefix+"vanillaSkin","").isEmpty()){long skinRevision=Long.parseLong(skinSnapshot.values().getOrDefault(skinPrefix+"skinRevision","0"));if(!skinConfig.apply(new dev.mineagent.runtime.api.config.ConfigPatch(skinSnapshot.revision(),java.util.Map.of(skinPrefix+"vanillaSkin","",skinPrefix+"skinRevision",Long.toString(skinRevision+1))),true).accepted())throw new IllegalStateException("SKIN_MODE_OUTCOME_UNKNOWN");}}
+
         if (Boolean.getBoolean("mineagent.productionYsmSmokeTest")) {
             dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info(
                     "MINEAGENT_SMOKE_YSM_SERVER_RESULT accepted={} diagnostic={}",
