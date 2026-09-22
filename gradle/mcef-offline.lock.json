@@ -1,18 +1,18 @@
 {
   "schema": 1,
   "repository": "gaoshanliuni/MCEF-Offline",
-  "tag": "offline-2.2.0-b28a2f2a92bd-r35625164357-a1",
-  "sourceCommit": "b28a2f2a92bd6d6ec26b4e63a04c72a3d02332c5",
+  "tag": "offline-2.2.0-03327bd04d1f-r35696570555-a1",
+  "sourceCommit": "03327bd04d1fdf3ee1eab4c3898dde039ae358e5",
   "jcefCommit": "eaeb3d4370aa3526ee237ad1981ad59af3de4dd1",
   "api": {
     "file": "mcef-offline-neoforge-api.jar",
-    "sha256": "9faa3ff4cffada099ee89d98c16be830ebb86be36b95b7d222f2e66669699ffc",
-    "size": 296047
+    "sha256": "a318602ee425989bf0c0459734b2c1fcfb3b8ebda54bd75eb2392cd52532bc16",
+    "size": 297263
   },
   "sources": {
     "file": "mcef-offline-corresponding-sources.jar",
-    "sha256": "4597014f138bbd6b46bdb296182307fdba24b189401a6386fdd66cbfd0912d7e",
-    "size": 8041541
+    "sha256": "b65cc0bee8c227ae3eb8180eedd6ab5962ff4e1b065f4ef02b15c30d73ced0c7",
+    "size": 8044887
   },
   "notices": {
     "file": "MCEF-OFFLINE-NOTICES.md",
@@ -21,29 +21,29 @@
   },
   "manifest": {
     "file": "mcef-offline-release.json",
-    "sha256": "2782645006bb559cdc267158b065079f59714af0204e84464a94ee4ed908cdf4",
+    "sha256": "c7622fd4a30ca49bc21efa85835f555f596271b3d875a43bee045586ee7005c4",
     "size": 4492
   },
   "platforms": {
     "windows_amd64": {
       "file": "mcef-offline-neoforge-windows_amd64.jar",
-      "sha256": "85fb9acac9f6cc6b336f81d418809db9097a5088996f9921e12c7914a1e79cb9",
-      "size": 124645146
+      "sha256": "59747c6de21a0962bce9b7d2f2fc527ebe845d9b28eed209f6969b76a1bc2fa5",
+      "size": 124646363
     },
     "linux_amd64": {
       "file": "mcef-offline-neoforge-linux_amd64.jar",
-      "sha256": "2a364172b88f0cf992d5d5b40da735597adf15a579c4a98c4954f4611f1d8085",
-      "size": 128272713
+      "sha256": "0115fc266a296c78014acc9d37dd00cabe7a20a00157a077b2647f0a3fed3f8d",
+      "size": 128273929
     },
     "macos_amd64": {
       "file": "mcef-offline-neoforge-macos_amd64.jar",
-      "sha256": "0d49a55cedfec679d9ac8aaeecd2dce1d1ce366f0b1c2e3cb95e6d1ab6de0da3",
-      "size": 121972193
+      "sha256": "32d0067dbad1080e2cab4999ea22ba0aae6ad2dd1e857036a6d70bcdf2c2fed6",
+      "size": 121973410
     },
     "macos_arm64": {
       "file": "mcef-offline-neoforge-macos_arm64.jar",
-      "sha256": "cbd41157894bbc976c45cad4f1b7d1fb0aa3b42b80e4e7c8f4471b08a352a142",
-      "size": 116895247
+      "sha256": "98c1021d101e49aae0c5760112c567cdddb151eabd1e0d414929ea63409d4cb3",
+      "size": 116896464
     }
   }
 }
