@@ -11,6 +11,9 @@ import java.util.zip.GZIPInputStream;
 /** Public HTTPS GET only. DNS is checked once and the checked address is pinned to the TLS socket. */
 public final class PublicHttpsReader {
     public static final int MAX_BYTES=768*1024;
+    private final int maxBytes;
+    public PublicHttpsReader(){this(MAX_BYTES);}
+    public PublicHttpsReader(int maxBytes){if(maxBytes<1||maxBytes>64*1024*1024)throw new IllegalArgumentException("WEB_RESPONSE_BUDGET");this.maxBytes=maxBytes;}
     private static final java.util.concurrent.ScheduledThreadPoolExecutor DEADLINES=new java.util.concurrent.ScheduledThreadPoolExecutor(1,r->{var t=new Thread(r,"public-web-deadline");t.setDaemon(true);return t;});
     static {DEADLINES.setRemoveOnCancelPolicy(true);}
     public record Page(URI url,int status,String contentType,byte[] body,String fetchedAt){}
@@ -35,7 +38,7 @@ public final class PublicHttpsReader {
             Response response=request(uri,addresses[0],deadline,proxy);
             if(Set.of(301,302,303,307,308).contains(response.status())){String location=response.headers().get("location");if(location==null)throw new IOException("WEB_REDIRECT_WITHOUT_LOCATION");uri=address(uri.resolve(location).toString());continue;}
             String type=response.headers().getOrDefault("content-type","");byte[] body=response.body();String encoding=response.headers().getOrDefault("content-encoding","identity").toLowerCase(Locale.ROOT);
-            if(encoding.equals("gzip")){try(var in=new GZIPInputStream(new ByteArrayInputStream(body))){body=readBounded(in,MAX_BYTES);}}else if(!encoding.equals("identity"))throw new IOException("WEB_CONTENT_ENCODING_UNSUPPORTED");
+            if(encoding.equals("gzip")){try(var in=new GZIPInputStream(new ByteArrayInputStream(body))){body=readBounded(in,maxBytes);}}else if(!encoding.equals("identity"))throw new IOException("WEB_CONTENT_ENCODING_UNSUPPORTED");
             return new Page(uri,response.status(),type,body,Instant.now().toString());
         }
         throw new IOException("WEB_REDIRECT_LIMIT");
@@ -59,13 +62,13 @@ public final class PublicHttpsReader {
         // With an explicitly OS-configured proxy, avoid poisoned/local DNS. Resolve over a pinned
         // public DoH endpoint, then CONNECT to the checked IP, never an unchecked proxy-resolved host.
         URI dns=URI.create("https://cloudflare-dns.com/dns-query?name="+URLEncoder.encode(uri.getHost(),StandardCharsets.UTF_8)+"&type=A");
-        var answer=request(dns,InetAddress.getByAddress(new byte[]{1,1,1,1}),deadline,selectProxy(dns));
+        var answer=new PublicHttpsReader().request(dns,InetAddress.getByAddress(new byte[]{1,1,1,1}),deadline,selectProxy(dns));
         if(answer.status()!=200)throw new IOException("WEB_DNS_FAILED");var json=new com.fasterxml.jackson.databind.ObjectMapper().readTree(answer.body());
         if(json.path("Status").asInt(-1)!=0)throw new IOException("WEB_DNS_FAILED");var ips=new ArrayList<InetAddress>();
         for(var row:json.path("Answer"))if(row.path("type").asInt()==1){String ip=row.path("data").asText();if(!ip.matches("[0-9]{1,3}(?:\\.[0-9]{1,3}){3}"))throw new IOException("WEB_DNS_RESPONSE_INVALID");ips.add(InetAddress.getByName(ip));}
         if(ips.isEmpty())throw new IOException("WEB_DNS_NO_PUBLIC_IPV4");return ips.toArray(InetAddress[]::new);
     }
-    private static Response request(URI uri,InetAddress ip,long deadline,Proxy proxy)throws Exception{
+    private Response request(URI uri,InetAddress ip,long deadline,Proxy proxy)throws Exception{
         int remaining=remaining(deadline);try(var raw=new Socket(Proxy.NO_PROXY)){
             var expiry=DEADLINES.schedule(()->{try{raw.close();}catch(IOException ignored){}},remaining,java.util.concurrent.TimeUnit.MILLISECONDS);
             try{
@@ -89,11 +92,11 @@ public final class PublicHttpsReader {
                 if(!transfer.isEmpty()){
                     if(fields.containsKey("content-length"))throw new IOException("WEB_AMBIGUOUS_BODY_LENGTH");
                     if(!transfer.equalsIgnoreCase("chunked"))throw new IOException("WEB_TRANSFER_ENCODING_UNSUPPORTED");
-                    while(true){remaining(deadline);String size=line(in,128,deadline).split(";",2)[0].strip();if(!size.matches("[a-fA-F0-9]{1,8}"))throw new IOException("WEB_CHUNK_SIZE_INVALID");long n=Long.parseLong(size,16);if(n==0)break;if(n>MAX_BYTES-out.size())throw new IOException("WEB_RESPONSE_TOO_LARGE");copy(in,out,(int)n,deadline);if(!line(in,2,deadline).isEmpty())throw new IOException("WEB_CHUNK_END_INVALID");}
+                    while(true){remaining(deadline);String size=line(in,128,deadline).split(";",2)[0].strip();if(!size.matches("[a-fA-F0-9]{1,8}"))throw new IOException("WEB_CHUNK_SIZE_INVALID");long n=Long.parseLong(size,16);if(n==0)break;if(n>maxBytes-out.size())throw new IOException("WEB_RESPONSE_TOO_LARGE");copy(in,out,(int)n,deadline);if(!line(in,2,deadline).isEmpty())throw new IOException("WEB_CHUNK_END_INVALID");}
                 }else if(fields.containsKey("content-length")){
-                    long n;try{n=Long.parseLong(fields.get("content-length"));}catch(NumberFormatException e){throw new IOException("WEB_CONTENT_LENGTH_INVALID");}if(n<0||n>MAX_BYTES)throw new IOException("WEB_RESPONSE_TOO_LARGE");copy(in,out,(int)n,deadline);
+                    long n;try{n=Long.parseLong(fields.get("content-length"));}catch(NumberFormatException e){throw new IOException("WEB_CONTENT_LENGTH_INVALID");}if(n<0||n>maxBytes)throw new IOException("WEB_RESPONSE_TOO_LARGE");copy(in,out,(int)n,deadline);
                 }else{
-                    byte[] buffer=new byte[8192];for(int n;(n=in.read(buffer))!=-1;){remaining(deadline);if(out.size()+n>MAX_BYTES)throw new IOException("WEB_RESPONSE_TOO_LARGE");out.write(buffer,0,n);}
+                    byte[] buffer=new byte[8192];for(int n;(n=in.read(buffer))!=-1;){remaining(deadline);if(out.size()+n>maxBytes)throw new IOException("WEB_RESPONSE_TOO_LARGE");out.write(buffer,0,n);}
                 }
                 return new Response(code,fields,out.toByteArray());
             }

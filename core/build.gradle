@@ -7,3 +7,13 @@ dependencies {
     implementation "org.xerial:sqlite-jdbc:${sqlite_jdbc_version}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
 }
+
+// Explicit read-only audit of operator-selected architecture corpus, never bundled in distribution.
+tasks.register('buildingCorpus', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.mineagent.runtime.core.building.BuildingCorpusCli'
+    maxHeapSize = '2G'
+    args providers.gradleProperty('buildingCorpusRoot').getOrElse(''), providers.gradleProperty('buildingCorpusOutput').getOrElse('')
+    if (providers.gradleProperty('buildingCorpusMode').isPresent()) args providers.gradleProperty('buildingCorpusMode').get()
+}

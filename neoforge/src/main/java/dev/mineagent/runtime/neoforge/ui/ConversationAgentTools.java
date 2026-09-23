@@ -44,6 +44,8 @@ public final class ConversationAgentTools {
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>16384)throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
+            if(tool.equals("inspect_building_files")||tool.equals("inspect_building_file")){keys(args,"file_id","entry","query","offset","dimension","min","max","block_offset","material_offset");return ServerBuildingFiles.read(p,agent,tool,args,permit).thenApply(v->{s.execute(()->BuildingImportSmokeServer.observe(tool,args,v));return v;});}
+            if(tool.equals("plan_building_import")){keys(args,"file_id","entry","dimension","min","max","anchor","rotation","mirror","include_air","data_policy");return ServerBuildingFiles.plan(p,agent,args,permit).thenApply(v->{s.execute(()->BuildingImportSmokeServer.observe(tool,args,v));return v;});}
             if(tool.equals("inspect_world_geometry"))return ConversationWorldGeometry.inspect(p,agent,args).thenApply(v->{s.execute(()->WorldGeometrySmokeServer.observe(tool,args,v));return v;});
             if(tool.equals("plan_world_geometry"))return ConversationWorldGeometry.plan(p,agent,args,permit).thenApply(v->{WorldGeometrySmokeServer.observe(tool,args,v);return v;});
             if(tool.equals("inspect_agent_body")){keys(args);return CompletableFuture.completedFuture(ConversationBodyTools.execute(p,agent,args,true));}
@@ -64,7 +66,7 @@ public final class ConversationAgentTools {
                 catch(Exception rejected){action=CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(rejected)));}
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     var value=failure==null?receipt:Map.<String,Object>of("status","UNKNOWN","error","AGENT_TOOL_OUTCOME_UNKNOWN");
-                    WorldGeometrySmokeServer.observe(tool,args,value);PythonHostSmokeServer.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
+                    BuildingImportSmokeServer.observe(tool,args,value);WorldGeometrySmokeServer.observe(tool,args,value);PythonHostSmokeServer.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
                     ConversationRuntimeItemSmokeServer.observe(tool,value);ConversationHostSmokeServer.observe(tool,args,value);ConversationFeedbackSmokeServer.observe(tool,value);ConversationCreatureSmokeServer.observe(tool,args,value);ConversationWatchSmokeServer.observe(tool,value);
                     try{String encoded=JSON.writeValueAsString(Map.of("owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args,"receipt",value));CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,1,encoded);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((written,writeError)->s.execute(()->{if(writeError!=null||failure!=null)result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));else result.complete(value);}));}
                     catch(Exception writeError){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));}
@@ -118,6 +120,8 @@ public final class ConversationAgentTools {
     private static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,UUID operation,String tool,JsonNode a,BooleanSupplier permit)throws Exception{
         Map<String,Object> result;
         switch(tool){
+            case "request_building_file"->{keys(a,"reason");return ServerBuildingFiles.request(p,agent,permit,text(a,"reason",200));}
+            case "fetch_building_file"->{keys(a,"url","name");return ServerBuildingFiles.download(p,agent,a,permit);}
             case "apply_world_geometry"->{return ConversationWorldGeometry.apply(p,agent,a,permit);}
             case "define_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.define(p,operation,a);}
             case "control_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.control(p,a);}
@@ -211,7 +215,7 @@ public final class ConversationAgentTools {
             if(!current(p,permit)||p.level()!=level){future.complete(Map.of("status","REJECTED","error","AGENT_TOOL_CONTEXT_CHANGED"));return;}
             if(error!=null||reply==null){future.complete(Map.of("status","REJECTED","error","WEB_REQUEST_FAILED"));return;}
             if(!reply.type().equals("web.result")){String code=String.valueOf(reply.payload().getOrDefault("code","WEB_REQUEST_FAILED"));future.complete(Map.of("status","REJECTED","error",code.matches("(?:WEB|SERVICE_BUDGET)_[A-Z0-9_]{1,80}")?code:"WEB_REQUEST_FAILED"));return;}
-            ConversationBuildSmokeServer.observeWeb(tool,reply.payload());future.complete(reply.payload());
+            BuildingImportSmokeServer.web(tool,reply.payload());ConversationBuildSmokeServer.observeWeb(tool,reply.payload());future.complete(reply.payload());
         }));return future;
     }
     private static CompletableFuture<Map<String,Object>> inspectBlueprints(ServerPlayer p,JsonNode a,BooleanSupplier permit){

@@ -55,6 +55,7 @@ public final class UiClientSessions {
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(opening, "openShell", "{}"));
     }
     private static void accept(UiPayloads.Event packet) {
+        if(packet.channel().equals("buildingFilesOpen")){BuildingFilesClient.requestOpen(JsonParser.parseString(packet.json()).getAsJsonObject().get("agentId").getAsString());return;}
         if (connection != Minecraft.getInstance().getConnection() || !WebGuiHostAdapter.INSTANCE.ready()) return;
         try {
             if(packet.channel().equals("conversationVoiceStatus")){WebGuiHostAdapter.INSTANCE.emit("conversationVoiceStatus",JsonParser.parseString(packet.json()));return;}

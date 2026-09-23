@@ -227,3 +227,6 @@ body[data-interacting=false] .window .titlebar button,body[data-interacting=fals
 .conversation-thinking [hidden] { display: none !important; }
 
 [data-view-id="runtime-agent-model"] [hidden] { display:none !important; }
+
+[data-view-id="runtime-building-files"] strong,[data-view-id="runtime-building-files"] small{display:block;overflow-wrap:anywhere;margin-bottom:6px;}
+[data-view-id="runtime-building-files"] small{opacity:.78;}

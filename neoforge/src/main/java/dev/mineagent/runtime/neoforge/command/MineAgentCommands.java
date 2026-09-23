@@ -14,6 +14,7 @@ public final class MineAgentCommands {
 
     public static void register(com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("ai")
+                .then(Commands.literal("files").then(Commands.argument("agent",net.minecraft.commands.arguments.UuidArgument.uuid()).executes(c->dev.mineagent.runtime.neoforge.ui.ServerBuildingFiles.open(c.getSource().getPlayerOrException(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent")))))
                 .then(Commands.literal("accept").executes(c->accept(c.getSource())))
                 .then(Commands.literal("interrupt").then(Commands.argument("agent",net.minecraft.commands.arguments.UuidArgument.uuid())
                     .executes(c->interrupt(c.getSource(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent"),""))
