@@ -16,3 +16,7 @@
 - **FFmpeg n8.1.2-51-g7ba069f4f1**：[BtbN 构建与源代码/构建脚本](https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-09-07-15-39)，LGPL 2.1 或更新版本，共享库构建。固定归档 SHA-256：`afb1c55ecdef6b80f6243984954dbfe350d44c7da2b64f30575c283b68214825`。归档内 `LICENSE.txt` 保持不变并在安装时保留；程序以独立进程调用，不修改这些二进制。
 
 程序中自带的界面与基础示例资源来自项目源码。旧示例/测试开关不构成当前动态生成能力已经完整交付的证据；不分发用户上传的蓝图、皮肤、存档或聊天数据。
+
+## Optional managed Python runtime
+
+Java may download the separately distributed CPython 3.13.15 Windows x86_64 `install_only_stripped` artifact from [astral-sh/python-build-standalone release 20260901](https://github.com/astral-sh/python-build-standalone/releases/tag/20260901), only after local approval. The archive is not included in this Git repository or Mod JAR. Its upstream license/notice files are retained unchanged during extraction; consult the [distribution documentation](https://github.com/astral-sh/python-build-standalone/blob/main/docs/distributions.rst) and the bundled notices for CPython and its dependencies. Python packages installed later by the user/Agent have their own licenses and are not part of this source snapshot.

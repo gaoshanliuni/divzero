@@ -1,0 +1,21 @@
+package dev.mineagent.runtime.client.host;
+import dev.mineagent.runtime.core.host.HostCommandRequest;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.*;import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
+class LocalPythonExecutorTest {
+ @TempDir static Path root;private static LocalPythonExecutor executor;
+ @BeforeAll static void setup()throws Exception{String path=System.getProperty("mineagent.testPythonArchive","");assumeTrue(ManagedPythonRuntime.supported()&&!path.isEmpty(),"Opt in with pythonTestArchive: no automatic network install in ordinary unit tests");new ManagedPythonRuntime(root,Path.of(path)).ensure(()->true);executor=new LocalPythonExecutor(root);}
+ @AfterAll static void unlockOwnedTemporaryBytecode()throws Exception{if(root!=null&&Files.isDirectory(root))try(var paths=Files.walk(root)){for(var p:paths.filter(x->x.toString().endsWith(".pyc")).toList())Files.setAttribute(p,"dos:readonly",false);}}
+ private Map<String,Object> run(String code,int timeout){var r=new HostCommandRequest(UUID.randomUUID(),"Python regression",code,timeout);return executor.execute(r,r.sha256(),()->true);}
+ @Test void actualManagedInterpreterUnicodeQuotesAndNoShell()throws Exception{
+  var r=new HostCommandRequest(UUID.randomUUID(),"UTF8 approval","import sys, pathlib; print('原生命令成功 😀 \"引号\"'); print(sys.version); pathlib.Path('receipt.txt').write_text('one',encoding='utf-8')",10);
+  assertEquals("REJECTED",executor.execute(r,"0".repeat(64),()->true).get("status"));var result=executor.execute(r,r.sha256(),()->true);assertEquals("EXECUTED",result.get("status"),result.toString());assertTrue(result.get("stdout").toString().contains("原生命令成功 😀"));assertTrue(result.get("stdout").toString().contains(ManagedPythonRuntime.VERSION));assertEquals("one",Files.readString(root.resolve("mineagent-host/workspace/receipt.txt")));assertEquals("HOST_OPERATION_NOT_REPLAYABLE",executor.execute(r,r.sha256(),()->true).get("error"));assertEquals("JAVA_MANAGED_PYTHON",result.get("engine"));
+ }
+ @Test void failureAndTimeoutAreDistinct(){assertEquals("FAILED",run("raise RuntimeError('expected')",10).get("status"));assertEquals("TIMED_OUT",run("import time; time.sleep(10)",1).get("status"));}
+ @Test void cancellationKillsActualChildAndNeverReplays(){var r=new HostCommandRequest(UUID.randomUUID(),"stop Python","import time; from pathlib import Path; Path('cancel-ready').write_text('ready'); time.sleep(20)",30);var allowed=new java.util.concurrent.atomic.AtomicBoolean(true);Thread stop=Thread.ofVirtual().start(()->{try{long deadline=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(60);while(!Files.exists(root.resolve("mineagent-host/workspace/cancel-ready"))&&System.nanoTime()<deadline)Thread.sleep(25);allowed.set(false);}catch(InterruptedException e){Thread.currentThread().interrupt();}});var value=executor.execute(r,r.sha256(),allowed::get);assertEquals("CANCELLED",value.get("status"),value.toString());assertFalse(ProcessHandle.of(((Number)value.get("pid")).longValue()).map(ProcessHandle::isAlive).orElse(false));assertEquals("HOST_OPERATION_NOT_REPLAYABLE",executor.execute(r,r.sha256(),()->true).get("error"));}
+ @Test void completeOutputPreservesUnicodeAndPagesWithoutRerun()throws Exception{var r=new HostCommandRequest(UUID.randomUUID(),"full output","print('a'*4095+'😀尾部'+'x'*20000,end='')",10);var v=executor.execute(r,r.sha256(),()->true);assertEquals("EXECUTED",v.get("status"),v.toString());assertEquals(true,v.get("outputPreviewOnly"));assertEquals(false,v.get("outputTruncated"));StringBuilder text=new StringBuilder();int offset=0;do{var part=executor.output(r.operation(),"stdout",offset);text.append(part.get("text"));offset=((Number)part.get("nextOffset")).intValue();}while(offset>=0);assertEquals("a".repeat(4095)+"😀尾部"+"x".repeat(20000),text.toString());}
+ @Test void childProcessesUseTheManagedInterpreter(){var result=run("import subprocess,sys; r=subprocess.run([sys.executable,'-I','-X','utf8','-c',\"print('子进程成功')\"],capture_output=True,text=True,encoding='utf-8',creationflags=subprocess.CREATE_NO_WINDOW); print(r.stdout,end=''); assert r.returncode==0",15);assertEquals("EXECUTED",result.get("status"),result.toString());assertTrue(result.get("stdout").toString().contains("子进程成功"));}
+}

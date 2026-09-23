@@ -8,4 +8,6 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
 }
 
+tasks.named('test') { systemProperty 'mineagent.testPythonArchive', providers.gradleProperty('pythonTestArchive').getOrElse('') }
+
 // Public snapshot: only included JVM tests are attached to check.
