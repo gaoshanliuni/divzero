@@ -3,6 +3,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class ConversationToolsTest {
+    @Test void creatureAndFullHostOutputToolsAreDiscoverable(){
+        for(String name:java.util.List.of("inspect_creatures","read_host_output")){assertTrue(ConversationTools.NAMES.contains(name));assertFalse(ConversationTools.mutation(name));}
+        for(String name:java.util.List.of("define_creature","control_creature")){assertTrue(ConversationTools.NAMES.contains(name));assertTrue(ConversationTools.mutation(name));}
+    }
+
  @org.junit.jupiter.api.Test void feedbackToolsAreActuallyAdvertised(){org.junit.jupiter.api.Assertions.assertTrue(ConversationTools.NAMES.containsAll(java.util.Set.of("inspect_agent_body","control_agent_body","remember","inspect_memories","forget_memory","inspect_packages","inspect_operations","send_chat_message","set_chat_color","read_command_output")));}
 
     @Test void dialogueManagementAndContinuousControlHaveDiscoverableReadAndWriteTools(){

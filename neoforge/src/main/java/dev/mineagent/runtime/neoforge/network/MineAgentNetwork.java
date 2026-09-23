@@ -52,7 +52,7 @@ public final class MineAgentNetwork {
         SpeechInputPayloads.register(event);
         ObjectAssetPayloads.register(event);
         dev.mineagent.runtime.neoforge.ui.ServerUiRuntime.register(event);
-        var registrar = event.registrar("3").versioned("3").executesOn(HandlerThread.NETWORK);
+        var registrar = event.registrar("4").versioned("4").executesOn(HandlerThread.NETWORK);
         registrar.playToServer(ProviderModelsPayloads.Request.TYPE,ProviderModelsPayloads.Request.CODEC,(p,c)->serverWork(c,()->ProviderModelsPayloads.respond(p,(ServerPlayer)c.player(),c::reply)));
         registrar.playToClient(ProviderModelsPayloads.Response.TYPE,ProviderModelsPayloads.Response.CODEC,(p,c)->c.enqueueWork(()->dev.mineagent.runtime.neoforge.client.ProviderModelsClient.accept(p)));
         registrar.playToServer(MineAgentPayloads.SecretConfigWrite.TYPE,MineAgentPayloads.SecretConfigWrite.CODEC,(p,c)->serverWork(c,()->c.reply(applyNativeSecret(p,(ServerPlayer)c.player()))));
@@ -60,7 +60,7 @@ public final class MineAgentNetwork {
         registrar.playToServer(
                 MineAgentPayloads.PanelRequest.TYPE,
                 MineAgentPayloads.PanelRequest.CODEC,
-                (payload, context) -> serverWork(context,() -> sendSnapshot((ServerPlayer) context.player(), context))
+                (payload, context) -> serverWork(context,() -> {if(payload.agentOffset()>=0)AGENT_PAGES.put((ServerPlayer)context.player(),payload.agentOffset());sendSnapshot((ServerPlayer) context.player(), context);})
         );
         registrar.playToServer(
                 MineAgentPayloads.ConfigPatch.TYPE,
@@ -170,11 +170,9 @@ public final class MineAgentNetwork {
                 MineAgentPayloads.CodeState.CODEC,
                 (payload, context) -> context.enqueueWork(() -> PanelSnapshotInbox.accept(payload))
         );
-        registrar.playToServer(MineAgentPayloads.NativeStudioRequest.TYPE,MineAgentPayloads.NativeStudioRequest.CODEC,
-                (payload,context)->serverWork(context,()->dev.mineagent.runtime.neoforge.ui.NativeStudioBridge.handle(payload,(ServerPlayer)context.player())));
         registrar.playToServer(MineAgentPayloads.AgentNamesRequest.TYPE,MineAgentPayloads.AgentNamesRequest.CODEC,(payload,context)->serverWork(context,()->{
-            var player=(ServerPlayer)context.player();var server=player.level().getServer();var names=MineAgentRuntimeServices.permissions(server).allowed(player.getUUID(),player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),PermissionAction.CHAT)?MineAgentRuntimeServices.bodies(server).definitions().stream().map(dev.mineagent.runtime.api.agent.AgentDefinition::displayName).sorted().limit(64).toList():java.util.List.<String>of();
-            context.reply(new MineAgentPayloads.AgentNames(payload.request(),MineAgentRuntimeServices.worldId(server),names));
+            var player=(ServerPlayer)context.player();var server=player.level().getServer();var names=MineAgentRuntimeServices.permissions(server).allowed(player.getUUID(),player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),PermissionAction.CHAT)?MineAgentRuntimeServices.bodies(server).definitions().stream().map(dev.mineagent.runtime.api.agent.AgentDefinition::displayName).sorted().toList():java.util.List.<String>of();
+            for(int start=0;start<Math.max(1,names.size());start+=64)context.reply(new MineAgentPayloads.AgentNames(payload.request(),MineAgentRuntimeServices.worldId(server),names.subList(start,Math.min(start+64,names.size())),start/64,start+64>=names.size()));
         }));
         registrar.playToClient(MineAgentPayloads.AgentNames.TYPE,MineAgentPayloads.AgentNames.CODEC,(payload,context)->{var connection=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.chat.NativeAgentChat.accept(payload,connection));});
         registrar.playToClient(AgentSkinPayload.TYPE,AgentSkinPayload.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.AgentSkinClient.accept(payload,wire));});
@@ -184,8 +182,6 @@ public final class MineAgentNetwork {
         registrar.playToServer(PlayerBodyPayloads.Decision.TYPE,PlayerBodyPayloads.Decision.CODEC,(payload,context)->serverWork(context,()->dev.mineagent.runtime.neoforge.task.PlayerBodyAgent.decide((ServerPlayer)context.player(),payload)));
         registrar.playToClient(PlayerBodyPayloads.Offer.TYPE,PlayerBodyPayloads.Offer.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.body.PlayerBodyControlClient.offer(payload,wire));});
         registrar.playToClient(PlayerBodyPayloads.Signal.TYPE,PlayerBodyPayloads.Signal.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->{dev.mineagent.runtime.neoforge.client.body.PlayerBodySmokeClient.signal(payload,wire);dev.mineagent.runtime.neoforge.client.body.PlayerBodyControlClient.signal(payload,wire);});});
-        registrar.playToClient(MineAgentPayloads.NativeStudioResponse.TYPE,MineAgentPayloads.NativeStudioResponse.CODEC,
-                (payload,context)->{var connection=context.connection();context.enqueueWork(()->{dev.mineagent.runtime.neoforge.client.screen.NativeCoderScreen.accept(payload,connection);dev.mineagent.runtime.neoforge.client.screen.NativeCodeStudioScreen.accept(payload,connection);dev.mineagent.runtime.neoforge.client.screen.NativeWorkspaceScreen.accept(payload,connection);});});
         registrar.playToServer(
                 MineAgentPayloads.MemoryCommand.TYPE,
                 MineAgentPayloads.MemoryCommand.CODEC,
@@ -299,6 +295,7 @@ public final class MineAgentNetwork {
         context.reply(panelSnapshot(player));
     }
 
+    private static final java.util.Map<ServerPlayer,Integer> AGENT_PAGES=new java.util.WeakHashMap<>();
     private static MineAgentPayloads.PanelSnapshot panelSnapshot(ServerPlayer player) {
         var snapshot = MineAgentRuntimeServices.config(player.level().getServer()).snapshot();
         var values = new java.util.LinkedHashMap<>(snapshot.values());
@@ -311,8 +308,10 @@ public final class MineAgentNetwork {
         var server = player.level().getServer();
         values.put("security.configInstance",MineAgentRuntimeServices.config(server).instanceId().toString());values.put("security.worldId",MineAgentRuntimeServices.worldId(server).toString());
         var allAgents = MineAgentRuntimeServices.bodies(server).definitions();
-        var agents = allAgents.stream().limit(8).toList();
+        int offset=Math.min(AGENT_PAGES.getOrDefault(player,0),Math.max(0,((allAgents.size()-1)/8)*8));
+        var agents = allAgents.stream().skip(offset).limit(8).toList();
         var agentPrefixes=agents.stream().map(a->"agent."+a.agentId()+".").toList();values.keySet().removeIf(k->k.startsWith("agent.")&&agentPrefixes.stream().noneMatch(k::startsWith));
+        values.put("agent.offset",Integer.toString(offset));
         values.put("agent.total",Integer.toString(allAgents.size()));
         values.put("agent.count", Integer.toString(agents.size()));
         for (int index = 0; index < agents.size(); index++) {

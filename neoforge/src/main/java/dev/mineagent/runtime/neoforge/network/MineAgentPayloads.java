@@ -22,10 +22,11 @@ public final class MineAgentPayloads {
         public static final StreamCodec<RegistryFriendlyByteBuf,AgentNamesRequest> CODEC=CustomPacketPayload.codec((p,b)->b.writeUUID(p.request()),b->new AgentNamesRequest(b.readUUID()));
         @Override public Type<AgentNamesRequest> type(){return TYPE;}
     }
-    public record AgentNames(java.util.UUID request,java.util.UUID world,java.util.List<String> names) implements CustomPacketPayload {
+    public record AgentNames(java.util.UUID request,java.util.UUID world,java.util.List<String> names,int page,boolean last) implements CustomPacketPayload {
         public static final Type<AgentNames> TYPE=MineAgentPayloads.type("agent_names");
-        public static final StreamCodec<RegistryFriendlyByteBuf,AgentNames> CODEC=CustomPacketPayload.codec((p,b)->{b.writeUUID(p.request());b.writeUUID(p.world());b.writeVarInt(p.names().size());for(String n:p.names())b.writeUtf(n,128);},b->{var r=b.readUUID();var w=b.readUUID();int size=b.readVarInt();if(size<0||size>64)throw new IllegalArgumentException("AGENT_NAMES_SIZE");var names=new java.util.ArrayList<String>();for(int i=0;i<size;i++)names.add(b.readUtf(128));return new AgentNames(r,w,names);});
-        public AgentNames{names=java.util.List.copyOf(names);if(names.size()>64||names.stream().anyMatch(n->n.isBlank()||n.length()>128))throw new IllegalArgumentException("AGENT_NAMES_SIZE");}
+        public static final StreamCodec<RegistryFriendlyByteBuf,AgentNames> CODEC=CustomPacketPayload.codec((p,b)->{b.writeUUID(p.request());b.writeUUID(p.world());b.writeVarInt(p.page());b.writeBoolean(p.last());b.writeVarInt(p.names().size());for(String n:p.names())b.writeUtf(n,128);},b->{var r=b.readUUID();var w=b.readUUID();int page=b.readVarInt();boolean last=b.readBoolean();int size=b.readVarInt();if(size<0||size>64)throw new IllegalArgumentException("AGENT_NAMES_SIZE");var names=new java.util.ArrayList<String>();for(int i=0;i<size;i++)names.add(b.readUtf(128));return new AgentNames(r,w,names,page,last);});
+        public AgentNames(java.util.UUID request,java.util.UUID world,java.util.List<String> names){this(request,world,names,0,true);}
+        public AgentNames{if(page<0)throw new IllegalArgumentException("AGENT_NAMES_PAGE");names=java.util.List.copyOf(names);if(names.size()>64||names.stream().anyMatch(n->n.isBlank()||n.length()>128))throw new IllegalArgumentException("AGENT_NAMES_SIZE");}
         @Override public Type<AgentNames> type(){return TYPE;}
     }
     public record NativeStudioRequest(java.util.UUID requestId,java.util.UUID operationId,String worldId,boolean write,Map<String,String> arguments) implements CustomPacketPayload {
@@ -50,10 +51,12 @@ public final class MineAgentPayloads {
         @Override public Type<SecretConfigResult> type(){return TYPE;}
     }
 
-    public record PanelRequest() implements CustomPacketPayload {
+    public record PanelRequest(int agentOffset) implements CustomPacketPayload {
         public static final Type<PanelRequest> TYPE = MineAgentPayloads.type("panel_request");
         public static final StreamCodec<RegistryFriendlyByteBuf, PanelRequest> CODEC =
-                CustomPacketPayload.codec((payload, buffer) -> { }, buffer -> new PanelRequest());
+                CustomPacketPayload.codec((payload, buffer) -> buffer.writeVarInt(payload.agentOffset()), buffer -> new PanelRequest(buffer.readVarInt()));
+        public PanelRequest(){this(-1);}
+        public PanelRequest{if(agentOffset < -1)throw new IllegalArgumentException("AGENT_PAGE_OFFSET");}
 
         @Override
         public Type<PanelRequest> type() {

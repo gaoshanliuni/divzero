@@ -59,6 +59,7 @@ public final class MineAgentRuntimeMod {
     }
 
     private void createEntityAttributes(net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent event) {
+        event.put(MineAgentRegistries.RUNTIME_CREATURE.get(),dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity.createAttributes().build());
         event.put(MineAgentRegistries.SENTINEL_BOSS.get(),
                 dev.mineagent.runtime.neoforge.content.SentinelBoss.createAttributes().build());
     }

@@ -108,7 +108,7 @@ export function createDecisionCards({ windowFor, send, report, persist = () => {
       });
       pending = all.filter(r => ['OPEN', 'DEFERRED'].includes(r.status));
       pageRequests = all;
-      if(entry){const selected=entry.value;entry.replaceChildren();add('option','选择本页问题 / 历史…',entry).value='';for(const q of all)add('option',`${q.title} · ${q.status} · r${q.revision}`,entry).value=q.decisionId;if(all.some(q=>q.decisionId===selected))entry.value=selected;}
+      if(entry){const selected=entry.value;entry.replaceChildren();add('option','选择本页问题 / 历史…',entry).value='';for(const q of all)add('option',`${q.title} · ${q.status}`,entry).value=q.decisionId;if(all.some(q=>q.decisionId===selected))entry.value=selected;}
       button.textContent = `待决定 (${pending.length})`;
       for (const request of all) {
         const node = shown.get(request.decisionId)?.node;

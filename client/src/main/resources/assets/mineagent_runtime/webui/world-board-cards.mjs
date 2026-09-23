@@ -6,7 +6,7 @@ export function createWorldBoardCards({send,report}){
     if(!drafts.has(view.id)){if(drafts.size>=64)drafts.delete(drafts.keys().next().value);drafts.set(view.id,new WorldBoardDraft());}
     const draft=drafts.get(view.id);draft.update(view);
     const box=el('details',null,parent);box.className='world-board-controls';box.dataset.worldViewId=view.id;
-    el('summary',`世界文字看板 · ${view.kind==='WORLD_BOARD'?'已投射':'未投射'} · r${view.revision}`,box);
+    el('summary',`世界文字看板 · ${view.kind==='WORLD_BOARD'?'已投射':'未投射'}`,box);
     el('p','复用本视图的同一计分源与版式。按既有受众定向显示；关闭网页不停止世界展示。',box).className='muted';
     const grid=el('div',null,box);grid.className='world-coordinates';
     for(const key of ['dimension','x','y','z','yaw','scale','viewDistance']){const label=el('label',key,grid);const input=el('input',null,label);input.type=key==='dimension'?'text':'number';input.step='any';input.value=String(draft.fields[key]??0);input.dataset.worldField=key;input.oninput=()=>draft.edit(key,input.value);}

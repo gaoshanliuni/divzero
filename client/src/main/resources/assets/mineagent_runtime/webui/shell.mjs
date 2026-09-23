@@ -326,7 +326,7 @@ function renderHudRestoreStatus(){
   const list=document.querySelector('#hud-restore-list');if(!list)return;list.replaceChildren();
   if(hudRestoreStatus.storageError){el('p',hudRestoreStatus.storageError,list).className='error';el('button','清除无效的 HUD 恢复设置',list).onclick=()=>send('hudResetPreferences').catch(report);return;}
   if(!hudRestoreStatus.entries.length){el('p','在 HUD 标题栏启用“登录时恢复”；关闭 HUD 会取消恢复。',list).className='muted';return;}
-  for(const entry of hudRestoreStatus.entries){const row=el('div',null,list);row.className='generation-job';el('p',`HUD ${entry.target.slice(0,8)} · r${entry.revision} · ${entry.status}`,row);
+  for(const entry of hudRestoreStatus.entries){const row=el('div',null,list);row.className='generation-job';el('p',`HUD ${entry.target.slice(0,8)} · ${entry.status}`,row);
     el('button','不再恢复',row).onclick=()=>send('hudForget',{key:entry.key}).catch(report);
     if(entry.status==='RESTORE_FAILED')el('button','重试恢复',row).onclick=()=>send('hudRetry',{key:entry.key}).catch(report);
   }
@@ -377,7 +377,7 @@ function fillAgents() {
   if(select.value!==previous)conversations.agent(select.value);
   fillDecisionTargets();
 }
-function fillDecisionTargets(){const select=document.querySelector('#chat-decision'),agent=document.querySelector('#chat-agent');if(!select||!agent)return;const previous=select.value;select.replaceChildren();el('option','普通对话 / 唯一问题的序号回答',select).value='';for(const q of decisionContexts.filter(q=>q.agentId===agent.value)){const option=el('option',`${q.title} · ${q.status} · r${q.revision}`,select);option.value=q.decisionId;}if([...select.options].some(o=>o.value===previous))select.value=previous;}
+function fillDecisionTargets(){const select=document.querySelector('#chat-decision'),agent=document.querySelector('#chat-agent');if(!select||!agent)return;const previous=select.value;select.replaceChildren();el('option','普通对话 / 唯一问题的序号回答',select).value='';for(const q of decisionContexts.filter(q=>q.agentId===agent.value)){const option=el('option',`${q.title} · ${q.status}`,select);option.value=q.decisionId;}if([...select.options].some(o=>o.value===previous))select.value=previous;}
 function showSnapshot(data) {
   lastSnapshot = data; connected = data.connected === true;
   status.textContent = connected ? 'WebGUI 已连接游戏' : 'WebGUI 已就绪 · 未进入世界';

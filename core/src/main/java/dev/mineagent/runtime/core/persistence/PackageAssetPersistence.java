@@ -42,7 +42,7 @@ final class PackageAssetPersistence {
     private static PackageLibraryHistory.Version source(Connection db,Input input)throws Exception {
         if(input.shelf()!=null){var s=shelf(db,input.owner(),input.shelf());if(!s.active()||s.revision()!=input.expectedRevision()||!s.packageId().equals(input.source())||s.packageRevision()!=input.sourceRevision()||!s.canonical().equals(input.sourceHash()))throw new IllegalStateException("PACKAGE_ASSET_SHELF_STALE");}
         else try(var q=db.prepareStatement("SELECT revision,payload FROM mineagent_runtime_records WHERE world_id=? AND namespace=? AND record_id=? AND deleted=0")){
-            q.setString(1,GLOBAL);q.setString(2,PackageLibraryHistory.NS);q.setString(3,input.source().toString());try(var r=q.executeQuery()){if(!r.next()||r.getLong(1)!=input.sourceRevision()||!JSON.readTree(r.getString(2)).path("canonicalSha256").asText().equals(input.sourceHash()))throw new IllegalStateException("PACKAGE_ASSET_SOURCE_CHANGED");}
+            q.setString(1,GLOBAL);q.setString(2,PackageLibraryHistory.NS);q.setString(3,input.source().toString());try(var r=q.executeQuery()){if(!r.next()||(input.action().equals("COPY_VERSION")?r.getLong(1)!=input.expectedRevision():r.getLong(1)!=input.sourceRevision()||!JSON.readTree(r.getString(2)).path("canonicalSha256").asText().equals(input.sourceHash())))throw new IllegalStateException("PACKAGE_ASSET_SOURCE_CHANGED");}
         }
         var version=PackageLibraryHistory.version(db,input.source(),input.sourceRevision());if(version==null||!version.canonical().equals(input.sourceHash())||!RuntimePackageCanonicalizer.sha256(version.payload()).equals(version.payloadHash()))throw new IllegalStateException("PACKAGE_ASSET_VERSION_UNAVAILABLE");
         if(input.shelf()!=null&&!shelf(db,input.owner(),input.shelf()).payloadHash().equals(version.payloadHash()))throw new IllegalStateException("PACKAGE_ASSET_VERSION_UNAVAILABLE");return version;
@@ -73,7 +73,7 @@ final class PackageAssetPersistence {
         }catch(Exception e){try{db.rollback();}catch(Exception ignored){}throw e;}finally{db.setAutoCommit(true);}
     }
     static Receipt copy(Connection db,Input input,String payload,long now)throws Exception {
-        if(!Set.of("COPY","REUSE_ASSET").contains(input.action()))throw new IllegalArgumentException("PACKAGE_COPY_ACTION");
+        if(!Set.of("COPY","COPY_VERSION","REUSE_ASSET").contains(input.action()))throw new IllegalArgumentException("PACKAGE_COPY_ACTION");
         db.setAutoCommit(false);try{
             var old=receipt(db,input.world(),input.owner(),input.operation());if(old!=null){if(!old.input().equals(input))throw new IllegalStateException("PACKAGE_ASSET_OPERATION_REUSED");db.commit();return old;}
             var source=source(db,input);var candidate=JSON.readValue(payload,RuntimePackage.class);

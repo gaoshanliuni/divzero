@@ -86,6 +86,7 @@ public final class MineAgentClientMod {
     @SuppressWarnings({"rawtypes", "unchecked"})
     static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(MineAgentRegistries.RUNTIME_THROWN_ITEM.get(),dev.mineagent.runtime.neoforge.client.objects.RuntimeThrownItemRenderer::new);
+        event.registerEntityRenderer(MineAgentRegistries.RUNTIME_CREATURE.get(),dev.mineagent.runtime.neoforge.client.objects.RuntimeCreatureRenderer::new);
         event.registerEntityRenderer(MineAgentRegistries.RUNTIME_OBJECT.get(),dev.mineagent.runtime.neoforge.client.objects.RuntimeObjectRenderer::new);
         event.registerEntityRenderer(MineAgentRegistries.BASKETBALL_ENTITY.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(MineAgentRegistries.SENTINEL_BOSS.get(),

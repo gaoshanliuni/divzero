@@ -337,6 +337,9 @@ public final class RuntimePackageLibrary implements AutoCloseable {
     public synchronized List<dev.mineagent.runtime.core.persistence.PackageLibraryHistory.VersionSummary> versions(UUID id,int offset)throws Exception{return repository.packageVersions(id,offset,9);}
     public synchronized dev.mineagent.runtime.core.persistence.PackageLibraryHistory.Usage usage()throws Exception{return repository.packageLibraryUsage();}
     public record SavedVersion(RuntimePackage manifest,String payloadHash,String provenance,long observedAt,String payload){}
+    public synchronized RuntimePackage versionByCanonical(UUID id,long revision,String canonical)throws Exception{
+        var stored=repository.packageVersion(id,revision);if(stored==null)throw new IllegalStateException("PACKAGE_VERSION_NOT_RECORDED");var p=version(id,revision,stored.payloadHash()).manifest();if(!p.canonicalSha256().equals(canonical))throw new IllegalStateException("PACKAGE_VERSION_SNAPSHOT_CHANGED");return p;
+    }
     public synchronized SavedVersion version(UUID id,long revision,String expectedPayloadHash)throws Exception{
         var stored=repository.packageVersion(id,revision);if(stored==null)throw new IllegalStateException("PACKAGE_VERSION_NOT_RECORDED");
         String hash=RuntimePackageCanonicalizer.sha256(stored.payload().getBytes(StandardCharsets.UTF_8));if(!hash.equals(stored.payloadHash())||!hash.equals(expectedPayloadHash))throw new IllegalStateException("PACKAGE_VERSION_SNAPSHOT_CHANGED");

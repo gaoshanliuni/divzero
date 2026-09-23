@@ -63,7 +63,7 @@ public final class ConversationAgentTools {
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     var value=failure==null?receipt:Map.<String,Object>of("status","UNKNOWN","error","AGENT_TOOL_OUTCOME_UNKNOWN");
                     ConversationInteractionSmokeServer.observe(tool,args,value);
-                    ConversationRuntimeItemSmokeServer.observe(tool,value);ConversationHostSmokeServer.observe(tool,args,value);ConversationFeedbackSmokeServer.observe(tool,value);
+                    ConversationRuntimeItemSmokeServer.observe(tool,value);ConversationHostSmokeServer.observe(tool,args,value);ConversationFeedbackSmokeServer.observe(tool,value);ConversationCreatureSmokeServer.observe(tool,args,value);ConversationWatchSmokeServer.observe(tool,value);
                     try{String encoded=JSON.writeValueAsString(Map.of("owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args,"receipt",value));CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,1,encoded);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((written,writeError)->s.execute(()->{if(writeError!=null||failure!=null)result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));else result.complete(value);}));}
                     catch(Exception writeError){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));}
                 }));
@@ -71,6 +71,7 @@ public final class ConversationAgentTools {
         }catch(Exception invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid)));}
     }
     private static CompletableFuture<Map<String,Object>> read(ServerPlayer p,String tool,JsonNode args,BooleanSupplier permit)throws Exception{
+        if(tool.equals("read_host_output")){keys(args,"operation_id","stream","offset");return dev.mineagent.runtime.neoforge.host.LocalHostCommands.output(p,UUID.fromString(text(args,"operation_id",36)),text(args,"stream",6),args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0);}
         if(tool.equals("scan_blocks"))return scan(p,args,permit).thenApply(result->{ConversationDiamondSmokeServer.observe(result);return result;});
         if(tool.equals("web_search")||tool.equals("read_web_page"))return web(p,tool,args,permit);
         if(tool.equals("inspect_blocks"))return inspectBlocks(p,args,permit);
@@ -79,6 +80,7 @@ public final class ConversationAgentTools {
         Map<String,Object> value=switch(tool){
             case "read_command_output"->{keys(args,"output_id","offset");yield commandOutput(p,UUID.fromString(text(args,"output_id",36)),args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0);}
             case "inspect_player_control"->{keys(args);yield dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.inspect(p);}
+            case "inspect_creatures"->{yield dev.mineagent.runtime.neoforge.content.RuntimeCreatures.inspect(p,args);}
             case "inspect_webui"->{keys(args);yield Map.of("contract",dev.mineagent.runtime.worker.generation.WorldUiContract.TEXT,"watchSupported",true,"scope","WORLD_OBJECT_BOUND_PLAYER_WINDOW");}
             case "inspect_effects"->{keys(args);yield ConversationEffectTools.inspect(p);}
             case "inspect_host"->{keys(args);yield dev.mineagent.runtime.neoforge.host.LocalHostCommands.inspect(p);}
@@ -114,6 +116,8 @@ public final class ConversationAgentTools {
     private static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,UUID operation,String tool,JsonNode a,BooleanSupplier permit)throws Exception{
         Map<String,Object> result;
         switch(tool){
+            case "define_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.define(p,operation,a);}
+            case "control_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.control(p,a);}
             case "set_persona"->{keys(a,"expected_revision","text");if(!a.path("expected_revision").canConvertToLong()||!a.path("expected_revision").isIntegralNumber()||a.path("expected_revision").asLong()<0||!a.path("text").isTextual()||a.path("text").asText().length()>8192)throw new IllegalArgumentException("PERSONA_ARGUMENTS");result=ConversationIdentityTools.setPersona(p,agent,operation,a.path("expected_revision").longValue(),a.path("text").textValue());}
             case "set_appearance"->{keys(a,"kind","expected_revision","skin","model","texture","animation");for(String field:List.of("kind","skin","model","texture","animation"))if(a.has(field)&&!a.path(field).isTextual())throw new IllegalArgumentException("APPEARANCE_FIELD_TYPE");if(!a.path("expected_revision").isIntegralNumber()||!a.path("expected_revision").canConvertToLong()||a.path("expected_revision").asLong()<0)throw new IllegalArgumentException("APPEARANCE_REVISION");result=ConversationIdentityTools.setAppearance(p,agent,operation,a);}
             case "modify_effect"->{keys(a,"action","effect","expected_hash","level","duration_seconds","infinite","ambient","particles","icon");for(String key:List.of("infinite","ambient","particles","icon"))if(a.has(key)&&!a.path(key).isBoolean())throw new IllegalArgumentException("EFFECT_BOOLEAN");result=ConversationEffectTools.change(p,a);}

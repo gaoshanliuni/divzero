@@ -53,6 +53,8 @@ public final class MineAgentRegistries {
                     MobCategory.MISC,
                     builder -> builder.sized(0.30F, 0.30F).clientTrackingRange(8).updateInterval(1)
             );
+    public static final DeferredHolder<EntityType<?>,EntityType<dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity>> RUNTIME_CREATURE =
+            ENTITIES.registerEntityType("runtime_creature",dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity::new,MobCategory.CREATURE,builder->builder.sized(.8F,.8F).clientTrackingRange(10).updateInterval(2));
     public static final DeferredHolder<EntityType<?>, EntityType<dev.mineagent.runtime.neoforge.content.RuntimeObjectEntity>> RUNTIME_OBJECT =
             ENTITIES.registerEntityType("runtime_object",dev.mineagent.runtime.neoforge.content.RuntimeObjectEntity::new,MobCategory.MISC,builder->builder.sized(1,1).clientTrackingRange(8).updateInterval(1));
     public static final DeferredHolder<EntityType<?>,EntityType<dev.mineagent.runtime.neoforge.content.RuntimeThrownItemEntity>> RUNTIME_THROWN_ITEM =

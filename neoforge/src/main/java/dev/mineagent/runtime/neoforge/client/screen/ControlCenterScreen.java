@@ -133,13 +133,6 @@ public final class ControlCenterScreen extends Screen {
         screen.model.select(section);
         return screen;
     }
-    public static ControlCenterScreen forCoderDraft(Screen parent,String draftId,String world){
-        java.util.UUID.fromString(draftId);java.util.UUID.fromString(world);var screen=create(parent,PanelSection.CODE_STUDIO);
-        screen.requestedCodeDraftId=draftId;screen.requestedCodeWorld=world;return screen;
-    }
-    /** The inline editor is retired; mutable source now belongs to NativeCodeStudioScreen. */
-    @Deprecated public boolean hasUnsavedCodeDraft(){return false;}
-
     public static ControlCenterScreen workflowEditor(Screen parent){
         if(!Boolean.parseBoolean(PanelSnapshotInbox.snapshot().values().getOrDefault("permission.manage_providers","false")))throw new SecurityException("PROVIDER_EDITOR_FORBIDDEN");
         var screen=new ControlCenterScreen(parent,false,ControlCenterModel.forProviderManager());screen.model.select(PanelSection.PROVIDERS);screen.providerPage=3;return screen;
@@ -234,6 +227,11 @@ public final class ControlCenterScreen extends Screen {
             ));
         }
 
+        var directory=PanelSnapshotInbox.snapshot().values();int offset=parseBoundedInt(directory.get("agent.offset"),0,Integer.MAX_VALUE,0),total=parseBoundedInt(directory.get("agent.total"),0,Integer.MAX_VALUE,0);
+        if(java.util.Set.of(PanelSection.AGENTS,PanelSection.APPEARANCE,PanelSection.CONVERSATIONS,PanelSection.TASKS).contains(model.selectedSection())&&total>8){
+            Button prev=Button.builder(Component.literal("上一组 AI"),b->ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest(Math.max(0,offset-8)))).bounds(contentX,68,90,18).build();prev.active=offset>0;addRenderableWidget(prev);
+            Button next=Button.builder(Component.literal("下一组 AI"),b->ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest(offset+8))).bounds(contentX+94,68,90,18).build();next.active=offset+8<total;addRenderableWidget(next);
+        }
         if (model.selectedSection() == PanelSection.AGENTS) {
             addAgentControls(contentX, contentWidth);
         } else if (model.selectedSection() == PanelSection.OVERVIEW) {
@@ -242,8 +240,7 @@ public final class ControlCenterScreen extends Screen {
             addConversationControls(contentX, contentWidth);
         } else if (model.selectedSection() == PanelSection.TASKS) {
             addTaskControls(contentX, contentWidth);
-        } else if (model.selectedSection() == PanelSection.CODE_STUDIO) {
-            addCodeStudioControls(contentX, contentWidth);
+
         } else if (model.selectedSection() == PanelSection.MEMORY) {
             addMemoryControls(contentX, contentWidth);
         } else if (model.selectedSection() == PanelSection.PERMISSIONS) {
@@ -252,16 +249,14 @@ public final class ControlCenterScreen extends Screen {
             addModKnowledgeControls(contentX, contentWidth);
         } else if (model.selectedSection() == PanelSection.BACKUPS) {
             addBackupControls(contentX, contentWidth);
-        } else if (model.selectedSection() == PanelSection.MEDIA) {
-            addMediaControls(contentX, contentWidth);
+
         } else if (model.selectedSection() == PanelSection.APPEARANCE) {
             addAppearanceControls(contentX, contentWidth);
         } else if (model.selectedSection() == PanelSection.PACKAGES) {
             addPackageControls(contentX, contentWidth);
         } else if (model.selectedSection() == PanelSection.DIAGNOSTICS) {
             addDiagnosticsControls(contentX, contentWidth);
-        } else if (model.selectedSection() == PanelSection.CREATOR) {
-            addCreatorControls(contentX, contentWidth);
+
         } else if (model.selectedSection() == PanelSection.PROVIDERS) {
             addProviderControls(contentX, contentWidth);
         }
@@ -857,36 +852,6 @@ public final class ControlCenterScreen extends Screen {
                 .build());
     }
 
-    private void addCreatorControls(int contentX, int contentWidth) {
-        String[] modes = {"建筑", "实体/NPC", "机器", "世界规则/玩法", "图像", "脚本"};
-        addRenderableWidget(Button.builder(Component.literal("模式: " + modes[creatorMode]), ignored -> {
-                    creatorMode = (creatorMode + 1) % modes.length;
-                    rebuildWidgets();
-                }).bounds(contentX, 112, Math.min(100, contentWidth), 18).build());
-        addRenderableWidget(new StringWidget(contentX, 132, contentWidth, 16,
-                Component.translatable("screen.mineagent_runtime.creator_prompt"), this.font));
-        EditBox prompt = new EditBox(this.font, contentX, 150, contentWidth, 20,
-                Component.translatable("screen.mineagent_runtime.creator_prompt"));
-        prompt.setMaxLength(16_384);
-        prompt.setValue(creatorPromptDraft);
-        prompt.setResponder(value -> creatorPromptDraft = value);
-        addRenderableWidget(prompt);
-        Button submit = Button.builder(creatorMode==4?Component.translatable("screen.mineagent_runtime.creator_submit"):Component.literal("Coder 预算与候选"), ignored -> {
-                    if (this.minecraft.getConnection() != null) {
-                        if(creatorMode==4&&!creatorPromptDraft.isBlank())ClientPacketDistributor.sendToServer(new MineAgentPayloads.PromptRequest("IMAGE",creatorPromptDraft));
-                        else if(creatorMode!=4)this.minecraft.setScreen(new NativeCoderScreen(this,creatorPromptDraft.isBlank()?"":"创造类别="+modes[creatorMode]+"。"+creatorPromptDraft));
-                    }
-                }).bounds(contentX, 174, Math.min(120, contentWidth), 20).build();
-        submit.active = creatorMode!=4||!creatorPromptDraft.isBlank();
-        addRenderableWidget(submit);
-        var result = PanelSnapshotInbox.promptResult();
-        String resultText = creatorMode!=4?"代码请求与结果请查看 Coder 候选历史；不使用旧 PromptResult 作为新结果。":result.accepted()
-                ? result.providerId() + ": " + result.text()
-                : "状态: " + result.errorCode();
-        addRenderableWidget(new StringWidget(contentX, 198, contentWidth, 16,
-                Component.literal(resultText), this.font).setMaxWidth(contentWidth));
-    }
-
     private void addDecisionControls(int contentX, int contentWidth) {
         Map<String, String> state = PanelSnapshotInbox.decisionState().values();
         if (!Boolean.parseBoolean(state.getOrDefault("present", "false"))) {
@@ -999,19 +964,6 @@ public final class ControlCenterScreen extends Screen {
         } else {
             addTaskManagementControls(contentX, contentWidth);
         }
-    }
-
-    private void addCodeStudioControls(int contentX,int contentWidth){
-        addRenderableWidget(new StringWidget(contentX,112,contentWidth,38,Component.literal("原生编辑已统一到独立 Code Studio：按 Owner/world/revision 读取，明确 Agent，不使用共享列表快照覆盖本地源码。"),font).setMaxWidth(contentWidth));
-        addRenderableWidget(Button.builder(Component.literal(requestedCodeDraftId.isEmpty()?"打开全部本人草稿":"打开指定采用稿"),b->{
-            this.minecraft.setScreen(requestedCodeDraftId.isEmpty()?new NativeCodeStudioScreen(this):new NativeCodeStudioScreen(this,requestedCodeDraftId,requestedCodeWorld));
-        }).bounds(contentX,154,contentWidth,20).build());
-        int width=(contentWidth-8)/3;
-        addRenderableWidget(Button.builder(Component.literal("新 JS"),b->this.minecraft.setScreen(NativeCodeStudioScreen.createDraft(this,"script.js"))).bounds(contentX,179,width,20).build());
-        addRenderableWidget(Button.builder(Component.literal("新 mjs"),b->this.minecraft.setScreen(NativeCodeStudioScreen.createDraft(this,"script.mjs"))).bounds(contentX+width+4,179,width,20).build());
-        addRenderableWidget(Button.builder(Component.literal("新 Java"),b->this.minecraft.setScreen(NativeCodeStudioScreen.createDraft(this,"Extension.java"))).bounds(contentX+2*(width+4),179,contentWidth-2*(width+4),20).build());
-        addRenderableWidget(Button.builder(Component.literal("Coder 请求与候选（另行确认费用）"),b->this.minecraft.setScreen(new NativeCoderScreen(this,""))).bounds(contentX,204,contentWidth,20).build());
-        addRenderableWidget(new StringWidget(contentX,228,contentWidth,30,Component.literal("创建、保存、源码发布、运行、停止分别确认；打开界面不创建示例或 Task。"),font).setMaxWidth(contentWidth));
     }
 
     private void addMemoryControls(int contentX, int contentWidth) {
@@ -1266,105 +1218,6 @@ public final class ControlCenterScreen extends Screen {
         }
     }
 
-    private void addMediaControls(int contentX, int contentWidth) {
-        int tabWidth = Math.max(42, Math.min(72, (contentWidth - 8) / 3));
-        Button addTab = Button.builder(Component.literal("添加媒体"), ignored -> {
-                    mediaPage = 0;
-                    rebuildWidgets();
-                }).bounds(contentX, 108, tabWidth, 18).build();
-        addTab.active = mediaPage != 0;
-        addRenderableWidget(addTab);
-        Button controlTab = Button.builder(Component.literal("播放控制"), ignored -> {
-                    mediaPage = 1;
-                    ClientPacketDistributor.sendToServer(new MineAgentPayloads.MediaCommand("refresh", Map.of()));
-                    rebuildWidgets();
-                }).bounds(contentX + tabWidth + 4, 108, tabWidth, 18).build();
-        controlTab.active = mediaPage != 1;
-        addRenderableWidget(controlTab);
-        Button scopeTab = Button.builder(Component.literal("网络范围"), ignored -> {
-                    mediaPage = 2;
-                    rebuildWidgets();
-                }).bounds(contentX + (tabWidth + 4) * 2, 108, tabWidth, 18).build();
-        scopeTab.active = mediaPage != 2;
-        addRenderableWidget(scopeTab);
-        if (mediaPage == 0) {
-            addRenderableWidget(Button.builder(Component.literal("类型: " + mediaKind.name()), ignored -> {
-                        var values = dev.mineagent.runtime.api.media.MediaKind.values();
-                        mediaKind = values[(mediaKind.ordinal() + 1) % values.length];
-                        rebuildWidgets();
-                    }).bounds(contentX, 130, contentWidth, 18).build());
-            EditBox title = new EditBox(this.font, contentX, 152, contentWidth, 18, Component.literal("标题"));
-            title.setMaxLength(256);
-            title.setHint(Component.literal("标题"));
-            title.setValue(mediaTitleDraft);
-            title.setResponder(value -> mediaTitleDraft = value);
-            addRenderableWidget(title);
-            EditBox url = new EditBox(this.font, contentX, 174, contentWidth, 18, Component.literal("HTTP(S) URL"));
-            url.setMaxLength(4_096);
-            url.setHint(Component.literal("HTTP(S) URL"));
-            url.setValue(mediaUrlDraft);
-            url.setResponder(value -> mediaUrlDraft = value);
-            addRenderableWidget(url);
-            Button add = Button.builder(Component.literal("加入播放列表"), ignored ->
-                            ClientPacketDistributor.sendToServer(new MineAgentPayloads.MediaCommand("create", Map.of(
-                                    "kind", mediaKind.name(), "title", mediaTitleDraft.strip(),
-                                    "url", mediaUrlDraft.strip()))))
-                    .bounds(contentX, 196, Math.min(120, contentWidth), 18).build();
-            add.active = !mediaTitleDraft.isBlank() && !mediaUrlDraft.isBlank();
-            addRenderableWidget(add);
-        } else if (mediaPage == 1) {
-            Map<String, String> state = PanelSnapshotInbox.mediaState().values();
-            int count = parseBoundedInt(state.get("mediaCount"), 0, 20, 0);
-            if (count == 0) {
-                addRenderableWidget(new StringWidget(contentX, 134, contentWidth, 18,
-                        Component.literal("播放列表为空"), this.font));
-                return;
-            }
-            selectedMediaIndex = Math.min(selectedMediaIndex, count - 1);
-            String prefix = "media." + selectedMediaIndex + ".";
-            addRenderableWidget(Button.builder(Component.literal(state.getOrDefault(prefix + "title", "媒体")), ignored -> {
-                        selectedMediaIndex = (selectedMediaIndex + 1) % count;
-                        rebuildWidgets();
-                    }).bounds(contentX, 130, contentWidth, 18).build());
-            addRenderableWidget(new StringWidget(contentX, 152, contentWidth, 16,
-                    Component.literal(state.getOrDefault(prefix + "kind", "URL") + "  "
-                            + abbreviate(state.getOrDefault(prefix + "url", ""), 28)), this.font));
-            addRenderableWidget(new StringWidget(contentX, 170, contentWidth, 16,
-                    Component.literal("绑定: " + state.getOrDefault(prefix + "binding", "未绑定")), this.font));
-            String id = state.getOrDefault(prefix + "id", "");
-            String revision = state.getOrDefault(prefix + "revision", "0");
-            int width = Math.max(44, (contentWidth - 8) / 3);
-            String playAction = Boolean.parseBoolean(state.getOrDefault(prefix + "playing", "false")) ? "pause" : "play";
-            addRenderableWidget(Button.builder(Component.literal("play".equals(playAction) ? "播放" : "暂停"), ignored ->
-                            sendMediaAction(playAction, id, revision))
-                    .bounds(contentX, 190, width, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("绑定当前位置"), ignored ->
-                            sendMediaAction("bind_here", id, revision))
-                    .bounds(contentX + width + 4, 190, width * 2 + 4, 18).build());
-        } else {
-            EditBox allowed = new EditBox(this.font, contentX, 134, contentWidth, 18,
-                    Component.literal("允许访问的私有主机"));
-            allowed.setMaxLength(4_096);
-            allowed.setHint(Component.literal("逗号分隔，例如 media.internal,192.168.1.20"));
-            allowed.setValue(mediaAllowedHostsDraft);
-            allowed.setResponder(value -> mediaAllowedHostsDraft = value);
-            addRenderableWidget(allowed);
-            addRenderableWidget(new StringWidget(contentX, 156, contentWidth, 32,
-                    Component.literal("默认阻止 private/special IP 与 DNS 解析结果；仅显式主机可例外。"),
-                    this.font).setMaxWidth(contentWidth));
-            addRenderableWidget(Button.builder(Component.literal("保存网络范围"), ignored ->
-                            ClientPacketDistributor.sendToServer(new MineAgentPayloads.ConfigPatch(
-                                    PanelSnapshotInbox.snapshot().revision(),
-                                    Map.of("media.allowedHosts", mediaAllowedHostsDraft.strip()))))
-                    .bounds(contentX, 194, Math.min(120, contentWidth), 18).build());
-        }
-    }
-
-    private void sendMediaAction(String action, String id, String revision) {
-        ClientPacketDistributor.sendToServer(new MineAgentPayloads.MediaCommand(action, Map.of(
-                "mediaId", id, "expectedRevision", revision, "positionMillis", "0")));
-    }
-
     private dev.mineagent.runtime.client.trust.ServerTrustStore trustStore() throws java.io.IOException {
         return new dev.mineagent.runtime.client.trust.ServerTrustStore(
                 this.minecraft.gameDirectory.toPath().resolve("config").resolve("mineagent-trusted-servers.properties"));
@@ -1445,7 +1298,7 @@ public final class ControlCenterScreen extends Screen {
                 .bounds(contentX + width + 4, 174, width, 18).build());
         addRenderableWidget(new StringWidget(contentX, 196, contentWidth, 16,
                 Component.literal(PanelSnapshotInbox.memoryState().errorCode().isBlank()
-                        ? "Revision " + revision : "错误: " + PanelSnapshotInbox.memoryState().errorCode()), this.font));
+                        ? "" : "错误: " + PanelSnapshotInbox.memoryState().errorCode()), this.font));
     }
 
     private void loadSelectedMemory() {
