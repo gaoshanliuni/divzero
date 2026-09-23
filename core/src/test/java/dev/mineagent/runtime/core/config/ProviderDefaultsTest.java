@@ -6,4 +6,12 @@ class ProviderDefaultsTest {
   var file=root.resolve("settings.db");try(var db=new dev.mineagent.runtime.core.persistence.SqliteConfigRepository(file)){assertTrue(db.save(0,new dev.mineagent.runtime.core.persistence.StoredConfig(1,Map.of("provider.openai.baseUrl","https://api.deepseek.com/v1/"),Map.of())));}
   try(var c=ServerConfigService.open(file)){assertEquals("deepseek-flash",c.snapshot().values().get("provider.openai.model"));}
  }
+ @Test void unlistedCustomModelSurvivesKeyRotationAndReopen(@org.junit.jupiter.api.io.TempDir java.nio.file.Path root)throws Exception{
+  var file=root.resolve("custom.db");try(var c=ServerConfigService.open(file)){
+   assertTrue(c.apply(new ConfigPatch(c.snapshot().revision(),Map.of("provider.openai.baseUrl","https://api.deepseek.com/v1/","provider.openai.model","my-private/model-v9")),true).accepted());
+   assertTrue(c.apply(new ConfigPatch(c.snapshot().revision(),Map.of("provider.openai.apiKey","offline-test-value")),true).accepted());
+   assertEquals("my-private/model-v9",c.snapshot().values().get("provider.openai.model"));
+  }
+  try(var c=ServerConfigService.open(file)){assertEquals("my-private/model-v9",c.snapshot().values().get("provider.openai.model"));}
+ }
 }

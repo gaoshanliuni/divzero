@@ -833,12 +833,13 @@ public final class ControlCenterScreen extends Screen {
 
             addRenderableWidget(field(contentX, 130, fieldWidth, "OpenAI-compatible Base URL", openAiBaseUrlDraft,
                     value -> {String old=openAiBaseUrlDraft;openAiBaseUrlDraft=value;if(openAiModelDraft.isBlank()||openAiModelDraft.equals(dev.mineagent.runtime.core.config.ProviderDefaults.model(old)))openAiModelDraft=dev.mineagent.runtime.core.config.ProviderDefaults.model(value);}));
-            addRenderableWidget(field(contentX, 176, fieldWidth, "OpenAI-compatible 模型", openAiModelDraft,
+            addRenderableWidget(Button.builder(Component.literal("选择模型…"),b->Minecraft.getInstance().setScreen(new ProviderModelScreen(this))).bounds(contentX,198,fieldWidth,18).build());
+            addRenderableWidget(field(contentX, 176, fieldWidth, "OpenAI-compatible 模型（亦可点击下方选择）", openAiModelDraft,
                     value -> openAiModelDraft = value));
         } else if (providerPage == 1) {
             addRenderableWidget(new StringWidget(contentX,130,fieldWidth,20,Component.literal("API Key 不在网页或普通设置字段中显示。"),font));
             addRenderableWidget(Button.builder(Component.literal("打开原生保密 Key 输入"),b->Minecraft.getInstance().setScreen(new NativeSecretScreen(this))).bounds(contentX,160,fieldWidth,22).build());
-            addRenderableWidget(new StringWidget(contentX,190,fieldWidth,20,Component.literal("保存不测试模型；实际对话/任务请求可能计费。"),font));
+            addRenderableWidget(new StringWidget(contentX,190,fieldWidth,20,Component.literal("保存 Key 后获取模型列表；不会生成内容。"),font));
         } else if (providerPage == 2) {
             addRenderableWidget(field(contentX, 130, fieldWidth, "Ollama Base URL", ollamaBaseUrlDraft,
                     value -> ollamaBaseUrlDraft = value));

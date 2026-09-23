@@ -50,6 +50,7 @@ public final class ServerSettings {
             result=config.apply(new ConfigPatch(Long.parseLong(args.get("revision")),changes),true);
         }else throw new IllegalArgumentException("SETTINGS_ACTION_INVALID");
         if(result.accepted()){
+            if("save".equals(kind))ServerProviderModels.changed(viewer,JSON.readTree(args.get("values")).properties().stream().map(Map.Entry::getKey).collect(java.util.stream.Collectors.toSet()));
             MineAgentRuntimeServices.bodies(server).refreshResourceLimits();
             MineAgentNetwork.sendPanelSnapshot(viewer);
         }

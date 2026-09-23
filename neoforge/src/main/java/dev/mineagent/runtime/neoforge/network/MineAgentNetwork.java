@@ -53,6 +53,8 @@ public final class MineAgentNetwork {
         ObjectAssetPayloads.register(event);
         dev.mineagent.runtime.neoforge.ui.ServerUiRuntime.register(event);
         var registrar = event.registrar("3").versioned("3").executesOn(HandlerThread.NETWORK);
+        registrar.playToServer(ProviderModelsPayloads.Request.TYPE,ProviderModelsPayloads.Request.CODEC,(p,c)->serverWork(c,()->ProviderModelsPayloads.respond(p,(ServerPlayer)c.player(),c::reply)));
+        registrar.playToClient(ProviderModelsPayloads.Response.TYPE,ProviderModelsPayloads.Response.CODEC,(p,c)->c.enqueueWork(()->dev.mineagent.runtime.neoforge.client.ProviderModelsClient.accept(p)));
         registrar.playToServer(MineAgentPayloads.SecretConfigWrite.TYPE,MineAgentPayloads.SecretConfigWrite.CODEC,(p,c)->serverWork(c,()->c.reply(applyNativeSecret(p,(ServerPlayer)c.player()))));
         registrar.playToClient(MineAgentPayloads.SecretConfigResult.TYPE,MineAgentPayloads.SecretConfigResult.CODEC,(p,c)->c.enqueueWork(()->dev.mineagent.runtime.neoforge.client.screen.NativeSecretScreen.accept(p)));
         registrar.playToServer(
@@ -396,7 +398,7 @@ public final class MineAgentNetwork {
         }
         var result = MineAgentRuntimeServices.config(player.level().getServer())
                 .apply(new ConfigPatch(payload.expectedRevision(), values), true);
-        if (result.accepted()) MineAgentRuntimeServices.bodies(player.level().getServer()).refreshResourceLimits();
+        if (result.accepted()) { MineAgentRuntimeServices.bodies(player.level().getServer()).refreshResourceLimits(); dev.mineagent.runtime.neoforge.ui.ServerProviderModels.changed(player,values.keySet()); }
         context.reply(new MineAgentPayloads.ConfigPatchResult(
                 result.accepted(),
                 result.errorCode(),
@@ -421,7 +423,7 @@ public final class MineAgentNetwork {
             var decoder=java.util.Base64.getDecoder();var clear=SecretChannel.open(MineAgentRuntimeMod.SECRET_TRANSPORT_KEYS.getPrivate(),new SecretEnvelope(decoder.decode(request.envelope().get("ephemeral")),decoder.decode(request.envelope().get("nonce")),decoder.decode(request.envelope().get("ciphertext"))));
             var input=dev.mineagent.runtime.core.config.NativeSecretPayload.decode(clear,request.operation(),request.world(),request.instance(),request.revision());
             var result=config.apply(new ConfigPatch(request.revision(),java.util.Map.of(input.targetKey(),input.value())),true);
-            if(result.accepted()){audit(server,viewer.getUUID().toString(),"CONFIG_SECRET_PATCH","server",input.targetKey());sendPanelSnapshot(viewer);}
+            if(result.accepted()){audit(server,viewer.getUUID().toString(),"CONFIG_SECRET_PATCH","server",input.targetKey());dev.mineagent.runtime.neoforge.ui.ServerProviderModels.changed(viewer,java.util.Set.of(input.targetKey()));sendPanelSnapshot(viewer);}
             return new MineAgentPayloads.SecretConfigResult(request.operation(),result.accepted(),result.errorCode(),result.snapshot().revision(),config.secretValue(input.targetKey()).filter(v->!v.isBlank()).isPresent());
         }catch(Exception invalid){return new MineAgentPayloads.SecretConfigResult(request.operation(),false,"SECRET_ENVELOPE_REJECTED",config.snapshot().revision(),configured);}
     }

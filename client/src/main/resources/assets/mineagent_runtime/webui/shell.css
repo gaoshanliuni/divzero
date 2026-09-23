@@ -216,3 +216,6 @@ body[data-interacting=false] .window .titlebar button,body[data-interacting=fals
 #status:empty { display:none; }
 #chat-history article > details { font-size:12px; color:var(--muted); }
 #chat-history article > details:not([open]) > :not(summary) { display:none; }
+
+/* API conditional fields must stay hidden even when label/action styles set display. */
+[data-view-id="runtime-api-settings"] [hidden] { display:none !important; }
