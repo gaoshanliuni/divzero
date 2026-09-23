@@ -6,7 +6,7 @@ export const conversationFieldBounds={
 };
 export function conversationBudgetError(code){
   if(serviceBudgetErrors[code])return serviceBudgetErrors[code]+'。原文保留，不自动重试或换服务。';
-  return ({AGENT_TOOL_OUTCOME_UNKNOWN:'工具结果尚未确认；点击“核对后继续”读取回执和实际状态，不会直接重放动作。',AGENT_TOOL_CONTEXT_CHANGED:'操作期间上下文已改变；刷新后可核对并继续，旧上下文的写入不会直接重试。',CONVERSATION_CONTEXT_CHANGED:'会话上下文已变化；重新读取当前会话后可核对并继续。',CONTEXT_CHANGED:'当前世界或权限上下文已变化；返回有效上下文后核对再继续。',CURRENT_CONTEXT_EXCEEDS_BUDGET:'当前人设与本次消息已超出输入预算。不会截断人设或原文，也未开始摘要或回复生成。',
+  return ({AGENT_MODEL_PROVIDER_CHANGED:'此 AI 指定模型的 API 地址已改变，请重新选择模型或恢复默认。',AGENT_MODEL_PROVIDER_UNAVAILABLE:'此 AI 的指定模型 Provider 未启用，请配置 API 或恢复默认。',AGENT_TOOL_OUTCOME_UNKNOWN:'工具结果尚未确认；点击“核对后继续”读取回执和实际状态，不会直接重放动作。',AGENT_TOOL_CONTEXT_CHANGED:'操作期间上下文已改变；刷新后可核对并继续，旧上下文的写入不会直接重试。',CONVERSATION_CONTEXT_CHANGED:'会话上下文已变化；重新读取当前会话后可核对并继续。',CONTEXT_CHANGED:'当前世界或权限上下文已变化；返回有效上下文后核对再继续。',CURRENT_CONTEXT_EXCEEDS_BUDGET:'当前人设与本次消息已超出输入预算。不会截断人设或原文，也未开始摘要或回复生成。',
     AUDIT_TEXT_NOT_ORIGINAL:'这是已核验身份的旧审计片段；审计可能已经脱敏或截断，不代表完整原始聊天。',
     SUMMARY_DISABLED:'需要新的摘要，但本次发送的摘要预算为 0。已停止，原文保留。',
     SUMMARY_CALL_BUDGET_EXHAUSTED:'本次发送的摘要批次预算已耗尽，未继续发起回复。已经完成的有效摘要保留，可用于之后明确发送的新请求。',

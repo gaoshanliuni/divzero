@@ -527,6 +527,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
     }
 
     private WorkerEnvelope planAgent(WorkerEnvelope request) {
+        OpenAiCompatibleProvider openAiProvider;try{openAiProvider=agentOpenAi();}catch(IllegalArgumentException invalid){return error(request,"AGENT_MODEL_PROVIDER_UNAVAILABLE",invalid.getMessage());}
         if (openAiProvider == null) {
             return error(request, "TOOL_PROVIDER_UNAVAILABLE", "Tool Calls 需要 OpenAI-compatible Provider");
         }
@@ -872,7 +873,13 @@ public final class WorkerRequestHandler implements AutoCloseable {
                 + "},\"required\":[" + required + "]}";
     }
 
+    private OpenAiCompatibleProvider agentOpenAi(){
+        if(serviceRequest==null||!serviceRequest.payload().containsKey("agentModel"))return openAiProvider;
+        var p=serviceRequest.payload();if(!(p.get("agentModel") instanceof Map<?,?> c)||!c.keySet().equals(java.util.Set.of("world","agent","model","baseUrl","revision"))||!(c.get("model") instanceof String)||!(c.get("baseUrl") instanceof String)||!(c.get("revision") instanceof Number revision)||revision.longValue()<1||!java.util.Objects.equals(c.get("world"),p.get("worldId"))||!java.util.Objects.equals(c.get("agent"),p.get("agentId"))||openAiProvider==null)throw new IllegalArgumentException("AGENT_MODEL_PROVIDER_UNAVAILABLE");
+        return openAiProvider.withModel(String.valueOf(c.get("model")),String.valueOf(c.get("baseUrl")));
+    }
     private java.util.List<ModelProvider> orderedProviders() {
+        if(serviceRequest!=null&&serviceRequest.payload().containsKey("agentModel"))return java.util.List.of(agentOpenAi());
         var ordered = new java.util.ArrayList<ModelProvider>();
         for(String id:providerOrder)if(providers.containsKey(id))ordered.add(providers.get(id));
         return ordered;

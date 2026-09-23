@@ -613,6 +613,13 @@ public final class WebGuiHostAdapter implements AutoCloseable {
             else throw new IllegalArgumentException("EVENT_MANAGEMENT_KIND");
             boolean write=kind.equals("state")||kind.equals("archive");return UiClientSessions.command(write?"task.eventsWrite":"task.eventsRead",args,write?UUID.fromString(text(message,"operationId",36)):UUID.randomUUID());
         }
+        if(channel.equals("agentModelAction")){
+            String kind=text(message,"kind",16),agent=text(message,"agentId",36);UUID.fromString(agent);
+            if(kind.equals("read"))return UiClientSessions.command("agent.modelRead",Map.of("agentId",agent),UUID.randomUUID());
+            if(kind.equals("models"))return UiClientSessions.command("agent.modelModels",Map.of("agentId",agent,"refresh",Boolean.toString(message.has("refresh")&&message.get("refresh").getAsBoolean()),"offset",message.has("offset")?message.get("offset").getAsString():"0","query",message.has("query")?text(message,"query",128):""),UUID.randomUUID());
+            if(!kind.equals("save"))throw new IllegalArgumentException("AGENT_MODEL_ARGUMENTS");
+            return UiClientSessions.command("agent.modelSave",Map.of("agentId",agent,"mode",text(message,"mode",16),"model",text(message,"model",256),"baseUrl",text(message,"baseUrl",2048),"expectedRevision",message.get("expectedRevision").getAsString()),UUID.fromString(text(message,"operationId",36)));
+        }
         if(channel.equals("agentManagement")){
             if(message.has("offset")){int offset=message.get("offset").getAsInt();if(offset<0)throw new IllegalArgumentException("AGENT_PAGE");args.put("offset",Integer.toString(offset));}
 

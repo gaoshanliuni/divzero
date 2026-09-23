@@ -18,6 +18,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
     public String id() {
         return "openai-compatible";
     }
+    public OpenAiCompatibleProvider withModel(String value,String expectedBase){if(!dev.mineagent.runtime.core.config.AgentModelSettings.validModel(value)||!normalize(baseUri).equals(normalize(URI.create(expectedBase))))throw new IllegalArgumentException("AGENT_MODEL_PROVIDER_CHANGED");return new OpenAiCompatibleProvider(baseUri,apiKey,value,timeout);}
     public OpenAiCompatibleProvider withTimeout(Duration timeout){return new OpenAiCompatibleProvider(baseUri,apiKey,model,timeout);}
 
     @Override
@@ -223,10 +224,10 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         if(reasoning.isTextual()&&!reasoning.textValue().isEmpty())return reasoning.textValue();
         var thinking=delta.path("thinking");return thinking.isTextual()?thinking.textValue():"";
     }
-    private boolean officialDeepSeek(){return "https".equalsIgnoreCase(baseUri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(baseUri.getHost())&&"deepseek-flash".equals(model);}
+    private boolean officialDeepSeek(){return "https".equalsIgnoreCase(baseUri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(baseUri.getHost())&&java.util.Set.of("deepseek-flash","deepseek-v4-pro").contains(model);}
     static void configureConversationThinking(URI uri,String model,com.fasterxml.jackson.databind.node.ObjectNode body){
         // Explicit user preference; do not send DeepSeek-only parameters to unrelated Providers.
-        if("https".equalsIgnoreCase(uri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(uri.getHost())&&"deepseek-flash".equals(model)){
+        if("https".equalsIgnoreCase(uri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(uri.getHost())&&java.util.Set.of("deepseek-flash","deepseek-v4-pro").contains(model)){
             body.putObject("thinking").put("type","enabled");body.put("reasoning_effort","high");
         }
     }

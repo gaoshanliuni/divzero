@@ -17,6 +17,7 @@ import {createSentContent} from './sent-content-cards.mjs';
 import {createFeedbackHistory} from './feedback-history-cards.mjs';
 import {createApiSettings} from './api-settings-cards.mjs';
 import {createServerSettings} from './server-settings-cards.mjs';
+import {createAgentModels} from './agent-model-cards.mjs';
 import {createAgentManagement} from './agent-management-cards.mjs';
 import { createRendererSettings } from './renderer-settings.mjs';
 import { WindowState, containerBounds, taskbarAction } from './window-state.mjs';
@@ -89,7 +90,7 @@ const eventManagement=createEventManagement({windowFor,send,report,openTasks:wor
 const scheduleManagement=createScheduleManagement({windowFor,send,openTasks:worldTasks.open,openEvents:eventManagement.open});document.querySelector('#open-schedules').onclick=scheduleManagement.open;
 const serverSettings=createServerSettings({windowFor,send});document.querySelector('#open-server-settings').onclick=serverSettings.open;
 const apiSettings=createApiSettings({windowFor,send,advanced:serverSettings.open});document.querySelector('#open-api-settings').onclick=apiSettings.open;
-const agentManagement=createAgentManagement({windowFor,send,report});document.querySelector('#open-agents').onclick=agentManagement.open;
+const agentModels=createAgentModels({windowFor,send});const agentManagement=createAgentManagement({windowFor,send,report,openModel:agentModels.open});document.querySelector('#open-agents').onclick=agentManagement.open;
 const appearances=createAppearanceCards({windowFor,send,report,openDecision:q=>decisions.open(q)});
 const personas=createPersonaCards({windowFor,send,report,persist:saveUiState});
 const conversations=createConversationCards({send,report,persist:saveUiState,openApiSettings:apiSettings.open});
@@ -445,7 +446,7 @@ addEventListener('mineagent:host', event => {
       if(!state.workspaceVisible)releaseWorkspaceInput();
       for(const id of state.views.keys())renderLayout(id);dock();
     }
-    else if (channel === 'session') { deliveries.session(data);feedbackHistory.session(data);sentContent.session(data);taskHistory.session(data);generationHistory.session(data);packageCatalog.session(data);packageAssets.session(data);preferences.session(data);javaStudio.session(data);nativeCompatibility.session(data);worldRestore.session(data);dataPacks.session(data);resourcePacks.session(data);clientScripts.session(data);nativeApi.session(data);bootExtensions.session(data);generations.session(data);scheduleManagement.session(data);eventManagement.session(data);agentManagement.session(data);worldTasks.session();serverSettings.session();apiSettings.session();hasServerSession = true; status.textContent = ''; }
+    else if (channel === 'session') { deliveries.session(data);feedbackHistory.session(data);sentContent.session(data);taskHistory.session(data);generationHistory.session(data);packageCatalog.session(data);packageAssets.session(data);preferences.session(data);javaStudio.session(data);nativeCompatibility.session(data);worldRestore.session(data);dataPacks.session(data);resourcePacks.session(data);clientScripts.session(data);nativeApi.session(data);bootExtensions.session(data);generations.session(data);scheduleManagement.session(data);eventManagement.session(data);agentModels.session();agentManagement.session(data);worldTasks.session();serverSettings.session();apiSettings.session();hasServerSession = true; status.textContent = ''; }
     else if(channel==='hudRestoreStatus'){hudRestoreStatus=data;renderHudRestoreStatus();}
     else if(channel==='hudRememberState'){
       const button=nodes.get(data.viewId)?.querySelector('[data-action=remember-hud]');if(button){button.disabled=!data.available;button.setAttribute('aria-pressed',String(data.enabled));button.textContent=data.enabled?'已开启登录恢复':'登录时恢复';}

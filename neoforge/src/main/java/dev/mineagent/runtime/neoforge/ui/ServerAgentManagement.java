@@ -26,7 +26,7 @@ public final class ServerAgentManagement {
         for(var a:all.stream().skip(offset).limit(16).toList()){
             var body=bodies.body(a.agentId()).orElse(null);boolean own=a.ownerPlayerId().equals(viewer.getUUID());var row=new LinkedHashMap<String,Object>();
             row.put("id",a.agentId());row.put("name",a.displayName());row.put("revision",bodies.revision(a.agentId()));row.put("requestedMode",a.mode());row.put("bodyState",bodies.bodyState(a.agentId()));row.put("effectiveMode",body==null?"":body.gameMode.getGameModeForPlayer().getName());
-            row.put("canManage",own||op(viewer));row.put("canCollaborate",own);row.put("mine",own);row.put("canStartTask",ServerTaskStart.allowed(viewer,a.agentId())&&body!=null&&body.canAct());row.put("health",body==null?null:body.getHealth());row.put("food",body==null?null:body.getFoodData().getFoodLevel());
+            row.put("canConfigureModel",ServerAgentModels.permitted(viewer,a.agentId()));var model=dev.mineagent.runtime.core.config.AgentModelSettings.read(MineAgentRuntimeServices.config(server).snapshot().values(),MineAgentRuntimeServices.worldId(server),a.agentId());row.put("modelLabel",model.mode().equals("DEFAULT")?"默认模型":model.model());row.put("canManage",own||op(viewer));row.put("canCollaborate",own);row.put("mine",own);row.put("canStartTask",ServerTaskStart.allowed(viewer,a.agentId())&&body!=null&&body.canAct());row.put("health",body==null?null:body.getHealth());row.put("food",body==null?null:body.getFoodData().getFoodLevel());
             row.put("collaborators",own?a.collaboratorPlayerIds().stream().map(UUID::toString).sorted().toList():List.of());rows.add(row);
             row.put("ticketState",bodies.ticketState(a.agentId()));
         }

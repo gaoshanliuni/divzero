@@ -26,7 +26,7 @@ final class RealProviderSmokeAudit {
 
     static RealProviderSmokeAudit begin(URI uri, ObjectNode body) throws Exception {
         Path directory = configuredDirectory();
-        return directory == null ? null : begin(directory, uri, body, parseBudget(System.getenv().getOrDefault("MINEAGENT_REAL_PROVIDER_MAX_CALLS", "24")));
+        return directory == null ? null : begin(directory, uri, body, parseBudget(System.getenv().getOrDefault("MINEAGENT_REAL_PROVIDER_MAX_CALLS", "24")),"true".equals(System.getenv("MINEAGENT_REAL_AGENT_MODEL_TEST")));
     }
 
     static int parseBudget(String value) { return "unlimited".equals(value) ? -1 : Integer.parseInt(value); }
@@ -34,10 +34,11 @@ final class RealProviderSmokeAudit {
     static RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body) throws Exception {
         return begin(directory,uri,body,MAX_CALLS);
     }
-    static synchronized RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body, int maximum) throws Exception {
+    static synchronized RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body, int maximum) throws Exception {return begin(directory,uri,body,maximum,false);}
+    private static synchronized RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body, int maximum,boolean agentModels) throws Exception {
         if(maximum != -1 && (maximum<1||maximum>MAX_CALLS))throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_CALL_LIMIT");
         if (!uri.equals(URI.create("https://api.deepseek.com/v1/chat/completions"))
-                || !body.path("model").asText().equals("deepseek-flash") || !body.path("stream").asBoolean())
+                || !(agentModels?Set.of("deepseek-flash","deepseek-v4-pro"):Set.of("deepseek-flash")).contains(body.path("model").asText()) || !body.path("stream").asBoolean())
             throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_ENDPOINT_OR_MODE");
         if (!Files.isDirectory(directory)) throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_DIRECTORY");
         int index = 1;
@@ -55,7 +56,7 @@ final class RealProviderSmokeAudit {
         evidence.put("call", index);
         evidence.put("callBudget", maximum == -1 ? "USER_AUTHORIZED_UNLIMITED" : maximum);
         evidence.put("endpoint", uri.toString());
-        evidence.put("requestedModel", "deepseek-flash");
+        evidence.put("requestedModel", body.path("model").asText());
         evidence.put("requestBytes", request.length);
         evidence.put("requestSha256", HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(request)));
         evidence.put("outputLimitMode", "PROVIDER_DEFAULT_NOT_SET");

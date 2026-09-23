@@ -225,3 +225,5 @@ body[data-interacting=false] .window .titlebar button,body[data-interacting=fals
 .conversation-thinking > summary { cursor: pointer; color: #bbcee6; }
 .conversation-thinking pre { white-space: pre-wrap; overflow-wrap: anywhere; color: #c4d2e4; }
 .conversation-thinking [hidden] { display: none !important; }
+
+[data-view-id="runtime-agent-model"] [hidden] { display:none !important; }

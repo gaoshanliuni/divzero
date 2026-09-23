@@ -96,7 +96,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                 configureProviders(config);
                 var payload=new java.util.LinkedHashMap<String,Object>();payload.put("capability",modelRequest.capability().name());payload.put("prompt",modelRequest.prompt());
                 if(!modelRequest.images().isEmpty())payload.put("images",dev.mineagent.runtime.worker.WorkerModelImages.encode(modelRequest.images()));
-                var request=withTask(new WorkerEnvelope(1,UUID.randomUUID(),"model.complete",payload),task);
+                var request=dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,withTask(new WorkerEnvelope(1,UUID.randomUUID(),"model.complete",payload),task));
                 if(!modelRequest.images().isEmpty()){ensureWorker();return worker.request(request,permit);} // An uncertain image request must not be automatically billed twice.
                 return requestWithRecovery(request,permit);
             } catch (Exception failure) {
@@ -113,10 +113,11 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
     public CompletableFuture<WorkerEnvelope> summarizeConversation(ServerConfigService config,UUID jobId,String prompt,java.util.function.BooleanSupplier permit){
         return completeSingle(config,summaryRequest(jobId,prompt),permit);
     }
+    public CompletableFuture<WorkerEnvelope> summarizeConversation(ServerConfigService config,UUID jobId,String prompt,java.util.function.BooleanSupplier permit,UUID world,UUID agent){return completeSingle(config,dev.mineagent.runtime.core.config.AgentModelSettings.context(summaryRequest(jobId,prompt),world,agent),permit);}
     private CompletableFuture<WorkerEnvelope> completeSingle(ServerConfigService config,WorkerEnvelope request,java.util.function.BooleanSupplier permit){
         java.util.Objects.requireNonNull(permit);
         return CompletableFuture.supplyAsync(()->{
-            try{if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();configureProviders(config);ensureWorker();return worker.request(request,permit);}
+            try{if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();configureProviders(config);ensureWorker();return worker.request(dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,request),permit);}
             catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}
         },requests);
     }
@@ -134,6 +135,9 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
         return streamConversation(config,capability,prompt,deltaConsumer,permit,context,operation,null);
     }
     public CompletableFuture<WorkerEnvelope> streamConversation(ServerConfigService config,String capability,String prompt,java.util.function.Consumer<WorkerEnvelope> deltaConsumer,java.util.function.BooleanSupplier permit,dev.mineagent.runtime.core.memory.PlayerPreferenceStore.Snapshot context,UUID operation,java.util.List<java.util.Map<String,Object>> toolHistory){
+        return streamConversation(config,capability,prompt,deltaConsumer,permit,context,operation,toolHistory,null,null);
+    }
+    public CompletableFuture<WorkerEnvelope> streamConversation(ServerConfigService config,String capability,String prompt,java.util.function.Consumer<WorkerEnvelope> deltaConsumer,java.util.function.BooleanSupplier permit,dev.mineagent.runtime.core.memory.PlayerPreferenceStore.Snapshot context,UUID operation,java.util.List<java.util.Map<String,Object>> toolHistory,UUID world,UUID agent){
         return CompletableFuture.supplyAsync(() -> {
             try {
                 if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();
@@ -141,7 +145,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                 ensureWorker();
                 var prefs=context==null?null:preferences();if(context!=null)prefs.prepareUse(operation,context);
                 var payload=new java.util.LinkedHashMap<String,Object>();payload.put("capability",capability);payload.put("prompt",prompt);if(toolHistory!=null){payload.put("conversationTools",true);payload.put("toolHistory",toolHistory);}
-                boolean returned=false;try{var result=worker.streamRequest(new WorkerEnvelope(1,operation,"model.stream",payload),deltaConsumer,toolHistory==null?Duration.ofSeconds(90):Duration.ofMinutes(4),()->permit.getAsBoolean()&&(context==null||prefs.current(context)));returned=result.type().equals("model.stream.result");return result;}finally{if(context!=null)prefs.finishUse(operation,returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
+                boolean returned=false;try{var result=worker.streamRequest(dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,dev.mineagent.runtime.core.config.AgentModelSettings.context(new WorkerEnvelope(1,operation,"model.stream",payload),world,agent)),deltaConsumer,toolHistory==null?Duration.ofSeconds(90):Duration.ofMinutes(4),()->permit.getAsBoolean()&&(context==null||prefs.current(context)));returned=result.type().equals("model.stream.result");return result;}finally{if(context!=null)prefs.finishUse(operation,returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
             } catch (Exception failure) {
                 throw new java.util.concurrent.CompletionException(failure);
             }
@@ -261,7 +265,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                 WorkerEnvelope response;boolean returned=false;dev.mineagent.runtime.worker.generation.StudioCoderResult result=null;
                 try{
                     submitted=true;
-                    response=worker.request(new WorkerEnvelope(1,attempt.id(),"studio.coder.generate",taskPayload(Map.of("prompt",prompt,"javaSource",input.javaSource(),"ordinal",attempt.ordinal(),"workspace",input.workspace(),"entryPath",input.path()),input.world(),input.agent(),input.task(),input.taskIntent())),Duration.ofSeconds(200),()->permit.getAsBoolean()&&prefs.current(context));
+                    response=worker.request(dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,new WorkerEnvelope(1,attempt.id(),"studio.coder.generate",taskPayload(Map.of("prompt",prompt,"javaSource",input.javaSource(),"ordinal",attempt.ordinal(),"workspace",input.workspace(),"entryPath",input.path()),input.world(),input.agent(),input.task(),input.taskIntent()))),Duration.ofSeconds(200),()->permit.getAsBoolean()&&prefs.current(context));
                     returned=response.type().equals("studio.coder.result")&&response.requestId().equals(attempt.id());
                     if(returned){
                         result=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(response.payload().get("result"),dev.mineagent.runtime.worker.generation.StudioCoderResult.class);
@@ -453,7 +457,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                 var prefs=preferences();var context=prefs.snapshot(job.ownerPlayerId(),job.worldId(),job.agentId(),"GENERATION");payload.put("prompt",context.append(String.valueOf(payload.get("prompt"))));if(String.valueOf(payload.get("prompt")).getBytes(java.nio.charset.StandardCharsets.UTF_8).length>7*1024*1024)throw new IllegalStateException("GENERATION_CONTEXT_LIMIT");
                 payload.put("nativeEnvironment",dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe().wire());if(job.nativeSelection()!=null)payload.put("nativeSelectionHash",job.nativeSelection().fingerprint());
                 if(job.repairSource()!=null)payload.put("repairSource",new com.fasterxml.jackson.databind.ObjectMapper().convertValue(job.repairSource(),java.util.Map.class));
-                prefs.prepareUse(job.operationId(),context);WorkerEnvelope response;boolean returned=false;try{response=worker.request(new WorkerEnvelope(1,job.operationId(),"runtime_package.generate",payload),(job.purpose().equals("WORLD_CONTENT")||job.repairSource()!=null)?Duration.ofSeconds(200):Duration.ofSeconds(90),()->permit.getAsBoolean()&&prefs.current(context));returned=java.util.Set.of("runtime_package.result","runtime_package.failure").contains(response.type());}finally{prefs.finishUse(job.operationId(),returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
+                prefs.prepareUse(job.operationId(),context);WorkerEnvelope response;boolean returned=false;try{response=worker.request(dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,new WorkerEnvelope(1,job.operationId(),"runtime_package.generate",payload)),(job.purpose().equals("WORLD_CONTENT")||job.repairSource()!=null)?Duration.ofSeconds(200):Duration.ofSeconds(90),()->permit.getAsBoolean()&&prefs.current(context));returned=java.util.Set.of("runtime_package.result","runtime_package.failure").contains(response.type());}finally{prefs.finishUse(job.operationId(),returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
                 String responseError=dev.mineagent.runtime.worker.generation.PackageGenerationFailure.response(job.operationId(),response);
                 if(!responseError.isEmpty())throw new dev.mineagent.runtime.worker.generation.PackageGenerationFailure(responseError);
                 return dev.mineagent.runtime.worker.generation.WorkerPackageResult.prepare(job, response,
@@ -477,7 +481,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
             try{
                 configureProviders(config);ensureWorker();var store=new dev.mineagent.runtime.core.content.ContentAddressedStore(contentRoot);
                 String prompt=dev.mineagent.runtime.worker.generation.UiPatchPrompt.build(job.base(),job.prompt(),store::read);var prefs=preferences();var context=prefs.snapshot(job.ownerPlayerId(),job.worldId(),job.agentId(),"GENERATION");prompt=context.append(prompt);prefs.prepareUse(job.operationId(),context);
-                WorkerEnvelope response;boolean returned=false;try{response=worker.request(new WorkerEnvelope(1,job.operationId(),"model.completeOnce",taskPayload(Map.of("capability","CODING","prompt",prompt),job.worldId(),job.agentId(),job.taskId(),job.taskIntentRevision())),Duration.ofSeconds(200),()->prefs.current(context));returned=response.type().equals("model.result");}finally{prefs.finishUse(job.operationId(),returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
+                WorkerEnvelope response;boolean returned=false;try{response=worker.request(dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,new WorkerEnvelope(1,job.operationId(),"model.completeOnce",taskPayload(Map.of("capability","CODING","prompt",prompt),job.worldId(),job.agentId(),job.taskId(),job.taskIntentRevision()))),Duration.ofSeconds(200),()->prefs.current(context));returned=response.type().equals("model.result");}finally{prefs.finishUse(job.operationId(),returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
                 String error=dev.mineagent.runtime.worker.generation.UiPatchTransport.responseError(job.operationId(),response);
                 if(!error.isEmpty())return new dev.mineagent.runtime.worker.generation.WorkerUiPatchResult(null,error,"","");
                 return dev.mineagent.runtime.worker.generation.WorkerUiPatchResult.prepare(job.base(),String.valueOf(response.payload().get("text")),String.valueOf(response.payload().get("providerId")),store,signer);
@@ -490,7 +494,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                 if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();
                 configureProviders(config);ensureWorker();var store=new dev.mineagent.runtime.core.content.ContentAddressedStore(contentRoot);
                 String prompt=dev.mineagent.runtime.worker.generation.WorldPatchPrompt.build(job.base(),job.prompt(),store::read);var prefs=preferences();var context=prefs.snapshot(job.ownerPlayerId(),job.worldId(),job.agentId(),"GENERATION");prompt=context.append(prompt);prefs.prepareUse(job.operationId(),context);
-                WorkerEnvelope response;boolean returned=false;try{response=worker.request(new WorkerEnvelope(1,job.operationId(),"model.completeOnce",taskPayload(Map.of("capability","CODING","prompt",prompt),job.worldId(),job.agentId(),job.taskId(),job.taskIntentRevision())),Duration.ofSeconds(200),()->permit.getAsBoolean()&&prefs.current(context));returned=response.type().equals("model.result");}finally{prefs.finishUse(job.operationId(),returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
+                WorkerEnvelope response;boolean returned=false;try{response=worker.request(dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,new WorkerEnvelope(1,job.operationId(),"model.completeOnce",taskPayload(Map.of("capability","CODING","prompt",prompt),job.worldId(),job.agentId(),job.taskId(),job.taskIntentRevision()))),Duration.ofSeconds(200),()->permit.getAsBoolean()&&prefs.current(context));returned=response.type().equals("model.result");}finally{prefs.finishUse(job.operationId(),returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
                 String error=dev.mineagent.runtime.worker.generation.UiPatchTransport.responseError(job.operationId(),response).replace("UI_PATCH_","WORLD_PATCH_");
                 if(!error.isEmpty())return new dev.mineagent.runtime.worker.generation.WorkerWorldPatchResult(null,error,"","");
                 return dev.mineagent.runtime.worker.generation.WorkerWorldPatchResult.prepare(job.base(),String.valueOf(response.payload().get("text")),String.valueOf(response.payload().get("providerId")),store,signer);
@@ -618,7 +622,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                 if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();
                 configureProviders(config);
                 var prefs=owner==null?null:preferences();var context=owner==null?null:prefs.snapshot(owner,worldId,agentId,"PLANNING");UUID operation=UUID.randomUUID();if(context!=null)prefs.prepareUse(operation,context);
-                boolean returned=false;try{var result=requestWithRecovery(new WorkerEnvelope(1,operation,"agent.plan",Map.of(
+                boolean returned=false;try{var result=requestWithRecovery(dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,new WorkerEnvelope(1,operation,"agent.plan",Map.of(
                         "prompt", context==null?prompt:context.append(prompt),
                         "worldId", worldId.toString(),
                         "agentId", agentId.toString(),
@@ -626,7 +630,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                         "taskRevision", taskRevision,"budgetTaskRevisionKind","MUTATION",
                           "packageRevision", packageRevision,
                           "toolScope",toolScope
-                )),()->permit.getAsBoolean()&&(context==null||prefs.current(context)));returned=result.type().equals("agent.plan.result");return result;}finally{if(context!=null)prefs.finishUse(operation,returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
+                ))),()->permit.getAsBoolean()&&(context==null||prefs.current(context)));returned=result.type().equals("agent.plan.result");return result;}finally{if(context!=null)prefs.finishUse(operation,returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
             } catch (Exception failure) {
                 throw new java.util.concurrent.CompletionException(failure);
             }
