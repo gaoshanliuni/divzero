@@ -34,7 +34,12 @@ public final class NativeDataPackRuntime implements AutoCloseable {
     public static synchronized void stop(MinecraftServer server){var runtime=RUNTIMES.remove(server);if(runtime!=null)try{runtime.close();}catch(Exception ignored){}}
     private void viewer(ServerPlayer player){if(closed||!server.isSameThread()||player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer||server.getPlayerList().getPlayer(player.getUUID())!=player)throw new SecurityException("DATA_PACK_OWNER");}
     private boolean allowed(ServerPlayer player){var p=MineAgentRuntimeServices.permissions(server);boolean op=player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);return p.allowed(player.getUUID(),op,PermissionAction.RUN_CODE)&&p.allowed(player.getUUID(),op,PermissionAction.MANAGE_PACKAGES);}
-    private List<String> selected(){return server.getResourceManager().listPacks().map(PackResources::packId).toList();}
+    // NeoForge expands hidden mod children at runtime; saved DataPacks contains only visible roots.
+    private List<String> selected(){
+        // Pack.hidden() can hide repository children without changing PackResources.isHidden().
+        var hidden=server.getPackRepository().getSelectedPacks().stream().filter(net.minecraft.server.packs.repository.Pack::isHidden).map(net.minecraft.server.packs.repository.Pack::getId).collect(java.util.stream.Collectors.toSet());
+        return server.getResourceManager().listPacks().map(PackResources::packId).filter(id->!hidden.contains(id)).toList();
+    }
     private String selection()throws Exception{return RuntimePackageCanonicalizer.sha256(RuntimePackageCanonicalizer.stableJson(Map.of("selected",selected())));}
     private RuntimePackage owned(ServerPlayer player,UUID pkg,long revision){return packages.ownedPackage(player.getUUID(),pkg,revision).orElseThrow(()->new SecurityException("DATA_PACK_OWNER"));}
     public Map<String,Object> read(ServerPlayer player,Map<String,String> args)throws Exception{

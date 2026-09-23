@@ -1134,8 +1134,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/package-catalog-cards.mjs",
-      "sha256": "794c9f624ac70c074d0c935cc618c4f7c7c1606370d1f9edca9abe59f7ac9b04",
-      "bytes": 14506
+      "sha256": "13272e876941171670a9115f8c7b4ffdb525f0553ff55818a46782115c859d5d",
+      "bytes": 14617
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/package-direct-enable.mjs",
@@ -2829,8 +2829,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "beea7ce59615248615acca0b0de27b8a5445d04681215db19350ee1e7d4404e1",
-      "bytes": 18629
+      "sha256": "91301d6d5ccf9849c4a04dda9805fd001b6cb716e474bcb4f29b6990790b019e",
+      "bytes": 18989
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3594,8 +3594,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ResourcePackSmokeClient.java",
-      "sha256": "7f9363b76407e9cb375b789cd7f4441841e1577470037afe7adcde443cab770d",
-      "bytes": 12511
+      "sha256": "f85ba102c21a8944d1668455c9737a882ff00c39ff94e88757cc211c05f5d79e",
+      "bytes": 14408
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/RuntimeObjectSmokeClient.java",
@@ -3924,8 +3924,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/NativeDataPackRuntime.java",
-      "sha256": "66f503bf7cf8b64e9add52c07ef12fe1b3b7f9077c572378b175e5c141e82d74",
-      "bytes": 27378
+      "sha256": "4a35ce45496fecfa98cbd97cfa0b1fe2b4403e9c163c1761cd612f4acf8d1d0c",
+      "bytes": 27859
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/NativePackageCompatibility.java",
@@ -4759,8 +4759,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ResourcePackSmokeServer.java",
-      "sha256": "2e484eb966434052b8f3595bf14e0e5f531024f1ff4c9a3146821515e2bccded",
-      "bytes": 6004
+      "sha256": "63928b602e2cf47069f82fa23bc02b6551ec77667b209f009feea7a46ce2695c",
+      "bytes": 10436
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ScoreHudSmokeServer.java",
