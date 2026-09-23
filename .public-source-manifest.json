@@ -989,8 +989,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/conversation-cards.mjs",
-      "sha256": "93585b58496ad7d258668b29ad638f16b5e372cace286073a6a010380372c674",
-      "bytes": 23963
+      "sha256": "42139d3af6be35afa5355bf234bc76937ab70c35d02c92ebc335e48d5f7fabd1",
+      "bytes": 24291
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/conversation-import.mjs",
@@ -1259,8 +1259,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/shell.mjs",
-      "sha256": "4c92d49859fcb12867fb38d4198088712cdc4ae7736ce13adf8ff620aa5c3e71",
-      "bytes": 57876
+      "sha256": "026835ae2c6fd0e02a8e79d749951fb50bd2243ad9f97128164005f7801dfe41",
+      "bytes": 57971
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/skin-cards.mjs",

@@ -241,6 +241,8 @@ function close(id) {
   const node = nodes.get(id); if (!node) return;
   if(id==='runtime-windows')desktopWindows.cancel();
   if(id==='runtime-chat')conversations.closed();
+  if(id==='runtime-preview')scenePreview.session();
+  if(id==='runtime-skins')skins.session();
   if(id==='runtime-deliveries')deliveries.closed();
   const view=state.views.get(id);if(!view.layoutKey||view.layoutSource!=='PACKAGE')restoredLayouts[view.layoutKey||id] = {...savedLayouts(new Map([[id,view]]),{} )[view.layoutKey||id],minimized:false};
   node._observer?.disconnect(); node.remove(); nodes.delete(id); state.close(id); dock();
