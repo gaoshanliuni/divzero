@@ -4,7 +4,9 @@
   "package": "dev.mineagent.runtime.neoforge.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "client.ChatHistoryAccess",
     "client.AgentSkinMixin",
+    "client.AgentPlayerInfoSkinMixin",
     "client.AgentNameMixin",
     "client.PlayerControlKeyAccess",
     "client.PlayerBodyMouseMixin",

@@ -80,7 +80,8 @@ public final class ServerConversations implements AutoCloseable {
         }
         viewer.sendSystemMessage(message);return Map.of("status","SENT","buttons",buttons.size());
     }
-    private net.minecraft.network.chat.Component colored(UUID agent,String text){String color=MineAgentRuntimeServices.config(server).snapshot().values().getOrDefault("agent."+agent+".chatColor","#FFFFFF");return net.minecraft.network.chat.Component.literal(text).withStyle(style->style.withColor(color.matches("#[A-Fa-f0-9]{6}")?Integer.parseInt(color.substring(1),16):0xFFFFFF));}
+    private net.minecraft.network.chat.Component colored(UUID agent,String text){return colored(agent,net.minecraft.network.chat.Component.literal(text));}
+    private net.minecraft.network.chat.Component colored(UUID agent,net.minecraft.network.chat.MutableComponent message){String color=MineAgentRuntimeServices.config(server).snapshot().values().getOrDefault("agent."+agent+".chatColor","#FFFFFF");return message.withStyle(style->style.withColor(color.matches("#[A-Fa-f0-9]{6}")?Integer.parseInt(color.substring(1),16):0xFFFFFF));}
     private void pollNativeReplies(){
         for(var entry:List.copyOf(nativeReplies.entrySet())){var n=entry.getValue();if(server.getPlayerList().getPlayer(n.viewer.getUUID())!=n.viewer){nativeReplies.remove(entry.getKey());continue;}
             try{var usage=store.context(n.viewer.getUUID(),n.agent,n.conversation,n.assistant).orElseThrow();boolean done=!Set.of("PENDING","GENERATING").contains(usage.requestState());
@@ -89,7 +90,7 @@ public final class ServerConversations implements AutoCloseable {
                     for(int part=0;part<4&&n.thinkingOffset<thinking.textLength();part++){
                         var chunk=store.thinkingChunk(n.viewer.getUUID(),n.agent,n.conversation,n.assistant,thinking.revision(),n.thinkingOffset,512);
                         int count=NativeChatSegments.nextLength(chunk.text(),240,done||!thinking.active()||System.currentTimeMillis()-n.thinkingLastSent>800);
-                        if(count==0)break;n.viewer.sendSystemMessage(colored(n.agent,"["+n.name+"][思考]"+chunk.text().substring(0,count)));n.thinkingOffset+=count;n.thinkingLastSent=System.currentTimeMillis();
+                        if(count==0)break;n.viewer.sendSystemMessage(colored(n.agent,net.minecraft.network.chat.Component.translatableWithFallback("mineagent.chat.thinking","[%s][思考]%s",n.name,chunk.text().substring(0,count))));n.thinkingOffset+=count;n.thinkingLastSent=System.currentTimeMillis();
                     }
                     if(n.thinkingOffset<thinking.textLength())continue;
                 }

@@ -16,6 +16,11 @@ import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.world.InteractionHand;
 
 public final class MineAgentPlayer extends ServerPlayer {
+    private GameProfile visualProfile;
+    @Override public GameProfile getGameProfile(){return visualProfile==null?super.getGameProfile():visualProfile;}
+    public void updateVisualProfile(GameProfile profile){if(!profile.id().equals(super.getGameProfile().id())||!profile.name().equals(super.getGameProfile().name()))throw new IllegalArgumentException("AGENT_SKIN_IDENTITY_CHANGED");visualProfile=profile;}
+    public boolean hasVisualProfile(){return visualProfile!=null;}
+    public void resetVisualProfile(){visualProfile=null;}
     private final UUID agentId;
     private final UUID ownerPlayerId;
     private Component agentDisplayName;

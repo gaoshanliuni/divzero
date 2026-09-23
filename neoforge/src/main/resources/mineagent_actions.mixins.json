@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "dev.mineagent.runtime.neoforge.mixin",
   "compatibilityLevel": "JAVA_25",
-  "mixins": ["ManagedPackRepositoryAccess", "ManagedWorldPackConfigMixin", "ManagedWorldServerConstructedMixin", "ManagedWorldgenReadMixin", "ManagedDataPackSourceMixin", "AgentMiningAccess", "AgentMiningOutcomeMixin", "AgentRespawnMixin", "AgentDeathAcceptedMixin", "AgentPreparedSpawnMixin", "AgentGameModeAccess", "ScoreboardObservationMixin"],
+  "mixins": ["AgentEntityTrackerAccess", "AgentTrackedEntityAccess", "ManagedPackRepositoryAccess", "ManagedWorldPackConfigMixin", "ManagedWorldServerConstructedMixin", "ManagedWorldgenReadMixin", "ManagedDataPackSourceMixin", "AgentMiningAccess", "AgentMiningOutcomeMixin", "AgentRespawnMixin", "AgentDeathAcceptedMixin", "AgentPreparedSpawnMixin", "AgentGameModeAccess", "ScoreboardObservationMixin"],
   "injectors": {"defaultRequire": 1}
 }

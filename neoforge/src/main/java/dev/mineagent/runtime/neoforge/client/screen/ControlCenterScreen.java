@@ -922,7 +922,7 @@ public final class ControlCenterScreen extends Screen {
     }
 
     private void addConversationControls(int contentX, int contentWidth) {
-        int tabWidth = Math.max(60, Math.min(96, (contentWidth - 4) / 2));
+        int tabWidth = Math.max(30, Math.min(96, (contentWidth - 8) / 3));
         Button chatTab = Button.builder(Component.literal("聊天"), ignored -> {
                     conversationPage = 0;
                     requestSelectedConversation();
@@ -935,6 +935,7 @@ public final class ControlCenterScreen extends Screen {
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.DecisionRequestPayload());
                     rebuildWidgets();
                 }).bounds(contentX + tabWidth + 4, 90, tabWidth, 18).build();
+        var thinkingButton=Button.builder(Component.literal("聊天思考："+(dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.showThinking()?"显示":"隐藏")),button->{button.active=false;var current=dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.view();dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.save(!((Boolean)current.get("showThinking")),((Number)current.get("revision")).longValue()).whenComplete((v,e)->Minecraft.getInstance().execute(()->{button.active=true;button.setMessage(Component.literal(e==null?"聊天思考："+(((Boolean)v.get("showThinking"))?"显示":"隐藏"):"思考设置保存失败"));}));}).bounds(contentX+tabWidth*2+8,90,Math.max(30,Math.min(125,contentWidth-tabWidth*2-8)),18).build();addRenderableWidget(thinkingButton);
         choiceTab.active = conversationPage != 1;
         addRenderableWidget(choiceTab);
         if (conversationPage == 0) {

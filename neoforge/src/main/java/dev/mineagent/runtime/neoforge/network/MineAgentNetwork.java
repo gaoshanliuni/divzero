@@ -52,7 +52,7 @@ public final class MineAgentNetwork {
         SpeechInputPayloads.register(event);
         ObjectAssetPayloads.register(event);
         dev.mineagent.runtime.neoforge.ui.ServerUiRuntime.register(event);
-        var registrar = event.registrar("4").versioned("4").executesOn(HandlerThread.NETWORK);
+        var registrar = event.registrar("5").versioned("5").executesOn(HandlerThread.NETWORK);
         registrar.playToServer(ProviderModelsPayloads.Request.TYPE,ProviderModelsPayloads.Request.CODEC,(p,c)->serverWork(c,()->ProviderModelsPayloads.respond(p,(ServerPlayer)c.player(),c::reply)));
         registrar.playToClient(ProviderModelsPayloads.Response.TYPE,ProviderModelsPayloads.Response.CODEC,(p,c)->c.enqueueWork(()->dev.mineagent.runtime.neoforge.client.ProviderModelsClient.accept(p)));
         registrar.playToServer(MineAgentPayloads.SecretConfigWrite.TYPE,MineAgentPayloads.SecretConfigWrite.CODEC,(p,c)->serverWork(c,()->c.reply(applyNativeSecret(p,(ServerPlayer)c.player()))));
@@ -175,6 +175,7 @@ public final class MineAgentNetwork {
             for(int start=0;start<Math.max(1,names.size());start+=64)context.reply(new MineAgentPayloads.AgentNames(payload.request(),MineAgentRuntimeServices.worldId(server),names.subList(start,Math.min(start+64,names.size())),start/64,start+64>=names.size()));
         }));
         registrar.playToClient(MineAgentPayloads.AgentNames.TYPE,MineAgentPayloads.AgentNames.CODEC,(payload,context)->{var connection=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.chat.NativeAgentChat.accept(payload,connection));});
+        registrar.playToClient(AgentPngSkinPayload.TYPE,AgentPngSkinPayload.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.AgentPngSkinClient.accept(payload,wire));});
         registrar.playToClient(AgentSkinPayload.TYPE,AgentSkinPayload.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.AgentSkinClient.accept(payload,wire));});
         registrar.playToServer(AutonomyPayloads.Input.TYPE,AutonomyPayloads.Input.CODEC,(payload,context)->serverWork(context,()->dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.input((ServerPlayer)context.player(),payload)));
         registrar.playToClient(AutonomyPayloads.Offer.TYPE,AutonomyPayloads.Offer.CODEC,(payload,context)->{var wire=context.connection();context.enqueueWork(()->dev.mineagent.runtime.neoforge.client.body.AutonomousBodyClient.offer(payload,wire));});

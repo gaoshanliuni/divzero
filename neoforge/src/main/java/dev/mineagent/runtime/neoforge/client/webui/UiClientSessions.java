@@ -55,7 +55,9 @@ public final class UiClientSessions {
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(opening, "openShell", "{}"));
     }
     private static void accept(UiPayloads.Event packet) {
-        if(packet.channel().equals("buildingFilesOpen")){BuildingFilesClient.requestOpen(JsonParser.parseString(packet.json()).getAsJsonObject().get("agentId").getAsString());return;}
+        if(packet.channel().equals("skinUiOpen")){SkinUiClient.open(JsonParser.parseString(packet.json()).getAsJsonObject().get("agentId").getAsString());return;}
+        if(packet.channel().equals("previewOpen")){PreviewClient.open(JsonParser.parseString(packet.json()).getAsJsonObject().get("previewId").getAsString());return;}
+        if(packet.channel().equals("buildingFilesOpen")){var fileEvent=JsonParser.parseString(packet.json()).getAsJsonObject();BuildingFilesClient.requestOpen(fileEvent.get("agentId").getAsString(),fileEvent.has("fileId")?fileEvent.get("fileId").getAsString():"");return;}
         if (connection != Minecraft.getInstance().getConnection() || !WebGuiHostAdapter.INSTANCE.ready()) return;
         try {
             if(packet.channel().equals("conversationVoiceStatus")){WebGuiHostAdapter.INSTANCE.emit("conversationVoiceStatus",JsonParser.parseString(packet.json()));return;}

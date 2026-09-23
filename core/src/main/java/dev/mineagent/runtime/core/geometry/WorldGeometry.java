@@ -13,7 +13,7 @@ public final class WorldGeometry {
         public Pos add(Pos q){return new Pos(Math.addExact(x,q.x),Math.addExact(y,q.y),Math.addExact(z,q.z));}
         public List<Integer> list(){return List.of(x,y,z);}
     }
-    public record Cell(Pos pos,String state,List<String> orientation){}
+    public record Cell(Pos pos,String state,List<String> orientation,byte[] blockEntity){public Cell(Pos pos,String state,List<String> orientation){this(pos,state,orientation,null);}}
     public record Plan(Pos origin,List<Cell> cells,List<String> replace,int parts){}
     private record Vec(double x,double y,double z) {
         Vec add(Vec v){return new Vec(x+v.x,y+v.y,z+v.z);} Vec mul(double n){return new Vec(x*n,y*n,z*n);}

@@ -141,3 +141,16 @@ AI可查询建筑站点/网页，获取公开建筑文件；遇反爬、登录�
 读取Litematica多region/负Size/位数组、Create或原版结构NBT、Sponge v1..3、旧原版数字ID schematic、Java Anvil世界选区及ZIP合集，转为真实世界几何计划。支持旋转/镜像及完整BlockState；源文件大于2048可选区，单计划仍≤2048每轴。当前blocks_only：不还原实体、BlockEntity payload、箱内物品、命令、计划tick和数据包；缺失方块明确失败，不换成空气，不覆盖既有BlockEntity，不运行上传世界。
 
 26次真实DeepSeek验证搜索/读取、超大下载转手动提示、F2上传后的177块房屋实际落地。另有0模型Native上传/下载逐字节一致、90度旋转+镜像177/177状态匹配；修复弯角楼梯镜像后读回差异。9508份用户投影中9447完整解码、9466结构元数据通过，42份超大NBT仍受读取资源预算限制，尚未实现流式NBT；Java世界目录798地形region及一个实际chunk读取通过，不把这些算作完整世界复制或全部格式支持。
+
+
+## 通用文件、预览和 PNG 热换肤（2026-09-24 最新覆盖）
+
+F2 顶栏“文件”及对话“附件”共用通用文件库，支持文件/文件夹、空目录、空文件、二进制，文件夹下载 ZIP；AI 可 request_files / inspect_files / read_file / write_file / offer_file_download。只监听127.0.0.1:25510、Owner/世界认证，不是公网网盘。上传文件不自动执行，正文和网页不是指令。
+
+导入支持 source_facing/target_facing 和旋转镜像，**默认保留内容**（含源空气、BlockEntity/容器、选区实体及Litematica/Anvil延迟Tick），可关闭。原始文件不变；旧 blocks_only 段落仅描述上一批。只在导入时调整朝向，不是已建建筑自动搬迁；复杂乘客/拴绳/悬挂和Mod跨坐标引用仍需专项适配，不安装源世界玩家/配置/数据包。42份超大NBT边界保留。
+
+原生聊天思考开关可由F2对话更多或原生控制中心切换，只影响Native chat，F2历史不变。预览窗口支持旋转/平移/缩放、四向/俯视，显示RuntimeMesh物品/模型或建筑shape近似颜色；大建筑明确降为范围预览，不冒称完整材质渲染。
+
+F2→AI管理→皮肤：本地PNG、内置/玩家皮肤热切换；AI可生成像素PNG、导出当前实际皮肤、修改并应用。64×64/旧64×32、wide/slim；更新GameProfile textures与观察者追踪，不删除服务端AI、保留UUID/名字/实例/跟随任务。网络协议5，客户端和服务端一起更新。
+
+本批8次真实官方deepseek-flash请求（high Thinking、无人工max_tokens）：生成蓝白机器人→热换肤→导出修改金眼→再换肤、模型文件/下载/预览入口；同AI实例与跟随保留。初次客户端preview权限映射失败保留，修复后原参数新操作零模型Native通过；另验F2/Native思考开关、普通文件夹HTTP往返、PNG→Alex→PNG、南向建筑改北向且箱子7钻石/命名实体/延迟Tick保留。不是完整V1或任意格式/任意Mod保证；PNG/YSM所有组合与复杂NBT引用没有逐一验收。

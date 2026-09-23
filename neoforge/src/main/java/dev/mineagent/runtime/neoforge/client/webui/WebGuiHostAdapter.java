@@ -613,6 +613,9 @@ public final class WebGuiHostAdapter implements AutoCloseable {
             else throw new IllegalArgumentException("EVENT_MANAGEMENT_KIND");
             boolean write=kind.equals("state")||kind.equals("archive");return UiClientSessions.command(write?"task.eventsWrite":"task.eventsRead",args,write?UUID.fromString(text(message,"operationId",36)):UUID.randomUUID());
         }
+        if(channel.equals("skinUi"))return SkinUiClient.handle(message);
+        if(channel.equals("preview"))return UiClientSessions.command("preview.read",Map.of("previewId",text(message,"previewId",36),"offset",message.has("offset")?message.get("offset").getAsString():"0"),UUID.randomUUID());
+        if(channel.equals("nativeChatPreferences"))return dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.handle(message);
         if(channel.equals("buildingFiles"))return BuildingFilesClient.handle(message);
         if(channel.equals("agentModelAction")){
             String kind=text(message,"kind",16),agent=text(message,"agentId",36);UUID.fromString(agent);

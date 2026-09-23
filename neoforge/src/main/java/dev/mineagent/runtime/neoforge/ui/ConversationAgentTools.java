@@ -44,8 +44,10 @@ public final class ConversationAgentTools {
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>16384)throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
+            if(tool.equals("inspect_skins")){keys(args);return CompletableFuture.completedFuture(ServerAgentSkins.inspect(p,agent));}
+            if(tool.equals("inspect_files")||tool.equals("read_file")){keys(args,"file_id","query","entry","encoding","offset");return ServerFileTools.read(p,agent,tool,args);}
             if(tool.equals("inspect_building_files")||tool.equals("inspect_building_file")){keys(args,"file_id","entry","query","offset","dimension","min","max","block_offset","material_offset");return ServerBuildingFiles.read(p,agent,tool,args,permit).thenApply(v->{s.execute(()->BuildingImportSmokeServer.observe(tool,args,v));return v;});}
-            if(tool.equals("plan_building_import")){keys(args,"file_id","entry","dimension","min","max","anchor","rotation","mirror","include_air","data_policy");return ServerBuildingFiles.plan(p,agent,args,permit).thenApply(v->{s.execute(()->BuildingImportSmokeServer.observe(tool,args,v));return v;});}
+            if(tool.equals("plan_building_import")){keys(args,"file_id","entry","dimension","min","max","anchor","rotation","mirror","include_air","data_policy","preserve_contents","source_facing","target_facing");return ServerBuildingFiles.plan(p,agent,args,permit).thenApply(v->{s.execute(()->BuildingImportSmokeServer.observe(tool,args,v));return v;});}
             if(tool.equals("inspect_world_geometry"))return ConversationWorldGeometry.inspect(p,agent,args).thenApply(v->{s.execute(()->WorldGeometrySmokeServer.observe(tool,args,v));return v;});
             if(tool.equals("plan_world_geometry"))return ConversationWorldGeometry.plan(p,agent,args,permit).thenApply(v->{WorldGeometrySmokeServer.observe(tool,args,v);return v;});
             if(tool.equals("inspect_agent_body")){keys(args);return CompletableFuture.completedFuture(ConversationBodyTools.execute(p,agent,args,true));}
@@ -66,7 +68,7 @@ public final class ConversationAgentTools {
                 catch(Exception rejected){action=CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(rejected)));}
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     var value=failure==null?receipt:Map.<String,Object>of("status","UNKNOWN","error","AGENT_TOOL_OUTCOME_UNKNOWN");
-                    BuildingImportSmokeServer.observe(tool,args,value);WorldGeometrySmokeServer.observe(tool,args,value);PythonHostSmokeServer.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
+                    MediaToolsSmokeServer.observe(tool,value);BuildingImportSmokeServer.observe(tool,args,value);WorldGeometrySmokeServer.observe(tool,args,value);PythonHostSmokeServer.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
                     ConversationRuntimeItemSmokeServer.observe(tool,value);ConversationHostSmokeServer.observe(tool,args,value);ConversationFeedbackSmokeServer.observe(tool,value);ConversationCreatureSmokeServer.observe(tool,args,value);ConversationWatchSmokeServer.observe(tool,value);
                     try{String encoded=JSON.writeValueAsString(Map.of("owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args,"receipt",value));CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,1,encoded);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((written,writeError)->s.execute(()->{if(writeError!=null||failure!=null)result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));else result.complete(value);}));}
                     catch(Exception writeError){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));}
@@ -120,6 +122,14 @@ public final class ConversationAgentTools {
     private static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,UUID operation,String tool,JsonNode a,BooleanSupplier permit)throws Exception{
         Map<String,Object> result;
         switch(tool){
+            case "export_current_skin"->{keys(a);return ServerAgentSkins.exportCurrent(p,agent,operation,permit);}
+            case "open_skin_ui"->{keys(a);return CompletableFuture.completedFuture(ServerAgentSkins.openUi(p,agent));}
+            case "create_skin_png"->{keys(a,"name","model","base_file_id","base_color","rects");return ServerAgentSkins.create(p,agent,operation,a,permit);}
+            case "set_skin_png"->{keys(a,"file_id","model","expected_revision");return ServerAgentSkins.apply(p,agent,operation,a,permit);}
+            case "open_preview"->{keys(a,"kind","file_id","entry","dimension","min","max","source","slot");return ServerPreviews.open(p,agent,a,permit);}
+            case "request_files"->{keys(a,"reason");return ServerBuildingFiles.request(p,agent,permit,text(a,"reason",200));}
+            case "write_file"->{keys(a,"name","content","encoding");return ServerFileTools.write(p,agent,operation,a,permit);}
+            case "offer_file_download"->{keys(a,"file_id");return ServerFileTools.offer(p,agent,a,permit);}
             case "request_building_file"->{keys(a,"reason");return ServerBuildingFiles.request(p,agent,permit,text(a,"reason",200));}
             case "fetch_building_file"->{keys(a,"url","name");return ServerBuildingFiles.download(p,agent,a,permit);}
             case "apply_world_geometry"->{return ConversationWorldGeometry.apply(p,agent,a,permit);}

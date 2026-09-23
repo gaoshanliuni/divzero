@@ -1,6 +1,6 @@
 import {AgentEditDraft,OperationDraft,bodyLabels,modeLabel,agentError} from './agent-management-state.mjs';
 
-export function createAgentManagement({windowFor,send,report,openModel}){
+export function createAgentManagement({windowFor,send,report,openModel,openSkin}){
   let root=null,roster=null,epoch=0,scope='',createFields=null,createBusy=false;const cards=new Map(),createOperation=new OperationDraft();
   const add=(tag,text,parent,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;parent.append(n);return n;};
   const label=(text,field,parent)=>{const n=add('label',text,parent);n.append(field);return field;};
@@ -27,7 +27,7 @@ export function createAgentManagement({windowFor,send,report,openModel}){
       try{const args=record.draft.request(kind,a.id,()=>crypto.randomUUID(),record.operation,kind==='mode'&&check.checked);await request(args,notice,v=>record.draft.committed(v.revision,kind));}
       catch(e){error(notice,e);}finally{record.busy=false;form.disabled=!record.value.canManage;confirmation.hidden=true;check.checked=false;}
     }
-    record.modelButton=button('模型',actions,()=>openModel?.(a.id));record.modelButton.dataset.agentAction='model';
+    record.modelButton=button('模型',actions,()=>openModel?.(a.id));record.modelButton.dataset.agentAction='model';record.skinButton=button('皮肤',actions,()=>openSkin?.(a.id));record.skinButton.dataset.agentAction='skin';
     button('保存名称',actions,()=>write('rename')).dataset.agentAction='rename';
     button('应用模式…',actions,()=>{record.confirmKind='mode';message.textContent=`将「${record.value.name}」的实际模式设为${modeLabel(mode.value)}。现有身体动作可能中断；观战状态会被明确覆盖。`;check.checked=false;confirmation.hidden=false;}).dataset.agentAction='mode';
     button('重新读取',actions,()=>{record.draft.dirty=false;record.operation.reset();updateCard(record,record.value);notice.textContent='已重新读取当前资料。';notice.className='muted';});
@@ -46,7 +46,7 @@ export function createAgentManagement({windowFor,send,report,openModel}){
   function updateCard(c,a){
     if(!c.draft.update(a))return;
     if(c.value.revision!==a.revision||!a.canManage){c.confirmation.hidden=true;c.check.checked=false;}
-    c.modelButton.disabled=!a.canConfigureModel;c.modelButton.textContent='模型：'+(a.modelLabel||'默认');
+    c.skinButton.disabled=!a.canConfigureModel;c.modelButton.disabled=!a.canConfigureModel;c.modelButton.textContent='模型：'+(a.modelLabel||'默认');
     c.value=a;c.title.textContent=a.name;c.badge.textContent=bodyLabels[a.bodyState]||'未知状态';c.badge.dataset.state=a.bodyState;
     c.info.textContent=`${a.mine?'你的 AI':'其他玩家的 AI'} · 请求${modeLabel(a.requestedMode)} / 实际${modeLabel(a.effectiveMode)}${a.health==null?'':` · 生命 ${a.health} / 饱食 ${a.food}`}`;
     c.info.textContent+=` · 附加区块票：${({GRANTED:'已分配',LIMIT_REACHED:'预算不足（依赖已加载区块）',DISABLED:'管理员已禁用',PENDING:'等待应用',DEGRADED:'登记异常',INACTIVE:'身体当前不需要'})[a.ticketState]||'等待状态'}`;
