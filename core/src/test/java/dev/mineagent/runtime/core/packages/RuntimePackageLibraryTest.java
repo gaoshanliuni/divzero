@@ -46,6 +46,25 @@ class RuntimePackageLibraryTest {
         }
     }
 
+    @Test void historicalNonHotCopyKeepsLifecycleAndNeverEnablesSourceOrCopy()throws Exception{
+        try(var signer=IdentitySigner.open(temporaryDirectory.resolve("nonhot-id"));var library=RuntimePackageLibrary.open(temporaryDirectory.resolve("nonhot.db"),clock,signer.publicKeyEncoded())){
+            for(var mode:ActivationMode.values()){
+                if(mode==ActivationMode.HOT_RUNTIME)continue;
+                UUID id=UUID.randomUUID(),world=UUID.randomUUID(),owner=UUID.randomUUID();var base=signed(signer,id,"1.0.0",false);
+                var unsigned=new RuntimePackage(id,base.type(),base.name(),base.version(),mode,base.dependencies(),base.permissions(),base.entrypoints(),base.definitions(),base.resources(),base.origin(),false,1,"0".repeat(64),"",0);
+                String hash=RuntimePackageCanonicalizer.sha256(unsigned);
+                var first=new RuntimePackage(id,unsigned.type(),unsigned.name(),unsigned.version(),mode,unsigned.dependencies(),unsigned.permissions(),unsigned.entrypoints(),unsigned.definitions(),unsigned.resources(),unsigned.origin(),false,1,hash,Base64.getEncoder().encodeToString(signer.sign(hash.getBytes(StandardCharsets.US_ASCII))),0);
+                assertTrue(library.install(first).accepted());assertTrue(library.setEnabled(id,1,true).accepted());assertTrue(library.setEnabled(id,2,false).accepted());
+                var source=library.versionByCanonical(id,1,hash);var input=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,hash,"历史重载副本",null,3);
+                var copy=RuntimePackageAssetCopy.prepare(source,input.targetId(),input.name(),signer);var receipt=library.installAssetCopy(input,copy);var stored=library.get(receipt.target()).orElseThrow();
+                assertEquals(mode,stored.activationMode());assertFalse(stored.enabled());assertEquals(PackageOrigin.REUSED,stored.origin());assertEquals(first.resources(),stored.resources());assertEquals(first.entrypoints(),stored.entrypoints());
+                assertFalse(library.get(id).orElseThrow().enabled());assertEquals(3,library.get(id).orElseThrow().revision());assertEquals(receipt,library.installAssetCopy(input,copy));
+                var stale=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,hash,"过期读取",null,2);
+                var denied=RuntimePackageAssetCopy.prepare(source,stale.targetId(),stale.name(),signer);org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,()->library.installAssetCopy(stale,denied));assertTrue(library.get(stale.targetId()).isEmpty());
+            }
+        }
+    }
+
     @Test
     void persistsPackagesInGlobalLibraryAndUsesCasForMutations() throws Exception {
         Path database = temporaryDirectory.resolve("global.db");
