@@ -59,6 +59,8 @@ final class RealProviderSmokeAudit {
         evidence.put("requestBytes", request.length);
         evidence.put("requestSha256", HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(request)));
         evidence.put("outputLimitMode", "PROVIDER_DEFAULT_NOT_SET");
+        evidence.put("thinkingEnabled", "enabled".equals(body.path("thinking").path("type").asText()));
+        evidence.put("highReasoningEffort", "high".equals(body.path("reasoning_effort").asText()));
         evidence.put("startedAt", java.time.Instant.now().toString());
         // CREATE_NEW fences concurrent processes and preserves consumed budget after worker restart.
         Files.writeString(directory.resolve(index + "-started.json"), JSON.writeValueAsString(evidence), StandardOpenOption.CREATE_NEW);
@@ -74,6 +76,10 @@ final class RealProviderSmokeAudit {
         }catch(Exception ignored){/* Never retry a paid request to repair diagnostics. The start record remains fenced. */}
     }
     void complete(String responseModel, JsonNode usage, List<ToolCall> calls, String text) throws Exception {
+        complete(responseModel,usage,calls,text,-1);
+    }
+    void complete(String responseModel, JsonNode usage, List<ToolCall> calls, String text,int thinkingChars) throws Exception {
+        if(thinkingChars>=0)evidence.put("thinkingChars",thinkingChars);
         evidence.put("completed", true);
         evidence.put("responseModel", responseModel);
         evidence.put("toolNames", calls.stream().map(ToolCall::name).toList());

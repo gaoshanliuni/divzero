@@ -177,7 +177,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
                     var conversationProvider=openAi.withTimeout(Duration.ofMinutes(4));
                     var definitions=dev.mineagent.runtime.core.conversation.ConversationTools.ALL.stream().map(t->new dev.mineagent.runtime.worker.provider.ToolDefinition(t.name(),t.description(),t.parameters())).toList();
                     var history=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(request.payload().getOrDefault("toolHistory",java.util.List.of()),new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String,Object>>>(){});
-                    var result=service(capability.name(),openAi.id(),()->conversationProvider.streamWithTools(modelRequest,definitions,history,emit));calls=result.toolCalls();reasoningContent=result.reasoningContent();response=new dev.mineagent.runtime.api.model.ModelResponse(openAi.id(),result.text(),result.requestedModel(),result.responseModel());
+                    var result=service(capability.name(),openAi.id(),()->conversationProvider.streamWithTools(modelRequest,definitions,history,emit,delta->deltaConsumer.accept(new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"model.stream.delta",Map.of("sequence",sequence.getAndIncrement(),"channel","thinking","delta",delta)))));calls=result.toolCalls();reasoningContent=result.reasoningContent();response=new dev.mineagent.runtime.api.model.ModelResponse(openAi.id(),result.text(),result.requestedModel(),result.responseModel());
                 }else response = service(modelRequest.images().isEmpty()?capability.name():"VISION", openAi.id(), () -> openAi.stream(modelRequest, emit));
             } else {
                 response = complete(selected, modelRequest);

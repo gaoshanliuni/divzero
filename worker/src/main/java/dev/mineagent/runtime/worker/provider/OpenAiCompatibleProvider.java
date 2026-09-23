@@ -123,6 +123,10 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
     }
 
     public ToolCompletion streamWithTools(ModelRequest request,java.util.List<ToolDefinition> tools,java.util.List<java.util.Map<String,Object>> history,java.util.function.Consumer<String> chunkConsumer) {
+        return streamWithTools(request,tools,history,chunkConsumer,ignored->{});
+    }
+    public ToolCompletion streamWithTools(ModelRequest request,java.util.List<ToolDefinition> tools,java.util.List<java.util.Map<String,Object>> history,java.util.function.Consumer<String> chunkConsumer,java.util.function.Consumer<String> thinkingConsumer) {
+        java.util.Objects.requireNonNull(thinkingConsumer, "thinkingConsumer");
         java.util.Objects.requireNonNull(chunkConsumer, "chunkConsumer");
         var body = mapper.createObjectNode();
         body.put("model", model);
@@ -176,9 +180,10 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
                         if(!reportedModel.isEmpty()&&!reportedModel.equals(reported))throw new ProviderRequestException(0,"PROVIDER_MODEL_CHANGED_DURING_STREAM");
                         reportedModel=reported;
                     }
-                    String reasoningDelta=event.path("choices").path(0).path("delta").path("reasoning_content").asText("");
+                    String reasoningDelta=thinkingText(event.path("choices").path(0).path("delta"));
                     if(reasoning.length()+reasoningDelta.length()>1_000_000)throw new ProviderRequestException(0,"STREAM_REASONING_SIZE_GUARD");
-                    reasoning.append(reasoningDelta); // Transport-only continuation; never sent to the player's chat stream.
+                    reasoning.append(reasoningDelta);
+                    if(!reasoningDelta.isEmpty())thinkingConsumer.accept(reasoningDelta);
                     streamedTools.accept(event.path("choices").path(0).path("delta"));
                     String chunk = event.path("choices").path(0)
                             .path("delta").path("content").asText("");
@@ -196,7 +201,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
             if (result.isEmpty()&&calls.isEmpty()) {
                 throw new ProviderRequestException(0, "streaming response contained no text");
             }
-            if(audit!=null) audit.complete(reportedModel,usage,calls,result.toString());
+            if(audit!=null) audit.complete(reportedModel,usage,calls,result.toString(),reasoning.length());
             return new ToolCompletion(result.toString(),calls,model,reportedModel,reasoning.toString());
         } catch (InterruptedException interrupted) {
             if(audit!=null)audit.failed(interrupted);
@@ -212,6 +217,12 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         }
     }
 
+    /** Response text only: request-side thinking configuration objects are not display content. */
+    static String thinkingText(com.fasterxml.jackson.databind.JsonNode delta){
+        var reasoning=delta.path("reasoning_content");
+        if(reasoning.isTextual()&&!reasoning.textValue().isEmpty())return reasoning.textValue();
+        var thinking=delta.path("thinking");return thinking.isTextual()?thinking.textValue():"";
+    }
     private boolean officialDeepSeek(){return "https".equalsIgnoreCase(baseUri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(baseUri.getHost())&&"deepseek-flash".equals(model);}
     static void configureConversationThinking(URI uri,String model,com.fasterxml.jackson.databind.node.ObjectNode body){
         // Explicit user preference; do not send DeepSeek-only parameters to unrelated Providers.

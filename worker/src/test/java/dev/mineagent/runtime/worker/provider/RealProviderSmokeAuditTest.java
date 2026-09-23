@@ -28,6 +28,11 @@ class RealProviderSmokeAuditTest {
         }
         assertThrows(IllegalStateException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body()));
     }
+    @Test void thinkingEvidenceRecordsOnlyModeAndLengthNotContent(@TempDir Path directory)throws Exception{
+        var request=body();request.putObject("thinking").put("type","enabled");request.put("reasoning_effort","high");
+        var audit=RealProviderSmokeAudit.begin(directory,URI_REAL,request);audit.complete("deepseek-flash",null,List.of(),"private answer",321);
+        String raw=Files.readString(directory.resolve("1-completed.json"));var record=JSON.readTree(raw);assertTrue(record.path("thinkingEnabled").asBoolean());assertTrue(record.path("highReasoningEffort").asBoolean());assertEquals(321,record.path("thinkingChars").asInt());assertFalse(raw.contains("private answer"));assertFalse(raw.contains("never-log-this"));
+    }
     @Test void unknownOutcomeCannotSpendAgainAfterRestart(@TempDir Path directory)throws Exception{
         RealProviderSmokeAudit.begin(directory,URI_REAL,body());
         assertThrows(IllegalStateException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body()));

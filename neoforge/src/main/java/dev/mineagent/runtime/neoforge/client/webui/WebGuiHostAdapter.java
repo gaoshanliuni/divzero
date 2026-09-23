@@ -409,7 +409,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
             return UiClientSessions.command("persona.save",Map.of("agentId",agent,"text",text(message,"text",8192),"expectedRevision",message.get("expectedRevision").getAsString()),UUID.fromString(text(message,"requestId",36)));
         }
         if(channel.equals("conversationAction")){
-            String kind=text(message,"kind",24);boolean read=Set.of("list","get","messages","message","summary","context","auditCandidates","auditPreview","auditJobs","auditJob","auditSource").contains(kind);
+            String kind=text(message,"kind",24);boolean read=Set.of("list","get","messages","message","thinking","summary","context","auditCandidates","auditPreview","auditJobs","auditJob","auditSource").contains(kind);
             if(!read&&!Set.of("create","rename","archive","delete","restore","send","cancel","focus","route","unfocus","voice","voiceCancel","speechDiscard","auditStart","auditStep").contains(kind))throw new IllegalArgumentException("CONVERSATION_ACTION");
             var data=new LinkedHashMap<String,String>();data.put("kind",kind);
             for(String key:java.util.List.of("agentId","conversationId","title","state","search","before","messageId","messageRevision","offset","expectedRevision","text","targetOperation","contextId","enabled","summaryId","sourceConversationId","upperSequence","availableRecords","identityHash","jobId","cursor","confirmed","speechOperation"))if(message.has(key)){

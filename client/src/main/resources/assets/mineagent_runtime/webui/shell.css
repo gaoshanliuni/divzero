@@ -219,3 +219,9 @@ body[data-interacting=false] .window .titlebar button,body[data-interacting=fals
 
 /* API conditional fields must stay hidden even when label/action styles set display. */
 [data-view-id="runtime-api-settings"] [hidden] { display:none !important; }
+
+/* Provider reasoning is secondary and collapsed unless explicitly opened. */
+.conversation-thinking { margin: 6px 0; padding: 7px 10px; border-radius: 8px; background: rgba(49, 72, 101, .28); border: 1px solid rgba(153, 190, 220, .2); }
+.conversation-thinking > summary { cursor: pointer; color: #bbcee6; }
+.conversation-thinking pre { white-space: pre-wrap; overflow-wrap: anywhere; color: #c4d2e4; }
+.conversation-thinking [hidden] { display: none !important; }

@@ -24,7 +24,7 @@ class HttpModelProviderTest {
         var other=json.createObjectNode();OpenAiCompatibleProvider.configureConversationThinking(URI.create("https://example.com/v1/"),"deepseek-flash",other);assertTrue(other.isEmpty());
     }
 
-    @Test void reasoningIsRetainedForToolContinuationButNeverEmittedAsChat()throws Exception{
+    @Test void reasoningIsRetainedForToolContinuationAndNeverMixedWithAnswer()throws Exception{
         var received=new AtomicReference<String>();var calls=new java.util.concurrent.atomic.AtomicInteger();
         server.createContext("/v1/chat/completions",e->{received.set(new String(e.getRequestBody().readAllBytes(),StandardCharsets.UTF_8));
             String response=calls.incrementAndGet()==1?
@@ -37,6 +37,12 @@ class HttpModelProviderTest {
         assertEquals(java.util.List.of("visible"),chunks);assertEquals("transport-only",first.reasoningContent());assertEquals("visible",first.text());
         provider.streamWithTools(request,definitions,java.util.List.of(java.util.Map.of("role","assistant","content",first.text(),"reasoning_content",first.reasoningContent(),"tool_calls",java.util.List.of())),chunks::add);
         var wire=new com.fasterxml.jackson.databind.ObjectMapper().readTree(received.get());assertEquals("transport-only",wire.path("messages").get(1).path("reasoning_content").asText());assertFalse(wire.has("max_tokens"));
+    }
+    @Test void thinkingChannelsRemainSeparateAndAliasNeverRendersConfigurationObjects()throws Exception{
+        server.createContext("/v1/chat/completions",e->{e.getRequestBody().readAllBytes();respond(e,200,"data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"先想\",\"thinking\":\"duplicate\"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"thinking\":\"再想\"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"thinking\":{\"type\":\"enabled\"},\"content\":\"答案\"}}]}\n\ndata: [DONE]\n\n");});
+        var provider=new OpenAiCompatibleProvider(baseUri.resolve("/v1/"),"fixture","test",Duration.ofSeconds(2));var thinking=new java.util.ArrayList<String>();var content=new java.util.ArrayList<String>();
+        var result=provider.streamWithTools(new ModelRequest(ModelCapability.SEMANTIC,"question"),java.util.List.of(),java.util.List.of(),content::add,thinking::add);
+        assertEquals(java.util.List.of("先想","再想"),thinking);assertEquals(java.util.List.of("答案"),content);assertEquals("先想再想",result.reasoningContent());assertEquals("答案",result.text());
     }
     @Test void lengthTerminatedToolBatchIsNotExecutable(){
         server.createContext("/v1/chat/completions",e->{e.getRequestBody().readAllBytes();respond(e,200,"data: {\"choices\":[{\"delta\":{\"content\":\"partial\"},\"finish_reason\":\"length\"}]}\n\ndata: [DONE]\n\n");});
