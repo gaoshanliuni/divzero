@@ -44,6 +44,8 @@ public final class ConversationAgentTools {
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>16384)throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
+            if(tool.equals("inspect_world_geometry"))return ConversationWorldGeometry.inspect(p,agent,args).thenApply(v->{s.execute(()->WorldGeometrySmokeServer.observe(tool,args,v));return v;});
+            if(tool.equals("plan_world_geometry"))return ConversationWorldGeometry.plan(p,agent,args,permit).thenApply(v->{WorldGeometrySmokeServer.observe(tool,args,v);return v;});
             if(tool.equals("inspect_agent_body")){keys(args);return CompletableFuture.completedFuture(ConversationBodyTools.execute(p,agent,args,true));}
             if(tool.equals("inspect_memories")){keys(args,"query","offset");return memory(p,agent,tool,args,permit);}
             if(tool.equals("inspect_packages")){keys(args,"offset");if(!ServerTaskStart.allowed(p,agent))throw new SecurityException("AGENT_PACKAGE_PERMISSION");var runtime=ServerPackageRuntime.get(s);var page=runtime.ownedHeads(p.getUUID(),args.path("offset").asInt(0),16);var out=new ArrayList<Object>();var worldRuntime=dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(s);for(var pack:page.items()){var row=new LinkedHashMap<String,Object>(runtime.headView(p.getUUID(),pack));row.put("instances",worldRuntime.list(p.getUUID()).stream().filter(v->v.packageId().equals(pack.packageId())).toList());out.add(row);}return CompletableFuture.completedFuture(Map.of("packages",out,"total",page.total(),"nextOffset",page.more()?page.nextOffset():-1));}
@@ -62,7 +64,7 @@ public final class ConversationAgentTools {
                 catch(Exception rejected){action=CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(rejected)));}
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     var value=failure==null?receipt:Map.<String,Object>of("status","UNKNOWN","error","AGENT_TOOL_OUTCOME_UNKNOWN");
-                    PythonHostSmokeServer.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
+                    WorldGeometrySmokeServer.observe(tool,args,value);PythonHostSmokeServer.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
                     ConversationRuntimeItemSmokeServer.observe(tool,value);ConversationHostSmokeServer.observe(tool,args,value);ConversationFeedbackSmokeServer.observe(tool,value);ConversationCreatureSmokeServer.observe(tool,args,value);ConversationWatchSmokeServer.observe(tool,value);
                     try{String encoded=JSON.writeValueAsString(Map.of("owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args,"receipt",value));CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,1,encoded);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((written,writeError)->s.execute(()->{if(writeError!=null||failure!=null)result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));else result.complete(value);}));}
                     catch(Exception writeError){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));}
@@ -116,6 +118,7 @@ public final class ConversationAgentTools {
     private static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,UUID operation,String tool,JsonNode a,BooleanSupplier permit)throws Exception{
         Map<String,Object> result;
         switch(tool){
+            case "apply_world_geometry"->{return ConversationWorldGeometry.apply(p,agent,a,permit);}
             case "define_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.define(p,operation,a);}
             case "control_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.control(p,a);}
             case "set_persona"->{keys(a,"expected_revision","text");if(!a.path("expected_revision").canConvertToLong()||!a.path("expected_revision").isIntegralNumber()||a.path("expected_revision").asLong()<0||!a.path("text").isTextual()||a.path("text").asText().length()>8192)throw new IllegalArgumentException("PERSONA_ARGUMENTS");result=ConversationIdentityTools.setPersona(p,agent,operation,a.path("expected_revision").longValue(),a.path("text").textValue());}
