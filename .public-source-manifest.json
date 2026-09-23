@@ -829,8 +829,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/ShellAssetCatalog.java",
-      "sha256": "c684bc28c246900da066e8b28e2adf7fb4c6b5d7d48da3e447dc8dda5d2246c0",
-      "bytes": 2788
+      "sha256": "c98c6836a7c02b3e5ce9fffa1877b80caa7c85f3fab8b8e8dd9f07044da5a2fb",
+      "bytes": 2808
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/UiAgentClientPolicy.java",
@@ -1109,8 +1109,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/index.html",
-      "sha256": "9ab01f99cf6092afc95e26e6135e25d6b4465e6eec4b704f3c34b20d715c67c5",
-      "bytes": 2705
+      "sha256": "9895a015348a6fcfd0c0e4da4a8d2061513f6b6ff7d525fd0e36a8a4a632a28e",
+      "bytes": 2696
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/input-target.mjs",
@@ -1154,8 +1154,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/package-catalog-cards.mjs",
-      "sha256": "13272e876941171670a9115f8c7b4ffdb525f0553ff55818a46782115c859d5d",
-      "bytes": 14617
+      "sha256": "5eb8dbcce111f27eec010fa907819c9dd7ae42e98753a60881cf9b8823cf5984",
+      "bytes": 14602
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/package-direct-enable.mjs",
@@ -1208,6 +1208,11 @@
       "bytes": 9764
     },
     {
+      "path": "client/src/main/resources/assets/mineagent_runtime/webui/preview-orbit.mjs",
+      "sha256": "4f2dee1a8eddf957e657a300ec9bc00162285992d0b0ab02266319edc3eb5a69",
+      "bytes": 2075
+    },
+    {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/provider-models.mjs",
       "sha256": "2ad0d2d0ca1f8477315b2657a3e046d43dc112f78e334d0ed86134da4d972fd7",
       "bytes": 1928
@@ -1224,8 +1229,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/scene-preview.mjs",
-      "sha256": "aefca9bb8bf6284486383fdb654b8c09b677f8f062c0dfe0a540ec0d5734d489",
-      "bytes": 4858
+      "sha256": "c6be9846f148eb8650a21c158002baadaadb0c633dfd97910d469cbef8e9e6a3",
+      "bytes": 4163
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/schedule-management-cards.mjs",
@@ -1254,13 +1259,13 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/shell.css",
-      "sha256": "fda20afc304eca06e765ed4fb78ea2b50c19eaaeff7cb330acf7d4ffde240203",
-      "bytes": 21767
+      "sha256": "d48a47c99b5ea1c3c3d6240ac1574187fd74623c50d0a29cb7507a8bbee3c125",
+      "bytes": 21828
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/shell.mjs",
-      "sha256": "026835ae2c6fd0e02a8e79d749951fb50bd2243ad9f97128164005f7801dfe41",
-      "bytes": 57971
+      "sha256": "0c409f424d057a437890e7e1bce40cec711f1415675a27397b1b2c0bc3ca5e29",
+      "bytes": 58021
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/skin-cards.mjs",
@@ -2949,8 +2954,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "d4fa395ac9e8865de9494e20fcd96bc28e1965a59592518660fa88b5e3e0c98a",
-      "bytes": 27081
+      "sha256": "5f44214ceb58d818bce03e9766006a05b7bee828fc4137d749895c25844e126f",
+      "bytes": 27542
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3659,8 +3664,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/MediaToolsSmokeClient.java",
-      "sha256": "cf2c9e35b982f8180e034f5a28b47e7ea8005dc9e84d5a2da62ff00785a3c70f",
-      "bytes": 11876
+      "sha256": "f2b3fe85f8b385863222afcbb5fe9d2fb7468b99800de9b9b3a4b27dd69246fe",
+      "bytes": 13167
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/MultiWindowInputSmokeClient.java",
@@ -5253,6 +5258,11 @@
       "bytes": 70
     },
     {
+      "path": "neoforge/src/main/resources/assets/mineagent_runtime/icon.png",
+      "sha256": "2421874f851588083e1339640a0284c1ad10a24069caa9b6ab7b354ab1e58f58",
+      "bytes": 19873
+    },
+    {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/items/agent_blade.json",
       "sha256": "2e37e5200f0fe9d0e2c9c4bf1eb66e1170a0df3dec6033c762cb0f72cb3f3675",
       "bytes": 82
@@ -5469,8 +5479,8 @@
     },
     {
       "path": "neoforge/src/main/templates/META-INF/neoforge.mods.toml",
-      "sha256": "39d35e9506fe9bc9522a5218721c1aa640fd8f13998e3f92cd9b6cabb48b15d3",
-      "bytes": 1138
+      "sha256": "b560b92f52cce55e27cf235c1cbe848b52039f8a51575cc16201f5d24c88cdb0",
+      "bytes": 1183
     },
     {
       "path": "scripting/build.gradle",

@@ -237,6 +237,9 @@ body[data-interacting=false] .window .titlebar button,body[data-interacting=fals
 .scene-preview-content { display:flex; flex-direction:column; gap:10px; min-height:0; overflow:hidden; }
 .scene-preview-toolbar { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .scene-preview-toolbar strong { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.scene-preview-toolbar select { width:auto; max-width:140px; }
+
 .scene-preview-content .scene-preview-canvas { flex:1; min-height:100px; min-width:0; border-radius:10px; background:rgba(16,25,28,.22); }
 .scene-preview-content small { flex-shrink:0; color:var(--muted); }
+
+.scene-preview-canvas { cursor:grab; user-select:none; }
+.scene-preview-canvas[data-dragging="true"] { cursor:grabbing; }

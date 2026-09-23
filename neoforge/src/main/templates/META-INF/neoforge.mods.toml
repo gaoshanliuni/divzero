@@ -7,6 +7,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 authors="MineAgent Runtime contributors"
+logoFile="assets/mineagent_runtime/icon.png"
 description='''
 面向 Minecraft 26.1.2 NeoForge 的游戏内 AI 玩家、自动编程与动态内容运行时。
 '''

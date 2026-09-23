@@ -150,7 +150,7 @@ Object.defineProperty(window,'__mineagentPopupOwner',{value:()=>{
  return {hostDocumentId:captureHostDocumentId,token:currentPaintToken,viewId:n?.dataset.viewId??'chrome:atlas',tag:a.tagName,url:a.tagName==='IFRAME'?a.src:location.href,frameRect:{x:r.x,y:r.y,width:r.width,height:r.height},control:{tag:a.tagName,secret:a.type==='password'||a.type==='file',visible:a.isConnected&&!a.disabled&&css.display!=='none'&&css.visibility!=='hidden'&&r.width>0&&r.height>0,rect:{x:r.x,y:r.y,width:r.width,height:r.height}}};
 },writable:false,configurable:false});
 Object.defineProperty(window,'__mineagentResolveInput',{value:(requestId,request)=>{
-  let result;try{const viewId=nativeAtlas?resolveAtlasInput(request,document,window,nativeAtlas.snapshot(),currentPaintToken,drag):resolveInputTarget(request,document,viewportWidth(),viewportHeight());result={requestId,viewId};}catch(error){result={requestId,error:error.message};}
+  let result;try{const viewId=nativeAtlas?resolveAtlasInput(request,document,window,nativeAtlas.snapshot(),currentPaintToken,drag??scenePreview.capture()):resolveInputTarget(request,document,viewportWidth(),viewportHeight());result={requestId,viewId};}catch(error){result={requestId,error:error.message};}
   window.mineagentInputQuery({request:JSON.stringify(result),persistent:false,onSuccess(){},onFailure(){}});
 },writable:false,configurable:false});
 function saveUiState() {
@@ -293,6 +293,7 @@ document.addEventListener('pointermove', event => {
 document.addEventListener('pointerup', () => { if (drag) { editedLayout(drag.id);renderLayout(drag.id);saveUiState(); } drag = null; });
 document.addEventListener('pointercancel', () => { drag = null; });
 function releaseWorkspaceInput(){
+  scenePreview.release();
   moreMenu.open=false;desktopWindows.cancel();
   if(drag?.capture?.hasPointerCapture(drag.pointerId))drag.capture.releasePointerCapture(drag.pointerId);
   drag=null;document.activeElement?.blur();saveUiState();

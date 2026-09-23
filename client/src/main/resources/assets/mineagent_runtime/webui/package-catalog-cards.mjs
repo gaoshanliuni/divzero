@@ -43,7 +43,7 @@ export function createPackageCatalog({windowFor,send,openTools,openCompatibility
     catch(error){if(generation===epoch&&reads.get(box)===ticket&&box.isConnected){box.replaceChildren();el('p',error.message,box,'error');}}
   }
   function build(){if(root.childElementCount)return;el('p','全量自有包目录，不受近期 32 / 64 条列表限制。查看版本不会变更 head、重新签名或恢复旧包。',root,'muted');const status=el('p','等待可信会话…',root,'muted');status.id='package-catalog-status';status.setAttribute('aria-live','polite');const row=el('div',null,root,'event-toolbar'),label=el('label','包名 / UUID 子串',row),input=el('input',null,label);input.maxLength=128;input.value=search;input.disabled=!ready;button('搜索 / 刷新第一页',row,()=>{search=input.value;offset=0;selected=null;detailSerial++;q('#package-catalog-detail').replaceChildren();void list();});el('div',null,root,'actions').id='package-catalog-paging';const grid=el('div',null,root,'event-management-grid');el('section',null,grid).id='package-catalog-list';el('section',null,grid).id='package-catalog-detail';}
-  function open(){const next=windowFor('runtime-package-catalog','自有包目录与版本');if(root!==next){root=next;epoch++;selected=null;}build();if(ready)void list();}
+  function open(){const next=windowFor('runtime-package-catalog','包管理');if(root!==next){root=next;epoch++;selected=null;}build();if(ready)void list();}
   function session(value){const key=JSON.stringify([value?.binding?.worldId,value?.binding?.viewerPlayerId,value?.sessionId,value?.serverInstanceId]);if(key===scope&&ready===!!value)return;scope=key;epoch++;serial++;detailSerial++;ready=!!value;selected=null;if(!ready){offset=0;search='';}if(root?.isConnected){root.replaceChildren();build();if(ready)void list();}}
   return {open,session,reset:()=>session(null)};
 }
