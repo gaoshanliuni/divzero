@@ -16,13 +16,13 @@ export const permissionLabels={CREATE_AGENT:'创建 AI',MODIFY_AGENT:'修改 AI'
 export const settingsError=code=>({STALE_REVISION:'配置已更新，未覆盖他人的修改。草稿仍保留，请重新读取或明确放弃草稿。',FORBIDDEN:'没有管理此设置的权限。',PERMISSION_DENIED:'没有管理此设置的权限。',PROVIDER_ADDRESS_CONFIRM_REQUIRED:'更改地址前请确认后续请求将使用当前保存的密钥。',SETTINGS_PUBLIC_FIELDS_ONLY:'网页只接受公开设置字段；请使用原生保密输入管理 Key。',VALIDATION_FAILED:'请修正标出的字段。'})[code]||code;
 
 export const resourceFieldBounds={
-  'runtime.maxAgents':{min:1,max:4},
+  'runtime.maxAgents':{min:1,max:2147483647},
   'runtime.maxChunkTickets':{min:0,max:100},
   'runtime.agentTicketRadius':{min:0,max:2},
 };
 export function resourceStatusText(limits){
   const state={APPLIED:'已应用',PENDING:'等待服务端应用',DEGRADED:'区块票更新失败，正在重新协调',STOPPING:'服务端正在关闭'}[limits.state]||'状态未知';
-  let text=`资源${state} · AI ${limits.agentCount} / ${limits.maxAgents} · 已登记附加区块票 ${limits.activeTickets} / ${limits.maxChunkTickets} · 半径 ${limits.agentTicketRadius}`;
+  let text=`资源${state} · AI ${limits.agentCount}（不限数量） · 已登记附加区块票 ${limits.activeTickets} / ${limits.maxChunkTickets} · 半径 ${limits.agentTicketRadius}`;
   if(limits.overAgentLimit)text+='。现有 AI 超过新建上限，全部保留；减少至上限以下后才能新建';
   if(limits.maxChunkTickets===0)text+='。附加区块票已禁用';
   else if(limits.limitedAgents>0)text+=`。${limits.limitedAgents} 个 AI 暂未获得完整区块票，活动依赖世界中已加载的区块`;

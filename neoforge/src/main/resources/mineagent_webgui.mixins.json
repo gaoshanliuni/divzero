@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "client.AgentSkinMixin",
+    "client.AgentNameMixin",
     "client.PlayerControlKeyAccess",
     "client.PlayerBodyMouseMixin",
     "client.PlayerBodyFocusMixin",

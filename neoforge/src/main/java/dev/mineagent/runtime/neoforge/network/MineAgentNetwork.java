@@ -308,7 +308,10 @@ public final class MineAgentNetwork {
                 .encodeToString(MineAgentRuntimeMod.SECRET_TRANSPORT_KEYS.getPublic().getEncoded()));
         var server = player.level().getServer();
         values.put("security.configInstance",MineAgentRuntimeServices.config(server).instanceId().toString());values.put("security.worldId",MineAgentRuntimeServices.worldId(server).toString());
-        var agents = MineAgentRuntimeServices.bodies(server).definitions();
+        var allAgents = MineAgentRuntimeServices.bodies(server).definitions();
+        var agents = allAgents.stream().limit(8).toList();
+        var agentPrefixes=agents.stream().map(a->"agent."+a.agentId()+".").toList();values.keySet().removeIf(k->k.startsWith("agent.")&&agentPrefixes.stream().noneMatch(k::startsWith));
+        values.put("agent.total",Integer.toString(allAgents.size()));
         values.put("agent.count", Integer.toString(agents.size()));
         for (int index = 0; index < agents.size(); index++) {
             var agent = agents.get(index);

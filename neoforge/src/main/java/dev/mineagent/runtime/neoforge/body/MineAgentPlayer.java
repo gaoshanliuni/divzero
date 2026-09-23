@@ -105,9 +105,12 @@ public final class MineAgentPlayer extends ServerPlayer {
         return movementController;
     }
 
+    @Override public Component getName(){return agentDisplayName==null?super.getName():agentDisplayName;}
+    @Override public Component getTabListDisplayName(){return agentDisplayName;}
     public void setAgentDisplayName(String displayName) {
         this.agentDisplayName = Component.literal(displayName);
         setCustomName(this.agentDisplayName);
+        if(level().getServer().getPlayerList().getPlayer(getUUID())==this)level().getServer().getPlayerList().broadcastAll(new net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket(net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME,this));
     }
 
     public boolean beginMining(BlockPos target) {

@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  if(window.mineagentWorld?.version===1&&typeof window.mineagentWorld.subscribe==='function')return;
+  if(window.mineagentWorld?.version===1&&typeof window.mineagentWorld.watch==='function')return;
   let pending=0,listenRevision=0,enabled=false,refreshing=false,wanted=false,lastState=null;
   const listeners=new Set();
   function request(action,args,operationId){return new Promise((resolve,reject)=>{
@@ -27,7 +27,15 @@
     let stopped=false;return ()=>{if(stopped)return;stopped=true;listeners.delete(listener);if(!listeners.size){enabled=false;wanted=false;const generation=++listenRevision;request('worldui.read',{listen:'false',listenRevision:String(generation)}).catch(()=>{});}};
   }
   window.addEventListener('mineagent:world-refresh',()=>{if(!listeners.size)return;wanted=true;void refresh();});
-  const api=Object.freeze({version:1,read:()=>request('worldui.read',{}),subscribe,action(expectedRevision,name,payload={},operationId){
+  const watchers=new Set();
+  function watch(onState,onError,intervalMs=1000){
+    if(typeof onState!=='function'||onError!==undefined&&typeof onError!=='function'||!Number.isFinite(intervalMs)||intervalMs<1000||intervalMs>60000)throw new TypeError('WORLD_UI_WATCH_ARGUMENTS');
+    if(watchers.size>=4)throw new Error('WORLD_UI_WATCH_BUDGET');let stopped=false,timer=null;const stop=()=>{if(stopped)return;stopped=true;clearTimeout(timer);watchers.delete(stop);};watchers.add(stop);
+    async function poll(){if(stopped)return;if(document.visibilityState==='hidden'){timer=setTimeout(poll,intervalMs);return;}try{const state=await request('worldui.read',{});if(!stopped)onState(state);}catch(error){try{if(!stopped)onError?.(error);}catch(_){}finally{stop();}return;}if(!stopped)timer=setTimeout(poll,intervalMs);}
+    void poll();return stop;
+  }
+  window.addEventListener('pagehide',()=>{for(const stop of [...watchers])stop();});
+  const api=Object.freeze({version:1,watch,read:()=>request('worldui.read',{}),subscribe,action(expectedRevision,name,payload={},operationId){
     try{if(!Number.isSafeInteger(expectedRevision)||expectedRevision<1||typeof name!=='string'||!/^[A-Za-z][A-Za-z\d_.-]{0,63}$/.test(name))throw new Error('WORLD_UI_ACTION_INPUT');const data=JSON.stringify(payload);if(typeof data!=='string'||data.length>8192)throw new Error('WORLD_UI_DATA_INVALID');return request('worldui.action',{expectedRevision:String(expectedRevision),name,payload:data},operationId);}catch(error){return Promise.reject(error);}
   }});
   Object.defineProperty(window,'mineagentWorld',{value:api,configurable:true,writable:false});window.dispatchEvent(new CustomEvent('mineagent:world-ready'));

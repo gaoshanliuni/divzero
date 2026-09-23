@@ -34,9 +34,9 @@ public final class ControlCenterScreen extends Screen {
     private String agentNameDraft = "Steve";
     private long observedSnapshotGeneration = -1;
     private String openAiBaseUrlDraft = "https://api.openai.com/v1";
-    private String openAiModelDraft = "";
+    private String openAiModelDraft = "gpt-4.1-mini";
     private String ollamaBaseUrlDraft = "http://127.0.0.1:11434";
-    private String ollamaModelDraft = "";
+    private String ollamaModelDraft = "qwen3:8b";
     private String openAiApiKeyDraft = "";
     private String comfyUiBaseUrlDraft = "http://127.0.0.1:8188";
     private String comfyUiWorkflowDraft = "";
@@ -225,7 +225,7 @@ public final class ControlCenterScreen extends Screen {
         ));
         addRenderableWidget(new StringWidget(
                 contentX, 68, contentWidth, 20,
-                Component.literal("配置版本: " + PanelSnapshotInbox.snapshot().revision()), this.font
+                Component.empty(), this.font
         ));
         if (model.selectedSection() != PanelSection.CONVERSATIONS) {
             addRenderableWidget(new StringWidget(
@@ -324,8 +324,8 @@ public final class ControlCenterScreen extends Screen {
         Map<String, String> values = PanelSnapshotInbox.snapshot().values();
         String[] lines = {
                 "Worker: " + (Boolean.parseBoolean(values.getOrDefault("runtime.workerAlive", "false")) ? "READY" : "OFFLINE"),
-                "AI 玩家: " + values.getOrDefault("agent.count", "0") + " / "
-                        + values.getOrDefault("runtime.maxAgents", "4"),
+                "AI 玩家: " + values.getOrDefault("agent.total", values.getOrDefault("agent.count", "0")) + " / "
+                        + "不限数量",
                 "任务: " + values.getOrDefault("runtime.taskCount", "0")
                         + "  代码草稿: " + values.getOrDefault("runtime.codeDraftCount", "0"),
                 "记忆: " + values.getOrDefault("runtime.memoryCount", "0")
@@ -353,7 +353,7 @@ public final class ControlCenterScreen extends Screen {
         }
         addRenderableWidget(new StringWidget(contentX, 112, contentWidth, 14,
                 Component.literal(ysmStatus), this.font).setMaxWidth(contentWidth));
-        int count = parseBoundedInt(values.get("agent.count"), 0, 4, 0);
+        int count = parseBoundedInt(values.get("agent.count"), 0, Integer.MAX_VALUE, 0);
         if (count == 0) {
             return;
         }
@@ -457,7 +457,7 @@ public final class ControlCenterScreen extends Screen {
     public boolean runYsmAppearanceUiSmoke(String modelId, String textureId, String animationId) {
         Map<String, String> values = PanelSnapshotInbox.snapshot().values();
         if (!Boolean.parseBoolean(values.getOrDefault("ysm.runtimeAvailable", "false"))
-                || parseBoundedInt(values.get("agent.count"), 0, 4, 0) == 0
+                || parseBoundedInt(values.get("agent.count"), 0, Integer.MAX_VALUE, 0) == 0
                 || !Boolean.parseBoolean(values.getOrDefault("agent.0.mutable", "false"))) {
             return false;
         }
@@ -645,7 +645,7 @@ public final class ControlCenterScreen extends Screen {
 
     private void addAgentSettingsControls(int contentX, int contentWidth) {
         Map<String, String> snapshot = PanelSnapshotInbox.snapshot().values();
-        int count = parseBoundedInt(snapshot.get("agent.count"), 0, 4, 0);
+        int count = parseBoundedInt(snapshot.get("agent.count"), 0, Integer.MAX_VALUE, 0);
         if (count == 0) {
             addRenderableWidget(new StringWidget(contentX, 132, contentWidth, 18,
                     Component.literal("尚未创建 AI 玩家"), this.font));
@@ -766,7 +766,7 @@ public final class ControlCenterScreen extends Screen {
             String agentId = versioned.get("agentId");
             if (agentId != null && !"follow".equals(action)) {
                 Map<String, String> panel = PanelSnapshotInbox.snapshot().values();
-                int count = parseBoundedInt(panel.get("agent.count"), 0, 4, 0);
+                int count = parseBoundedInt(panel.get("agent.count"), 0, Integer.MAX_VALUE, 0);
                 for (int index = 0; index < count; index++) {
                     if (agentId.equals(panel.get("agent." + index + ".id"))) {
                         versioned.put("expectedRevision", panel.getOrDefault("agent." + index + ".revision", "0"));
@@ -828,8 +828,11 @@ public final class ControlCenterScreen extends Screen {
         addRenderableWidget(comfyTab);
 
         if (providerPage == 0) {
+            String[] urls={"https://api.deepseek.com/v1/","https://open.bigmodel.cn/api/paas/v4/","https://api.z.ai/api/paas/v4/","https://api.openai.com/v1/"};String[] labels={"DeepSeek","GLM 智谱","GLM Z.AI","OpenAI"};
+            for(int i=0;i<urls.length;i++){final int choice=i;addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{openAiBaseUrlDraft=urls[choice];openAiModelDraft=dev.mineagent.runtime.core.config.ProviderDefaults.model(openAiBaseUrlDraft);rebuildWidgets();}).bounds(contentX+i*(fieldWidth/4),220,fieldWidth/4-2,18).build());}
+
             addRenderableWidget(field(contentX, 130, fieldWidth, "OpenAI-compatible Base URL", openAiBaseUrlDraft,
-                    value -> openAiBaseUrlDraft = value));
+                    value -> {String old=openAiBaseUrlDraft;openAiBaseUrlDraft=value;if(openAiModelDraft.isBlank()||openAiModelDraft.equals(dev.mineagent.runtime.core.config.ProviderDefaults.model(old)))openAiModelDraft=dev.mineagent.runtime.core.config.ProviderDefaults.model(value);}));
             addRenderableWidget(field(contentX, 176, fieldWidth, "OpenAI-compatible 模型", openAiModelDraft,
                     value -> openAiModelDraft = value));
         } else if (providerPage == 1) {
@@ -847,7 +850,7 @@ public final class ControlCenterScreen extends Screen {
             addRenderableWidget(field(contentX, 176, fieldWidth, "ComfyUI Workflow JSON", comfyUiWorkflowDraft,
                     value -> comfyUiWorkflowDraft = value));
         }
-        addRenderableWidget(Button.builder(Component.translatable("screen.mineagent_runtime.save_provider"), ignored -> saveProviderSettings())
+        addRenderableWidget(Button.builder(Component.literal("保存"), ignored -> saveProviderSettings())
                 .bounds(contentX + (tabWidth + 4) * 4, 108,
                         Math.max(40, contentWidth - (tabWidth + 4) * 4), 18)
                 .build());
@@ -1390,7 +1393,7 @@ public final class ControlCenterScreen extends Screen {
         key.setHint(Component.literal("记忆键"));
         key.setValue(memoryKeyDraft);
         key.setResponder(value -> memoryKeyDraft = value);
-        addRenderableWidget(key);
+        key.setVisible(false);
         EditBox value = new EditBox(this.font, contentX, 174, contentWidth, 18, Component.literal("记忆内容"));
         value.setMaxLength(16_384);
         value.setHint(Component.literal("记忆内容"));
@@ -1399,12 +1402,12 @@ public final class ControlCenterScreen extends Screen {
         addRenderableWidget(value);
         Button create = Button.builder(Component.literal("保存记忆"), ignored -> {
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.MemoryCommand("create", Map.of(
-                            "kind", memoryKind.name(), "key", memoryKeyDraft.strip(),
+                            "kind", memoryKind.name(), "key", "memory-"+UUID.randomUUID(),
                             "value", memoryValueDraft.strip())));
                     memoryKeyDraft = "";
                     memoryValueDraft = "";
                 }).bounds(contentX, 196, Math.min(100, contentWidth), 18).build();
-        create.active = !memoryKeyDraft.isBlank() && !memoryValueDraft.isBlank();
+        create.active = !memoryValueDraft.isBlank();
         addRenderableWidget(create);
     }
 
@@ -1461,7 +1464,7 @@ public final class ControlCenterScreen extends Screen {
 
     private void addTaskCreationControls(int contentX, int contentWidth) {
         Map<String, String> panel = PanelSnapshotInbox.snapshot().values();
-        int agents = parseBoundedInt(panel.get("agent.count"), 0, 4, 0);
+        int agents = parseBoundedInt(panel.get("agent.count"), 0, Integer.MAX_VALUE, 0);
         if (agents == 0) {
             addRenderableWidget(new StringWidget(contentX, 132, contentWidth, 18,
                     Component.literal("请先创建 AI 玩家"), this.font));

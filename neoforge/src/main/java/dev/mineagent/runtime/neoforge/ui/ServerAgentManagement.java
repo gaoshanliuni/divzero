@@ -12,6 +12,7 @@ import java.util.*;
 /** Trusted-shell facade over the existing persistent Agent/body services. No actor authority from the page. */
 public final class ServerAgentManagement {
     private ServerAgentManagement(){}
+    private static final Map<ServerPlayer,Integer> pages=new WeakHashMap<>();
     private static boolean op(ServerPlayer viewer){return viewer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);}
     public static void authorize(ServerPlayer viewer,Map<String,String> args){
         var server=viewer.level().getServer();if(viewer instanceof MineAgentPlayer)throw new SecurityException("AGENT_VIEWER_REQUIRED");
@@ -21,18 +22,20 @@ public final class ServerAgentManagement {
     }
     public static Map<String,Object> view(ServerPlayer viewer){
         var server=viewer.level().getServer();var bodies=MineAgentRuntimeServices.bodies(server);var rows=new ArrayList<Map<String,Object>>();
-        for(var a:bodies.definitions()){
+        var all=bodies.definitions();int offset=Math.min(pages.getOrDefault(viewer,0),Math.max(0,((all.size()-1)/16)*16));
+        for(var a:all.stream().skip(offset).limit(16).toList()){
             var body=bodies.body(a.agentId()).orElse(null);boolean own=a.ownerPlayerId().equals(viewer.getUUID());var row=new LinkedHashMap<String,Object>();
             row.put("id",a.agentId());row.put("name",a.displayName());row.put("revision",bodies.revision(a.agentId()));row.put("requestedMode",a.mode());row.put("bodyState",bodies.bodyState(a.agentId()));row.put("effectiveMode",body==null?"":body.gameMode.getGameModeForPlayer().getName());
             row.put("canManage",own||op(viewer));row.put("canCollaborate",own);row.put("mine",own);row.put("canStartTask",ServerTaskStart.allowed(viewer,a.agentId())&&body!=null&&body.canAct());row.put("health",body==null?null:body.getHealth());row.put("food",body==null?null:body.getFoodData().getFoodLevel());
             row.put("collaborators",own?a.collaboratorPlayerIds().stream().map(UUID::toString).sorted().toList():List.of());rows.add(row);
             row.put("ticketState",bodies.ticketState(a.agentId()));
         }
-        return Map.of("agents",rows,"maximum",MineAgentRuntimeServices.config(server).resourceLimits().maxAgents(),"canCreate",MineAgentRuntimeServices.permissions(server).allowed(viewer.getUUID(),op(viewer),PermissionAction.CREATE_AGENT),"players",server.getPlayerList().getPlayers().stream().filter(p->!(p instanceof MineAgentPlayer)).map(p->Map.of("id",p.getUUID(),"name",p.getGameProfile().name())).toList());
+        return Map.of("agents",rows,"total",all.size(),"offset",offset,"nextOffset",offset+16<all.size()?offset+16:-1,"maximum",MineAgentRuntimeServices.config(server).resourceLimits().maxAgents(),"canCreate",MineAgentRuntimeServices.permissions(server).allowed(viewer.getUUID(),op(viewer),PermissionAction.CREATE_AGENT),"players",server.getPlayerList().getPlayers().stream().filter(p->!(p instanceof MineAgentPlayer)).map(p->Map.of("id",p.getUUID(),"name",p.getGameProfile().name())).toList());
     }
     public static Map<String,String> write(ServerPlayer viewer,UUID operation,Map<String,String> args)throws Exception{
         var server=viewer.level().getServer();if(!server.isSameThread()||viewer instanceof MineAgentPlayer)throw new SecurityException("AGENT_VIEWER_REQUIRED");
         var bodies=MineAgentRuntimeServices.bodies(server);String kind=Objects.requireNonNull(args.get("kind"));
+        if(kind.equals("page")){if(!args.keySet().equals(Set.of("kind","offset")))throw new IllegalArgumentException("AGENT_ARGUMENTS_INVALID");int offset=Integer.parseInt(args.get("offset"));if(offset<0)throw new IllegalArgumentException("AGENT_PAGE");pages.put(viewer,offset);return Map.of("offset",Integer.toString(offset));}
         Set<String> expected=switch(kind){case "create"->Set.of("kind","name","mode");case "rename"->Set.of("kind","agentId","expectedRevision","name");case "mode"->Set.of("kind","agentId","expectedRevision","mode","confirmed");case "delete"->Set.of("kind","agentId","expectedRevision","confirmed");case "collaborator"->Set.of("kind","agentId","expectedRevision","playerId","enabled");default->throw new IllegalArgumentException("AGENT_ACTION_INVALID");};
         if(!args.keySet().equals(expected))throw new IllegalArgumentException("AGENT_ARGUMENTS_INVALID");
         if(kind.equals("create")){

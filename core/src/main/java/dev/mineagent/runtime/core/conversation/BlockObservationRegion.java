@@ -1,15 +1,13 @@
 package dev.mineagent.runtime.core.conversation;
-
-/** Small loaded-world snapshots; limits apply before any Minecraft block access. */
+/** A coordinate scope, not an allocation. Reads MUST use bounded pages over this long cursor. */
 public record BlockObservationRegion(int minX,int minY,int minZ,int maxX,int maxY,int maxZ,int afterTicks) {
+    public static final int MAX_EDGE=4096;
     public BlockObservationRegion {
         long x=(long)maxX-minX+1,y=(long)maxY-minY+1,z=(long)maxZ-minZ+1;
-        if(x<1||y<1||z<1||x>65||y>65||z>65||x*y*z>4096||afterTicks<0||afterTicks>200)
-            throw new IllegalArgumentException("AGENT_BLOCK_REGION_BOUNDS");
+        if(x<1||y<1||z<1||x>MAX_EDGE||y>MAX_EDGE||z>MAX_EDGE||afterTicks<0||afterTicks>200)throw new IllegalArgumentException("AGENT_BLOCK_REGION_BOUNDS");
     }
-    public void requireNear(int x,int y,int z){
-        if(Math.abs((long)minX-x)>32||Math.abs((long)maxX-x)>32||Math.abs((long)minY-y)>32||Math.abs((long)maxY-y)>32||Math.abs((long)minZ-z)>32||Math.abs((long)maxZ-z)>32)
-            throw new IllegalArgumentException("AGENT_BLOCK_REGION_TOO_FAR");
-    }
-    public int volume(){return (maxX-minX+1)*(maxY-minY+1)*(maxZ-minZ+1);}
+    /** Retained source compatibility: distance is no longer an arbitrary 32-block restriction. */
+    public void requireNear(int x,int y,int z){}
+    public long volume(){return ((long)maxX-minX+1)*((long)maxY-minY+1)*((long)maxZ-minZ+1);}
+    public int[] at(long offset){if(offset<0||offset>=volume())throw new IllegalArgumentException("AGENT_BLOCK_CURSOR");long width=(long)maxX-minX+1,depth=(long)maxZ-minZ+1;return new int[]{(int)(minX+offset%width),(int)(minY+offset/width/depth),(int)(minZ+offset/width%depth)};}
 }

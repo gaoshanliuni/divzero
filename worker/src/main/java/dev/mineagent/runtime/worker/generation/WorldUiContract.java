@@ -11,6 +11,9 @@ public final class WorldUiContract {
         ui.action 根据 event.action() 验证名称和 JSON.parse(String(event.payload())) 数据，再改变实际实例/Native 对象并回复实际结果。操作在服务端记入持久 intent；相同 operationId 不重复执行，未知结果不自动重放。
         浏览器的 window.mineagentWorld 由可信宿主注入，version=1。页面若已有它可初始化，否则监听 mineagent:world-ready。SDK 初始化不自动读写。
         await mineagentWorld.read() 得到 {revision,data,executionMode}；data 只含服务端 ui.read 明确回复的 JSON。await mineagentWorld.action(expectedRevision,actionName,payload,operationId) 发送动作，参数不包含 actor、实例或包身份。operationId 可省略自动生成，但不确定结果的重试必须保存原ID和原参数。
+        需要持续坐标、生命值、周围方块读数时可显式const stop=mineagentWorld.watch(onState,onError,1000)。这是同一当前PLAYER会话每秒只读刷新，只有上次完成才下一次，无并发积压、不重放写入；隐藏文档暂停，关闭/导航停止，权限/实例失效报错后停止。onState只改数字/显示，不重建整页或盖掉草稿。不要同时watch和额外setInterval。watch不同于事件推送subscribe；不需为纯读数反复调用模型或创建32次的有限调度。
+        在ui.read中可用content.observePlayer(event.player())返回位置、视角、生命/饥饿/经验的JSON字符串；content.observeBlockPage(event.player(),radius,offset)返回以玩家当前位置为中心的实际已加载方块计数分页，radius=1..2047，每页最多4096格。维持一次统计的center/min/max不可把移动后的不同页拼成同一瞬时快照；小半径快速观察，较大区域明确标注分批/未知格。也可直接读event.player().getX()/getY()/getZ()及原生只读API。每页数据必须标注读数时刻。
+        WebGUI窗口是独立可移动/缩放/最小化/关闭的网页视图，不是聊天消息，也不是Minecraft物品建模的Canvas替代。World UI绑定实际对象与当前玩家；读数窗口持续显示不意味着持续占用键鼠，悬浮与交互是不同状态。距离/权限边界仍生效，不能假称跨地图跟随显示。
         可显式const stop=mineagentWorld.subscribe(onState,onError)开启只读状态订阅；此时进行一次初读，后续仅在Native推送提示到达时有界合并刷新，不并行轮询。stop()解除当前页面订阅，不撤销其他窗口。回调拿到同read的{revision,data,executionMode}，仅更新展示节点，不能覆盖未提交表单、滚动或焦点；失败显示诊断，不自动重放action。即便实例revision没增加，共享数据或Native状态仍可变化，不能按相同revision跳过推送刷新。
         事件STATE_PUSH的目标由GENERAL在inspect_state_push_targets后明确配置；SDK.subscribe只是当前文档同意接收，不自建全局事件订阅或取得写权限。推送不带源事件私有数据，Native给原Session只读拉取；隐藏/关闭/导航/委派变化后旧令牌失效，重新打开需新文档subscribe初读。不要将Native交付读取回执当作页面绘制或用户已读证明。
         action 的 payload 直接传 JSON 数据对象，SDK 会编码；配置对象不要二次 JSON.stringify 成字符串。若业务 reply 含 ok/error 字段，页面须检查实际 data.ok/data.error，不能吞掉拒绝后显示成功。

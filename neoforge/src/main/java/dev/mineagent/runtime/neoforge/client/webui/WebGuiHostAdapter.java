@@ -613,6 +613,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
             boolean write=kind.equals("state")||kind.equals("archive");return UiClientSessions.command(write?"task.eventsWrite":"task.eventsRead",args,write?UUID.fromString(text(message,"operationId",36)):UUID.randomUUID());
         }
         if(channel.equals("agentManagement")){
+            if(message.has("offset")){int offset=message.get("offset").getAsInt();if(offset<0)throw new IllegalArgumentException("AGENT_PAGE");args.put("offset",Integer.toString(offset));}
 
             for(String key:java.util.List.of("kind","agentId","name","mode","playerId"))if(message.has(key))args.put(key,text(message,key,key.equals("name")?128:64));
             if(message.has("expectedRevision")){String revision=message.get("expectedRevision").getAsString();if(!revision.matches("0|[1-9][0-9]{0,18}"))throw new IllegalArgumentException("AGENT_REVISION_INVALID");args.put("expectedRevision",Long.toString(Long.parseLong(revision)));}

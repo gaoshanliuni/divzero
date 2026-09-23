@@ -30,7 +30,7 @@ public final class ServerConfigService implements AutoCloseable {
 
     private ServerConfigService(SqliteConfigRepository repository) {
         this.repository = repository;
-        publicValues.put("runtime.maxAgents", "4");
+        publicValues.put("runtime.maxAgents", Integer.toString(Integer.MAX_VALUE));
         publicValues.put("runtime.maxChunkTickets", "100");
         publicValues.put("runtime.agentTicketRadius", "2");
         publicValues.put("runtime.initialized", "false");
@@ -53,6 +53,7 @@ public final class ServerConfigService implements AutoCloseable {
         publicValues.put("voice.volume", "+0%");
         publicValues.put("media.allowedHosts", "");
         publicValues.put("skill.veinMining.maxBlocks", "32");
+        ProviderDefaults.fill(publicValues);
     }
 
     public static ServerConfigService open(Path database) throws Exception {
@@ -62,7 +63,10 @@ public final class ServerConfigService implements AutoCloseable {
             StoredConfig stored = repository.load();
             service.revision = stored.revision();
             service.publicValues.putAll(stored.publicValues());
+            if(stored.publicValues().getOrDefault("provider.openai.model", "").isBlank()) service.publicValues.remove("provider.openai.model");
             service.publicValues.put("voice.input.enabled","false"); // ASR is skipped in the current delivery scope, including legacy settings.
+            ProviderDefaults.fill(service.publicValues);
+            service.publicValues.put("runtime.maxAgents",Integer.toString(Integer.MAX_VALUE));
             service.secretValues.putAll(stored.secretValues());
             service.permissionGenerations=repository.permissionGenerations();
             // Invalid stored limits fail loading rather than silently claiming a different budget.
@@ -100,6 +104,7 @@ public final class ServerConfigService implements AutoCloseable {
             }
         });
 
+        ProviderDefaults.update(publicValues,nextPublic,patch.values());
         var nextLimits = RuntimeResourceLimits.from(nextPublic);
         var nextGenerations=PermissionGenerations.advance(permissionGenerations,publicValues,nextPublic);
         if (repository != null) {
@@ -172,7 +177,7 @@ public final class ServerConfigService implements AutoCloseable {
                     try { ServiceCallBudget.from(Map.of(key,value)); }
                     catch(IllegalArgumentException invalid) { errors.put(key, key.equals(ServiceCallBudget.PAUSED)?"应为 true 或 false":(key.equals(ServiceCallBudget.DAILY)||key.equals(ServiceCallBudget.TASK))?"0–1000000 整数；0 不额外限制":"0–10000 整数；0 不额外限制"); }
                 }
-                case "runtime.maxAgents" -> validateRange(key, value, 1, 4, "1–4", errors);
+                case "runtime.maxAgents" -> validateRange(key, value, 1, Integer.MAX_VALUE, "正整数", errors);
                 case "runtime.maxChunkTickets" -> validateRange(key, value, 0, 100, "0–100", errors);
                 case "runtime.agentTicketRadius" -> validateRange(key, value, 0, 2, "0–2", errors);
                 case "conversation.contextTokenBudget" -> validateRange(key, value, 1024, 131072, "1024–131072", errors);

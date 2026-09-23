@@ -14,6 +14,7 @@ public final class ControlCenterModel {
     }
     private ControlCenterModel(boolean operator,java.util.Set<PanelSection> additionallyVisible){
         sections = Arrays.stream(PanelSection.values())
+                .filter(section -> !java.util.Set.of(PanelSection.CODE_STUDIO,PanelSection.MEDIA,PanelSection.SCOREBOARDS,PanelSection.CREATOR).contains(section))
                 .filter(section -> operator || !section.operatorOnly() || additionallyVisible.contains(section))
                 .toList();
         selectedSection = sections.getFirst();

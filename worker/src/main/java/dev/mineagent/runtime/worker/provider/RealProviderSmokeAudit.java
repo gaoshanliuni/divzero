@@ -26,14 +26,16 @@ final class RealProviderSmokeAudit {
 
     static RealProviderSmokeAudit begin(URI uri, ObjectNode body) throws Exception {
         Path directory = configuredDirectory();
-        return directory == null ? null : begin(directory, uri, body, Integer.parseInt(System.getenv().getOrDefault("MINEAGENT_REAL_PROVIDER_MAX_CALLS", "24")));
+        return directory == null ? null : begin(directory, uri, body, parseBudget(System.getenv().getOrDefault("MINEAGENT_REAL_PROVIDER_MAX_CALLS", "24")));
     }
+
+    static int parseBudget(String value) { return "unlimited".equals(value) ? -1 : Integer.parseInt(value); }
 
     static RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body) throws Exception {
         return begin(directory,uri,body,MAX_CALLS);
     }
     static synchronized RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body, int maximum) throws Exception {
-        if(maximum<1||maximum>MAX_CALLS)throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_CALL_LIMIT");
+        if(maximum != -1 && (maximum<1||maximum>MAX_CALLS))throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_CALL_LIMIT");
         if (!uri.equals(URI.create("https://api.deepseek.com/v1/chat/completions"))
                 || !body.path("model").asText().equals("deepseek-flash") || !body.path("stream").asBoolean())
             throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_ENDPOINT_OR_MODE");
@@ -45,13 +47,13 @@ final class RealProviderSmokeAudit {
                 throw new IllegalStateException("REAL_PROVIDER_SMOKE_PREVIOUS_OUTCOME_UNKNOWN");
             index++;
         }
-        if (index > maximum) throw new IllegalStateException("REAL_PROVIDER_SMOKE_CALL_BUDGET");
+        if (maximum != -1 && index > maximum) throw new IllegalStateException("REAL_PROVIDER_SMOKE_CALL_BUDGET");
         // The user explicitly disabled assistant-imposed output token caps. Provider limits still apply.
         body.putObject("stream_options").put("include_usage", true);
         byte[] request = JSON.writeValueAsBytes(body);
         var evidence = new LinkedHashMap<String, Object>();
         evidence.put("call", index);
-        evidence.put("callBudget", maximum);
+        evidence.put("callBudget", maximum == -1 ? "USER_AUTHORIZED_UNLIMITED" : maximum);
         evidence.put("endpoint", uri.toString());
         evidence.put("requestedModel", "deepseek-flash");
         evidence.put("requestBytes", request.length);

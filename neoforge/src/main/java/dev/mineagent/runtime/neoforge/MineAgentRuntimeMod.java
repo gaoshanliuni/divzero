@@ -612,6 +612,8 @@ public final class MineAgentRuntimeMod {
             return;
         }
         if(!WorldIdentityRuntime.notifyIfPending(player))return;
+        if(!player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[MineAgent] 只有启用作弊模式（服务器需管理员权限）才可以使用模组的完整操作能力。"));
+        else if(!Boolean.parseBoolean(MineAgentRuntimeServices.config(player.level().getServer()).snapshot().values().getOrDefault("runtime.initialized","false")))player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[MineAgent] 输入 /ai accept 即可授权本人使用模组。"));
         dev.mineagent.runtime.neoforge.network.MineAgentNetwork.sendPanelSnapshot(player);
         dev.mineagent.runtime.neoforge.network.MineAgentNetwork.sendMediaStateTo(player);
         dev.mineagent.runtime.neoforge.network.MineAgentNetwork.sendPackageStateTo(player);

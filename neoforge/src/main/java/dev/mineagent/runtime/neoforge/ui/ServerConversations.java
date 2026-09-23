@@ -18,6 +18,8 @@ public final class ServerConversations implements AutoCloseable {
     private final MinecraftServer server;private final ConversationStore store;private final ConversationSummaryStore summaries;private final com.fasterxml.jackson.databind.ObjectMapper json=new com.fasterxml.jackson.databind.ObjectMapper();private boolean closed;
     private final Map<UUID,Flight> flights=new LinkedHashMap<>();
     private static final class NativeReply{final ServerPlayer viewer;final UUID agent,conversation,assistant;final String name;int offset;long lastSent;NativeReply(ServerPlayer viewer,UUID agent,UUID conversation,UUID assistant,String name){this.viewer=viewer;this.agent=agent;this.conversation=conversation;this.assistant=assistant;this.name=name;}}
+    private record PendingNative(ServerPlayer viewer,UUID agent,String text,long expires){}
+    private final Map<UUID,PendingNative> pendingNative=new LinkedHashMap<>();
     private final Map<UUID,NativeReply> nativeReplies=new LinkedHashMap<>();
     private final Map<UUID,VoiceFlight> voices=new LinkedHashMap<>();
     private static final class VoiceFlight{final UUID op;final ServerPlayer viewer;final ConversationFocusRegistry.Focus focus;final AtomicBoolean permit=new AtomicBoolean(true);final long deadline=System.currentTimeMillis()+90000;VoiceFlight(UUID op,ServerPlayer viewer,ConversationFocusRegistry.Focus focus){this.op=op;this.viewer=viewer;this.focus=focus;}}
@@ -29,7 +31,7 @@ public final class ServerConversations implements AutoCloseable {
     public static synchronized void stop(MinecraftServer server){var r=LIVE.remove(server);if(r!=null)r.close();}
     public ConversationStore store(){return store;}
     public Optional<ConversationFocusRegistry.Focus> focused(ServerPlayer viewer){thread();return focus.current(viewer.getUUID(),viewer);}
-    public void disconnect(ServerPlayer viewer){focus.disconnect(viewer.getUUID(),viewer);nativeReplies.values().removeIf(v->v.viewer==viewer);for(var f:List.copyOf(flights.values()))if(f.viewer==viewer)failGeneration(f,"CONVERSATION_DISCONNECTED");}
+    public void disconnect(ServerPlayer viewer){pendingNative.values().removeIf(v->v.viewer()==viewer);focus.disconnect(viewer.getUUID(),viewer);nativeReplies.values().removeIf(v->v.viewer==viewer);for(var f:List.copyOf(flights.values()))if(f.viewer==viewer)failGeneration(f,"CONVERSATION_DISCONNECTED");}
     public static String nativeError(Throwable error){String code=Objects.toString(error.getMessage(),"");return code.matches("(?:CONVERSATION|MODEL|SUMMARY|PROVIDER|SERVICE|STALE_CONVERSATION)_[A-Z_]{1,80}")?code:"CONVERSATION_REQUEST_FAILED";}
     /** An explicit @ is a choice of Agent, not implicit permission to continue some unrelated latest web conversation. */
     public void submitNative(ServerPlayer viewer,UUID agent,String text,boolean explicitMention)throws Exception{
@@ -40,20 +42,51 @@ public final class ServerConversations implements AutoCloseable {
         var definition=requireAgent(agent);var selected=focused(viewer).filter(f->f.nativeInput()&&f.agentId().equals(agent));ConversationStore.Conversation c;
         if(selected.isPresent())c=store.get(viewer.getUUID(),agent,selected.orElseThrow().conversationId());
         else{if(!explicitMention)throw new IllegalStateException("CONVERSATION_SELECTION_REQUIRED");UUID create=UUID.nameUUIDFromBytes(("native-mention-v1|"+MineAgentRuntimeServices.worldId(server)+"|"+viewer.getUUID()+"|"+agent).getBytes(java.nio.charset.StandardCharsets.UTF_8));c=store.create(viewer.getUUID(),agent,create,"原生 @ 对话");}
+        if(!c.activeOperation().isEmpty()){
+            pendingNative.entrySet().removeIf(e->e.getValue().expires()<System.currentTimeMillis()||e.getValue().viewer()==viewer);UUID pending=UUID.randomUUID();pendingNative.put(pending,new PendingNative(viewer,agent,text,System.currentTimeMillis()+300000));
+            var button=net.minecraft.network.chat.Component.literal("[打断并发送这条消息]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+agent+" pending:"+pending)));
+            viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+definition.displayName()+"] 正在处理上一条消息。 ").append(button));return;
+        }
         if(nativeReplies.size()>=16)throw new IllegalStateException("CONVERSATION_GENERATION_BUDGET");
         var accepted=write(viewer,op,Map.of("kind","send","agentId",agent.toString(),"conversationId",c.conversationId().toString(),"expectedRevision",Long.toString(c.revision()),"text",text),true);if("true".equals(accepted.get("duplicate")))return;
         var context=store.context(viewer.getUUID(),agent,c.conversationId(),null).orElseThrow();if(!context.operationId().equals(op))throw new IllegalStateException("CONVERSATION_CONTEXT_CHANGED");
         nativeReplies.put(op,new NativeReply(viewer,agent,c.conversationId(),context.assistantMessageId(),definition.displayName()));
         viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("[你 → "+definition.displayName()+"] "+text));
-        viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI] 正在处理…"));
+        viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+definition.displayName()+"] 正在处理… ").append(net.minecraft.network.chat.Component.literal("[打断]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+agent)))));
         pollNativeReplies();
     }
+    public int interruptNative(ServerPlayer viewer,UUID agent,String next)throws Exception{
+        thread();requireAgent(agent);
+        if(next!=null&&next.startsWith("pending:")){var item=pendingNative.remove(UUID.fromString(next.substring(8)));if(item==null||item.viewer()!=viewer||!item.agent().equals(agent)||item.expires()<System.currentTimeMillis())throw new IllegalStateException("CONVERSATION_PENDING_EXPIRED");next=item.text();}
+        var selected=focused(viewer).filter(f->f.agentId().equals(agent));var targets=selected.isPresent()?List.of(store.get(viewer.getUUID(),agent,selected.get().conversationId())):store.list(viewer.getUUID(),agent,"ACTIVE","",0,20).conversations();
+        for(var c:targets){
+            if(c.activeOperation().isEmpty())continue;UUID target=UUID.fromString(c.activeOperation());
+            write(viewer,UUID.randomUUID(),Map.of("kind","cancel","agentId",agent.toString(),"conversationId",c.conversationId().toString(),"targetOperation",target.toString()),true);
+            var f=flights.remove(target);if(f!=null)f.permit.set(false);
+        }
+        pollNativeReplies();viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+requireAgent(agent).displayName()+"] 已打断；已发生的游戏/电脑操作不会回滚。"));
+        if(next!=null&&!next.isBlank())submitNative(viewer,agent,next,true);return 1;
+    }
+    public Map<String,Object> richMessage(ServerPlayer viewer,UUID agent,com.fasterxml.jackson.databind.JsonNode a){
+        thread();String text=a.path("text").asText();if(text.isBlank()||text.length()>2048)throw new IllegalArgumentException("AGENT_CHAT_TEXT");
+        String color=a.path("color").asText("#FFFFFF");if(!color.matches("#[a-fA-F0-9]{6}"))throw new IllegalArgumentException("AGENT_CHAT_COLOR");
+        var buttons=a.path("buttons");if(!buttons.isMissingNode()&&(!buttons.isArray()||buttons.size()>8))throw new IllegalArgumentException("AGENT_CHAT_BUTTONS");
+        var message=net.minecraft.network.chat.Component.literal("["+requireAgent(agent).displayName()+"] "+text).withStyle(style->style.withColor(Integer.parseInt(color.substring(1),16)));
+        pendingNative.entrySet().removeIf(e->e.getValue().expires()<System.currentTimeMillis());
+        for(var b:buttons){String label=b.path("label").asText(),value=b.path("value").asText(),action=b.path("action").asText();if(label.isBlank()||label.length()>80||value.isBlank()||value.length()>2048)throw new IllegalArgumentException("AGENT_CHAT_BUTTON");
+            net.minecraft.network.chat.ClickEvent click;
+            switch(action){case "copy"->click=new net.minecraft.network.chat.ClickEvent.CopyToClipboard(value);case "suggest"->click=new net.minecraft.network.chat.ClickEvent.SuggestCommand(value);case "confirm"->{if(pendingNative.size()>1024)throw new IllegalStateException("AGENT_CHAT_PENDING_BUDGET");UUID id=UUID.randomUUID();pendingNative.put(id,new PendingNative(viewer,agent,"玩家点击选择："+value,System.currentTimeMillis()+300000));click=new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+agent+" pending:"+id);}default->throw new IllegalArgumentException("AGENT_CHAT_BUTTON_ACTION");}
+            message.append(net.minecraft.network.chat.Component.literal(" ["+label+"]").withStyle(style->style.withUnderlined(true).withClickEvent(click)));
+        }
+        viewer.sendSystemMessage(message);return Map.of("status","SENT","buttons",buttons.size());
+    }
+    private net.minecraft.network.chat.Component colored(UUID agent,String text){String color=MineAgentRuntimeServices.config(server).snapshot().values().getOrDefault("agent."+agent+".chatColor","#FFFFFF");return net.minecraft.network.chat.Component.literal(text).withStyle(style->style.withColor(color.matches("#[A-Fa-f0-9]{6}")?Integer.parseInt(color.substring(1),16):0xFFFFFF));}
     private void pollNativeReplies(){
         for(var entry:List.copyOf(nativeReplies.entrySet())){var n=entry.getValue();if(server.getPlayerList().getPlayer(n.viewer.getUUID())!=n.viewer){nativeReplies.remove(entry.getKey());continue;}
             try{var usage=store.context(n.viewer.getUUID(),n.agent,n.conversation,n.assistant).orElseThrow();boolean done=!Set.of("PENDING","GENERATING").contains(usage.requestState());
-                var message=store.message(n.viewer.getUUID(),n.agent,n.conversation,n.assistant);if(message.textLength()>n.offset){var chunk=store.chunk(n.viewer.getUUID(),n.agent,n.conversation,n.assistant,message.revision(),n.offset,512);String remaining=chunk.text();int count=NativeChatSegments.nextLength(remaining,240,done||System.currentTimeMillis()-n.lastSent>800);if(count>0){n.viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+n.name+"] "+remaining.substring(0,count)));n.offset+=count;n.lastSent=System.currentTimeMillis();}}
-                if(done&&n.offset>=message.textLength()){nativeReplies.remove(entry.getKey());if(!usage.requestState().equals("COMPLETE"))n.viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+n.name+"] 本次未完成："+usage.errorCode()));}
-            }catch(Exception failure){nativeReplies.remove(entry.getKey());n.viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI] "+nativeError(failure)));}
+                var message=store.message(n.viewer.getUUID(),n.agent,n.conversation,n.assistant);if(message.textLength()>n.offset){var chunk=store.chunk(n.viewer.getUUID(),n.agent,n.conversation,n.assistant,message.revision(),n.offset,512);String remaining=chunk.text();int count=NativeChatSegments.nextLength(remaining,240,done||System.currentTimeMillis()-n.lastSent>800);if(count>0){n.viewer.sendSystemMessage(colored(n.agent,"["+n.name+"] "+remaining.substring(0,count)));n.offset+=count;n.lastSent=System.currentTimeMillis();}}
+                if(done&&n.offset>=message.textLength()){nativeReplies.remove(entry.getKey());if(!usage.requestState().equals("COMPLETE"))n.viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+n.name+"] 本次未完成："+usage.errorCode()+" ").append(net.minecraft.network.chat.Component.literal("[核对后继续]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+n.agent+" 请先inspect_operations和实际状态，核对上次失败结果；不要重放已执行或UNKNOWN的写操作，再继续未完成部分。")))));}
+            }catch(Exception failure){nativeReplies.remove(entry.getKey());n.viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+n.name+"] "+nativeError(failure)));}
         }
     }
     public static void disconnectIfPresent(MinecraftServer server,ServerPlayer viewer){ServerConversations r;synchronized(ServerConversations.class){r=LIVE.get(server);}if(r!=null)r.disconnect(viewer);}
@@ -246,7 +279,7 @@ public final class ServerConversations implements AutoCloseable {
         if(index==calls.size()){synchronized(f.buffer){if(!f.reply.isEmpty()&&f.reply.charAt(f.reply.length()-1)!='\n'){f.reply.append('\n');f.buffer.append('\n');}}agentRound(f,g,plan);return;}
         var call=calls.get(index);UUID operation=UUID.nameUUIDFromBytes((f.op+"|tool|"+f.rounds+"|"+call.path("id").asText()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         ConversationAgentTools.execute(f.viewer,g.agent().agentId(),operation,call.path("name").asText(),call.path("arguments").asText(),()->live(f)).whenComplete((result,error)->server.execute(()->{
-            if(closed)return;try{if(!live(f)||!store.pending(f.op))throw new IllegalStateException("CONVERSATION_CONTEXT_CHANGED");if(error!=null)throw new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN");String encoded=json.writeValueAsString(result);if(encoded.length()>24000)throw new IllegalStateException("CONVERSATION_TOOL_CONTEXT_BUDGET");f.tools.add(Map.of("role","tool","tool_call_id",call.path("id").asText(),"content",encoded));runTools(f,g,plan,calls,index+1);}catch(Exception failure){failGeneration(f,agentError(failure));}
+            if(closed)return;try{if(!live(f)||!store.pending(f.op))throw new IllegalStateException("CONVERSATION_CONTEXT_CHANGED");if(error!=null)throw new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN");if(Boolean.getBoolean("mineagent.conversationAgentSmoke"))MineAgentRuntimeServices.audit(server).record(f.viewer.getUUID().toString(),"CONVERSATION_SMOKE_TOOL",operation.toString(),json.writeValueAsString(Map.of("tool",call.path("name").asText(),"arguments",call.path("arguments").asText(),"result",result)));String encoded=json.writeValueAsString(result);if(encoded.length()>24000)throw new IllegalStateException("CONVERSATION_TOOL_CONTEXT_BUDGET");f.tools.add(Map.of("role","tool","tool_call_id",call.path("id").asText(),"content",encoded));runTools(f,g,plan,calls,index+1);}catch(Exception failure){failGeneration(f,agentError(failure));}
         }));
     }
     private dev.mineagent.runtime.api.agent.AgentDefinition requireAgent(UUID id){return MineAgentRuntimeServices.bodies(server).definitions().stream().filter(a->a.agentId().equals(id)).findFirst().orElseThrow(()->new IllegalArgumentException("CONVERSATION_AGENT_UNAVAILABLE"));}

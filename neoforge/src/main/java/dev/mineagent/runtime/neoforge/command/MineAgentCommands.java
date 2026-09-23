@@ -14,6 +14,10 @@ public final class MineAgentCommands {
 
     public static void register(com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("ai")
+                .then(Commands.literal("accept").executes(c->accept(c.getSource())))
+                .then(Commands.literal("interrupt").then(Commands.argument("agent",net.minecraft.commands.arguments.UuidArgument.uuid())
+                    .executes(c->interrupt(c.getSource(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent"),""))
+                    .then(Commands.argument("message",StringArgumentType.greedyString()).executes(c->interrupt(c.getSource(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent"),StringArgumentType.getString(c,"message"))))))
                 .then(Commands.literal("body")
                     .then(Commands.literal("review").then(Commands.argument("operation",net.minecraft.commands.arguments.UuidArgument.uuid()).executes(c->dev.mineagent.runtime.neoforge.task.PlayerBodyAgent.review(c.getSource().getPlayerOrException(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"operation")))))
                     .then(Commands.literal("stop").executes(c->dev.mineagent.runtime.neoforge.task.PlayerBodyAgent.stop(c.getSource().getPlayerOrException())))
@@ -50,6 +54,17 @@ public final class MineAgentCommands {
                                 )))));
     }
 
+    private static int interrupt(CommandSourceStack source,java.util.UUID agent,String message){
+        try{return dev.mineagent.runtime.neoforge.ui.ServerConversations.get(source.getServer()).interruptNative(source.getPlayerOrException(),agent,message);}catch(Exception e){source.sendFailure(Component.literal("无法打断："+e.getMessage()));return 0;}
+    }
+    private static int accept(CommandSourceStack source){
+        try{var p=source.getPlayerOrException();if(!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)){source.sendFailure(Component.literal("只有启用作弊模式（服务器需管理员权限）才可以使用模组；此命令不会自动提权。"));return 0;}
+            var s=source.getServer();var config=MineAgentRuntimeServices.config(s);var actions=java.util.EnumSet.allOf(PermissionAction.class);
+            var result=config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(config.snapshot().revision(),java.util.Map.of("runtime.initialized","true","permission.player."+p.getUUID(),actions.stream().map(Enum::name).sorted().collect(java.util.stream.Collectors.joining(",")))),true);
+            if(!result.accepted())throw new IllegalStateException(result.errorCode());MineAgentRuntimeServices.permissions(s).setTrustedActions(p.getUUID(),actions);
+            source.sendSuccess(()->Component.literal("已授权本人使用模组。电脑命令仍按本机确认执行。"),false);dev.mineagent.runtime.neoforge.network.MineAgentNetwork.sendPanelSnapshot(p);return 1;
+        }catch(Exception e){source.sendFailure(Component.literal("授权未完成："+e.getMessage()));return 0;}
+    }
     private static int openPanel(CommandSourceStack source) {
         if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);
         try {

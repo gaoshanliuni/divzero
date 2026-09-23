@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import java.nio.file.*;
 import java.util.*;
 
-/** Live generation acceptance. Requires an explicit hash-bound local approval after source inspection. */
+/** New chat packages auto-activate; saved historical artifacts retain hash-bound fixture approval. */
 public final class ConversationRuntimeItemSmokeServer {
     private static final ObjectMapper JSON=new ObjectMapper();
     public static volatile boolean ready,itemReady,used,clientCaptured,verified,observedModeling;
@@ -38,16 +38,26 @@ public final class ConversationRuntimeItemSmokeServer {
                 if(!context.requestState().equals("COMPLETE")||packId==null||mutations.size()!=1||!mutations.getFirst().equals("generate_content_package"))throw new IllegalStateException("RUNTIME_ITEM_CHAT_GENERATION_FAILED");}
                 if(spherical()&&!saved()&&!observedModeling)throw new IllegalStateException("MODELING_CAPABILITY_NOT_DISCOVERED");
                 var pack=packages.worldLibrary().get(packId).orElseThrow();if(pack.activationMode()!=ActivationMode.HOT_RUNTIME||pack.definitions().size()!=1||!basketball()&&pack.definitions().values().iterator().next().kind()!=RuntimeDefinitionKind.ITEM)throw new IllegalStateException("RUNTIME_ITEM_PACKAGE_KIND");
+                if(saved()){
                 var beforeInventory=new ArrayList<Object>();for(int slot=0;slot<p.getInventory().getContainerSize();slot++){var stack=p.getInventory().getItem(slot);if(stack.is(MineAgentRegistries.RUNTIME_ITEM.get()))throw new IllegalStateException("RUNTIME_ITEM_EXECUTED_WITHOUT_APPROVAL");if(!stack.isEmpty())beforeInventory.add(Map.of("slot",slot,"item",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),"count",stack.getCount()));}
                 if(!runtime.list(p.getUUID()).isEmpty())throw new IllegalStateException("RUNTIME_ITEM_EXECUTED_WITHOUT_APPROVAL");
                 save(s,"preapproval-inventory",Map.of("naturallyCollectedItems",beforeInventory,"runtimeItems",0,"activations",0));
                 {for(var dropped:p.level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,p.getBoundingBox().inflate(24))){if(dropped.getItem().is(MineAgentRegistries.RUNTIME_ITEM.get()))throw new IllegalStateException("RUNTIME_ITEM_EXECUTED_WITHOUT_APPROVAL");dropped.discard();}p.getInventory().clearContent();p.inventoryMenu.broadcastFullState();}
                 save(s,"pending-approval",Map.of("package",pack,"mutations",mutations,"nothingExecuted",true));
+                }
                 var source=new TreeMap<String,String>();for(var r:pack.resources().values())if(r.path().endsWith(".js")||r.path().endsWith(".json"))source.put(r.path(),new String(packages.worldContent().read(r.sha256()),java.nio.charset.StandardCharsets.UTF_8));save(s,"generated-sources",source);phase=1;
             }
             if(phase==1){
-                var pack=packages.worldLibrary().get(packId).orElseThrow();Path approval=root(s).resolve("approve.txt");if(!Files.exists(approval)||!Files.readString(approval).strip().equals(pack.canonicalSha256()))return;
-                activation=UUID.randomUUID();var result=runtime.activate(p,activation,packId,pack.revision(),pack.definitions().keySet().iterator().next(),new RuntimeInstanceLocation(p.level().dimension().identifier().toString(),p.getX()+(basketball()?6:0),p.getY(),p.getZ(),0,0),true,false);save(s,"activation",result);
+                var pack=packages.worldLibrary().get(packId).orElseThrow();
+                dev.mineagent.runtime.core.packages.WorldActivationLedger.Activation result;
+                if(saved()){
+                    Path approval=root(s).resolve("approve.txt");if(!Files.exists(approval)||!Files.readString(approval).strip().equals(pack.canonicalSha256()))return;
+                    activation=UUID.randomUUID();result=runtime.activate(p,activation,packId,pack.revision(),pack.definitions().keySet().iterator().next(),new RuntimeInstanceLocation(p.level().dimension().identifier().toString(),p.getX()+(basketball()?6:0),p.getY(),p.getZ(),0,0),true,false);
+                }else{
+                    var active=runtime.list(p.getUUID()).stream().filter(a->a.packageId().equals(packId)&&a.state().equals("ACTIVE")).toList();
+                    if(active.size()!=1)throw new IllegalStateException("AUTO_ACTIVATION_EXPECTED_EXACTLY_ONE");result=active.getFirst();activation=result.operationId();
+                }
+                save(s,"activation",result);
                 if(!result.state().equals("ACTIVE"))throw new IllegalStateException("RUNTIME_ITEM_ACTIVATION_FAILED");instance=result.instanceId();var stack=p.getMainHandItem();var binding=RuntimeItem.binding(stack);
                 if(binding==null||!stack.is(MineAgentRegistries.RUNTIME_ITEM.get())||stack.getCount()!=1||!runtime.itemActive(p,stack))throw new IllegalStateException("RUNTIME_ITEM_NATIVE_STACK_MISSING");if(basketball()){ConversationBasketballSmokeServer.begin(s,p,instance,activation);itemReady=true;phase=5;return;}if(throwing()){ConversationThrowItemSmokeServer.begin(s,p,instance,activation);itemReady=true;phase=4;return;}firstHash=binding.assetHash();var states=runtime.instance(instance).orElseThrow().state();var keys=states.keySet().stream().filter(k->(k.equals("uses")||k.endsWith("_uses"))&&states.get(k).equals("0")).toList();if(keys.size()!=1)throw new IllegalStateException("RUNTIME_ITEM_COUNTER_NOT_DISCOVERABLE");usesKey=keys.getFirst();save(s,"before-use",Map.of("name",stack.getHoverName().getString(),"binding",binding,"count",stack.getCount(),"state",runtime.instance(instance).orElseThrow().state()));itemReady=true;phase=2;
             }
@@ -62,7 +72,7 @@ public final class ConversationRuntimeItemSmokeServer {
             if(phase==3&&clientCaptured){
                 var stack=p.getMainHandItem();var b=RuntimeItem.binding(stack);var wrong=stack.copy();wrong.set(MineAgentRegistries.RUNTIME_ITEM_BINDING.get(),dev.mineagent.runtime.core.objects.RuntimeItemBinding.create(UUID.randomUUID(),b.instance(),b.part(),b.packageHash(),b.modelPath(),b.modelSource()).encode());if(runtime.itemActive(p,wrong))throw new IllegalStateException("RUNTIME_ITEM_WRONG_WORLD_ACCEPTED");
                 runtime.disable(p,activation);if(runtime.itemActive(p,stack)||runtime.useItem(p,net.minecraft.world.InteractionHand.MAIN_HAND)||!runtime.instance(instance).orElseThrow().state().getOrDefault(usesKey,"").equals("1")||stack.getCount()!=1)throw new IllegalStateException("RUNTIME_ITEM_DISABLED_EXECUTED");
-                save(s,"result",Map.of("status","REAL_GENERATED_ITEM_NATIVE_VERIFIED","ordinaryChat",!saved(),"hashBoundManualApproval",true,"nativeItemUse",true,"restyledModel",true,"count",1,"wrongWorldRejected",true,"disabledHandlerRejected",true,"codecRoundtrip",true,"newRegistryIdPerDefinition",false));verified=true;
+                save(s,"result",Map.of("status","REAL_GENERATED_ITEM_NATIVE_VERIFIED","ordinaryChat",!saved(),"activationMode",saved()?"HASH_BOUND_MANUAL":"CHAT_AUTOMATIC","nativeItemUse",true,"restyledModel",true,"count",1,"wrongWorldRejected",true,"disabledHandlerRejected",true,"codecRoundtrip",true,"newRegistryIdPerDefinition",false));verified=true;
             }
         }catch(Exception e){failure=e.toString();try{save(s,"failure",Map.of("error",failure,"phase",phase));}catch(Exception ignored){}}
     }

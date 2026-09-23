@@ -46,7 +46,7 @@ export function createAgentManagement({windowFor,send,report}){
     if(!c.draft.update(a))return;
     if(c.value.revision!==a.revision||!a.canManage){c.confirmation.hidden=true;c.check.checked=false;}
     c.value=a;c.title.textContent=a.name;c.badge.textContent=bodyLabels[a.bodyState]||'未知状态';c.badge.dataset.state=a.bodyState;
-    c.info.textContent=`${a.mine?'你的 AI':'其他玩家的 AI'} · 请求${modeLabel(a.requestedMode)} / 实际${modeLabel(a.effectiveMode)}${a.health==null?'':` · 生命 ${a.health} / 饱食 ${a.food}`} · r${a.revision}`;
+    c.info.textContent=`${a.mine?'你的 AI':'其他玩家的 AI'} · 请求${modeLabel(a.requestedMode)} / 实际${modeLabel(a.effectiveMode)}${a.health==null?'':` · 生命 ${a.health} / 饱食 ${a.food}`}`;
     c.info.textContent+=` · 附加区块票：${({GRANTED:'已分配',LIMIT_REACHED:'预算不足（依赖已加载区块）',DISABLED:'管理员已禁用',PENDING:'等待应用',DEGRADED:'登记异常',INACTIVE:'身体当前不需要'})[a.ticketState]||'等待状态'}`;
     if(!c.draft.nameDirty)c.name.value=c.draft.name;if(!c.draft.modeDirty)c.mode.value=c.draft.mode;
     if(c.draft.stale)error(c.notice,new Error('STALE_AGENT_REVISION'));
@@ -58,7 +58,7 @@ export function createAgentManagement({windowFor,send,report}){
   }
   function render(){if(!root?.isConnected||!root.querySelector('#agent-management-status'))return;const list=root.querySelector('#agent-management-list'),status=root.querySelector('#agent-management-status');
     if(!roster){status.textContent='正在读取 AI 与权限…';return;}
-    status.textContent=`${roster.agents.length} / ${roster.maximum} 个 AI · 身体状态来自服务器`;createFields.disabled=createBusy||!roster.canCreate||roster.agents.length>=roster.maximum;
+    status.textContent=`${roster.total??roster.agents.length} 个 AI · 不限创建数量`;const paging=root.querySelector('#agent-management-paging')||add('div',null,status.parentNode,'actions');paging.id='agent-management-paging';paging.replaceChildren();const change=offset=>request({kind:'page',offset,operationId:crypto.randomUUID()},status);const previous=button('上一页',paging,()=>change(Math.max(0,(roster.offset||0)-16)));previous.disabled=!(roster.offset>0);const next=button('下一页',paging,()=>change(roster.nextOffset));next.disabled=!(roster.nextOffset>=0);createFields.disabled=createBusy||!roster.canCreate||roster.agents.length>=roster.maximum;
     if(roster.agents.length>=roster.maximum)status.textContent+=' · 已达新建上限，现有 AI 保留；管理员可在“配置与权限 → 运行资源”调整。';
     for(const [id,c] of cards)if(!roster.agents.some(a=>a.id===id)){c.node.remove();cards.delete(id);}
     let empty=list.querySelector('.agent-empty');if(!roster.agents.length){if(!empty)add('p','还没有 AI。创建后可开始对话或通用任务。',list,'agent-empty muted');}else empty?.remove();

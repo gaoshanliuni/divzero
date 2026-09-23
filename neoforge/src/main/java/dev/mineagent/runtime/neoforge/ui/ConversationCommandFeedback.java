@@ -14,10 +14,7 @@ final class ConversationCommandFeedback implements CommandSource {
     ConversationCommandFeedback(CommandSource delegate) { this.delegate = delegate; }
     @Override public void sendSystemMessage(Component message) {
         String text = message.getString();
-        if (messages.size() < 32 && characters < 4096) {
-            String kept = text.substring(0, Math.min(text.length(), 4096 - characters));
-            messages.add(kept); characters += kept.length(); truncated |= kept.length() < text.length();
-        } else truncated = true;
+        messages.add(text);
         delegate.sendSystemMessage(message);
     }
     @Override public boolean acceptsSuccess() { return delegate.acceptsSuccess(); }
