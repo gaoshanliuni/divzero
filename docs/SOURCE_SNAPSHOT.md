@@ -13,7 +13,7 @@
 | Mod ID | `mineagent_runtime` |
 | 技术包名 | `dev.mineagent.runtime` |
 | Gradle Wrapper | 9.2.1 |
-| 当前 Mod 版本 | `1.0.6` |
+| 当前 Mod 版本 | `1.0.7` |
 
 ## 操作入口
 
@@ -165,3 +165,5 @@ Opt-in isolated acceptance now observes actual hierarchical bone render matrices
 Test-only provider auditing can explicitly record independent parallel paid requests. Default unknown-outcome fencing remains enabled. No API keys, runtime databases, screenshots, or player worlds are included in this snapshot.
 
 Native preflight correction (1.0.6): the deterministic rig now uses valid origin-based carrier collision boxes for its downward-facing bone meshes; a bundled-resource parser test guards this fixture. The initial two Native starts failed in test setup (provider order, then fixture collision) with zero model requests. Acceptance remains pending.
+
+Native results: real generated bone visuals, all five terrain cases, 64-agent navigation with isolated cancellation, 16 same-owner plans and eight real-model conversations passed their checks. Concurrent placement exposed a real defect: 63 blocks changed, but 42 change-journal writes failed and were incorrectly reported as rejected. 1.0.7 reserves SQLite CAS write transactions before reading and marks post-mutation journal failures PARTIAL, never safe-to-replay. Focused new-target verification is pending; the failed batch is retained and will not be replayed.

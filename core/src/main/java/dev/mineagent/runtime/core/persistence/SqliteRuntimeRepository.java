@@ -19,7 +19,12 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
         if (absolute.getParent() != null) {
             Files.createDirectories(absolute.getParent());
         }
-        connection = DriverManager.getConnection("jdbc:sqlite:" + absolute);
+        // Reserve the writer before a CAS reads its snapshot. DEFERRED read-to-write
+        // upgrades in WAL can fail with SQLITE_BUSY_SNAPSHOT despite busy_timeout
+        // when an independent tool journal commits between SELECT and INSERT.
+        var properties = new java.util.Properties();
+        properties.setProperty("transaction_mode", "IMMEDIATE");
+        connection = DriverManager.getConnection("jdbc:sqlite:" + absolute, properties);
         initialize();
     }
 

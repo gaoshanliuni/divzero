@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "files": [
     {
       "path": ".gitattributes",
@@ -2499,8 +2499,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteRuntimeRepository.java",
-      "sha256": "48b543f953834601f376a696cbaa93d8e4a63f7edb88cdc9fb736087c04c95ad",
-      "bytes": 28698
+      "sha256": "f7ef154741aea9551701f19d07d1003085fe0b2db926ba5eed7826eb92ac41a4",
+      "bytes": 29076
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/StoredConfig.java",
@@ -3138,6 +3138,21 @@
       "bytes": 25147
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/SqliteConcurrentJournalTest.java",
+      "sha256": "ec201abc2667e3d8fe4422e2cd54a69eb13b15d162c79ed7b2028c32ef910653",
+      "bytes": 3195
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/SqliteRuntimeRepositoryTest.java",
+      "sha256": "1ae1bd0bb3944343d35fc2a581904dfc905e0082cc5b174b2f287ebfe8f4b067",
+      "bytes": 4094
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/recovery/ChangeJournalServiceTest.java",
+      "sha256": "9ab111129c57c9a3c79bd531e59e0921a7aac4d9ba154fe12f77b72b40fad69e",
+      "bytes": 2054
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/scoreboard/ScoreboardReadGuardTest.java",
       "sha256": "11597c7f3d8136efaba15c9acac7b5200ee41be35a07ab19438722b603e8c25b",
       "bytes": 2113
@@ -3179,8 +3194,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "558b3bba8690b90eb1bf04e837bec4d180cf608f8066cb168838e56d6d5d8c5b",
-      "bytes": 14622
+      "sha256": "e7474647b453f7e9e01bea42c0ecc3594449310b6b4db6ba606c29f7e9fc4e85",
+      "bytes": 15189
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3189,7 +3204,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "d617035d7ee01964a42af33b593308272278569f478c834e64e9c287aab5d1ea",
+      "sha256": "d28a0fa8439108730a7377b7d354731806130fcc96d56e59b852072d5db2749e",
       "bytes": 495
     },
     {
@@ -3334,8 +3349,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
-      "sha256": "c37ef43d22a47b98e94a969183b7031362484cad2ee4a3070fd60caa49a3acc4",
-      "bytes": 34515
+      "sha256": "05ce6da7ea7b964995fb4bfce08cd317632ede9bbb4573941258968300195fdd",
+      "bytes": 34810
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentConnection.java",
@@ -3694,8 +3709,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeAcceptanceClient.java",
-      "sha256": "df1c3a3525a2cfad7fe8a9314d060411d48922667961c01d9191ad3885621aae",
-      "bytes": 5709
+      "sha256": "c07848ccccc2e72d79c9f679a13c39ab7b4a45e654a3ac928083dc95ad7a4d6b",
+      "bytes": 5747
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeCreatureRenderer.java",
@@ -5299,13 +5314,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeAcceptanceSmoke.java",
-      "sha256": "2c31dcd05114a3fd9192362ff65f788ec28a4ab8a6e06720c3e97b98001f0e02",
-      "bytes": 21769
+      "sha256": "2fed26af1ab10445b5dfecebdb7c470d38536e43d5eae1083ef3a5e75564a502",
+      "bytes": 22412
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeAgentBlockActions.java",
-      "sha256": "5fa74090bc6786e95689637e02383c125998ef7e5ad6b8aa18117a6c4a67aa2e",
-      "bytes": 11452
+      "sha256": "d75b8886137ae1901618564064a4866db1f3de241bcc9d54389fa4657c3c4ebc",
+      "bytes": 11567
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeAgentPathBuilder.java",

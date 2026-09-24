@@ -422,6 +422,11 @@ public final class MineAgentBodyManager implements AutoCloseable {
                 net.minecraft.core.SectionPos.blockToSectionCoord(position.getZ()));
     }
 
+    /** The world mutation already happened. Callers must not report this as a rejected action. */
+    public static final class WorldChangePersistenceException extends IllegalStateException {
+        public WorldChangePersistenceException(Throwable cause) { super("AGENT_WORLD_CHANGE_JOURNAL_FAILED", cause); }
+    }
+
     private void recordChanges(
             MineAgentPlayer body,
             String action,
@@ -431,7 +436,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
             dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.changeJournal(server)
                     .record(body.ownerPlayerId(), action, changes);
         } catch (Exception failure) {
-            throw new IllegalStateException("cannot persist AI world change", failure);
+            throw new WorldChangePersistenceException(failure);
         }
     }
 
