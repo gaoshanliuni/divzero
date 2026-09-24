@@ -21,5 +21,12 @@
   "item.mineagent_runtime.agent_blade": "Agent 之刃",
   "item.mineagent_runtime.sentinel_summoner": "哨兵召唤核心",
   "entity.mineagent_runtime.sentinel_boss": "MineAgent 哨兵",
-  "block.mineagent_runtime.media_screen": "MineAgent 媒体屏幕"
+  "block.mineagent_runtime.media_screen": "MineAgent 媒体屏幕",
+  "mineagent.chat.agent_name": "[%s]",
+  "mineagent.chat.thinking": "%s[思考]%s",
+  "mineagent.chat.messages.status": "聊天保留：%s 条；AI 名称悬停格式：%s（无额外前缀）",
+  "mineagent.chat.messages.failed": "聊天显示设置未确认：%s",
+  "mineagent.chat.messages.limit": "聊天保留条数： ",
+  "mineagent.chat.messages.mark": "悬停 AI 名称查看日期时间： ",
+  "mineagent.chat.messages.help": "自定义示例：/ai msg mark 消息时间：{yyyy-MM-dd HH:mm:ss}（日期格式模板，不是正则匹配）"
 }

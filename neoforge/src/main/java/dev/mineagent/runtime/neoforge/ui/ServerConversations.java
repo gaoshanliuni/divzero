@@ -55,14 +55,14 @@ public final class ServerConversations implements AutoCloseable {
         if(!c.activeOperation().isEmpty()||!fromQueue&&pendingWeb.values().stream().anyMatch(q->q.conversation().equals(c.conversationId()))){
             pendingNative.entrySet().removeIf(e->e.getValue().expires()<System.currentTimeMillis());UUID pending=UUID.randomUUID();pendingNative.put(pending,new PendingNative(viewer,agent,c.conversationId(),text,Long.MAX_VALUE,true,ServerChatAccess.policy(server,agent).revision()));
             var button=net.minecraft.network.chat.Component.literal("[打断并发送这条消息]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+agent+" pending:"+pending)));
-            viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+definition.displayName()+"] 正在处理上一条消息，等待处理。 ").append(button).append(net.minecraft.network.chat.Component.literal(" [取消发送这条消息]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.GRAY).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai cancel_send "+pending)))));return;
+            viewer.sendSystemMessage(dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(definition.displayName()," 正在处理上一条消息，等待处理。 ").append(button).append(net.minecraft.network.chat.Component.literal(" [取消发送这条消息]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.GRAY).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai cancel_send "+pending)))));return;
         }
 
         var accepted=write(viewer,op,Map.of("kind","send","agentId",agent.toString(),"conversationId",c.conversationId().toString(),"expectedRevision",Long.toString(c.revision()),"text",text),true);if("true".equals(accepted.get("duplicate")))return;
         var context=store.context(viewer.getUUID(),agent,c.conversationId(),null).orElseThrow();if(!context.operationId().equals(op))throw new IllegalStateException("CONVERSATION_CONTEXT_CHANGED");
         nativeReplies.put(op,new NativeReply(viewer,agent,c.conversationId(),context.assistantMessageId(),definition.displayName()));
         viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("[你 → "+definition.displayName()+"] "+text));
-        viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+definition.displayName()+"] 正在处理… ").append(net.minecraft.network.chat.Component.literal("[打断]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+agent+" active:"+op)))));
+        viewer.sendSystemMessage(dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(definition.displayName()," 正在处理… ").append(net.minecraft.network.chat.Component.literal("[打断]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+agent+" active:"+op)))));
         pollNativeReplies();
     }
     public int interruptNative(ServerPlayer viewer,UUID agent,String next)throws Exception{
@@ -75,14 +75,14 @@ public final class ServerConversations implements AutoCloseable {
             write(viewer,UUID.randomUUID(),Map.of("kind","cancel","agentId",agent.toString(),"conversationId",c.conversationId().toString(),"targetOperation",target.toString()),true);
             var f=flights.remove(target);if(f!=null)f.permit.set(false);
         }
-        pollNativeReplies();viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+requireAgent(agent).displayName()+"] 已打断；已发生的游戏/电脑操作不会回滚。"));
+        pollNativeReplies();viewer.sendSystemMessage(dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(requireAgent(agent).displayName()," 已打断；已发生的游戏/电脑操作不会回滚。"));
         if(next!=null&&!next.isBlank()){if(queuedConversation!=null)submitNativeTo(viewer,agent,next,store.get(viewer.getUUID(),agent,queuedConversation),UUID.randomUUID());else submitNative(viewer,agent,next,true);}return 1;
     }
     public Map<String,Object> richMessage(ServerPlayer viewer,UUID agent,com.fasterxml.jackson.databind.JsonNode a){
         thread();String text=a.path("text").asText();if(text.isBlank()||text.length()>2048)throw new IllegalArgumentException("AGENT_CHAT_TEXT");
         String color=a.path("color").asText("#FFFFFF");if(!color.matches("#[a-fA-F0-9]{6}"))throw new IllegalArgumentException("AGENT_CHAT_COLOR");
         var buttons=a.path("buttons");if(!buttons.isMissingNode()&&(!buttons.isArray()||buttons.size()>8))throw new IllegalArgumentException("AGENT_CHAT_BUTTONS");
-        var message=net.minecraft.network.chat.Component.literal("["+requireAgent(agent).displayName()+"] "+text).withStyle(style->style.withColor(Integer.parseInt(color.substring(1),16)));
+        var message=dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(requireAgent(agent).displayName()," "+text).withStyle(style->style.withColor(Integer.parseInt(color.substring(1),16)));
         pendingNative.entrySet().removeIf(e->e.getValue().expires()<System.currentTimeMillis());
         for(var b:buttons){String label=b.path("label").asText(),value=b.path("value").asText(),action=b.path("action").asText();if(label.isBlank()||label.length()>80||value.isBlank()||value.length()>2048)throw new IllegalArgumentException("AGENT_CHAT_BUTTON");
             net.minecraft.network.chat.ClickEvent click;
@@ -106,13 +106,13 @@ public final class ServerConversations implements AutoCloseable {
                     for(int part=0;part<4&&n.thinkingOffset<thinking.textLength();part++){
                         var chunk=store.thinkingChunk(n.viewer.getUUID(),n.agent,n.conversation,n.assistant,thinking.revision(),n.thinkingOffset,512);
                         int count=NativeChatSegments.nextLength(chunk.text(),240,done||!thinking.active()||System.currentTimeMillis()-n.thinkingLastSent>800);
-                        if(count==0)break;n.viewer.sendSystemMessage(colored(n.agent,net.minecraft.network.chat.Component.translatableWithFallback("mineagent.chat.thinking","[%s][思考]%s",n.name,chunk.text().substring(0,count))));n.thinkingOffset+=count;n.thinkingLastSent=System.currentTimeMillis();
+                        if(count==0)break;n.viewer.sendSystemMessage(colored(n.agent,net.minecraft.network.chat.Component.translatableWithFallback("mineagent.chat.thinking","%s[思考]%s",dev.mineagent.runtime.neoforge.chat.AiChatMessages.name(n.name),chunk.text().substring(0,count))));n.thinkingOffset+=count;n.thinkingLastSent=System.currentTimeMillis();
                     }
                     if(n.thinkingOffset<thinking.textLength())continue;
                 }
-                var message=store.message(n.viewer.getUUID(),n.agent,n.conversation,n.assistant);if(message.textLength()>n.offset){var chunk=store.chunk(n.viewer.getUUID(),n.agent,n.conversation,n.assistant,message.revision(),n.offset,512);String remaining=chunk.text();int count=NativeChatSegments.nextLength(remaining,240,done||System.currentTimeMillis()-n.lastSent>800);if(count>0){n.viewer.sendSystemMessage(colored(n.agent,"["+n.name+"] "+remaining.substring(0,count)));n.offset+=count;n.lastSent=System.currentTimeMillis();}}
-                if(done&&n.offset>=message.textLength()){nativeReplies.remove(entry.getKey());if(!usage.requestState().equals("COMPLETE"))n.viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+n.name+"] 本次未完成："+usage.errorCode()+" ").append(net.minecraft.network.chat.Component.literal("[核对后继续]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+n.agent+" 请先inspect_operations和实际状态，核对上次失败结果；不要重放已执行或UNKNOWN的写操作，再继续未完成部分。")))));}
-            }catch(Exception failure){nativeReplies.remove(entry.getKey());n.viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+n.name+"] "+nativeError(failure)));}
+                var message=store.message(n.viewer.getUUID(),n.agent,n.conversation,n.assistant);if(message.textLength()>n.offset){var chunk=store.chunk(n.viewer.getUUID(),n.agent,n.conversation,n.assistant,message.revision(),n.offset,512);String remaining=chunk.text();int count=NativeChatSegments.nextLength(remaining,240,done||System.currentTimeMillis()-n.lastSent>800);if(count>0){n.viewer.sendSystemMessage(colored(n.agent,dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(n.name," "+remaining.substring(0,count))));n.offset+=count;n.lastSent=System.currentTimeMillis();}}
+                if(done&&n.offset>=message.textLength()){nativeReplies.remove(entry.getKey());if(!usage.requestState().equals("COMPLETE"))n.viewer.sendSystemMessage(dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(n.name," 本次未完成："+usage.errorCode()+" ").append(net.minecraft.network.chat.Component.literal("[核对后继续]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+n.agent+" 请先inspect_operations和实际状态，核对上次失败结果；不要重放已执行或UNKNOWN的写操作，再继续未完成部分。")))));}
+            }catch(Exception failure){nativeReplies.remove(entry.getKey());n.viewer.sendSystemMessage(dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(n.name," "+nativeError(failure)));}
         }
     }
     public static void disconnectIfPresent(MinecraftServer server,ServerPlayer viewer){ServerConversations r;synchronized(ServerConversations.class){r=LIVE.get(server);}if(r!=null)r.disconnect(viewer);}

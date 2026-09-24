@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_25",
   "client": [
     "client.ChatHistoryAccess",
+    "client.ChatMessageDisplayMixin",
+    "client.GuiMessageMarkMixin",
     "client.AgentSkinMixin",
     "client.AgentPlayerInfoSkinMixin",
     "client.AgentNameMixin",

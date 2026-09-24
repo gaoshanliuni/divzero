@@ -45,6 +45,7 @@ public final class ConversationAgentTools {
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>16384)throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
             if(tool.equals("inspect_interaction_rules")){keys(args,"offset");return CompletableFuture.completedFuture(ServerInteractionRules.inspect(p,args.path("offset").asInt(0)));}
+            if(tool.equals("inspect_chat_messages")){keys(args);return ServerChatMessageSettings.request(p,null,null,null,permit);}
             if(tool.equals("inspect_chat_settings")){keys(args);return CompletableFuture.completedFuture(ServerChatSettings.inspect(p,agent));}
             if(tool.equals("inspect_skins")){keys(args);return CompletableFuture.completedFuture(ServerAgentSkins.inspect(p,agent));}
             if(tool.equals("inspect_files")||tool.equals("read_file")){keys(args,"file_id","query","entry","encoding","offset");return ServerFileTools.read(p,agent,tool,args);}
@@ -59,14 +60,14 @@ public final class ConversationAgentTools {
             if(tool.equals("inspect_persona")){keys(args);return CompletableFuture.completedFuture(ConversationIdentityTools.persona(p,agent));}
             if(tool.equals("inspect_appearance")){keys(args);return CompletableFuture.completedFuture(ConversationIdentityTools.appearance(p,agent));}
             if(!ConversationTools.mutation(tool)){if(tool.equals("inspect_container"))return CompletableFuture.completedFuture(ConversationNativeInteractions.inspect(p,agent,args));return read(p,tool,args,permit);}
-            if(!tool.equals("set_chat_settings")&&!ServerTaskStart.allowed(p,agent))throw new SecurityException("AGENT_TOOL_PERMISSION");
+            if(!Set.of("set_chat_settings","set_chat_messages").contains(tool)&&!ServerTaskStart.allowed(p,agent))throw new SecurityException("AGENT_TOOL_PERMISSION");
             if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");
             var world=MineAgentRuntimeServices.worldId(s);var level=p.level();long permission=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE);
             var db=s.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");var result=new CompletableFuture<Map<String,Object>>();String intent=JSON.writeValueAsString(Map.of("state","DISPATCHING","owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args));
             CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,0,intent);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((v,error)->s.execute(()->{
                 if(error!=null){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));return;}
                 CompletableFuture<Map<String,Object>> action;
-                try{if(!current(p,permit)||p.level()!=level||(!tool.equals("set_chat_settings")&&!ServerTaskStart.allowed(p,agent))||permission!=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE))throw new IllegalStateException("AGENT_TOOL_CONTEXT_CHANGED");if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");action=mutate(p,agent,operation,tool,args,permit);}
+                try{if(!current(p,permit)||p.level()!=level||(!Set.of("set_chat_settings","set_chat_messages").contains(tool)&&!ServerTaskStart.allowed(p,agent))||permission!=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE))throw new IllegalStateException("AGENT_TOOL_CONTEXT_CHANGED");if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");action=mutate(p,agent,operation,tool,args,permit);}
                 catch(Exception rejected){action=CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(rejected)));}
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     var value=failure==null?receipt:Map.<String,Object>of("status","UNKNOWN","error","AGENT_TOOL_OUTCOME_UNKNOWN");
@@ -122,6 +123,7 @@ public final class ConversationAgentTools {
         if(result.isEmpty()||result.getCount()>result.getMaxStackSize())throw new IllegalArgumentException("AGENT_ITEM_COUNT");return result;
     }
     private static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,UUID operation,String tool,JsonNode a,BooleanSupplier permit)throws Exception{
+        if(tool.equals("set_chat_messages")){keys(a,"limit","mark","expected_revision");Integer limit=a.has("limit")?number(a,"limit",1,16384):null;String mark=a.has("mark")?text(a,"mark",256):null;Long expected=null;if(a.has("expected_revision")){if(!a.get("expected_revision").isIntegralNumber()||!a.get("expected_revision").canConvertToLong()||a.get("expected_revision").longValue()<0)throw new IllegalArgumentException("CHAT_MESSAGES_REVISION");expected=a.get("expected_revision").longValue();}if(limit==null&&mark==null)throw new IllegalArgumentException("CHAT_MESSAGES_ARGUMENTS");return ServerChatMessageSettings.request(p,limit,mark,expected,permit);}
         Map<String,Object> result;
         switch(tool){
             case "export_current_skin"->{keys(a);return ServerAgentSkins.exportCurrent(p,agent,operation,permit);}

@@ -54,7 +54,7 @@ Release Assets 提供运行 JAR，SHA-256 校验值列在正文。GitHub 的 Sou
 
 ## 版本规则
 
-当前 Mod 版本为 **1.0.3**，以已提交 `gradle.properties` 的 `mod_version` 为准，不再自动覆盖成日期版本。历史 `-SNAPSHOT` 提交仍使用 UTC 日期＋公开提交序号；文件名中的提交号、运行 ID 和 attempt 区分构建身份。
+当前 Mod 版本为 **1.0.4**，以已提交 `gradle.properties` 的 `mod_version` 为准，不再自动覆盖成日期版本。历史 `-SNAPSHOT` 提交仍使用 UTC 日期＋公开提交序号；文件名中的提交号、运行 ID 和 attempt 区分构建身份。
 
 `get-build-version.ps1` 使用完整 Git 提交记录，Actions 采用 `fetch-depth: 0`。构建通过 `-Pmod_version=...` 将版本写入 JAR 文件名、NeoForge 元数据和发布信息。
 
@@ -79,7 +79,7 @@ $version = ./scripts/get-build-version.ps1
 
 ### 发布命名
 
-当前版本 **1.0.3**，Tag与Release标题均为 `1.0.3`，主模组附件为 `DivZero-mineagent-1.0.3.jar`。依赖JAR保留各自名称。源码提交、变体和运行号保存在构建信息/正文，不再拼入主JAR名或版本Tag。已发布版本Tag不强制移动；同版本不同源码会明确拒绝，后续源码发布需提升版本号。
+当前版本 **1.0.4**，Tag与Release标题均为 `1.0.4`，主模组附件为 `DivZero-mineagent-1.0.4.jar`。依赖JAR保留各自名称。源码提交、变体和运行号保存在构建信息/正文，不再拼入主JAR名或版本Tag。已发布版本Tag不强制移动；同版本不同源码会明确拒绝，后续源码发布需提升版本号。
 
 本轮起不再本地编译，由main推送触发GitHub Actions编译与检查。
 
@@ -94,3 +94,7 @@ $version = ./scripts/get-build-version.ps1
 ## 1.0.3 F2 修复
 
 F2注册原生文本输入焦点及IME预编辑；流式回复保持节点并跟随当前末尾，手动翻阅历史时保持位置，点击“最新消息”恢复跟随。超过4096字符的活跃回复可继续显示新内容。实际浏览器回归通过；游戏窗口的具体Windows输入法候选词兼容尚待Native复验。协议仍7，退出游戏并备份后替换旧主模组JAR。
+
+## 1.0.4 原生聊天
+
+默认保留1024条、最高16384条；`/ai msg limit 16384`修改，`/ai msg`提供点击选项。**不加时间前缀**，悬停`[AI名字]`查看该消息收到时的日期时间。`/ai msg mark time`恢复默认，`/ai msg mark off`关闭，`/ai msg mark 消息时间：{yyyy-MM-dd HH:mm:ss}`自定义悬停内容。AI已开放inspect_chat_messages/set_chat_messages，设置只影响请求者本机。较低上限裁剪旧原生显示缓存，不删除F2/数据库会话；协议仍7。

@@ -5,5 +5,12 @@
   "key.mineagent_runtime.open_control_center": "Open MineAgent workspace",
   "key.mineagent_runtime.toggle_workspace": "Toggle MineAgent workspace",
   "key.category.mineagent_runtime.control_center": "MineAgent Runtime",
-  "key.categories.mineagent_runtime.control_center": "MineAgent Runtime"
+  "key.categories.mineagent_runtime.control_center": "MineAgent Runtime",
+  "mineagent.chat.agent_name": "[%s]",
+  "mineagent.chat.thinking": "%s[Thinking]%s",
+  "mineagent.chat.messages.status": "Chat history: %s messages; AI-name hover format: %s (no extra prefix)",
+  "mineagent.chat.messages.failed": "Chat display change not confirmed: %s",
+  "mineagent.chat.messages.limit": "Chat history limit: ",
+  "mineagent.chat.messages.mark": "Hover over the AI name for date/time: ",
+  "mineagent.chat.messages.help": "Example: /ai msg mark Sent at: {yyyy-MM-dd HH:mm:ss} (date-format template, not a regex)"
 }

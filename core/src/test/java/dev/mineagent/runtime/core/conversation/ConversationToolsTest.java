@@ -3,6 +3,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class ConversationToolsTest {
+    @Test void nativeMessageDisplayToolsAreAvailableAndScoped(){assertTrue(ConversationTools.NAMES.contains("inspect_chat_messages"));assertFalse(ConversationTools.mutation("inspect_chat_messages"));assertTrue(ConversationTools.NAMES.contains("set_chat_messages"));assertTrue(ConversationTools.mutation("set_chat_messages"));}
     @Test void reusablePathAndSneakAreAdvertised()throws Exception{assertTrue(ConversationTools.NAMES.contains("build_agent_path"));assertTrue(ConversationTools.mutation("build_agent_path"));var control=ConversationTools.ALL.stream().filter(t->t.name().equals("control_agent_body")).findFirst().orElseThrow();var values=new ObjectMapper().readTree(control.parameters()).path("properties").path("action").path("enum");assertTrue(values.toString().contains("sneak"));}
 
     @Test void creatureAndFullHostOutputToolsAreDiscoverable(){

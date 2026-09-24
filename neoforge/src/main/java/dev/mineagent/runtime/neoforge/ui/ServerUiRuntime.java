@@ -60,7 +60,7 @@ public final class ServerUiRuntime {
     public static void register(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("3");
         registrar.playToServer(UiPayloads.Command.TYPE, UiPayloads.Command.CODEC,
-                (p, context) -> context.enqueueWork(() -> {var player=(ServerPlayer)context.player();if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.notifyIfPending(player)){context.reply(new UiPayloads.Event(p.requestId(),"error","{\"code\":\"WORLD_IDENTITY_NOT_READY\"}"));return;}get(player.level().getServer()).handle(player,p);}));
+                (p, context) -> context.enqueueWork(() -> {var player=(ServerPlayer)context.player();if(p.channel().equals("chatMessageDisplayReply")){ServerChatMessageSettings.reply(player,p);return;}if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.notifyIfPending(player)){context.reply(new UiPayloads.Event(p.requestId(),"error","{\"code\":\"WORLD_IDENTITY_NOT_READY\"}"));return;}get(player.level().getServer()).handle(player,p);}));
         registrar.playToClient(UiPayloads.Event.TYPE, UiPayloads.Event.CODEC);
         registrar.playToClient(dev.mineagent.runtime.neoforge.network.WorldBoardPayload.TYPE,dev.mineagent.runtime.neoforge.network.WorldBoardPayload.CODEC);
     }

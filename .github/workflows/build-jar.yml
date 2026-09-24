@@ -79,7 +79,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path build/ci-logs -Force | Out-Null
-          & ./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$env:DIVZERO_BUILD_VERSION" :neoforge:jar :neoforge:verifyProductionUiParser :api:test :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath build/ci-logs/gradle.log
+          & ./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$env:DIVZERO_BUILD_VERSION" :neoforge:jar :neoforge:verifyProductionUiParser :neoforge:test :api:test :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath build/ci-logs/gradle.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Stage and verify runtime JARs and internal audit files
