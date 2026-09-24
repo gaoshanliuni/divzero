@@ -1,0 +1,15 @@
+// Public CI overlay: keep legal notices inside the installable JAR, not as extra Release assets.
+// -Pmod_version is supplied from get-build-version.ps1 and consumed by the normal metadata task.
+gradle.beforeProject { p ->
+    if (p.path == ':neoforge') {
+        p.plugins.withId('java-library') {
+            p.tasks.named('jar', org.gradle.api.tasks.bundling.Jar).configure {
+                from(p.rootProject.file('LICENSE')) { rename { 'LICENSE-DIVZERO.txt' } }
+                from(p.rootProject.file('docs/THIRD_PARTY_NOTICES.md')) {
+                    into 'META-INF'
+                    rename { 'DIVZERO-THIRD-PARTY-NOTICES.md' }
+                }
+            }
+        }
+    }
+}

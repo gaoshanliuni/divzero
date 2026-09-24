@@ -32,6 +32,7 @@ jobs:
     outputs:
       artifact-name: ${{ steps.package.outputs.artifact-name }}
       variant: ${{ steps.package.outputs.variant }}
+      mod-version: ${{ steps.version.outputs.mod-version }}
     env:
       CI: 'true'
       BUILD_VARIANT: ${{ github.event_name == 'workflow_dispatch' && inputs.include_media_tools && 'with-media' || 'standard' }}
@@ -41,6 +42,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Set up Java 25
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -58,6 +60,14 @@ jobs:
       - name: Test release packaging and version guards
         run: ./scripts/test-ci-release.ps1
 
+      - name: Resolve a unique source-based Mod version
+        id: version
+        run: |
+          $version = & ./scripts/get-build-version.ps1 -Commit '${{ github.sha }}'
+          "DIVZERO_BUILD_VERSION=$version" >> $env:GITHUB_ENV
+          "mod-version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "MOD_VERSION=$version"
+
       - name: Prepare optional pinned media tools
         if: github.event_name == 'workflow_dispatch' && inputs.include_media_tools
         run: ./scripts/prepare-media-tools.ps1
@@ -66,14 +76,14 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path build/ci-logs -Force | Out-Null
-          & ./gradlew.bat :neoforge:jar :neoforge:verifyProductionUiParser :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath build/ci-logs/gradle.log
+          & ./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$env:DIVZERO_BUILD_VERSION" :neoforge:jar :neoforge:verifyProductionUiParser :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath build/ci-logs/gradle.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Stage separate runtime JARs, licenses and checksums
+      - name: Stage and verify runtime JARs and internal audit files
         id: package
         run: ./scripts/package-ci-artifact.ps1 -Variant $env:BUILD_VARIANT
 
-      - name: Add pinned platform offline MCEF attachments and verify the full release
+      - name: Verify pinned MCEF alternatives and the runtime-only publish list
         run: |
           ./scripts/stage-offline-mcef.ps1
           $commit = (& git rev-parse HEAD).Trim()
@@ -103,7 +113,7 @@ jobs:
           retention-days: 7
 
   publish:
-    name: Publish separate Release assets
+    name: Publish installable JAR assets only
     needs: build
     if: github.repository == 'gaoshanliuni/divzero' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: windows-2025
@@ -120,6 +130,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+          fetch-depth: 0
       - name: Download this build's verified files
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -131,4 +142,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SOURCE_COMMIT: ${{ github.sha }}
           BUILD_VARIANT: ${{ needs.build.outputs.variant }}
+          DIVZERO_BUILD_VERSION: ${{ needs.build.outputs.mod-version }}
         run: ./scripts/publish-ci-release.ps1 -Commit $env:SOURCE_COMMIT -Variant $env:BUILD_VARIANT

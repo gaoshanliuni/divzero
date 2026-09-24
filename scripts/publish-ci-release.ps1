@@ -14,6 +14,10 @@ if ($Commit -notmatch '^[a-f0-9]{40}$') { throw 'RELEASE_COMMIT_INVALID' }
 $info=Get-Content -LiteralPath (Join-Path $assets 'BUILD-INFO.json') -Raw | ConvertFrom-Json
 if ($info.sourceCommit -ne $Commit -or $info.variant -ne $Variant -or $info.repository -ne "https://github.com/$repo") { throw 'RELEASE_BUILD_IDENTITY_MISMATCH' }
 $versions = & (Join-Path $PSScriptRoot 'get-release-versions.ps1')
+if (-not $DryRun) {
+    $expectedVersion = & (Join-Path $PSScriptRoot 'get-build-version.ps1') -Commit $Commit
+    if ($versions.modVersion -cne $expectedVersion) { throw 'RELEASE_NOT_SOURCE_BASED_VERSION' }
+}
 foreach ($property in $versions.PSObject.Properties) {
     if (-not $info.PSObject.Properties[$property.Name] -or $info.($property.Name) -cne $property.Value) { throw "RELEASE_VERSION_MISMATCH: $($property.Name)" }
 }
@@ -73,8 +77,8 @@ $marker
 MCEF 的原始文件名标注 MC26.1.1，本项目锁定并测试的兼容工件就是这一版；不修改上游 JAR。
 Chromium/JCEF 原生运行库仍由 MCEF 准备，这里不打包浏览器原生库或 YSM 模型。
 
-SHA256SUMS 包含全部附件的校验值，BUILD-INFO.json 记录对应源码与构建信息。
-mcef-2.2.0-neoforge-sources.jar 是对应开发源码，**不要放入 mods**；许可及来源分别在 LICENSE-*.txt、DEPENDENCIES.json、THIRD-PARTY-NOTICES.md 中。
+校验值直接列在正文；完整构建信息保留在本次 Actions 工件，不作为 Release 附件。主 JAR 内含 DivZero 许可及第三方说明，依赖保留自身许可。
+[MCEF 对应开发源码](https://cdn.modrinth.com/data/bQhBuv7x/versions/h38n5aI0/sources_mcef_neoforge_2.2.0_MC_26.1.1.jar)仅供开发者，不是安装包；许可及来源见[第三方声明](https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/THIRD_PARTY_NOTICES.md)。
 WebGUI [上游源码](https://github.com/mc-webgui/webgui/tree/v1.6.2)，MCEF [上游源码](https://github.com/Keksuccino/mcef/)。
 
 不上传整合 ZIP。GitHub 自动附加的 Source code (zip/tar.gz) 是源码，不是安装包。
@@ -87,7 +91,26 @@ if (Test-Path -LiteralPath (Join-Path $root 'gradle/mcef-offline.lock.json')) {
     if (-not $info.PSObject.Properties['offlineMcef']) { throw 'RELEASE_OFFLINE_MCEF_NOT_STAGED' }
     $notes = & (Join-Path $PSScriptRoot 'format-offline-release-notes.ps1') -OriginalNotes $notes -BuildInfo $info -Checksums $manifest
 }
-if ($DryRun) { Write-Output "RELEASE_DRY_RUN_TAG=$tag"; Write-Output "RELEASE_TITLE=$title"; Write-Output $notes; Write-Output "VERIFIED_FILES=$($files.Count)"; return }
+# All staged files remain verified, but only runtime JARs become public Release assets.
+$verifiedCount=$files.Count
+function Select-RuntimeFiles($Info,$AllFiles,$Manifest) {
+$publishNames=@([string]$Info.jar,'webgui-neoforge-1.6.2+mc26.1.2.jar')
+if ($Info.PSObject.Properties['offlineMcef']) {
+    $publishNames+=@($Info.offlineMcef.platforms.PSObject.Properties | ForEach-Object { [string]$_.Value.file })
+} else { $publishNames+='mcef_neoforge_2.2.0_MC_26.1.1.jar' }
+if (@($publishNames | Sort-Object -Unique).Count -ne $publishNames.Count) { throw 'RELEASE_RUNTIME_LIST_DUPLICATE' }
+foreach ($name in $publishNames) {
+    if ($name -notmatch '^[A-Za-z0-9][A-Za-z0-9_.+-]*\.jar$' -or $name -match '(sources|javadoc|corresponding|neoforge-api)' -or -not $Manifest.ContainsKey($name)) { throw 'RELEASE_RUNTIME_JAR_REQUIRED' }
+}
+$selected=@($AllFiles | Where-Object { $_.Name -cin $publishNames })
+if ($selected.Count -ne $publishNames.Count) { throw 'RELEASE_RUNTIME_LIST_MISSING' }
+    return $selected
+}
+$files=@(Select-RuntimeFiles $info $files $manifest)
+$notes+="`n`n### 运行 JAR 的 SHA-256`n`n| 文件 | SHA-256 |`n|---|---|`n"
+foreach ($file in $files) { $notes+='| '+$file.Name+' | `'+$manifest[$file.Name]+'` |'+"`n" }
+$notes+="`nRelease 只上传上表运行 JAR。源码、许可证和构建审计使用正文链接或 JAR 内副本；没有删除必要的来源信息。`n"
+if ($DryRun) { Write-Output "RELEASE_DRY_RUN_TAG=$tag"; Write-Output "RELEASE_TITLE=$title"; Write-Output $notes; Write-Output "VERIFIED_FILES=$verifiedCount"; Write-Output "PUBLISHED_JARS=$($files.Count)"; foreach ($file in $files) { Write-Output "PUBLISH_JAR=$($file.Name)" }; return }
 if (-not $env:GH_TOKEN) { throw 'RELEASE_TOKEN_MISSING' }
 $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28';'User-Agent'='DivZero automatic development releases'}
 $api="https://api.github.com/repos/$repo"

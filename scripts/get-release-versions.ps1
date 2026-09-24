@@ -1,4 +1,4 @@
-param()
+param([string]$ModVersion = $env:DIVZERO_BUILD_VERSION)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -14,7 +14,7 @@ $java = [regex]::Matches([IO.File]::ReadAllText((Join-Path $root 'build.gradle')
 if ($java.Count -ne 1) { throw 'RELEASE_JAVA_VERSION_UNAVAILABLE' }
 [pscustomobject][ordered]@{
     modId = Read-VersionProperty 'mod_id' '^[a-z][a-z0-9_]*$'
-    modVersion = Read-VersionProperty 'mod_version' '^[0-9][A-Za-z0-9.+_-]*$'
+    modVersion = if ($ModVersion) { if ($ModVersion -notmatch '^[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}-dev\.[1-9][0-9]*$') { throw 'RELEASE_BUILD_VERSION_INVALID' }; $ModVersion } else { Read-VersionProperty 'mod_version' '^[0-9][A-Za-z0-9.+_-]*$' }
     minecraftVersion = Read-VersionProperty 'minecraft_version' '^[0-9][A-Za-z0-9.+_-]*$'
     minecraftVersionRange = Read-VersionProperty 'minecraft_version_range' '^[\[\(][A-Za-z0-9.,+ _\[\]\(\)-]+[\]\)]$'
     neoForgeVersion = Read-VersionProperty 'neo_version' '^[0-9][A-Za-z0-9.+_-]*$'

@@ -30,10 +30,10 @@ $extra=@"
 
 **只安装与你运行 Minecraft 的 Java 架构一致的一个离线 MCEF。不要把多个平台一起装，也不要与原版 MCEF 同时安装。**
 本次不提供原生 Windows/Linux ARM64 附件：固定上游对应名称的压缩包实际是 x64 二进制。
-原版 mcef_neoforge_2.2.0_MC_26.1.1.jar 仍作为可选在线方案保留，会自行下载运行库；普通玩家推荐上面的离线方案。
+旧在线 MCEF 不再重复作为本 Release 附件；需要在线方案可自行前往上游获取，不能与离线版同时安装。
 
 离线分支版本：$($lock.tag)。[离线分支源码](https://github.com/$($lock.repository)/commit/$($lock.sourceCommit))。
-mcef-offline-corresponding-sources.jar 是本离线分支的完整对应源码，**不是安装文件**；原版 sources 附件仅对应保留的在线方案。
+[完整对应源码](https://github.com/$($lock.repository)/releases/download/$($lock.tag)/$($lock.sources.file))与[许可声明](https://github.com/$($lock.repository)/releases/download/$($lock.tag)/$($lock.notices.file))仍可获取，不重复上传到本 Release。它们不是安装文件。
 运行库平台打包和安装器测试不等于已在全部平台完成真实游戏渲染验收。
 "@
 Write-Output ($notes+$extra)

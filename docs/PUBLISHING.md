@@ -71,8 +71,12 @@ DivZero 采用“私密开发、按版本公开源码快照”的方式维护。
 
 ## 已配置的自动开发预发布
 
-公开 `main` 的成功构建自动生成独立 Pre-release，标题与正文标注 Mod 版本、支持的 Minecraft 版本、NeoForge 与 Java。主 JAR 和 WebGUI/MCEF 依赖分别上传，不上传整合 ZIP；GitHub 自带的源码 ZIP/tar.gz 链接不是安装包。依赖保留原字节与许可证，MCEF 对应源码作为单独开发附件分发，不可放入 `mods`。
+公开 `main` 的成功构建自动生成独立 Pre-release，标题与正文标注 Mod 版本、支持的 Minecraft 版本、NeoForge 与 Java。只上传主 JAR、WebGUI 与各平台 MCEF 运行 JAR，不上传整合 ZIP、独立元数据／许可文本或开发源码 JAR；GitHub 自带的源码 ZIP/tar.gz 链接不是安装包。主 JAR 内含本项目许可，依赖保留原字节及许可证，固定对应源码与声明通过 Release 正文链接提供。校验值在正文，完整打包审计仍保留在 CI 工件。
 
 发布只使用同次成功构建产物，先保留 draft、核验全部附件，再公开；独立标签包含版本、提交和运行身份，不 force 更新、不覆盖正式版本、不抢稳定版 Latest。PR 无 Release 写权限。构建测试不代表真实模型或完整游戏验收。
 
 此流程不改变源码快照人工审查原则：私密开发中的日常提交不会自动公开，禁止直接同步其分支或历史。发布凭据只在发布 job 使用临时 `GITHUB_TOKEN`，不得写入源码、提交记录、公开文档或日志。
+
+## 2026-09-24 玩法文档与发布整理
+
+最新公开源码已在main，README与[全部功能](FEATURES.md)使用已审查的历史实测截图。新的CI版本使用提交UTC日期＋公开提交序号，并写入JAR元数据，不只修改标题。新Release只发布可安装JAR；历史标签与附件不改写。具体规则见[BUILD_JAR.md](BUILD_JAR.md)。

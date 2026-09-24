@@ -23,7 +23,7 @@ if ($jars.Count -ne 1) { throw "CI_EXPECTED_ONE_INSTALLABLE_JAR: found $($jars.C
 $jar = $jars[0]
 $archive = [IO.Compression.ZipFile]::OpenRead($jar.FullName)
 try {
-    foreach ($entry in @('META-INF/neoforge.mods.toml', 'META-INF/mineagent/worker/mineagent-worker.jar')) {
+    foreach ($entry in @('META-INF/neoforge.mods.toml', 'META-INF/mineagent/worker/mineagent-worker.jar', 'LICENSE-DIVZERO.txt', 'META-INF/DIVZERO-THIRD-PARTY-NOTICES.md')) {
         if ($null -eq $archive.GetEntry($entry)) { throw "CI_MISSING_RUNTIME_ENTRY: $entry" }
     }
     $reader = [IO.StreamReader]::new($archive.GetEntry('META-INF/neoforge.mods.toml').Open())
@@ -45,7 +45,7 @@ try {
     }
 } finally { $archive.Dispose() }
 New-Item -ItemType Directory -Path $out -Force | Out-Null
-$name = "$($jar.BaseName)-$Variant-$short.jar"
+$name = "DivZero-$($versions.modVersion)-mc$($versions.minecraftVersion)-$Variant-$short.jar"
 $destination = Join-Path $out $name
 Copy-Item -LiteralPath $jar.FullName -Destination $destination
 $sha = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()

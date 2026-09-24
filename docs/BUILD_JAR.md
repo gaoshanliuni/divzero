@@ -1,50 +1,63 @@
-# 自动编译与下载 JAR
+# 版本、构建与安装
 
-[Releases 下载](https://github.com/gaoshanliuni/divzero/releases) · [Build JAR 工作流](https://github.com/gaoshanliuni/divzero/actions/workflows/build-jar.yml)
+[返回首页](../README.md) · [Releases](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](FEATURES.md) · [Build JAR](https://github.com/gaoshanliuni/divzero/actions/workflows/build-jar.yml)
 
-## 自动触发与发布
+## 下载哪些文件
 
-- 向公开仓库 `main` 推送提交：自动编译、测试，成功后发布独立的 **开发预发布（Pre-release）**。
-- 向 `main` 提交 Pull Request：只构建测试，不创建 Release。
-- Actions → Build JAR → Run workflow：可手动构建；只有本仓库 `main` 的构建允许发布。
-- 同一分支的新任务会取消旧任务；取消或失败的构建不公开半成品附件。
+Release 的 **Assets** 只上传可安装的运行 JAR：
 
-流水线使用 Windows 2025、Temurin Java 25、项目 Gradle Wrapper，验证 Wrapper 和已有依赖校验值，编译 NeoForge JAR、检查打包解析器，运行公开快照包含的 core/worker/client 测试。不会启动 Minecraft，不请求 DeepSeek，不需要 API Key。
-
-## 分文件下载，无需解压整合包
-
-在 Releases 选择对应开发版本，向下滚动到 **Assets（资源）**，展开附件列表，分别下载三个运行时 JAR。正文只列文件名，不再拼接下载直链：
-
-1. `mineagent_runtime-<版本>-<构建类型>-<提交号>.jar`：DivZero 主模组。
+1. `DivZero-<版本>-mc26.1.2-<类型>-<提交号>.jar`：主模组。
 2. `webgui-neoforge-1.6.2+mc26.1.2.jar`：WebGUI。
-3. `mcef_neoforge_2.2.0_MC_26.1.1.jar`：MCEF，上游原文件名保持不变。
+3. 下表中与你系统及 **Java 架构** 匹配的 **一个** MCEF。
 
-客户端将这三个 JAR 放进 `mods`；先关闭游戏，并移除同 Mod 的旧版，建议使用已备份的测试实例。MCEF 文件名虽然包含 MC26.1.1，其上游元数据允许后续版本，当前项目锁定这个工件用于 Minecraft 26.1.2；不因此宣称本 Mod 支持其它游戏版本。
+| 系统／Java架构 | MCEF 文件 |
+|---|---|
+| Windows x64 | `mcef-offline-neoforge-windows_amd64.jar` |
+| Linux x64 | `mcef-offline-neoforge-linux_amd64.jar` |
+| macOS Intel | `mcef-offline-neoforge-macos_amd64.jar` |
+| macOS Apple Silicon | `mcef-offline-neoforge-macos_arm64.jar` |
 
-**浏览器依赖不会由 DivZero 自动安装**：CI 下载并分别发布 WebGUI/MCEF JAR，玩家仍需下载放入 `mods`。Chromium/JCEF 原生库由 MCEF 自身的初始化/下载机制准备，不包含在这些 Release 附件中。
+因此完整跨平台 Release 有6个运行 JAR，**每位玩家只安装3个**。不能同时安装多个 MCEF 平台包，也不能与旧在线 MCEF 一起安装。当前不提供原生 Windows/Linux ARM64 包；有平台附件不等于所有 Mod 功能已在该平台完整验收，例如本机 Python 仍限 Windows x64。
 
-其它附件：
-- `SHA256SUMS`：所有附件（清单自身除外）的 SHA-256。
-- `BUILD-INFO.json`：Mod/Minecraft/NeoForge/Java 版本、源码提交、构建类型、工作流身份及主 JAR 校验值。
-- `DEPENDENCIES.json`、`LICENSE-*.txt`、`THIRD-PARTY-NOTICES.md`、`README.txt`：来源、许可证及安装说明。
-- `mcef-2.2.0-neoforge-sources.jar`：MCEF 对应开发源码，**不要放进 mods**。
+关闭游戏后，在已备份的测试实例将选中的三个 JAR 放进 `mods`，移除同 Mod 的旧版本。需要 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，客户端与服务端同步升级。MCEF 离线包提供匹配平台的浏览器运行库，AI API 和在线网页仍需网络。
 
-不上传整合 ZIP。GitHub 自动显示的 **Source code (zip/tar.gz)** 是源码下载，不是 Mod 安装包。Actions artifact 只用于两个 job 间传递文件，保留 7 天；用户下载入口是 Releases，不受这个 7 天暂存期影响。
+首次进入世界，开启作弊／具备真实管理权限后使用 `/ai accept`；F2 → 更多 → API 设置配置模型。不要把 Key 发到聊天或 Issues。
 
-## 版本标注与可追溯性
+## 哪些内容不再作为 Release 附件
 
-Release 标题、正文和构建信息自动读取本次公开源码的 `gradle.properties` 与 Java toolchain，标注当前 Mod 版本、Minecraft 版本与声明范围、NeoForge 构建版本、Java 版本。打包时核对实际 JAR 元数据，版本不一致则拒绝发布，不把开发快照冒称正式 V1。
+- 不再上传独立的 README、BUILD-INFO、DEPENDENCIES、SHA256SUMS、许可文本和说明 Markdown。
+- 不再重复上传开发源码／javadoc／API JAR，或旧在线 MCEF 备选。
+- **校验值直接写在 Release 正文**；构建提交与 Actions 记录可以追溯。
+- 主 JAR 内含 DivZero 许可证和第三方说明；WebGUI/MCEF 原有许可不移除。MCEF Offline 的固定对应源码和许可入口保留在 Release 正文，链接到其精确上游版本。
+- 完整校验、构建身份、来源和许可证仍先在 CI 暂存并验证；只是不用它们占据玩家的附件列表。Actions 审计工件保留7天，永久来源另见仓库文档与上游固定版本。
 
-当前配置为 **Mod 0.1.0-SNAPSHOT / Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**；未来以对应 Release 自动生成的版本信息为准。
+GitHub 会自动显示 **Source code (zip/tar.gz)**。这是 GitHub 提供的源码下载，不是我们上传的安装附件，不能通过筛选上传文件去掉；不要放进 `mods`。历史已发布版本保留原始标签、二进制和附件，新的附件规则不改写旧版本。
 
-每次构建使用独立标签 `ci-v<Mod版本>-mc<游戏版本>-<提交号>-<类型>-r<运行ID>-a<构建次数>`。同一 Mod 版本的开发提交用源码 SHA 区分，不移动既有标签、不覆盖正式 Release。重跑已成功发布的同次发布 job 仅核验，不改附件。
+## 版本不再固定为0.1.0
 
-发布顺序为：创建本构建专属 draft → 逐文件上传 → 核对附件集合/大小/服务器提供的 digest → 公开为 Pre-release → 使用 GitHub 返回的真实附件地址逐项检查公共下载 HTTP 200（不携带 Token）。上传阶段中途失败保留 draft，不让用户下载不完整发布；重新运行失败的发布 job 可恢复。公开后的下载检查失败会使 job 报错；不会删除已发布附件或假称未发布，重跑仅再次核验。发布 job 仅持有本仓库的临时 `GITHUB_TOKEN`，构建 job 为只读权限；第三方 Actions 固定到 commit。
+发布版本按**该公开提交的 UTC 日期＋公开历史提交序号**生成，例如 `2026.9.24-dev.42`。
 
-## 可选多媒体版与边界
+- 每个新的公开提交得到新的开发版本；同一提交重跑保持同一Mod版本，运行ID／attempt仍用于区分不可变发布标签。
+- `get-build-version.ps1`需要完整公开Git历史；Actions使用`fetch-depth: 0`，不把浅克隆的“1次提交”当版本序号。
+- CI把结果以`-Pmod_version=...`传给所有Gradle模块，因此 **JAR文件名、NeoForge元数据、Release标题和构建记录一致**。打包时读取真实JAR验证，版本不一致拒绝发布。
+- `gradle.properties`中的`0.1.0-SNAPSHOT`只保留为未使用发布流程的本地开发默认值，不再作为GitHub发布版本。无需改动私密开发仓库的版本文件，也不会在下次干净快照导出时丢失公开发版规则。
+- 本地按相同规则构建（需要Java25、PowerShell7和完整Git checkout）：
 
-自动构建默认 `standard`，不包含可选 yt-dlp/FFmpeg。手动勾选 `include_media_tools` 时，使用已有脚本下载固定版本并验证 SHA-256，产出较大的 `with-media` JAR；同样按文件发布。
+```powershell
+$version = ./scripts/get-build-version.ps1
+./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$version" :neoforge:jar
+```
 
-只编译**已经公开提交**的源码，不读取、自动同步私密开发仓库或发布本机配置/存档。正式稳定版仍由维护者按 [PUBLISHING.md](PUBLISHING.md) 审核发布；自动开发预发布不会抢占稳定版 Latest。
+## 自动构建和发布
 
-CI 成功不等于完整 V1、真实模型或游戏内全部验收；支持范围见 [SOURCE_SNAPSHOT.md](SOURCE_SNAPSHOT.md)。
+- 公开 `main` 推送：编译、测试、打包成功后生成开发预发布。
+- Pull Request：只构建测试，不发布。
+- Actions → Build JAR → Run workflow：可手动构建；只有本仓库 `main` 能发布。
+- 同分支新构建取消旧构建。先创建draft、上传选定JAR、核验集合／大小／SHA、再公开，避免发布半成品。
+- 已发布标签与二进制不强制覆盖；重跑已成功发布的同次job只核验。
+
+构建job只读，发布job使用临时GITHUB_TOKEN；固定第三方Actions提交。不会读取本机私密开发目录、存档、Provider Key，也不会调用DeepSeek或启动Minecraft。
+
+标准版为`standard`。手动选择`include_media_tools`时构建`with-media`，包含已有固定版本的可选媒体工具；不要将打包成功理解为所有媒体源／平台都已验证。
+
+CI只证明公开源码的构建与所列测试通过，不代表完整V1。截图与场景边界见[功能清单](FEATURES.md)，源码发布原则见[PUBLISHING.md](PUBLISHING.md)。
