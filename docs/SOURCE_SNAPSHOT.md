@@ -155,3 +155,5 @@ Node回归和实际浏览器DOM/滚动/中文草稿保持检查已通过；浏�
 默认保留1024条，最多16384条，按完整消息计数。`/ai msg limit 16384`调整，`/ai msg`提供点击预设。**不增加可见时间前缀**；悬停`[AI名字]`显示该条接收时的日期和时间，正文、名字颜色、签名和点击按钮保持不变。
 
 `/ai msg mark time`默认完整日期/时分秒，date只显示日期，off关闭。支持日期格式或带文字模板，如`/ai msg mark 消息时间：{yyyy-MM-dd HH:mm:ss}`；这是日期格式模板而非正则匹配。设置只影响本人客户端原生聊天，不修改F2持久历史；降低条数会裁剪旧显示缓存。AI通过inspect_chat_messages/set_chat_messages调用，等待本机保存与显示刷新回执，不以“已发送设置”冒称完成。
+
+1.0.4验证补充：[Actions 36027772930](https://github.com/gaoshanliuni/divzero/actions/runs/36027772930)通过；同一发布JAR在隔离Minecraft中验证默认/最大条数、缩减/恢复、无前缀、名字HoverEvent及原文/签名/按钮保留，并完成limit/mark命令的真实客户端保存和回执。另1次官方DeepSeek Flash high Thinking请求正确选择set_chat_messages及16384/datetime参数；模型工具选择与Native设置往返分别验证，不冒称一次完整端到端模型执行。
