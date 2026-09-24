@@ -35,7 +35,8 @@ final class RealProviderSmokeAudit {
         return begin(directory,uri,body,MAX_CALLS);
     }
     static synchronized RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body, int maximum) throws Exception {return begin(directory,uri,body,maximum,false);}
-    private static synchronized RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body, int maximum,boolean agentModels) throws Exception {
+    private static synchronized RealProviderSmokeAudit begin(Path directory, URI uri, ObjectNode body, int maximum,boolean agentModels) throws Exception {return begin(directory,uri,body,maximum,agentModels,"true".equals(System.getenv("MINEAGENT_REAL_PROVIDER_PARALLEL")));}
+    static synchronized RealProviderSmokeAudit begin(Path directory,URI uri,ObjectNode body,int maximum,boolean agentModels,boolean parallel) throws Exception {
         if(maximum != -1 && (maximum<1||maximum>MAX_CALLS))throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_CALL_LIMIT");
         if (!uri.equals(URI.create("https://api.deepseek.com/v1/chat/completions"))
                 || !(agentModels?Set.of("deepseek-flash","deepseek-v4-pro"):Set.of("deepseek-flash")).contains(body.path("model").asText()) || !body.path("stream").asBoolean())
@@ -44,7 +45,7 @@ final class RealProviderSmokeAudit {
         int index = 1;
         while (Files.exists(directory.resolve(index + "-started.json"))) {
             Path done = directory.resolve(index + "-completed.json");
-            if (!Files.isRegularFile(done) || !JSON.readTree(done.toFile()).path("completed").asBoolean())
+            if (!parallel && (!Files.isRegularFile(done) || !JSON.readTree(done.toFile()).path("completed").asBoolean()))
                 throw new IllegalStateException("REAL_PROVIDER_SMOKE_PREVIOUS_OUTCOME_UNKNOWN");
             index++;
         }
@@ -53,7 +54,7 @@ final class RealProviderSmokeAudit {
         body.putObject("stream_options").put("include_usage", true);
         byte[] request = JSON.writeValueAsBytes(body);
         var evidence = new LinkedHashMap<String, Object>();
-        evidence.put("call", index);
+        evidence.put("call", index);evidence.put("independentParallelAudit",parallel);
         evidence.put("callBudget", maximum == -1 ? "USER_AUTHORIZED_UNLIMITED" : maximum);
         evidence.put("endpoint", uri.toString());
         evidence.put("requestedModel", body.path("model").asText());

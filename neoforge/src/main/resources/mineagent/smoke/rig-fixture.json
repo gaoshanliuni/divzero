@@ -1,0 +1,266 @@
+{
+  "name": "Deterministic hierarchy fixture",
+  "disposition": "friendly",
+  "model": {
+    "version": 1,
+    "boxes": [
+      {
+        "from": [
+          -0.5,
+          0,
+          -0.4
+        ],
+        "to": [
+          0.5,
+          2.4,
+          0.4
+        ],
+        "color": "#1679c4"
+      }
+    ],
+    "collision": [
+      -0.5,
+      0,
+      -0.4,
+      0.5,
+      2.4,
+      0.4
+    ]
+  },
+  "bones": [
+    {
+      "name": "body",
+      "pivot": [
+        0,
+        0,
+        0
+      ],
+      "model": {
+        "version": 1,
+        "boxes": [
+          {
+            "from": [
+              -0.4,
+              0,
+              -0.25
+            ],
+            "to": [
+              0.4,
+              1.55,
+              0.25
+            ],
+            "color": "#1679c4"
+          }
+        ],
+        "collision": [
+          -0.4,
+          0,
+          -0.25,
+          0.4,
+          1.55,
+          0.25
+        ]
+      }
+    },
+    {
+      "name": "head",
+      "parent": "body",
+      "pivot": [
+        0,
+        1.65,
+        0
+      ],
+      "model": {
+        "version": 1,
+        "boxes": [
+          {
+            "from": [
+              -0.32,
+              0,
+              -0.32
+            ],
+            "to": [
+              0.32,
+              0.6,
+              0.32
+            ],
+            "color": "#f4dc40"
+          }
+        ],
+        "collision": [
+          -0.32,
+          0,
+          -0.32,
+          0.32,
+          0.6,
+          0.32
+        ]
+      }
+    },
+    {
+      "name": "arm",
+      "parent": "body",
+      "pivot": [
+        0.5,
+        1.45,
+        0
+      ],
+      "model": {
+        "version": 1,
+        "boxes": [
+          {
+            "from": [
+              -0.14,
+              -0.75,
+              -0.14
+            ],
+            "to": [
+              0.14,
+              0,
+              0.14
+            ],
+            "color": "#e34840"
+          }
+        ],
+        "collision": [
+          -0.14,
+          -0.75,
+          -0.14,
+          0.14,
+          0,
+          0.14
+        ]
+      }
+    },
+    {
+      "name": "forearm",
+      "parent": "arm",
+      "pivot": [
+        0,
+        -0.75,
+        0
+      ],
+      "model": {
+        "version": 1,
+        "boxes": [
+          {
+            "from": [
+              -0.12,
+              -0.6,
+              -0.12
+            ],
+            "to": [
+              0.12,
+              0,
+              0.12
+            ],
+            "color": "#32d690"
+          }
+        ],
+        "collision": [
+          -0.12,
+          -0.6,
+          -0.12,
+          0.12,
+          0,
+          0.12
+        ]
+      }
+    },
+    {
+      "name": "hand",
+      "parent": "forearm",
+      "pivot": [
+        0,
+        -0.6,
+        0
+      ],
+      "model": {
+        "version": 1,
+        "boxes": [
+          {
+            "from": [
+              -0.18,
+              -0.3,
+              -0.18
+            ],
+            "to": [
+              0.18,
+              0,
+              0.18
+            ],
+            "color": "#d077f2"
+          }
+        ],
+        "collision": [
+          -0.18,
+          -0.3,
+          -0.18,
+          0.18,
+          0,
+          0.18
+        ]
+      }
+    }
+  ],
+  "animations": {
+    "idle": {
+      "duration_ticks": 60,
+      "loop": true,
+      "bones": {
+        "arm": [
+          {
+            "tick": 0,
+            "rotation": [
+              0,
+              0,
+              -65
+            ]
+          },
+          {
+            "tick": 30,
+            "rotation": [
+              0,
+              0,
+              65
+            ]
+          },
+          {
+            "tick": 60,
+            "rotation": [
+              0,
+              0,
+              -65
+            ]
+          }
+        ],
+        "head": [
+          {
+            "tick": 0,
+            "rotation": [
+              0,
+              -50,
+              0
+            ]
+          },
+          {
+            "tick": 30,
+            "rotation": [
+              0,
+              50,
+              0
+            ]
+          },
+          {
+            "tick": 60,
+            "rotation": [
+              0,
+              -50,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

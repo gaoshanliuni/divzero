@@ -58,4 +58,15 @@ class RealProviderSmokeAuditTest {
         assertThrows(IllegalStateException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body(),-1));
         assertThrows(IllegalArgumentException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body(),0));
     }
+    @Test void explicitParallelAuditSeparatesIndependentRequestsAndPreservesUnknown(@TempDir Path directory)throws Exception {
+        var first=RealProviderSmokeAudit.begin(directory,URI_REAL,body(),-1,false,true);
+        var second=RealProviderSmokeAudit.begin(directory,URI_REAL,body(),-1,false,true);
+        second.complete("deepseek-flash",null,List.of(),"second response");
+        assertTrue(JSON.readTree(directory.resolve("2-completed.json").toFile()).path("independentParallelAudit").asBoolean());
+        assertFalse(Files.exists(directory.resolve("1-completed.json")));
+        assertThrows(IllegalStateException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body(),-1,false,false));
+        first.complete("deepseek-flash",null,List.of(),"first response");
+        assertEquals(1,JSON.readTree(directory.resolve("1-completed.json").toFile()).path("call").asInt());
+        assertEquals(2,JSON.readTree(directory.resolve("2-completed.json").toFile()).path("call").asInt());
+    }
 }

@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "files": [
     {
       "path": ".gitattributes",
@@ -854,8 +854,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/RuntimeObjectTelemetry.java",
-      "sha256": "386c6bc51110c037d505648ad0ad5d467fed33fc3ab1f0cc0937fdf0ba3fa95a",
-      "bytes": 724
+      "sha256": "1bb60f936cbde54ee685f22f533d6b9ca3ec35f187c5f1371186711af2c893ce",
+      "bytes": 758
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/ShellAssetCatalog.java",
@@ -3179,8 +3179,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "5f21a6b02cfbe7081b3fb8b732325073a50db5307b45b526aea3cc10c959772f",
-      "bytes": 13494
+      "sha256": "84dc66c49d3d63b96d03f5d36d0e35d1e5734dee8bb24995510e451f3af8454a",
+      "bytes": 14275
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3189,7 +3189,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "53d6252d90c099a300aec7f8a74e5c71b00b3ced0d9b52fc4948cd1852d6f279",
+      "sha256": "ed003df200943cd437c6f1ee2f59efabe250cb0f6b6ebea653145a19f81742e0",
       "bytes": 495
     },
     {
@@ -3688,9 +3688,19 @@
       "bytes": 6113
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/CreatureRigTelemetry.java",
+      "sha256": "6e9da33a4b518d3e0e658c56bab5d64732af791eea83b5935a982922cb780c77",
+      "bytes": 1672
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeAcceptanceClient.java",
+      "sha256": "df1c3a3525a2cfad7fe8a9314d060411d48922667961c01d9191ad3885621aae",
+      "bytes": 5709
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeCreatureRenderer.java",
-      "sha256": "65d27f252a6e2a513b3f27e343b0b9bf956c083a7cd48a2eafb1d2acfb5252d0",
-      "bytes": 6495
+      "sha256": "fd14eaacf2207ccd641e256ea25905dd77f926a8a355022b4fdf527a8cee269e",
+      "bytes": 6813
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeItemRenderer.java",
@@ -5288,6 +5298,11 @@
       "bytes": 6577
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeAcceptanceSmoke.java",
+      "sha256": "2c31dcd05114a3fd9192362ff65f788ec28a4ab8a6e06720c3e97b98001f0e02",
+      "bytes": 21769
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeAgentBlockActions.java",
       "sha256": "5fa74090bc6786e95689637e02383c125998ef7e5ad6b8aa18117a6c4a67aa2e",
       "bytes": 11452
@@ -5409,8 +5424,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "fcfadaf91f6fa694a50ded01f2c124b44a32c7d4c3b8f80d6847ab1ca721001f",
-      "bytes": 60913
+      "sha256": "9424d0ff8a0d7d20a54eb76de128e800c891ca0c4f2efe51ed5d97ea98eb24d6",
+      "bytes": 60991
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerFileTools.java",
@@ -5801,6 +5816,11 @@
       "path": "neoforge/src/main/resources/data/minecraft/tags/block/mineable/pickaxe.json",
       "sha256": "0ac7e28ae24e3d5d3d1b73fe8a1998b9110ca0f944659ca757cc24d66ae2bfbe",
       "bytes": 205
+    },
+    {
+      "path": "neoforge/src/main/resources/mineagent/smoke/rig-fixture.json",
+      "sha256": "f059b500cd984a6cc6841623dba7c0a6f7b879e106e6e8764a81c7f013ecd5e8",
+      "bytes": 4257
     },
     {
       "path": "neoforge/src/main/resources/mineagent_actions.mixins.json",
@@ -6389,8 +6409,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/RealProviderSmokeAudit.java",
-      "sha256": "afa44aec613804019d1d516660b9396d30c44271dc565b9d6d84407aba419d9f",
-      "bytes": 6508
+      "sha256": "d82fcb49020ad031590669cfc90227bfe86c55601b603b90849293afe3e55bd1",
+      "bytes": 6853
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/ScheduleDeliverySchemas.java",
@@ -6624,8 +6644,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/RealProviderSmokeAuditTest.java",
-      "sha256": "0a045e89a387c5b7000346f0417990ea3b3778ad69cf81b6539f8f482c180b7f",
-      "bytes": 5271
+      "sha256": "5b353a36a9f995f2c48c1e700df976ccbc3a22a081f9de8add9bb4c7bc690ee0",
+      "bytes": 6277
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/web/PublicHttpsReaderTest.java",
