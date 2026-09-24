@@ -2,11 +2,13 @@
 
 <a id="chinese"></a>
 
-# 除零 · DivZero
+# 除零 · DivZero AI Runtime
 
 > **世界未定义，创造不设限。**
 
-DivZero 让你通过对话在 Minecraft 中行动与创造：和 AI 伙伴聊天、探索世界、搭桥建房、制作新物品与新生物，以及为世界设置交互规则。
+DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 真正参与游戏世界，而不仅仅作为聊天助手存在。
+
+通过自然语言交互、世界感知、长期记忆与动态内容生成，你可以创建能够探索、建造和互动的 AI 角色：搭桥建房、制作新物品与新生物，以及为世界设置交互规则。
 
 **[下载 JAR](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](docs/FEATURES.md) · [安装说明](docs/BUILD_JAR.md) · [问题反馈](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
@@ -93,6 +95,16 @@ Java 管理的专用 Python 可执行本机任务、安装第三方库，每次�
 
 **[全部功能、适用范围与更多截图 →](docs/FEATURES.md)**
 
+## 脚本与扩展
+
+支持通过 **JavaScript** 和运行时内容包编写自定义交互、回调与 AI 行为。在对应权限与执行生命周期内使用模组开放的游戏 API 和对象；本机任务则使用 Java 管理的专用 Python，并逐次在原生聊天确认。
+
+## 许可证与免责声明
+
+DivZero 使用 [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob/main/LICENSE) 开源许可。
+
+**本项目不包含任何第三方 AI 服务密钥。** 玩家需要自行配置服务提供商、API URL、Key 和模型，并承担相关 AI 服务产生的费用。模型的可用性、能力与价格以对应服务提供商为准。
+
 ## 下载与项目
 
 Release 提供主模组、WebGUI 和四个平台的 MCEF 备选包；每位玩家安装三份 JAR。版本号以对应 Release 为准，校验值列在 Release 正文。
@@ -103,11 +115,13 @@ Release 提供主模组、WebGUI 和四个平台的 MCEF 备选包；每位玩�
 
 <a id="english"></a>
 
-# DivZero
+# DivZero AI Runtime
 
 > **An undefined world. Unlimited creativity.**
 
-DivZero lets you act and create in Minecraft through conversation: chat with AI companions, explore the world, build bridges and houses, create new items and creatures, and define interaction rules.
+DivZero AI Runtime is an intelligent AI framework for Minecraft that lets AI agents actively participate in the world, rather than only act as chatbots.
+
+Through natural language interaction, world awareness, persistent memory, and dynamic content generation, you can create AI characters that explore, build, and interact: construct bridges and houses, make new items and creatures, and define interaction rules.
 
 **[Download JARs](https://github.com/gaoshanliuni/divzero/releases) · [All features](docs/FEATURES.md#english) · [Installation](docs/BUILD_JAR.md) · [Report an issue](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
@@ -193,6 +207,16 @@ When you explicitly ask the AI to take over your player, it continuously control
 A dedicated Python runtime managed by Java can perform local tasks and install third-party libraries. Review and approve each request in Minecraft chat.
 
 **[All features, supported scope, and more screenshots →](docs/FEATURES.md#english)**
+
+## Scripts and extensions
+
+Use **JavaScript** and runtime content packages to define custom interactions, callbacks, and AI behavior. Access the game's exposed APIs and objects within the relevant permissions and execution lifecycle. Local computer tasks use a dedicated Python runtime managed by Java, with per-request confirmation in native chat.
+
+## License and Disclaimer
+
+DivZero is open source under the [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob/main/LICENSE).
+
+**No third-party AI service keys are included.** Configure your own provider, API URL, key, and model. You are responsible for any charges from your chosen AI service. Model availability, capabilities, and pricing are determined by the provider.
 
 ## Downloads and project information
 
