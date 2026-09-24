@@ -1,3 +1,7 @@
+[简体中文](#chinese) · [English](#english)
+
+<a id="chinese"></a>
+
 # 除零 · DivZero
 
 > **世界未定义，创造不设限。**
@@ -91,6 +95,107 @@ Java 管理的专用 Python 可执行本机任务、安装第三方库，每次�
 
 ## 下载与项目
 
-Release 提供主模组、WebGUI 和四个平台的 MCEF 备选包；每位玩家安装三份 JAR。版本采用提交日期＋公开提交序号，校验值列在 Release 正文。
+Release 提供主模组、WebGUI 和四个平台的 MCEF 备选包；每位玩家安装三份 JAR。版本号以对应 Release 为准，校验值列在 Release 正文。
 
 [源码与技术说明](docs/SOURCE_SNAPSHOT.md) · [发布流程](docs/PUBLISHING.md) · [第三方声明](docs/THIRD_PARTY_NOTICES.md) · [截图来源](docs/images/README.md)
+
+---
+
+<a id="english"></a>
+
+# DivZero
+
+> **An undefined world. Unlimited creativity.**
+
+DivZero lets you act and create in Minecraft through conversation: chat with AI companions, explore the world, build bridges and houses, create new items and creatures, and define interaction rules.
+
+**[Download JARs](https://github.com/gaoshanliuni/divzero/releases) · [All features](docs/FEATURES.md#english) · [Installation](docs/BUILD_JAR.md) · [Report an issue](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
+
+This is a development/test release for **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**. Network protocol: **6**. Keep the main mod version in sync on clients and servers. Back up your world before testing.
+
+## Your model makes a major difference
+
+**The final results depend heavily on the capabilities of your chosen model.** Complex construction, creature design, multi-step planning, and tool use can vary substantially between models. For better results, consider newer, more capable models from the Claude, Grok, or GPT families, connected through an API compatible with the mod. Compatibility, pricing, and actual performance depend on your chosen service.
+
+All existing project demos use the more budget-friendly **DeepSeek 4 Flash** (in-game model ID: `deepseek-flash`). These demos do not represent the mod's maximum potential. Stronger models can help with complex tasks, but do not guarantee a better result on every attempt.
+
+## Quick start
+
+1. Download the main mod, WebGUI, and **one** MCEF JAR matching your operating system and Java architecture from Releases. Put them in `mods`.
+2. Enable cheats or obtain server administrator permissions. After entering your world, run `/ai accept`.
+3. Open **Ctrl+M → Model**, or **F2 → More → API Settings**. Configure the API URL, key, and model. DeepSeek defaults to `deepseek-flash`.
+4. Run **`/ai create "Nova"`** to create a companion. You can also use Ctrl+M → AI Players → Create, or F2 → AI Management → Create AI.
+5. Type `@Nova Hello` in Minecraft chat. Press Tab after `@` to complete an AI name. You can also chat through F2 → Chat.
+6. Run `/ai default` to select your default responding AI, then send messages without mentioning it each time. This setting applies only to you.
+
+## Common controls
+
+| Task | Command / chat | Native panel (Ctrl+M) | F2 workspace |
+|---|---|---|---|
+| Create an AI | `/ai create "Nova"` | AI Players → Create | AI Management → Create AI |
+| API URL and model | — | Model → Preset / URL / Select Model | More → API Settings |
+| Set a key | — | Model → Key → Save | More → API Settings → Set / Replace API Key |
+| Chat | `@Nova …`; select a default AI with `/ai default` | Conversations and Selection | Chat |
+| Show thinking in chat | `/ai thinking see` | Conversations and Selection → Chat Thinking | Chat → Thinking display toggle |
+| Thinking depth | `/ai thinking deep` | The command opens a selection menu | Ask the AI to change it |
+| Delete the current conversation | `/ai chat delete` | — | Chat → Delete Conversation |
+
+F2 opens a local confidential input screen for API keys; the native Model page has an inline key field. After saving the URL/key, fetch and select a model, or choose “Use Custom Model” and enter its name. Enter keys only in the in-game settings.
+
+## Things to try
+
+| Goal | Tell your AI |
+|---|---|
+| Equipment and exploration advice | `@Nova Check my equipment and suggest how I should prepare for exploring.` |
+| Sneaking and building a bridge | `@Nova Sneak through here, then build a bridge to the other side that I can use too.` |
+| Building upward | `@Nova Pillar up three blocks and leave a ladder so I can climb up.` |
+| Build a machine | `@Nova Build a cobblestone generator and check that it works.` |
+| Create items and gameplay | `@Nova Make a basketball and hoop, with charged throws and points for scoring.` |
+| Create a companion | `@Nova Make a friendly planet companion that can follow, trade, and be ridden.` |
+| Equipment and effects | `@Nova Give my held sword Sharpness V and give me Speed II for one minute.` |
+| Interaction rules | `@Nova Make this door open only when I hold a stick, without blocking placement beside it.` |
+| Web research | `@Nova Look up how to defeat the Lich King and give me the sources.` |
+| Import a build | `@Nova Place this schematic in front of me with its entrance facing north.` |
+| Personality and memory | `@Nova Be a concise, friendly space guide, and remember that I like quartz buildings.` |
+
+### Roads that players can use too
+
+The AI places real blocks and moves along the new route. It can build bridges, continuous steps, jump-and-place pillars, and ladders. Blocks stay in the world for players and other AIs to use. Survival building consumes materials from the AI's inventory; vertical routes also need ladders.
+
+![Permanent bridges, steps, and a pillar with a ladder](docs/images/reusable-paths.png)
+
+### A basketball you can throw and score with
+
+From modeling the ball and hoop to charged throws, recovering the original ball, and scoring real baskets, the AI can create both the item and its gameplay.
+
+![Basketball hoop and actual scoring](docs/images/basketball.png)
+
+### Create creature companions
+
+Choose friendly, neutral, or hostile creatures and combine trading, dropped-item exchanges, proximity events, attacks, breeding, riding, following, and patrols. Idle, random, hit-reaction, and other whole-mesh animations are also configurable.
+
+![A custom planet companion](docs/images/creature.png)
+
+### Import a build you choose
+
+Use F2 → Files, or Chat → Attachments, to select a building file for your AI. Supported inputs include structure blueprints, Litematica schematics, Schematic files, and Java world selections, with preview, orientation, rotation, mirroring, and content-preservation options.
+
+![An imported 177-block house in the world](docs/images/imported-house.png)
+
+## Conversations and permissions
+
+Messages queue while the AI is busy. You can choose “Interrupt and Send” or cancel the queued message. F2 keeps conversation history and a thinking section that is collapsed by default. Deleting a conversation starts fresh context.
+
+An AI you create responds directly to you by default. When another player mentions it, you can allow once, always allow, deny once, or always deny. F2 → AI Settings provides allow-all, deny-all, and allow-list controls.
+
+When you explicitly ask the AI to take over your player, it continuously controls your body and view while showing an action summary and the next waypoint on the left. **Press Esc to stop.** Opening a screen or losing focus pauses input.
+
+A dedicated Python runtime managed by Java can perform local tasks and install third-party libraries. Review and approve each request in Minecraft chat.
+
+**[All features, supported scope, and more screenshots →](docs/FEATURES.md#english)**
+
+## Downloads and project information
+
+Each release provides the main mod, WebGUI, and four platform-specific MCEF alternatives. Each player installs three JARs. Refer to the corresponding Release for its version and checksums.
+
+[Source and technical notes](docs/SOURCE_SNAPSHOT.md) · [Publishing](docs/PUBLISHING.md) · [Third-party notices](docs/THIRD_PARTY_NOTICES.md) · [Screenshot sources](docs/images/README.md)
