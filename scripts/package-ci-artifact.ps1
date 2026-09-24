@@ -45,7 +45,7 @@ try {
     }
 } finally { $archive.Dispose() }
 New-Item -ItemType Directory -Path $out -Force | Out-Null
-$name = "DivZero-$($versions.modVersion)-mc$($versions.minecraftVersion)-$Variant-$short.jar"
+$name = "DivZero-mineagent-$($versions.modVersion).jar"
 $destination = Join-Path $out $name
 Copy-Item -LiteralPath $jar.FullName -Destination $destination
 $sha = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()

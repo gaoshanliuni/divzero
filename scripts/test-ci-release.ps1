@@ -115,7 +115,7 @@ try {
     $assets=Join-Path $fixture 'build/ci-artifacts'
     $publish=Join-Path $fixture 'scripts/publish-ci-release.ps1'
     $result=& $publish -Commit $commit -AssetDirectory $assets -DryRun
-    if (-not ($result -match 'RELEASE_TITLE=DivZero .* · Minecraft ') -or -not ($result -match 'VERIFIED_FILES=12') -or -not ($result -match 'PUBLISHED_JARS=3')) { throw 'DRY_RUN_SUMMARY_MISSING' }
+    if ($result -cnotcontains "RELEASE_TITLE=$($props.mod_version)" -or $result -cnotcontains "RELEASE_DRY_RUN_TAG=$($props.mod_version)" -or $result -cnotcontains "PUBLISH_JAR=DivZero-mineagent-$($props.mod_version).jar" -or -not ($result -match 'VERIFIED_FILES=12') -or -not ($result -match 'PUBLISHED_JARS=3')) { throw 'DRY_RUN_SUMMARY_MISSING' }
     $notes=$result -join "`n"
     if ($notes -notmatch '下载附件（Assets）' -or @($result | Where-Object { $_ -like 'PUBLISH_JAR=*' -and $_ -match 'sources|LICENSE|json|md|txt' }).Count) { throw 'RELEASE_NOTES_MUST_USE_ASSETS_SECTION' }
     $result | Where-Object { $_ -match '^(RELEASE_TITLE|VERIFIED_FILES)=' }

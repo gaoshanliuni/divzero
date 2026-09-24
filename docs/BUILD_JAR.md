@@ -8,7 +8,7 @@
 
 从 Release 的 Assets 选择以下三份文件：
 
-1. `DivZero-<版本>-mc26.1.2-<类型>-<提交号>.jar`：主模组。
+1. `DivZero-mineagent-<版本>.jar`：主模组。
 2. `webgui-neoforge-1.6.2+mc26.1.2.jar`：WebGUI。
 3. 与系统及游戏所用 Java 架构匹配的一个 MCEF。
 
@@ -76,3 +76,9 @@ $version = ./scripts/get-build-version.ps1
 - 发布流程：创建 draft → 上传运行 JAR → 检查文件集合／大小／SHA-256 → 公开 Release。
 
 构建 job 使用只读权限；发布 job 使用临时 GitHub Token。CI 覆盖公开源码构建和选定测试；游戏场景与模型联验范围见 [功能清单](FEATURES.md)。
+
+### 发布命名
+
+当前版本 **1.0.0**，Tag与Release标题均为 `1.0.0`，主模组附件为 `DivZero-mineagent-1.0.0.jar`。依赖JAR保留各自名称。源码提交、变体和运行号保存在构建信息/正文，不再拼入主JAR名或版本Tag。已发布版本Tag不强制移动；同版本不同源码会明确拒绝，后续源码发布需提升版本号。
+
+本轮起不再本地编译，由main推送触发GitHub Actions编译与检查。

@@ -136,7 +136,7 @@ jobs:
         with:
           name: ${{ needs.build.outputs.artifact-name }}
           path: build/release-assets
-      - name: Publish an immutable development prerelease
+      - name: Publish immutable version tag and runtime assets
         id: release
         env:
           GH_TOKEN: ${{ github.token }}

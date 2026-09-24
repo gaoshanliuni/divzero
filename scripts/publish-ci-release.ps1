@@ -21,6 +21,7 @@ if (-not $DryRun) {
 foreach ($property in $versions.PSObject.Properties) {
     if (-not $info.PSObject.Properties[$property.Name] -or $info.($property.Name) -cne $property.Value) { throw "RELEASE_VERSION_MISMATCH: $($property.Name)" }
 }
+if ($info.jar -cne "DivZero-mineagent-$($versions.modVersion).jar") { throw 'RELEASE_MAIN_NAME_MISMATCH' }
 $run=[string]$info.workflowRunId;$attempt=[string]$info.workflowRunAttempt
 if ($run -notmatch '^[1-9][0-9]*$' -or $attempt -notmatch '^[1-9][0-9]*$') { throw 'RELEASE_BUILD_RUN_MISSING' }
 if (-not $DryRun -and ($run -ne $env:GITHUB_RUN_ID -or [long]$attempt -gt [long]$env:GITHUB_RUN_ATTEMPT -or $env:GITHUB_REPOSITORY -ne $repo -or $env:GITHUB_REF -ne 'refs/heads/main')) { throw 'RELEASE_ONLY_FROM_TRUSTED_MAIN_RUN' }
@@ -43,9 +44,9 @@ foreach($name in $required) { if (-not $manifest.ContainsKey($name)) { throw "RE
 if ($manifest[[string]$info.jar] -ne $info.sha256) { throw 'RELEASE_MAIN_JAR_HASH_MISMATCH' }
 $manifest.Add('SHA256SUMS',(Get-FileHash -LiteralPath (Join-Path $assets 'SHA256SUMS') -Algorithm SHA256).Hash.ToLowerInvariant())
 $short=$Commit.Substring(0,12)
-$tag="ci-v$($versions.modVersion)-mc$($versions.minecraftVersion)-$short-$Variant-r$run-a$attempt"
-$title="DivZero $($versions.modVersion) · Minecraft $($versions.minecraftVersion) · 开发构建 $short ($Variant)"
-$marker="<!-- divzero-ci-release-v1 commit=$Commit variant=$Variant run=$run build-attempt=$attempt -->"
+$tag=[string]$versions.modVersion
+$title=[string]$versions.modVersion
+$marker="<!-- divzero-version-release-v1 version=$($versions.modVersion) commit=$Commit variant=$Variant -->"
 $notes=@"
 $marker
 ## $title
@@ -64,6 +65,7 @@ $marker
 
 - **/ai create "星河"** 创建 AI，**/ai accept** 初始化本人权限；原生面板默认 Ctrl+M，Web 工作区默认 F2。
 - API URL／模型／Key：Ctrl+M → 模型；F2 → 更多 → API 设置。两个入口均可配置模型，F2 的 Key 按钮打开本机保密输入。
+- 默认跟随游戏语言，F2 → 更多 → 语言 / 原生面板 → 语言可手动覆盖。
 - 流式对话、排队／打断／取消、对话删除、本人默认响应 AI、创建者响应许可。
 - AI 真实持物交互、低净空潜行、永久桥梁／台阶、跳跃搭高与可复用梯子；放置／破坏／使用分别设置。
 - 生物整体网格动画、物品／生物预览、建模、建筑导入、PNG 换肤与 Java 管理的 Python。
