@@ -12,9 +12,9 @@ public record ScoreObjectiveSnapshot(
         NumberFormatSpec numberFormat
 ) {
     public ScoreObjectiveSnapshot {
-        if (name == null || name.isBlank() || name.length() > 16 || name.chars().anyMatch(Character::isISOControl)
-                || criteria == null || criteria.isBlank() || criteria.length() > 128
-                || displayName == null || displayName.length() > 2_048
+        if (!NativeScoreboardText.valid(name)
+                || !NativeScoreboardText.valid(criteria)
+                || !NativeScoreboardText.valid(displayName)
                 || renderType == null || !renderType.matches("[A-Z_]{1,32}")) {
             throw new IllegalArgumentException("invalid scoreboard objective snapshot");
         }

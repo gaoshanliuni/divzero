@@ -16,7 +16,10 @@ public record ScoreSourceBinding(
     public ScoreSourceBinding {
         Objects.requireNonNull(sourceId, "sourceId");
         Objects.requireNonNull(backend, "backend");
-        if (reference == null || reference.isBlank() || reference.length() > 256 || revision < 1) {
+        boolean validReference = backend == ScoreSourceBackend.VANILLA
+                ? dev.mineagent.runtime.api.scoreboard.NativeScoreboardText.valid(reference)
+                : reference != null && !reference.isBlank() && reference.length() <= 256;
+        if (!validReference || revision < 1) {
             throw new IllegalArgumentException("invalid score source binding");
         }
         Objects.requireNonNull(ownership, "ownership");

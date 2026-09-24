@@ -31,14 +31,14 @@
 
 ## 自动开发预发布
 
-[Build JAR](../.github/workflows/build-jar.yml) 对 main 的成功构建发布独立 Pre-release。版本采用提交 UTC 日期和公开提交序号，写入主 JAR 元数据、文件名和 Release 标题。
+[Build JAR](../.github/workflows/build-jar.yml) 对 main 的成功构建发布独立 Pre-release。版本采用已提交的 mod_version，写入主 JAR 元数据、文件名和 Release 标题；历史 SNAPSHOT 提交才采用 UTC 日期和公开提交序号。
 
 附件为主模组、WebGUI 和四个平台的 MCEF 运行 JAR。每位玩家安装其中三份；校验值、许可证和固定源码入口列在 Release 正文。
 
-发布 job 使用同次构建的验证产物，依次完成 draft、上传、附件核验和公开。标签包含版本、提交和运行身份；已发布标签与附件保持可追溯。
+发布 job 使用同次构建的验证产物，依次完成 draft、上传、附件核验和公开。标签为 Mod 版本；提交和运行身份记录在正文/构建审计中，已发布标签与附件保持可追溯。
 
 构建 job 只读，发布 job 使用临时 `GITHUB_TOKEN`。开发预发布与稳定版分别管理；稳定版使用维护者确认的版本与验收范围。
 
 ## 当前命名与不可变边界
 
-Tag和发布标题直接使用Mod版本（当前 `1.0.0`）；主模组文件名为 `DivZero-mineagent-1.0.0.jar`。构建仍由main上的Actions执行，不把本地JAR上传冒充Actions产物。保留源码绑定、附件hash和发布前后校验；不强制移动既有Tag。同一源码/变体可核对重跑，不同源码不能覆盖同一个已发布版本。
+Tag和发布标题直接使用Mod版本（当前 `1.0.1`）；主模组文件名为 `DivZero-mineagent-1.0.1.jar`。构建仍由main上的Actions执行，不把本地JAR上传冒充Actions产物。保留源码绑定、附件hash和发布前后校验；不强制移动既有Tag。同一源码/变体可核对重跑，不同源码不能覆盖同一个已发布版本。

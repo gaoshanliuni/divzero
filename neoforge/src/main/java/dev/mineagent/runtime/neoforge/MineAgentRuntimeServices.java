@@ -429,16 +429,22 @@ public final class MineAgentRuntimeServices {
         if (existing != null) {
             return existing;
         }
+        dev.mineagent.runtime.core.scoreboard.ScoreboardService created;
         try {
-            var created = dev.mineagent.runtime.core.scoreboard.ScoreboardService.open(
+            created = dev.mineagent.runtime.core.scoreboard.ScoreboardService.open(
                     server.getServerDirectory().resolve("mineagent-runtime-data").resolve("runtime.db"),
                     worldId(server), java.time.Clock.systemUTC(),
                     new dev.mineagent.runtime.neoforge.scoreboard.NeoForgeScoreboardPort(server));
+        } catch (Exception failure) {
+            throw new IllegalStateException("cannot open MineAgent scoreboard database", failure);
+        }
+        try {
             created.refreshSources();
             SCOREBOARDS.put(server, created);
             return created;
         } catch (Exception failure) {
-            throw new IllegalStateException("cannot open MineAgent scoreboard database", failure);
+            try { created.close(); } catch (Exception closing) { failure.addSuppressed(closing); }
+            throw new IllegalStateException("cannot read MineAgent native scoreboard sources", failure);
         }
     }
 

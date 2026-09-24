@@ -15,7 +15,7 @@ public record ScoreViewSnapshot(
 ) {
     public ScoreViewSnapshot {
         Objects.requireNonNull(viewId, "viewId");
-        if (revision < 1 || title == null || title.length() > 2_048) {
+        if (revision < 1 || !NativeScoreboardText.valid(title)) {
             throw new IllegalArgumentException("invalid score view snapshot");
         }
         rows = List.copyOf(Objects.requireNonNull(rows, "rows"));

@@ -54,7 +54,7 @@ Release Assets 提供运行 JAR，SHA-256 校验值列在正文。GitHub 的 Sou
 
 ## 版本规则
 
-当前 Mod 版本为 **1.0.0**，以已提交 `gradle.properties` 的 `mod_version` 为准，不再自动覆盖成日期版本。历史 `-SNAPSHOT` 提交仍使用 UTC 日期＋公开提交序号；文件名中的提交号、运行 ID 和 attempt 区分构建身份。
+当前 Mod 版本为 **1.0.1**，以已提交 `gradle.properties` 的 `mod_version` 为准，不再自动覆盖成日期版本。历史 `-SNAPSHOT` 提交仍使用 UTC 日期＋公开提交序号；文件名中的提交号、运行 ID 和 attempt 区分构建身份。
 
 `get-build-version.ps1` 使用完整 Git 提交记录，Actions 采用 `fetch-depth: 0`。构建通过 `-Pmod_version=...` 将版本写入 JAR 文件名、NeoForge 元数据和发布信息。
 
@@ -79,6 +79,10 @@ $version = ./scripts/get-build-version.ps1
 
 ### 发布命名
 
-当前版本 **1.0.0**，Tag与Release标题均为 `1.0.0`，主模组附件为 `DivZero-mineagent-1.0.0.jar`。依赖JAR保留各自名称。源码提交、变体和运行号保存在构建信息/正文，不再拼入主JAR名或版本Tag。已发布版本Tag不强制移动；同版本不同源码会明确拒绝，后续源码发布需提升版本号。
+当前版本 **1.0.1**，Tag与Release标题均为 `1.0.1`，主模组附件为 `DivZero-mineagent-1.0.1.jar`。依赖JAR保留各自名称。源码提交、变体和运行号保存在构建信息/正文，不再拼入主JAR名或版本Tag。已发布版本Tag不强制移动；同版本不同源码会明确拒绝，后续源码发布需提升版本号。
 
 本轮起不再本地编译，由main推送触发GitHub Actions编译与检查。
+
+## 1.0.1 修复说明
+
+修复进入含长名称原生计分板的世界时崩溃（`invalid scoreboard objective snapshot`），保留计分板名称和分数；读取异常不再逃逸展示 Tick。退出游戏并备份存档后替换旧的主模组JAR，不需要删除存档、数据库或计分板。1.0.0的Tag和附件保持不变。新增长名称及故障隔离单测；用户原世界入图复验尚待完成。

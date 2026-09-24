@@ -10,10 +10,9 @@ public record ScoreEntrySnapshot(
         NumberFormatSpec numberFormat
 ) {
     public ScoreEntrySnapshot {
-        if (objectiveName == null || objectiveName.isBlank() || objectiveName.length() > 16
-                || objectiveName.chars().anyMatch(Character::isISOControl)
-                || holder == null || holder.isBlank() || holder.length() > 40
-                || displayName == null || displayName.length() > 2_048) {
+        if (!NativeScoreboardText.valid(objectiveName)
+                || !NativeScoreboardText.valid(holder)
+                || !NativeScoreboardText.valid(displayName)) {
             throw new IllegalArgumentException("invalid scoreboard entry snapshot");
         }
         Objects.requireNonNull(numberFormat, "numberFormat");

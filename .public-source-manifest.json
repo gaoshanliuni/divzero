@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "files": [
     {
       "path": ".gitattributes",
@@ -468,24 +468,29 @@
       "bytes": 171
     },
     {
+      "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/NativeScoreboardText.java",
+      "sha256": "c7207e119e975619b792884a6c32e50afc63c6522e091135b9a18cb700818135",
+      "bytes": 503
+    },
+    {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/NumberFormatKind.java",
       "sha256": "e1a49a70b202e28d571ad4c009a2a1b00808734d19307b2d4225f5109eada346",
       "bytes": 126
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/NumberFormatSpec.java",
-      "sha256": "bfae5c90058e34b68ad90014ad160bfa863f5ffc30006ed98f88ff91fc2491b9",
-      "bytes": 753
+      "sha256": "18ec79d113e6ee8351536cafff797784294a8cae90ce0d68095c6760feac7c02",
+      "bytes": 729
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/ScoreEntrySnapshot.java",
-      "sha256": "00d6f3aa03ba607df467a1adfbec4b23ec13ac76749d59e0b722661ac56fbf0b",
-      "bytes": 766
+      "sha256": "4baeadf875275960056637d28dfe681c17e90c44d83c6fb1e945e6b5e2e770b8",
+      "bytes": 620
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/ScoreObjectiveSnapshot.java",
-      "sha256": "3064aa5641c073f5a091ad09453bdbc69737aa40145de58c74658982343bf015",
-      "bytes": 865
+      "sha256": "62de6858ae524a909d6b320ec7f941767c9931af5bcca00e01c7ff1023f51e5c",
+      "bytes": 757
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/ScoreOperation.java",
@@ -494,18 +499,18 @@
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/ScoreRow.java",
-      "sha256": "9ef7003a37818356bbf980fbdf3ab4b24dd7f3b71214f67dd48f7c4bc350e4fb",
-      "bytes": 664
+      "sha256": "553efa6bee095dc947fb3284bd7644b8d49fb9347a6f247913c9bd8a7150887c",
+      "bytes": 616
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/ScoreTeamSnapshot.java",
-      "sha256": "a15c3dc61ef9ce5605bf481fd4d2939a4011f1e222668816b16d6444f7529424",
-      "bytes": 568
+      "sha256": "f97c77cda5442ba8d9c389ff702ec43f548643829a281b1433ed71e047675db2",
+      "bytes": 538
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/ScoreViewSnapshot.java",
-      "sha256": "351c3ebf9a6567e3f838c1c84aecfda1a41854d619ebf1be05cd7109fec36378",
-      "bytes": 871
+      "sha256": "5c8b6daa04cd7538874b664da586bf2cba5a4554108a9e52d70dcfd79a9e1011",
+      "bytes": 866
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/scoreboard/ScoreboardCommand.java",
@@ -621,6 +626,11 @@
       "path": "api/src/main/java/dev/mineagent/runtime/api/worker/WorkerEnvelope.java",
       "sha256": "938f3175e0d0423b6522d269bba8bb989db7bac31ce7041946cdcfb59512ebb6",
       "bytes": 708
+    },
+    {
+      "path": "api/src/test/java/dev/mineagent/runtime/api/scoreboard/ScoreboardContractTest.java",
+      "sha256": "04e8f59ba801a2805cad7f942bcade3ce08c9bb25b9ccf917499ce643b0228e1",
+      "bytes": 3399
     },
     {
       "path": "build.gradle",
@@ -2559,8 +2569,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scoreboard/ScoreSourceBinding.java",
-      "sha256": "7a3380e249ddd2fce7d5f15208e8a4a71498321f2e6c1adbaa915ece90f762d9",
-      "bytes": 1021
+      "sha256": "565ac31e43e59d3cc333d87211aaca565c3524b5ed378e78b42b49be71301b31",
+      "bytes": 1222
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scoreboard/ScoreSourceOwnership.java",
@@ -2601,6 +2611,11 @@
       "path": "core/src/main/java/dev/mineagent/runtime/core/scoreboard/ScoreboardPoller.java",
       "sha256": "4d578c4c4f22381011340d4e3d2bbe3c19a4aa55a5431f662748024ccf84efbd",
       "bytes": 3741
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/scoreboard/ScoreboardReadGuard.java",
+      "sha256": "74f6b71c0521d5e01d974561381d69fdc7830cdc9125423ba61042c620f69d34",
+      "bytes": 1501
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scoreboard/ScoreboardService.java",
@@ -3043,6 +3058,21 @@
       "bytes": 25147
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/scoreboard/ScoreboardReadGuardTest.java",
+      "sha256": "11597c7f3d8136efaba15c9acac7b5200ee41be35a07ab19438722b603e8c25b",
+      "bytes": 2113
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/scoreboard/ScoreboardServiceTest.java",
+      "sha256": "4c6bfcb18fad71450f4c92acf93280030db9451c6e55d48579a2824ea8e2b694",
+      "bytes": 14823
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/scoreboard/ScoreboardViewProjectorTest.java",
+      "sha256": "a5ea1a42ba6cbf7bddcfea36560d4a8b61dc4f04d42a0d7d1a47ed207746d893",
+      "bytes": 3070
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/AutonomyPlanTest.java",
       "sha256": "ddfd268748bcebf45ac7e87fedcbd380a25e9e8bdd2db78ea447e872ad112e41",
       "bytes": 3379
@@ -3064,8 +3094,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "3528f1bbb2da52fba290f3a8c8c7507f897b04447309c4cf6c7e28bce1a20a3d",
-      "bytes": 8546
+      "sha256": "324ab58d81d137f448976f4f62d771b92032374591dcf6cce0dc1fe6664d02a4",
+      "bytes": 9835
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3074,7 +3104,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "130eae91c92167110a3a832881334e4acda7d95c998e62c510fcb79b3a19e451",
+      "sha256": "5fb416554609a241180ec0773240781ef334749b4b372e11bd14d9df14871f2d",
       "bytes": 495
     },
     {
@@ -3179,8 +3209,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
-      "sha256": "2bab5e6d0ab2e6f88fa245dfafa4710e71774c1dc5806adeb89b1a8253dca109",
-      "bytes": 26312
+      "sha256": "2e60da366abde27ce12b490787fc9cd220d341027fc8b5047cae603e382622f5",
+      "bytes": 26647
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/WorldIdentityRuntime.java",
@@ -3799,8 +3829,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/LanguageUiSmokeClient.java",
-      "sha256": "1c2b575aa91bd02bfbd873c95ea66edff9312db1618d58e3eada2b91c7fde49d",
-      "bytes": 9248
+      "sha256": "ec3289d91d2341d2e2c82e75c049d708687e160e1dfe783725874881bdc5cf98",
+      "bytes": 9276
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/LivePlacementSmokeClient.java",
@@ -4699,8 +4729,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/scoreboard/WorldBoardRuntime.java",
-      "sha256": "f1804eb428195da29f723f116e506c3739a97643f44fa10e1e61d5fda1cc72de",
-      "bytes": 3039
+      "sha256": "f5f09af3a6422b4034a253e8d9a2808228456655439ea1aba14bc624e26bdc36",
+      "bytes": 4269
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/scripting/MineAgentScriptHost.java",

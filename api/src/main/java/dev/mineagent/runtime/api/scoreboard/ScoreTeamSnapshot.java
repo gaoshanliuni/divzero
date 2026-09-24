@@ -9,8 +9,8 @@ public record ScoreTeamSnapshot(
         Set<String> members
 ) {
     public ScoreTeamSnapshot {
-        if (name == null || name.isBlank() || name.length() > 16
-                || displayName == null || displayName.length() > 2_048
+        if (!NativeScoreboardText.valid(name)
+                || !NativeScoreboardText.valid(displayName)
                 || color == null || color.length() > 32) {
             throw new IllegalArgumentException("invalid score team snapshot");
         }
