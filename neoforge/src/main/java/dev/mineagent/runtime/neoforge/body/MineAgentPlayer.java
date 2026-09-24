@@ -172,6 +172,8 @@ public final class MineAgentPlayer extends ServerPlayer {
         return true;
     }
 
+    public void applySneaking(boolean value){setShiftKeyDown(value);if(value)setSprinting(false);updatePlayerPose();}
+
     @Override
     public String getIpAddress() {
         return "127.0.0.1";

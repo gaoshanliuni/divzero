@@ -28,7 +28,11 @@ public final class MineAgentMovementController {
     private String outcome="IDLE";
     private int executedSteps,openedDoors,openedGates;private final java.util.Set<Double> traversedFloors=new java.util.LinkedHashSet<>();
     public void recordOpened(boolean gate){if(gate)openedGates++;else openedDoors++;}
-    public java.util.Map<String,Object> evidence(){return java.util.Map.of("steps",executedSteps,"openedDoors",openedDoors,"openedGates",openedGates,"observedGroundHeights",java.util.List.copyOf(traversedFloors));}
+    public java.util.Map<String,Object> evidence(){return java.util.Map.of("steps",executedSteps,"crouchingSteps",crouchingSteps,"openedDoors",openedDoors,"openedGates",openedGates,"observedGroundHeights",java.util.List.copyOf(traversedFloors));}
+    private boolean manualSneak;
+    private int crouchingSteps;
+    public boolean manualSneak(){return manualSneak;}
+    public void setSneaking(MineAgentPlayer player,boolean enabled){manualSneak=enabled;player.applySneaking(enabled||NativeSurfaceNavigation.requiresSneaking(player,player.position()));}
     private double arrivalDistanceSqr=.64;
     public double arrivalTolerance(){return Math.sqrt(arrivalDistanceSqr);}
     public void movePreciselyTo(Vec3 target){moveTo(target);arrivalDistanceSqr=.04;}
@@ -44,12 +48,12 @@ public final class MineAgentMovementController {
         }
         this.target = target;
         arrivalDistanceSqr=.64;
-        commandRevision++;outcome="MOVING";executedSteps=0;openedDoors=openedGates=0;traversedFloors.clear();route=List.of();routeIndex=0;failedPlans=0;stuckTicks=0;lastProgressPosition=null;
+        commandRevision++;outcome="MOVING";executedSteps=0;crouchingSteps=0;openedDoors=openedGates=0;traversedFloors.clear();route=List.of();routeIndex=0;failedPlans=0;stuckTicks=0;lastProgressPosition=null;
         this.ticksUntilReplan = 0;
     }
 
     public void stop() {
-        commandRevision++;finish("CANCELLED");
+        manualSneak=false;commandRevision++;finish("CANCELLED");
     }
     private void finish(String status){
         outcome=status;
@@ -70,6 +74,7 @@ public final class MineAgentMovementController {
     }
 
     public void tick(MineAgentPlayer player) {
+        player.applySneaking(player.canAct()&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(player,player.position())));
         if (target == null || !player.canAct()) {
             return;
         }
@@ -102,15 +107,16 @@ public final class MineAgentMovementController {
             waypointOffset = waypointCenter.subtract(player.position());
         }
         if(!NativeSurfaceNavigation.openOnPath(player,waypointCenter)){finish("INTERACTION_BLOCKED");return;}
+        player.applySneaking(manualSneak||NativeSurfaceNavigation.requiresSneaking(player,waypointCenter));
         player.lookAt(EntityAnchorArgument.Anchor.EYES, waypointCenter.add(0,player.getEyeHeight(),0));
         Vec3 horizontal = new Vec3(waypointOffset.x, 0, waypointOffset.z);
         if (waypointOffset.y > 0.65 && player.onGround()) {
             player.jumpFromGround();
         }
         if (horizontal.lengthSqr() > 0.001) {
-            Vec3 step = horizontal.normalize().scale(player.isSprinting() ? 0.16 : 0.11);
+            Vec3 step = horizontal.normalize().scale(player.isCrouching() ? 0.065 : player.isSprinting() ? 0.16 : 0.11);
             player.move(MoverType.SELF, step);
-            executedSteps++;
+            executedSteps++;if(player.isCrouching())crouchingSteps++;
         }
     }
 

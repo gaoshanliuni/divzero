@@ -1,0 +1,6 @@
+package dev.mineagent.runtime.core.task;
+import org.junit.jupiter.api.Test;import static org.junit.jupiter.api.Assertions.*;import dev.mineagent.runtime.core.task.ReusablePathPlan.Cell;
+class ReusablePathPlanTest {
+ @Test void cardinalContiguousReusableSlope(){for(int x=-9;x<=9;x++)for(int z=-9;z<=9;z++){int d=Math.abs(x)+Math.abs(z);if(d==0)continue;for(int y=-d;y<=d;y++){var plan=ReusablePathPlan.between(new Cell(0,64,0),new Cell(x,64+y,z));assertEquals(new Cell(x,64+y,z),plan.feet().getLast());for(int i=1;i<plan.feet().size();i++){var a=plan.feet().get(i-1);var b=plan.feet().get(i);assertEquals(1,Math.abs(a.x()-b.x())+Math.abs(a.z()-b.z()));assertTrue(Math.abs(a.y()-b.y())<=1);}}}}
+ @Test void verticalAndBounds(){assertTrue(ReusablePathPlan.between(new Cell(1,64,1),new Cell(1,68,1)).pillar());assertEquals(2048,ReusablePathPlan.between(new Cell(0,0,0),new Cell(2047,0,0)).feet().size());assertThrows(IllegalArgumentException.class,()->ReusablePathPlan.between(new Cell(0,0,0),new Cell(2048,0,0)));assertThrows(IllegalArgumentException.class,()->ReusablePathPlan.between(new Cell(0,0,0),new Cell(1,3,0)));assertThrows(IllegalArgumentException.class,()->ReusablePathPlan.between(new Cell(0,4,0),new Cell(0,0,0)));}
+}

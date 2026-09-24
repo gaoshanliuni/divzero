@@ -3,6 +3,8 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class AutonomyPlanTest {
+ @Test void explicitSneakHasBinarySlot(){assertDoesNotThrow(()->new AutonomyPlan("SNEAK",List.of(0d,0d,0d),1,1,"潜行"));assertThrows(IllegalArgumentException.class,()->new AutonomyPlan("SNEAK",List.of(0d,0d,0d),1,2,"错误"));}
+
     @Test void uiResumeDoesNotReplayFailedRequestsOrReplanUnchangedIdle(){
         for(double moved:new double[]{0,.24,.25,10,Double.POSITIVE_INFINITY})
             assertFalse(AutonomySessionPolicy.reobserveOnResume("WAITING_FOR_INSTRUCTION",moved));
