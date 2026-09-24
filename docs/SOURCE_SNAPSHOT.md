@@ -13,7 +13,7 @@
 | Mod ID | `mineagent_runtime` |
 | 技术包名 | `dev.mineagent.runtime` |
 | Gradle Wrapper | 9.2.1 |
-| 当前 Mod 版本 | `1.0.5` |
+| 当前 Mod 版本 | `1.0.6` |
 
 ## 操作入口
 
@@ -163,3 +163,5 @@ Node回归和实际浏览器DOM/滚动/中文草稿保持检查已通过；浏�
 Opt-in isolated acceptance now observes actual hierarchical bone render matrices and captures native screenshots. It exercises five terrain cases, 64 concurrent AI bodies, 63 native placements, 16 independent plans for one owner, and eight separate real DeepSeek conversations with one cancellation and one queued follow-up. These are sample sizes, not runtime concurrency limits. At this checkpoint the new Native run is pending; source availability and CI do not establish visual or large-scale acceptance.
 
 Test-only provider auditing can explicitly record independent parallel paid requests. Default unknown-outcome fencing remains enabled. No API keys, runtime databases, screenshots, or player worlds are included in this snapshot.
+
+Native preflight correction (1.0.6): the deterministic rig now uses valid origin-based carrier collision boxes for its downward-facing bone meshes; a bundled-resource parser test guards this fixture. The initial two Native starts failed in test setup (provider order, then fixture collision) with zero model requests. Acceptance remains pending.

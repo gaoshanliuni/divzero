@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "files": [
     {
       "path": ".gitattributes",
@@ -3179,8 +3179,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "84dc66c49d3d63b96d03f5d36d0e35d1e5734dee8bb24995510e451f3af8454a",
-      "bytes": 14275
+      "sha256": "558b3bba8690b90eb1bf04e837bec4d180cf608f8066cb168838e56d6d5d8c5b",
+      "bytes": 14622
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3189,7 +3189,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "ed003df200943cd437c6f1ee2f59efabe250cb0f6b6ebea653145a19f81742e0",
+      "sha256": "d617035d7ee01964a42af33b593308272278569f478c834e64e9c287aab5d1ea",
       "bytes": 495
     },
     {
@@ -5819,8 +5819,8 @@
     },
     {
       "path": "neoforge/src/main/resources/mineagent/smoke/rig-fixture.json",
-      "sha256": "f059b500cd984a6cc6841623dba7c0a6f7b879e106e6e8764a81c7f013ecd5e8",
-      "bytes": 4257
+      "sha256": "434e0ab83d19e6268ac2d94803d0e3afc847b633282c0290ff71c872b898a015",
+      "bytes": 4224
     },
     {
       "path": "neoforge/src/main/resources/mineagent_actions.mixins.json",
@@ -5876,6 +5876,11 @@
       "path": "neoforge/src/main/templates/META-INF/neoforge.mods.toml",
       "sha256": "2ef2fd87ae41a4e38f43e2acbd0b9ab3d2cf405a57455dcd261a2d76ee01d131",
       "bytes": 1193
+    },
+    {
+      "path": "neoforge/src/test/java/dev/mineagent/runtime/neoforge/NativeAcceptanceFixtureTest.java",
+      "sha256": "67d14c7dbb455222a4d986a09ff3857f49229f85fa0fc540e3d36909fa19cb34",
+      "bytes": 916
     },
     {
       "path": "neoforge/src/test/java/dev/mineagent/runtime/neoforge/client/chat/AiNameHoverTest.java",
