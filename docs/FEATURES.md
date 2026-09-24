@@ -1,3 +1,7 @@
+[简体中文](#chinese) · [English](#english)
+
+<a id="chinese"></a>
+
 # DivZero 全部功能与使用范围
 
 [返回首页](../README.md) · [下载版本](https://github.com/gaoshanliuni/divzero/releases) · [安装说明](BUILD_JAR.md)
@@ -212,3 +216,222 @@ Java直接管理固定校验的 `python-build-standalone install_only_stripped`�
 多人创建者审批已用独立 ServerPlayer 身份验证，双真实客户端联验列入后续验证。事件队列 BACKPRESSURE 状态与测试断言的统一列入维护项。
 
 [截图说明与原图校验](images/README.md) · [源码与技术说明](SOURCE_SNAPSHOT.md)
+
+---
+
+<a id="english"></a>
+
+# DivZero: Features and Supported Scope
+
+[Home](../README.md#english) · [Downloads](https://github.com/gaoshanliuni/divzero/releases) · [Installation](BUILD_JAR.md)
+
+This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **Protocol 6:** update clients and servers together. Administrative actions require cheats or real administrator permissions. Use `/ai accept` for initial setup.
+
+## Your model makes a major difference
+
+**The final results depend heavily on the capabilities of your chosen model.** Complex construction, creature design, multi-step planning, and tool use can vary substantially between models. For better results, consider newer, more capable models from the Claude, Grok, or GPT families through an API compatible with the mod. Compatibility, pricing, and actual performance depend on the service you choose.
+
+All existing project demos use the more budget-friendly **DeepSeek 4 Flash** (in-game model ID: `deepseek-flash`). They do not represent the mod's maximum potential. Stronger models can help with complex tasks, but do not guarantee a better result on every attempt.
+
+## Common controls
+
+Direct commands are the quickest way to perform common actions, such as `/ai create "Nova"`. **Ctrl+M** opens the native panel, and **F2** opens the web workspace by default. Key bindings can be changed in Minecraft settings.
+
+| Action | Command / chat | Native panel | F2 workspace |
+|---|---|---|---|
+| Initialize your permissions | `/ai accept` | Permissions and Trust | More → Configuration and Permissions |
+| Create an AI | `/ai create "Nova"` | AI Players → Create | AI Management → Create AI |
+| List AIs | `/ai list` | AI Players | AI Management |
+| API URL | — | Model → URL / Four provider presets | More → API Settings → URL / Presets |
+| Set / replace a key | — | Model → Key → Save | More → API Settings → Set / Replace API Key |
+| Fetch / select a model | — | Model → Select Model | More → API Settings → Model List |
+| Custom model name | — | Model → Model Name | API Settings → Use Custom Model |
+| Chat | `@AIName …` | Conversations and Selection | Chat |
+| Default responding AI | `/ai default`; `/ai default off` | The command opens a selection menu | Ask the AI to configure it |
+| Show thinking in native chat | `/ai thinking see` | Conversations and Selection → Chat Thinking | Toggle in Chat |
+| Thinking depth | `/ai thinking deep` | The command opens a selection menu | Ask the AI to configure it |
+| Delete the current conversation | `/ai chat delete` | — | Chat → Delete Conversation |
+
+F2 opens a local confidential input page for keys; the native Model page supports inline entry. API URLs and model names have selectable options. Put AI names containing spaces or Chinese characters in quotes where needed.
+
+## 1. Conversations, models, and AI management
+
+| Feature | How it works |
+|---|---|
+| Native chat | Mention `@AIName`, use Tab completion, and describe what you want in natural language. |
+| F2 chat | Persistent history, new/switch conversations, original text, archive/restore, and context details. Deleting a conversation cancels its in-flight request and unsent queue, then starts fresh context. |
+| Streaming replies | Replies appear as they are generated. Long replies are split across native chat messages without dropping the full content. |
+| Interrupt and resume | New messages queue by default and send after the previous message finishes. Choose “Interrupt and Send” or cancel a queued message. Interrupts target the relevant operation. “Verify and Continue” checks actual state before deciding how to proceed after a failure. |
+| Thinking display | Native chat shows `[AIName][Thinking]…`. Use `/ai thinking see` to toggle it and `/ai thinking deep` to choose depth. F2 keeps the full returned thinking text. The AI can also change these settings; official DeepSeek depth parameters have been verified. |
+| Providers | Configuration entries for DeepSeek, OpenAI-compatible APIs, GLM via Zhipu/Z.AI, and Ollama. Live GLM credential testing is pending. |
+| Model selection | Saving the URL/key enables fetching `/v1/models`. Select a returned model, or choose “Use Custom Model” to show a name field. |
+| Personal default response | `/ai default` selects your responding AI; `/ai default off` disables it. Stored per world and current player, not globally for everyone. |
+| Creator response permissions | New AIs respond directly only to their creator. Other players' mentions prompt allow once / always allow / deny once / always deny. F2 supports allow-all, deny-all, and allow lists. Game and computer actions have separate permissions. |
+| Per-AI model | Each AI can inherit the global model or use its own model from the current compatible API. API URL and key are shared. |
+| AI count and names | Continued creation, paginated directories, and chunked name completion. Native testing has covered 70 AIs; hardware and chunk resources remain finite. |
+| Long tasks | Continued tool calls, active stopping, provider/transport boundaries, and verification of actual operation results. |
+| Colored interactive messages | AIs can send colored messages with copy, fill-chat, and confirmation actions. |
+
+The native Model page puts URL, model, and key on one page. DeepSeek/GLM/OpenAI/Ollama presets fill the URL, and the save button is simply “Save.” Live model testing covers DeepSeek; live GLM credentials and local Ollama inference remain unverified.
+
+![Native model settings: URL, model, and key on one page](images/native-model-settings.png)
+
+The key field in this screenshot is empty. Saved keys are managed confidentially.
+
+## 2. Personality, long-term memory, and appearance
+
+- **Set personality through chat:** for example, “Be my space guide from now on.” Updated personality is read later in the same turn and in new conversations.
+- **Facts and preferences:** the AI can read, save, update, and delete memories. Newer information replaces older information on the same topic, and time-sensitive facts can expire. Keys are generated automatically; players select topics.
+- **Built-in / player skins:** 18 built-in character/body variants, plus copying player skins.
+- **Hot-swappable PNG skins:** import a local PNG or ask the AI to generate, export, or edit standard-UV pixel art. Supports 64×64 and 64×32, wide/slim. The same AI identity, name, following state, and task are preserved.
+- **YSM:** with a compatible YSM installation and model, select appearances from its model directory without restarting. Removing the mod itself still requires a restart. Specific PNG/YSM combinations depend on the actual versions and models.
+
+## 3. Reading and modifying the existing world
+
+| Capability | Details |
+|---|---|
+| Player information | Held items, inventory, equipment, position, view, health, hunger, experience, and available spawn/death points, advancements, and visible entities. Missing fields are reported according to what can actually be read. |
+| Status effects | Read, apply, change level/duration, or remove a specific effect while preserving the others. |
+| Vanilla / registered items | Edit names, enchantments, and components directly in the inventory or held stack, or give a new registered item. No need to drop it first. |
+| Block observation / ore search | Coordinate regions up to 4096³, cursor-based paging, and expandable searches within loaded chunks. |
+| Native interaction | The AI approaches, visibly holds the actual item, aims, then places/breaks/uses the block. Mining has arm swings and cracks. Container reads, full-stack transfers, native menu controls, levers, and similar actions are supported; specialized mod menus depend on adapters. |
+| Separate interaction rules | Configure `block_place`, `block_break`, and `block_use` separately, plus entity use and attack. Supports keys, allow lists, and creating/updating/removing callbacks executed through native events. |
+| Commands and game rules | Discover and execute game commands using the player's actual command permissions, including keep-inventory, PvP, and scoreboards. Existing OP levels are respected. |
+| Full command output | Output is saved and paginated. The initial result is a preview; remaining output can be read afterward. |
+
+Placement rules check the actual destination. If any position in a multi-block placement such as a door or bed is denied, the native operation and item count roll back together. Use locks and normal block placement are independent. Rules cover NeoForge player interaction events; redstone, hoppers, and direct world writes follow their own mechanisms.
+
+Try “Enchant the sword in my hand,” “Remove only Speed,” or “Enable keep-inventory and disable PvP.”
+
+## 4. Building and world geometry
+
+Supports lines, planes, walls/shells, non-rectangular extrusion, ramps, Bezier curves, bilinear surfaces, cylinders, ellipsoids, and domes, plus mirroring, rotation, arrays/path repetition, material rules, full BlockState values, and local replacement.
+
+A plan's bounding box may be up to **2048×2048×2048**, using disk paging and work spread across ticks. World height/borders, loaded chunks, permissions, disk space, and pre-write state checks still apply. Filling the entire maximum volume has not been performance-tested. Partial completion is handled using actual execution results.
+
+A cobblestone generator built through the live DeepSeek workflow was verified to regenerate cobblestone three times. Survival construction requires the corresponding materials.
+
+## 5. Creating items, models, and gameplay at runtime
+
+- The AI generates separate content packages for new items, models, and rules.
+- **13 parametric primitives:** box, plane, disc, annulus, sphere, torus, cylinder, cone, frustum, prism, pyramid, ellipsoid, and capsule, plus free-form meshes, smooth normals, and geometry validation.
+- Define right-click behavior, restyle/rename the same item, charge and release, throw, bounce, recover items, trigger collisions, and award points.
+- Generated HOT content is enabled automatically. The AI can inspect packages and actual instance state. Native scoreboard scoring supports persistent deduplication.
+- The basketball scenario covers charged throws, zero points for a miss, two hits scoring 2 → 4, and recovery of the original ball.
+
+![A generated key changes to a purple model after right-clicking](images/runtime-item.png)
+
+This screenshot shows the item being given and the same stack changing after a right-click. It retains the original test text; in normal play, just describe what you want.
+
+**Scope:** runtime items use a generic hot-loadable carrier. FML Registry ID registration still follows the game's loading lifecycle. Migration of existing content and mod-specific pickup hooks depend on adapters.
+
+## 6. Creating and interacting with creatures
+
+Choose **friendly, neutral, or hostile** creatures with custom geometry, attributes, and combinations of behaviors:
+
+| Interaction style | Capability |
+|---|---|
+| Villager-like | Right-click opens a native trade window. |
+| Piglin-like | Drop items nearby; inputs are consumed and exchange results are dropped. |
+| Proximity trigger | Messages, effects, items, and sounds; optional fuse-based explosions that can cancel when the player moves away. Block destruction is off by default. |
+| Zombie-like | Hostile creatures attack proactively; neutral creatures retaliate when hit. |
+| Sheep-like | Feeding and same-species breeding. |
+| Horse-like | The owner mounts with a normal empty-handed right-click and can control movement. |
+| Dog-like | Follow, stay, commanded combat, and patrol; following can be canceled. |
+
+![A generated planet companion](images/creature.png)
+
+Creature definitions can be updated and persisted. Keyframe animations include idle, walk, random, hurt, attack, death, interact, and ride, with translation, rotation, and scale. These are currently **whole-mesh animations** with primarily geometry-based colors. Skeletal animation, separate animated parts, and external textures remain extension areas. Overlapping riding/trading/feeding behavior follows the current interaction contract.
+
+## 7. AI movement and player takeover
+
+- **The AI's own entity:** movement/local pathfinding, turning, sprinting, sneaking, selecting/dropping items, following/stopping, and teleporting to the player.
+- **Low-clearance navigation:** planning uses actual block collision shapes and standing/crouching dimensions. In addition to doors, fence gates, slabs, carpets, and stairs, it recognizes passages requiring crouching. The AI crouches before entering and stands up when safe; lower spaces return a blocked route. Chat can enable or disable persistent sneaking.
+- **Take over your player:** starts when you explicitly request it, without reconfirming every planning round. The AI observes and replans continuously. A left-side HUD shows a public action summary and the next waypoint.
+- Arrival leaves the session idle but active. **Esc or an explicit stop request ends it.** T/F2, unfocused windows, and open screens pause input but retain the session. Death, disconnects, world changes, or permission changes release control.
+- Navigation currently focuses on local ground movement in loaded areas. Flying, swimming, and vehicles depend on their respective capabilities. Local computer commands require separate confirmation.
+
+### Build reusable routes
+
+Say “Build a route from here to the other side that I can use too” to invoke native path construction:
+
+| Route | Behavior |
+|---|---|
+| Horizontal crossing | Walk to the start, place bridge blocks one by one, and move along the new route. |
+| Height changes with horizontal distance | Build continuous steps; steep slopes may need multiple segments. |
+| Straight upward | Jump, place beneath the AI, land, and add climbable ladders, with a bottom landing platform if needed. |
+
+Blocks and ladders remain in the world for players and other AIs. Survival consumes the AI's inventory materials; vertical routes also require ladders. Stopping or interrupting preserves built sections and reports progress. Each axis supports up to 2048 blocks including endpoints, in loaded chunks only. Routes are one block wide by default; clearing obstacles or adding railings can be separate requests. Complex terrain may need segmented plans.
+
+![Actual crouching posture in a low-clearance passage](images/crouch-navigation.png)
+
+![Permanent bridges, steps, and a ladder-equipped pillar](images/reusable-paths.png)
+
+These images come from isolated native regression runs. Zero-model replays reproduce actions and capture screenshots; separate live DeepSeek calls verify conversational tool use. Player bridge traversal, ladder climbing, step reuse by a second AI, survival material consumption, and preserving partially built routes have corresponding checks.
+
+## 8. Web search, general files, and building imports
+
+- Search MC encyclopedias, building sites, and public webpages, read their text, and cite sources. Login requirements, CAPTCHAs, or read failures are reported, with manual upload as a fallback.
+- Download buildings with public direct links. If automatic access fails, a chat button opens F2 Files; upload/select a file and hand it to the AI to continue.
+- F2 Files and Chat Attachments support files/folders, empty files/directories, binary files, and folder ZIP downloads. The AI can read/create files and provide download buttons. Files are treated as data; execution requires the corresponding confirmation.
+- Transfers listen only on `127.0.0.1:25510`, authenticated by owner/world, for local use. Uploads support up to 8 GiB per file; automatic direct downloads up to 64 MiB. Currently intended for local single-player use.
+
+| Import format | Support |
+|---|---|
+| Litematica `.litematic` | Multiple regions, negative sizes, palettes, and full block states. |
+| Create / vanilla `.nbt` | Structure blueprints processed as structure data. |
+| Sponge `.schem` | Versions 1, 2, and 3. |
+| `.schematic` | Vanilla numeric ID mapping; mod numeric IDs need corresponding adapters. |
+| Java worlds / ZIP | Anvil world selections and building ZIP collections, read within the selected area. |
+
+Choose facing direction, rotation, and mirroring. **Preserve contents is the default:** source air, block entities/containers, selected entities, and scheduled ticks from supported formats. Preservation can be disabled. Source files are not modified; only selected building data is imported.
+
+![A house uploaded and imported into the world](images/imported-house.png)
+
+This image shows placement of 177 blocks. Separate preservation checks cover a container holding seven diamonds, a named entity, and scheduled ticks. Complex passengers/leashes/hanging entities, mod-specific cross-coordinate references, streaming very large NBT, Bedrock, LZ4, and `.mcc` still have limitations. Each format is read according to its implemented fields.
+
+## 9. F2, previews, floating windows, and live webpages
+
+- Independent translucent windows can be shown/hidden, minimized, closed, or kept floating. The AI can change window state when authorized.
+- Package Management is a top-level entry, alongside files/attachments; less-used settings live under More. Owned creatures are listed, and both items and creatures use the shared preview.
+- Model/structure preview: left-drag to rotate freely, right/middle-drag to pan, scroll in either direction to zoom, and reset the view.
+- Large structures may use a bounds preview. Building colors are approximated; full textures depend on the preview type.
+- Generated WebUIs can subscribe to real coordinates and nearby block statistics. Background views pause, closed views release subscriptions, and invalid contexts stop updates. Readouts use local data subscriptions.
+
+![F2 model preview and the Package Management entry](images/preview.png)
+
+![Live coordinates and nearby stone-block counts](images/live-readout.png)
+
+## 10. Content packages and advanced lifecycles
+
+View, validate, copy, and enable package versions, with dedicated resource/data/client-code workflows:
+
+- **HOT:** enable inactive definitions; generated content can enable automatically.
+- **Package versions:** copy to an independent package before enabling; original packages and instances stay independent.
+- **Resource/data packs:** actual downloads, signature checks, reloads, and result readback.
+- **WORLD_REOPEN:** save a plan for the next normal world reopening; the UI marks it as pending.
+- **BOOT/CLIENT native code:** dedicated installation/execution and per-machine confirmation remain in place, with separate server and local permission checks.
+
+Advanced runtime capabilities are available through web management. Technical revision/hash values are in the details; normal player actions use selectable options.
+
+## 11. Local Python, dependency installation, and full output
+
+Java directly manages a checksum-pinned `python-build-standalone install_only_stripped` distribution, a dedicated virtual environment, and Python/pip processes. The AI can perform local Python tasks and install third-party libraries in that dedicated environment.
+
+Review the code and **approve or reject each request in native chat**; running tasks can be stopped. Currently available only to the local owner in Windows x64 single-player, using the local user's permissions. Scripts have that user's filesystem access, so check what the task will do before approving.
+
+Complete stdout/stderr is saved and paginated. Timeouts or cancellations may leave effects that already occurred; uncertain outcomes are checked before continuing. Live DeepSeek tests have installed colorama, read its version, launched a hidden child process, and saved results.
+
+## 12. Voice, media, and broader scope
+
+- **Speech recognition (ASR): lowest priority; implementation is deferred.**
+- TTS/media foundations and optional media builds remain available; platforms, sources, and service combinations depend on adapters.
+- Full seed-based maps, arbitrary mod adaptation, migration of all existing content, multi-platform local commands, and multiplayer local-file collaboration remain future adaptation areas.
+
+## Screenshots and verification scope
+
+Screenshots come from actual native runs. Crouching and route images were newly captured for those checks; model settings use an already verified screenshot of the corresponding features. Model generation and native actions have separate records covering the specific listed scenarios.
+
+Creator approval was checked using separate ServerPlayer identities. Testing with two real clients remains pending. Aligning event-queue BACKPRESSURE states and test assertions remains a maintenance item.
+
+[Screenshot notes and original checksums](images/README.md) · [Source and technical notes](SOURCE_SNAPSHOT.md)
