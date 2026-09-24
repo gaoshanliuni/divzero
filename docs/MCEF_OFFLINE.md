@@ -1,28 +1,37 @@
-# Offline MCEF distribution
+# MCEF 离线运行库
 
-DivZero compiles against the independent `gaoshanliuni/MCEF-Offline` fork, using an exact GitHub Release tag and SHA-256 values in `gradle/mcef-offline.lock.json`. It does not follow `latest` or build a moving upstream branch. The baseline remains MCEF 2.2.0 / Minecraft 26.1.1 / Java 25, matching the existing DivZero Minecraft 26.1.2 integration.
+DivZero 使用独立的 [MCEF-Offline](https://github.com/gaoshanliuni/MCEF-Offline) 分发，Release 标签、源码提交和 SHA-256 固定在 `gradle/mcef-offline.lock.json`。编译 API 为 MCEF 2.2.0，匹配本项目 Minecraft 26.1.2 / Java 25 集成。
 
-## Player installation
+## 玩家安装
 
-Download the DivZero main JAR, WebGUI, and **one** matching `mcef-offline-neoforge-<platform>.jar` from the DivZero Release Assets. Supported offline attachments: Windows x64, Linux x64, macOS Intel, macOS Apple Silicon. Select the architecture of the Java runtime running the game. Do not install multiple MCEF variants or install the original MCEF alongside the fork. The original online MCEF attachment is retained as an optional alternative only. API, sources, JSON and license attachments are not installable mods.
+从 DivZero Release Assets 下载主模组、WebGUI，以及与你的系统和 Java 架构匹配的一个 `mcef-offline-neoforge-<platform>.jar`。
 
-The platform JAR includes its entire fixed JCEF/CEF runtime. The fork extracts it locally, verifies its bytes, reuses valid cached installations and repairs corrupted files from its own JAR. It does not request a remote checksum or fall back to downloading the runtime. Webpages and AI APIs still require their normal network access. This is not an offline Minecraft installer.
+| 平台 | 标识 |
+|---|---|
+| Windows x64 | windows_amd64 |
+| Linux x64 | linux_amd64 |
+| macOS Intel | macos_amd64 |
+| macOS Apple Silicon | macos_arm64 |
 
-Native Windows ARM64 and Linux ARM64 packages are deliberately absent: the pinned upstream packages with those names contain x64 binaries. The fork verifies PE/ELF/Mach-O headers instead of trusting filenames. See its `offline/UNSUPPORTED_PLATFORMS.md` for details.
+每个游戏实例选择一个 MCEF 平台包。API 和 sources 工件供编译、开发与许可核对使用。
 
-## Build and release flow
+平台 JAR 内置固定版本 JCEF/CEF，启动时在本地解压、校验并复用缓存；损坏缓存由包内资源修复。网页和 AI API 使用正常网络连接。
 
-`gradle/mcef-offline.gradle` replaces the ordinary MCEF implementation dependency with the fork's fixed compile-only API JAR and the current platform's runtime JAR. Both are downloaded only from the pinned MCEF-Offline Release and verified before compilation. `-PmcefOfflinePlatform=macos_arm64` overrides platform selection; dedicated-server profiles omit the client-only runtime. The original `webguiLocked` dependency remains solely to verify the optional online attachment.
+Windows／Linux 原生 ARM64 列入后续平台适配；分发流程检查 PE／ELF／Mach-O 架构头。
 
-The existing `build-jar.yml` workflow still builds/tests DivZero and stages its normal individual assets. It then runs `scripts/stage-offline-mcef.ps1` to add four offline JARs, corresponding source, notices and the fork release manifest. Hashes, dependency metadata and installation instructions are updated. A complete release dry-run verifies all new assets before upload. The publication job rechecks the immutable lock and the returned public download URLs. No combined installation ZIP is published.
+## 构建与发布
 
-## Updating the fork
+`gradle/mcef-offline.gradle` 配置固定 compile-only API 和当前平台的 runtime JAR，编译前核对依赖集合与 SHA-256。`-PmcefOfflinePlatform=macos_arm64` 可选择目标平台；专用服务端配置仅保留所需依赖。
 
-1. Publish a successful tested Release in MCEF-Offline.
-2. Review its source commit, native runtime changes, platform architecture checks and `mcef-offline-release.json`.
-3. Update the downstream lock with that exact tag/source commit and all matching asset SHA-256/size records. API, source, platform JARs and manifest must come from the same release. Include the notices record too.
-4. Run the DivZero build and release dry-run; do not silently fall back to upstream if the fork cannot be resolved or a checksum differs.
+Build JAR 工作流构建与测试 DivZero，再由 `stage-offline-mcef.ps1` 准备四个平台运行包、对应源码、第三方声明与上游 manifest。发布 job 核对固定版本、校验值及公开下载 URL；玩家在 Assets 中选择运行 JAR。
 
-The fork provides its modified source and pinned JCEF source in `mcef-offline-corresponding-sources.jar`; license resources accompany the binaries. The older source attachment only corresponds to the optional original online MCEF. Retain these notices when redistributing.
+## 更新依赖
 
-Validation distinguishes compilation, packaging, actual bundled extraction/repair tests, and real game/browser rendering. A successful CI release is not a claim that every supported platform has passed in-game rendering or that DivZero has completed V1 acceptance. Test in a backed-up instance with game dependencies already installed, clear the fork's cache, disconnect networking and verify first-start local page rendering.
+1. 在 MCEF-Offline 发布已测试的版本。
+2. 核对源码提交、原生库、架构验证与 release manifest。
+3. 将精确标签、源码提交、文件大小和 SHA-256 更新到 lock；API、源码、运行包与声明来自同一上游版本。
+4. 执行 DivZero 构建和发布 dry-run，完成依赖与产物校验。
+
+`mcef-offline-corresponding-sources.jar` 包含 fork 修改源码与固定 JCEF 对应源码，二进制保留许可证及第三方声明。再分发时请同时提供这些许可与源码入口。
+
+验证按编译、打包、原生库解压／修复、游戏渲染分别记录。可在已备份实例中验证断网首启和本地页面渲染；平台附件与具体游戏场景的验证范围见 [功能说明](FEATURES.md)。

@@ -1,63 +1,78 @@
-# 版本、构建与安装
+# 版本、安装与构建
 
 [返回首页](../README.md) · [Releases](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](FEATURES.md) · [Build JAR](https://github.com/gaoshanliuni/divzero/actions/workflows/build-jar.yml)
 
-## 下载哪些文件
+## 安装
 
-Release 的 **Assets** 只上传可安装的运行 JAR：
+支持 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，网络协议 **6**。客户端与服务端请使用同版主模组。
+
+从 Release 的 Assets 选择以下三份文件：
 
 1. `DivZero-<版本>-mc26.1.2-<类型>-<提交号>.jar`：主模组。
 2. `webgui-neoforge-1.6.2+mc26.1.2.jar`：WebGUI。
-3. 下表中与你系统及 **Java 架构** 匹配的 **一个** MCEF。
+3. 与系统及游戏所用 Java 架构匹配的一个 MCEF。
 
-| 系统／Java架构 | MCEF 文件 |
+| 系统／Java 架构 | MCEF 文件 |
 |---|---|
 | Windows x64 | `mcef-offline-neoforge-windows_amd64.jar` |
 | Linux x64 | `mcef-offline-neoforge-linux_amd64.jar` |
 | macOS Intel | `mcef-offline-neoforge-macos_amd64.jar` |
 | macOS Apple Silicon | `mcef-offline-neoforge-macos_arm64.jar` |
 
-因此完整跨平台 Release 有6个运行 JAR，**每位玩家只安装3个**。不能同时安装多个 MCEF 平台包，也不能与旧在线 MCEF 一起安装。当前不提供原生 Windows/Linux ARM64 包；有平台附件不等于所有 Mod 功能已在该平台完整验收，例如本机 Python 仍限 Windows x64。
+完整 Release 提供6个运行 JAR，每位玩家安装其中3个。每个实例保留一份主模组、一份 WebGUI 和一个 MCEF 平台包。
 
-关闭游戏后，在已备份的测试实例将选中的三个 JAR 放进 `mods`，移除同 Mod 的旧版本。需要 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，客户端与服务端同步升级。MCEF 离线包提供匹配平台的浏览器运行库，AI API 和在线网页仍需网络。
+关闭游戏，备份存档，将选定 JAR 放入 `mods`。MCEF 平台包内置 Chromium/JCEF 运行库；AI API 和在线网页使用网络连接。本机 Python 支持 Windows x64。
 
-首次进入世界，开启作弊／具备真实管理权限后使用 `/ai accept`；F2 → 更多 → API 设置配置模型。不要把 Key 发到聊天或 Issues。
+## 初始化与创建 AI
 
-## 哪些内容不再作为 Release 附件
+进入已启用作弊／具备管理权限的世界：
 
-- 不再上传独立的 README、BUILD-INFO、DEPENDENCIES、SHA256SUMS、许可文本和说明 Markdown。
-- 不再重复上传开发源码／javadoc／API JAR，或旧在线 MCEF 备选。
-- **校验值直接写在 Release 正文**；构建提交与 Actions 记录可以追溯。
-- 主 JAR 内含 DivZero 许可证和第三方说明；WebGUI/MCEF 原有许可不移除。MCEF Offline 的固定对应源码和许可入口保留在 Release 正文，链接到其精确上游版本。
-- 完整校验、构建身份、来源和许可证仍先在 CI 暂存并验证；只是不用它们占据玩家的附件列表。Actions 审计工件保留7天，永久来源另见仓库文档与上游固定版本。
+```mcfunction
+/ai accept
+/ai create "星河"
+```
 
-GitHub 会自动显示 **Source code (zip/tar.gz)**。这是 GitHub 提供的源码下载，不是我们上传的安装附件，不能通过筛选上传文件去掉；不要放进 `mods`。历史已发布版本保留原始标签、二进制和附件，新的附件规则不改写旧版本。
+API 设置任选以下入口：
 
-## 版本不再固定为0.1.0
+| 设置 | 原生面板 | F2 界面 |
+|---|---|---|
+| 打开设置 | Ctrl+M → 模型 | F2 → 更多 → API 设置 |
+| API URL | 选择 DeepSeek／GLM／OpenAI／Ollama 预设，或编辑 URL | 选择地址预设，或编辑 URL |
+| API Key | 同页 Key 输入框 → 保存 | 设置 / 替换 API Key → 本机保密输入页 |
+| 模型 | 选择模型，或编辑模型名称 | 获取模型列表 → 选择名称；也可选择使用自定义模型 |
+| 创建 AI | AI 玩家 → 创建 | AI 管理 → 创建 AI |
 
-发布版本按**该公开提交的 UTC 日期＋公开历史提交序号**生成，例如 `2026.9.24-dev.42`。
+DeepSeek 默认 `deepseek-flash`。保存 URL／Key 后可获取 `/v1/models` 列表。Key 仅在游戏设置填写。
 
-- 每个新的公开提交得到新的开发版本；同一提交重跑保持同一Mod版本，运行ID／attempt仍用于区分不可变发布标签。
-- `get-build-version.ps1`需要完整公开Git历史；Actions使用`fetch-depth: 0`，不把浅克隆的“1次提交”当版本序号。
-- CI把结果以`-Pmod_version=...`传给所有Gradle模块，因此 **JAR文件名、NeoForge元数据、Release标题和构建记录一致**。打包时读取真实JAR验证，版本不一致拒绝发布。
-- `gradle.properties`中的`0.1.0-SNAPSHOT`只保留为未使用发布流程的本地开发默认值，不再作为GitHub发布版本。无需改动私密开发仓库的版本文件，也不会在下次干净快照导出时丢失公开发版规则。
-- 本地按相同规则构建（需要Java25、PowerShell7和完整Git checkout）：
+原生聊天输入 `@星河 你好`，Tab 可补全 AI 名字；F2 → 对话提供相同聊天能力。`/ai default` 可选择只对本人响应的默认 AI。
+
+## Release 内容与校验
+
+Release Assets 提供运行 JAR，SHA-256 校验值列在正文。GitHub 的 Source code ZIP/tar.gz 用于查看和构建源码。
+
+主 JAR 内含项目许可和第三方说明。WebGUI/MCEF 保留各自许可；MCEF 对应源码链接到固定上游版本。完整构建身份、依赖清单和打包审计保留在 Actions 工件中，保存7天；固定来源入口见仓库文档与上游 Release。
+
+## 版本规则
+
+版本采用公开提交的 **UTC 日期＋公开提交序号**，例如 `2026.9.24-dev.42`。同一提交保持同一 Mod 版本；运行 ID 和 attempt 区分发布身份。
+
+`get-build-version.ps1` 使用完整 Git 提交记录，Actions 采用 `fetch-depth: 0`。构建通过 `-Pmod_version=...` 将版本写入 JAR 文件名、NeoForge 元数据和发布信息。
+
+Windows 本地构建需要 Java 25 和 PowerShell 7：
 
 ```powershell
 $version = ./scripts/get-build-version.ps1
-./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$version" :neoforge:jar
+./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$version" :neoforge:jar --no-configuration-cache
 ```
 
-## 自动构建和发布
+输出目录为 `neoforge/build/libs/`。
 
-- 公开 `main` 推送：编译、测试、打包成功后生成开发预发布。
-- Pull Request：只构建测试，不发布。
-- Actions → Build JAR → Run workflow：可手动构建；只有本仓库 `main` 能发布。
-- 同分支新构建取消旧构建。先创建draft、上传选定JAR、核验集合／大小／SHA、再公开，避免发布半成品。
-- 已发布标签与二进制不强制覆盖；重跑已成功发布的同次job只核验。
+## Actions 构建与发布
 
-构建job只读，发布job使用临时GITHUB_TOKEN；固定第三方Actions提交。不会读取本机私密开发目录、存档、Provider Key，也不会调用DeepSeek或启动Minecraft。
+- main 推送：构建、测试和打包成功后生成开发预发布。
+- Pull Request：构建与测试。
+- Actions → Build JAR → Run workflow：手动构建，main 可发布。
+- `standard`：标准版。选择 `include_media_tools` 后构建 `with-media`，包含固定版本的可选媒体工具。
+- 发布流程：创建 draft → 上传运行 JAR → 检查文件集合／大小／SHA-256 → 公开 Release。
 
-标准版为`standard`。手动选择`include_media_tools`时构建`with-media`，包含已有固定版本的可选媒体工具；不要将打包成功理解为所有媒体源／平台都已验证。
-
-CI只证明公开源码的构建与所列测试通过，不代表完整V1。截图与场景边界见[功能清单](FEATURES.md)，源码发布原则见[PUBLISHING.md](PUBLISHING.md)。
+构建 job 使用只读权限；发布 job 使用临时 GitHub Token。CI 覆盖公开源码构建和选定测试；游戏场景与模型联验范围见 [功能清单](FEATURES.md)。

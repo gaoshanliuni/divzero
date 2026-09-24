@@ -57,8 +57,18 @@ $marker
 | NeoForge 构建版本 | $($versions.neoForgeVersion) |
 | Java | $($versions.requiredJavaVersion) |
 
-自动构建的测试版本，不是完整 V1 正式发行。
+开发测试版，网络协议 6；客户端与服务端同步更新。
 源码：[$short](https://github.com/$repo/commit/$Commit) · [构建记录](https://github.com/$repo/actions/runs/$run)
+
+### 功能与入口
+
+- **/ai create "星河"** 创建 AI，**/ai accept** 初始化本人权限；原生面板默认 Ctrl+M，Web 工作区默认 F2。
+- API URL／模型／Key：Ctrl+M → 模型；F2 → 更多 → API 设置。两个入口均可配置模型，F2 的 Key 按钮打开本机保密输入。
+- 流式对话、排队／打断／取消、对话删除、本人默认响应 AI、创建者响应许可。
+- AI 真实持物交互、低净空潜行、永久桥梁／台阶、跳跃搭高与可复用梯子；放置／破坏／使用分别设置。
+- 生物整体网格动画、物品／生物预览、建模、建筑导入、PNG 换肤与 Java 管理的 Python。
+
+[全部功能与命令](https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/FEATURES.md) · [功能截图](https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/images/README.md)
 
 ### 下载附件（Assets）
 
@@ -71,19 +81,19 @@ $marker
 | webgui-neoforge-1.6.2+mc26.1.2.jar | WebGUI |
 | mcef_neoforge_2.2.0_MC_26.1.1.jar | MCEF |
 
-下载后将以上三个文件放入客户端 mods。**不要把名称带 sources 的开发源码 JAR 放入 mods。**
+下载后将以上三个文件放入客户端 mods。名称带 sources 的工件用于源码阅读和开发。
 
-请使用上述 Minecraft / NeoForge / Java 版本；不代表支持其它 Minecraft 版本。关闭游戏后，在备份过的测试实例替换旧版同 Mod；不要同时放入多个版本。
-MCEF 的原始文件名标注 MC26.1.1，本项目锁定并测试的兼容工件就是这一版；不修改上游 JAR。
-Chromium/JCEF 原生运行库仍由 MCEF 准备，这里不打包浏览器原生库或 YSM 模型。
+请使用上述 Minecraft / NeoForge / Java 版本。关闭游戏并备份存档，每个实例保留一份主模组、WebGUI 和所选 MCEF。
+MCEF 使用固定版本的兼容工件，校验值随构建验证。
+Chromium/JCEF 运行库由 MCEF 配置准备；YSM 模型由用户单独安装。
 
 校验值直接列在正文；完整构建信息保留在本次 Actions 工件，不作为 Release 附件。主 JAR 内含 DivZero 许可及第三方说明，依赖保留自身许可。
-[MCEF 对应开发源码](https://cdn.modrinth.com/data/bQhBuv7x/versions/h38n5aI0/sources_mcef_neoforge_2.2.0_MC_26.1.1.jar)仅供开发者，不是安装包；许可及来源见[第三方声明](https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/THIRD_PARTY_NOTICES.md)。
+[MCEF 对应开发源码](https://cdn.modrinth.com/data/bQhBuv7x/versions/h38n5aI0/sources_mcef_neoforge_2.2.0_MC_26.1.1.jar)供开发者阅读和构建；许可及来源见[第三方声明](https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/THIRD_PARTY_NOTICES.md)。
 WebGUI [上游源码](https://github.com/mc-webgui/webgui/tree/v1.6.2)，MCEF [上游源码](https://github.com/Keksuccino/mcef/)。
 
-不上传整合 ZIP。GitHub 自动附加的 Source code (zip/tar.gz) 是源码，不是安装包。
-标准版不包含可选 yt-dlp/FFmpeg；with-media 为手动选择的多媒体版。
-本流程只证明编译、打包及所列测试通过，不代替真实模型或游戏内完整验收。
+GitHub 的 Source code (zip/tar.gz) 用于查看和构建源码。游戏安装请使用 Assets 中的运行 JAR。
+standard 为标准版；with-media 附带可选 yt-dlp/FFmpeg。
+构建记录覆盖编译、打包和选定测试；模型联验与游戏场景见功能说明。
 "@
 # Keep legacy fixture tests unchanged; real builds with the checked-in offline
 # lock must stage and verify the offline attachments before publication.
@@ -109,7 +119,7 @@ if ($selected.Count -ne $publishNames.Count) { throw 'RELEASE_RUNTIME_LIST_MISSI
 $files=@(Select-RuntimeFiles $info $files $manifest)
 $notes+="`n`n### 运行 JAR 的 SHA-256`n`n| 文件 | SHA-256 |`n|---|---|`n"
 foreach ($file in $files) { $notes+='| '+$file.Name+' | `'+$manifest[$file.Name]+'` |'+"`n" }
-$notes+="`nRelease 只上传上表运行 JAR。源码、许可证和构建审计使用正文链接或 JAR 内副本；没有删除必要的来源信息。`n"
+$notes+="`nRelease 只上传上表运行 JAR。源码、许可证和构建审计使用正文链接或 JAR 内副本；完整提供对应来源信息。`n"
 if ($DryRun) { Write-Output "RELEASE_DRY_RUN_TAG=$tag"; Write-Output "RELEASE_TITLE=$title"; Write-Output $notes; Write-Output "VERIFIED_FILES=$verifiedCount"; Write-Output "PUBLISHED_JARS=$($files.Count)"; foreach ($file in $files) { Write-Output "PUBLISH_JAR=$($file.Name)" }; return }
 if (-not $env:GH_TOKEN) { throw 'RELEASE_TOKEN_MISSING' }
 $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28';'User-Agent'='DivZero automatic development releases'}

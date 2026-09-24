@@ -3014,13 +3014,13 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "5f02a36fb44997bad31a6398db4f39a232bc84aed233e5ccd80ecedb324e16c6",
-      "bytes": 31463
+      "sha256": "818262d5c251c55825b8556f6f9d68ac7b8d466ef962fa11d12ff9f6bffd7134",
+      "bytes": 6486
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
-      "sha256": "d04635e682e54d53d4e6765105e436fa1b5b9d2fa91475c58327f0d02c86718d",
-      "bytes": 2723
+      "sha256": "32280f517afe5d0e3c85a1378c339b826ad7c8857e917ab84f4213ef08ef8902",
+      "bytes": 2922
     },
     {
       "path": "gradle.properties",

@@ -15,8 +15,8 @@ foreach($item in $items) {
 $notes=$OriginalNotes.Replace('展开后分别下载以下三个 JAR。','展开后下载主模组、WebGUI，再从下面的 MCEF 方案中选择一个。')
 $notes=$notes.Replace('| mcef_neoforge_2.2.0_MC_26.1.1.jar | MCEF |','| mcef-offline-neoforge-<platform>.jar | 推荐：与你的系统和 Java 架构匹配的离线 MCEF，只选一个 |')
 $notes=$notes.Replace('下载后将以上三个文件放入客户端 mods。','下载后将主模组、WebGUI 和选定的一个 MCEF 放入客户端 mods。')
-$notes=$notes.Replace('MCEF 的原始文件名标注 MC26.1.1，本项目锁定并测试的兼容工件就是这一版；不修改上游 JAR。','MCEF Offline 基于本项目原有 MC26.1.1 / MCEF 2.2.0 兼容基线。编译依赖来自独立 MCEF-Offline 仓库的固定 Release，版本与 SHA-256 锁定在源码中。')
-$notes=$notes.Replace('Chromium/JCEF 原生运行库仍由 MCEF 准备，这里不打包浏览器原生库或 YSM 模型。','离线 MCEF 附件内已包含各自平台的 Chromium/JCEF 运行库，首次本地安装、后续校验和损坏修复均不请求下载站。没有打包 YSM 模型。在线网页和 AI API 仍需要网络。')
+$notes=$notes.Replace('MCEF 使用固定版本的兼容工件，校验值随构建验证。','MCEF Offline 使用固定 Release 的 API 与运行包，版本和 SHA-256 由源码中的 lock 文件管理。')
+$notes=$notes.Replace('Chromium/JCEF 运行库由 MCEF 配置准备；YSM 模型由用户单独安装。','离线 MCEF 附件内置各自平台的 Chromium/JCEF 运行库，安装、校验和修复在本地完成；在线网页与 AI API 使用网络。YSM 模型由用户单独安装。')
 $extra=@"
 
 ### 离线 MCEF：按平台选择一个附件
@@ -28,12 +28,11 @@ $extra=@"
 | macOS Intel | mcef-offline-neoforge-macos_amd64.jar |
 | macOS Apple Silicon | mcef-offline-neoforge-macos_arm64.jar |
 
-**只安装与你运行 Minecraft 的 Java 架构一致的一个离线 MCEF。不要把多个平台一起装，也不要与原版 MCEF 同时安装。**
-本次不提供原生 Windows/Linux ARM64 附件：固定上游对应名称的压缩包实际是 x64 二进制。
-旧在线 MCEF 不再重复作为本 Release 附件；需要在线方案可自行前往上游获取，不能与离线版同时安装。
+**每个实例选择一个与 Minecraft 所用 Java 架构一致的离线 MCEF 平台包。**
+原生 Windows/Linux ARM64 列入后续平台适配。
 
 离线分支版本：$($lock.tag)。[离线分支源码](https://github.com/$($lock.repository)/commit/$($lock.sourceCommit))。
-[完整对应源码](https://github.com/$($lock.repository)/releases/download/$($lock.tag)/$($lock.sources.file))与[许可声明](https://github.com/$($lock.repository)/releases/download/$($lock.tag)/$($lock.notices.file))仍可获取，不重复上传到本 Release。它们不是安装文件。
-运行库平台打包和安装器测试不等于已在全部平台完成真实游戏渲染验收。
+[完整对应源码](https://github.com/$($lock.repository)/releases/download/$($lock.tag)/$($lock.sources.file))与[许可声明](https://github.com/$($lock.repository)/releases/download/$($lock.tag)/$($lock.notices.file))用于源码阅读、构建与许可核对。
+平台打包、安装器与具体游戏渲染分别记录验证范围，详见功能说明。
 "@
 Write-Output ($notes+$extra)
