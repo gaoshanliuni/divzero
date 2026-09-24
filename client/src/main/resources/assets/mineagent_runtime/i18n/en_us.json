@@ -2512,5 +2512,6 @@
   "；这里只使用当前真实包，不创建伪造生成任务。Native 会再次检查版本与权限。": "; only the current real package is used here; no fake generation task is created. Native will check version and permissions again.",
   "；采用保留声明，运行仍需单独确认。": "; adoption retains the declaration; running still requires separate confirmation.",
   "取消排队消息": "Cancel queued message",
-  "[本机 Python] 已确认，按当前环境队列执行。": "[Local Python] Approved; queued for this environment."
+  "[本机 Python] 已确认，按当前环境队列执行。": "[Local Python] Approved; queued for this environment.",
+  "最新消息": "Latest messages"
 }

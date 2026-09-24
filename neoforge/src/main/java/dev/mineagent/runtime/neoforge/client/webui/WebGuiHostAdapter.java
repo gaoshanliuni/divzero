@@ -58,7 +58,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     private WebGuiHostAdapter() {}
 
     public String diagnostic() { return diagnostic; }
-    public boolean compositionActive(){return compositionActive;}
+    public boolean compositionActive(){return compositionActive||Minecraft.getInstance().screen instanceof WebGuiInteractionScreen screen&&screen.nativeComposing();}
     public boolean workspaceShown(){return dev.mineagent.runtime.client.webui.WorkspaceShortcut.shown(workspaceVisible,Minecraft.getInstance().screen instanceof WebGuiInteractionScreen,Minecraft.getInstance().screen instanceof WebGuiDiagnosticScreen);}
     public boolean ready() { return ready && browser != null && gate.owns(browser); }
     public MCEFBrowser browser() { return browser; }

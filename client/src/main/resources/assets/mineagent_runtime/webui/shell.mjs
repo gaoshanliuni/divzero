@@ -56,7 +56,7 @@ state.workspace(document.body.dataset.workspaceVisible!=='false');
 const nodes = new Map();
 let lastSnapshot = null;
 let connected = false;
-let composition = false;
+let composition = false,nativeComposition=false;
 let drag = null;
 const status = document.querySelector('#status');
 let availableAgents = [];
@@ -106,7 +106,7 @@ const skins=createSkinCards({windowFor,send,openFiles:agent=>buildingFiles.open(
 const agentModels=createAgentModels({windowFor,send});const agentManagement=createAgentManagement({windowFor,send,report,openModel:agentModels.open,openSkin:skins.open});document.querySelector('#open-agents').onclick=agentManagement.open;
 const appearances=createAppearanceCards({windowFor,send,report,openDecision:q=>decisions.open(q)});
 const personas=createPersonaCards({windowFor,send,report,persist:saveUiState});
-const conversations=createConversationCards({send,report,persist:saveUiState,openApiSettings:apiSettings.open,openFiles:agent=>buildingFiles.open(agent)});
+const conversations=createConversationCards({send,report,isComposing:()=>composition||nativeComposition,persist:saveUiState,openApiSettings:apiSettings.open,openFiles:agent=>buildingFiles.open(agent)});
 document.querySelector('#open-persona').onclick=personas.open;
 document.querySelector('#open-appearance').onclick=appearances.open;
 document.querySelector('#open-tasks').onclick=worldTasks.open;
@@ -321,7 +321,7 @@ new ResizeObserver(()=>{if(dockReflowQueued)return;dockReflowQueued=true;request
 document.addEventListener('compositionstart', () => { composition = true;send('compositionState',{active:true}).catch(report); });
 document.addEventListener('compositionend', () => { composition = false;send('compositionState',{active:false}).catch(report); });
 document.addEventListener('keydown', event => {
-  if (event.key !== 'Escape' || composition || event.isComposing) return;
+  if (event.key !== 'Escape' || composition || nativeComposition || event.isComposing) return;
   event.preventDefault();
   if(dismissMoreWithEscape())return;
   send('releaseInput').catch(report);
@@ -366,7 +366,7 @@ function openChat() {
   const actions = el('div', null, content); actions.className = 'actions';
   const submit = el('button', __uiT("发送"), actions);
   submit.onclick = async () => {
-    if (!connected || !text.value.trim()) return;
+    if (!connected || composition || nativeComposition || !text.value.trim()) return;
     submit.disabled = true;
     try {
       let context=decisionContexts.find(q=>q.decisionId===target.value&&q.agentId===agent.value);
@@ -451,7 +451,8 @@ addEventListener('mineagent:host', event => {
     const { channel, data } = event.detail;
     if (channel === 'snapshot') showSnapshot(data);
     else if(channel==='presentationApply')applyPresentation(data).catch(report);
-    else if(channel==='nativeEscape'&&releaseTrustedEscape(composition,document.activeElement?.tagName)){if(!dismissMoreWithEscape())send('releaseInput').catch(report);}
+    else if(channel==='nativeCompositionState'){nativeComposition=data.active===true;}
+    else if(channel==='nativeEscape'&&releaseTrustedEscape(composition||nativeComposition,document.activeElement?.tagName)){if(!dismissMoreWithEscape())send('releaseInput').catch(report);}
     else if(channel==='interactionMode'){
       state.interaction(data.active);document.body.dataset.interacting=String(state.interacting);
       if(!state.interacting)releaseWorkspaceInput();

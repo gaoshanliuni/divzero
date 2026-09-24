@@ -1,5 +1,6 @@
 // Reviewed fixed UI text only; no runtime network translation.
 export const messages=Object.freeze({
+  "最新消息": "Latest messages",
   "取消排队消息": "Cancel queued message",
   "[本机 Python] 已确认，按当前环境队列执行。": "[Local Python] Approved; queued for this environment.",
   "\n[已上传文件：{0}；file_id={1}；请通过文件工具读取]": "\n[Uploaded file: {0}; file_id={1}; please read via the file tool]",

@@ -72,8 +72,8 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.include_media_tools
         run: ./scripts/prepare-media-tools.ps1
 
-      - name: Test batched conversation history cache
-        run: node --test client/src/test/webui/conversation-cache.test.mjs
+      - name: Test conversation streaming, scrolling and thinking history
+        run: node --test client/src/test/webui/conversation-cache.test.mjs client/src/test/webui/conversation-scroll.test.mjs client/src/test/webui/conversation-thinking.test.mjs
 
       - name: Compile production JAR and run included tests
         run: |

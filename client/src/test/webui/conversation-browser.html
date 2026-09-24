@@ -1,0 +1,42 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/webui/shell.css"></head><body>
+<section class="window" data-view-id="runtime-chat" style="left:20px;top:20px;width:720px;height:690px"><header class="titlebar"><strong>流式滚动 / 中文草稿回归</strong></header><div class="content" id="test-content"><select id="chat-agent"><option value="agent-a">测试助手</option></select><select id="chat-decision" hidden><option value=""></option></select></div></section>
+<pre id="result" style="position:absolute;left:760px;top:20px;width:470px;max-height:680px;overflow:auto">Running</pre>
+<script type="module">
+import {createConversationCards} from '/webui/conversation-cards.mjs';
+const results=[],errors=[];let composing=false,revision=1,finished=false,text=('中文长回复第一个段落。'.repeat(650))+'【当前输出一】';
+const c={conversationId:'conversation-a',agentId:'agent-a',title:'回归会话',revision:1,state:'ACTIVE',activeOperation:'op'};
+const old=Array.from({length:8},(_,i)=>({messageId:'old-'+i,role:'USER',status:'COMPLETE',revision:1,textLength:400,sequence:i+1,errorCode:''}));
+const message=()=>({messageId:'live',role:'ASSISTANT',status:finished?'COMPLETE':'GENERATING',revision,textLength:text.length,sequence:9,errorCode:''});
+const send=async(channel,a)=>{if(channel==='nativeChatPreferences')return {showThinking:false,revision:1};if(channel!=='conversationAction')return {};
+ let state={};switch(a.kind){case 'list':state={conversations:[c],nextBefore:0};break;case 'get':state=c;break;case 'focus':state={nativeInput:'false'};break;
+ case 'messages':state={conversation:{...c,activeOperation:finished?'':'op'},messages:[...old,message()],nextBefore:0,summary:{},context:{},thinking:{},voiceJobs:[],voiceOutputEnabled:false,queued:[]};break;
+ case 'messageBatch':state={chunks:JSON.parse(a.messages).map(r=>{const t=r.messageId==='live'?text:'历史文本。'.repeat(80);return {...r,total:t.length,text:t.slice(r.offset,r.offset+4096)};})};break;
+ default:state={};}
+ return {code:'OBSERVED',values:{state:JSON.stringify(state)}};
+};
+const cards=createConversationCards({send,persist(){},report:e=>errors.push(String(e)),isComposing:()=>composing});
+const content=document.querySelector('#test-content');cards.mount(content,'agent-a');
+const draft=document.createElement('textarea');draft.id='chat-draft';draft.value='';content.append(draft);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function until(f){for(let i=0;i<100;i++){if(f())return;await sleep(30);}throw new Error('WAIT_TIMEOUT');}
+const check=(name,ok,detail={})=>{results.push({name,ok,...detail});if(!ok)throw new Error(name);};
+const row=()=>document.querySelector('article[data-message-id="live"]'),body=()=>row()?.querySelector(':scope > pre');
+const bottom=h=>h.scrollHeight-h.scrollTop-h.clientHeight;
+try{
+ await until(()=>document.querySelector('#conversation-list').options.length>1);const select=document.querySelector('#conversation-list');select.value=c.conversationId;select.dispatchEvent(new Event('change'));
+ await until(()=>body()?.textContent.endsWith('【当前输出一】'));await sleep(150);const h=document.querySelector('#chat-history');
+ check('initial live text beyond 4096 is fully displayed',body().textContent.length>7000);check('initial follows actual history scrollport',bottom(h)<3,{bottom:bottom(h)});
+ const initialRow=row(),initialBody=body();text+='【追加输出二】';revision++;cards.changed({agentId:c.agentId,conversationId:c.conversationId});await until(()=>body()?.textContent.endsWith('【追加输出二】'));await sleep(100);
+ check('stream preserves article and pre nodes',row()===initialRow&&body()===initialBody);check('new stream follows bottom',bottom(h)<3,{bottom:bottom(h)});
+ h.scrollTop=120;h.dispatchEvent(new Event('scroll'));await sleep(20);const before=h.scrollTop;const anchor=[...h.children].find(n=>n.getBoundingClientRect().bottom>h.getBoundingClientRect().top);const y=anchor.getBoundingClientRect().top;
+ text+='【用户正在翻历史】';revision++;cards.changed({agentId:c.agentId,conversationId:c.conversationId});await until(()=>body()?.textContent.endsWith('【用户正在翻历史】'));await sleep(100);
+ check('history reader is not pulled to latest',Math.abs(h.scrollTop-before)<2&&Math.abs(anchor.getBoundingClientRect().top-y)<2,{before,after:h.scrollTop});
+ check('latest button is offered',!document.querySelector('#conversation-latest').hidden);document.querySelector('#conversation-latest').click();await sleep(150);check('latest button restores following',bottom(h)<3);
+ draft.focus();draft.value='中文输入测试';draft.setSelectionRange(2,2);composing=true;text+='【输入不中断】';revision++;cards.changed({agentId:c.agentId,conversationId:c.conversationId});await until(()=>body()?.textContent.endsWith('【输入不中断】'));
+ check('Chinese draft and caret survive streamed reply',draft.value==='中文输入测试'&&draft.selectionStart===2&&document.activeElement===draft);composing=false;
+ finished=true;revision++;cards.changed({agentId:c.agentId,conversationId:c.conversationId});await until(()=>row()?.dataset.structure.includes('COMPLETE'));await sleep(150);
+ check('completion retains full latest text and bottom',body().textContent===text&&bottom(h)<3);check('outer panels are not accidental scrollports',content.scrollTop===0&&document.querySelector('#conversation-manager').scrollTop===0);
+ check('no UI errors',errors.length===0,{errors});document.body.dataset.testStatus='PASSED';
+}catch(e){results.push({failure:String(e),errors});document.body.dataset.testStatus='FAILED';}
+finally{document.querySelector('#result').textContent=JSON.stringify(results,null,2);window.testResults=results;}
+</script></body></html>
