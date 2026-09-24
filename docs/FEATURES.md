@@ -6,6 +6,8 @@
 
 [返回首页](../README.md) · [下载版本](https://github.com/gaoshanliuni/divzero/releases) · [安装说明](BUILD_JAR.md)
 
+DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，通过自然语言、世界感知、长期记忆和动态创造，让 AI 角色真正参与游戏世界。
+
 本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**协议6**，客户端与服务端一起更新。管理操作需要开启作弊／真实管理权限，首次可用 `/ai accept` 初始化。
 
 ## 模型选择会显著影响效果
@@ -183,6 +185,10 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 
 ![真实坐标与附近石头统计读数](images/live-readout.png)
 
+## 脚本与扩展
+
+支持通过 **JavaScript** 和运行时内容包编写自定义交互、回调与 AI 行为。在对应权限与执行生命周期内使用模组开放的游戏 API 和对象；本机任务则使用 Java 管理的专用 Python，并逐次在原生聊天确认。
+
 ## 10. 内容包与高级运行生命周期
 
 支持包版本查看、校验、复制、启用，以及资源／数据／客户端代码等专用流程：
@@ -215,6 +221,12 @@ Java直接管理固定校验的 `python-build-standalone install_only_stripped`�
 
 多人创建者审批已用独立 ServerPlayer 身份验证，双真实客户端联验列入后续验证。事件队列 BACKPRESSURE 状态与测试断言的统一列入维护项。
 
+## 许可证与免责声明
+
+DivZero 使用 [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob/main/LICENSE) 开源许可。
+
+**本项目不包含任何第三方 AI 服务密钥。** 玩家需要自行配置服务提供商、API URL、Key 和模型，并承担相关 AI 服务产生的费用。模型的可用性、能力与价格以对应服务提供商为准。
+
 [截图说明与原图校验](images/README.md) · [源码与技术说明](SOURCE_SNAPSHOT.md)
 
 ---
@@ -224,6 +236,8 @@ Java直接管理固定校验的 `python-build-standalone install_only_stripped`�
 # DivZero: Features and Supported Scope
 
 [Home](../README.md#english) · [Downloads](https://github.com/gaoshanliuni/divzero/releases) · [Installation](BUILD_JAR.md)
+
+DivZero AI Runtime is an intelligent AI framework for Minecraft. Natural language interaction, world awareness, persistent memory, and dynamic creation let AI characters actively participate in the game world.
 
 This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **Protocol 6:** update clients and servers together. Administrative actions require cheats or real administrator permissions. Use `/ai accept` for initial setup.
 
@@ -402,6 +416,10 @@ This image shows placement of 177 blocks. Separate preservation checks cover a c
 
 ![Live coordinates and nearby stone-block counts](images/live-readout.png)
 
+## Scripts and extensions
+
+Use **JavaScript** and runtime content packages to define custom interactions, callbacks, and AI behavior. Access the game's exposed APIs and objects within the relevant permissions and execution lifecycle. Local computer tasks use a dedicated Python runtime managed by Java, with per-request confirmation in native chat.
+
 ## 10. Content packages and advanced lifecycles
 
 View, validate, copy, and enable package versions, with dedicated resource/data/client-code workflows:
@@ -433,5 +451,11 @@ Complete stdout/stderr is saved and paginated. Timeouts or cancellations may lea
 Screenshots come from actual native runs. Crouching and route images were newly captured for those checks; model settings use an already verified screenshot of the corresponding features. Model generation and native actions have separate records covering the specific listed scenarios.
 
 Creator approval was checked using separate ServerPlayer identities. Testing with two real clients remains pending. Aligning event-queue BACKPRESSURE states and test assertions remains a maintenance item.
+
+## License and Disclaimer
+
+DivZero is open source under the [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob/main/LICENSE).
+
+**No third-party AI service keys are included.** Configure your own provider, API URL, key, and model. You are responsible for any charges from your chosen AI service. Model availability, capabilities, and pricing are determined by the provider.
 
 [Screenshot notes and original checksums](images/README.md) · [Source and technical notes](SOURCE_SNAPSHOT.md)
