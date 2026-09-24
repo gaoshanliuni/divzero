@@ -1834,8 +1834,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationToolJournal.java",
-      "sha256": "42891ef80ff0ecc2ecc0e4ebf36777ba685a11310d89fae13a749f0480ac8e0e",
-      "bytes": 4840
+      "sha256": "9776be1964c6d72f4b4538e0bf8ae880b1652ff4b6282a40396674c611b3e1a5",
+      "bytes": 4964
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
@@ -2499,8 +2499,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteRuntimeRepository.java",
-      "sha256": "f7ef154741aea9551701f19d07d1003085fe0b2db926ba5eed7826eb92ac41a4",
-      "bytes": 29076
+      "sha256": "70dbbf3c260d129afdb4aa42707aefed64f45fd8ecf79eba2eea2f3fcc6bbb15",
+      "bytes": 29379
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteWriteGate.java",
+      "sha256": "21041318db7960d45989317e441fe0fbd52e83e9ff24f94646dd5f444a8f75ae",
+      "bytes": 863
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/StoredConfig.java",
@@ -3194,8 +3199,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "e7474647b453f7e9e01bea42c0ecc3594449310b6b4db6ba606c29f7e9fc4e85",
-      "bytes": 15189
+      "sha256": "0a04aa88d3210a51ed892eaa3df033d5b4d13a0cb9315f456bf63bd28c1862df",
+      "bytes": 15470
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",

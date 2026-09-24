@@ -13,9 +13,11 @@ import java.util.UUID;
 public final class SqliteRuntimeRepository implements AutoCloseable {
     public static final int SCHEMA_VERSION = 1;
     private final Connection connection;
+    private final java.util.concurrent.locks.ReentrantLock writeGate;
 
     public SqliteRuntimeRepository(Path database) throws Exception {
         Path absolute = database.toAbsolutePath().normalize();
+        writeGate = SqliteWriteGate.forFile(absolute);
         if (absolute.getParent() != null) {
             Files.createDirectories(absolute.getParent());
         }
@@ -26,6 +28,15 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
         properties.setProperty("transaction_mode", "IMMEDIATE");
         connection = DriverManager.getConnection("jdbc:sqlite:" + absolute, properties);
         initialize();
+    }
+
+    private void beginWrite() throws SQLException {
+        writeGate.lock();
+        try { connection.setAutoCommit(false); }
+        catch (SQLException | RuntimeException | Error failure) { writeGate.unlock(); throw failure; }
+    }
+    private void endWrite() throws SQLException {
+        try { connection.setAutoCommit(true); } finally { writeGate.unlock(); }
     }
 
     private void initialize() throws SQLException {
@@ -96,12 +107,12 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
     public synchronized List<PackageLibraryHistory.VersionSummary> packageVersions(UUID id,int offset,int limit)throws SQLException{return PackageLibraryHistory.versions(connection,id,offset,limit);}
     public synchronized PackageLibraryHistory.Version packageVersion(UUID id,long revision)throws SQLException{return PackageLibraryHistory.version(connection,id,revision);}
     public synchronized void packageBaselines(List<RuntimeRecord> records,long observedAt)throws Exception{
-        connection.setAutoCommit(false);try{for(var record:records)PackageLibraryHistory.record(connection,record,"BASELINE_OBSERVED",observedAt);connection.commit();}catch(Exception failure){connection.rollback();throw failure;}finally{connection.setAutoCommit(true);}
+        beginWrite();try{for(var record:records)PackageLibraryHistory.record(connection,record,"BASELINE_OBSERVED",observedAt);connection.commit();}catch(Exception failure){connection.rollback();throw failure;}finally{endWrite();}
     }
     /** Head plus exact stored snapshots commit together; a history-capacity failure never replaces the head. */
     public synchronized RuntimeCasResult packageCompareAndSet(UUID id,long expected,String payload,long at)throws Exception{
         UUID world=dev.mineagent.runtime.core.packages.RuntimePackageLibrary.GLOBAL_LIBRARY_ID;String ns=PackageLibraryHistory.NS;
-        validateKey(world,ns,id.toString(),expected,payload);connection.setAutoCommit(false);
+        validateKey(world,ns,id.toString(),expected,payload);beginWrite();
         try{
             var current=select(world,ns,id.toString()).orElse(null);
             if(current==null?expected!=0:current.deleted()||current.revision()!=expected){connection.rollback();return new RuntimeCasResult(false,current==null?missing(world,ns,id.toString()):current);}
@@ -111,7 +122,7 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
             var saved=new RuntimeRecord(world,ns,id.toString(),next,payload,at,false);
             PackageLibraryHistory.record(connection,current,"OBSERVED_PREVIOUS_HEAD",at);PackageLibraryHistory.record(connection,saved,"LIBRARY_COMMIT",at);
             PackageLibraryHistory.check(before,PackageLibraryHistory.usage(connection));connection.commit();return new RuntimeCasResult(true,saved);
-        }catch(Exception failure){connection.rollback();throw failure;}finally{connection.setAutoCommit(true);}
+        }catch(Exception failure){connection.rollback();throw failure;}finally{endWrite();}
     }
     public synchronized dev.mineagent.runtime.core.packages.PackageAssetMetadata.Alias packageAlias(UUID owner,UUID pkg)throws SQLException{return PackageAssetPersistence.alias(connection,owner,pkg);}
     public synchronized dev.mineagent.runtime.core.packages.PackageAssetMetadata.Shelf packageShelf(UUID owner,UUID id)throws Exception{return PackageAssetPersistence.shelf(connection,owner,id);}
@@ -148,14 +159,14 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
         String ns="world_package_activations_v1",requests="world_package_restore_requests_v1";
         validateKey(world,ns,activation.toString(),expected,payload);validateKey(world,requests,operation.toString(),0,receipt);
         if(expected<1||receipt.length()>8192)throw new IllegalArgumentException("RESTORE_REQUEST_INVALID");
-        connection.setAutoCommit(false);
+        beginWrite();
         try{
             if(select(world,requests,operation.toString()).isPresent()||select(world,ns,operation.toString()).isPresent())throw new IllegalStateException("RESTORE_REQUEST_REUSED");
             try(var q=connection.prepareStatement("SELECT COUNT(*) FROM mineagent_runtime_records WHERE world_id=? AND namespace=?")){q.setString(1,world.toString());q.setString(2,requests);try(var r=q.executeQuery()){if(r.next()&&r.getLong(1)>=65536)throw new IllegalStateException("RESTORE_REQUEST_BUDGET");}}
             try(var q=connection.prepareStatement("UPDATE mineagent_runtime_records SET revision=?,payload=?,updated_at=? WHERE world_id=? AND namespace=? AND record_id=? AND revision=? AND deleted=0")){q.setLong(1,expected+1);q.setString(2,payload);q.setLong(3,at);q.setString(4,world.toString());q.setString(5,ns);q.setString(6,activation.toString());q.setLong(7,expected);if(q.executeUpdate()!=1)throw new IllegalStateException("RESTORE_REQUEST_STALE");}
             try(var q=connection.prepareStatement("INSERT INTO mineagent_runtime_records(world_id,namespace,record_id,revision,payload,updated_at,deleted) VALUES(?,?,?,1,?,?,0)")){q.setString(1,world.toString());q.setString(2,requests);q.setString(3,operation.toString());q.setString(4,receipt);q.setLong(5,at);q.executeUpdate();}
             connection.commit();
-        }catch(SQLException|RuntimeException failure){connection.rollback();throw failure;}finally{connection.setAutoCommit(true);}
+        }catch(SQLException|RuntimeException failure){connection.rollback();throw failure;}finally{endWrite();}
     }
 
     public synchronized RuntimeCasResult compareAndSet(
@@ -195,7 +206,7 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
     }
     private RuntimeCasResult write(UUID worldId,String namespace,String recordId,long expectedRevision,String payload,long updatedAtEpochMillis,boolean deleted,boolean worldAction,boolean taskCreation,TaskBudgetLineage.Parent taskParent)throws SQLException{
         validateKey(worldId, namespace, recordId, expectedRevision, payload);
-        connection.setAutoCommit(false);
+        beginWrite();
         try {
             RuntimeRecord current = select(worldId, namespace, recordId).orElse(null);
             if (current == null) {
@@ -257,7 +268,7 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
             if(failure instanceof SQLException sql){String message=java.util.Objects.toString(sql.getMessage(),"");for(String code:java.util.List.of("PACKAGE_JOB_ROW_BUDGET","PACKAGE_JOB_BYTE_BUDGET","PACKAGE_JOB_ACTIVE_BUDGET","PACKAGE_JOB_RETAINED_ID"))if(message.contains(code))throw new IllegalStateException(code,sql);}
             throw failure;
         } finally {
-            connection.setAutoCommit(true);
+            endWrite();
         }
     }
     private void projectWorldAction(UUID world,String namespace,String id,long revision,String payload)throws SQLException{
@@ -359,7 +370,7 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
         if (worldId == null || oldestCreatedAt < 0 || maximumBytes < 1) {
             throw new IllegalArgumentException("invalid audit retention policy");
         }
-        connection.setAutoCommit(false);
+        beginWrite();
         try {
             try (var expired = connection.prepareStatement(
                     "DELETE FROM mineagent_runtime_audit WHERE world_id = ? AND created_at < ?")) {
@@ -393,7 +404,7 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
             connection.rollback();
             throw failure;
         } finally {
-            connection.setAutoCommit(true);
+            endWrite();
         }
     }
 
