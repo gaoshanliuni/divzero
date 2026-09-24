@@ -3,7 +3,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $buildVersion=& (Join-Path $PSScriptRoot 'get-build-version.ps1')
-if ($buildVersion -notmatch '^\d{4}\.\d{1,2}\.\d{1,2}-dev\.[1-9][0-9]*$' -or $buildVersion -eq '0.1.0-SNAPSHOT') { throw 'BUILD_VERSION_NOT_DYNAMIC' }
+& (Join-Path $PSScriptRoot 'test-build-version.ps1')
+if ($buildVersion -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$' -or $buildVersion.EndsWith('-SNAPSHOT')) { throw 'BUILD_VERSION_INVALID' }
 $oldVersion=$env:DIVZERO_BUILD_VERSION
 try {
     $env:DIVZERO_BUILD_VERSION=$buildVersion

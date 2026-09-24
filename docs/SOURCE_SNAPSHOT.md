@@ -13,7 +13,7 @@
 | Mod ID | `mineagent_runtime` |
 | 技术包名 | `dev.mineagent.runtime` |
 | Gradle Wrapper | 9.2.1 |
-| 发布版本 | 提交 UTC 日期＋公开提交序号 |
+| 当前 Mod 版本 | `1.0.0` |
 
 ## 操作入口
 
@@ -109,3 +109,5 @@ F2“更多→关于”、原生面板“关于”均显示项目名DivZero、�
 同一源PNG现在同时打入根目录logo.png和namespaced资源，metadata指向根目录；新增jar/check最终产物校验（条目、字节一致、1024×1024可解码PNG），公开构建也执行。上一包namespaced PNG原本存在，本轮补根目录通用引用，不改写历史。
 
 0模型Native实测并查看F2、原生关于与NeoForge实际Mod列表截图；四字段/版本与PNG加载通过。原生测试首轮等待列表刷新问题已修正，失败证据保留。本轮不新增模型请求、不覆盖生产存档/配置。
+
+当前项目版本按用户指定设为 **1.0.0**；构建配置、JAR metadata、关于页与源码manifest使用同一版本。版本号不等于所有历史验收均已完成，本文列出的边界继续有效。

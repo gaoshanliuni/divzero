@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "0.1.0-SNAPSHOT",
+  "version": "1.0.0",
   "files": [
     {
       "path": ".gitattributes",
@@ -3029,8 +3029,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "5ca7acb870c2c5257afdb8ef76322c29c371226d334dc134d4ad5f31cccde69b",
-      "bytes": 7360
+      "sha256": "d6bf8cb716c68d047aa3ece08f8c913371c6d08634235dc196ba0889c431833a",
+      "bytes": 7552
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3039,8 +3039,8 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "7e59fb11157ca8e8349f2df8bf6a0a878735a9285e560f97331a68f284bbb15c",
-      "bytes": 504
+      "sha256": "130eae91c92167110a3a832881334e4acda7d95c998e62c510fcb79b3a19e451",
+      "bytes": 495
     },
     {
       "path": "gradle/wrapper/gradle-wrapper.jar",

@@ -54,7 +54,7 @@ Release Assets 提供运行 JAR，SHA-256 校验值列在正文。GitHub 的 Sou
 
 ## 版本规则
 
-版本采用公开提交的 **UTC 日期＋公开提交序号**，例如 `2026.9.24-dev.42`。同一提交保持同一 Mod 版本；运行 ID 和 attempt 区分发布身份。
+当前 Mod 版本为 **1.0.0**，以已提交 `gradle.properties` 的 `mod_version` 为准，不再自动覆盖成日期版本。历史 `-SNAPSHOT` 提交仍使用 UTC 日期＋公开提交序号；文件名中的提交号、运行 ID 和 attempt 区分构建身份。
 
 `get-build-version.ps1` 使用完整 Git 提交记录，Actions 采用 `fetch-depth: 0`。构建通过 `-Pmod_version=...` 将版本写入 JAR 文件名、NeoForge 元数据和发布信息。
 
