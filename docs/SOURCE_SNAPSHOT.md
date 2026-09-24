@@ -169,3 +169,18 @@ Native preflight correction (1.0.6): the deterministic rig now uses valid origin
 Native results: real generated bone visuals, all five terrain cases, 64-agent navigation with isolated cancellation, 16 same-owner plans and eight real-model conversations passed their checks. Concurrent placement exposed a real defect: 63 blocks changed, but 42 change-journal writes failed and were incorrectly reported as rejected. 1.0.7 reserves SQLite CAS write transactions before reading and marks post-mutation journal failures PARTIAL, never safe-to-replay. Focused new-target verification is pending; the failed batch is retained and will not be replayed.
 
 The expanded CI stress test also exposed writer starvation at the tool journal timeout. Short transactions now share a fair per-database write gate; unrelated databases, reads, model calls and world planning remain independent. No AI-task concurrency or queue-count cap is added.
+
+### Native acceptance closure — 1.0.7
+
+| Sample | Result |
+|---|---|
+| DeepSeek-generated hierarchical bones and native screenshots | Passed (1.0.6 full run; renderer unchanged) |
+| Five terrain cases, including normal steps without crouching and low-clearance crouching | Passed |
+| 64 simultaneous AI bodies, one cancellation / 63 arrivals | Passed |
+| 63 independent placements and durable world-change journals | Passed after fix; 63/63 verified after shutdown |
+| 16 same-owner independent geometry plans / 128 placed blocks | Passed |
+| Eight overlapping real DeepSeek requests, isolated cancellation and ordered follow-up | Passed |
+
+Actions run `36037269439` succeeded. The focused new-world Native rerun used no credentials and zero model calls; the earlier failed run was preserved, not replayed. The full live batch used 21 official deepseek-flash requests, all high Thinking with no artificial output-token cap: 20 completed and one intentionally cancelled. Available completed usage was 318488 total tokens; the cancelled request's usage is unknown.
+
+Performance remains hardware-bound: the focused 64-body movement sample had median 18.56 ms / p95 37.70 ms per server tick, with a 186.04 ms peak; placement peak was 71.89 ms. This is not a stable-20-TPS or unlimited-scale guarantee. Bone support is rigid hierarchy, not weighted skinning. These results close the specified Native sample, not every outstanding V1 or third-party Mod compatibility case.
