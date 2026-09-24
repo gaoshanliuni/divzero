@@ -1,3 +1,6 @@
+import {t as __uiT,tf as __uiF} from './i18n.mjs';
+import {localizeStaticHtml} from './i18n.mjs';
+import {createLanguageSettings} from './language-settings.mjs';
 import {createAboutCards} from './about-cards.mjs';
 import {createSkinCards} from './skin-cards.mjs';
 import {createScenePreview} from './scene-preview.mjs';
@@ -44,6 +47,7 @@ import { collectPaintLayout, createPaintLayoutPublisher } from './paint-layout.m
 import { createNativeAtlas } from './native-atlas.mjs';
 import { resolveAtlasInput } from './atlas-input.mjs';
 import { canDelegateView } from './ui-delegation-state.mjs';
+localizeStaticHtml();
 const state = new WindowState();
 let nativeAtlas=null;
 function viewportWidth(){return nativeAtlas?.logical().width??window.innerWidth;}
@@ -59,6 +63,7 @@ let availableAgents = [];
 const desktopWindows=createDesktopWindows({state,nodes,windowFor,send,pin:setWindowPinned,toggle:toggleWindow,persist:persistUiStateNow,agents:()=>availableAgents});
 document.querySelector('#open-windows').onclick=desktopWindows.open;
 const about=createAboutCards({windowFor,send,report});document.querySelector('#open-about').onclick=about.open;
+const languageSettings=createLanguageSettings({windowFor,send,report,persist:persistUiStateNow});document.querySelector('#open-language').onclick=languageSettings.open;
 const moreMenu=document.querySelector('#more-menu');
 let menuEscapeClosedAt=-Infinity;
 function dismissMoreWithEscape(){const now=performance.now();if(moreMenu.open){moreMenu.open=false;menuEscapeClosedAt=now;return true;}return now-menuEscapeClosedAt<250;}
@@ -81,7 +86,7 @@ window.addEventListener('mineagent:native-api-probe',()=>{const find=id=>([...do
 const resourcePacks=createResourcePackCards({windowFor,send});document.querySelector('#open-resource-packs').onclick=()=>resourcePacks.open();
 window.addEventListener('mineagent:resource-pack-probe',()=>{const pane=id=>[...document.querySelectorAll('.window')].find(n=>n.dataset.viewId===id),catalog=pane('runtime-package-catalog'),resource=pane('runtime-resource-packs'),card=resource?.querySelector('.event-card');send('resourcePackProbe',{catalogText:(catalog?.innerText||'').slice(0,12000),resourceText:(resource?.innerText||'').slice(0,12000),windowBackground:resource?getComputedStyle(resource).backgroundColor:'',cardBackground:card?getComputedStyle(card).backgroundColor:''}).catch(()=>{});});
 const clientScripts=createClientScriptCards({windowFor,send});document.querySelector('#open-client-scripts').onclick=()=>clientScripts.open();
-window.addEventListener('mineagent:client-script-probe',()=>{const pane=id=>[...document.querySelectorAll('.window')].find(n=>n.dataset.viewId===id),catalog=pane('runtime-package-catalog'),manager=pane('runtime-client-scripts'),studio=pane('runtime-java-studio'),delivery=pane('runtime-deliveries'),card=manager?.querySelector('.event-card'),studioCard=studio?.querySelector('.event-card'),studioEditor=studio?.querySelector('textarea[aria-label="Java 或 Rhino 源码"]'),studioPath=[...studio?.querySelectorAll('label')||[]].find(n=>n.textContent.includes('源码路径'))?.querySelector('input');send('clientScriptProbe',{catalogText:(catalog?.innerText||'').slice(0,12000),clientScriptText:(manager?.innerText||'').slice(0,12000),studioText:(studio?.innerText||'').slice(0,16000),studioSource:(studioEditor?.value||'').slice(0,16000),studioPath:(studioPath?.value||'').slice(0,128),deliveryText:(delivery?.innerText||'').slice(0,12000),cardBackground:card?getComputedStyle(card).backgroundColor:'',studioCardBackground:studioCard?getComputedStyle(studioCard).backgroundColor:''}).catch(()=>{});});
+window.addEventListener('mineagent:client-script-probe',()=>{const pane=id=>[...document.querySelectorAll('.window')].find(n=>n.dataset.viewId===id),catalog=pane('runtime-package-catalog'),manager=pane('runtime-client-scripts'),studio=pane('runtime-java-studio'),delivery=pane('runtime-deliveries'),card=manager?.querySelector('.event-card'),studioCard=studio?.querySelector('.event-card'),studioEditor=studio?.querySelector('textarea[data-studio-source]'),studioPath=[...studio?.querySelectorAll('label')||[]].find(n=>n.textContent.includes(__uiT("源码路径")))?.querySelector('input');send('clientScriptProbe',{catalogText:(catalog?.innerText||'').slice(0,12000),clientScriptText:(manager?.innerText||'').slice(0,12000),studioText:(studio?.innerText||'').slice(0,16000),studioSource:(studioEditor?.value||'').slice(0,16000),studioPath:(studioPath?.value||'').slice(0,128),deliveryText:(delivery?.innerText||'').slice(0,12000),cardBackground:card?getComputedStyle(card).backgroundColor:'',studioCardBackground:studioCard?getComputedStyle(studioCard).backgroundColor:''}).catch(()=>{});});
 const generations = createGenerationCards({ windowFor, send, report, persist: saveUiState, openRestore:worldRestore.open, openDataPack:dataPacks.open, openResourcePack:resourcePacks.open, openClientScript:clientScripts.open });
 const preferences=createPreferenceCards({windowFor,send});document.querySelector('#open-preferences').onclick=preferences.open;
 const javaStudio=createJavaStudio({windowFor,send,openCatalog:()=>packageCatalog.open(),openNativeApi:()=>nativeApi.open(),openClientScripts:id=>clientScripts.open(id),nativeApiContext:()=>nativeApi.selection()});document.querySelector('#open-java-studio').onclick=javaStudio.open;nativeApi.onSelectionChanged(javaStudio.nativeContextChanged);
@@ -183,7 +188,7 @@ function renderLayout(id) {
   const desired=validateOpacity(view.opacity??view.agentPlacement?.opacity??view.placement?.opacity);
   const unavailable=desired!==undefined&&!nativeAtlas;if(unavailable)report(new Error('UI_OPACITY_BACKEND_REQUIRED'));
   const visible=state.visible(id)&&!unavailable;
-  node.dataset.pinned=String(view.pinned);const pinButton=node.querySelector('[data-action=pin-window]');if(pinButton){pinButton.textContent=view.pinned?'已悬浮':'悬浮';pinButton.setAttribute('aria-pressed',String(view.pinned));pinButton.title=view.pinned?'取消游戏中悬浮':'返回游戏后继续显示';}
+  node.dataset.pinned=String(view.pinned);const pinButton=node.querySelector('[data-action=pin-window]');if(pinButton){pinButton.textContent=view.pinned?__uiT("已悬浮"):__uiT("悬浮");pinButton.setAttribute('aria-pressed',String(view.pinned));pinButton.title=view.pinned?__uiT("取消游戏中悬浮"):__uiT("返回游戏后继续显示");}
   const content=node.querySelector('.content');if(content)content.inert=view.mode==='PASSIVE_HUD'||!state.interacting;
   if(nativeAtlas&&desired!==undefined)nativeAtlas.setOpacity(id,desired);
   Object.assign(node.style, { left: nativeAtlas?node.style.left:`${x}px`, top: nativeAtlas?node.style.top:`${y}px`, width: `${width}px`, height: `${height}px`, zIndex: view.z, display: visible ? 'flex' : 'none' });
@@ -232,7 +237,7 @@ function dock() {
   const tray = document.querySelector('#minimized'); tray.replaceChildren();
   for (const [id, view] of state.views) if (state.workspaceVisible||!['INTERACTIVE_FLOATING','MODAL'].includes(view.mode)) {
     const hidden=opacityHidden(view.opacity??view.agentPlacement?.opacity??view.placement?.opacity);
-    const button=el('button',(hidden?'恢复可见 · ':'')+nodes.get(id).dataset.title+(view.pinned?' · 悬浮':''),tray);button.dataset.restoreOpacityView=id;button.dataset.windowTask=id;button.setAttribute('aria-pressed',String(!view.minimized&&state.focused===id));button.title=(view.minimized?'显示':'切换 / 隐藏')+' · '+nodes.get(id).dataset.title;
+    const button=el('button',(hidden?__uiT("恢复可见 · "):'')+nodes.get(id).dataset.title+(view.pinned?__uiT(" · 悬浮"):''),tray);button.dataset.restoreOpacityView=id;button.dataset.windowTask=id;button.setAttribute('aria-pressed',String(!view.minimized&&state.focused===id));button.title=(view.minimized?__uiT("显示"):__uiT("切换 / 隐藏"))+' · '+nodes.get(id).dataset.title;
     button.onclick=async()=>{if(hidden){try{const revision=view.layoutRevision;await send('restoreViewOpacity',{viewId:id,expectedLayoutRevision:revision});if(state.views.get(id)!==view||view.layoutRevision!==revision)return;view.opacity=1;state.minimize(id,true);}catch(e){report(e);return;}}toggleWindow(id,true);};
   }
   desktopWindows.refresh();nativeAtlas?.schedule();
@@ -258,16 +263,16 @@ function windowFor(id, title, mode = 'INTERACTIVE_FLOATING', reveal = true) {
   node.className = 'window'; node.dataset.title = title; node.dataset.mode = mode; node.dataset.viewId = id;
   node.setAttribute('aria-label', title); node.setAttribute('role', 'region');
   const bar = el('header', null, node); bar.className = 'titlebar'; const heading=el('strong', title, bar);heading.title=title;
-  if (mode === 'PREVIEW') el('span', '预览 · 禁止世界写入', bar).className = 'badge';
-  if (mode === 'CONTENT') el('span', '服务端绑定', bar).className = 'badge';
-  if (mode === 'PASSIVE_HUD') el('span', '只读 HUD', bar).className = 'badge';
-  if(mode!=='MODAL'){const pin=el('button','悬浮',bar);pin.dataset.action='pin-window';pin.setAttribute('aria-label','切换窗口悬浮');pin.onclick=()=>setWindowPinned(id,!view.pinned);}
-  const min = el('button', '−', bar); min.setAttribute('aria-label', '收起'); min.onclick = () => {
+  if (mode === 'PREVIEW') el('span', __uiT("预览 · 禁止世界写入"), bar).className = 'badge';
+  if (mode === 'CONTENT') el('span', __uiT("服务端绑定"), bar).className = 'badge';
+  if (mode === 'PASSIVE_HUD') el('span', __uiT("只读 HUD"), bar).className = 'badge';
+  if(mode!=='MODAL'){const pin=el('button',__uiT("悬浮"),bar);pin.dataset.action='pin-window';pin.setAttribute('aria-label',__uiT("切换窗口悬浮"));pin.onclick=()=>setWindowPinned(id,!view.pinned);}
+  const min = el('button', '−', bar); min.dataset.action='minimize-window'; min.setAttribute('aria-label', __uiT("收起")); min.onclick = () => {
     editedLayout(id);
     if(id==='runtime-windows')desktopWindows.cancel();
     send('previewStop',{viewId:id}).catch(report); // Also revoke a delegate still waiting for its first RPC.
     state.minimize(id, true); renderLayout(id); dock(); saveUiState(); };
-  const shut = el('button', '×', bar); shut.setAttribute('aria-label', '关闭'); shut.onclick = () => close(id);
+  const shut = el('button', '×', bar); shut.setAttribute('aria-label', __uiT("关闭")); shut.onclick = () => close(id);
   const content = el('div', null, node); content.className = 'content';
   if(mode==='PASSIVE_HUD')content.inert=true;
   if(typeof restoredLayouts[id]?.pinned==='boolean'&&mode!=='MODAL')state.pin(id,restoredLayouts[id].pinned);
@@ -322,44 +327,44 @@ document.addEventListener('keydown', event => {
   send('releaseInput').catch(report);
 });
 function openStatus() {
-  const content = windowFor('runtime-status', 'WebGUI 宿主状态');
+  const content = windowFor('runtime-status', __uiT("WebGUI 宿主状态"));
   if (content.childElementCount) return;
-  el('h2', '本地网页 · 独立生命周期', content);
-  el('p', '一个透明 WebGUI 宿主协调多个窗口。关闭对话不会关闭其他窗口。', content);
-  el('p', '服务端会话授权、可信选择卡和对话已接通。包页面生成与 AI 操作仍在实施。', content).className = 'muted';
-  const echoLabel = el('label', '桥接回读测试', content); echoLabel.htmlFor = 'echo-input';
-  const input = el('input', null, content); input.id = 'echo-input'; input.value = '你好，Minecraft';
-  const button = el('button', '发送并回读', content); button.id = 'echo-submit';
+  el('h2', __uiT("本地网页 · 独立生命周期"), content);
+  el('p', __uiT("一个透明 WebGUI 宿主协调多个窗口。关闭对话不会关闭其他窗口。"), content);
+  el('p', __uiT("服务端会话授权、可信选择卡和对话已接通。包页面生成与 AI 操作仍在实施。"), content).className = 'muted';
+  const echoLabel = el('label', __uiT("桥接回读测试"), content); echoLabel.htmlFor = 'echo-input';
+  const input = el('input', null, content); input.id = 'echo-input'; input.value = __uiT("你好，Minecraft");
+  const button = el('button', __uiT("发送并回读"), content); button.id = 'echo-submit';
   const receipt = el('pre', '', content); receipt.id = 'echo-receipt'; receipt.setAttribute('role', 'status');
   button.onclick = async () => { try { const r = await send('echo', { text: input.value }); receipt.textContent = r.text; } catch (e) { report(e); } };
-  el('h3','登录时恢复的 HUD',content);const bookmarks=el('div','',content);bookmarks.id='hud-restore-list';renderHudRestoreStatus();
+  el('h3',__uiT("登录时恢复的 HUD"),content);const bookmarks=el('div','',content);bookmarks.id='hud-restore-list';renderHudRestoreStatus();
 }
 function renderHudRestoreStatus(){
   const list=document.querySelector('#hud-restore-list');if(!list)return;list.replaceChildren();
-  if(hudRestoreStatus.storageError){el('p',hudRestoreStatus.storageError,list).className='error';el('button','清除无效的 HUD 恢复设置',list).onclick=()=>send('hudResetPreferences').catch(report);return;}
-  if(!hudRestoreStatus.entries.length){el('p','在 HUD 标题栏启用“登录时恢复”；关闭 HUD 会取消恢复。',list).className='muted';return;}
+  if(hudRestoreStatus.storageError){el('p',hudRestoreStatus.storageError,list).className='error';el('button',__uiT("清除无效的 HUD 恢复设置"),list).onclick=()=>send('hudResetPreferences').catch(report);return;}
+  if(!hudRestoreStatus.entries.length){el('p',__uiT("在 HUD 标题栏启用“登录时恢复”；关闭 HUD 会取消恢复。"),list).className='muted';return;}
   for(const entry of hudRestoreStatus.entries){const row=el('div',null,list);row.className='generation-job';el('p',`HUD ${entry.target.slice(0,8)} · ${entry.status}`,row);
-    el('button','不再恢复',row).onclick=()=>send('hudForget',{key:entry.key}).catch(report);
-    if(entry.status==='RESTORE_FAILED')el('button','重试恢复',row).onclick=()=>send('hudRetry',{key:entry.key}).catch(report);
+    el('button',__uiT("不再恢复"),row).onclick=()=>send('hudForget',{key:entry.key}).catch(report);
+    if(entry.status==='RESTORE_FAILED')el('button',__uiT("重试恢复"),row).onclick=()=>send('hudRetry',{key:entry.key}).catch(report);
   }
 }
 function openChat() {
-  const content = windowFor('runtime-chat', 'AI 对话');
+  const content = windowFor('runtime-chat', __uiT("AI 对话"));
   if (content.childElementCount) return;
   const intro=el('p', '', content);intro.className='muted';intro.id='conversation-intro';
   el('label', 'Agent', content).id='chat-agent-label';
   const agent = el('select', null, content); agent.id = 'chat-agent'; agent.setAttribute('aria-label', 'Agent');
   fillAgents();
-  const taskAnswer=el('details',null,content);taskAnswer.id='chat-task-answer';el('summary','待确认',taskAnswer);
-  const target=el('select',null,taskAnswer);target.id='chat-decision';target.setAttribute('aria-label','回答待决问题');agent.onchange=()=>{fillDecisionTargets();conversations.agent(agent.value);};fillDecisionTargets();
+  const taskAnswer=el('details',null,content);taskAnswer.id='chat-task-answer';el('summary',__uiT("待确认"),taskAnswer);
+  const target=el('select',null,taskAnswer);target.id='chat-decision';target.setAttribute('aria-label',__uiT("回答待决问题"));agent.onchange=()=>{fillDecisionTargets();conversations.agent(agent.value);};fillDecisionTargets();
   const notice=el('p','',taskAnswer);notice.id='chat-decision-result';notice.setAttribute('role','status');
   conversations.mount(content,agent.value);
-  el('label', '消息', content).id='chat-message-label';
-  const text = el('textarea', null, content); text.setAttribute('aria-label', '消息');
-  text.id = 'chat-draft';text.maxLength=16384;text.value = '';text.disabled=!conversations.current();text.placeholder='输入消息或需求';text.addEventListener('input',()=>{if(!target.value)conversations.edit(text.value);else restoredChat=text.value;});
+  el('label', __uiT("消息"), content).id='chat-message-label';
+  const text = el('textarea', null, content); text.setAttribute('aria-label', __uiT("消息"));
+  text.id = 'chat-draft';text.maxLength=16384;text.value = '';text.disabled=!conversations.current();text.placeholder=__uiT("输入消息或需求");text.addEventListener('input',()=>{if(!target.value)conversations.edit(text.value);else restoredChat=text.value;});
   target.addEventListener('change',()=>{text.disabled=!target.value&&(!conversations.current()||conversations.current().state!=='ACTIVE');text.value=target.value?restoredChat:conversations.current()?conversations.snapshot().drafts[conversations.current().conversationId]||'':'';});
   const actions = el('div', null, content); actions.className = 'actions';
-  const submit = el('button', '发送', actions);
+  const submit = el('button', __uiT("发送"), actions);
   submit.onclick = async () => {
     if (!connected || !text.value.trim()) return;
     submit.disabled = true;
@@ -373,12 +378,12 @@ function openChat() {
       if (!['ACCEPTED', 'APPLIED'].includes(result.code)) throw new Error(result.values?.errorCode || result.code);
       if(result.values?.transport==='DECISION_CHAT'){
         if(result.values.decision)decisions.updateOne(JSON.parse(result.values.decision),result.values.answer?JSON.parse(result.values.answer):null,result.values.domainEffect?JSON.parse(result.values.domainEffect):null);
-        notice.textContent='聊天回答已记录；外观执行结果见对应选择卡，回答接受不等于外观已应用。';
+        notice.textContent=__uiT("聊天回答已记录；外观执行结果见对应选择卡，回答接受不等于外观已应用。");
       }
       if(context&&agent.value===submittedAgent&&text.value===submitted)text.value = ''; }
     catch (e) { report(e); } finally { submit.disabled = false; }
   };
-  el('button', '刷新', actions).onclick = () => conversations.refresh();
+  el('button', __uiT("刷新"), actions).onclick = () => conversations.refresh();
   if (lastSnapshot) showSnapshot(lastSnapshot);
 }
 function fillAgents() {
@@ -389,12 +394,12 @@ function fillAgents() {
   if(select.value!==previous)conversations.agent(select.value);
   fillDecisionTargets();
 }
-function fillDecisionTargets(){const select=document.querySelector('#chat-decision'),agent=document.querySelector('#chat-agent');if(!select||!agent)return;const previous=select.value;select.replaceChildren();el('option','普通对话 / 唯一问题的序号回答',select).value='';for(const q of decisionContexts.filter(q=>q.agentId===agent.value)){const option=el('option',`${q.title} · ${q.status}`,select);option.value=q.decisionId;}if([...select.options].some(o=>o.value===previous))select.value=previous;}
+function fillDecisionTargets(){const select=document.querySelector('#chat-decision'),agent=document.querySelector('#chat-agent');if(!select||!agent)return;const previous=select.value;select.replaceChildren();el('option',__uiT("普通对话 / 唯一问题的序号回答"),select).value='';for(const q of decisionContexts.filter(q=>q.agentId===agent.value)){const option=el('option',`${q.title} · ${q.status}`,select);option.value=q.decisionId;}if([...select.options].some(o=>o.value===previous))select.value=previous;}
 function showSnapshot(data) {
   lastSnapshot = data; connected = data.connected === true;
-  status.textContent = connected ? 'WebGUI 已连接游戏' : 'WebGUI 已就绪 · 未进入世界';
+  status.textContent = connected ? __uiT("WebGUI 已连接游戏") : __uiT("WebGUI 已就绪 · 未进入世界");
   const history = document.querySelector('#chat-history');
-  if (history&&!history.dataset.persistentConversation) history.textContent = data.conversationText || '尚无当前会话';
+  if (history&&!history.dataset.persistentConversation) history.textContent = data.conversationText || __uiT("尚无当前会话");
 }
 function openPackage(data) {
   // Only native host messages create a frame. Package messages cannot create/retarget windows.
@@ -403,30 +408,30 @@ function openPackage(data) {
   const content = windowFor(data.viewId, data.title, data.mode);
   const view=state.views.get(data.viewId);if(typeof data.layoutKey!=='string'||!/^package:[a-f0-9]{64}$/.test(data.layoutKey))throw new Error('UI_LAYOUT_SCOPE');view.layoutKey=data.layoutKey;view.placement=data.placement||null;applyInitialPlacement(data.viewId);renderLayout(data.viewId);
   if(data.contentKind==='CONTAINER'&&!view.placement&&!restoredLayouts[view.layoutKey])layoutInWorkspace(data.viewId,containerBounds(viewportWidth(),viewportHeight()));
-  nodes.get(data.viewId).dataset.targetObjectId=data.targetObjectId||'';nodes.get(data.viewId).dataset.contentKind=data.contentKind||'';if(data.contentKind==='CONTAINER')nodes.get(data.viewId).querySelector('.badge').textContent=data.actorKind==='AGENT'?'原生容器 · Agent 自身背包':'原生容器 · 玩家操作';
+  nodes.get(data.viewId).dataset.targetObjectId=data.targetObjectId||'';nodes.get(data.viewId).dataset.contentKind=data.contentKind||'';if(data.contentKind==='CONTAINER')nodes.get(data.viewId).querySelector('.badge').textContent=data.actorKind==='AGENT'?__uiT("原生容器 · Agent 自身背包"):__uiT("原生容器 · 玩家操作");
   nodes.get(data.viewId).dataset.packageId=data.packageId||'';nodes.get(data.viewId).dataset.packageRevision=data.packageRevision||'';
   nodes.get(data.viewId).dataset.candidatePreview=String(!!data.candidatePreview);
-  if(data.candidatePreview){const badge=nodes.get(data.viewId).querySelector('.badge');if(badge)badge.textContent='候选预览 · 只读';}
+  if(data.candidatePreview){const badge=nodes.get(data.viewId).querySelector('.badge');if(badge)badge.textContent=__uiT("候选预览 · 只读");}
   if (content.childElementCount) return;
   content.classList.add('frame');
   if(data.mode==='PASSIVE_HUD'&&data.targetObjectId){
-    const remember=el('button','登录时恢复',nodes.get(data.viewId).querySelector('.titlebar'));remember.dataset.action='remember-hud';remember.setAttribute('aria-pressed','false');remember.disabled=true;
-    remember.title='仅保存该世界/玩家的 HUD 绑定和布局；下次登录仍重新授权，不保存比分或 Session';
+    const remember=el('button',__uiT("登录时恢复"),nodes.get(data.viewId).querySelector('.titlebar'));remember.dataset.action='remember-hud';remember.setAttribute('aria-pressed','false');remember.disabled=true;
+    remember.title=__uiT("仅保存该世界/玩家的 HUD 绑定和布局；下次登录仍重新授权，不保存比分或 Session");
     remember.onclick=async()=>{const v=state.views.get(data.viewId);remember.disabled=true;try{await send('hudRemember',{viewId:data.viewId,enabled:remember.getAttribute('aria-pressed')!=='true',bounds:v.bounds,minimized:v.minimized});}catch(e){report(e);}finally{remember.disabled=false;}};
   }
-  if(data.mode==='CONTENT'&&!['CONTAINER','WORLD','DELIVERY'].includes(data.contentKind)){const delegate=el('button','让 AI 操作',nodes.get(data.viewId).querySelector('.titlebar'));delegate.dataset.action='open-delegation';delegate.disabled=true;delegate.onclick=()=>uiAgents.open(data.viewId);}
+  if(data.mode==='CONTENT'&&!['CONTAINER','WORLD','DELIVERY'].includes(data.contentKind)){const delegate=el('button',__uiT("让 AI 操作"),nodes.get(data.viewId).querySelector('.titlebar'));delegate.dataset.action='open-delegation';delegate.disabled=true;delegate.onclick=()=>uiAgents.open(data.viewId);}
   if(data.mode==='CONTENT'&&data.contentKind==='WORLD'){
-    const bar=nodes.get(data.viewId).querySelector('.titlebar');bar.querySelector('.badge').textContent=data.actorKind==='AGENT'?'物件界面 · Agent 自身身份':'物件界面 · 玩家身份';
-    if(data.actorKind==='PLAYER'){const button=el('button','让 Agent 操作',bar);button.dataset.action='open-world-delegation';button.disabled=true;button.onclick=()=>uiAgents.openWorld(data.viewId);}
-    else{const stop=el('button','停止 Agent',bar);stop.dataset.action='stop-world-agent';stop.onclick=()=>send('previewStop',{viewId:data.viewId}).catch(report);}
+    const bar=nodes.get(data.viewId).querySelector('.titlebar');bar.querySelector('.badge').textContent=data.actorKind==='AGENT'?__uiT("物件界面 · Agent 自身身份"):__uiT("物件界面 · 玩家身份");
+    if(data.actorKind==='PLAYER'){const button=el('button',__uiT("让 Agent 操作"),bar);button.dataset.action='open-world-delegation';button.disabled=true;button.onclick=()=>uiAgents.openWorld(data.viewId);}
+    else{const stop=el('button',__uiT("停止 Agent"),bar);stop.dataset.action='stop-world-agent';stop.onclick=()=>send('previewStop',{viewId:data.viewId}).catch(report);}
   }
   if(data.mode==='PREVIEW'){
-    const delegate=el('button','让 AI 操作',nodes.get(data.viewId).querySelector('.titlebar'));delegate.dataset.action='open-page-delegation';
+    const delegate=el('button',__uiT("让 AI 操作"),nodes.get(data.viewId).querySelector('.titlebar'));delegate.dataset.action='open-page-delegation';
     delegate.onclick=async()=>{delegate.disabled=true;try{const r=await send('packageAction',{action:'preparePage',viewId:data.viewId});if(r.code!=='ACCEPTED')throw new Error(r.values?.errorCode||r.code);uiAgents.open(data.viewId,true);}catch(e){report(e);}finally{delegate.disabled=false;}};
   }
   if(data.mode==='CONTENT'&&!['CONTAINER','WORLD','DELIVERY'].includes(data.contentKind)){
-    const takeover=el('button','接管',nodes.get(data.viewId).querySelector('.titlebar'));takeover.dataset.action='takeover';
-    takeover.title='停止当前执行者，保存草稿并在新的只读文档中恢复；不会自动提交';
+    const takeover=el('button',__uiT("接管"),nodes.get(data.viewId).querySelector('.titlebar'));takeover.dataset.action='takeover';
+    takeover.title=__uiT("停止当前执行者，保存草稿并在新的只读文档中恢复；不会自动提交");
     takeover.onclick=async()=>{takeover.disabled=true;try{const r=await send('takeoverUi',{action:'begin',viewId:data.viewId});if(r.code!=='ACCEPTED')throw new Error(r.values?.errorCode||r.code);}catch(e){report(e);takeover.disabled=false;}};
   }
   const frame = document.createElement('iframe'); frame.title = data.title; frame.name = data.viewId;
@@ -463,7 +468,7 @@ addEventListener('mineagent:host', event => {
     else if (channel === 'session') { skins.session();scenePreview.session();buildingFiles.session();deliveries.session(data);feedbackHistory.session(data);sentContent.session(data);taskHistory.session(data);generationHistory.session(data);packageCatalog.session(data);packageAssets.session(data);preferences.session(data);javaStudio.session(data);nativeCompatibility.session(data);worldRestore.session(data);dataPacks.session(data);resourcePacks.session(data);clientScripts.session(data);nativeApi.session(data);bootExtensions.session(data);generations.session(data);scheduleManagement.session(data);eventManagement.session(data);agentModels.session();agentManagement.session(data);worldTasks.session();serverSettings.session();apiSettings.session();hasServerSession = true; status.textContent = ''; }
     else if(channel==='hudRestoreStatus'){hudRestoreStatus=data;renderHudRestoreStatus();}
     else if(channel==='hudRememberState'){
-      const button=nodes.get(data.viewId)?.querySelector('[data-action=remember-hud]');if(button){button.disabled=!data.available;button.setAttribute('aria-pressed',String(data.enabled));button.textContent=data.enabled?'已开启登录恢复':'登录时恢复';}
+      const button=nodes.get(data.viewId)?.querySelector('[data-action=remember-hud]');if(button){button.disabled=!data.available;button.setAttribute('aria-pressed',String(data.enabled));button.textContent=data.enabled?__uiT("已开启登录恢复"):__uiT("登录时恢复");}
     }
     else if(channel==='hudRestoreLayout'){
       if(restoreHudLayout(state,data.viewId,data.layout,layoutEdited.has(data.viewId)||drag?.id===data.viewId,viewportWidth(),viewportHeight())){
@@ -490,7 +495,7 @@ addEventListener('mineagent:host', event => {
     else if (channel === 'decisionUpdate') decisions.updateOne(data.request,data.answer,data.effect);
     else if (channel === 'decisionPaging') {
       document.querySelector('#decision-page-tools').hidden=data.count===0;
-      document.querySelector('#decision-page-label').textContent=`${data.page+1}/${data.pages} · 待决 ${data.pendingCount}`;
+      document.querySelector('#decision-page-label').textContent=__uiF("{0}/{1} · 待决 {2}",data.page+1,data.pages,data.pendingCount);
       const prev=document.querySelector('#decision-prev'),next=document.querySelector('#decision-next');
       prev.disabled=data.page===0;next.disabled=data.page+1>=data.pages;
       prev.onclick=()=>send('decisionPage',{page:data.page-1}).catch(report);next.onclick=()=>send('decisionPage',{page:data.page+1}).catch(report);
@@ -509,11 +514,11 @@ addEventListener('mineagent:host', event => {
     else if (channel === 'worldPatchJobs') generations.worldPatches(data);
     else if(channel==='closeManagedView')close(data.viewId);
     else if(channel==='uiPackageTransition'){
-      const labels={CAPTURING:'保存旧窗口草稿…',PREVIEW:'载入只读改版候选…',CHECKING_CANDIDATE:'核验候选表单与真实画面…',COMMITTING:'提交包版本…',RESTORING:'在新只读文档恢复草稿…',SWAPPING:'切换窗口并回收旧页面…',COMPLETE:'页面已切换；草稿只读恢复，仍须明确启用编辑后保存。',NOT_COMMITTED:'改版未确认提交，旧草稿保留；请检查改版历史。',COMMITTED_RESTORE_FAILED:'包已更新但窗口恢复失败；旧草稿保留，请勿重复提交保存。'};
+      const labels={CAPTURING:__uiT("保存旧窗口草稿…"),PREVIEW:__uiT("载入只读改版候选…"),CHECKING_CANDIDATE:__uiT("核验候选表单与真实画面…"),COMMITTING:__uiT("提交包版本…"),RESTORING:__uiT("在新只读文档恢复草稿…"),SWAPPING:__uiT("切换窗口并回收旧页面…"),COMPLETE:__uiT("页面已切换；草稿只读恢复，仍须明确启用编辑后保存。"),NOT_COMMITTED:__uiT("改版未确认提交，旧草稿保留；请检查改版历史。"),COMMITTED_RESTORE_FAILED:__uiT("包已更新但窗口恢复失败；旧草稿保留，请勿重复提交保存。")};
       status.textContent=labels[data.phase]||data.phase;
       let stop=document.querySelector('#stop-ui-transition');
       if(['COMPLETE','NOT_COMMITTED','COMMITTED_RESTORE_FAILED'].includes(data.phase)){stop?.remove();}
-      else{if(!stop){stop=el('button','停止页面切换',document.querySelector('#dock'));stop.id='stop-ui-transition';}stop.onclick=()=>send('packageAction',{action:'patchSwapCancel',operationId:data.operationId}).catch(report);}
+      else{if(!stop){stop=el('button',__uiT("停止页面切换"),document.querySelector('#dock'));stop.id='stop-ui-transition';}stop.onclick=()=>send('packageAction',{action:'patchSwapCancel',operationId:data.operationId}).catch(report);}
     }
     else if(channel==='contentHotSwap'){
       const old=nodes.get(data.oldViewId),next=nodes.get(data.viewId);
@@ -527,8 +532,8 @@ addEventListener('mineagent:host', event => {
       }
     }
     else if (channel === 'packageViewOutdated'){
-      const node=nodes.get(data.viewId);if(node){node.dataset.outdated='true';const badge=node.querySelector('.badge');if(badge)badge.textContent='旧会话 · 草稿保留';node.querySelector('[data-action="open-delegation"]')?.setAttribute('disabled','');}
-      report(new Error('旧页面已停止提交；请从内容库打开当前版本。原窗口草稿仍保留。'));
+      const node=nodes.get(data.viewId);if(node){node.dataset.outdated='true';const badge=node.querySelector('.badge');if(badge)badge.textContent=__uiT("旧会话 · 草稿保留");node.querySelector('[data-action="open-delegation"]')?.setAttribute('disabled','');}
+      report(new Error(__uiT("旧页面已停止提交；请从内容库打开当前版本。原窗口草稿仍保留。")));
     }
     else if (channel === 'scoreSources') generations.sources(data);
     else if (channel === 'scoreViews') generations.views(data);
@@ -541,23 +546,23 @@ addEventListener('mineagent:host', event => {
     else if (channel === 'uiAgentTasks') data.forEach(uiAgents.status);
     else if (channel === 'uiAgentStopped') report(new Error(data.status));
     else if (channel === 'takeoverReady'){
-      const node=nodes.get(data.viewId);if(node){node.dataset.takeoverStatus='READ_ONLY_READY';node.querySelector('.badge').textContent='草稿已恢复 · 只读';
+      const node=nodes.get(data.viewId);if(node){node.dataset.takeoverStatus='READ_ONLY_READY';node.querySelector('.badge').textContent=__uiT("草稿已恢复 · 只读");
         node.querySelector('[data-action="takeover"]')?.setAttribute('hidden','');
-        const activate=el('button','启用玩家编辑',node.querySelector('.titlebar'));activate.dataset.action='activate-takeover';const operationId=crypto.randomUUID();
-        activate.title='明确开启此新文档的玩家写权限；草稿不会自动提交，仍需点击页面保存';
+        const activate=el('button',__uiT("启用玩家编辑"),node.querySelector('.titlebar'));activate.dataset.action='activate-takeover';const operationId=crypto.randomUUID();
+        activate.title=__uiT("明确开启此新文档的玩家写权限；草稿不会自动提交，仍需点击页面保存");
         activate.onclick=async()=>{activate.disabled=true;try{const r=await send('takeoverUi',{action:'activate',viewId:data.viewId,operationId});if(r.code!=='APPLIED')throw new Error(r.values?.errorCode||r.code);}catch(e){report(e);activate.disabled=false;}};
       }
     }
     else if(channel==='takeoverPending'){const node=nodes.get(data.viewId);if(node){node.dataset.takeoverStatus='RESTORING';node.querySelector('[data-action="activate-takeover"]')?.remove();}}
     else if (channel === 'takeoverActivated'){
-      const node=nodes.get(data.viewId);if(node){node.dataset.takeoverStatus='ACTIVE';node.querySelector('.badge').textContent='玩家编辑';node.querySelector('[data-action="activate-takeover"]')?.remove();}
+      const node=nodes.get(data.viewId);if(node){node.dataset.takeoverStatus='ACTIVE';node.querySelector('.badge').textContent=__uiT("玩家编辑");node.querySelector('[data-action="activate-takeover"]')?.remove();}
       if(data.oldViewId&&data.oldViewId!==data.viewId)close(data.oldViewId);
     }
     else if (channel === 'setupNotice') {
       const button = document.querySelector('#setup-notice');
       button.hidden = data.trust === 'TRUSTED' && data.initialized;
-      button.textContent = data.trust === 'TRUSTED' ? '待设置' : '待授权';
-      button.title = `当前信任状态：${data.trust}；不会自动批准。指纹：${data.fingerprint}`;
+      button.textContent = data.trust === 'TRUSTED' ? __uiT("待设置") : __uiT("待授权");
+      button.title = __uiF("当前信任状态：{0}；不会自动批准。指纹：{1}",data.trust,data.fingerprint);
       reflowWorkspace();
     }
     else if (channel === 'openChat') openChat();
@@ -571,7 +576,7 @@ addEventListener('mineagent:host', event => {
     else if (channel === 'previewAgentStatus') {
       const node=nodes.get(data.viewId); if(node) {
         node.querySelector('.agent-stop')?.remove();
-        if(data.running) { const stop=el('button','停止 AI 操作',node.querySelector('.titlebar')); stop.className='agent-stop';
+        if(data.running) { const stop=el('button',__uiT("停止 AI 操作"),node.querySelector('.titlebar')); stop.className='agent-stop';
           stop.onclick=()=>send('previewStop',{viewId:data.viewId}).catch(report); }
       }
     }

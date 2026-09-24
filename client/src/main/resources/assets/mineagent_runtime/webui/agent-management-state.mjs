@@ -1,6 +1,7 @@
-export const bodyLabels={RESTORING:'正在加载身体',RETURNING:'等待原生返回',SPECTATOR:'观战 · 暂不可行动',BUSY:'执行任务中',READY:'可以行动',STOPPING:'正在保存退出',UNAVAILABLE:'身体暂不可用'};
-export const modeLabel=value=>({CREATOR:'创造',SURVIVAL:'生存',creative:'创造',survival:'生存',spectator:'观战',adventure:'冒险'}[value]||'未就绪');
-export function agentError(code){return ({STALE_AGENT_REVISION:'资料已被更新，草稿仍保留。请重新读取后再修改。',AGENT_CREATION_REMOVED:'这个创建请求对应的 AI 已被删除，不会重新创建。',AGENT_LIMIT:'AI 数量已达上限。',AGENT_NAME_EXISTS:'已有同名 AI，请换一个名称。',AGENT_NAME_INVALID:'请填写 1–32 个字符的单行名称。',PERMISSION_DENIED:'没有执行此操作的权限。',FORBIDDEN:'没有执行此操作的权限。',BODY_UNAVAILABLE:'身体尚不可行动，请先等待加载或调整模式。',STALE_TASK_REVISION:'原任务已变化，请关闭此确认并重新查看任务。',TASK_REPLAN_NOT_AVAILABLE:'当前任务不能从这里重新规划。'})[code]||code;}
+import {t as __uiT,tf as __uiF} from './i18n.mjs';
+export const bodyLabels={RESTORING:__uiT("正在加载身体"),RETURNING:__uiT("等待原生返回"),SPECTATOR:__uiT("观战 · 暂不可行动"),BUSY:__uiT("执行任务中"),READY:__uiT("可以行动"),STOPPING:__uiT("正在保存退出"),UNAVAILABLE:__uiT("身体暂不可用")};
+export const modeLabel=value=>({CREATOR:__uiT("创造","game_mode"),SURVIVAL:__uiT("生存"),creative:__uiT("创造","game_mode"),survival:__uiT("生存"),spectator:__uiT("观战"),adventure:__uiT("冒险")}[value]||__uiT("未就绪"));
+export function agentError(code){return ({STALE_AGENT_REVISION:__uiT("资料已被更新，草稿仍保留。请重新读取后再修改。"),AGENT_CREATION_REMOVED:__uiT("这个创建请求对应的 AI 已被删除，不会重新创建。"),AGENT_LIMIT:__uiT("AI 数量已达上限。"),AGENT_NAME_EXISTS:__uiT("已有同名 AI，请换一个名称。"),AGENT_NAME_INVALID:__uiT("请填写 1–32 个字符的单行名称。"),PERMISSION_DENIED:__uiT("没有执行此操作的权限。"),FORBIDDEN:__uiT("没有执行此操作的权限。"),BODY_UNAVAILABLE:__uiT("身体尚不可行动，请先等待加载或调整模式。"),STALE_TASK_REVISION:__uiT("原任务已变化，请关闭此确认并重新查看任务。"),TASK_REPLAN_NOT_AVAILABLE:__uiT("当前任务不能从这里重新规划。")})[code]||code;}
 export class OperationDraft {
   fingerprint='';operationId=null;
   request(args,uuid){const key=JSON.stringify(args);if(key!==this.fingerprint){this.fingerprint=key;this.operationId=null;}this.operationId??=uuid();return {...args,operationId:this.operationId};}

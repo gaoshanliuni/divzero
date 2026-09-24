@@ -12,7 +12,7 @@ public final class MineAgentBasketballHud {
         var player = Minecraft.getInstance().player;
         if (player != null) {
             player.sendOverlayMessage(Component.literal(
-                    "+" + payload.points() + " 分  |  总分 " + payload.totalScore()));
+                    "+" + payload.points() + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(" 分  |  总分 ") + payload.totalScore()));
             if (Boolean.getBoolean("mineagent.smokeTest")) {
                 dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info(
                         "MINEAGENT_SMOKE_BASKETBALL_HUD_OK points={} total={}",

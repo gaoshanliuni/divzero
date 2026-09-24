@@ -58,7 +58,7 @@ public final class WebGuiClientLifecycle {
                         throw new IllegalStateException("MCEF_TEXTURE_RETIREMENT_NOT_EXERCISED");
                     probe.addProperty("retiredTextures",McefTextureRetirement.textures());probe.addProperty("retiredTextureViews",McefTextureRetirement.views());probe.addProperty("pendingRetirements",McefTextureRetirement.pending());
                 }
-                if (!"WebGUI 本地回读".equals(probe.get("echo").getAsString())
+                if (!dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("WebGUI 本地回读").equals(probe.get("echo").getAsString())
                         || !probe.get("defaultBridgeBlocked").getAsBoolean()
                         || !probe.get("independentClose").getAsBoolean() || !probe.get("titlebarVisible").getAsBoolean()
                         || probe.getAsJsonArray("controls").isEmpty() || !host.browser().isTextureReady()) {

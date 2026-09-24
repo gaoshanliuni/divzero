@@ -85,7 +85,7 @@ public final class ControlCenterScreen extends Screen {
     private int selectedSnapshotIndex;
     private int selectedChangeIndex;
     private int snapshotRadius = 4;
-    private String snapshotLabelDraft = "施工前快照";
+    private String snapshotLabelDraft = dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("施工前快照");
     private MineAgentPayloads.MediaState observedMediaState = PanelSnapshotInbox.mediaState();
     private int mediaPage;
     private int selectedMediaIndex;
@@ -115,7 +115,7 @@ public final class ControlCenterScreen extends Screen {
         this(parent,operator,operator?ControlCenterModel.forOperator():ControlCenterModel.forRegularPlayer());
     }
     private ControlCenterScreen(Screen parent,boolean operator,ControlCenterModel model){
-        super(Component.translatable("screen.mineagent_runtime.control_center"));
+        super(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("MineAgent 控制中心")));
         this.parent = parent;
         this.operator = operator;
         this.model = model;
@@ -153,7 +153,7 @@ public final class ControlCenterScreen extends Screen {
 
         for (int index = 0; index < visibleSections.size(); index++) {
                     PanelSection section = visibleSections.get(index);
-            Button button = Button.builder(Component.literal(section.displayName()), ignored -> {
+            Button button = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(section.displayName())), ignored -> {
                         model.select(section);
                         if (section == PanelSection.CONVERSATIONS && this.minecraft.getConnection() != null) {
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.DecisionRequestPayload());
@@ -214,7 +214,7 @@ public final class ControlCenterScreen extends Screen {
         int contentWidth = Math.max(120, this.width - contentX - 18);
         addRenderableWidget(new StringWidget(
                 contentX, 38, contentWidth, 20,
-                Component.literal(model.selectedSection().displayName()), this.font
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(model.selectedSection().displayName())), this.font
         ));
         addRenderableWidget(new StringWidget(
                 contentX, 68, contentWidth, 20,
@@ -223,14 +223,14 @@ public final class ControlCenterScreen extends Screen {
         if (model.selectedSection() != PanelSection.CONVERSATIONS && model.selectedSection()!=PanelSection.PROVIDERS) {
             addRenderableWidget(new StringWidget(
                     contentX, 92, contentWidth, 20,
-                    Component.translatable("screen.mineagent_runtime.server_authoritative"), this.font
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("所有设置由服务端校验并以版本化事务保存。")), this.font
             ));
         }
 
         var directory=PanelSnapshotInbox.snapshot().values();int offset=parseBoundedInt(directory.get("agent.offset"),0,Integer.MAX_VALUE,0),total=parseBoundedInt(directory.get("agent.total"),0,Integer.MAX_VALUE,0);
         if(java.util.Set.of(PanelSection.AGENTS,PanelSection.APPEARANCE,PanelSection.CONVERSATIONS,PanelSection.TASKS).contains(model.selectedSection())&&total>8){
-            Button prev=Button.builder(Component.literal("上一组 AI"),b->ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest(Math.max(0,offset-8)))).bounds(contentX,68,90,18).build();prev.active=offset>0;addRenderableWidget(prev);
-            Button next=Button.builder(Component.literal("下一组 AI"),b->ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest(offset+8))).bounds(contentX+94,68,90,18).build();next.active=offset+8<total;addRenderableWidget(next);
+            Button prev=Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("上一组 AI")),b->ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest(Math.max(0,offset-8)))).bounds(contentX,68,90,18).build();prev.active=offset>0;addRenderableWidget(prev);
+            Button next=Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("下一组 AI")),b->ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest(offset+8))).bounds(contentX+94,68,90,18).build();next.active=offset+8<total;addRenderableWidget(next);
         }
         if (model.selectedSection() == PanelSection.AGENTS) {
             addAgentControls(contentX, contentWidth);
@@ -261,21 +261,22 @@ public final class ControlCenterScreen extends Screen {
             addProviderControls(contentX, contentWidth);
         }
 
-        addRenderableWidget(Button.builder(Component.literal("关于"), ignored -> Minecraft.getInstance().setScreen(new AboutScreen(this))).bounds(12,this.height-22,NAV_WIDTH,18).build());
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, ignored -> onClose())
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("关于")), ignored -> Minecraft.getInstance().setScreen(new AboutScreen(this))).bounds(12,this.height-22,60,18).build());
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("语言")), b -> Minecraft.getInstance().setScreen(new LanguageScreen(this))).bounds(78,this.height-22,60,18).build());
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("完成")), ignored -> onClose())
                 .bounds(Math.max(12, this.width - 112), this.height - 22, 100, 18)
                 .build());
     }
 
     private void addAgentControls(int contentX, int contentWidth) {
         int tabWidth = Math.max(56, Math.min(90, (contentWidth - 4) / 2));
-        Button createTab = Button.builder(Component.literal("创建"), ignored -> {
+        Button createTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("创建")), ignored -> {
                     agentPage = 0;
                     rebuildWidgets();
                 }).bounds(contentX, 108, tabWidth, 18).build();
         createTab.active = agentPage != 0;
         addRenderableWidget(createTab);
-        Button settingsTab = Button.builder(Component.literal("设置"), ignored -> {
+        Button settingsTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("设置")), ignored -> {
                     agentPage = 1;
                     loadSelectedAgentVoice();
                     rebuildWidgets();
@@ -288,11 +289,11 @@ public final class ControlCenterScreen extends Screen {
         }
         addRenderableWidget(new StringWidget(
                 contentX, 126, contentWidth, 18,
-                Component.translatable("screen.mineagent_runtime.agent_name"), this.font
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 玩家名称")), this.font
         ));
         EditBox name = new EditBox(
                 this.font, contentX, 148, Math.min(220, contentWidth), 20,
-                Component.translatable("screen.mineagent_runtime.agent_name")
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 玩家名称"))
         );
         name.setMaxLength(32);
         name.setValue(agentNameDraft);
@@ -300,7 +301,7 @@ public final class ControlCenterScreen extends Screen {
         addRenderableWidget(name);
 
         Button create = Button.builder(
-                        Component.translatable("screen.mineagent_runtime.create_agent"),
+                        Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("创建 AI 玩家")),
                         ignored -> createAgent()
                 )
                 .bounds(contentX + Math.min(100, contentWidth / 2) + 4, 178,
@@ -310,7 +311,7 @@ public final class ControlCenterScreen extends Screen {
                 .getOrDefault("permission.create_agent", Boolean.toString(operator))) && !agentNameDraft.isBlank();
         addRenderableWidget(create);
         addRenderableWidget(Button.builder(Component.literal(
-                        agentCreateMode == AgentMode.CREATOR ? "模式: 创造" : "模式: 生存"), ignored -> {
+                        agentCreateMode == AgentMode.CREATOR ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("模式: 创造") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("模式: 生存")), ignored -> {
                     agentCreateMode = agentCreateMode == AgentMode.CREATOR ? AgentMode.SURVIVAL : AgentMode.CREATOR;
                     rebuildWidgets();
                 }).bounds(contentX, 178, Math.min(100, contentWidth / 2), 20).build());
@@ -320,13 +321,13 @@ public final class ControlCenterScreen extends Screen {
         Map<String, String> values = PanelSnapshotInbox.snapshot().values();
         String[] lines = {
                 "Worker: " + (Boolean.parseBoolean(values.getOrDefault("runtime.workerAlive", "false")) ? "READY" : "OFFLINE"),
-                "AI 玩家: " + values.getOrDefault("agent.total", values.getOrDefault("agent.count", "0")) + " / "
-                        + "不限数量",
-                "任务: " + values.getOrDefault("runtime.taskCount", "0")
-                        + "  代码草稿: " + values.getOrDefault("runtime.codeDraftCount", "0"),
-                "记忆: " + values.getOrDefault("runtime.memoryCount", "0")
-                        + "  媒体: " + values.getOrDefault("runtime.mediaCount", "0"),
-                "内容包: " + values.getOrDefault("runtime.packageCount", "0")
+                dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 玩家: ") + values.getOrDefault("agent.total", values.getOrDefault("agent.count", "0")) + " / "
+                        + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("不限数量"),
+                dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("任务: ") + values.getOrDefault("runtime.taskCount", "0")
+                        + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("  代码草稿: ") + values.getOrDefault("runtime.codeDraftCount", "0"),
+                dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("记忆: ") + values.getOrDefault("runtime.memoryCount", "0")
+                        + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("  媒体: ") + values.getOrDefault("runtime.mediaCount", "0"),
+                dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("内容包: ") + values.getOrDefault("runtime.packageCount", "0")
         };
         int y = 116;
         for (String line : lines) {
@@ -339,13 +340,13 @@ public final class ControlCenterScreen extends Screen {
     private void addAppearanceControls(int contentX, int contentWidth) {
         Map<String, String> values = PanelSnapshotInbox.snapshot().values();
         String ysmStatus = !Boolean.parseBoolean(values.getOrDefault("ysm.installed", "false"))
-                ? "未安装 YSM"
+                ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("未安装 YSM")
                 : Boolean.parseBoolean(values.getOrDefault("ysm.runtimeAvailable", "false"))
                 ? "YSM READY " + values.getOrDefault("ysm.version", "")
-                : "YSM 不可用 " + values.getOrDefault("ysm.version", "") + " "
+                : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("YSM 不可用 ") + values.getOrDefault("ysm.version", "") + " "
                 + values.getOrDefault("ysm.diagnostic", "");
         if (Boolean.parseBoolean(values.getOrDefault("ysm.installed", "false"))) {
-            ysmStatus += " · BOOT_EXTENSION，停用/卸载需重启";
+            ysmStatus += dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(" · BOOT_EXTENSION，停用/卸载需重启");
         }
         addRenderableWidget(new StringWidget(contentX, 112, contentWidth, 14,
                 Component.literal(ysmStatus), this.font).setMaxWidth(contentWidth));
@@ -356,50 +357,50 @@ public final class ControlCenterScreen extends Screen {
         appearanceAgentIndex = Math.min(appearanceAgentIndex, count - 1);
         String prefix = "agent." + appearanceAgentIndex + ".";
         String agentId = values.getOrDefault(prefix + "id", "");
-        addRenderableWidget(Button.builder(Component.literal("AI 玩家: "
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 玩家: ")
                         + values.getOrDefault(prefix + "name", "AI")), ignored -> {
                     appearanceAgentIndex = (appearanceAgentIndex + 1) % count;
                     loadAppearanceDraft();
                     rebuildWidgets();
                 }).bounds(contentX, 128, contentWidth, 18).build());
         int editorWidth = Math.max(70, contentWidth - 88);
-        EditBox model = new EditBox(this.font, contentX, 148, editorWidth, 18, Component.literal("YSM 模型 ID"));
+        EditBox model = new EditBox(this.font, contentX, 148, editorWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("YSM 模型 ID")));
         model.setMaxLength(256);
-        model.setHint(Component.literal("YSM 模型 ID"));
+        model.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("YSM 模型 ID")));
         model.setValue(appearanceModelDraft);
         model.setResponder(value -> appearanceModelDraft = value);
         addRenderableWidget(model);
-        addRenderableWidget(Button.builder(Component.literal("模型列表"), ignored -> {
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("模型列表")), ignored -> {
                     appearanceModelDraft = nextChoice(values.get("ysm.modelChoices"), appearanceModelDraft, "default");
                     rebuildWidgets();
                 }).bounds(contentX + editorWidth + 4, 148, 84, 18).build());
-        EditBox texture = new EditBox(this.font, contentX, 168, editorWidth, 18, Component.literal("贴图 ID（可空）"));
+        EditBox texture = new EditBox(this.font, contentX, 168, editorWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("贴图 ID（可空）")));
         texture.setMaxLength(256);
-        texture.setHint(Component.literal("贴图 ID（可空）"));
+        texture.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("贴图 ID（可空）")));
         texture.setValue(appearanceTextureDraft);
         texture.setResponder(value -> appearanceTextureDraft = value);
         addRenderableWidget(texture);
-        addRenderableWidget(Button.builder(Component.literal("贴图列表"), ignored -> {
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("贴图列表")), ignored -> {
                     appearanceTextureDraft = nextChoice(values.get("ysm.textureChoices"), appearanceTextureDraft, "default");
                     rebuildWidgets();
                 }).bounds(contentX + editorWidth + 4, 168, 84, 18).build());
         EditBox animation = new EditBox(this.font, contentX, 188, editorWidth, 18,
-                Component.literal("动画 ID（可空）"));
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("动画 ID（可空）")));
         animation.setMaxLength(256);
-        animation.setHint(Component.literal("动画 ID（可空）"));
+        animation.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("动画 ID（可空）")));
         animation.setValue(appearanceAnimationDraft);
         animation.setResponder(value -> appearanceAnimationDraft = value);
         addRenderableWidget(animation);
-        addRenderableWidget(Button.builder(Component.literal("动画列表"), ignored -> {
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("动画列表")), ignored -> {
                     appearanceAnimationDraft = nextChoice(values.get("ysm.animationChoices"), appearanceAnimationDraft, "idle");
                     rebuildWidgets();
                 }).bounds(contentX + editorWidth + 4, 188, 84, 18).build());
-        Button apply = Button.builder(Component.literal("应用并预览"), ignored -> submitAppearance(agentId))
+        Button apply = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("应用并预览")), ignored -> submitAppearance(agentId))
                 .bounds(contentX, 208, Math.min(100, contentWidth), 18).build();
         apply.active = !appearanceModelDraft.isBlank()
                 && Boolean.parseBoolean(values.getOrDefault(prefix + "mutable", "false"));
         addRenderableWidget(apply);
-        Button choice = Button.builder(Component.literal("选择卡"), ignored -> {
+        Button choice = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("选择卡")), ignored -> {
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.DecisionCommand(
                             "openAppearance", Map.of("agentId", agentId)));
                     this.model.select(PanelSection.CONVERSATIONS);
@@ -464,7 +465,7 @@ public final class ControlCenterScreen extends Screen {
         appearanceAnimationDraft = animationId;
         rebuildWidgets();
         for (var child : children()) {
-            if (child instanceof Button button && "应用并预览".equals(button.getMessage().getString())) {
+            if (child instanceof Button button && dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("应用并预览").equals(button.getMessage().getString())) {
                 if (!button.active) {
                     return false;
                 }
@@ -479,7 +480,7 @@ public final class ControlCenterScreen extends Screen {
         model.select(PanelSection.APPEARANCE);
         rebuildWidgets();
         for (var child : children()) {
-            if (child instanceof Button button && "选择卡".equals(button.getMessage().getString()) && button.active) {
+            if (child instanceof Button button && dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("选择卡").equals(button.getMessage().getString()) && button.active) {
                 press(button);
                 return true;
             }
@@ -489,7 +490,7 @@ public final class ControlCenterScreen extends Screen {
 
     public boolean runYsmFirstChoiceSubmitSmoke() {
         Map<String, String> state = PanelSnapshotInbox.decisionState().values();
-        if (!"AI 外观选择".equals(state.get("title"))) {
+        if (!dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 外观选择").equals(state.get("title"))) {
             return false;
         }
         model.select(PanelSection.CONVERSATIONS);
@@ -502,7 +503,7 @@ public final class ControlCenterScreen extends Screen {
             }
         }
         for (var child : children()) {
-            if (child instanceof Button button && "提交".equals(button.getMessage().getString()) && button.active) {
+            if (child instanceof Button button && dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("提交").equals(button.getMessage().getString()) && button.active) {
                 press(button);
                 return true;
             }
@@ -527,13 +528,13 @@ public final class ControlCenterScreen extends Screen {
     private void addPackageControls(int contentX, int contentWidth) {
         Map<String, String> state = PanelSnapshotInbox.packageState().values();
         int tabWidth = Math.max(54, Math.min(90, (contentWidth - 4) / 2));
-        Button manageTab = Button.builder(Component.literal("管理"), ignored -> {
+        Button manageTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("管理")), ignored -> {
             packagePage = 0;
             rebuildWidgets();
         }).bounds(contentX, 108, tabWidth, 18).build();
         manageTab.active = packagePage != 0;
         addRenderableWidget(manageTab);
-        Button transferTab = Button.builder(Component.literal("导入/导出"), ignored -> {
+        Button transferTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("导入/导出")), ignored -> {
             packagePage = 1;
             rebuildWidgets();
         }).bounds(contentX + tabWidth + 4, 108, tabWidth, 18).build();
@@ -541,13 +542,13 @@ public final class ControlCenterScreen extends Screen {
         addRenderableWidget(transferTab);
         if (packagePage == 1) {
             MultiLineEditBox transfer = MultiLineEditBox.builder()
-                    .setX(contentX).setY(132).setPlaceholder(Component.literal("粘贴签名内容包 JSON"))
-                    .build(this.font, contentWidth, 58, Component.literal("内容包 JSON"));
+                    .setX(contentX).setY(132).setPlaceholder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("粘贴签名内容包 JSON")))
+                    .build(this.font, contentWidth, 58, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("内容包 JSON")));
             transfer.setCharacterLimit(32_000);
             transfer.setValue(packageTransferDraft);
             transfer.setValueListener(value -> packageTransferDraft = value);
             addRenderableWidget(transfer);
-            Button importButton = Button.builder(Component.literal("验证并导入/迁移"), ignored ->
+            Button importButton = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("验证并导入/迁移")), ignored ->
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.PackageCommand(
                                     "import", Map.of("json", packageTransferDraft))))
                     .bounds(contentX, 194, Math.min(140, contentWidth), 18).build();
@@ -555,16 +556,16 @@ public final class ControlCenterScreen extends Screen {
             addRenderableWidget(importButton);
             addRenderableWidget(new StringWidget(contentX, 216, contentWidth, 14,
                     Component.literal(PanelSnapshotInbox.packageState().errorCode().isBlank()
-                            ? "导入时校验依赖、版本、SHA-256 与 Ed25519 签名"
-                            : "错误: " + PanelSnapshotInbox.packageState().errorCode()), this.font)
+                            ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("导入时校验依赖、版本、SHA-256 与 Ed25519 签名")
+                            : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("错误: ") + PanelSnapshotInbox.packageState().errorCode()), this.font)
                     .setMaxWidth(contentWidth));
             return;
         }
         int count = parseBoundedInt(state.get("packageCount"), 0, 20, 0);
         if (count == 0) {
             addRenderableWidget(new StringWidget(contentX, 134, contentWidth, 16,
-                    Component.literal("暂无已发布内容包"), this.font));
-            addRenderableWidget(Button.builder(Component.literal("打开 Code Studio"), ignored -> {
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("暂无已发布内容包")), this.font));
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("打开 Code Studio")), ignored -> {
                         model.select(PanelSection.CODE_STUDIO);
                         ClientPacketDistributor.sendToServer(new MineAgentPayloads.CodeCommand("refresh", Map.of()));
                         rebuildWidgets();
@@ -573,18 +574,18 @@ public final class ControlCenterScreen extends Screen {
         }
         selectedPackageIndex = Math.min(selectedPackageIndex, count - 1);
         String prefix = "package." + selectedPackageIndex + ".";
-        addRenderableWidget(Button.builder(Component.literal(state.getOrDefault(prefix + "name", "内容包")), ignored -> {
+        addRenderableWidget(Button.builder(Component.literal(state.getOrDefault(prefix + "name", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("内容包"))), ignored -> {
                     selectedPackageIndex = (selectedPackageIndex + 1) % count;
                     rebuildWidgets();
                 }).bounds(contentX, 132, contentWidth, 18).build());
         addRenderableWidget(new StringWidget(contentX, 154, contentWidth, 16,
-                Component.literal("版本 " + state.getOrDefault(prefix + "version", "") + "  "
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("版本 ") + state.getOrDefault(prefix + "version", "") + "  "
                         + state.getOrDefault(prefix + "mode", "")), this.font));
         addRenderableWidget(new StringWidget(contentX, 172, contentWidth, 16,
-                Component.literal("依赖: " + state.getOrDefault(prefix + "dependencies", "0")
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("依赖: ") + state.getOrDefault(prefix + "dependencies", "0")
                         + "  SHA: " + abbreviate(state.getOrDefault(prefix + "sha256", ""), 18)), this.font));
         boolean enabled = Boolean.parseBoolean(state.getOrDefault(prefix + "enabled", "false"));
-        Button toggle = Button.builder(Component.literal(enabled ? "停用" : "启用"), ignored ->
+        Button toggle = Button.builder(Component.literal(enabled ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("停用") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("启用")), ignored ->
                         ClientPacketDistributor.sendToServer(new MineAgentPayloads.PackageCommand("toggle", Map.of(
                                 "packageId", state.getOrDefault(prefix + "id", ""),
                                 "expectedRevision", state.getOrDefault(prefix + "revision", "0"),
@@ -593,7 +594,7 @@ public final class ControlCenterScreen extends Screen {
         toggle.active = Boolean.parseBoolean(PanelSnapshotInbox.snapshot().values()
                 .getOrDefault("permission.manage_packages", "false"));
         addRenderableWidget(toggle);
-        Button export = Button.builder(Component.literal("导出 JSON"), ignored ->
+        Button export = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("导出 JSON")), ignored ->
                         ClientPacketDistributor.sendToServer(new MineAgentPayloads.PackageCommand("export", Map.of(
                                 "packageId", state.getOrDefault(prefix + "id", "")))))
                 .bounds(contentX + 84, 192, Math.min(90, Math.max(40, contentWidth - 84)), 18).build();
@@ -601,7 +602,7 @@ public final class ControlCenterScreen extends Screen {
         addRenderableWidget(export);
         addRenderableWidget(new StringWidget(contentX, 214, contentWidth, 14,
                 Component.literal(PanelSnapshotInbox.packageState().errorCode().isBlank()
-                        ? "签名与哈希已校验" : "错误: " + PanelSnapshotInbox.packageState().errorCode()), this.font));
+                        ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("签名与哈希已校验") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("错误: ") + PanelSnapshotInbox.packageState().errorCode()), this.font));
     }
 
     private void addDiagnosticsControls(int contentX, int contentWidth) {
@@ -609,17 +610,17 @@ public final class ControlCenterScreen extends Screen {
         Map<String, String> diagnostics = PanelSnapshotInbox.diagnosticsState().values();
         addRenderableWidget(new StringWidget(contentX, 112, contentWidth, 16,
                 Component.literal("Worker=" + values.getOrDefault("runtime.workerAlive", "false")
-                        + " 签名=" + PanelSnapshotInbox.signatureValid()
+                        + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(" 签名=") + PanelSnapshotInbox.signatureValid()
                         + " Threads=" + diagnostics.getOrDefault("threadCount", "?")), this.font));
         addRenderableWidget(new StringWidget(contentX, 130, contentWidth, 16,
-                Component.literal("内存: " + diagnostics.getOrDefault("usedMemoryBytes", "?")
-                        + "  Config错误: " + emptyAsNone(PanelSnapshotInbox.lastErrorCode())), this.font));
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("内存: ") + diagnostics.getOrDefault("usedMemoryBytes", "?")
+                        + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("  Config错误: ") + emptyAsNone(PanelSnapshotInbox.lastErrorCode())), this.font));
         int count = parseBoundedInt(diagnostics.get("eventCount"), 0, 10, 0);
         if (count > 0) {
             selectedDiagnosticIndex = Math.min(selectedDiagnosticIndex, count - 1);
             String prefix = "event." + selectedDiagnosticIndex + ".";
             addRenderableWidget(Button.builder(Component.literal(
-                            diagnostics.getOrDefault(prefix + "action", "事件") + " @ "
+                            diagnostics.getOrDefault(prefix + "action", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("事件")) + " @ "
                                     + diagnostics.getOrDefault(prefix + "target", "")), ignored -> {
                         selectedDiagnosticIndex = (selectedDiagnosticIndex + 1) % count;
                         rebuildWidgets();
@@ -630,13 +631,13 @@ public final class ControlCenterScreen extends Screen {
                     Component.literal(diagnostics.getOrDefault(prefix + "payload", "")), this.font)
                     .setMaxWidth(contentWidth));
         }
-        addRenderableWidget(Button.builder(Component.literal("刷新诊断"), ignored ->
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("刷新诊断")), ignored ->
                         ClientPacketDistributor.sendToServer(new MineAgentPayloads.DiagnosticsRequest()))
                 .bounds(contentX, 202, Math.min(90, contentWidth), 14).build());
     }
 
     private static String emptyAsNone(String value) {
-        return value == null || value.isBlank() ? "无" : value;
+        return value == null || value.isBlank() ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("无") : value;
     }
 
     private void addAgentSettingsControls(int contentX, int contentWidth) {
@@ -644,22 +645,22 @@ public final class ControlCenterScreen extends Screen {
         int count = parseBoundedInt(snapshot.get("agent.count"), 0, Integer.MAX_VALUE, 0);
         if (count == 0) {
             addRenderableWidget(new StringWidget(contentX, 132, contentWidth, 18,
-                    Component.literal("尚未创建 AI 玩家"), this.font));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("尚未创建 AI 玩家")), this.font));
             return;
         }
         selectedAgentSettingsIndex = Math.min(selectedAgentSettingsIndex, count - 1);
         String prefix = "agent." + selectedAgentSettingsIndex + ".";
-        String name = snapshot.getOrDefault(prefix + "name", "AI 玩家");
-        addRenderableWidget(Button.builder(Component.literal("AI 玩家: " + name), ignored -> {
+        String name = snapshot.getOrDefault(prefix + "name", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 玩家"));
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 玩家: ") + name), ignored -> {
                     selectedAgentSettingsIndex = (selectedAgentSettingsIndex + 1) % count;
                     loadSelectedAgentVoice();
                     rebuildWidgets();
                 }).bounds(contentX, 130, contentWidth, 18).build());
         String detailTitle = switch (agentSettingsDetailPage) {
-            case 0 -> "基本设置";
-            case 1 -> "语音设置";
-            case 2 -> "协作者";
-            default -> "技能";
+            case 0 -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("基本设置");
+            case 1 -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("语音设置");
+            case 2 -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("协作者");
+            default -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("技能");
         };
         addRenderableWidget(Button.builder(Component.literal(detailTitle + " ▶"), ignored -> {
                     agentSettingsDetailPage = (agentSettingsDetailPage + 1) % 4;
@@ -668,71 +669,71 @@ public final class ControlCenterScreen extends Screen {
         boolean mutable = Boolean.parseBoolean(snapshot.getOrDefault(prefix + "mutable", "false"));
         String agentId = snapshot.getOrDefault(prefix + "id", "");
         if (agentSettingsDetailPage == 0) {
-            EditBox rename = new EditBox(this.font, contentX, 168, contentWidth, 18, Component.literal("显示名称"));
+            EditBox rename = new EditBox(this.font, contentX, 168, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("显示名称")));
             rename.setMaxLength(32);
             rename.setValue(agentRenameDraft);
             rename.setResponder(value -> agentRenameDraft = value);
             addRenderableWidget(rename);
             int width = Math.max(36, (contentWidth - 12) / 4);
-            Button renameButton = Button.builder(Component.literal("重命名"), ignored -> sendAgentAction(
+            Button renameButton = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("重命名")), ignored -> sendAgentAction(
                             "rename", Map.of("agentId", agentId, "name", agentRenameDraft.strip())))
                     .bounds(contentX, 190, width, 18).build();
             renameButton.active = mutable && !agentRenameDraft.isBlank();
             addRenderableWidget(renameButton);
             String mode = snapshot.getOrDefault(prefix + "mode", "CREATOR");
-            Button modeButton = Button.builder(Component.literal("CREATOR".equals(mode) ? "转生存" : "转创造"), ignored ->
+            Button modeButton = Button.builder(Component.literal("CREATOR".equals(mode) ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("转生存") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("转创造")), ignored ->
                             sendAgentAction("set_mode", Map.of("agentId", agentId, "mode",
                                     "CREATOR".equals(mode) ? "SURVIVAL" : "CREATOR")))
                     .bounds(contentX + width + 4, 190, width, 18).build();
             modeButton.active = mutable;
             addRenderableWidget(modeButton);
-            Button follow = Button.builder(Component.literal("跟随"), ignored ->
+            Button follow = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("跟随")), ignored ->
                             sendAgentAction("follow", Map.of("agentId", agentId)))
                     .bounds(contentX + (width + 4) * 2, 190, width, 18).build();
             follow.active = mutable;
             addRenderableWidget(follow);
-            Button delete = Button.builder(Component.literal("删除"), ignored ->
+            Button delete = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("删除")), ignored ->
                             sendAgentAction("delete", Map.of("agentId", agentId)))
                     .bounds(contentX + (width + 4) * 3, 190, width, 18).build();
             delete.active = mutable;
             addRenderableWidget(delete);
         } else if (agentSettingsDetailPage == 1) {
-            EditBox voice = new EditBox(this.font, contentX, 168, contentWidth, 18, Component.literal("Edge TTS 声音"));
+            EditBox voice = new EditBox(this.font, contentX, 168, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("Edge TTS 声音")));
             voice.setMaxLength(80);
-            voice.setHint(Component.literal("Edge TTS 声音"));
+            voice.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("Edge TTS 声音")));
             voice.setValue(agentVoiceDraft);
             voice.setResponder(value -> agentVoiceDraft = value);
             addRenderableWidget(voice);
-            Button save = Button.builder(Component.literal("保存声音"), ignored -> saveAgentVoice())
+            Button save = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("保存声音")), ignored -> saveAgentVoice())
                     .bounds(contentX, 190, Math.min(110, contentWidth), 18).build();
             save.active = mutable && !agentVoiceDraft.isBlank();
             addRenderableWidget(save);
         } else if (agentSettingsDetailPage == 2) {
             EditBox collaborator = new EditBox(this.font, contentX, 168, contentWidth, 18,
-                    Component.literal("玩家 UUID"));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("玩家 UUID")));
             collaborator.setMaxLength(36);
-            collaborator.setHint(Component.literal("玩家 UUID"));
+            collaborator.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("玩家 UUID")));
             collaborator.setValue(collaboratorDraft);
             collaborator.setResponder(value -> collaboratorDraft = value);
             addRenderableWidget(collaborator);
             int width = Math.max(54, (contentWidth - 4) / 2);
-            Button add = Button.builder(Component.literal("添加协作者"), ignored -> sendCollaborator(agentId, true))
+            Button add = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("添加协作者")), ignored -> sendCollaborator(agentId, true))
                     .bounds(contentX, 190, width, 18).build();
             add.active = mutable && !collaboratorDraft.isBlank();
             addRenderableWidget(add);
-            Button remove = Button.builder(Component.literal("移除协作者"), ignored -> sendCollaborator(agentId, false))
+            Button remove = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("移除协作者")), ignored -> sendCollaborator(agentId, false))
                     .bounds(contentX + width + 4, 190, width, 18).build();
             remove.active = mutable && !collaboratorDraft.isBlank();
             addRenderableWidget(remove);
         } else {
             EditBox limit = new EditBox(this.font, contentX, 168, contentWidth, 18,
-                    Component.literal("连锁挖掘上限"));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("连锁挖掘上限")));
             limit.setMaxLength(3);
             limit.setHint(Component.literal("1–128"));
             limit.setValue(veinMiningLimitDraft);
             limit.setResponder(value -> veinMiningLimitDraft = value);
             addRenderableWidget(limit);
-            addRenderableWidget(Button.builder(Component.literal("保存技能设置"), ignored ->
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("保存技能设置")), ignored ->
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.ConfigPatch(
                                     PanelSnapshotInbox.snapshot().revision(),
                                     Map.of("skill.veinMining.maxBlocks", veinMiningLimitDraft.strip()))))
@@ -802,28 +803,28 @@ public final class ControlCenterScreen extends Screen {
         for(int i=0;i<urls.length;i++){final int choice=i;addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{openAiBaseUrlDraft=urls[choice];openAiModelDraft=dev.mineagent.runtime.core.config.ProviderDefaults.model(openAiBaseUrlDraft);rebuildWidgets();}).bounds(contentX+i*(cell+4),108,cell,18).build());}
         addRenderableWidget(new StringWidget(contentX,134,38,18,Component.literal("URL"),font));
         EditBox url=new EditBox(font,contentX+42,134,w-42,20,Component.literal("API URL"));url.setMaxLength(2048);url.setValue(openAiBaseUrlDraft);url.setResponder(v->openAiBaseUrlDraft=v);addRenderableWidget(url);
-        addRenderableWidget(new StringWidget(contentX,160,38,18,Component.literal("模型"),font));
-        EditBox modelName=new EditBox(font,contentX+42,160,w-42,20,Component.literal("模型名称"));modelName.setMaxLength(256);modelName.setValue(openAiModelDraft);modelName.setResponder(v->openAiModelDraft=v);addRenderableWidget(modelName);
+        addRenderableWidget(new StringWidget(contentX,160,38,18,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("模型")),font));
+        EditBox modelName=new EditBox(font,contentX+42,160,w-42,20,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("模型名称")));modelName.setMaxLength(256);modelName.setValue(openAiModelDraft);modelName.setResponder(v->openAiModelDraft=v);addRenderableWidget(modelName);
         addRenderableWidget(new StringWidget(contentX,186,38,18,Component.literal("Key"),font));
-        inlineProviderKey=new EditBox(font,contentX+42,186,w-42,20,Component.literal("API Key")){@Override protected net.minecraft.network.chat.MutableComponent createNarrationMessage(){return Component.literal("API Key，内容已隐藏");}};
-        inlineProviderKey.setMaxLength(4096);inlineProviderKey.setHint(Component.literal("留空保留已保存 Key"));inlineProviderKey.addFormatter((value,cursor)->net.minecraft.util.FormattedCharSequence.forward("•".repeat(value.length()),net.minecraft.network.chat.Style.EMPTY));inlineProviderKey.setValue(openAiApiKeyDraft);inlineProviderKey.setResponder(value->{openAiApiKeyDraft=value;if(!value.isEmpty())clearInlineKey=false;});addRenderableWidget(inlineProviderKey);
-        addRenderableWidget(Button.builder(Component.literal("选择模型…"),b->Minecraft.getInstance().setScreen(new ProviderModelScreen(this))).bounds(contentX,212,Math.max(60,w-158),18).build());
-        addRenderableWidget(Button.builder(Component.literal(clearInlineKey?"将清除Key":"清除Key"),b->{clearInlineKey=!clearInlineKey;openAiApiKeyDraft="";rebuildWidgets();}).bounds(contentX+w-152,212,76,18).build());
-        addRenderableWidget(Button.builder(Component.literal("保存"),b->saveProviderSettings()).bounds(contentX+w-70,212,70,18).build());
+        inlineProviderKey=new EditBox(font,contentX+42,186,w-42,20,Component.literal("API Key")){@Override protected net.minecraft.network.chat.MutableComponent createNarrationMessage(){return Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("API Key，内容已隐藏"));}};
+        inlineProviderKey.setMaxLength(4096);inlineProviderKey.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("留空保留已保存 Key")));inlineProviderKey.addFormatter((value,cursor)->net.minecraft.util.FormattedCharSequence.forward("•".repeat(value.length()),net.minecraft.network.chat.Style.EMPTY));inlineProviderKey.setValue(openAiApiKeyDraft);inlineProviderKey.setResponder(value->{openAiApiKeyDraft=value;if(!value.isEmpty())clearInlineKey=false;});addRenderableWidget(inlineProviderKey);
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("选择模型…")),b->Minecraft.getInstance().setScreen(new ProviderModelScreen(this))).bounds(contentX,212,Math.max(60,w-158),18).build());
+        addRenderableWidget(Button.builder(Component.literal(clearInlineKey?dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("将清除Key"):dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("清除Key")),b->{clearInlineKey=!clearInlineKey;openAiApiKeyDraft="";rebuildWidgets();}).bounds(contentX+w-152,212,76,18).build());
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("保存")),b->saveProviderSettings()).bounds(contentX+w-70,212,70,18).build());
     }
 
     private void addDecisionControls(int contentX, int contentWidth) {
         Map<String, String> state = PanelSnapshotInbox.decisionState().values();
         if (!Boolean.parseBoolean(state.getOrDefault("present", "false"))) {
             addRenderableWidget(new StringWidget(contentX, 122, contentWidth, 18,
-                    Component.literal("当前没有待回答的选择"), this.font));
-            addRenderableWidget(Button.builder(Component.literal("刷新"), ignored ->
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("当前没有待回答的选择")), this.font));
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("刷新")), ignored ->
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.DecisionRequestPayload()))
                     .bounds(contentX, 148, Math.min(80, contentWidth), 18).build());
             return;
         }
         addRenderableWidget(new StringWidget(contentX, 112, contentWidth, 16,
-                Component.literal(state.getOrDefault("title", "选择")), this.font).setMaxWidth(contentWidth));
+                Component.literal(state.getOrDefault("title", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("选择"))), this.font).setMaxWidth(contentWidth));
         addRenderableWidget(new StringWidget(contentX, 128, contentWidth, 16,
                 Component.literal(state.getOrDefault("question", "")), this.font).setMaxWidth(contentWidth));
 
@@ -843,13 +844,13 @@ public final class ControlCenterScreen extends Screen {
         }
         if (optionCount > availableRows) {
             int half = Math.max(32, Math.min(55, contentWidth / 4));
-            Button previous = Button.builder(Component.literal("上一项"), ignored -> {
+            Button previous = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("上一项")), ignored -> {
                         decisionOptionOffset = Math.max(0, decisionOptionOffset - availableRows);
                         rebuildWidgets();
                     }).bounds(contentX, y, half, 18).build();
             previous.active = decisionOptionOffset > 0;
             addRenderableWidget(previous);
-            Button next = Button.builder(Component.literal("下一项"), ignored -> {
+            Button next = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("下一项")), ignored -> {
                         decisionOptionOffset = Math.min(Math.max(0, optionCount - 1), decisionOptionOffset + availableRows);
                         rebuildWidgets();
                     }).bounds(contentX + half + 4, y, half, 18).build();
@@ -858,9 +859,9 @@ public final class ControlCenterScreen extends Screen {
             y += 20;
         }
         if (Boolean.parseBoolean(state.getOrDefault("allowCustomInput", "false"))) {
-            EditBox custom = new EditBox(this.font, contentX, y, contentWidth, 18, Component.literal("自由回答"));
+            EditBox custom = new EditBox(this.font, contentX, y, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("自由回答")));
             custom.setMaxLength(16_384);
-            custom.setHint(Component.literal("自由回答"));
+            custom.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("自由回答")));
             custom.setValue(decisionCustomDraft);
             custom.setResponder(value -> decisionCustomDraft = value);
             addRenderableWidget(custom);
@@ -869,33 +870,33 @@ public final class ControlCenterScreen extends Screen {
         int buttonWidth = Math.max(44, (contentWidth - 8) / 3);
         String status = state.getOrDefault("status", "OPEN");
         if ("DEFERRED".equals(status)) {
-            addRenderableWidget(Button.builder(Component.literal("继续回答"), ignored -> sendDecisionCommand("resume", state))
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("继续回答")), ignored -> sendDecisionCommand("resume", state))
                     .bounds(contentX, y, buttonWidth, 18).build());
         } else {
-            addRenderableWidget(Button.builder(Component.literal("提交"), ignored -> sendDecisionCommand("submit", state))
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("提交")), ignored -> sendDecisionCommand("submit", state))
                     .bounds(contentX, y, buttonWidth, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("稍后"), ignored -> sendDecisionCommand("defer", state))
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("稍后")), ignored -> sendDecisionCommand("defer", state))
                     .bounds(contentX + buttonWidth + 4, y, buttonWidth, 18).build());
         }
-        addRenderableWidget(Button.builder(Component.literal("取消任务"), ignored -> sendDecisionCommand("cancel", state))
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("取消任务")), ignored -> sendDecisionCommand("cancel", state))
                 .bounds(contentX + (buttonWidth + 4) * 2, y, buttonWidth, 18).build());
     }
 
     private void addConversationControls(int contentX, int contentWidth) {
         int tabWidth = Math.max(30, Math.min(96, (contentWidth - 8) / 3));
-        Button chatTab = Button.builder(Component.literal("聊天"), ignored -> {
+        Button chatTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("聊天")), ignored -> {
                     conversationPage = 0;
                     requestSelectedConversation();
                     rebuildWidgets();
                 }).bounds(contentX, 90, tabWidth, 18).build();
         chatTab.active = conversationPage != 0;
         addRenderableWidget(chatTab);
-        Button choiceTab = Button.builder(Component.literal("待回答选择"), ignored -> {
+        Button choiceTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("待回答选择")), ignored -> {
                     conversationPage = 1;
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.DecisionRequestPayload());
                     rebuildWidgets();
                 }).bounds(contentX + tabWidth + 4, 90, tabWidth, 18).build();
-        var thinkingButton=Button.builder(Component.literal("聊天思考："+(dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.showThinking()?"显示":"隐藏")),button->{button.active=false;var current=dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.view();dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.save(!((Boolean)current.get("showThinking")),((Number)current.get("revision")).longValue()).whenComplete((v,e)->Minecraft.getInstance().execute(()->{button.active=true;button.setMessage(Component.literal(e==null?"聊天思考："+(((Boolean)v.get("showThinking"))?"显示":"隐藏"):"思考设置保存失败"));}));}).bounds(contentX+tabWidth*2+8,90,Math.max(30,Math.min(125,contentWidth-tabWidth*2-8)),18).build();addRenderableWidget(thinkingButton);
+        var thinkingButton=Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("聊天思考：")+(dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.showThinking()?dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("显示"):dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("隐藏"))),button->{button.active=false;var current=dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.view();dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.save(!((Boolean)current.get("showThinking")),((Number)current.get("revision")).longValue()).whenComplete((v,e)->Minecraft.getInstance().execute(()->{button.active=true;button.setMessage(Component.literal(e==null?dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("聊天思考：")+(((Boolean)v.get("showThinking"))?dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("显示"):dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("隐藏")):dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("思考设置保存失败")));}));}).bounds(contentX+tabWidth*2+8,90,Math.max(30,Math.min(125,contentWidth-tabWidth*2-8)),18).build();addRenderableWidget(thinkingButton);
         choiceTab.active = conversationPage != 1;
         addRenderableWidget(choiceTab);
         if (conversationPage == 0) {
@@ -907,13 +908,13 @@ public final class ControlCenterScreen extends Screen {
 
     private void addTaskControls(int contentX, int contentWidth) {
         int tabWidth = Math.max(58, Math.min(90, (contentWidth - 4) / 2));
-        Button createTab = Button.builder(Component.literal("发起任务"), ignored -> {
+        Button createTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("发起任务")), ignored -> {
                     taskPage = 0;
                     rebuildWidgets();
                 }).bounds(contentX, 108, tabWidth, 18).build();
         createTab.active = taskPage != 0;
         addRenderableWidget(createTab);
-        Button manageTab = Button.builder(Component.literal("管理任务"), ignored -> {
+        Button manageTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("管理任务")), ignored -> {
                     taskPage = 1;
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.TaskCommand("refresh", Map.of()));
                     rebuildWidgets();
@@ -929,13 +930,13 @@ public final class ControlCenterScreen extends Screen {
 
     private void addMemoryControls(int contentX, int contentWidth) {
         int tabWidth = Math.max(54, Math.min(86, (contentWidth - 4) / 2));
-        Button createTab = Button.builder(Component.literal("新增记忆"), ignored -> {
+        Button createTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("新增记忆")), ignored -> {
                     memoryPage = 0;
                     rebuildWidgets();
                 }).bounds(contentX, 108, tabWidth, 18).build();
         createTab.active = memoryPage != 0;
         addRenderableWidget(createTab);
-        Button editTab = Button.builder(Component.literal("编辑记忆"), ignored -> {
+        Button editTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("编辑记忆")), ignored -> {
                     memoryPage = 1;
                     loadSelectedMemory();
                     rebuildWidgets();
@@ -951,13 +952,13 @@ public final class ControlCenterScreen extends Screen {
 
     private void addPermissionControls(int contentX, int contentWidth) {
         int tabWidth = Math.max(54, Math.min(86, (contentWidth - 4) / 2));
-        Button trustTab = Button.builder(Component.literal("服务器信任"), ignored -> {
+        Button trustTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("服务器信任")), ignored -> {
                     permissionPage = 0;
                     rebuildWidgets();
                 }).bounds(contentX, 108, tabWidth, 18).build();
         trustTab.active = permissionPage != 0;
         addRenderableWidget(trustTab);
-        Button accessTab = Button.builder(Component.literal("权限组"), ignored -> {
+        Button accessTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("权限组")), ignored -> {
                     permissionPage = 1;
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.PermissionCommand("refresh", Map.of()));
                     rebuildWidgets();
@@ -969,7 +970,7 @@ public final class ControlCenterScreen extends Screen {
             return;
         }
         Map<String, String> values = PanelSnapshotInbox.snapshot().values();
-        String fingerprint = values.getOrDefault("security.identityFingerprint", "未收到");
+        String fingerprint = values.getOrDefault("security.identityFingerprint", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("未收到"));
         String publicKey = values.getOrDefault("security.identityPublicKey", "");
         String serverId = currentServerId();
         dev.mineagent.runtime.client.trust.TrustStatus status = dev.mineagent.runtime.client.trust.TrustStatus.UNKNOWN;
@@ -979,17 +980,17 @@ public final class ControlCenterScreen extends Screen {
             trustError = failure.getMessage();
         }
         addRenderableWidget(new StringWidget(contentX, 130, contentWidth, 16,
-                Component.literal("签名: " + (PanelSnapshotInbox.signatureValid() ? "有效" : "无效")), this.font));
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("签名: ") + (PanelSnapshotInbox.signatureValid() ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("有效") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("无效"))), this.font));
         addRenderableWidget(new StringWidget(contentX, 148, contentWidth, 16,
-                Component.literal("指纹: " + abbreviate(fingerprint, 28)), this.font).setMaxWidth(contentWidth));
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("指纹: ") + abbreviate(fingerprint, 28)), this.font).setMaxWidth(contentWidth));
         addRenderableWidget(new StringWidget(contentX, 166, contentWidth, 16,
-                Component.literal("信任状态: " + switch (status) {
-                    case UNKNOWN -> "未确认";
-                    case TRUSTED -> "已信任";
-                    case MISMATCH -> "指纹变化";
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("信任状态: ") + switch (status) {
+                    case UNKNOWN -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("未确认");
+                    case TRUSTED -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("已信任");
+                    case MISMATCH -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("指纹变化");
                 }), this.font));
         Button trust = Button.builder(Component.literal(status == dev.mineagent.runtime.client.trust.TrustStatus.MISMATCH
-                        ? "确认更新指纹" : "信任此服务器"), ignored -> {
+                        ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("确认更新指纹") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("信任此服务器")), ignored -> {
                     try {
                         trustStore().confirm(serverId, fingerprint, java.util.Base64.getDecoder().decode(publicKey));
                         trustError = "";
@@ -1006,9 +1007,9 @@ public final class ControlCenterScreen extends Screen {
         addRenderableWidget(trust);
         addRenderableWidget(new StringWidget(contentX, 204, contentWidth, 14,
                 Component.literal(trustError.isBlank()
-                        ? "创建AI=" + values.getOrDefault("permission.create_agent", "false")
-                        + " 代码=" + values.getOrDefault("permission.run_code", "false")
-                        : "错误: " + trustError), this.font).setMaxWidth(contentWidth));
+                        ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("创建AI=") + values.getOrDefault("permission.create_agent", "false")
+                        + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(" 代码=") + values.getOrDefault("permission.run_code", "false")
+                        : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("错误: ") + trustError), this.font).setMaxWidth(contentWidth));
     }
 
     private void addPermissionGroupControls(int contentX, int contentWidth) {
@@ -1016,31 +1017,31 @@ public final class ControlCenterScreen extends Screen {
                 .getOrDefault("permission.manage_permissions", "false"));
         if (!mayManage) {
             addRenderableWidget(new StringWidget(contentX, 132, contentWidth, 18,
-                    Component.literal("你可以查看自己的权限，但不能管理权限组"), this.font).setMaxWidth(contentWidth));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("你可以查看自己的权限，但不能管理权限组")), this.font).setMaxWidth(contentWidth));
             return;
         }
-        EditBox player = new EditBox(this.font, contentX, 132, contentWidth, 18, Component.literal("玩家 UUID"));
+        EditBox player = new EditBox(this.font, contentX, 132, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("玩家 UUID")));
         player.setMaxLength(36);
-        player.setHint(Component.literal("玩家 UUID"));
+        player.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("玩家 UUID")));
         player.setValue(permissionPlayerDraft);
         player.setResponder(value -> permissionPlayerDraft = value);
         addRenderableWidget(player);
-        addRenderableWidget(Button.builder(Component.literal("权限: " + permissionAction.name()), ignored -> {
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("权限: ") + permissionAction.name()), ignored -> {
                     var values = dev.mineagent.runtime.api.permission.PermissionAction.values();
                     permissionAction = values[(permissionAction.ordinal() + 1) % values.length];
                     rebuildWidgets();
                 }).bounds(contentX, 154, contentWidth, 18).build());
         int width = Math.max(60, (contentWidth - 4) / 2);
-        Button grant = Button.builder(Component.literal("授予"), ignored -> sendPermissionChange(true))
+        Button grant = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("授予")), ignored -> sendPermissionChange(true))
                 .bounds(contentX, 176, width, 18).build();
         grant.active = !permissionPlayerDraft.isBlank();
         addRenderableWidget(grant);
-        Button revoke = Button.builder(Component.literal("撤销"), ignored -> sendPermissionChange(false))
+        Button revoke = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("撤销")), ignored -> sendPermissionChange(false))
                 .bounds(contentX + width + 4, 176, width, 18).build();
         revoke.active = !permissionPlayerDraft.isBlank();
         addRenderableWidget(revoke);
         addRenderableWidget(new StringWidget(contentX, 198, contentWidth, 16,
-                Component.literal("受信玩家: " + PanelSnapshotInbox.permissionState().values()
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("受信玩家: ") + PanelSnapshotInbox.permissionState().values()
                         .getOrDefault("playerCount", "0") + "  "
                         + emptyAsNone(PanelSnapshotInbox.permissionState().errorCode())), this.font));
     }
@@ -1056,10 +1057,10 @@ public final class ControlCenterScreen extends Screen {
         Map<String, String> state = payload.values();
         int count = parseBoundedInt(state.get("modCount"), 0, 30, 0);
         if (count == 0) {
-            String text = "INDEXING".equals(payload.errorCode()) ? "正在索引 Mod JAR…" : "尚无可用 Mod 索引";
+            String text = "INDEXING".equals(payload.errorCode()) ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("正在索引 Mod JAR…") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("尚无可用 Mod 索引");
             addRenderableWidget(new StringWidget(contentX, 120, contentWidth, 18,
                     Component.literal(text), this.font));
-            addRenderableWidget(Button.builder(Component.literal("扫描 mods 目录"), ignored ->
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("扫描 mods 目录")), ignored ->
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.ModKnowledgeRequest()))
                     .bounds(contentX, 146, Math.min(120, contentWidth), 18).build());
             return;
@@ -1073,33 +1074,33 @@ public final class ControlCenterScreen extends Screen {
                 }).bounds(contentX, 116, contentWidth, 18).build());
         addRenderableWidget(new StringWidget(contentX, 140, contentWidth, 16,
                 Component.literal("ID: " + state.getOrDefault(prefix + "id", "")
-                        + "  版本: " + state.getOrDefault(prefix + "version", "")), this.font));
+                        + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("  版本: ") + state.getOrDefault(prefix + "version", "")), this.font));
         addRenderableWidget(new StringWidget(contentX, 158, contentWidth, 16,
                 Component.literal("Classes: " + state.getOrDefault(prefix + "classes", "0")
                         + "  Sources: " + state.getOrDefault(prefix + "sources", "0")), this.font));
         addRenderableWidget(new StringWidget(contentX, 176, contentWidth, 16,
                 Component.literal("SHA-256: " + abbreviate(state.getOrDefault(prefix + "sha256", ""), 28)), this.font));
-        addRenderableWidget(Button.builder(Component.literal("重新扫描"), ignored ->
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("重新扫描")), ignored ->
                         ClientPacketDistributor.sendToServer(new MineAgentPayloads.ModKnowledgeRequest()))
                 .bounds(contentX, 196, Math.min(90, contentWidth), 18).build());
     }
 
     private void addBackupControls(int contentX, int contentWidth) {
         int tabWidth = Math.max(42, Math.min(72, (contentWidth - 8) / 3));
-        Button createTab = Button.builder(Component.literal("创建快照"), ignored -> {
+        Button createTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("创建快照")), ignored -> {
                     backupPage = 0;
                     rebuildWidgets();
                 }).bounds(contentX, 108, tabWidth, 18).build();
         createTab.active = backupPage != 0;
         addRenderableWidget(createTab);
-        Button restoreTab = Button.builder(Component.literal("预览恢复"), ignored -> {
+        Button restoreTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("预览恢复")), ignored -> {
                     backupPage = 1;
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.BackupCommand("refresh", Map.of()));
                     rebuildWidgets();
                 }).bounds(contentX + tabWidth + 4, 108, tabWidth, 18).build();
         restoreTab.active = backupPage != 1;
         addRenderableWidget(restoreTab);
-        Button journalTab = Button.builder(Component.literal("变更记录"), ignored -> {
+        Button journalTab = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("变更记录")), ignored -> {
                     backupPage = 2;
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.BackupCommand("refresh", Map.of()));
                     rebuildWidgets();
@@ -1107,43 +1108,43 @@ public final class ControlCenterScreen extends Screen {
         journalTab.active = backupPage != 2;
         addRenderableWidget(journalTab);
         if (backupPage == 0) {
-            EditBox label = new EditBox(this.font, contentX, 132, contentWidth, 18, Component.literal("快照名称"));
+            EditBox label = new EditBox(this.font, contentX, 132, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("快照名称")));
             label.setMaxLength(128);
             label.setValue(snapshotLabelDraft);
             label.setResponder(value -> snapshotLabelDraft = value);
             addRenderableWidget(label);
-            addRenderableWidget(Button.builder(Component.literal("半径: " + snapshotRadius), ignored -> {
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("半径: ") + snapshotRadius), ignored -> {
                         snapshotRadius = snapshotRadius == 4 ? 8 : snapshotRadius == 8 ? 16 : 4;
                         rebuildWidgets();
                     }).bounds(contentX, 154, Math.min(90, contentWidth), 18).build());
-            Button create = Button.builder(Component.literal("立即创建局部快照"), ignored ->
+            Button create = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("立即创建局部快照")), ignored ->
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.BackupCommand("create", Map.of(
                                     "label", snapshotLabelDraft.strip(), "radius", Integer.toString(snapshotRadius)))))
                     .bounds(contentX, 178, Math.min(140, contentWidth), 18).build();
             create.active = !snapshotLabelDraft.isBlank();
             addRenderableWidget(create);
             addRenderableWidget(new StringWidget(contentX, 200, contentWidth, 16,
-                    Component.literal("默认保留 7 天，上限 10 GB"), this.font));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("默认保留 7 天，上限 10 GB")), this.font));
         } else if (backupPage == 1) {
             Map<String, String> state = PanelSnapshotInbox.backupState().values();
             int count = parseBoundedInt(state.get("snapshotCount"), 0, 10, 0);
             if (count == 0) {
                 addRenderableWidget(new StringWidget(contentX, 134, contentWidth, 18,
-                        Component.literal("当前没有快照"), this.font));
+                        Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("当前没有快照")), this.font));
                 return;
             }
             selectedSnapshotIndex = Math.min(selectedSnapshotIndex, count - 1);
             String prefix = "snapshot." + selectedSnapshotIndex + ".";
-            addRenderableWidget(Button.builder(Component.literal(state.getOrDefault(prefix + "label", "快照")), ignored -> {
+            addRenderableWidget(Button.builder(Component.literal(state.getOrDefault(prefix + "label", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("快照"))), ignored -> {
                         selectedSnapshotIndex = (selectedSnapshotIndex + 1) % count;
                         rebuildWidgets();
                     }).bounds(contentX, 132, contentWidth, 18).build());
             addRenderableWidget(new StringWidget(contentX, 156, contentWidth, 16,
-                    Component.literal("方块: " + state.getOrDefault(prefix + "blocks", "0")
-                            + "  估算字节: " + state.getOrDefault(prefix + "bytes", "0")), this.font));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("方块: ") + state.getOrDefault(prefix + "blocks", "0")
+                            + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("  估算字节: ") + state.getOrDefault(prefix + "bytes", "0")), this.font));
             addRenderableWidget(new StringWidget(contentX, 174, contentWidth, 16,
-                    Component.literal("到期: " + state.getOrDefault(prefix + "expires", "")), this.font));
-            addRenderableWidget(Button.builder(Component.literal("恢复此快照"), ignored ->
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("到期: ") + state.getOrDefault(prefix + "expires", "")), this.font));
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("恢复此快照")), ignored ->
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.BackupCommand("restore", Map.of(
                                     "snapshotId", state.getOrDefault(prefix + "id", "")))))
                     .bounds(contentX, 196, Math.min(120, contentWidth), 18).build());
@@ -1152,23 +1153,23 @@ public final class ControlCenterScreen extends Screen {
             int count = parseBoundedInt(state.get("changeCount"), 0, 10, 0);
             if (count == 0) {
                 addRenderableWidget(new StringWidget(contentX, 134, contentWidth, 18,
-                        Component.literal("当前没有可撤销变更"), this.font));
+                        Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("当前没有可撤销变更")), this.font));
                 return;
             }
             selectedChangeIndex = Math.min(selectedChangeIndex, count - 1);
             String prefix = "change." + selectedChangeIndex + ".";
             addRenderableWidget(Button.builder(Component.literal(
-                            state.getOrDefault(prefix + "action", "变更")), ignored -> {
+                            state.getOrDefault(prefix + "action", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("变更"))), ignored -> {
                         selectedChangeIndex = (selectedChangeIndex + 1) % count;
                         rebuildWidgets();
                     }).bounds(contentX, 132, contentWidth, 18).build());
             addRenderableWidget(new StringWidget(contentX, 156, contentWidth, 16,
-                    Component.literal("方块: " + state.getOrDefault(prefix + "blocks", "0")
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("方块: ") + state.getOrDefault(prefix + "blocks", "0")
                             + "  Revision: " + state.getOrDefault(prefix + "revision", "0")), this.font));
             boolean reverted = Boolean.parseBoolean(state.getOrDefault(prefix + "reverted", "false"));
             addRenderableWidget(new StringWidget(contentX, 176, contentWidth, 16,
-                    Component.literal(reverted ? "状态: 已撤销" : "状态: 可撤销"), this.font));
-            Button undo = Button.builder(Component.literal("撤销此变更"), ignored ->
+                    Component.literal(reverted ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("状态: 已撤销") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("状态: 可撤销")), this.font));
+            Button undo = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("撤销此变更")), ignored ->
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.BackupCommand(
                                     "undo_change", Map.of(
                                     "changeId", state.getOrDefault(prefix + "id", ""),
@@ -1194,28 +1195,28 @@ public final class ControlCenterScreen extends Screen {
     }
 
     private void addMemoryCreationControls(int contentX, int contentWidth) {
-        addRenderableWidget(Button.builder(Component.literal("类型: " + switch (memoryKind) {
-                    case PLAYER_PREFERENCE -> "玩家偏好";
-                    case WORLD_FACT -> "世界事实";
-                    case SKILL -> "技能";
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("类型: ") + switch (memoryKind) {
+                    case PLAYER_PREFERENCE -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("玩家偏好");
+                    case WORLD_FACT -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("世界事实");
+                    case SKILL -> dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("技能");
                 }), ignored -> {
                     var values = dev.mineagent.runtime.api.memory.MemoryKind.values();
                     memoryKind = values[(memoryKind.ordinal() + 1) % values.length];
                     rebuildWidgets();
                 }).bounds(contentX, 130, contentWidth, 18).build());
-        EditBox key = new EditBox(this.font, contentX, 152, contentWidth, 18, Component.literal("记忆键"));
+        EditBox key = new EditBox(this.font, contentX, 152, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("记忆键")));
         key.setMaxLength(128);
-        key.setHint(Component.literal("记忆键"));
+        key.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("记忆键")));
         key.setValue(memoryKeyDraft);
         key.setResponder(value -> memoryKeyDraft = value);
         key.setVisible(false);
-        EditBox value = new EditBox(this.font, contentX, 174, contentWidth, 18, Component.literal("记忆内容"));
+        EditBox value = new EditBox(this.font, contentX, 174, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("记忆内容")));
         value.setMaxLength(16_384);
-        value.setHint(Component.literal("记忆内容"));
+        value.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("记忆内容")));
         value.setValue(memoryValueDraft);
         value.setResponder(text -> memoryValueDraft = text);
         addRenderableWidget(value);
-        Button create = Button.builder(Component.literal("保存记忆"), ignored -> {
+        Button create = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("保存记忆")), ignored -> {
                     ClientPacketDistributor.sendToServer(new MineAgentPayloads.MemoryCommand("create", Map.of(
                             "kind", memoryKind.name(), "key", "memory-"+UUID.randomUUID(),
                             "value", memoryValueDraft.strip())));
@@ -1231,7 +1232,7 @@ public final class ControlCenterScreen extends Screen {
         int count = parseBoundedInt(state.get("memoryCount"), 0, 20, 0);
         if (count == 0) {
             addRenderableWidget(new StringWidget(contentX, 132, contentWidth, 18,
-                    Component.literal("当前没有可见记忆"), this.font));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("当前没有可见记忆")), this.font));
             return;
         }
         selectedMemoryIndex = Math.min(selectedMemoryIndex, count - 1);
@@ -1243,7 +1244,7 @@ public final class ControlCenterScreen extends Screen {
                     loadSelectedMemory();
                     rebuildWidgets();
                 }).bounds(contentX, 130, contentWidth, 18).build());
-        EditBox value = new EditBox(this.font, contentX, 152, contentWidth, 18, Component.literal("记忆内容"));
+        EditBox value = new EditBox(this.font, contentX, 152, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("记忆内容")));
         value.setMaxLength(16_384);
         value.setValue(memoryValueDraft);
         value.setResponder(text -> memoryValueDraft = text);
@@ -1251,15 +1252,15 @@ public final class ControlCenterScreen extends Screen {
         String id = state.getOrDefault(prefix + "id", "");
         String revision = state.getOrDefault(prefix + "revision", "0");
         int width = Math.max(60, (contentWidth - 4) / 2);
-        addRenderableWidget(Button.builder(Component.literal("更新"), ignored -> sendMemoryAction(
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("更新")), ignored -> sendMemoryAction(
                         "update", id, revision, memoryValueDraft))
                 .bounds(contentX, 174, width, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("删除"), ignored -> sendMemoryAction(
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("删除")), ignored -> sendMemoryAction(
                         "delete", id, revision, ""))
                 .bounds(contentX + width + 4, 174, width, 18).build());
         addRenderableWidget(new StringWidget(contentX, 196, contentWidth, 16,
                 Component.literal(PanelSnapshotInbox.memoryState().errorCode().isBlank()
-                        ? "" : "错误: " + PanelSnapshotInbox.memoryState().errorCode()), this.font));
+                        ? "" : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("错误: ") + PanelSnapshotInbox.memoryState().errorCode()), this.font));
     }
 
     private void loadSelectedMemory() {
@@ -1282,22 +1283,22 @@ public final class ControlCenterScreen extends Screen {
         int agents = parseBoundedInt(panel.get("agent.count"), 0, Integer.MAX_VALUE, 0);
         if (agents == 0) {
             addRenderableWidget(new StringWidget(contentX, 132, contentWidth, 18,
-                    Component.literal("请先创建 AI 玩家"), this.font));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("请先创建 AI 玩家")), this.font));
             return;
         }
         taskAgentIndex = Math.min(taskAgentIndex, agents - 1);
-        addRenderableWidget(Button.builder(Component.literal("执行者: "
-                        + panel.getOrDefault("agent." + taskAgentIndex + ".name", "AI 玩家")), ignored -> {
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("执行者: ")
+                        + panel.getOrDefault("agent." + taskAgentIndex + ".name", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 玩家"))), ignored -> {
                     taskAgentIndex = (taskAgentIndex + 1) % agents;
                     rebuildWidgets();
                 }).bounds(contentX, 130, contentWidth, 18).build());
-        EditBox title = new EditBox(this.font, contentX, 152, contentWidth, 18, Component.literal("任务描述"));
+        EditBox title = new EditBox(this.font, contentX, 152, contentWidth, 18, Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("任务描述")));
         title.setMaxLength(256);
-        title.setHint(Component.literal("任务描述"));
+        title.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("任务描述")));
         title.setValue(taskTitleDraft);
         title.setResponder(value -> taskTitleDraft = value);
         addRenderableWidget(title);
-        Button create = Button.builder(Component.literal("开始任务"), ignored -> {
+        Button create = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("开始任务")), ignored -> {
                     String agentId = panel.getOrDefault("agent." + taskAgentIndex + ".id", "");
                     if (!agentId.isBlank() && !taskTitleDraft.isBlank()) {
                         ClientPacketDistributor.sendToServer(new MineAgentPayloads.TaskCommand("create", Map.of(
@@ -1314,34 +1315,34 @@ public final class ControlCenterScreen extends Screen {
         int count = parseBoundedInt(state.get("taskCount"), 0, 20, 0);
         if (count == 0) {
             addRenderableWidget(new StringWidget(contentX, 132, contentWidth, 18,
-                    Component.literal("当前没有任务"), this.font));
+                    Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("当前没有任务")), this.font));
             return;
         }
         selectedTaskIndex = Math.min(selectedTaskIndex, count - 1);
         String prefix = "task." + selectedTaskIndex + ".";
-        addRenderableWidget(Button.builder(Component.literal(state.getOrDefault(prefix + "title", "任务")), ignored -> {
+        addRenderableWidget(Button.builder(Component.literal(state.getOrDefault(prefix + "title", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("任务"))), ignored -> {
                     selectedTaskIndex = (selectedTaskIndex + 1) % count;
                     rebuildWidgets();
                 }).bounds(contentX, 130, contentWidth, 18).build());
         String status = state.getOrDefault(prefix + "status", "RUNNING");
         String runnable = state.getOrDefault(prefix + "runnable", "");
         addRenderableWidget(new StringWidget(contentX, 151, contentWidth, 16,
-                Component.literal("状态: " + status + "  可执行: " + runnable), this.font).setMaxWidth(contentWidth));
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("状态: ") + status + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("  可执行: ") + runnable), this.font).setMaxWidth(contentWidth));
         String taskId = state.getOrDefault(prefix + "id", "");
         String revision = state.getOrDefault(prefix + "revision", "0");
         int width = Math.max(44, (contentWidth - 8) / 3);
         String primaryAction = "PAUSED".equals(status) ? "resume" : "pause";
-        addRenderableWidget(Button.builder(Component.literal("PAUSED".equals(status) ? "恢复" : "暂停"), ignored ->
+        addRenderableWidget(Button.builder(Component.literal("PAUSED".equals(status) ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("恢复") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("暂停")), ignored ->
                         sendTaskAction(primaryAction, taskId, revision))
                 .bounds(contentX, 170, width, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("重规划"), ignored ->
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("重规划")), ignored ->
                         sendTaskAction("replan", taskId, revision))
                 .bounds(contentX + width + 4, 170, width, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("取消"), ignored ->
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("取消")), ignored ->
                         sendTaskAction("cancel", taskId, revision))
                 .bounds(contentX + (width + 4) * 2, 170, width, 18).build());
         addRenderableWidget(new StringWidget(contentX, 192, contentWidth, 16,
-                Component.literal("变更: " + state.getOrDefault(prefix + "changeReason", "")), this.font)
+                Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("变更: ") + state.getOrDefault(prefix + "changeReason", "")), this.font)
                 .setMaxWidth(contentWidth));
     }
 
@@ -1350,17 +1351,17 @@ public final class ControlCenterScreen extends Screen {
         values.put("taskId", taskId);
         values.put("expectedRevision", revision);
         if ("replan".equals(action)) {
-            values.put("reason", "玩家在任务面板请求重规划");
+            values.put("reason", dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("玩家在任务面板请求重规划"));
         }
         ClientPacketDistributor.sendToServer(new MineAgentPayloads.TaskCommand(action, values));
     }
 
     private void addChatControls(int contentX, int contentWidth) {
-        addRenderableWidget(new StringWidget(contentX,112,contentWidth,36,Component.literal("普通对话已迁移到持久 WebGUI 会话。请明确新建或选择会话；不再自动续聊最近的 AI。"),this.font).setMaxWidth(contentWidth));
-        addRenderableWidget(Button.builder(Component.literal("打开完整会话与历史"),ignored->dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE.open()).bounds(contentX,154,contentWidth,22).build());
+        addRenderableWidget(new StringWidget(contentX,112,contentWidth,36,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("普通对话已迁移到持久 WebGUI 会话。请明确新建或选择会话；不再自动续聊最近的 AI。")),this.font).setMaxWidth(contentWidth));
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("打开完整会话与历史")),ignored->dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE.open()).bounds(contentX,154,contentWidth,22).build());
         if(!conversationDraft.isEmpty()){
-            EditBox retained=new EditBox(this.font,contentX,186,contentWidth,36,Component.literal("旧版未发送草稿（不会自动发送）"));retained.setMaxLength(16384);retained.setValue(conversationDraft);retained.setResponder(value->conversationDraft=value);addRenderableWidget(retained);
-            addRenderableWidget(Button.builder(Component.literal("复制旧草稿（自行选择目标后粘贴）"),ignored->this.minecraft.keyboardHandler.setClipboard(conversationDraft)).bounds(contentX,226,contentWidth,22).build());
+            EditBox retained=new EditBox(this.font,contentX,186,contentWidth,36,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("旧版未发送草稿（不会自动发送）")));retained.setMaxLength(16384);retained.setValue(conversationDraft);retained.setResponder(value->conversationDraft=value);addRenderableWidget(retained);
+            addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("复制旧草稿（自行选择目标后粘贴）")),ignored->this.minecraft.keyboardHandler.setClipboard(conversationDraft)).bounds(contentX,226,contentWidth,22).build());
         }
     }
     private void requestSelectedConversation() { /* Reading/opening a panel is not a conversation-selection intent. */ }
@@ -1420,9 +1421,9 @@ public final class ControlCenterScreen extends Screen {
     }
 
     private void saveProviderSettings(){
-        if(this.minecraft.getConnection()==null)return;String address=openAiBaseUrlDraft.strip();var original=PanelSnapshotInbox.snapshot().values();if(!address.equals(original.getOrDefault("provider.openai.baseUrl",""))&&original.containsKey("provider.openai.apiKey")&&openAiApiKeyDraft.isBlank()&&!clearInlineKey&&!address.equals(confirmedProviderAddress)){confirmedProviderAddress=address;Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal("地址已改变；再次点击保存将向新地址使用已有Key，也可选择清除Key。"));return;}var values=new LinkedHashMap<String,String>();values.put("provider.openai.baseUrl",openAiBaseUrlDraft.strip());values.put("provider.openai.model",openAiModelDraft.strip());values.put("provider.openai.enabled","true");
+        if(this.minecraft.getConnection()==null)return;String address=openAiBaseUrlDraft.strip();var original=PanelSnapshotInbox.snapshot().values();if(!address.equals(original.getOrDefault("provider.openai.baseUrl",""))&&original.containsKey("provider.openai.apiKey")&&openAiApiKeyDraft.isBlank()&&!clearInlineKey&&!address.equals(confirmedProviderAddress)){confirmedProviderAddress=address;Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("地址已改变；再次点击保存将向新地址使用已有Key，也可选择清除Key。")));return;}var values=new LinkedHashMap<String,String>();values.put("provider.openai.baseUrl",openAiBaseUrlDraft.strip());values.put("provider.openai.model",openAiModelDraft.strip());values.put("provider.openai.enabled","true");
         // These are compatible API presets, not mutually exclusive Provider capability switches.
-        if(clearInlineKey||!openAiApiKeyDraft.isBlank())try{String encoded=PanelSnapshotInbox.snapshot().values().get("security.secretTransportPublicKey");if(encoded==null)throw new IllegalStateException();var key=KeyFactory.getInstance("X25519").generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(encoded)));var envelope=SecretChannel.seal(key,openAiApiKeyDraft);var encoder=Base64.getEncoder();values.put("provider.openai.apiKey.encrypted.ephemeral",encoder.encodeToString(envelope.ephemeralPublicKey()));values.put("provider.openai.apiKey.encrypted.nonce",encoder.encodeToString(envelope.nonce()));values.put("provider.openai.apiKey.encrypted.ciphertext",encoder.encodeToString(envelope.ciphertext()));}catch(Exception e){openAiApiKeyDraft="";if(inlineProviderKey!=null)inlineProviderKey.setValue("");Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal("密钥加密失败，请刷新设置后重试。"));return;}
+        if(clearInlineKey||!openAiApiKeyDraft.isBlank())try{String encoded=PanelSnapshotInbox.snapshot().values().get("security.secretTransportPublicKey");if(encoded==null)throw new IllegalStateException();var key=KeyFactory.getInstance("X25519").generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(encoded)));var envelope=SecretChannel.seal(key,openAiApiKeyDraft);var encoder=Base64.getEncoder();values.put("provider.openai.apiKey.encrypted.ephemeral",encoder.encodeToString(envelope.ephemeralPublicKey()));values.put("provider.openai.apiKey.encrypted.nonce",encoder.encodeToString(envelope.nonce()));values.put("provider.openai.apiKey.encrypted.ciphertext",encoder.encodeToString(envelope.ciphertext()));}catch(Exception e){openAiApiKeyDraft="";if(inlineProviderKey!=null)inlineProviderKey.setValue("");Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("密钥加密失败，请刷新设置后重试。")));return;}
         openAiApiKeyDraft="";clearInlineKey=false;confirmedProviderAddress="";if(inlineProviderKey!=null)inlineProviderKey.setValue("");ClientPacketDistributor.sendToServer(new MineAgentPayloads.ConfigPatch(PanelSnapshotInbox.snapshot().revision(),values));
     }
     @Override public void removed(){openAiApiKeyDraft="";clearInlineKey=false;confirmedProviderAddress="";if(inlineProviderKey!=null)inlineProviderKey.setValue("");super.removed();}

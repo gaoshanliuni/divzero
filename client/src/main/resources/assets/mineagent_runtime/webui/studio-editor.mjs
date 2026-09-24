@@ -1,3 +1,4 @@
+import {t as __uiT,tf as __uiF} from './i18n.mjs';
 // Local text operations only: no Provider, host execution, clipboard or filesystem access.
 const JAVA_WORDS=new Set(('abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while record sealed permits non-sealed var yield true false null').split(' '));
 const JS_WORDS=new Set(('await break case catch class const continue debugger default delete do else export extends false finally for function if import in instanceof let new null return static super switch this throw true try typeof undefined var void while with yield').split(' '));
@@ -33,7 +34,7 @@ export function lexicalTokens(text,java=false){
 }
 export function literalMatches(text,query,caseSensitive=true){
   if(!query)return[];
-  if(query.length>256)throw new Error('查找文本最多 256 字符。');
+  if(query.length>256)throw new Error(__uiT("查找文本最多 256 字符。"));
   const escaped=query.replace(/[.*+?^{}$()|[\]\\]/g,'\\$&');
   return Array.from(text.matchAll(new RegExp(escaped,caseSensitive?'gu':'giu')),m=>({start:m.index,end:m.index+m[0].length}));
 }
@@ -49,14 +50,14 @@ export function attachStudioEditor({container,textarea,language,canEdit,notify})
     return n;
   };
   const bar=node('section',null,container,'studio-editor-tools');
-  const title=node('p','本地编辑工具 · 不保存、不发布、不执行',bar,'muted');
+  const title=node('p',__uiT("本地编辑工具 · 不保存、不发布、不执行"),bar,'muted');
   const row=node('div',null,bar,'event-toolbar');
   const field=(title,max,parent=row)=>{const label=node('label',title,parent),n=node('input',null,label);n.maxLength=max;return n;};
-  const search=field('查找（literal）',256),replace=field('替换为（literal）',512);
-  const sensitiveLabel=node('label',null,row),sensitive=node('input',null,sensitiveLabel);sensitive.type='checkbox';sensitive.checked=true;sensitiveLabel.append(document.createTextNode('区分大小写'));
+  const search=field(__uiT("查找（literal）"),256),replace=field(__uiT("替换为（literal）"),512);
+  const sensitiveLabel=node('label',null,row),sensitive=node('input',null,sensitiveLabel);sensitive.type='checkbox';sensitive.checked=true;sensitiveLabel.append(document.createTextNode(__uiT("区分大小写")));
   const actions=node('div',null,bar,'actions'),summary=node('p','',bar,'muted');summary.setAttribute('aria-live','polite');
   const matches=()=>literalMatches(textarea.value,search.value,sensitive.checked);
-  const position=index=>{const prefix=textarea.value.slice(0,index),line=prefix.split('\n').length,start=prefix.lastIndexOf('\n')+1;return '行 '+line+' · 列 '+(Array.from(prefix.slice(start)).length+1);};
+  const position=index=>{const prefix=textarea.value.slice(0,index),line=prefix.split('\n').length,start=prefix.lastIndexOf('\n')+1;return __uiT("行 ")+line+__uiT(" · 列 ")+(Array.from(prefix.slice(start)).length+1);};
   function select(start,end){if(!available())return;textarea.focus();textarea.setSelectionRange(start,end);summary.textContent=position(start);refreshState();}
   function remember(value){undo.push(value);if(undo.length>64)undo.shift();redo.length=0;}
   function changed(){
@@ -65,41 +66,41 @@ export function attachStudioEditor({container,textarea,language,canEdit,notify})
   }
   function apply(text,start,end){
     if(!writable())return false;
-    if(text.length>limit){notify('结果超过单文件 16000 字符上限，未修改源码。');return false;}
+    if(text.length>limit){notify(__uiT("结果超过单文件 16000 字符上限，未修改源码。"));return false;}
     if(text!==textarea.value){remember(textarea.value);textarea.value=text;last=text;textarea.dispatchEvent(new Event('input',{bubbles:true}));}
     select(Math.min(text.length,start),Math.min(text.length,end));schedulePreview();refreshState();return true;
   }
   function replaceRange(start,end,value){return apply(textarea.value.slice(0,start)+value+textarea.value.slice(end),start,start+value.length);}
   function find(direction){
-    const found=matches();if(!found.length){summary.textContent='没有匹配；空查找不会修改源码。';return;}
+    const found=matches();if(!found.length){summary.textContent=__uiT("没有匹配；空查找不会修改源码。");return;}
     const cursor=direction>0?textarea.selectionEnd:textarea.selectionStart;
     const match=direction>0?(found.find(m=>m.start>=cursor)||found[0]):(found.findLast(m=>m.end<=cursor)||found.at(-1));
     select(match.start,match.end);summary.textContent=(found.indexOf(match)+1)+' / '+found.length+' · '+position(match.start);
   }
   function replaceSelected(){
     const found=matches(),match=found.find(m=>m.start===textarea.selectionStart&&m.end===textarea.selectionEnd);
-    if(!match){find(1);notify('已定位匹配；再次点击替换才修改这处文本。');return;}
-    if(replaceRange(match.start,match.end,replace.value))notify('已替换选中匹配，尚未保存。');
+    if(!match){find(1);notify(__uiT("已定位匹配；再次点击替换才修改这处文本。"));return;}
+    if(replaceRange(match.start,match.end,replace.value))notify(__uiT("已替换选中匹配，尚未保存。"));
   }
   function replaceAll(){
-    const text=textarea.value,found=matches();if(!found.length){summary.textContent='没有匹配，未修改。';return;}
+    const text=textarea.value,found=matches();if(!found.length){summary.textContent=__uiT("没有匹配，未修改。");return;}
     const length=text.length+found.reduce((n,m)=>n+replace.value.length-(m.end-m.start),0);
-    if(length>limit){notify('全部替换会超过 16000 字符，未作部分替换。');return;}
+    if(length>limit){notify(__uiT("全部替换会超过 16000 字符，未作部分替换。"));return;}
     const pieces=[];let cursor=0;for(const m of found){pieces.push(text.slice(cursor,m.start),replace.value);cursor=m.end;}pieces.push(text.slice(cursor));
-    if(apply(pieces.join(''),found[0].start,found[0].start+replace.value.length))notify('已替换 '+found.length+' 处（literal，未保存）。');
+    if(apply(pieces.join(''),found[0].start,found[0].start+replace.value.length))notify(__uiT("已替换 ")+found.length+__uiT(" 处（literal，未保存）。"));
   }
   function undoRedo(back){
     if(!writable())return;const from=back?undo:redo,to=back?redo:undo;if(!from.length)return;
     to.push(textarea.value);if(to.length>64)to.shift();const cursor=textarea.selectionStart;textarea.value=from.pop();last=textarea.value;
     textarea.dispatchEvent(new Event('input',{bubbles:true}));select(Math.min(cursor,last.length),Math.min(cursor,last.length));schedulePreview();refreshState();
   }
-  button('上一处',actions,()=>find(-1));button('下一处',actions,()=>find(1));
-  button('替换选中匹配',actions,replaceSelected,true);button('全部替换',actions,replaceAll,true);
-  button('撤销',actions,()=>undoRedo(true),true,()=>undo.length>0);button('重做',actions,()=>undoRedo(false),true,()=>redo.length>0);
-  const gotoRow=node('div',null,bar,'event-toolbar'),line=field('跳转行',7,gotoRow);line.inputMode='numeric';
-  button('跳转',gotoRow,()=>{
+  button(__uiT("上一处"),actions,()=>find(-1));button(__uiT("下一处"),actions,()=>find(1));
+  button(__uiT("替换选中匹配"),actions,replaceSelected,true);button(__uiT("全部替换"),actions,replaceAll,true);
+  button(__uiT("撤销"),actions,()=>undoRedo(true),true,()=>undo.length>0);button(__uiT("重做"),actions,()=>undoRedo(false),true,()=>redo.length>0);
+  const gotoRow=node('div',null,bar,'event-toolbar'),line=field(__uiT("跳转行"),7,gotoRow);line.inputMode='numeric';
+  button(__uiT("跳转"),gotoRow,()=>{
     const target=Number(line.value),lines=textarea.value.split('\n');
-    if(!Number.isSafeInteger(target)||target<1||target>lines.length){notify('请输入已有行号 1–'+lines.length+'。');return;}
+    if(!Number.isSafeInteger(target)||target<1||target>lines.length){notify(__uiT("请输入已有行号 1–")+lines.length+'。');return;}
     const index=lines.slice(0,target-1).reduce((n,s)=>n+s.length+1,0);select(index,index);
   });
   function indent(remove){
@@ -108,34 +109,34 @@ export function attachStudioEditor({container,textarea,language,canEdit,notify})
     const lineEnd=text.indexOf('\n',end);end=lineEnd<0?text.length:lineEnd;
     const fragment=text.slice(start,end),parts=fragment.split('\n');
     const edited=parts.map(s=>{if(!remove)return '  '+s;const amount=s.startsWith('\t')?1:(s.match(/^ {1,2}/)?.[0].length||0);return s.slice(amount);}).join('\n');
-    if(apply(text.slice(0,start)+edited+text.slice(end),start,start+edited.length))notify((remove?'减少':'增加')+'所选行缩进；这是文本编辑，不是 AST 格式化。');
+    if(apply(text.slice(0,start)+edited+text.slice(end),start,start+edited.length))notify((remove?__uiT("减少"):__uiT("增加"))+__uiT("所选行缩进；这是文本编辑，不是 AST 格式化。"));
   }
-  button('缩进所选行',gotoRow,()=>indent(false),true);button('减少缩进',gotoRow,()=>indent(true),true);
-  const tabLabel=node('label',null,gotoRow),tabs=node('input',null,tabLabel);tabs.type='checkbox';tabLabel.append(document.createTextNode('仅此编辑器：Tab 用于缩进（默认关闭）'));
+  button(__uiT("缩进所选行"),gotoRow,()=>indent(false),true);button(__uiT("减少缩进"),gotoRow,()=>indent(true),true);
+  const tabLabel=node('label',null,gotoRow),tabs=node('input',null,tabLabel);tabs.type='checkbox';tabLabel.append(document.createTextNode(__uiT("仅此编辑器：Tab 用于缩进（默认关闭）")));
   const completions=node('div',null,bar,'studio-completions');
   function clearCompletions(){suggestion=null;completions.replaceChildren();}
   function complete(){
-    if(!writable())return;const text=textarea.value,cursor=textarea.selectionStart;if(cursor!==textarea.selectionEnd){notify('请先将光标放在一个标识符中，不选择文本。');return;}
+    if(!writable())return;const text=textarea.value,cursor=textarea.selectionStart;if(cursor!==textarea.selectionEnd){notify(__uiT("请先将光标放在一个标识符中，不选择文本。"));return;}
     let start=cursor,end=cursor;while(start>0&&identifierPart(charAt(text,previous(text,start))))start=previous(text,start);while(identifierPart(charAt(text,end)))end+=charAt(text,end).length;
-    const prefix=text.slice(start,cursor);if(!prefix){notify('先输入标识符前缀，再请求补全。');return;}
+    const prefix=text.slice(start,cursor);if(!prefix){notify(__uiT("先输入标识符前缀，再请求补全。"));return;}
     const tokens=lexicalTokens(text,language()==='JAVA');
-    if(tokens.some(t=>['comment','string'].includes(t.kind)&&cursor>t.start&&cursor<=t.end)){notify('不在注释或字符串内部提供标识符补全。');return;}
+    if(tokens.some(t=>['comment','string'].includes(t.kind)&&cursor>t.start&&cursor<=t.end)){notify(__uiT("不在注释或字符串内部提供标识符补全。"));return;}
     const words=new Set(language()==='JAVA'?JAVA_COMPLETIONS:JS_COMPLETIONS);
     for(const match of text.matchAll(/[$_\p{ID_Start}][$_\u200c\u200d\p{ID_Continue}]*/gu))words.add(match[0]);
     const candidates=Array.from(words).filter(v=>v.startsWith(prefix)&&v!==text.slice(start,end)).sort().slice(0,20);
     clearCompletions();suggestion={text,start,end,cursor,language:language()};
-    if(!candidates.length){notify('没有匹配的词法补全；Native 类型/方法请查看 Native API。');return;}
-    node('p','关键词 / 本文件标识符；不是 Native 类型推断或运行兼容证明。',completions,'muted');
+    if(!candidates.length){notify(__uiT("没有匹配的词法补全；Native 类型/方法请查看 Native API。"));return;}
+    node('p',__uiT("关键词 / 本文件标识符；不是 Native 类型推断或运行兼容证明。"),completions,'muted');
     for(const value of candidates){
       const n=node('button',value,completions);n.type='button';n.onclick=()=>{
-        const s=suggestion;if(!s||!writable()||textarea.value!==s.text||textarea.selectionStart!==s.cursor||textarea.selectionEnd!==s.cursor||language()!==s.language){notify('源码或光标已变化，请重新获取补全。');clearCompletions();return;}
-        replaceRange(s.start,s.end,value);notify('已采用补全，尚未保存。');clearCompletions();
+        const s=suggestion;if(!s||!writable()||textarea.value!==s.text||textarea.selectionStart!==s.cursor||textarea.selectionEnd!==s.cursor||language()!==s.language){notify(__uiT("源码或光标已变化，请重新获取补全。"));clearCompletions();return;}
+        replaceRange(s.start,s.end,value);notify(__uiT("已采用补全，尚未保存。"));clearCompletions();
       };
     }
   }
-  button('光标处词法补全',gotoRow,complete,true);
-  const preview=node('details',null,bar,'studio-syntax-view');node('summary','完整源码词法预览（不是语法检查）',preview);
-  const pre=node('pre',null,preview,'studio-syntax-code');pre.tabIndex=0;pre.setAttribute('aria-label','只读源码词法预览');
+  button(__uiT("光标处词法补全"),gotoRow,complete,true);
+  const preview=node('details',null,bar,'studio-syntax-view');node('summary',__uiT("完整源码词法预览（不是语法检查）"),preview);
+  const pre=node('pre',null,preview,'studio-syntax-code');pre.tabIndex=0;pre.setAttribute('aria-label',__uiT("只读源码词法预览"));
   function drawPreview(){
     timer=0;if(disposed||!preview.open||!textarea.isConnected)return;
     const text=textarea.value,java=language()==='JAVA',signature=(java?'JAVA:':'RHINO:')+text;if(rendered===signature)return;rendered=signature;
@@ -148,13 +149,13 @@ export function attachStudioEditor({container,textarea,language,canEdit,notify})
     if(disposed)return;
     for(const b of buttons){const enabled=available()&&(!b.mutates||writable())&&b.enabled();b.n.disabled=!enabled;b.n.dataset.studioAllowed=String(enabled);}
     for(const n of completions.querySelectorAll('button'))n.disabled=!writable();
-    if(!composing)title.textContent='本地编辑工具 · '+textarea.value.length+' / '+limit+' UTF-16 字符 · '+position(textarea.selectionStart)+' · 未跨重载保留撤销栈';
+    if(!composing)title.textContent=__uiT("本地编辑工具 · ")+textarea.value.length+' / '+limit+__uiT(" UTF-16 字符 · ")+position(textarea.selectionStart)+__uiT(" · 未跨重载保留撤销栈");
   }
   listen(textarea,'input',changed);listen(textarea,'select',refreshState);listen(textarea,'keyup',refreshState);listen(textarea,'click',refreshState);
   listen(textarea,'compositionstart',()=>{composing=true;clearCompletions();refreshState();});
   listen(textarea,'compositionend',()=>{composing=false;changed();});
   listen(preview,'toggle',drawPreview);
-  listen(search,'input',()=>{summary.textContent='查找条件已变化。';});listen(sensitive,'change',()=>{summary.textContent='查找条件已变化。';});
+  listen(search,'input',()=>{summary.textContent=__uiT("查找条件已变化。");});listen(sensitive,'change',()=>{summary.textContent=__uiT("查找条件已变化。");});
   listen(textarea,'keydown',event=>{
     if(event.isComposing||composing||!available())return;
     const command=event.ctrlKey||event.metaKey,key=event.key.toLowerCase();

@@ -55,7 +55,7 @@ public final class UiClientSessions {
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(opening, "openShell", "{}"));
     }
     private static void accept(UiPayloads.Event packet) {
-        if(packet.channel().equals("nativeThinkingSetting")){var mode=JsonParser.parseString(packet.json()).getAsJsonObject().get("mode").getAsString();var old=dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.view();boolean value=mode.equals("toggle")?!((Boolean)old.get("showThinking")):mode.equals("on");dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.save(value,((Number)old.get("revision")).longValue()).whenComplete((v,e)->Minecraft.getInstance().execute(()->{if(Minecraft.getInstance().player!=null)Minecraft.getInstance().gui.getChat().addClientSystemMessage(net.minecraft.network.chat.Component.literal(e==null?"原生聊天思考："+(value?"显示":"隐藏"):"思考显示设置失败"));}));return;}
+        if(packet.channel().equals("nativeThinkingSetting")){var mode=JsonParser.parseString(packet.json()).getAsJsonObject().get("mode").getAsString();var old=dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.view();boolean value=mode.equals("toggle")?!((Boolean)old.get("showThinking")):mode.equals("on");dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.save(value,((Number)old.get("revision")).longValue()).whenComplete((v,e)->Minecraft.getInstance().execute(()->{if(Minecraft.getInstance().player!=null)Minecraft.getInstance().gui.getChat().addClientSystemMessage(net.minecraft.network.chat.Component.literal(e==null?dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("原生聊天思考：")+(value?dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("显示"):dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("隐藏")):dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("思考显示设置失败")));}));return;}
         if(packet.channel().equals("skinUiOpen")){SkinUiClient.open(JsonParser.parseString(packet.json()).getAsJsonObject().get("agentId").getAsString());return;}
         if(packet.channel().equals("previewOpen")){PreviewClient.open(JsonParser.parseString(packet.json()).getAsJsonObject().get("previewId").getAsString());return;}
         if(packet.channel().equals("buildingFilesOpen")){var fileEvent=JsonParser.parseString(packet.json()).getAsJsonObject();BuildingFilesClient.requestOpen(fileEvent.get("agentId").getAsString(),fileEvent.has("fileId")?fileEvent.get("fileId").getAsString():"");return;}
@@ -67,7 +67,7 @@ public final class UiClientSessions {
             if (packet.channel().equals("error") && packet.requestId().equals(opening)) {
                 opening = null;
                 String code="SESSION_ADMISSION_REJECTED";
-                try{var detail=JsonParser.parseString(packet.json()).getAsJsonObject();if(detail.has("code")&&detail.get("code").getAsString().equals("WORLD_IDENTITY_NOT_READY"))code="存档身份尚未接入：请所有者/管理员执行 /ai identity，确认后保存并重新打开世界。";}catch(RuntimeException ignored){}
+                try{var detail=JsonParser.parseString(packet.json()).getAsJsonObject();if(detail.has("code")&&detail.get("code").getAsString().equals("WORLD_IDENTITY_NOT_READY"))code=dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("存档身份尚未接入：请所有者/管理员执行 /ai identity，确认后保存并重新打开世界。");}catch(RuntimeException ignored){}
                 WebGuiHostAdapter.INSTANCE.emit("sessionError", Map.of("code", code));
                 return;
             }

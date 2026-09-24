@@ -88,13 +88,16 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     private void open(boolean interactive) {
         open(interactive,true);
     }
+    private String loadedLanguage="";
     private void open(boolean interactive,boolean revealChat) {
         requireClientThread();
         Minecraft mc = Minecraft.getInstance();
+        String language=dev.mineagent.runtime.neoforge.client.language.ClientLanguage.language();
+        if(browser!=null&&!language.equals(loadedLanguage))close();
         if(interactive)backgroundOpen=false;
-        if (!MCEF.isInitialized()) { diagnostic = "BROWSER_NOT_READY: MCEF 尚未完成准备"; if(interactive)showDiagnostic(); return; }
+        if (!MCEF.isInitialized()) { diagnostic = dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("BROWSER_NOT_READY: MCEF 尚未完成准备"); if(interactive)showDiagnostic(); return; }
         if (!originIsolation) {
-            diagnostic = "WEB_SECURITY_DISABLED: 设置 cef-disable-web-security=false 后重启游戏";
+            diagnostic = dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("WEB_SECURITY_DISABLED: 设置 cef-disable-web-security=false 后重启游戏");
             if(interactive)showDiagnostic(); return;
         }
         try {
@@ -104,18 +107,20 @@ public final class WebGuiHostAdapter implements AutoCloseable {
                 WebGuiAtlasCompositor.configure(mc.gameDirectory.toPath().resolve("config/mineagent-webgui.properties"));
                 backgroundOpen=!interactive;
                 if (WebSession.browser() != null || WebSession.hudBrowser() != null) {
-                    diagnostic = "HOST_BUSY: 其他 WebGUI 页面正在占用上游宿主"; if(interactive)showDiagnostic(); return;
+                    diagnostic = dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("HOST_BUSY: 其他 WebGUI 页面正在占用上游宿主"); if(interactive)showDiagnostic(); return;
                 }
                 resources = new LocalUiResourceServer(13, 32L * 1024 * 1024);
                 var assets = new LinkedHashMap<String, PackageUiResolver.Asset>();
                 for (String name : dev.mineagent.runtime.client.webui.ShellAssetCatalog.NAMES) {
                     try (var in = getClass().getResourceAsStream("/assets/mineagent_runtime/webui/" + name)) {
                         if (in == null) throw new IOException("Missing bundled UI resource: " + name);
-                        byte[] bytes=in.readAllBytes();if(name.equals("index.html"))bytes=new String(bytes,java.nio.charset.StandardCharsets.UTF_8).replace("<body>","<body data-workspace-visible=\""+workspaceVisible+"\""+(standaloneOpen?" data-standalone=\"true\"":"")+">").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                        byte[] bytes = in.readAllBytes();
+                        if(name.equals("index.html"))bytes=new String(bytes,java.nio.charset.StandardCharsets.UTF_8).replace("<html lang=\"zh-CN\">","<html lang=\"zh-CN\" data-ui-language=\""+dev.mineagent.runtime.neoforge.client.language.ClientLanguage.language()+"\">").getBytes(java.nio.charset.StandardCharsets.UTF_8);if(name.equals("index.html"))bytes=new String(bytes,java.nio.charset.StandardCharsets.UTF_8).replace("<body>","<body data-workspace-visible=\""+workspaceVisible+"\""+(standaloneOpen?" data-standalone=\"true\"":"")+">").getBytes(java.nio.charset.StandardCharsets.UTF_8);
                         assets.put(name, new PackageUiResolver.Asset(bytes, name.endsWith("html")
                                 ? "text/html" : name.endsWith("css") ? "text/css" : "text/javascript"));
                     }
                 }
+                loadedLanguage=language;
                 shell = resources.mount(assets, true);
                 connection = mc.getConnection();
                 String url = shell.entry("index.html").toString();
@@ -619,6 +624,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
         }
         if(channel.equals("skinUi"))return SkinUiClient.handle(message);
         if(channel.equals("preview"))return UiClientSessions.command("preview.read",Map.of("previewId",text(message,"previewId",36),"offset",message.has("offset")?message.get("offset").getAsString():"0"),UUID.randomUUID());
+        if(channel.equals("languageSettings"))return dev.mineagent.runtime.neoforge.client.language.ClientLanguage.handle(message);
         if(channel.equals("nativeChatPreferences"))return dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.handle(message);
         if(channel.equals("buildingFiles"))return BuildingFilesClient.handle(message);
         if(channel.equals("agentModelAction")){
@@ -772,7 +778,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
         String paintFailure=McefPaintBoundary.takeFailure(browser);if(paintFailure!=null){boolean show=Minecraft.getInstance().screen instanceof WebGuiInteractionScreen;close();diagnostic=paintFailure;if(show)showDiagnostic();return;}
         if (connection != Minecraft.getInstance().getConnection() || WebSession.hudBrowser() != browser) { close(); return; }
         if (!gate.documentAllowed(browser, browser.getURL(), ready)) {
-            close(); diagnostic = "STALE_VIEW: 宿主页已导航"; return;
+            close(); diagnostic = dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("STALE_VIEW: 宿主页已导航"); return;
         }
         if (!ready && System.nanoTime() - openNanos > 15_000_000_000L) {
             boolean show=!backgroundOpen&&Minecraft.getInstance().screen instanceof WebGuiInteractionScreen;close(); diagnostic = "PAGE_READY_TIMEOUT"; if(show)showDiagnostic(); return;

@@ -44,5 +44,5 @@ public final class WorldUiClient {
     }
     private static boolean sameContext(Pending p){var mc=Minecraft.getInstance();return pending==p&&mc.getConnection()!=null&&mc.getConnection().getConnection()==p.connection&&mc.level==p.level&&mc.screen==p.screen;}
     private static boolean current(Pending p){return sameContext(p)&&System.currentTimeMillis()<p.deadline;}
-    private static void report(Throwable error){var mc=Minecraft.getInstance();String message=error.getMessage();if(message==null||!message.matches("[A-Z0-9_: .-]{1,120}"))message="WORLD_UI_UNAVAILABLE";if(mc.player!=null)mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("MineAgent 世界界面: "+message));}
+    private static void report(Throwable error){var mc=Minecraft.getInstance();String message=error.getMessage();if(message==null||!message.matches("[A-Z0-9_: .-]{1,120}"))message="WORLD_UI_UNAVAILABLE";if(mc.player!=null)mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("MineAgent 世界界面: ")+message));}
 }

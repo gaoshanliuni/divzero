@@ -1,0 +1,16 @@
+package dev.mineagent.runtime.neoforge.client.language;
+import dev.mineagent.runtime.client.control.*;import net.minecraft.client.Minecraft;import net.minecraft.network.chat.Component;import net.neoforged.bus.api.SubscribeEvent;import net.neoforged.fml.common.EventBusSubscriber;import java.util.*;import java.util.concurrent.*;import com.google.gson.JsonObject;
+@EventBusSubscriber(modid="mineagent_runtime",value=net.neoforged.api.distmarker.Dist.CLIENT)
+public final class ClientLanguage {
+ private static UiLanguagePreferences preferences;private static int reopenIn;private static Object reopenConnection,reopenBrowser;
+ private static final ExecutorService IO=Executors.newSingleThreadExecutor(r->{var t=new Thread(r,"mineagent-ui-language");t.setDaemon(true);return t;});
+ private static synchronized UiLanguagePreferences prefs(){if(preferences==null)try{preferences=new UiLanguagePreferences(Minecraft.getInstance().gameDirectory.toPath().resolve("config/mineagent-ui-language.properties"));}catch(Exception e){throw new IllegalStateException("UI_LANGUAGE_UNAVAILABLE",e);}return preferences;}
+ public static String language(){try{return prefs().state().language();}catch(Exception e){return "zh_cn";}}
+ public static String t(String source){return UiLanguageCatalog.text(language(),source);}
+ public static Component component(String source){return Component.literal(t(source));}
+ public static Map<String,Object> view(){try{var s=prefs().state();return Map.of("language",s.language(),"revision",s.revision(),"defaultLanguage","zh_cn");}catch(Exception e){return Map.of("language","zh_cn","revision",0L,"defaultLanguage","zh_cn","error","UI_LANGUAGE_UNAVAILABLE");}}
+ public static CompletableFuture<Map<String,Object>> save(String language,long revision){return CompletableFuture.supplyAsync(()->{try{prefs().save(revision,language);return view();}catch(Exception e){throw new CompletionException(e);}},IO);}
+ public static CompletableFuture<Map<String,Object>> handle(JsonObject a){String action=a.get("action").getAsString();if(action.equals("read"))return CompletableFuture.completedFuture(view());if(action.equals("set")){if(!a.has("language")||!a.has("expectedRevision")||!a.get("expectedRevision").getAsString().matches("0|[1-9][0-9]{0,18}"))return CompletableFuture.failedFuture(new IllegalArgumentException("UI_LANGUAGE_ARGUMENTS"));return save(a.get("language").getAsString(),a.get("expectedRevision").getAsLong());}if(action.equals("reopen")){reopenConnection=Minecraft.getInstance().getConnection();reopenBrowser=dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE.browser();reopenIn=3;return CompletableFuture.completedFuture(Map.of("status","REOPEN_SCHEDULED"));}return CompletableFuture.failedFuture(new IllegalArgumentException("UI_LANGUAGE_ACTION"));}
+ @SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post e){if(reopenIn>0&&--reopenIn==0){var h=dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE;var mc=Minecraft.getInstance();if(mc.getConnection()==reopenConnection&&mc.level!=null&&h.browser()==reopenBrowser&&mc.screen instanceof dev.mineagent.runtime.neoforge.client.webui.WebGuiInteractionScreen){h.close();h.open();}reopenConnection=reopenBrowser=null;}}
+ private ClientLanguage(){}
+}

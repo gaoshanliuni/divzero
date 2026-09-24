@@ -1,5 +1,6 @@
+import {t as __uiT,tf as __uiF} from './i18n.mjs';
 /** Metadata only: the bridge keeps credentials outside the browser. */
-export const modelError=code=>({MODELS_KEY_REQUIRED:'请先保存 API Key',MODELS_URL_REQUIRED:'请先保存 API URL',MODELS_AUTH_FAILED:'Key 无效或无权读取模型',MODELS_UNSUPPORTED:'该地址不支持 models，请检查 API URL',MODELS_EMPTY:'接口没有返回可选模型',MODELS_RATE_LIMITED:'服务限流，请稍后刷新',MODELS_REDIRECT_DENIED:'请保存重定向后的最终 API URL',MODELS_FORBIDDEN:'没有管理 Provider 的权限',MODELS_TIMEOUT:'获取超时，请点击刷新'})[code]||'模型列表读取失败，请点击刷新';
+export const modelError=code=>({MODELS_KEY_REQUIRED:__uiT("请先保存 API Key"),MODELS_URL_REQUIRED:__uiT("请先保存 API URL"),MODELS_AUTH_FAILED:__uiT("Key 无效或无权读取模型"),MODELS_UNSUPPORTED:__uiT("该地址不支持 models，请检查 API URL"),MODELS_EMPTY:__uiT("接口没有返回可选模型"),MODELS_RATE_LIMITED:__uiT("服务限流，请稍后刷新"),MODELS_REDIRECT_DENIED:__uiT("请保存重定向后的最终 API URL"),MODELS_FORBIDDEN:__uiT("没有管理 Provider 的权限"),MODELS_TIMEOUT:__uiT("获取超时，请点击刷新")})[code]||__uiT("模型列表读取失败，请点击刷新");
 export class ModelCatalog {
  constructor(send,update,{schedule=(fn,delay)=>setTimeout(fn,delay),cancel=id=>clearTimeout(id)}={}){Object.assign(this,{send,update,schedule,cancel});this.epoch=0;this.state=null;this.timer=null;}
  reset(){this.epoch++;if(this.timer!==null)this.cancel(this.timer);this.timer=null;this.state=null;}

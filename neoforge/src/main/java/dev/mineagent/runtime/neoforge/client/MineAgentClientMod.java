@@ -359,11 +359,11 @@ public final class MineAgentClientMod {
             return true;
         }
         if (ysmInteractionStage == 5
-                && "AI 外观选择".equals(
+                && dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 外观选择").equals(
                 dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox.decisionState().values().get("title"))
                 && "OPEN".equals(
                 dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox.decisionState().values().get("status"))) {
-            minecraft.getConnection().sendChat("模型=default 贴图=blue 动画=idle");
+            minecraft.getConnection().sendChat(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("模型=default 贴图=blue 动画=idle"));
             ysmInteractionStage = 6;
             return true;
         }

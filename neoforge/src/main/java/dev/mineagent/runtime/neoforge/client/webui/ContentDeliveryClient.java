@@ -44,14 +44,14 @@ public final class ContentDeliveryClient {
     }
     public static boolean accept(UiPayloads.Event packet){if(!Set.of("deliveryNotice","deliveryUpdated","deliveryRetired","feedbackChanged").contains(packet.channel()))return false;
         try{var n=JsonParser.parseString(packet.json()).getAsJsonObject();UUID id=UUID.fromString(n.get("deliveryId").getAsString());var mc=Minecraft.getInstance();
-            if(packet.channel().equals("deliveryNotice")&&announced.size()<4096&&announced.add(id)&&mc.player!=null)mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("MineAgent 收到内容邀请："+n.get("title").getAsString()+"。按 F2，在收件箱中选择打开或拒绝。"));
+            if(packet.channel().equals("deliveryNotice")&&announced.size()<4096&&announced.add(id)&&mc.player!=null)mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("MineAgent 收到内容邀请：")+n.get("title").getAsString()+dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("。按 F2，在收件箱中选择打开或拒绝。")));
             WebGuiHostAdapter.INSTANCE.emit("deliveryInboxChanged",Map.of("deliveryId",id.toString()));
             for(var e:List.copyOf(entries.values()))if(e.launch.deliveryId().equals(id)&&!e.closed){
                 if(packet.channel().equals("feedbackChanged")&&PackageContentClient.session(e.launch.viewId())!=null)notifyFeedback(e.launch.viewId(),UUID.fromString(n.get("feedbackId").getAsString()),n.get("revision").getAsLong());
                 else if(packet.channel().equals("deliveryRetired"))WebGuiHostAdapter.INSTANCE.emit("closeManagedView",Map.of("viewId",e.launch.viewId()));
                 else if(packet.channel().equals("deliveryUpdated")&&PackageContentClient.session(e.launch.viewId())!=null)notifyPage(e.launch.viewId(),n.get("dataRevision").getAsLong());
             }
-        }catch(RuntimeException e){if(Minecraft.getInstance().player!=null)Minecraft.getInstance().player.sendSystemMessage(net.minecraft.network.chat.Component.literal("MineAgent 内容通知无效"));}return true;
+        }catch(RuntimeException e){if(Minecraft.getInstance().player!=null)Minecraft.getInstance().player.sendSystemMessage(net.minecraft.network.chat.Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("MineAgent 内容通知无效")));}return true;
     }
     public static CompletableFuture<Receipt> open(UUID delivery,UUID pkg,long revision){return PackagePreviewClient.openDelivery(delivery,pkg,revision);}
     public static void mounted(DeliveryProtocol.Launch launch,Session session){if(entries.size()>=32)throw new IllegalStateException("DELIVERY_CLIENT_BUDGET");var e=new Entry(launch,session);entries.put(launch.viewId(),e);DeliveryDraftClient.mounted(launch,session);UiClientSessions.command("delivery.received",identity(e),UUID.randomUUID()).whenComplete((r,error)->Minecraft.getInstance().execute(()->{if(entries.get(launch.viewId())!=e||e.closed)return;if(error==null&&r.code()==Code.APPLIED){e.received=true;e.after=ticks+20;}else retireFailed(e,"DELIVERY_RECEIVED_REJECTED");}));}

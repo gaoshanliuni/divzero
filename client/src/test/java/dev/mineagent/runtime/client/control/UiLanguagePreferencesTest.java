@@ -1,0 +1,10 @@
+package dev.mineagent.runtime.client.control;
+import org.junit.jupiter.api.Test;import org.junit.jupiter.api.io.TempDir;import java.nio.file.*;import static org.junit.jupiter.api.Assertions.*;
+class UiLanguagePreferencesTest {
+ @TempDir Path dir;
+ @Test void defaultsToChineseAndPersistsOnlyLocalLanguage()throws Exception{var file=dir.resolve("language.properties");var prefs=new UiLanguagePreferences(file);assertEquals("zh_cn",prefs.state().language());assertFalse(Files.exists(file));assertEquals("en_us",prefs.save(0,"en_us").language());assertEquals(1,new UiLanguagePreferences(file).state().revision());assertEquals("en_us",new UiLanguagePreferences(file).state().language());assertEquals("zh_cn",prefs.save(1,"zh_cn").language());assertFalse(Files.readString(file).contains("provider"));}
+ @Test void staleOrInvalidSavesCannotOverwriteTheCurrentChoice()throws Exception{var file=dir.resolve("language.properties");var a=new UiLanguagePreferences(file);var b=new UiLanguagePreferences(file);a.save(0,"en_us");assertThrows(IllegalStateException.class,()->b.save(0,"zh_cn"));assertEquals("en_us",new UiLanguagePreferences(file).state().language());assertThrows(IllegalArgumentException.class,()->a.save(1,"../x"));assertEquals(1,a.state().revision());}
+ @Test void malformedFileIsVisibleRatherThanSilentlyOverwritten()throws Exception{var file=dir.resolve("language.properties");Files.writeString(file,"language=invalid\nrevision=0\n");assertThrows(IllegalArgumentException.class,()->new UiLanguagePreferences(file));}
+ @Test void serverOwnedSettingsLabelsAndGroupsAreIncluded(){for(var f:dev.mineagent.runtime.core.config.WebSettingsCatalog.FIELDS){for(String source:java.util.List.of(f.label(),f.group()))if(source.codePoints().anyMatch(c->c>=0x3400&&c<=0x9fff))assertTrue(UiLanguageCatalog.english().containsKey(source),source);}}
+ @Test void authoredLabelsTranslateButMissingAndUserTextRemainVerbatim(){assertEquals("关于",UiLanguageCatalog.text("zh_cn","关于"));assertEquals("About",UiLanguageCatalog.text("en_us","关于"));assertEquals("玩家自定义名称123",UiLanguageCatalog.text("en_us","玩家自定义名称123"));assertEquals("Language",UiLanguageCatalog.text("en_us","语言"));}
+}
