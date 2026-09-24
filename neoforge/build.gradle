@@ -621,6 +621,7 @@ sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
 
 tasks.named('processResources').configure {
+    from('src/main/resources/assets/mineagent_runtime/icon.png') { rename { 'logo.png' } }
     dependsOn project(':worker').tasks.named('fatJar')
     // FML's dev Mod module cannot see sibling project resources through Class.getResource.
     // Copy the same authored client resources that the release JAR embeds, not a test-only replacement.
@@ -839,3 +840,27 @@ tasks.matching { it.name in ['runContentDeliveryServer', 'runContentDeliveryClie
         if (!contentDeliveryConfigured || needsServer != sharedMultiServerSide) throw new GradleException('CONTENT_DELIVERY_EXPLICIT_PROFILE_AND_SIDE_REQUIRED')
     }
 }
+
+// Validate the final distributable, not merely source-tree presence.
+tasks.register('verifyModBranding') {
+    group = 'verification'
+    dependsOn tasks.named('jar')
+    inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    doLast {
+        new java.util.zip.ZipFile(inputs.files.singleFile).withCloseable { zip ->
+            def metadata = zip.getEntry('META-INF/neoforge.mods.toml')
+            if (metadata == null) throw new GradleException('MOD_METADATA_MISSING')
+            def toml = zip.getInputStream(metadata).getText('UTF-8')
+            if (!toml.contains('logoFile="logo.png"') || !toml.contains('authors="gaoshanliuni"') || !toml.contains('displayURL="https://github.com/gaoshanliuni/divzero"')) throw new GradleException('MOD_BRANDING_METADATA_INVALID')
+            def original = zip.getEntry('assets/mineagent_runtime/icon.png'), rootLogo = zip.getEntry('logo.png')
+            if (original == null || rootLogo == null) throw new GradleException('MOD_ICON_NOT_PACKAGED')
+            byte[] source = zip.getInputStream(original).bytes, root = zip.getInputStream(rootLogo).bytes
+            if (!java.util.Arrays.equals(source, root)) throw new GradleException('MOD_ICON_BYTES_DIFFER')
+            def image = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(root))
+            if (image == null || image.width != 1024 || image.height != 1024) throw new GradleException('MOD_ICON_INVALID_PNG')
+            logger.lifecycle('MOD_BRANDING_VERIFIED: logo.png + namespaced icon, 1024x1024')
+        }
+    }
+}
+tasks.named('jar') { finalizedBy 'verifyModBranding' }
+tasks.named('check') { dependsOn 'verifyModBranding' }

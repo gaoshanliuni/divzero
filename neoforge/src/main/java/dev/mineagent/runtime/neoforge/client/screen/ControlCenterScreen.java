@@ -261,6 +261,7 @@ public final class ControlCenterScreen extends Screen {
             addProviderControls(contentX, contentWidth);
         }
 
+        addRenderableWidget(Button.builder(Component.literal("关于"), ignored -> Minecraft.getInstance().setScreen(new AboutScreen(this))).bounds(12,this.height-22,NAV_WIDTH,18).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, ignored -> onClose())
                 .bounds(Math.max(12, this.width - 112), this.height - 22, 100, 18)
                 .build());

@@ -1,3 +1,4 @@
+import {createAboutCards} from './about-cards.mjs';
 import {createSkinCards} from './skin-cards.mjs';
 import {createScenePreview} from './scene-preview.mjs';
 import {createBuildingFiles} from './building-files.mjs';
@@ -57,6 +58,7 @@ const status = document.querySelector('#status');
 let availableAgents = [];
 const desktopWindows=createDesktopWindows({state,nodes,windowFor,send,pin:setWindowPinned,toggle:toggleWindow,persist:persistUiStateNow,agents:()=>availableAgents});
 document.querySelector('#open-windows').onclick=desktopWindows.open;
+const about=createAboutCards({windowFor,send,report});document.querySelector('#open-about').onclick=about.open;
 const moreMenu=document.querySelector('#more-menu');
 let menuEscapeClosedAt=-Infinity;
 function dismissMoreWithEscape(){const now=performance.now();if(moreMenu.open){moreMenu.open=false;menuEscapeClosedAt=now;return true;}return now-menuEscapeClosedAt<250;}

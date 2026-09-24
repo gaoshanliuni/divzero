@@ -240,6 +240,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     private Map<String, ?> handle(JsonObject message) {
         String channel = text(message, "channel", 64);
         switch (channel) {
+            case "about" -> {return dev.mineagent.runtime.neoforge.client.screen.ProjectAboutClient.handle(text(message,"action",24));}
             case "nativeAtlasResize" -> {return WebGuiAtlasCompositor.resize(message);}
             case "ready" -> {
                 if (message.get("bridgeVersion").getAsInt() != 1) throw new IllegalArgumentException("BRIDGE_VERSION");

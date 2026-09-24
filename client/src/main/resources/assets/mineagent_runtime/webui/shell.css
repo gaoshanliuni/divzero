@@ -243,3 +243,11 @@ body[data-interacting=false] .window .titlebar button,body[data-interacting=fals
 
 .scene-preview-canvas { cursor:grab; user-select:none; }
 .scene-preview-canvas[data-dragging="true"] { cursor:grabbing; }
+
+/* Compact public project information; uses the same translucent desktop window. */
+.about-content .about-heading{display:flex;align-items:center;gap:18px;margin-bottom:18px;}
+.about-content .about-heading img{width:72px;height:72px;object-fit:contain;border-radius:16px;}
+.about-content .about-heading h2{margin:0;}
+.about-fields{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:12px 18px;padding:16px;border:1px solid rgba(179,205,157,.22);border-radius:12px;background:rgba(29,43,35,.3);}
+.about-fields dt{color:var(--muted);}.about-fields dd{margin:0;overflow-wrap:anywhere;user-select:text;}
+.about-actions{display:flex;flex-wrap:wrap;gap:8px;}.about-actions button:active{transform:scale(.98);}
