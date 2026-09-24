@@ -138,4 +138,8 @@ F2“更多→关于”、原生面板“关于”均显示项目名DivZero、�
 
 独立任务采用Virtual Threads，无固定并发/排队数量门槛；同一会话有序、本机Python环境串行且逐请求聊天确认。Worker按requestId路由和取消，不因一条请求超时终止其它AI。规划占用按任务；文件列表与传输分离，上传/ZIP锁按具体任务或文件；包准备按不可变hash复用产物，下载与释放独立。F2变更推送、批量正文读取、revision缓存与局部更新；常规Tick流式增量合并后异步写入。
 
-网络协议7要求双端同步升级。新增Node/JVM及受控HTTP协议回归，编译由Actions执行；本批真实DeepSeek、游戏骨骼画面和复杂地形/多AI联验尚待完成，单测不冒称Native验收。1.0.1修复继续保留。
+网络协议7要求双端同步升级。新增Node/JVM及受控HTTP协议回归，编译由Actions执行；本批真实Provider并发取消结果见下节；游戏骨骼画面和复杂地形/多AI联验仍待完成，单测不冒称Native验收。1.0.1修复继续保留。
+
+### 1.0.2 验证补充
+
+[Actions 36018535786](https://github.com/gaoshanliuni/divzero/actions/runs/36018535786) 的构建、选定JVM回归、Node缓存测试和发布通过。使用其实际Worker产物又做了2次官方DeepSeek Flash并发流式请求（high Thinking、不设max_tokens）：取消其中一个，另一个完成且Worker继续响应；骨骼定义JSON包含双腿独立walk轨道。Provider usage未由当前Worker回执透传，记录为不可用。该测试不等于游戏画面或世界动作验收；Native骨骼、复杂高低差和大规模并发仍待联验。
