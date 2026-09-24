@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 class ProviderModelCatalogTest {
+ @Test void localCompatibleModelsMayOmitCredentials()throws Exception{var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);server.createContext("/v1/models",e->{assertNull(e.getRequestHeaders().getFirst("Authorization"));byte[] b="{\"data\":[{\"id\":\"qwen3:8b\"}]}".getBytes(StandardCharsets.UTF_8);e.sendResponseHeaders(200,b.length);try(var out=e.getResponseBody()){out.write(b);}});server.start();try{var result=ProviderModelCatalog.fetch("http://127.0.0.1:"+server.getAddress().getPort()+"/v1/","");assertEquals(java.util.List.of("qwen3:8b"),result.models());assertEquals("",result.error());}finally{server.stop(0);}}
+
  @Test void resolvesRootVersionAndCompatibleVendorPaths(){
   assertEquals("https://api.deepseek.com/v1/models",ProviderModelCatalog.endpoint("https://api.deepseek.com").toString());
   for(String base:new String[]{"https://example.test/v1","https://example.test/v1/"})assertEquals("https://example.test/v1/models",ProviderModelCatalog.endpoint(base).toString());
@@ -22,7 +24,7 @@ class ProviderModelCatalogTest {
    status.set(200);for(String body:new String[]{"{}","null","{\"data\":[{\"id\":4}]}","{\"data\":[{\"id\":\"test-private-key\"}]}","{\"data\":[{\"id\":\"sk-private\"}]}"}){response.set(body);assertEquals("MODELS_INVALID_RESPONSE",ProviderModelCatalog.fetch(base,"test-private-key").error());}
    response.set("{\"data\":[]}");assertEquals("MODELS_EMPTY",ProviderModelCatalog.fetch(base,"test-private-key").error());
    response.set("x".repeat(ProviderModelCatalog.MAX_BYTES+1));assertFalse(ProviderModelCatalog.fetch(base,"test-private-key").error().isBlank());
-   int before=calls.get();assertEquals("MODELS_KEY_REQUIRED",ProviderModelCatalog.fetch(base,"").error());assertEquals(before,calls.get());
+   int before=calls.get();assertEquals("MODELS_KEY_REQUIRED",ProviderModelCatalog.fetch("https://example.test/v1/","").error());assertEquals(before,calls.get());
   }finally{server.stop(0);}
  }
 }

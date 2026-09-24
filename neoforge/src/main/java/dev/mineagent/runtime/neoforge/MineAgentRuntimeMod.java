@@ -581,6 +581,7 @@ public final class MineAgentRuntimeMod {
             if(mentions.size()!=1||targets.size()!=1){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI] 未找到唯一 AI；输入 @ 后按 Tab 选择名字。每条消息只联系一个 AI。"));return;}
             var target=targets.getFirst();String message=mentions.getFirst().message();
             if(message.isBlank()){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI] 已选择 "+target.displayName()+"；请在名字后输入消息。"));return;}
+            if(!dev.mineagent.runtime.neoforge.ui.ServerChatAccess.admitOrAsk(player,target.agentId(),message,()->dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).submitNative(player,target.agentId(),message,true)))return;
             if(message.matches("^(?:接管|控制身体)[ ：:].*")){
                 try{dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.submit(player,target.agentId(),java.util.UUID.randomUUID(),message.replaceFirst("^(?:接管|控制身体)[ ：:]+", ""));}
                 catch(Exception failure){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI 接管] 请求未开始；请检查当前权限、是否已有计划或正在乘坐载具。"));}return;
@@ -596,8 +597,9 @@ public final class MineAgentRuntimeMod {
         if (agents.isEmpty()) {
             return;
         }
+        var defaultAgent=dev.mineagent.runtime.neoforge.ui.ServerChatSettings.defaultAgent(player);if(defaultAgent!=null){event.setCanceled(true);try{dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).submitNative(player,defaultAgent,event.getRawText(),true);}catch(Exception e){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("默认对话未发送："+dev.mineagent.runtime.neoforge.ui.ServerConversations.nativeError(e)));}return;}
         var focused=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).focused(player).filter(dev.mineagent.runtime.core.conversation.ConversationFocusRegistry.Focus::nativeInput);
-        java.util.UUID currentAgent=focused.map(dev.mineagent.runtime.core.conversation.ConversationFocusRegistry.Focus::agentId).orElse(null);
+        java.util.UUID currentAgent=null; // Unaddressed chat is routed only by the explicit per-player default above.
         var input = new dev.mineagent.runtime.api.interaction.InteractionInput(
                 player.getUUID(), dev.mineagent.runtime.api.interaction.InteractionSource.CHAT,
                 event.getRawText(), currentAgent);

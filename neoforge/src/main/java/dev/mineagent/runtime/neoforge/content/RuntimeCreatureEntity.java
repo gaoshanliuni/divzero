@@ -28,6 +28,8 @@ public final class RuntimeCreatureEntity extends Animal implements Merchant {
     private CreatureDefinition definition;private String parsed="";private UUID species;private long revision;
     private int navigationAttemptTick;private boolean lastNavigationAccepted;private String command="stay";private List<Vec3> patrol=List.of();private int point;
     private final Map<UUID,Long> proximityLast=new HashMap<>();private final Set<UUID> nearby=new HashSet<>();
+    public int interactionAnimationTicks;
+    @Override public void handleEntityEvent(byte id){if(id==67){interactionAnimationTicks=20;return;}super.handleEntityEvent(id);}
     private Player trader;private MerchantOffers offers=new MerchantOffers();
     private long tradesDone,bartersDone,proximityEvents,attacksDone,childrenBorn,effectsDone,giftsDone,soundsDone;private UUID fuseActor;private int fuseRemaining;private CreatureDefinition.ProximityAction fuseAction;private String lastError="";
     public RuntimeCreatureEntity(EntityType<? extends Animal> type,Level level){super(type,level);setPersistenceRequired();}
@@ -45,7 +47,7 @@ public final class RuntimeCreatureEntity extends Animal implements Merchant {
     @Override public boolean canMate(Animal other){return other instanceof RuntimeCreatureEntity e&&Objects.equals(species,e.species)&&Objects.equals(owner(),e.owner())&&super.canMate(other);}
     @Override public RuntimeCreatureEntity getBreedOffspring(ServerLevel level,AgeableMob partner){if(!(partner instanceof RuntimeCreatureEntity e)||!Objects.equals(species,e.species)||!Objects.equals(owner(),e.owner()))return null;var child=new RuntimeCreatureEntity(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_CREATURE.get(),level);child.bind(new CreatureStore.Species(species,owner(),revision,entityData.get(SOURCE)),true);return child;}
     @Override public void finalizeSpawnChildFromBreeding(ServerLevel level,Animal other,AgeableMob child){super.finalizeSpawnChildFromBreeding(level,other,child);if(child!=null)childrenBorn++;}
-    @Override public InteractionResult mobInteract(Player player,InteractionHand hand){var d=definition();if(d==null)return InteractionResult.PASS;if(isFood(player.getItemInHand(hand)))return super.mobInteract(player,hand);
+    @Override public InteractionResult mobInteract(Player player,InteractionHand hand){if(!level().isClientSide())level().broadcastEntityEvent(this,(byte)67);var d=definition();if(d==null)return InteractionResult.PASS;if(isFood(player.getItemInHand(hand)))return super.mobInteract(player,hand);
         if(d.rideable()&&!isBaby()&&owner()!=null&&owner().equals(player.getUUID())&&!player.isSecondaryUseActive()&&player.getItemInHand(hand).isEmpty()&&!isVehicle()){if(!level().isClientSide()){getNavigation().stop();setTarget(null);player.startRiding(this);}return InteractionResult.SUCCESS;}
         if(!d.trades().isEmpty()&&!isBaby()&&!isVehicle()&&(trader==null||trader==player)){if(!level().isClientSide()){getNavigation().stop();setTradingPlayer(player);openTradingScreen(player,getDisplayName(),1);}return InteractionResult.SUCCESS;}
         return super.mobInteract(player,hand);
@@ -55,7 +57,7 @@ public final class RuntimeCreatureEntity extends Animal implements Merchant {
     @Override protected Vec3 getRiddenInput(Player p,Vec3 input){return new Vec3(p.xxa*.5,0,p.zza<0?p.zza*.25:p.zza);}
     @Override protected float getRiddenSpeed(Player p){return (float)getAttributeValue(Attributes.MOVEMENT_SPEED);}
     public void command(String action,List<Vec3> points,LivingEntity target){if(definition()==null||!definition().companion())throw new IllegalArgumentException("CREATURE_NOT_COMPANION");if(!Set.of("follow","stay","attack","patrol").contains(action))throw new IllegalArgumentException("CREATURE_COMMAND");if(action.equals("attack")&&(target==null||!target.isAlive()||target==this||Objects.equals(target.getUUID(),owner())||distanceToSqr(target)>4096))throw new IllegalArgumentException("CREATURE_ATTACK_TARGET");if(action.equals("patrol")&&(points.size()<2||points.size()>16))throw new IllegalArgumentException("CREATURE_PATROL_POINTS");command=action;patrol=List.copyOf(points);point=0;getNavigation().stop();setTarget(action.equals("attack")?target:null);}
-    @Override public void tick(){super.tick();if(!(level() instanceof ServerLevel level)||definition()==null||species==null)return;
+    @Override public void tick(){super.tick();if(interactionAnimationTicks>0)interactionAnimationTicks--;if(!(level() instanceof ServerLevel level)||definition()==null||species==null)return;
         if(tickCount%40==0)try{var latest=RuntimeCreatures.get(level.getServer()).get(owner(),species).orElse(null);if(latest==null){getNavigation().stop();setTarget(null);lastError="CREATURE_DEFINITION_MISSING";return;}if(latest.revision()!=revision)bind(latest,false);}catch(Exception e){lastError="CREATURE_STORE_UNAVAILABLE";getNavigation().stop();setTarget(null);return;}
         if(!lastError.isEmpty()){cancelFuse();return;}var d=definition();try{if(!tickFuse(level))return;}catch(RuntimeException failure){lastError="CREATURE_EXPLOSION_OUTCOME_UNKNOWN";cancelFuse();return;}if(isVehicle()||trader!=null){cancelFuse();getNavigation().stop();setTarget(null);return;}
         if(tickCount%10!=0)return;if(getTarget()!=null&&(!getTarget().isAlive()||distanceToSqr(getTarget())>4096))setTarget(null);

@@ -55,6 +55,7 @@ public final class UiClientSessions {
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(opening, "openShell", "{}"));
     }
     private static void accept(UiPayloads.Event packet) {
+        if(packet.channel().equals("nativeThinkingSetting")){var mode=JsonParser.parseString(packet.json()).getAsJsonObject().get("mode").getAsString();var old=dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.view();boolean value=mode.equals("toggle")?!((Boolean)old.get("showThinking")):mode.equals("on");dev.mineagent.runtime.neoforge.client.chat.NativeChatPreferencesClient.save(value,((Number)old.get("revision")).longValue()).whenComplete((v,e)->Minecraft.getInstance().execute(()->{if(Minecraft.getInstance().player!=null)Minecraft.getInstance().gui.getChat().addClientSystemMessage(net.minecraft.network.chat.Component.literal(e==null?"原生聊天思考："+(value?"显示":"隐藏"):"思考显示设置失败"));}));return;}
         if(packet.channel().equals("skinUiOpen")){SkinUiClient.open(JsonParser.parseString(packet.json()).getAsJsonObject().get("agentId").getAsString());return;}
         if(packet.channel().equals("previewOpen")){PreviewClient.open(JsonParser.parseString(packet.json()).getAsJsonObject().get("previewId").getAsString());return;}
         if(packet.channel().equals("buildingFilesOpen")){var fileEvent=JsonParser.parseString(packet.json()).getAsJsonObject();BuildingFilesClient.requestOpen(fileEvent.get("agentId").getAsString(),fileEvent.has("fileId")?fileEvent.get("fileId").getAsString():"");return;}

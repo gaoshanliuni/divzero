@@ -1,7 +1,7 @@
 import {SettingsDraft,settingsError} from './server-settings-state.mjs';
 import {ModelCatalog,modelError,validCustomModel} from './provider-models.mjs';
 import {OperationDraft} from './agent-management-state.mjs';
-export const apiAddressPresets=[['当前 / 自定义',''],['DeepSeek 官方','https://api.deepseek.com/v1/'],['OpenAI 官方','https://api.openai.com/v1/'],['GLM 智谱','https://open.bigmodel.cn/api/paas/v4/'],['GLM Z.AI','https://api.z.ai/api/paas/v4/']];
+export const apiAddressPresets=[['当前 / 自定义',''],['Ollama 本地','http://localhost:11434/v1/'],['DeepSeek 官方','https://api.deepseek.com/v1/'],['OpenAI 官方','https://api.openai.com/v1/'],['GLM 智谱','https://open.bigmodel.cn/api/paas/v4/'],['GLM Z.AI','https://api.z.ai/api/paas/v4/']];
 /** This view handles only the public URL. API Key input remains in NativeSecretScreen. */
 export function createApiSettings({windowFor,send,advanced}){
  const draft=new SettingsDraft(),operation=new OperationDraft();let root=null,epoch=0,busy=false,queryTimer=null,modelChoice=null;

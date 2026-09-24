@@ -61,6 +61,7 @@ final class RealProviderSmokeAudit {
         evidence.put("requestSha256", HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(request)));
         evidence.put("outputLimitMode", "PROVIDER_DEFAULT_NOT_SET");
         evidence.put("thinkingEnabled", "enabled".equals(body.path("thinking").path("type").asText()));
+        evidence.put("reasoningEffort",body.path("reasoning_effort").asText(""));
         evidence.put("highReasoningEffort", "high".equals(body.path("reasoning_effort").asText()));
         evidence.put("startedAt", java.time.Instant.now().toString());
         // CREATE_NEW fences concurrent processes and preserves consumed budget after worker restart.

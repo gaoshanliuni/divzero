@@ -7,7 +7,7 @@ import java.net.URI;
 import java.time.Duration;
 
 public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
-    private final String apiKey;
+    private final String apiKey;private String thinkingLevel="high";
 
     public OpenAiCompatibleProvider(URI baseUri, String apiKey, String model, Duration timeout) {
         super(normalize(baseUri), model, timeout);
@@ -18,9 +18,10 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
     public String id() {
         return "openai-compatible";
     }
-    public OpenAiCompatibleProvider withModel(String value,String expectedBase){if(!dev.mineagent.runtime.core.config.AgentModelSettings.validModel(value)||!normalize(baseUri).equals(normalize(URI.create(expectedBase))))throw new IllegalArgumentException("AGENT_MODEL_PROVIDER_CHANGED");return new OpenAiCompatibleProvider(baseUri,apiKey,value,timeout);}
-    public OpenAiCompatibleProvider withTimeout(Duration timeout){return new OpenAiCompatibleProvider(baseUri,apiKey,model,timeout);}
+    public OpenAiCompatibleProvider withModel(String value,String expectedBase){if(!dev.mineagent.runtime.core.config.AgentModelSettings.validModel(value)||!normalize(baseUri).equals(normalize(URI.create(expectedBase))))throw new IllegalArgumentException("AGENT_MODEL_PROVIDER_CHANGED");return new OpenAiCompatibleProvider(baseUri,apiKey,value,timeout).withThinking(thinkingLevel);}
+    public OpenAiCompatibleProvider withTimeout(Duration timeout){return new OpenAiCompatibleProvider(baseUri,apiKey,model,timeout).withThinking(thinkingLevel);}
 
+    public OpenAiCompatibleProvider withThinking(String level){if(!dev.mineagent.runtime.core.config.AgentThinkingSettings.LEVELS.contains(level))throw new IllegalArgumentException("THINKING_LEVEL_INVALID");var copy=new OpenAiCompatibleProvider(baseUri,apiKey,model,timeout);copy.thinkingLevel=level;return copy;}
     @Override
     public ModelResponse complete(ModelRequest request) {
         if(request.capability()==dev.mineagent.runtime.api.model.ModelCapability.CODING&&officialDeepSeek())return stream(request,ignored->{});
@@ -132,7 +133,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         var body = mapper.createObjectNode();
         body.put("model", model);
         body.put("stream", true);
-        configureConversationThinking(baseUri,model,body);
+        configureConversationThinking(baseUri,model,body,thinkingLevel);
         var message = body.putArray("messages").addObject();
         message.put("role", "user");
         content(message,request);
@@ -225,10 +226,11 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         var thinking=delta.path("thinking");return thinking.isTextual()?thinking.textValue():"";
     }
     private boolean officialDeepSeek(){return "https".equalsIgnoreCase(baseUri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(baseUri.getHost())&&java.util.Set.of("deepseek-flash","deepseek-v4-pro").contains(model);}
-    static void configureConversationThinking(URI uri,String model,com.fasterxml.jackson.databind.node.ObjectNode body){
+    static void configureConversationThinking(URI uri,String model,com.fasterxml.jackson.databind.node.ObjectNode body){configureConversationThinking(uri,model,body,"high");}
+    static void configureConversationThinking(URI uri,String model,com.fasterxml.jackson.databind.node.ObjectNode body,String level){
         // Explicit user preference; do not send DeepSeek-only parameters to unrelated Providers.
         if("https".equalsIgnoreCase(uri.getScheme())&&"api.deepseek.com".equalsIgnoreCase(uri.getHost())&&java.util.Set.of("deepseek-flash","deepseek-v4-pro").contains(model)){
-            body.putObject("thinking").put("type","enabled");body.put("reasoning_effort","high");
+            body.putObject("thinking").put("type",level.equals("off")?"disabled":"enabled");if(!level.equals("off"))body.put("reasoning_effort",level);
         }
     }
     private String responseModel(com.fasterxml.jackson.databind.JsonNode response){

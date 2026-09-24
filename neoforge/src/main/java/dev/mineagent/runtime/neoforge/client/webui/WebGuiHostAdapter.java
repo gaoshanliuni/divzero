@@ -573,9 +573,12 @@ public final class WebGuiHostAdapter implements AutoCloseable {
         }
         if(channel.equals("packageCatalog")){
             String kind=text(message,"kind",16);args.put("kind",kind);
-            if(kind.equals("packages")){args.put("search",text(message,"search",128));args.put("offset",text(message,"offset",8));}
+            if(kind.equals("creatures")){args.put("offset",text(message,"offset",8));}
+            else if(kind.equals("creaturePreview")){args.put("speciesId",text(message,"speciesId",36));args.put("revision",text(message,"revision",20));}
+            else if(kind.equals("modelPreview")){for(String key:java.util.List.of("packageId","definitionId","path","revision"))args.put(key,text(message,key,256));}
+            else if(kind.equals("packages")){args.put("search",text(message,"search",128));args.put("offset",text(message,"offset",8));}
             else if(kind.equals("operation")){args.put("category",text(message,"category",16));args.put("operation",text(message,"operation",36));}
-            else if(Set.of("package","versions","version","versionText","versionFile","compatibility").contains(kind)){
+            else if(Set.of("models","package","versions","version","versionText","versionFile","compatibility").contains(kind)){
                 args.put("packageId",text(message,"packageId",36));args.put("headRevision",text(message,"headRevision",20));args.put("headHash",text(message,"headHash",64));
                 if(!kind.equals("package"))args.put("offset",text(message,"offset",8));
                 if(Set.of("version","versionText","versionFile").contains(kind)){args.put("versionRevision",text(message,"versionRevision",20));args.put("snapshotHash",text(message,"snapshotHash",64));}
@@ -627,7 +630,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
         if(channel.equals("agentManagement")){
             if(message.has("offset")){int offset=message.get("offset").getAsInt();if(offset<0)throw new IllegalArgumentException("AGENT_PAGE");args.put("offset",Integer.toString(offset));}
 
-            for(String key:java.util.List.of("kind","agentId","name","mode","playerId"))if(message.has(key))args.put(key,text(message,key,key.equals("name")?128:64));
+            for(String key:java.util.List.of("kind","agentId","name","mode","playerId","policyRevision","entry"))if(message.has(key))args.put(key,text(message,key,key.equals("name")?128:64));
             if(message.has("expectedRevision")){String revision=message.get("expectedRevision").getAsString();if(!revision.matches("0|[1-9][0-9]{0,18}"))throw new IllegalArgumentException("AGENT_REVISION_INVALID");args.put("expectedRevision",Long.toString(Long.parseLong(revision)));}
             for(String key:java.util.List.of("confirmed","enabled"))if(message.has(key)){if(!message.get(key).isJsonPrimitive()||!message.get(key).getAsJsonPrimitive().isBoolean())throw new IllegalArgumentException("AGENT_BOOLEAN_INVALID");args.put(key,Boolean.toString(message.get(key).getAsBoolean()));}
             return UiClientSessions.command("agent.manage",args,UUID.fromString(text(message,"operationId",36)));

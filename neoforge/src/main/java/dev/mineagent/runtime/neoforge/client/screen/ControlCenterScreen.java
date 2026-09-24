@@ -220,7 +220,7 @@ public final class ControlCenterScreen extends Screen {
                 contentX, 68, contentWidth, 20,
                 Component.empty(), this.font
         ));
-        if (model.selectedSection() != PanelSection.CONVERSATIONS) {
+        if (model.selectedSection() != PanelSection.CONVERSATIONS && model.selectedSection()!=PanelSection.PROVIDERS) {
             addRenderableWidget(new StringWidget(
                     contentX, 92, contentWidth, 20,
                     Component.translatable("screen.mineagent_runtime.server_authoritative"), this.font
@@ -794,62 +794,21 @@ public final class ControlCenterScreen extends Screen {
         )));
     }
 
-    private void addProviderControls(int contentX, int contentWidth) {
-        int fieldWidth = Math.min(300, contentWidth);
-        int tabWidth = Math.max(34, Math.min(50, (contentWidth - 60) / 4));
-        Button openAiTab = Button.builder(Component.literal("OpenAI"), ignored -> {
-                    providerPage = 0;
-                    rebuildWidgets();
-                }).bounds(contentX, 108, tabWidth, 18).build();
-        openAiTab.active = providerPage != 0;
-        addRenderableWidget(openAiTab);
-        Button keyTab = Button.builder(Component.literal("Key"), ignored -> {
-                    providerPage = 1;
-                    rebuildWidgets();
-                }).bounds(contentX + tabWidth + 4, 108, tabWidth, 18).build();
-        keyTab.active = providerPage != 1;
-        addRenderableWidget(keyTab);
-        Button ollamaTab = Button.builder(Component.literal("Ollama"), ignored -> {
-                    providerPage = 2;
-                    rebuildWidgets();
-                }).bounds(contentX + (tabWidth + 4) * 2, 108, tabWidth, 18).build();
-        ollamaTab.active = providerPage != 2;
-        addRenderableWidget(ollamaTab);
-        Button comfyTab = Button.builder(Component.literal("Comfy"), ignored -> {
-                    providerPage = 3;
-                    rebuildWidgets();
-                }).bounds(contentX + (tabWidth + 4) * 3, 108, tabWidth, 18).build();
-        comfyTab.active = providerPage != 3;
-        addRenderableWidget(comfyTab);
-
-        if (providerPage == 0) {
-            String[] urls={"https://api.deepseek.com/v1/","https://open.bigmodel.cn/api/paas/v4/","https://api.z.ai/api/paas/v4/","https://api.openai.com/v1/"};String[] labels={"DeepSeek","GLM 智谱","GLM Z.AI","OpenAI"};
-            for(int i=0;i<urls.length;i++){final int choice=i;addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{openAiBaseUrlDraft=urls[choice];openAiModelDraft=dev.mineagent.runtime.core.config.ProviderDefaults.model(openAiBaseUrlDraft);rebuildWidgets();}).bounds(contentX+i*(fieldWidth/4),220,fieldWidth/4-2,18).build());}
-
-            addRenderableWidget(field(contentX, 130, fieldWidth, "OpenAI-compatible Base URL", openAiBaseUrlDraft,
-                    value -> {String old=openAiBaseUrlDraft;openAiBaseUrlDraft=value;if(openAiModelDraft.isBlank()||openAiModelDraft.equals(dev.mineagent.runtime.core.config.ProviderDefaults.model(old)))openAiModelDraft=dev.mineagent.runtime.core.config.ProviderDefaults.model(value);}));
-            addRenderableWidget(Button.builder(Component.literal("选择模型…"),b->Minecraft.getInstance().setScreen(new ProviderModelScreen(this))).bounds(contentX,198,fieldWidth,18).build());
-            addRenderableWidget(field(contentX, 176, fieldWidth, "OpenAI-compatible 模型（亦可点击下方选择）", openAiModelDraft,
-                    value -> openAiModelDraft = value));
-        } else if (providerPage == 1) {
-            addRenderableWidget(new StringWidget(contentX,130,fieldWidth,20,Component.literal("API Key 不在网页或普通设置字段中显示。"),font));
-            addRenderableWidget(Button.builder(Component.literal("打开原生保密 Key 输入"),b->Minecraft.getInstance().setScreen(new NativeSecretScreen(this))).bounds(contentX,160,fieldWidth,22).build());
-            addRenderableWidget(new StringWidget(contentX,190,fieldWidth,20,Component.literal("保存 Key 后获取模型列表；不会生成内容。"),font));
-        } else if (providerPage == 2) {
-            addRenderableWidget(field(contentX, 130, fieldWidth, "Ollama Base URL", ollamaBaseUrlDraft,
-                    value -> ollamaBaseUrlDraft = value));
-            addRenderableWidget(field(contentX, 176, fieldWidth, "Ollama 模型", ollamaModelDraft,
-                    value -> ollamaModelDraft = value));
-        } else {
-            addRenderableWidget(field(contentX, 130, fieldWidth, "ComfyUI Base URL", comfyUiBaseUrlDraft,
-                    value -> comfyUiBaseUrlDraft = value));
-            addRenderableWidget(field(contentX, 176, fieldWidth, "ComfyUI Workflow JSON", comfyUiWorkflowDraft,
-                    value -> comfyUiWorkflowDraft = value));
-        }
-        addRenderableWidget(Button.builder(Component.literal("保存"), ignored -> saveProviderSettings())
-                .bounds(contentX + (tabWidth + 4) * 4, 108,
-                        Math.max(40, contentWidth - (tabWidth + 4) * 4), 18)
-                .build());
+    private EditBox inlineProviderKey;private boolean clearInlineKey;private String confirmedProviderAddress="";
+    private void addProviderControls(int contentX,int contentWidth){
+        int w=Math.min(400,contentWidth),cell=Math.max(36,(w-12)/4);
+        String[] urls={"https://api.deepseek.com/v1/","https://open.bigmodel.cn/api/paas/v4/","https://api.openai.com/v1/","http://localhost:11434/v1/"},labels={"DeepSeek","GLM","OpenAI","Ollama"};
+        for(int i=0;i<urls.length;i++){final int choice=i;addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{openAiBaseUrlDraft=urls[choice];openAiModelDraft=dev.mineagent.runtime.core.config.ProviderDefaults.model(openAiBaseUrlDraft);rebuildWidgets();}).bounds(contentX+i*(cell+4),108,cell,18).build());}
+        addRenderableWidget(new StringWidget(contentX,134,38,18,Component.literal("URL"),font));
+        EditBox url=new EditBox(font,contentX+42,134,w-42,20,Component.literal("API URL"));url.setMaxLength(2048);url.setValue(openAiBaseUrlDraft);url.setResponder(v->openAiBaseUrlDraft=v);addRenderableWidget(url);
+        addRenderableWidget(new StringWidget(contentX,160,38,18,Component.literal("模型"),font));
+        EditBox modelName=new EditBox(font,contentX+42,160,w-42,20,Component.literal("模型名称"));modelName.setMaxLength(256);modelName.setValue(openAiModelDraft);modelName.setResponder(v->openAiModelDraft=v);addRenderableWidget(modelName);
+        addRenderableWidget(new StringWidget(contentX,186,38,18,Component.literal("Key"),font));
+        inlineProviderKey=new EditBox(font,contentX+42,186,w-42,20,Component.literal("API Key")){@Override protected net.minecraft.network.chat.MutableComponent createNarrationMessage(){return Component.literal("API Key，内容已隐藏");}};
+        inlineProviderKey.setMaxLength(4096);inlineProviderKey.setHint(Component.literal("留空保留已保存 Key"));inlineProviderKey.addFormatter((value,cursor)->net.minecraft.util.FormattedCharSequence.forward("•".repeat(value.length()),net.minecraft.network.chat.Style.EMPTY));inlineProviderKey.setValue(openAiApiKeyDraft);inlineProviderKey.setResponder(value->{openAiApiKeyDraft=value;if(!value.isEmpty())clearInlineKey=false;});addRenderableWidget(inlineProviderKey);
+        addRenderableWidget(Button.builder(Component.literal("选择模型…"),b->Minecraft.getInstance().setScreen(new ProviderModelScreen(this))).bounds(contentX,212,Math.max(60,w-158),18).build());
+        addRenderableWidget(Button.builder(Component.literal(clearInlineKey?"将清除Key":"清除Key"),b->{clearInlineKey=!clearInlineKey;openAiApiKeyDraft="";rebuildWidgets();}).bounds(contentX+w-152,212,76,18).build());
+        addRenderableWidget(Button.builder(Component.literal("保存"),b->saveProviderSettings()).bounds(contentX+w-70,212,70,18).build());
     }
 
     private void addDecisionControls(int contentX, int contentWidth) {
@@ -1459,46 +1418,13 @@ public final class ControlCenterScreen extends Screen {
         return field;
     }
 
-    private void saveProviderSettings() {
-        var values = new LinkedHashMap<String, String>();
-        values.put("provider.openai.baseUrl", openAiBaseUrlDraft.strip());
-        values.put("provider.openai.model", openAiModelDraft.strip());
-        values.put("provider.ollama.baseUrl", ollamaBaseUrlDraft.strip());
-        values.put("provider.ollama.model", ollamaModelDraft.strip());
-        values.put("provider.comfyui.baseUrl", comfyUiBaseUrlDraft.strip());
-        values.put("provider.comfyui.workflow", comfyUiWorkflowDraft.strip());
-        if (!openAiApiKeyDraft.isBlank()) {
-            addEncryptedApiKey(values);
-        }
-        if (!Boolean.parseBoolean(PanelSnapshotInbox.snapshot().values()
-                .getOrDefault("runtime.initialized", "false"))) {
-            values.put("runtime.initialized", "true");
-        }
-        if (this.minecraft.getConnection() != null) {
-            ClientPacketDistributor.sendToServer(new MineAgentPayloads.ConfigPatch(
-                    PanelSnapshotInbox.snapshot().revision(), values
-            ));
-        }
+    private void saveProviderSettings(){
+        if(this.minecraft.getConnection()==null)return;String address=openAiBaseUrlDraft.strip();var original=PanelSnapshotInbox.snapshot().values();if(!address.equals(original.getOrDefault("provider.openai.baseUrl",""))&&original.containsKey("provider.openai.apiKey")&&openAiApiKeyDraft.isBlank()&&!clearInlineKey&&!address.equals(confirmedProviderAddress)){confirmedProviderAddress=address;Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal("地址已改变；再次点击保存将向新地址使用已有Key，也可选择清除Key。"));return;}var values=new LinkedHashMap<String,String>();values.put("provider.openai.baseUrl",openAiBaseUrlDraft.strip());values.put("provider.openai.model",openAiModelDraft.strip());values.put("provider.openai.enabled","true");
+        // These are compatible API presets, not mutually exclusive Provider capability switches.
+        if(clearInlineKey||!openAiApiKeyDraft.isBlank())try{String encoded=PanelSnapshotInbox.snapshot().values().get("security.secretTransportPublicKey");if(encoded==null)throw new IllegalStateException();var key=KeyFactory.getInstance("X25519").generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(encoded)));var envelope=SecretChannel.seal(key,openAiApiKeyDraft);var encoder=Base64.getEncoder();values.put("provider.openai.apiKey.encrypted.ephemeral",encoder.encodeToString(envelope.ephemeralPublicKey()));values.put("provider.openai.apiKey.encrypted.nonce",encoder.encodeToString(envelope.nonce()));values.put("provider.openai.apiKey.encrypted.ciphertext",encoder.encodeToString(envelope.ciphertext()));}catch(Exception e){openAiApiKeyDraft="";if(inlineProviderKey!=null)inlineProviderKey.setValue("");Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal("密钥加密失败，请刷新设置后重试。"));return;}
+        openAiApiKeyDraft="";clearInlineKey=false;confirmedProviderAddress="";if(inlineProviderKey!=null)inlineProviderKey.setValue("");ClientPacketDistributor.sendToServer(new MineAgentPayloads.ConfigPatch(PanelSnapshotInbox.snapshot().revision(),values));
     }
-
-    private void addEncryptedApiKey(LinkedHashMap<String, String> values) {
-        try {
-            String encodedKey = PanelSnapshotInbox.snapshot().values().get("security.secretTransportPublicKey");
-            if (encodedKey == null) {
-                return;
-            }
-            var serverKey = KeyFactory.getInstance("X25519")
-                    .generatePublic(new X509EncodedKeySpec(Base64.getDecoder().decode(encodedKey)));
-            var envelope = SecretChannel.seal(serverKey, openAiApiKeyDraft);
-            var encoder = Base64.getEncoder();
-            values.put("provider.openai.apiKey.encrypted.ephemeral", encoder.encodeToString(envelope.ephemeralPublicKey()));
-            values.put("provider.openai.apiKey.encrypted.nonce", encoder.encodeToString(envelope.nonce()));
-            values.put("provider.openai.apiKey.encrypted.ciphertext", encoder.encodeToString(envelope.ciphertext()));
-            openAiApiKeyDraft = "";
-        } catch (java.security.GeneralSecurityException | IllegalArgumentException ignored) {
-            // The server will send a fresh transport key on the next panel snapshot.
-        }
-    }
+    @Override public void removed(){openAiApiKeyDraft="";clearInlineKey=false;confirmedProviderAddress="";if(inlineProviderKey!=null)inlineProviderKey.setValue("");super.removed();}
 
     @Override
     public void added() {

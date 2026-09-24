@@ -1,0 +1,5 @@
+package dev.mineagent.runtime.core.config;
+import org.junit.jupiter.api.Test;import java.util.*;import dev.mineagent.runtime.api.config.ConfigPatch;import dev.mineagent.runtime.api.worker.WorkerEnvelope;import static org.junit.jupiter.api.Assertions.*;
+class AgentThinkingSettingsTest {
+ @Test void perAgentPerWorldAndRequestSnapshotDoNotChangeGlobalDefault(){var config=new ServerConfigService();UUID world=UUID.randomUUID(),a=UUID.randomUUID(),b=UUID.randomUUID();var original=AgentModelSettings.context(new WorkerEnvelope(1,UUID.randomUUID(),"model.stream",Map.of("prompt","hello")),world,a);assertEquals("high",AgentModelSettings.bind(config,original).payload().get("agentThinking"));assertTrue(config.apply(new ConfigPatch(config.snapshot().revision(),Map.of(AgentThinkingSettings.key(world,a),"low")),true).accepted());assertEquals("low",AgentModelSettings.bind(config,original).payload().get("agentThinking"));assertFalse(original.payload().containsKey("agentThinking"));assertEquals("high",AgentThinkingSettings.read(config.snapshot().values(),world,b));assertEquals("high",AgentThinkingSettings.read(config.snapshot().values(),UUID.randomUUID(),a));}
+}

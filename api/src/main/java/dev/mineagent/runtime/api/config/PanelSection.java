@@ -13,7 +13,7 @@ public enum PanelSection {
     SCOREBOARDS("计分板", false),
     MOD_KNOWLEDGE("Mod 知识", false),
     MEMORY("记忆", false),
-    PROVIDERS("Provider", true),
+    PROVIDERS("模型", true),
     PERMISSIONS("权限与信任", false),
     BACKUPS("备份恢复", true),
     DIAGNOSTICS("诊断", true);

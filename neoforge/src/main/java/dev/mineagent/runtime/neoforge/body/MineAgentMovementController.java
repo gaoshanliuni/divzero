@@ -19,14 +19,16 @@ public final class MineAgentMovementController {
     private Vec3 target;
     private Vec3 plannedTarget;
     private Vec3 lastProgressPosition;
-    private List<BlockPos> route = List.of();
+    private List<Vec3> route = List.of();
     private int routeIndex;
     private int ticksUntilReplan;
     private int stuckTicks;
     private int failedPlans;
     private long commandRevision;
     private String outcome="IDLE";
-    private int executedSteps;
+    private int executedSteps,openedDoors,openedGates;private final java.util.Set<Double> traversedFloors=new java.util.LinkedHashSet<>();
+    public void recordOpened(boolean gate){if(gate)openedGates++;else openedDoors++;}
+    public java.util.Map<String,Object> evidence(){return java.util.Map.of("steps",executedSteps,"openedDoors",openedDoors,"openedGates",openedGates,"observedGroundHeights",java.util.List.copyOf(traversedFloors));}
     private double arrivalDistanceSqr=.64;
     public double arrivalTolerance(){return Math.sqrt(arrivalDistanceSqr);}
     public void movePreciselyTo(Vec3 target){moveTo(target);arrivalDistanceSqr=.04;}
@@ -42,7 +44,7 @@ public final class MineAgentMovementController {
         }
         this.target = target;
         arrivalDistanceSqr=.64;
-        commandRevision++;outcome="MOVING";executedSteps=0;route=List.of();routeIndex=0;failedPlans=0;stuckTicks=0;lastProgressPosition=null;
+        commandRevision++;outcome="MOVING";executedSteps=0;openedDoors=openedGates=0;traversedFloors.clear();route=List.of();routeIndex=0;failedPlans=0;stuckTicks=0;lastProgressPosition=null;
         this.ticksUntilReplan = 0;
     }
 
@@ -72,10 +74,11 @@ public final class MineAgentMovementController {
             return;
         }
         Vec3 offset = target.subtract(player.position());
-        if (offset.horizontalDistanceSqr() < arrivalDistanceSqr && Math.abs(offset.y) < 1.5) {
+        if (offset.horizontalDistanceSqr() < arrivalDistanceSqr && Math.abs(offset.y) < .26) {
             finish("ARRIVED");
             return;
         }
+        if(player.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(player.getY()*16)/16);
         updateProgress(player);
         ticksUntilReplan--;
         if ((route.isEmpty() || routeIndex >= route.size() || ticksUntilReplan <= 0
@@ -86,21 +89,22 @@ public final class MineAgentMovementController {
         if (route.isEmpty() || routeIndex >= route.size()) {
             return;
         }
-        BlockPos waypoint = route.get(routeIndex);
-        Vec3 waypointCenter = Vec3.atBottomCenterOf(waypoint);
+        Vec3 waypoint = route.get(routeIndex);
+        Vec3 waypointCenter = waypoint;
         Vec3 waypointOffset = waypointCenter.subtract(player.position());
-        if (waypointOffset.horizontalDistanceSqr() < (routeIndex==route.size()-1?Math.min(.16,arrivalDistanceSqr):.16) && Math.abs(waypointOffset.y) < 0.75) {
+        if (waypointOffset.horizontalDistanceSqr() < (routeIndex==route.size()-1?Math.min(.16,arrivalDistanceSqr):.16) && Math.abs(waypointOffset.y) < .26) {
             routeIndex++;
             if (routeIndex >= route.size()) {
                 return;
             }
             waypoint = route.get(routeIndex);
-            waypointCenter = Vec3.atBottomCenterOf(waypoint);
+            waypointCenter = waypoint;
             waypointOffset = waypointCenter.subtract(player.position());
         }
-        player.lookAt(EntityAnchorArgument.Anchor.EYES, waypointCenter);
+        if(!NativeSurfaceNavigation.openOnPath(player,waypointCenter)){finish("INTERACTION_BLOCKED");return;}
+        player.lookAt(EntityAnchorArgument.Anchor.EYES, waypointCenter.add(0,player.getEyeHeight(),0));
         Vec3 horizontal = new Vec3(waypointOffset.x, 0, waypointOffset.z);
-        if (waypointOffset.y > 0.35 && player.onGround()) {
+        if (waypointOffset.y > 0.65 && player.onGround()) {
             player.jumpFromGround();
         }
         if (horizontal.lengthSqr() > 0.001) {
@@ -122,25 +126,10 @@ public final class MineAgentMovementController {
             Vec3 direction = target.subtract(player.position()).normalize().scale(128);
             goal = BlockPos.containing(player.position().add(direction));
         }
-        var level = player.level();
-        var path = new GroundPathfinder().find(
-                grid(start), grid(goal), MAX_EXPANDED_NODES,
-                position -> walkable(level, block(position)),position -> bodyClear(level,block(position)));
-        if (path.isEmpty()) {
-            route = List.of();
-            routeIndex = 0;
-            if (++failedPlans >= 3) {
-                finish("UNREACHABLE");
-            }
-            return;
-        }
-        failedPlans = 0;
-        var blocks = new ArrayList<BlockPos>(path.get().size());
-        for (GridPos position : path.get()) {
-            blocks.add(block(position));
-        }
-        route = List.copyOf(blocks);
-        routeIndex = route.size()==1&&arrivalDistanceSqr<.16?0:Math.min(1, route.size());
+        var path=NativeSurfaceNavigation.find(player,Vec3.atBottomCenterOf(goal),MAX_EXPANDED_NODES);
+        if(path.isEmpty()){route=List.of();routeIndex=0;if(++failedPlans>=3)finish("UNREACHABLE");return;}
+        failedPlans=0;route=path;routeIndex=route.size()==1&&arrivalDistanceSqr<.16?0:Math.min(1,route.size());
+        if(goal.getX()==(int)Math.floor(target.x)&&goal.getZ()==(int)Math.floor(target.z))target=new Vec3(target.x,route.getLast().y,target.z);
     }
 
     private void updateProgress(MineAgentPlayer player) {

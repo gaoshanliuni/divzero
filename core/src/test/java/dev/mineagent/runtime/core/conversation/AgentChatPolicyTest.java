@@ -1,0 +1,6 @@
+package dev.mineagent.runtime.core.conversation;
+import org.junit.jupiter.api.Test;import java.util.*;import static org.junit.jupiter.api.Assertions.*;
+class AgentChatPolicyTest {
+ @Test void defaultOnlyCreatorAndPrivatePerPlayerLists(){UUID owner=UUID.randomUUID(),a=UUID.randomUUID(),b=UUID.randomUUID();var p=AgentChatPolicy.defaults();assertEquals(AgentChatPolicy.Decision.ALLOW,p.decision(owner,owner));assertEquals(AgentChatPolicy.Decision.ASK,p.decision(owner,a));var next=p.remember(a,true);assertEquals(AgentChatPolicy.Decision.ALLOW,next.decision(owner,a));assertEquals(AgentChatPolicy.Decision.ASK,next.decision(owner,b));assertEquals(AgentChatPolicy.Decision.ASK,p.decision(owner,a));assertEquals(AgentChatPolicy.Decision.DENY,next.remember(a,false).decision(owner,a));}
+ @Test void modesNeverDenyCreatorAndListsRemainSeparate(){UUID owner=UUID.randomUUID(),a=UUID.randomUUID(),b=UUID.randomUUID();for(String mode:List.of("ASK","ALLOW_ALL","DENY_ALL","ALLOW_LIST")){var p=new AgentChatPolicy(mode,Set.of(a),Set.of(b),1);assertEquals(AgentChatPolicy.Decision.ALLOW,p.decision(owner,owner));}assertEquals(AgentChatPolicy.Decision.DENY,new AgentChatPolicy("ALLOW_LIST",Set.of(a),Set.of(),0).decision(owner,b));assertThrows(IllegalArgumentException.class,()->new AgentChatPolicy("ASK",Set.of(a),Set.of(a),0));}
+}

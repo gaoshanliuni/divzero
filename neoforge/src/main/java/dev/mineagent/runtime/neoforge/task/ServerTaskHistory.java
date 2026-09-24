@@ -13,7 +13,7 @@ public final class ServerTaskHistory {
     private ServerTaskHistory(){}
     public static Map<String,String> read(ServerPlayer viewer,Map<String,String> args)throws Exception{
         var server=viewer.level().getServer();if(!server.isSameThread()||viewer instanceof MineAgentPlayer||server.getPlayerList().getPlayer(viewer.getUUID())!=viewer)throw new SecurityException("TASK_HISTORY_IDENTITY");var tasks=MineAgentRuntimeServices.tasks(server);Object result;
-        if(Set.of("packages","package","versions","version","versionText","versionFile","operation","compatibility").contains(args.get("kind")))return ServerPackageCatalog.read(viewer,args);
+        if(Set.of("creatures","creaturePreview","modelPreview","models","packages","package","versions","version","versionText","versionFile","operation","compatibility").contains(args.get("kind")))return ServerPackageCatalog.read(viewer,args);
         if(Set.of("jobs","job","jobPrompt","jobRaw").contains(args.get("kind")))return ServerGenerationHistory.read(viewer,args);
         if("list".equals(args.get("kind"))){
             if(!args.keySet().equals(Set.of("kind","state","archive","offset")))throw new IllegalArgumentException("TASK_HISTORY_ARGUMENTS");var page=tasks.history(viewer.getUUID(),args.get("state"),args.get("archive"),Integer.parseInt(args.get("offset")),16);var items=new ArrayList<Object>();

@@ -52,7 +52,7 @@ public final class MineAgentNetwork {
         SpeechInputPayloads.register(event);
         ObjectAssetPayloads.register(event);
         dev.mineagent.runtime.neoforge.ui.ServerUiRuntime.register(event);
-        var registrar = event.registrar("5").versioned("5").executesOn(HandlerThread.NETWORK);
+        var registrar = event.registrar("6").versioned("6").executesOn(HandlerThread.NETWORK);
         registrar.playToServer(ProviderModelsPayloads.Request.TYPE,ProviderModelsPayloads.Request.CODEC,(p,c)->serverWork(c,()->ProviderModelsPayloads.respond(p,(ServerPlayer)c.player(),c::reply)));
         registrar.playToClient(ProviderModelsPayloads.Response.TYPE,ProviderModelsPayloads.Response.CODEC,(p,c)->c.enqueueWork(()->dev.mineagent.runtime.neoforge.client.ProviderModelsClient.accept(p)));
         registrar.playToServer(MineAgentPayloads.SecretConfigWrite.TYPE,MineAgentPayloads.SecretConfigWrite.CODEC,(p,c)->serverWork(c,()->c.reply(applyNativeSecret(p,(ServerPlayer)c.player()))));
@@ -299,7 +299,7 @@ public final class MineAgentNetwork {
     private static final java.util.Map<ServerPlayer,Integer> AGENT_PAGES=new java.util.WeakHashMap<>();
     private static MineAgentPayloads.PanelSnapshot panelSnapshot(ServerPlayer player) {
         var snapshot = MineAgentRuntimeServices.config(player.level().getServer()).snapshot();
-        var values = new java.util.LinkedHashMap<>(snapshot.values());
+        var values = new java.util.LinkedHashMap<>(publicConfig(snapshot.values()));
         boolean operator = player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
         if (!operator) {
             values.keySet().removeIf(key -> key.startsWith("permission.player."));
@@ -373,6 +373,7 @@ public final class MineAgentNetwork {
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, panelSnapshot(player));
     }
 
+    private static java.util.Map<String,String> publicConfig(java.util.Map<String,String> values){var out=new java.util.LinkedHashMap<>(values);out.keySet().removeIf(k->k.startsWith("chat.")||k.startsWith("ai.thinking.")||k.startsWith("interaction.rules."));return out;}
     private static void applyPatch(
             MineAgentPayloads.ConfigPatch payload,
             ServerPlayer player,
@@ -383,7 +384,7 @@ public final class MineAgentNetwork {
         if (!mayApplyConfigKeys(player, operator, values.keySet())) {
             var snapshot = MineAgentRuntimeServices.config(player.level().getServer()).snapshot();
             context.reply(new MineAgentPayloads.ConfigPatchResult(
-                    false, "FORBIDDEN", snapshot.revision(), snapshot.values(), java.util.Map.of()));
+                    false, "FORBIDDEN", snapshot.revision(), publicConfig(snapshot.values()), java.util.Map.of()));
             return;
         }
         try {
@@ -391,7 +392,7 @@ public final class MineAgentNetwork {
         } catch (java.security.GeneralSecurityException | IllegalArgumentException failure) {
             var snapshot = MineAgentRuntimeServices.config(player.level().getServer()).snapshot();
             context.reply(new MineAgentPayloads.ConfigPatchResult(
-                    false, "SECRET_DECRYPTION_FAILED", snapshot.revision(), snapshot.values(),
+                    false, "SECRET_DECRYPTION_FAILED", snapshot.revision(), publicConfig(snapshot.values()),
                     java.util.Map.of("provider.openai.apiKey", "密钥传输解密失败")
             ));
             return;
@@ -403,7 +404,7 @@ public final class MineAgentNetwork {
                 result.accepted(),
                 result.errorCode(),
                 result.snapshot().revision(),
-                result.snapshot().values(),
+                publicConfig(result.snapshot().values()),
                 result.fieldErrors()
         ));
         if (result.accepted()) {
@@ -458,6 +459,7 @@ public final class MineAgentNetwork {
         var server = player.level().getServer();
         var permissions = MineAgentRuntimeServices.permissions(server);
         for (String key : keys) {
+            if(key.startsWith("chat.")||key.startsWith("ai.thinking.")||key.startsWith("interaction.rules."))return false;
             if (key.startsWith("provider.") || key.equals("voice.input.enabled")) {
                 if (!permissions.allowed(player.getUUID(), operator, PermissionAction.MANAGE_PROVIDERS)) {
                     return false;

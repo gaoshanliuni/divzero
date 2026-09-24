@@ -41,12 +41,17 @@ export function createAgentManagement({windowFor,send,report,openModel,openSkin}
     async function collaborator(id,enabled){if(!id||record.busy||!record.value.canCollaborate)return;record.busy=true;form.disabled=true;
       await request(record.operation.request({kind:'collaborator',agentId:a.id,expectedRevision:record.value.revision,playerId:id,enabled},()=>crypto.randomUUID()),notice,v=>{record.draft.revision=Number(v.revision);record.draft.stale=false;});record.busy=false;form.disabled=!record.value.canManage;
     }
+    const access=add('details',null,form);add('summary','响应权限（仅创建者）',access);const accessMode=add('select',null,access);for(const [value,text]of [['ASK','其他玩家请求时询问我'],['ALLOW_ALL','全部允许'],['DENY_ALL','全部拒绝'],['ALLOW_LIST','仅允许列表']])add('option',text,accessMode).value=value;
+    const accessPlayers=add('select',null,access),accessList=add('div',null,access),accessActions=add('div',null,access,'actions');record.access={root:access,mode:accessMode,players:accessPlayers,list:accessList};
+    const saveAccess=async(entry='',playerId='')=>{if(record.busy||!record.value.mine)return;record.busy=true;try{await request({kind:'chat_access',agentId:a.id,policyRevision:String(record.value.chatAccess?.revision||0),mode:accessMode.value,...(playerId?{playerId,entry}:{}),operationId:crypto.randomUUID()},notice);}finally{record.busy=false;}};
+    button('保存响应模式',accessActions,()=>saveAccess());button('加入允许列表',accessActions,()=>accessPlayers.value&&saveAccess('allow',accessPlayers.value));button('始终拒绝此玩家',accessActions,()=>accessPlayers.value&&saveAccess('deny',accessPlayers.value));record.removeAccess=id=>saveAccess('remove',id);
     record.collaborator=collaborator;cards.set(a.id,record);return record;
   }
   function updateCard(c,a){
     if(!c.draft.update(a))return;
     if(c.value.revision!==a.revision||!a.canManage){c.confirmation.hidden=true;c.check.checked=false;}
     c.skinButton.disabled=!a.canConfigureModel;c.modelButton.disabled=!a.canConfigureModel;c.modelButton.textContent='模型：'+(a.modelLabel||'默认');
+    c.access.root.hidden=!a.mine;const policySignature=JSON.stringify([a.chatAccess,roster?.players]);if(c.access.signature!==policySignature){c.access.signature=policySignature;c.access.mode.value=a.chatAccess?.mode||'ASK';c.access.players.replaceChildren();add('option','选择玩家',c.access.players).value='';for(const p of roster?.players||[])if(p.id!==a.ownerId)add('option',p.name,c.access.players).value=p.id;c.access.list.replaceChildren();for(const kind of ['allow','deny'])for(const id of a.chatAccess?.[kind]||[]){const line=add('div',null,c.access.list,'actions');add('span',(kind==='allow'?'允许：':'拒绝：')+(roster?.players?.find(p=>p.id===id)?.name||id),line);button('移除',line,()=>c.removeAccess(id));}}
     c.value=a;c.title.textContent=a.name;c.badge.textContent=bodyLabels[a.bodyState]||'未知状态';c.badge.dataset.state=a.bodyState;
     c.info.textContent=`${a.mine?'你的 AI':'其他玩家的 AI'} · 请求${modeLabel(a.requestedMode)} / 实际${modeLabel(a.effectiveMode)}${a.health==null?'':` · 生命 ${a.health} / 饱食 ${a.food}`}`;
     c.info.textContent+=` · 附加区块票：${({GRANTED:'已分配',LIMIT_REACHED:'预算不足（依赖已加载区块）',DISABLED:'管理员已禁用',PENDING:'等待应用',DEGRADED:'登记异常',INACTIVE:'身体当前不需要'})[a.ticketState]||'等待状态'}`;

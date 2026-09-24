@@ -28,7 +28,7 @@ public final class ServerProviderModels {
         var config=MineAgentRuntimeServices.config(server);var snapshot=config.providerSnapshot();String url=snapshot.values().getOrDefault("provider.openai.baseUrl",""),key=snapshot.values().getOrDefault("provider.openai.apiKey","");String id=identity(url,key);var state=STATES.get(server);
         if(state==null||!state.identity.equals(id)||refresh&&!state.status.equals("LOADING")&&System.currentTimeMillis()-state.started>=3000){
             state=new State(id);STATES.put(server,state);var flight=state;
-            if(url.isBlank()||key.isBlank()){state.status="NOT_CONFIGURED";state.error=url.isBlank()?"MODELS_URL_REQUIRED":"MODELS_KEY_REQUIRED";}
+            if(url.isBlank()||key.isBlank()&&!ProviderModelCatalog.keyOptional(url)){state.status="NOT_CONFIGURED";state.error=url.isBlank()?"MODELS_URL_REQUIRED":"MODELS_KEY_REQUIRED";}
             else try{IO.execute(()->{var result=ProviderModelCatalog.fetch(url,key);server.execute(()->{if(STATES.get(server)!=flight)return;var latest=config.providerSnapshot();if(!identity(latest.values().getOrDefault("provider.openai.baseUrl",""),latest.values().getOrDefault("provider.openai.apiKey","")).equals(id)){STATES.remove(server);return;}flight.models=result.models();flight.error=result.error();flight.http=result.httpStatus();flight.status=result.error().isEmpty()?"READY":"ERROR";flight.finished=System.currentTimeMillis();});});}
             catch(RejectedExecutionException busy){state.status="ERROR";state.error="MODELS_BUSY";}
         }
