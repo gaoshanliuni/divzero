@@ -72,6 +72,9 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.include_media_tools
         run: ./scripts/prepare-media-tools.ps1
 
+      - name: Test batched conversation history cache
+        run: node --test client/src/test/webui/conversation-cache.test.mjs
+
       - name: Compile production JAR and run included tests
         run: |
           $ErrorActionPreference = 'Stop'

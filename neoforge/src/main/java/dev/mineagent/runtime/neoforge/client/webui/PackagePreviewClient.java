@@ -9,10 +9,8 @@ import java.util.concurrent.*;
 
 /** Actual network download. One bounded, connection-scoped assembly; no server paths or implicit trust confirmation. */
 public final class PackagePreviewClient {
-    private static final ExecutorService IO = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1), r -> {
-        Thread t = new Thread(r, "mineagent-preview-verify"); t.setDaemon(true); return t;
-    }, new ThreadPoolExecutor.AbortPolicy());
-    private static Download active;
+    private static final ExecutorService IO = Executors.newVirtualThreadPerTaskExecutor();
+    private static final Set<Download> active=java.util.concurrent.ConcurrentHashMap.newKeySet();
     private PackagePreviewClient() {}
     private static final class Download {
         final Session session;
@@ -44,10 +42,10 @@ public final class PackagePreviewClient {
     public static CompletableFuture<Receipt> openHud(UUID packageId,long revision,UUID targetViewId) {
         return open(packageId,revision,Objects.requireNonNull(targetViewId),false,null,true);
     }
-    public static boolean idle(){return active==null;}
+    public static boolean idle(){return active.isEmpty();}
     public static CompletableFuture<Receipt> openWorld(dev.mineagent.runtime.api.ui.WorldUiProtocol.Launch launch,java.util.function.BooleanSupplier current){
-        if(active!=null)return CompletableFuture.failedFuture(new IllegalStateException("UI_TRANSFER_BUSY"));var session=UiClientSessions.current();if(session==null)return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));
-        var d=new Download(session,launch.packageId(),launch.packageRevision());d.worldLaunch=launch;d.restoreCurrent=current;active=d;
+        var session=UiClientSessions.current();if(session==null)return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));
+        var d=new Download(session,launch.packageId(),launch.packageRevision());d.worldLaunch=launch;d.restoreCurrent=current;active.add(d);
         UiClientSessions.command("worldui.open",Map.of("launchId",launch.id().toString()),UUID.randomUUID()).whenComplete((receipt,error)->{
             if(!current(d))return;try{
                 if(error!=null||receipt.code()!=Code.ACCEPTED)throw new IllegalStateException("WORLD_UI_OPEN_FAILED");var values=receipt.values();
@@ -58,7 +56,7 @@ public final class PackagePreviewClient {
         });return d.future;
     }
     public static CompletableFuture<Receipt> openDelivery(UUID delivery,UUID packageId,long revision){
-        if(active!=null)return CompletableFuture.failedFuture(new IllegalStateException("UI_TRANSFER_BUSY"));var session=UiClientSessions.current();if(session==null)return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));var d=new Download(session,packageId,revision);active=d;
+        var session=UiClientSessions.current();if(session==null)return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));var d=new Download(session,packageId,revision);active.add(d);
         UiClientSessions.command("delivery.accept",Map.of("deliveryId",delivery.toString()),UUID.randomUUID()).whenComplete((receipt,error)->{
             if(!current(d))return;try{if(error!=null||receipt.code()!=Code.ACCEPTED)throw new IllegalStateException("DELIVERY_ACCEPT_FAILED");var values=receipt.values();d.deliveryLaunch=new com.google.gson.Gson().fromJson(values.get("launch"),dev.mineagent.runtime.api.ui.DeliveryProtocol.Launch.class);d.contentSession=new com.google.gson.Gson().fromJson(values.get("contentSession"),Session.class);if(!d.deliveryLaunch.deliveryId().equals(delivery)||!d.deliveryLaunch.packageId().equals(packageId)||d.deliveryLaunch.packageRevision()!=revision)throw new SecurityException("DELIVERY_ASSET_CONTEXT");DeliverySmokeClient.openObserved(session,d.deliveryLaunch,d.contentSession);dev.mineagent.runtime.api.ui.DeliveryProtocol.require(d.contentSession,session,d.deliveryLaunch,d.deliveryLaunch.canonicalSha256());d.passive=d.deliveryLaunch.mode().equals("HUD");d.transferId=UUID.fromString(values.get("transferId")).toString();d.transferHash=values.get("sha256");d.assembler=new PackagePreviewTransfer.Assembler(Integer.parseInt(values.get("size")),d.transferHash);next(d);}catch(Exception failed){fail(d,failed);}
         });return d.future;
@@ -81,10 +79,10 @@ public final class PackagePreviewClient {
         return open(packageId,revision,targetViewId,restore,patchOperation,passive,container,agent,goal,expected,null,()->true);
     }
     private static CompletableFuture<Receipt> open(UUID packageId,long revision,UUID targetViewId,boolean restore,UUID patchOperation,boolean passive,boolean container,UUID agent,String goal,String expected,dev.mineagent.runtime.client.webui.HudRestoreEntry saved,java.util.function.BooleanSupplier restoreCurrent) {
-        if (active != null) return CompletableFuture.failedFuture(new IllegalStateException("UI_TRANSFER_BUSY"));
+
         Session session = UiClientSessions.current();
         if (session == null) return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));
-        Download d = new Download(session, packageId, revision); d.passive=passive; active = d;
+        Download d = new Download(session, packageId, revision); d.passive=passive; active.add(d);
         d.savedHud=saved;d.restoreCurrent=restoreCurrent;
         var arguments=new LinkedHashMap<String,String>();arguments.put("packageId",packageId.toString());arguments.put("packageRevision",Long.toString(revision));
         if(targetViewId!=null)arguments.put("targetViewId",targetViewId.toString());
@@ -155,7 +153,7 @@ public final class PackagePreviewClient {
                         HudPersistenceClient.mounted(d.contentSession,resolved);
                         if(d.savedHud!=null)WebGuiHostAdapter.INSTANCE.emit("hudRestoreLayout",Map.of("viewId",view,"layout",d.savedHud.layout()));
                     }
-                    active = null; release(d);
+                    active.remove(d); release(d);
                     d.future.complete(new Receipt(UUID.randomUUID(), Code.ACCEPTED, Map.of("viewId", view, "packageId", d.packageId.toString(),
                             "state", "PAGE_LOADING", "executionMode", d.contentSession==null?"PREVIEW_ONLY":"SERVER_BOUND", "businessVerified", "false",
                             "downloadBytes", Integer.toString(d.assembler.size()), "downloadChunks", Integer.toString(d.chunks),
@@ -166,23 +164,23 @@ public final class PackagePreviewClient {
         } catch (RuntimeException failure) { fail(d, failure); }
     }
     private static boolean current(Download d) {
-        if (active != d) return false;
+        if (!active.contains(d)) return false;
         if (UiClientSessions.current() != d.session || !WebGuiHostAdapter.INSTANCE.ready() || System.currentTimeMillis() >= d.deadline || !d.restoreCurrent.getAsBoolean()) {
             fail(d, new IllegalStateException("UI_TRANSFER_EXPIRED")); return false;
         }
         return true;
     }
     private static void fail(Download d, Throwable error) {
-        if (active != d) return;
-        active = null; closeUnopened(d);release(d); d.future.completeExceptionally(error);if(d.deliveryLaunch!=null)DeliverySmokeClient.openFailed(error);
+        if (!active.contains(d)) return;
+        active.remove(d); closeUnopened(d);release(d); d.future.completeExceptionally(error);if(d.deliveryLaunch!=null)DeliverySmokeClient.openFailed(error);
     }
     private static void release(Download d) {
-        if (UiClientSessions.current() != null) UiClientSessions.command(d.deliveryLaunch!=null?"delivery.release":d.worldLaunch==null?"package.release":"worldui.release", Map.of(), UUID.randomUUID());
+        if (UiClientSessions.current() == d.session && d.transferId!=null) UiClientSessions.command(d.deliveryLaunch!=null?"delivery.release":d.worldLaunch==null?"package.release":"worldui.release", Map.of("transferId",d.transferId==null?"":d.transferId), UUID.randomUUID());
     }
-    public static void tick() { if (active != null) current(active); }
+    public static void tick() { for(var d:List.copyOf(active))current(d); }
     public static void cancel() {
-        var d = active; active = null;
-        if (d != null) {closeUnopened(d);d.future.completeExceptionally(new IllegalStateException("USER_INTERRUPTED"));}
+        for(var d:List.copyOf(active))fail(d,new IllegalStateException("USER_INTERRUPTED"));
     }
+
     private static void closeUnopened(Download d) {if(d.contentSession!=null)UiClientSessions.contentRequest("close",d.contentSession,"scoreview.read",Map.of(),UUID.randomUUID());}
 }

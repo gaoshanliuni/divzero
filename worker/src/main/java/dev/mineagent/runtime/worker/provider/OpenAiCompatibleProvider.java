@@ -153,6 +153,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
                 builder.header("Authorization", "Bearer " + apiKey);
             }
             var response = client.send(builder.build(), java.net.http.HttpResponse.BodyHandlers.ofLines());
+            dev.mineagent.runtime.worker.WorkerCancellation.watch(response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 try (var lines = response.body()) {
                     throw new ProviderRequestException(response.statusCode(),

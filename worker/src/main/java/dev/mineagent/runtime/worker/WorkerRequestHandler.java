@@ -101,6 +101,16 @@ public final class WorkerRequestHandler implements AutoCloseable {
         this.mediaAddressPolicy = java.util.Objects.requireNonNull(mediaAddressPolicy, "mediaAddressPolicy");
     }
 
+    /** Configuration is copied at admission; per-request ledger scope/error never leaks across calls. */
+    public synchronized WorkerRequestHandler requestSnapshot() {
+        var next=new WorkerRequestHandler(speechSynthesizer,mediaBackendFactory,mediaAddressPolicy);
+        next.providers.putAll(providers);next.providerFingerprints.putAll(providerFingerprints);
+        next.openAiProvider=openAiProvider;next.ollamaProvider=ollamaProvider;next.comfyUiProvider=comfyUiProvider;
+        next.providerOrder=providerOrder;next.configurationFingerprint=configurationFingerprint;next.configurationRevision=configurationRevision;
+        next.contentStore=contentStore;next.contentRoot=contentRoot;next.mediaBackend=mediaBackend;next.serviceLedger=serviceLedger;
+        return next;
+    }
+
     public synchronized WorkerEnvelope handle(WorkerEnvelope request) {
         beginEnvelope(request);
         try { return handleInternal(request); } finally { endEnvelope(); }

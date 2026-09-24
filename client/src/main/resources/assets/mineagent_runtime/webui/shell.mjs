@@ -502,6 +502,7 @@ addEventListener('mineagent:host', event => {
     }
     else if(channel==='decisionContexts'){decisionContexts=data;fillDecisionTargets();}
     else if (channel === 'agents') { availableAgents = data; desktopWindows.refresh(); preferences.agents(data);javaStudio.agents(data); fillAgents(); generations.agents(data); uiAgents.agents(data); worldTasks.agents(data); appearances.agents(data); personas.agents(data); }
+    else if(channel==='conversationChanged')conversations.changed(data);
     else if(channel==='conversationVoiceStatus')conversations.voiceStatus(data);
     else if(channel==='conversationSpeechDraft')conversations.speechDraft(data);
     else if(channel==='sessionError'){deliveries.session(null);feedbackHistory.reset();sentContent.reset();taskHistory.reset();generationHistory.reset();packageCatalog.reset();packageAssets.reset();preferences.reset();javaStudio.reset();nativeCompatibility.reset();worldRestore.reset();dataPacks.reset();resourcePacks.reset();clientScripts.reset();nativeApi.reset();bootExtensions.reset();generations.session(null);scheduleManagement.reset();eventManagement.reset();report(new Error(data.code||'SESSION_UNAVAILABLE'));}

@@ -176,17 +176,22 @@ public final class ConversationStore implements AutoCloseable {
     public synchronized Message feedbackReply(UUID viewer,UUID agent,UUID id,UUID operation)throws Exception{get(viewer,agent,id);var op=operation(operation,null);if(op==null||!op.kind().equals("feedback-reply")||!op.conversation().equals(id))throw new SecurityException("FEEDBACK_REPLY_NOT_OWNED");return message(viewer,agent,id,op.assistant());}
     private Operation turn(UUID op)throws SQLException{var value=operation(op,null);if(value==null||!value.kind().equals("send"))throw new IllegalArgumentException("CONVERSATION_TURN_UNKNOWN");return value;}
     public synchronized boolean pending(UUID op)throws SQLException{var t=turn(op);return !query("SELECT 1 FROM mineagent_conversation_messages_v1 WHERE world_id=? AND id=? AND status IN ('PENDING','GENERATING')",r->1,world,t.assistant()).isEmpty();}
-    public synchronized boolean delta(UUID op,String delta)throws Exception{
-        text(delta,131072,true);return transaction(()->{var t=turn(op);var rows=query("SELECT text FROM mineagent_conversation_messages_v1 WHERE world_id=? AND id=? AND status IN ('PENDING','GENERATING')",r->r.getString(1),world,t.assistant());if(rows.isEmpty())return false;String value=rows.getFirst()+delta;text(value,131072,true);execute("UPDATE mineagent_conversation_messages_v1 SET text=?,text_length=?,status='GENERATING',revision=revision+1,updated_at=? WHERE world_id=? AND id=?",value,value.length(),clock.millis(),world,t.assistant());return true;});
-    }
-    /** Provider thinking is private display data, never assistant text, TTS, or context-summary input. */
-    public synchronized boolean thinkingDelta(UUID op,String delta,boolean active)throws Exception{
-        text(delta,1_000_000,true);
-        return transaction(()->{var t=turn(op);if(!pending(op))return false;
-            var old=query("SELECT text FROM mineagent_conversation_thinking_v1 WHERE world_id=? AND message_id=?",r->r.getString(1),world,t.assistant());
-            if(old.isEmpty()&&delta.isEmpty())return true;
-            String value=(old.isEmpty()?"":old.getFirst())+delta;text(value,1_000_000,true);
-            execute("INSERT INTO mineagent_conversation_thinking_v1 VALUES(?,?,?,?,1,?) ON CONFLICT(world_id,message_id) DO UPDATE SET text=excluded.text,text_length=excluded.text_length,active=excluded.active,revision=revision+1",world,t.assistant(),value,value.length(),active?1:0);return true;
+    public synchronized boolean delta(UUID op,String delta)throws Exception{return streamDelta(op,delta,"",false,false);}
+    /** Append bounded UTF-16-length deltas in SQL; never read/concatenate the entire body in Java. */
+    public synchronized boolean thinkingDelta(UUID op,String delta,boolean active)throws Exception{return streamDelta(op,"",delta,true,active);}
+    public synchronized boolean streamDelta(UUID op,String delta,String thinking,boolean thinkingDirty,boolean active)throws Exception{
+        text(delta,131072,true);text(thinking,1_000_000,true);
+        return transaction(()->{
+            var t=turn(op);if(!pending(op))return false;
+            if(!delta.isEmpty()){
+                if(execute("UPDATE mineagent_conversation_messages_v1 SET text=text||?,text_length=text_length+?,status='GENERATING',revision=revision+1,updated_at=? WHERE world_id=? AND id=? AND text_length+?<=131072",delta,delta.length(),clock.millis(),world,t.assistant(),delta.length())!=1)throw new IllegalArgumentException("CONVERSATION_TEXT_LIMIT");
+            }
+            if(thinkingDirty){
+                var length=query("SELECT text_length FROM mineagent_conversation_thinking_v1 WHERE world_id=? AND message_id=?",r->r.getInt(1),world,t.assistant());
+                if((length.isEmpty()?0:length.getFirst())+thinking.length()>1_000_000)throw new IllegalArgumentException("CONVERSATION_TEXT_LIMIT");
+                if(!length.isEmpty()||!thinking.isEmpty())execute("INSERT INTO mineagent_conversation_thinking_v1 VALUES(?,?,?,?,1,?) ON CONFLICT(world_id,message_id) DO UPDATE SET text=text||excluded.text,text_length=text_length+excluded.text_length,active=excluded.active,revision=revision+1",world,t.assistant(),thinking,thinking.length(),active?1:0);
+            }
+            return true;
         });
     }
     public synchronized Thinking thinking(UUID viewer,UUID agent,UUID conversation,UUID message)throws SQLException{
@@ -194,8 +199,9 @@ public final class ConversationStore implements AutoCloseable {
         return query("SELECT revision,text_length,active FROM mineagent_conversation_thinking_v1 WHERE world_id=? AND message_id=?",r->new Thinking(message,r.getLong(1),r.getInt(2),r.getInt(3)==1&&Set.of("PENDING","GENERATING").contains(m.status())),world,message).stream().findFirst().orElse(new Thinking(message,0,0,false));
     }
     public synchronized Map<UUID,Thinking> thinkingPage(UUID viewer,UUID agent,UUID conversation,List<Message> messages)throws SQLException{
-        get(viewer,agent,conversation);limit(messages.isEmpty()?1:messages.size());var values=new LinkedHashMap<UUID,Thinking>();
-        for(var m:messages)if(m.role().equals("ASSISTANT")){var t=thinking(viewer,agent,conversation,m.messageId());if(t.textLength()>0)values.put(m.messageId(),t);}return Map.copyOf(values);
+        get(viewer,agent,conversation);if(messages.isEmpty())return Map.of();limit(messages.size());var args=new ArrayList<Object>();args.add(world);args.add(conversation);messages.forEach(m->args.add(m.messageId()));
+        var rows=query("SELECT t.message_id,t.revision,t.text_length,t.active,m.status FROM mineagent_conversation_thinking_v1 t JOIN mineagent_conversation_messages_v1 m ON m.world_id=t.world_id AND m.id=t.message_id WHERE t.world_id=? AND m.conversation_id=? AND t.message_id IN ("+String.join(",",Collections.nCopies(messages.size(),"?"))+")",r->new Thinking(uuid(r.getString(1)),r.getLong(2),r.getInt(3),r.getInt(4)==1&&Set.of("PENDING","GENERATING").contains(r.getString(5))),args.toArray());
+        var values=new LinkedHashMap<UUID,Thinking>();for(var row:rows)if(row.textLength()>0)values.put(row.messageId(),row);return Map.copyOf(values);
     }
     public synchronized Chunk thinkingChunk(UUID viewer,UUID agent,UUID conversation,UUID message,long revision,int offset,int size)throws SQLException{
         message(viewer,agent,conversation,message);if(offset<0||size<1||size>4096)throw new IllegalArgumentException("CONVERSATION_CHUNK_INPUT");
@@ -238,9 +244,8 @@ public final class ConversationStore implements AutoCloseable {
         get(viewer,agent,conversation);return List.copyOf(query("SELECT * FROM mineagent_conversation_voice_v1 WHERE world_id=? AND player_id=? AND agent_id=? AND conversation_id=? ORDER BY created_at DESC,operation_id LIMIT 20",this::voiceJob,world,viewer,agent,conversation));
     }
     public synchronized List<VoiceJob> voiceJobs(UUID viewer,UUID agent,UUID conversation,List<UUID> messages)throws SQLException{
-        get(viewer,agent,conversation);if(messages.size()>20)throw new IllegalArgumentException("CONVERSATION_PAGE_LIMIT");var result=new ArrayList<VoiceJob>();
-        for(var message:messages)result.addAll(query("SELECT * FROM mineagent_conversation_voice_v1 WHERE world_id=? AND player_id=? AND agent_id=? AND conversation_id=? AND message_id=? ORDER BY created_at DESC,rowid DESC LIMIT 1",this::voiceJob,world,viewer,agent,conversation,message));
-        return List.copyOf(result);
+        get(viewer,agent,conversation);if(messages.isEmpty())return List.of();limit(messages.size());var args=new ArrayList<Object>();Collections.addAll(args,world,viewer,agent,conversation);args.addAll(messages);
+        return List.copyOf(query("SELECT * FROM (SELECT *,ROW_NUMBER() OVER(PARTITION BY message_id ORDER BY created_at DESC,rowid DESC) AS latest FROM mineagent_conversation_voice_v1 WHERE world_id=? AND player_id=? AND agent_id=? AND conversation_id=? AND message_id IN ("+String.join(",",Collections.nCopies(messages.size(),"?"))+")) WHERE latest=1",this::voiceJob,args.toArray()));
     }
     public synchronized Optional<VoiceJob> voiceJob(UUID viewer,UUID agent,UUID conversation,UUID op)throws SQLException{
         get(viewer,agent,conversation);return query("SELECT * FROM mineagent_conversation_voice_v1 WHERE world_id=? AND player_id=? AND agent_id=? AND conversation_id=? AND operation_id=?",this::voiceJob,world,viewer,agent,conversation,op).stream().findFirst();
@@ -255,6 +260,14 @@ public final class ConversationStore implements AutoCloseable {
     }
     public synchronized Page messages(UUID viewer,UUID agent,UUID id,long before,int count)throws SQLException{
         limit(count);if(before<0)throw new IllegalArgumentException("CONVERSATION_CURSOR");var c=get(viewer,agent,id);var list=query("SELECT id,sequence,role,status,revision,text_length,error_code,persona_revision,created_at,updated_at FROM mineagent_conversation_messages_v1 WHERE world_id=? AND conversation_id=? AND sequence<? ORDER BY sequence DESC LIMIT ?",this::metadata,world,id,before==0?Long.MAX_VALUE:before,count);Collections.reverse(list);return new Page(c,List.copyOf(list),!list.isEmpty()&&list.getFirst().sequence()>1?list.getFirst().sequence():0);
+    }
+    public record ChunkRequest(UUID messageId,long revision,int offset){}
+    public synchronized List<Chunk> chunks(UUID viewer,UUID agent,UUID conversation,List<ChunkRequest> requests,int size)throws SQLException{
+        get(viewer,agent,conversation);if(requests.isEmpty()||requests.size()>4||size<1||size>4096)throw new IllegalArgumentException("CONVERSATION_CHUNK_INPUT");
+        var wanted=new LinkedHashMap<UUID,ChunkRequest>();for(var r:requests)if(r.offset()<0||wanted.put(r.messageId(),r)!=null)throw new IllegalArgumentException("CONVERSATION_CHUNK_INPUT");
+        var args=new ArrayList<Object>();args.add(world);args.add(conversation);args.addAll(wanted.keySet());
+        var rows=query("SELECT id,revision,text FROM mineagent_conversation_messages_v1 WHERE world_id=? AND conversation_id=? AND id IN ("+String.join(",",Collections.nCopies(wanted.size(),"?"))+")",r->{UUID id=uuid(r.getString(1));var expected=wanted.get(id);String text=r.getString(3);if(r.getLong(2)!=expected.revision())throw new IllegalStateException("STALE_MESSAGE_REVISION");if(expected.offset()>text.length())throw new IllegalArgumentException("CONVERSATION_CHUNK_OFFSET");return new Chunk(id,expected.revision(),expected.offset(),text.length(),text.substring(expected.offset(),Math.min(text.length(),expected.offset()+size)));},args.toArray());
+        if(rows.size()!=wanted.size())throw new SecurityException("CONVERSATION_MESSAGE_NOT_OWNED");return List.copyOf(rows);
     }
     public synchronized Chunk chunk(UUID viewer,UUID agent,UUID conversation,UUID message,long revision,int offset,int size)throws SQLException{
         get(viewer,agent,conversation);if(offset<0||size<1||size>4096)throw new IllegalArgumentException("CONVERSATION_CHUNK_INPUT");var rows=query("SELECT revision,text FROM mineagent_conversation_messages_v1 WHERE world_id=? AND conversation_id=? AND id=?",r->{String text=r.getString(2);if(r.getLong(1)!=revision)throw new IllegalStateException("STALE_MESSAGE_REVISION");if(offset>text.length())throw new IllegalArgumentException("CONVERSATION_CHUNK_OFFSET");return new Chunk(message,revision,offset,text.length(),text.substring(offset,Math.min(text.length(),offset+size)));},world,conversation,message);if(rows.isEmpty())throw new SecurityException("CONVERSATION_MESSAGE_NOT_OWNED");return rows.getFirst();

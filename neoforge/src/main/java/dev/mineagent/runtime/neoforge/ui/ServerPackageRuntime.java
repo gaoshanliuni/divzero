@@ -38,10 +38,13 @@ public final class ServerPackageRuntime implements AutoCloseable {
     private final Set<UUID> clientScriptPreparing=new HashSet<>();
     private final PackageTransferLeases clientJavaTransfers=new PackageTransferLeases(Clock.systemUTC(),ClientJavaPlan.MAX_BUNDLE);
     private final Set<UUID> clientJavaPreparing=new HashSet<>();
-    private final java.util.concurrent.ExecutorService io = new java.util.concurrent.ThreadPoolExecutor(1, 1, 0,
-            java.util.concurrent.TimeUnit.SECONDS, new java.util.concurrent.ArrayBlockingQueue<>(4), r -> {
-                Thread t = new Thread(r, "mineagent-package-transfer"); t.setDaemon(true); return t;
-            }, new java.util.concurrent.ThreadPoolExecutor.AbortPolicy());
+    private final java.util.concurrent.ExecutorService io = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
+    private final java.util.concurrent.ConcurrentMap<String,java.util.concurrent.CompletableFuture<String>> bundleCache=new java.util.concurrent.ConcurrentHashMap<>();
+    private java.util.concurrent.CompletableFuture<byte[]> bundle(String key,java.util.concurrent.Callable<byte[]> build){
+        var shared=bundleCache.computeIfAbsent(key,k->java.util.concurrent.CompletableFuture.supplyAsync(()->{try{return content.put(build.call()).sha256();}catch(Exception e){throw new java.util.concurrent.CompletionException(e);}},io));
+        shared.whenComplete((v,e)->{if(e!=null)bundleCache.remove(key,shared);});
+        return shared.thenApplyAsync(hash->{try{return content.read(hash);}catch(Exception e){bundleCache.remove(key,shared);throw new java.util.concurrent.CompletionException(e);}},io);
+    }
     private volatile boolean closed;
     private final Set<UUID> rebuildingUi=new HashSet<>();
     private ServerPackageRuntime(MinecraftServer server) throws Exception {
@@ -299,21 +302,21 @@ public final class ServerPackageRuntime implements AutoCloseable {
     }
     public RuntimePackage resourceTarget(UUID viewer,UUID id,long revision,String hash){requireServerThread();var p=ownedPackage(viewer,id,revision).orElseThrow(()->new SecurityException("RESOURCE_PACK_OWNER"));if(!p.canonicalSha256().equals(hash))throw new IllegalStateException("RESOURCE_PACK_SOURCE_CHANGED");ResourcePackPlan.inspect(p);return p;}
     public java.util.concurrent.CompletableFuture<byte[]> prepareResources(UUID viewer,UUID id,long revision,String hash){
-        var p=resourceTarget(viewer,id,revision,hash);if(resourcePreparing.size()>=4||!resourcePreparing.add(viewer))throw new IllegalStateException("RESOURCE_PACK_TRANSFER_BUSY");
-        try{return java.util.concurrent.CompletableFuture.supplyAsync(()->{try{return ResourcePackPlan.inspect(p).bundle(content);}catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}},io);}catch(RuntimeException failure){resourcePreparing.remove(viewer);throw failure;}
+        var p=resourceTarget(viewer,id,revision,hash);return bundle("resource|"+p.canonicalSha256(),()->ResourcePackPlan.inspect(p).bundle(content));
     }
+
     public void resourcesPrepared(UUID viewer){requireServerThread();resourcePreparing.remove(viewer);}
     public PackageTransferLeases.Offer resourceOffer(UUID viewer,UUID session,UUID id,long revision,String hash,byte[] body)throws Exception{resourceTarget(viewer,id,revision,hash);return resourceTransfers.offer(viewer,session,id,revision,body);}
     public byte[] resourceChunk(UUID viewer,UUID session,UUID transfer,int offset){requireServerThread();return resourceTransfers.chunk(viewer,session,transfer,offset,o->ownedPackage(viewer,o.packageId(),o.packageRevision()).filter(p->p.activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.RESOURCE_RELOAD).isPresent());}
     public void releaseResources(UUID viewer,UUID session,UUID transfer){requireServerThread();resourceTransfers.release(viewer,session,transfer);}
     public RuntimePackage clientScriptTarget(UUID viewer,UUID id,long revision,String hash){requireServerThread();var p=ownedPackage(viewer,id,revision).orElseThrow(()->new SecurityException("CLIENT_SCRIPT_OWNER"));if(!p.canonicalSha256().equals(hash))throw new IllegalStateException("CLIENT_SCRIPT_SOURCE_CHANGED");ClientScriptPlan.inspect(p);return p;}
-    public java.util.concurrent.CompletableFuture<byte[]> prepareClientScript(UUID viewer,UUID id,long revision,String hash){var p=clientScriptTarget(viewer,id,revision,hash);if(clientScriptPreparing.size()>=4||!clientScriptPreparing.add(viewer))throw new IllegalStateException("CLIENT_SCRIPT_TRANSFER_BUSY");try{return java.util.concurrent.CompletableFuture.supplyAsync(()->{try{return ClientScriptPlan.inspect(p).bundle(content);}catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}},io);}catch(RuntimeException failure){clientScriptPreparing.remove(viewer);throw failure;}}
+    public java.util.concurrent.CompletableFuture<byte[]> prepareClientScript(UUID viewer,UUID id,long revision,String hash){var p=clientScriptTarget(viewer,id,revision,hash);return bundle("clientScript|"+p.canonicalSha256(),()->ClientScriptPlan.inspect(p).bundle(content));}
     public void clientScriptPrepared(UUID viewer){requireServerThread();clientScriptPreparing.remove(viewer);}
     public PackageTransferLeases.Offer clientScriptOffer(UUID viewer,UUID session,UUID id,long revision,String hash,byte[] body)throws Exception{clientScriptTarget(viewer,id,revision,hash);return clientScriptTransfers.offer(viewer,session,id,revision,body);}
     public byte[] clientScriptChunk(UUID viewer,UUID session,UUID transfer,int offset){requireServerThread();return clientScriptTransfers.chunk(viewer,session,transfer,offset,o->ownedPackage(viewer,o.packageId(),o.packageRevision()).filter(p->{try{ClientScriptPlan.inspect(p);return true;}catch(Exception invalid){return false;}}).isPresent());}
     public void releaseClientScript(UUID viewer,UUID session,UUID transfer){requireServerThread();clientScriptTransfers.release(viewer,session,transfer);}
     public RuntimePackage clientJavaTarget(UUID viewer,UUID id,long revision,String hash){requireServerThread();var p=ownedPackage(viewer,id,revision).orElseThrow(()->new SecurityException("CLIENT_JAVA_OWNER"));if(!p.canonicalSha256().equals(hash))throw new IllegalStateException("CLIENT_JAVA_SOURCE_CHANGED");ClientJavaPlan.inspect(p);return p;}
-    public java.util.concurrent.CompletableFuture<byte[]> prepareClientJava(UUID viewer,UUID id,long revision,String hash){var p=clientJavaTarget(viewer,id,revision,hash);if(clientJavaPreparing.size()>=4||!clientJavaPreparing.add(viewer))throw new IllegalStateException("CLIENT_JAVA_TRANSFER_BUSY");try{return java.util.concurrent.CompletableFuture.supplyAsync(()->{try{return ClientJavaPlan.inspect(p).bundle(content);}catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}},io);}catch(RuntimeException failure){clientJavaPreparing.remove(viewer);throw failure;}}
+    public java.util.concurrent.CompletableFuture<byte[]> prepareClientJava(UUID viewer,UUID id,long revision,String hash){var p=clientJavaTarget(viewer,id,revision,hash);return bundle("clientJava|"+p.canonicalSha256(),()->ClientJavaPlan.inspect(p).bundle(content));}
     public void clientJavaPrepared(UUID viewer){requireServerThread();clientJavaPreparing.remove(viewer);}
     public PackageTransferLeases.Offer clientJavaOffer(UUID viewer,UUID session,UUID id,long revision,String hash,byte[] body)throws Exception{clientJavaTarget(viewer,id,revision,hash);return clientJavaTransfers.offer(viewer,session,id,revision,body);}
     public byte[] clientJavaChunk(UUID viewer,UUID session,UUID transfer,int offset){requireServerThread();return clientJavaTransfers.chunk(viewer,session,transfer,offset,o->ownedPackage(viewer,o.packageId(),o.packageRevision()).filter(p->{try{ClientJavaPlan.inspect(p);return true;}catch(Exception invalid){return false;}}).isPresent());}
@@ -332,21 +335,16 @@ public final class ServerPackageRuntime implements AutoCloseable {
         if(!Set.of("ui","hud","container").contains(name)||(!name.equals("ui")&&patchOperation!=null))throw new IllegalArgumentException("NAMED_CANDIDATE_UNSUPPORTED");
         var pkg = (patchOperation==null?ownedPackage(viewer,packageId,revision):candidate(viewer,patchOperation).filter(p->p.packageId().equals(packageId)&&p.revision()==revision)).orElseThrow(() -> new SecurityException("PACKAGE_NOT_OWNED"));
         String entry=(name.equals("ui")?PackageUiEntrypoints.select(pkg.entrypoints(),false):PackageUiEntrypoints.named(pkg.entrypoints(),name)).orElseThrow(()->new IllegalStateException("UI_ENTRYPOINT_MISSING"));
-        if (preparing.size() >= 4 || !preparing.add(viewer)) throw new IllegalStateException("UI_TRANSFER_BUSY");
-        try {
-            return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
-                try { return PackagePreviewBundle.encode(pkg, entry, content); }
-                catch (Exception failure) { throw new java.util.concurrent.CompletionException(new IllegalStateException("UI_BUNDLE_INVALID")); }
-            }, io);
-        } catch (RuntimeException rejected) { preparing.remove(viewer); throw rejected; }
+        return bundle("ui|"+pkg.canonicalSha256()+"|"+entry,()->PackagePreviewBundle.encode(pkg,entry,content));
     }
+
     public PackageTransferLeases.Offer offer(UUID viewer, UUID session, UUID packageId, long revision, byte[] body) throws Exception {
         return offer(viewer,session,packageId,revision,body,null);
     }
     public PackageTransferLeases.Offer offer(UUID viewer,UUID session,UUID packageId,long revision,byte[] body,UUID patchOperation)throws Exception{
         requireServerThread();
         if ((patchOperation==null?ownedPackage(viewer,packageId,revision):candidate(viewer,patchOperation).filter(p->p.packageId().equals(packageId)&&p.revision()==revision)).isEmpty())throw new SecurityException("STALE_PACKAGE");
-        candidateOffers.values().removeIf(o->o.expires()<=System.currentTimeMillis()||o.owner().equals(viewer));
+        candidateOffers.values().removeIf(o->o.expires()<=System.currentTimeMillis());
         var offer=transfers.offer(viewer,session,packageId,revision,body);if(patchOperation!=null)candidateOffers.put(offer.transferId(),new CandidateOffer(viewer,patchOperation,offer.expiresAt()));return offer;
     }
     public void prepared(UUID viewer) { preparing.remove(viewer); }
@@ -357,6 +355,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
                     :candidate.owner().equals(viewer)&&candidate(viewer,candidate.operation()).filter(p->p.packageId().equals(offer.packageId())&&p.revision()==offer.packageRevision()).isPresent();
         });
     }
+    public void release(UUID viewer,UUID session,UUID transfer){requireServerThread();transfers.release(viewer,session,transfer);var candidate=candidateOffers.get(transfer);if(candidate!=null&&candidate.owner().equals(viewer))candidateOffers.remove(transfer);}
     public static synchronized void disconnect(MinecraftServer server, UUID viewer) {
         var runtime = RUNTIMES.get(server); if (runtime != null) {runtime.transfers.release(viewer);runtime.resourceTransfers.release(viewer);runtime.clientScriptTransfers.release(viewer);runtime.clientJavaTransfers.release(viewer);runtime.candidateOffers.values().removeIf(o->o.owner().equals(viewer));}
     }
@@ -379,7 +378,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         if (!server.isSameThread() || closed) throw new IllegalStateException("PACKAGE_RUNTIME_UNAVAILABLE");
     }
     @Override public void close() throws Exception {
-        closed = true; io.shutdownNow(); transfers.clear();resourceTransfers.clear();resourcePreparing.clear();clientScriptTransfers.clear();clientScriptPreparing.clear();clientJavaTransfers.clear();clientJavaPreparing.clear();candidateOffers.clear(); preparing.clear();
+        closed = true; io.shutdownNow();bundleCache.clear(); transfers.clear();resourceTransfers.clear();resourcePreparing.clear();clientScriptTransfers.clear();clientScriptPreparing.clear();clientJavaTransfers.clear();clientJavaPreparing.clear();candidateOffers.clear(); preparing.clear();
         worldPatchPermits.values().forEach(p->p.set(false));worldPatchPermits.clear();generationPermits.values().forEach(p->p.set(false));generationPermits.clear();worldPatchTaskChanges.close();
         try{nativeKnowledge.close();}finally{try{worldPatches.close();}finally{try {imports.close();}finally{try {patches.close();}finally{try { jobs.close(); } finally { try{nativeCompatibility.close();}finally{library.close();} }}}}}
     }

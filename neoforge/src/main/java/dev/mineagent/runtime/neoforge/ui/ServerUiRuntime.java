@@ -327,9 +327,9 @@ public final class ServerUiRuntime {
         if(request.action().equals("delivery.list"))return deliveries.inbox(viewer,Integer.parseInt(args.get("offset")));
         if(request.action().equals("delivery.read"))return deliveries.read(viewer,sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow());
         if(request.action().equals("delivery.chunk"))return deliveries.chunk(viewer,request.sessionId(),UUID.fromString(args.get("transferId")),Integer.parseInt(args.get("offset")));
-        if(request.action().equals("delivery.release")){deliveries.release(viewer);return Map.of();}
+        if(request.action().equals("delivery.release")){if(args.containsKey("transferId"))deliveries.release(viewer,request.sessionId(),UUID.fromString(args.get("transferId")));else deliveries.release(viewer);return Map.of();}
         if(request.action().equals("delivery.codeChunk"))return deliveries.codeChunk(viewer,request.sessionId(),UUID.fromString(args.get("transferId")),Integer.parseInt(args.get("offset")));
-        if(request.action().equals("delivery.codeRelease")){deliveries.release(viewer);return Map.of();}
+        if(request.action().equals("delivery.codeRelease")){if(args.containsKey("transferId"))deliveries.release(viewer,request.sessionId(),UUID.fromString(args.get("transferId")));else deliveries.release(viewer);return Map.of();}
         if(request.action().equals("delivery.codeState"))return deliveries.codeState(viewer,request);
         if(Set.of("delivery.received","delivery.painted","delivery.closed","delivery.reject","delivery.visibility").contains(request.action()))return deliveries.receipt(viewer,request.action(),args);
         if(Set.of("delivery.manageRead","delivery.manageWrite").contains(request.action())){
@@ -362,7 +362,7 @@ public final class ServerUiRuntime {
         if(request.action().equals("worldui.read"))return worldUi.read(viewer,sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow(),request.operationId(),args);
         if(request.action().equals("worldui.action"))return worldUi.act(viewer,sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow(),request);
         if(request.action().equals("worldui.chunk"))return worldUi.chunk(viewer,request.sessionId(),UUID.fromString(args.get("transferId")),Integer.parseInt(args.get("offset")));
-        if(request.action().equals("worldui.release")){worldUi.release(viewer.getUUID());return Map.of();}
+        if(request.action().equals("worldui.release")){if(args.containsKey("transferId"))worldUi.release(viewer.getUUID(),request.sessionId(),UUID.fromString(args.get("transferId")));else worldUi.release(viewer.getUUID());return Map.of();}
         if(request.action().equals("package.worldPatchSubmit")){
             var s=ServerPackageRuntime.get(server).worldPatch(viewer,UUID.fromString(args.get("agentId")),request.operationId(),UUID.fromString(args.get("packageId")),Long.parseLong(args.get("packageRevision")),args.get("prompt"));var j=s.job();return Map.of("operationId",j.operationId().toString(),"taskId",j.taskId().toString(),"state",j.state(),"duplicate",Boolean.toString(s.duplicate()),"errorCode",j.errorCode());
         }
@@ -612,7 +612,7 @@ public final class ServerUiRuntime {
             return Map.of("offset", Integer.toString(offset), "bytes", Base64.getEncoder().encodeToString(bytes));
         }
         if (request.action().equals("package.release")) {
-            ServerPackageRuntime.disconnect(server, viewer.getUUID()); return Map.of("state", "TRANSFER_RELEASED");
+            if(args.containsKey("transferId"))ServerPackageRuntime.get(server).release(viewer.getUUID(),request.sessionId(),UUID.fromString(args.get("transferId")));else ServerPackageRuntime.disconnect(server, viewer.getUUID()); return Map.of("state", "TRANSFER_RELEASED");
         }
         if (request.action().startsWith("chat.")) {
             String agent = args.getOrDefault("agentId", "");

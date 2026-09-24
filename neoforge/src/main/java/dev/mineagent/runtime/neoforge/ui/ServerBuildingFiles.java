@@ -12,7 +12,7 @@ import java.nio.file.*;import java.util.*;import java.util.concurrent.*;import j
 
 @EventBusSubscriber(modid="mineagent_runtime")
 public final class ServerBuildingFiles {
-    private static final ObjectMapper JSON=new ObjectMapper();private static final ExecutorService IO=new ThreadPoolExecutor(2,2,30,TimeUnit.SECONDS,new ArrayBlockingQueue<>(32),r->{var t=new Thread(r,"mineagent-building-library");t.setDaemon(true);return t;},new ThreadPoolExecutor.AbortPolicy());
+    private static final ObjectMapper JSON=new ObjectMapper();private static final ExecutorService IO=java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
     private static final Map<MinecraftServer,State> LIVE=new IdentityHashMap<>();
     private record Pending(ServerPlayer player,UUID agent,BooleanSupplier permit,CompletableFuture<Map<String,Object>> future,long expires){}
     private static final class State{final CompletableFuture<FileLibrary> store;LocalFileTransferServer transfer;volatile boolean closed;final Map<UUID,Pending> pending=new HashMap<>();State(MinecraftServer s){Path root=s.getServerDirectory().resolve("mineagent-runtime-data/buildings").resolve(MineAgentRuntimeServices.worldId(s).toString());store=CompletableFuture.supplyAsync(()->{try{return new FileLibrary(root);}catch(Exception e){throw new CompletionException(e);}},IO);}}

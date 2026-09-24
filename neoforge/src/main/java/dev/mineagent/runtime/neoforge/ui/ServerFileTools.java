@@ -2,7 +2,7 @@ package dev.mineagent.runtime.neoforge.ui;
 import com.fasterxml.jackson.databind.JsonNode;import dev.mineagent.runtime.core.files.FileLibrary;import net.minecraft.server.level.ServerPlayer;import java.nio.file.*;import java.nio.charset.*;import java.io.*;import java.util.*;import java.util.concurrent.*;import java.util.function.BooleanSupplier;
 /** Generic attachment library. Building, skin and preview adapters consume the same immutable files. */
 public final class ServerFileTools {
- private static final ExecutorService IO=Executors.newFixedThreadPool(2,r->{var t=new Thread(r,"mineagent-file-tools");t.setDaemon(true);return t;});
+ private static final ExecutorService IO=java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
  private static String text(JsonNode a,String k,int max){if(!a.path(k).isTextual()||a.get(k).asText().length()>max)throw new IllegalArgumentException("FILES_ARGUMENTS");return a.get(k).asText();}
  private static UUID id(JsonNode a){return UUID.fromString(text(a,"file_id",36));}
  private static long offset(JsonNode a){if(!a.has("offset"))return 0;if(!a.get("offset").isIntegralNumber()||!a.get("offset").canConvertToLong()||a.get("offset").longValue()<0)throw new IllegalArgumentException("FILES_OFFSET");return a.get("offset").longValue();}

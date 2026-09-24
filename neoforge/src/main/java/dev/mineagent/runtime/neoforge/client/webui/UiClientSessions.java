@@ -61,6 +61,7 @@ public final class UiClientSessions {
         if(packet.channel().equals("buildingFilesOpen")){var fileEvent=JsonParser.parseString(packet.json()).getAsJsonObject();BuildingFilesClient.requestOpen(fileEvent.get("agentId").getAsString(),fileEvent.has("fileId")?fileEvent.get("fileId").getAsString():"");return;}
         if (connection != Minecraft.getInstance().getConnection() || !WebGuiHostAdapter.INSTANCE.ready()) return;
         try {
+            if(packet.channel().equals("conversationChanged")){WebGuiHostAdapter.INSTANCE.emit("conversationChanged",JsonParser.parseString(packet.json()));return;}
             if(packet.channel().equals("conversationVoiceStatus")){WebGuiHostAdapter.INSTANCE.emit("conversationVoiceStatus",JsonParser.parseString(packet.json()));return;}
             if(packet.channel().equals("packageViewOutdated")){var data=JsonParser.parseString(packet.json()).getAsJsonObject();PackageContentClient.outdated(data.get("viewId").getAsString(),UUID.fromString(data.get("sessionId").getAsString()));return;}
             if(UiAgentClient.accept(packet))return;

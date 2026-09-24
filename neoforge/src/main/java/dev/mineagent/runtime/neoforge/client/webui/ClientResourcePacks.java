@@ -16,8 +16,8 @@ import java.util.function.BooleanSupplier;
 
 /** Client-only download and explicit local-machine resource activation. Never accepts an enable command from the server. */
 public final class ClientResourcePacks {
-    private static final ExecutorService IO=new ThreadPoolExecutor(1,1,0,TimeUnit.SECONDS,new ArrayBlockingQueue<>(2),r->{var t=new Thread(r,"mineagent-client-resources");t.setDaemon(true);return t;},new ThreadPoolExecutor.AbortPolicy());
-    private static volatile Download download;private static String downloadOutcome="";private static long downloadGeneration;private static LocalResourcePackStore.Job active;private static AutoCloseable permit;private static Pending finish;private static boolean recoveryHook;
+    private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
+    private static final Set<Download> downloads=ConcurrentHashMap.newKeySet();private static volatile Download download;private static String downloadOutcome="";private static long downloadGeneration;private static LocalResourcePackStore.Job active;private static AutoCloseable permit;private static Pending finish;private static boolean recoveryHook;
     private record Pending(LocalResourcePackStore.Job job,boolean success,String code){}
     private static final class Download {
         final Session session;final Object connection;final UUID id;final long revision;final String canonical,server,fingerprint;final CompletableFuture<Map<String,Object>> future=new CompletableFuture<>();final long expires=System.currentTimeMillis()+120000;
@@ -38,21 +38,22 @@ public final class ClientResourcePacks {
         if(result.isDone())return result.getNow(Map.of("code","RESOURCE_PACK_FAILED"));return Map.of("code","ACCEPTED","state","DOWNLOADING");
     }
     public static CompletableFuture<Map<String,Object>> download(UUID id,long revision,String canonical){
-        thread();webScope();if(download!=null||active!=null)return CompletableFuture.failedFuture(new IllegalStateException("RESOURCE_PACK_BUSY"));
-        try{var d=new Download(UiClientSessions.current(),id,revision,canonical);download=d;
+        thread();webScope();
+        try{var d=new Download(UiClientSessions.current(),id,revision,canonical);downloads.add(d);download=d;
             UiClientSessions.command("package.resourcePrepare",Map.of("packageId",id.toString(),"packageRevision",Long.toString(revision),"canonical",canonical),UUID.randomUUID()).whenComplete((r,error)->{
                 if(!current(d))return;try{if(error!=null||r.code()!=Code.ACCEPTED)throw new IllegalStateException("RESOURCE_PACK_DOWNLOAD_FAILED");var v=r.values();if(!id.toString().equals(v.get("packageId"))||!Long.toString(revision).equals(v.get("packageRevision"))||!canonical.equals(v.get("canonical")))throw new IllegalStateException("RESOURCE_PACK_SOURCE_CHANGED");d.transfer=UUID.fromString(v.get("transferId")).toString();d.bytes=new PackagePreviewTransfer.Assembler(Integer.parseInt(v.get("size")),v.get("sha256"),ResourcePackPlan.MAX_BUNDLE);next(d);}catch(Exception e){fail(d,e);}
             });return d.future;
         }catch(Exception error){return CompletableFuture.failedFuture(error);}
     }
-    private static boolean current(Download d){if(download!=d)return false;if(d.session!=UiClientSessions.current()||d.connection!=mc().getConnection()||System.currentTimeMillis()>=d.expires||!WebGuiHostAdapter.INSTANCE.ready()){fail(d,"RESOURCE_PACK_DOWNLOAD_CONTEXT_CHANGED");return false;}return true;}
+    private static void removed(Download d){downloads.remove(d);if(download==d)download=downloads.stream().findFirst().orElse(null);}
+    private static boolean current(Download d){if(!downloads.contains(d))return false;if(d.session!=UiClientSessions.current()||d.connection!=mc().getConnection()||System.currentTimeMillis()>=d.expires||!WebGuiHostAdapter.INSTANCE.ready()){fail(d,"RESOURCE_PACK_DOWNLOAD_CONTEXT_CHANGED");return false;}return true;}
     private static void next(Download d){
         if(!current(d))return;
         if(d.bytes.offset()==d.bytes.size()){
             try{CompletableFuture.supplyAsync(()->{try{var t=trust();if(!t.trustedFingerprint(d.server).equals(d.fingerprint))throw new IllegalStateException("RESOURCE_PACK_TRUST_CHANGED");return ResourcePackPlan.decode(d.bytes.finish(),d.id,d.revision,d.canonical,(value,sig)->t.verify(d.server,value,sig));}catch(Exception failure){throw new CompletionException(failure);}},IO).whenComplete((resolved,error)->mc().execute(()->{
                 if(!current(d))return;if(error!=null){fail(d,error);return;}
-                try{var local=store();CompletableFuture.supplyAsync(()->{try{if(download!=d)throw new IllegalStateException("RESOURCE_PACK_DOWNLOAD_CONTEXT_CHANGED");return local.downloaded(d.server,d.fingerprint,resolved);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((asset,failure)->mc().execute(()->{
-                    if(!current(d))return;if(failure!=null){fail(d,failure);return;}release(d);download=null;d.future.complete(Map.of("code","DOWNLOADED_NOT_APPROVED","filename",asset.filename(),"revision",asset.revision()));
+                try{var local=store();CompletableFuture.supplyAsync(()->{try{if(!downloads.contains(d))throw new IllegalStateException("RESOURCE_PACK_DOWNLOAD_CONTEXT_CHANGED");return local.downloaded(d.server,d.fingerprint,resolved);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((asset,failure)->mc().execute(()->{
+                    if(!current(d))return;if(failure!=null){fail(d,failure);return;}release(d);removed(d);d.future.complete(Map.of("code","DOWNLOADED_NOT_APPROVED","filename",asset.filename(),"revision",asset.revision()));
                 }));}catch(Exception failure){fail(d,failure);}
             }));}catch(Exception error){fail(d,error);}return;
         }
@@ -62,7 +63,7 @@ public final class ClientResourcePacks {
     }
     private static void release(Download d){if(d.transfer!=null&&UiClientSessions.current()==d.session)UiClientSessions.command("package.resourceRelease",Map.of("transferId",d.transfer),UUID.randomUUID());}
     private static void fail(Download d,Throwable failure){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Client resource-pack download failed code={} type={}",code(failure),failure.getClass().getSimpleName(),failure);fail(d,code(failure));}
-    private static void fail(Download d,String code){if(download!=d)return;release(d);download=null;d.future.complete(Map.of("code",code));}
+    private static void fail(Download d,String code){if(!downloads.contains(d))return;release(d);removed(d);d.future.complete(Map.of("code",code));}
     public static void cancelDownload(){thread();var d=download;if(d!=null)fail(d,"RESOURCE_PACK_DOWNLOAD_CANCELLED");}
     private static List<String> selected(){return mc().getResourceManager().listPacks().map(PackResources::packId).toList();}
     private static String selection()throws Exception{return RuntimePackageCanonicalizer.sha256(RuntimePackageCanonicalizer.stableJson(Map.of("selected",selected())));}
@@ -110,6 +111,6 @@ public final class ClientResourcePacks {
         if(!json.valueToTree(selected).equals(json.readTree(values.getOrDefault("resourcePacks","null")))||!json.valueToTree(incompatible).equals(json.readTree(values.getOrDefault("incompatibleResourcePacks","null"))))throw new IllegalStateException("RESOURCE_PACK_OPTIONS_UNVERIFIED");
     }
     private static void complete(LocalResourcePackStore.Job job,boolean success,String code){try{store().finish(job,success,code);active=null;finish=null;}catch(Exception failure){active=job;finish=new Pending(job,success,code);}finally{if(permit!=null){try{permit.close();}catch(Exception ignored){}permit=null;}}}
-    public static void tick(){thread();if(download!=null)current(download);if(finish!=null){var p=finish;complete(p.job(),p.success(),p.code());}}
+    public static void tick(){thread();for(var d:List.copyOf(downloads))current(d);if(finish!=null){var p=finish;complete(p.job(),p.success(),p.code());}}
     public static String code(Throwable failure){while((failure instanceof CompletionException||failure instanceof ExecutionException)&&failure.getCause()!=null)failure=failure.getCause();String code=Objects.toString(failure.getMessage(),"");if(code.equals("SERVER_IDENTITY_NOT_TRUSTED"))return "RESOURCE_PACK_TRUST_REQUIRED";return code.matches("(?:RESOURCE_PACK|NATIVE_COMPATIBILITY|NATIVE_ENVIRONMENT)_[A-Z0-9_]{1,64}")?code:"RESOURCE_PACK_FAILED";}
 }

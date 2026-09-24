@@ -25,11 +25,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
     private synchronized dev.mineagent.runtime.core.memory.PlayerPreferenceStore preferences()throws Exception{if(preferenceStore==null){if(gameDirectory==null)throw new IllegalStateException("PREFERENCE_STORE_UNAVAILABLE");preferenceStore=new dev.mineagent.runtime.core.memory.PlayerPreferenceStore(gameDirectory.resolve("mineagent-runtime-data/runtime.db"),java.time.Clock.systemUTC());}return preferenceStore;}
 
     private long restartNotBeforeEpochMillis;
-    private final ExecutorService requests = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "mineagent-worker-requests");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final ExecutorService requests = Executors.newVirtualThreadPerTaskExecutor();
 
     public synchronized String start(Path gameDirectory) throws Exception {
         this.gameDirectory = gameDirectory.toAbsolutePath().normalize();
@@ -642,17 +638,18 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
         var response=requestWithRecovery(new WorkerEnvelope(1,UUID.randomUUID(),"provider.snapshot",Map.of("values",snapshot.values(),"revision",snapshot.revision())));
         if(!response.type().equals("provider.snapshotApplied"))throw new IOException("PROVIDER_CONFIG_INVALID");
     }
-    private synchronized WorkerEnvelope requestWithRecovery(WorkerEnvelope request) throws Exception {
+    private WorkerEnvelope requestWithRecovery(WorkerEnvelope request) throws Exception {
         return requestWithRecovery(request,()->true);
     }
-    private synchronized WorkerEnvelope requestWithRecovery(WorkerEnvelope request,java.util.function.BooleanSupplier permit) throws Exception {
+    private WorkerEnvelope requestWithRecovery(WorkerEnvelope request,java.util.function.BooleanSupplier permit) throws Exception {
         if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();
         ensureWorker();
         try {
             return worker.request(request,permit);
         } catch (Exception firstFailure) {
             if(firstFailure instanceof dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected)throw firstFailure;
-            closeWorker();
+            // A cancelled/timed-out request does not own the shared process.
+            if(worker!=null&&worker.isAlive())throw firstFailure;
             if(!dev.mineagent.runtime.worker.process.WorkerRetryPolicy.mayRetryAfterUncertainTransport(request.type()))throw firstFailure;
             if (System.currentTimeMillis() < restartNotBeforeEpochMillis) {
                 throw firstFailure;

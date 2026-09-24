@@ -19,7 +19,7 @@ public final class ServerWorldUiRuntime implements AutoCloseable {
     private final MinecraftServer server;private final UiSessionService sessions;private final ObjectMapper json=new ObjectMapper();
     private final WorldUiActionJournal actions;private final Map<String,View> views=new LinkedHashMap<>();private final Map<UUID,View> transfers=new HashMap<>();
     private final PackageTransferLeases leases=new PackageTransferLeases(java.time.Clock.systemUTC());
-    private final java.util.concurrent.ExecutorService io=new java.util.concurrent.ThreadPoolExecutor(1,1,0,java.util.concurrent.TimeUnit.SECONDS,new java.util.concurrent.ArrayBlockingQueue<>(4),r->{var t=new Thread(r,"mineagent-world-ui-bundle");t.setDaemon(true);return t;});
+    private final java.util.concurrent.ExecutorService io=java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
     private boolean closed;private int callbackTick=-1,callbacks;
     private static final class View{final Launch launch;final ServerPlayer actor;Session session;boolean preparing,offered,pushListening;long pushListenRevision,pushPage=-1,pushControl=-1;long expires;View(Launch launch,ServerPlayer actor){this.launch=launch;this.actor=actor;expires=launch.expiresAt();}}
     private static final class AgentInteraction{final View source;final dev.mineagent.runtime.neoforge.body.MineAgentPlayer body;final dev.mineagent.runtime.api.task.ManagedTask task;Launch offered;String error;AgentInteraction(View source,dev.mineagent.runtime.neoforge.body.MineAgentPlayer body,dev.mineagent.runtime.api.task.ManagedTask task){this.source=source;this.body=body;this.task=task;}}
@@ -89,6 +89,7 @@ public final class ServerWorldUiRuntime implements AutoCloseable {
             }));}catch(RuntimeException failed){v.preparing=false;throw failed;}
     }
     public Map<String,String> chunk(ServerPlayer viewer,UUID session,UUID transfer,int offset){requireThread();byte[] bytes=leases.chunk(viewer.getUUID(),session,transfer,offset,offer->{var v=transfers.get(offer.transferId());return v!=null&&valid(v);});return Map.of("offset",Integer.toString(offset),"bytes",Base64.getEncoder().encodeToString(bytes));}
+    public void release(UUID viewer,UUID session,UUID transfer){requireThread();leases.release(viewer,session,transfer);var v=transfers.get(transfer);if(v!=null&&v.launch.viewerId().equals(viewer))transfers.remove(transfer);}
     public void release(UUID viewer){requireThread();leases.release(viewer);transfers.values().removeIf(v->v.launch.viewerId().equals(viewer));}
     public List<Session> pushTargets(dev.mineagent.runtime.core.events.StatePushConsumer target,dev.mineagent.runtime.core.events.RuntimeEventStore.Event source)throws Exception{
         Objects.requireNonNull(source);return pushTargets(target.packageId(),target.instanceId(),target.packageRevision(),target.canonicalSha256(),target.entryPath(),source);
