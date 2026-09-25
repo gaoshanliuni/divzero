@@ -13,6 +13,6 @@ final class ConversationManagementSmokeClient {
         if(sent==2&&ConversationManagementSmokeServer.verified>=2){sent=3;mc.player.connection.sendChat("@工具助手 把我当前的速度效果改成30秒一级，保持隐藏粒子，不动抗火等其它效果；改完读取核对。");}
         if(sent==3&&ConversationManagementSmokeServer.verified>=3){sent=4;mc.player.connection.sendChat("@工具助手 只移除我的速度效果，先读再改再核对，保留其它Buff。");}
         if(sent==4&&ConversationManagementSmokeServer.verified>=4)finish(mc,root,Map.of("status","DIALOGUE_MANAGEMENT_NATIVE_CLIENT_VERIFIED","skin",((net.minecraft.client.player.AbstractClientPlayer)body).getSkin().body().texturePath().toString()));
-    }catch(Exception e){done=true;Files.writeString(root.resolve("client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",e.toString(),"sent",sent)));mc.stop();}}
-    private static void finish(Minecraft mc,Path root,Object result)throws Exception{Files.writeString(root.resolve("client.json"),new com.google.gson.Gson().toJson(result));done=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");mc.stop();}
+    }catch(Exception e){done=true;Files.writeString(root.resolve("client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",e.toString(),"sent",sent)));dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();}}
+    private static void finish(Minecraft mc,Path root,Object result)throws Exception{Files.writeString(root.resolve("client.json"),new com.google.gson.Gson().toJson(result));done=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();}
 }

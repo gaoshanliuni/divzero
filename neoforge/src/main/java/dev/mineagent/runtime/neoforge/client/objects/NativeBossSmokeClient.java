@@ -18,7 +18,7 @@ public final class NativeBossSmokeClient {
         if(++ticks==65&&!writing){writing=true;var file=mc.gameDirectory.toPath().resolve("native-boss-smoke/visual-"+serial+".png");mc.options.hideGui=true;
             net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(),image->{try(image){Files.createDirectories(file.getParent());image.writeToFile(file);}catch(Exception ignored){}finally{writing=false;}});
         }
-        if(NativeBossSmokeServer.done&&!writing)mc.stop();
+        if(NativeBossSmokeServer.done&&!writing)dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();
     }
     private NativeBossSmokeClient(){}
 }

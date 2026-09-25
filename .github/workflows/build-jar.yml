@@ -7,6 +7,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      build_only:
+        description: 'Build and test an artifact without publishing a Release'
+        required: false
+        type: boolean
+        default: false
       include_media_tools:
         description: 'Include pinned Windows yt-dlp/FFmpeg binaries (larger download)'
         required: false
@@ -118,7 +123,7 @@ jobs:
   publish:
     name: Publish installable JAR assets only
     needs: build
-    if: github.repository == 'gaoshanliuni/divzero' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.repository == 'gaoshanliuni/divzero' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.build_only))
     runs-on: windows-2025
     timeout-minutes: 30
     permissions:

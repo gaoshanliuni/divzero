@@ -18,8 +18,8 @@ final class ConversationBuildSmokeClient {
             if(ConversationBuildSmokeServer.verified){
                 var receipts=new ArrayList<JsonElement>();try(var files=Files.list(mc.gameDirectory.toPath().resolve("real-provider-audit"))){for(var f:files.filter(p->p.getFileName().toString().endsWith("-completed.json")).sorted().toList())receipts.add(JsonParser.parseString(Files.readString(f)));}
                 if(receipts.isEmpty())throw new IllegalStateException("BUILD_NO_REAL_PROVIDER_RECEIPTS");
-                Files.writeString(root.resolve("provider.json"),new Gson().toJson(Map.of("receipts",receipts,"realCalls",receipts.size())));finished=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");mc.stop();
+                Files.writeString(root.resolve("provider.json"),new Gson().toJson(Map.of("receipts",receipts,"realCalls",receipts.size())));finished=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();
             }
-        }catch(Exception e){finished=true;Files.writeString(root.resolve("client-failure.json"),new Gson().toJson(Map.of("error",e.toString(),"sent",sent)));mc.stop();}
+        }catch(Exception e){finished=true;Files.writeString(root.resolve("client-failure.json"),new Gson().toJson(Map.of("error",e.toString(),"sent",sent)));dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();}
     }
 }

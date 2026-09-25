@@ -17,8 +17,8 @@ final class ConversationInteractionSmokeClient {
                 int count=0;for(int i=0;i<mc.player.getInventory().getContainerSize();i++){var stack=mc.player.getInventory().getItem(i);if(stack.is(net.minecraft.world.item.Items.DIAMOND))count+=stack.getCount();}
                 if(count!=3||mc.player.containerMenu!=mc.player.inventoryMenu)return;if(!sawMenu||!sawScreen)throw new IllegalStateException("INTERACTION_NATIVE_MENU_NOT_SEEN_BY_CLIENT");
                 Files.writeString(root.resolve("client.json"),new com.google.gson.Gson().toJson(Map.of("nativeMenuObserved",sawMenu,"nativeScreenObserved",sawScreen,"finalMenuClosed",true,"clientDiamonds",count,"systemInputInjected",false)));
-                finished=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");mc.stop();
+                finished=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();
             }
-        }catch(Exception failure){finished=true;Files.writeString(root.resolve("client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",failure.toString(),"nativeMenuObserved",sawMenu,"nativeScreenObserved",sawScreen)));mc.stop();}
+        }catch(Exception failure){finished=true;Files.writeString(root.resolve("client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",failure.toString(),"nativeMenuObserved",sawMenu,"nativeScreenObserved",sawScreen)));dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();}
     }
 }

@@ -67,7 +67,7 @@ public final class NativeBossSmokeServer {
                 entities.clear();for(var entry:JSON.valueToTree(receipt).path("entities")){var e=viewer.level().getEntity(UUID.fromString(entry.path("entity_id").asText()));check(e instanceof Mob,"NOT_NATIVE_MOB");entities.add((Mob)e);}
                 check(entities.size()==(TYPES.get(index).endsWith("knight_phantom")?6:1),"GROUP_SIZE");at=server.getTickCount();renderType=TYPES.get(index);captureSerial++;phase="TICK";return;
             }
-            if(phase.equals("TICK")&&server.getTickCount()-at>=100){
+            if(phase.equals("TICK")&&server.getTickCount()-at>=(Boolean.getBoolean("mineagent.cinematic")?320:100)){
                 var rows=new ArrayList<Object>();var ids=new HashSet<UUID>();
                 for(var mob:entities){check(mob.isAlive()&&!mob.isNoAi()&&mob.tickCount>=90,"NATIVE_TICKS_"+TYPES.get(index));check(ids.add(mob.getUUID()),"DUPLICATE_UUID");
                     var output=TagValueOutput.createWithContext(ProblemReporter.DISCARDING,viewer.registryAccess());check(mob.save(output),"NATIVE_SAVE_FAILED");

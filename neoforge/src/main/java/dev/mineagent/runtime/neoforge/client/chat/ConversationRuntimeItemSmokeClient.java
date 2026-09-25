@@ -23,7 +23,7 @@ final class ConversationRuntimeItemSmokeClient {
             if(before&&!captureBusy&&!clicked&&++wait>25){clicked=true;mc.gameMode.useItem(mc.player,net.minecraft.world.InteractionHand.MAIN_HAND);wait=0;}
             if(ConversationRuntimeItemSmokeServer.used&&binding!=null&&!binding.assetHash().equals(firstHash)&&!after&&++wait>35){after=true;capture(root.resolve("after-use.png"));}
             if(after&&!captureBusy){ConversationRuntimeItemSmokeServer.clientCaptured=true;}
-            if(ConversationRuntimeItemSmokeServer.verified){Files.writeString(root.resolve("client.json"),new com.google.gson.Gson().toJson(Map.of("renderSubmissions",RuntimeItemRenderer.rendered,"sentNativeUse",clicked,"modelChanged",binding!=null&&!binding.assetHash().equals(firstHash),"systemInputInjected",false)));done=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");mc.stop();}
-        }catch(Exception e){done=true;Files.writeString(root.resolve("client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",e.toString(),"renderSubmissions",RuntimeItemRenderer.rendered)));mc.stop();}
+            if(ConversationRuntimeItemSmokeServer.verified){Files.writeString(root.resolve("client.json"),new com.google.gson.Gson().toJson(Map.of("renderSubmissions",RuntimeItemRenderer.rendered,"sentNativeUse",clicked,"modelChanged",binding!=null&&!binding.assetHash().equals(firstHash),"systemInputInjected",false)));done=true;dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.info("MINEAGENT_CONVERSATION_AGENT_OK");dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();}
+        }catch(Exception e){done=true;Files.writeString(root.resolve("client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",e.toString(),"renderSubmissions",RuntimeItemRenderer.rendered)));dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();}
     }
 }

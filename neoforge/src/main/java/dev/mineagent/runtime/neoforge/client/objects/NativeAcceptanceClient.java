@@ -68,8 +68,8 @@ public final class NativeAcceptanceClient {
             int visible=0;for(var id:NativeAcceptanceSmoke.crowdIds)if(mc.level.getPlayerByUUID(id)!=null)visible++;
             maxCrowd=Math.max(maxCrowd,visible);
             if(visible==64){NativeAcceptanceSmoke.crowdSeen=true;if(!crowdPicture){crowdPicture=true;screenshot(mc,"crowd-64");}}
-            if(NativeAcceptanceSmoke.done&&screenshotsPending==0){check(maxCrowd==64,"CLIENT_CROWD_COUNT_"+maxCrowd);if(!NativeAcceptanceSmoke.crowdOnly())check(terrainPicture,"LOW_CLEARANCE_POSE_NOT_OBSERVED");save();stopped=true;mc.stop();}
-        }catch(Exception e){failures.add(e.toString());try{save();}catch(Exception ignored){}NativeAcceptanceSmoke.visualFailure=String.join(",",failures);NativeAcceptanceSmoke.rigVisualDone=true;stopped=true;mc.stop();}
+            if(NativeAcceptanceSmoke.done&&screenshotsPending==0){check(maxCrowd==64,"CLIENT_CROWD_COUNT_"+maxCrowd);if(!NativeAcceptanceSmoke.crowdOnly())check(terrainPicture,"LOW_CLEARANCE_POSE_NOT_OBSERVED");save();stopped=true;dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();}
+        }catch(Exception e){failures.add(e.toString());try{save();}catch(Exception ignored){}NativeAcceptanceSmoke.visualFailure=String.join(",",failures);NativeAcceptanceSmoke.rigVisualDone=true;stopped=true;dev.mineagent.runtime.neoforge.client.cinematic.CinematicCaptureClient.finish();}
     }
     private static void save()throws Exception{
         evidence.put("status",failures.isEmpty()?"CLIENT_CHECKS_PASSED":"CLIENT_CHECKS_FAILED");evidence.put("phase",NativeAcceptanceSmoke.phase);evidence.put("failures",failures);evidence.put("maxSimultaneousClientAgents",maxCrowd);evidence.put("clientTerrainPoses",poses);evidence.put("osInputInjected",false);
