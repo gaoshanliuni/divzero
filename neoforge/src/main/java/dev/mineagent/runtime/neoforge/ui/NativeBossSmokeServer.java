@@ -39,8 +39,16 @@ public final class NativeBossSmokeServer {
         try{
             if(start==0)start=server.getTickCount();if(server.getTickCount()-start>18000)throw new IllegalStateException("NATIVE_BOSS_TIMEOUT_"+phase);
             if(phase.equals("BOOT")){
+                if(Boolean.getBoolean("mineagent.nativeBossReload")){
+                    var expected=JSON.readTree(Files.readString(root().resolve("reopen-expected.json")));var restored=viewer.level().getEntity(UUID.fromString(expected.path("entity_id").asText()));
+                    if(restored==null&&server.getTickCount()-start<200)return;
+                    check(restored!=null,"REOPEN_ENTITY_MISSING");var actual=NativeEntityTemplates.observe(restored);
+                    check(actual.get("class").equals(expected.path("class").asText()),"REOPEN_NATIVE_CLASS");check(actual.get("template_id").equals(expected.path("template_id").asText()),"REOPEN_TEMPLATE_METADATA");
+                    var catalog=NativeEntityTemplates.inspect(viewer,JSON.createObjectNode().put("template_id",expected.path("template_id").asText()));
+                    save("reopen-final",Map.of("status","PASSED","entity",actual,"persistedTemplate",catalog.get("template")));done=true;return;
+                }
                 check(net.neoforged.fml.ModList.get().isLoaded("twilightforest"),"REAL_TWILIGHT_REQUIRED");server.getPlayerList().op(viewer.nameAndId());viewer.setGameMode(net.minecraft.world.level.GameType.CREATIVE);server.setDifficulty(net.minecraft.world.Difficulty.NORMAL,true);
-                server.getCommands().performPrefixedCommand(viewer.createCommandSourceStack(),"ai accept");server.getCommands().performPrefixedCommand(viewer.createCommandSourceStack(),"time set midnight");
+                server.getCommands().performPrefixedCommand(viewer.createCommandSourceStack(),"ai accept");server.getCommands().performPrefixedCommand(viewer.createCommandSourceStack(),"time set noon");
                 for(int x=-40;x<=40;x++)for(int z=-40;z<=40;z++)viewer.level().setBlock(new BlockPos(x,170,z),Blocks.SMOOTH_STONE.defaultBlockState(),2);
                 viewer.teleportTo(viewer.level(),0,180,32,Set.of(),180,10,true);viewer.setNoGravity(true);
                 agent=MineAgentRuntimeServices.bodies(server).createPersistentAt("原生复刻师",viewer.getUUID(),viewer.level(),new Vec3(25,171,25)).agentId();save("catalog",NativeEntityTemplates.inspect(viewer,JSON.createObjectNode().put("query","twilightforest:")));phase="DEFINE";
@@ -76,14 +84,15 @@ public final class NativeBossSmokeServer {
             }
             if(phase.equals("JOIN_CANCEL")&&pending.isDone()){rejectJoin=false;var r=pending.join();save("join-cancel",r);check("UNKNOWN".equals(r.get("status"))&&Boolean.FALSE.equals(r.get("replayAllowed")),"JOIN_CANCEL_FALSE_SUCCESS");index++;phase="DEFINE";return;}
             if(phase.equals("MODEL_START")){
-                if(Boolean.getBoolean("mineagent.nativeBossZeroModel")){finish();return;}
+                if(Boolean.getBoolean("mineagent.nativeBossZeroModel")){var args=JSON.createObjectNode().put("action","spawn").put("template_id",template.toString());args.putArray("position").add(0).add(171).add(0);pending=call("control_native_entity",args);phase="SAVE_SENTINEL";return;}
                 ServerConversations.get(server).submitNative(viewer,agent,"请在坐标(0,171,0)复刻一只新的暮色森林娜迦，名字叫青玉守卫。我要真实完整身体与原生行为，不是只借用头部模型；不要修改其它实体，保持原生AI开启。创建独立可再用模板，然后生成一只，读取确认真实类型、多部件和模板归属。不要用游戏命令或电脑命令。",true);phase="MODEL";return;
             }
+            if(phase.equals("SAVE_SENTINEL")&&pending.isDone()){var r=pending.join();check("APPLIED".equals(r.get("status")),"SAVE_SENTINEL_SPAWN");save("reopen-expected",JSON.valueToTree(r).path("entities").get(0));finish();return;}
             if(phase.equals("MODEL")){
                 var store=ServerConversations.get(server).store();var cs=store.list(viewer.getUUID(),agent,"ACTIVE","",0,20).conversations();if(cs.isEmpty()||cs.getFirst().messageCount()<2||!cs.getFirst().activeOperation().isEmpty())return;
                 var ctx=store.context(viewer.getUUID(),agent,cs.getFirst().conversationId(),null).orElseThrow();save("model-context",ctx);check(ctx.requestState().equals("COMPLETE"),"MODEL_"+ctx.errorCode());
                 var matches=new ArrayList<Entity>();for(var e:viewer.level().getAllEntities())if(e.getName().getString().equals("青玉守卫"))matches.add(e);
-                check(matches.size()==1,"MODEL_ENTITY_COUNT");var e=matches.getFirst();check(TwilightBossInterop.id(e).equals("twilightforest:naga")&&e.getParts()!=null&&e.getParts().length==12,"MODEL_FULL_NAGA");check(!((Mob)e).isNoAi(),"MODEL_DISABLED_AI");check(!NativeEntityTemplates.observe(e).get("template_id").equals(""),"MODEL_TEMPLATE_MISSING");save("model-entity",EntityLogicTools.inspect(viewer,JSON.createObjectNode().put("entity_id",e.getUUID().toString())));finish();
+                check(matches.size()==1,"MODEL_ENTITY_COUNT");var e=matches.getFirst();check(TwilightBossInterop.id(e).equals("twilightforest:naga")&&e.getParts()!=null&&e.getParts().length==12,"MODEL_FULL_NAGA");check(!((Mob)e).isNoAi(),"MODEL_DISABLED_AI");check(!NativeEntityTemplates.observe(e).get("template_id").equals(""),"MODEL_TEMPLATE_MISSING");save("model-entity",EntityLogicTools.inspect(viewer,JSON.createObjectNode().put("entity_id",e.getUUID().toString())));save("reopen-expected",NativeEntityTemplates.observe(e));finish();
             }
         }catch(Exception failure){failures.add(failure.toString());try{finish();}catch(Exception ignored){done=true;}}
     }

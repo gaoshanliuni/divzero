@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "files": [
     {
       "path": ".gitattributes",
@@ -3244,7 +3244,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "254c61b01e7b2bd1c32f7f21010a9dce48be24fe3c5e43a5e493a4e3c174b262",
+      "sha256": "5e94d2ce4603f1d2ed62d83f6c3eaf40b7243dbb4e9a7fa3c3efb08e68c241bc",
       "bytes": 496
     },
     {
@@ -3779,8 +3779,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeBossSmokeClient.java",
-      "sha256": "f8f4e7f0933d90bd402c4d558ba9a9da0a58e63de21217043a373c190d8d3085",
-      "bytes": 1343
+      "sha256": "387ed73cf1f63675c980d1ac47918b88fe690e9d3907f8d329d6a6c89e831d87",
+      "bytes": 1568
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeCreatureRenderer.java",
@@ -5469,8 +5469,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeBossSmokeServer.java",
-      "sha256": "720f1d45ba03c4f61e46e0a6eaff37c7f0142a84594a1f93e7b9ce0466ea6a19",
-      "bytes": 10454
+      "sha256": "aca57e2c5b599cf9e7b141f45cc025554f138721b3c206e1f1059bc74a0dc793",
+      "bytes": 11936
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeContainerSnapshot.java",
