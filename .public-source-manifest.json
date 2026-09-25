@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "files": [
     {
       "path": ".gitattributes",
@@ -1839,8 +1839,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "a05f869ccf30a3c7615be93ab0426dc116c06a47565317f991d7caa1f406b723",
-      "bytes": 53932
+      "sha256": "aa23c888746a18b5019a8b42056fedde932df1deb62050a8c278d3f82251e16c",
+      "bytes": 55915
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/NativeChatSegments.java",
@@ -1876,6 +1876,11 @@
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureStore.java",
       "sha256": "54c8a1fe2a39022d372e01bd286a163720d4ce64bd12c66342fe1ca5c0d0b614",
       "bytes": 2977
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/creature/NativeEntityDefinition.java",
+      "sha256": "90f74c3120fb83bb97838b325c9c97a1b4852469b4f5150d20d917baac8cf47f",
+      "bytes": 5019
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/crypto/IdentitySigner.java",
@@ -3059,8 +3064,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationToolsTest.java",
-      "sha256": "c07609134538e078347af11a647bf442d3f5e9a5a3692c6f467e2bb9e1c26146",
-      "bytes": 5558
+      "sha256": "650060b2bd2a55e89907dc5700d3875a3130a88400fb1e5e74b76ae22ce95bb7",
+      "bytes": 5891
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureAnimationTest.java",
@@ -3076,6 +3081,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureRigTest.java",
       "sha256": "0f314f56f8af48b4d3d52d530ffbb4c65b335e4848211ec104ff0c5fea3babed",
       "bytes": 1290
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/creature/NativeEntityDefinitionTest.java",
+      "sha256": "8dbee9cdf655d2d9763b8491bce32e9457f3c596bfab4e7be05b02486261a7b9",
+      "bytes": 1390
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/files/FileLibraryConcurrencyTest.java",
@@ -3224,8 +3234,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "555f7d0b342127e69d438b80516c9d35f923a06e6370367586c557412a509e07",
-      "bytes": 25301
+      "sha256": "7238e4af6249c9e51cf7940eab9facd0de84af8e9773906ee6c5a6a581d0a791",
+      "bytes": 25872
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3234,7 +3244,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "7c17d9b2849343ff5f3e9e08d3c96091d5ec7a7a2febe90e9ba47ec6bbcf7b79",
+      "sha256": "254c61b01e7b2bd1c32f7f21010a9dce48be24fe3c5e43a5e493a4e3c174b262",
       "bytes": 496
     },
     {
@@ -3766,6 +3776,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeAcceptanceClient.java",
       "sha256": "c07848ccccc2e72d79c9f679a13c39ab7b4a45e654a3ac928083dc95ad7a4d6b",
       "bytes": 5747
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeBossSmokeClient.java",
+      "sha256": "f8f4e7f0933d90bd402c4d558ba9a9da0a58e63de21217043a373c190d8d3085",
+      "bytes": 1343
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeCreatureRenderer.java",
@@ -4608,6 +4623,11 @@
       "bytes": 6936
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/integration/TwilightBossInterop.java",
+      "sha256": "0ede4e68997cab1a54a60cee1479f4e010ffda70f3eee5748afd30c29397158f",
+      "bytes": 4532
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/integration/TwilightNagaInterop.java",
       "sha256": "93efc5ce006e451a817d6dcba2cac0501b554988e87eacd3375d916f25f18f67",
       "bytes": 2280
@@ -5224,8 +5244,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "fe16d972d7e56e662510521055f849a9f8b4d396d47e0041f4adffa04b543895",
-      "bytes": 59878
+      "sha256": "ec8ce94dd57e63c939de5531be7433d58c5dfcc151ff9043b1b342b80a4b54c2",
+      "bytes": 60549
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -5379,8 +5399,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityLogicTools.java",
-      "sha256": "665238bdf682d26411cd32c0df5c662b2491fc27f37f5d4b7f25017fcdd6ba53",
-      "bytes": 9093
+      "sha256": "e218f9f842b720c442fcc61cdeff6ddeb666c529ead50f6c9cacff8c3c6c7597",
+      "bytes": 9152
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/FeedbackApplicationSmokeServer.java",
@@ -5448,6 +5468,11 @@
       "bytes": 10282
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeBossSmokeServer.java",
+      "sha256": "bd1a2e9b09112e4d84400222e2be691039dd31f90a0f9e9bb9e3cd85290ab030",
+      "bytes": 9632
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeContainerSnapshot.java",
       "sha256": "ac3d6146b121e614cb8a526e6d40258ee2ce2911dc42e15a932ea2b2e38ab08a",
       "bytes": 2948
@@ -5456,6 +5481,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeDeliverySmokeServer.java",
       "sha256": "a5adc974150b893d5b2b5962bdc7dde93ff1f39b92da093a1021f5910fd4a1ab",
       "bytes": 9470
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeEntityTemplates.java",
+      "sha256": "5adb8fd61fd218ac90662075a7412c5d95f40fc0f8a6b9fb5e945f0036c4f780",
+      "bytes": 17068
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeFeedbackData.java",

@@ -226,3 +226,8 @@ Actions `36098988165` passed. Twilight Forest 4.9.3722 plus its declared Beanifi
 Native draw evidence showed +30 degrees on the original head, +45 on body segment 0, and -30 on the derived head, without shared-model leakage. A whole-model track moved through 0.14955 local units. Vanilla damage cancellation/scaling/restoration, knockback cancellation, Naga interaction/callbacks, multipart damage routing, and selected-goal removal/restoration were verified. The retained daze failure was fixed and separately passed a zero-model state regression in 1.0.14; the original no_ai setting stayed unchanged. Startup/world/chat regression without Twilight Forest also passed.
 
 The scope is explicit: runtime observations and declared rules are not arbitrary decompilation or private-AI cloning. Naga borrowing currently reuses the head renderer, not a complete multipart boss or its hitboxes/progression. Proprietary render pipelines and other event combinations require additional adapters/tests. Both sides must use network protocol 9. Failed preflights remain documented rather than relabeled as successful.
+
+
+## Native entity template increment
+
+Fresh native entity templates now retain the installed original entity implementation instead of borrowing only its head renderer. AI tools can inspect, derive a selected-property recipe, save it, spawn independent instances and apply changes. Twilight Forest combat-root discovery and six-member Knight Phantom initialization are included; source Mod remains required. Current scope is not arbitrary private-code cloning or complete all-boss combat acceptance. Validation results are pending this increment's Actions/isolated run.
