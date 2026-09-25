@@ -18,6 +18,7 @@ public final class ConversationBuildSmokeServer {
     public static volatile UUID agent;
     private static volatile Map<String,Object> blueprintRead=Map.of();
     private static final List<Map<String,Object>> webEvidence=new ArrayList<>();
+    public static boolean saved(){return System.getProperty("mineagent.conversationAgentScenario","").equals("cobble_saved");}
     public static boolean web(){return System.getProperty("mineagent.conversationAgentScenario","").equals("web");}
     public static void observeWeb(String tool,Map<String,Object> value){
         if(!active()||!web())return;var evidence=new LinkedHashMap<String,Object>();evidence.put("tool",tool);
@@ -29,7 +30,7 @@ public final class ConversationBuildSmokeServer {
     private static BlockPos center,output;
     private static int phase,deadline,removedAt;
     private static final List<Map<String,Object>> cycles=new ArrayList<>();
-    public static boolean active(){return Boolean.getBoolean("mineagent.conversationAgentReal")&&Set.of("cobble","blueprint","web").contains(System.getProperty("mineagent.conversationAgentScenario",""));}
+    public static boolean active(){return Boolean.getBoolean("mineagent.conversationAgentReal")&&Set.of("cobble","cobble_saved","blueprint","web").contains(System.getProperty("mineagent.conversationAgentScenario",""));}
     private static void save(MinecraftServer s,String name,Object value)throws Exception{
         Path root=Files.createDirectories(s.getServerDirectory().resolve("conversation-build-smoke"));Files.writeString(root.resolve(name+".json"),new ObjectMapper().writeValueAsString(value));
     }
@@ -39,6 +40,7 @@ public final class ConversationBuildSmokeServer {
         try{
             if(!ready&&(blueprint()||web())){agent=MineAgentRuntimeServices.bodies(s).createPersistentAt("工具助手",p.getUUID(),p.level(),p.position().add(3,0,0)).agentId();ready=true;return;}
             if(!ready){
+                if(saved()){var at=CinematicSavedSmoke.cobbleStart(p);p.teleportTo(p.level(),at.x,at.y,at.z,Set.of(),-90,10,true);}
                 s.getPlayerList().op(p.nameAndId());p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);center=p.blockPosition();
                 for(var pos:BlockPos.betweenClosed(center.offset(-12,-3,-12),center.offset(12,8,12)))p.level().setBlockAndUpdate(pos,pos.getY()<center.getY()?Blocks.DIRT.defaultBlockState():Blocks.AIR.defaultBlockState());
                 p.getInventory().clearContent();p.getInventory().setItem(0,new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE));p.getInventory().setSelectedSlot(0);p.inventoryMenu.broadcastChanges();
@@ -46,6 +48,7 @@ public final class ConversationBuildSmokeServer {
                 save(s,"initial",Map.of("center",List.of(center.getX(),center.getY(),center.getZ()),"fixture","Cleared dirt test plot; no water, lava or cobblestone placed by fixture","agent",agent));ready=true;return;
             }
             if(phase==0){
+                if(saved()){if(!CinematicSavedSmoke.cobble(p,agent))return;}else{
                 var store=ServerConversations.get(s).store();var conversations=store.list(p.getUUID(),agent,"ALL","",0,20).conversations();if(conversations.isEmpty())return;
                 var c=conversations.getFirst();if(c.messageCount()<2||!c.activeOperation().isEmpty())return;
                 var context=store.context(p.getUUID(),agent,c.conversationId(),null).orElseThrow();save(s,"conversation",Map.of("conversation",c,"context",context));
@@ -62,6 +65,7 @@ public final class ConversationBuildSmokeServer {
                 if(blueprint()){
                     if(blueprintRead.isEmpty()||!blueprintRead.get("name").equals(System.getProperty("mineagent.conversationAgentBlueprintName")))throw new IllegalStateException("BLUEPRINT_MODEL_DID_NOT_READ_SELECTED_FILE");
                     save(s,"blueprint-readback",blueprintRead);save(s,"result",Map.of("status","REAL_BLUEPRINT_READ_NATIVE_VERIFIED","file",blueprintRead.get("name"),"sha256",blueprintRead.get("sha256"),"size",blueprintRead.get("size"),"totalBlocks",blueprintRead.get("totalBlocks"),"createInstalled",net.neoforged.fml.ModList.get().isLoaded("create"),"placedBlocks",false));verified=true;return;
+                }
                 }
                 phase=1;deadline=s.getTickCount()+160;
             }
