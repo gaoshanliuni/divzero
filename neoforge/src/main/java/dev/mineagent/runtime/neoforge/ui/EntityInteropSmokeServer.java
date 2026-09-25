@@ -1,0 +1,75 @@
+package dev.mineagent.runtime.neoforge.ui;
+import com.fasterxml.jackson.databind.*;import com.fasterxml.jackson.databind.node.*;
+import dev.mineagent.runtime.neoforge.*;import dev.mineagent.runtime.neoforge.body.MineAgentPlayer;import dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity;
+import net.minecraft.server.MinecraftServer;import net.minecraft.server.level.*;import net.minecraft.world.entity.*;import net.minecraft.world.phys.Vec3;import net.minecraft.core.BlockPos;import net.minecraft.core.registries.BuiltInRegistries;import net.minecraft.resources.Identifier;import net.minecraft.world.level.block.Blocks;
+import net.neoforged.bus.api.*;import net.neoforged.fml.common.EventBusSubscriber;import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import java.util.*;import java.util.concurrent.*;import java.nio.file.*;
+/** Actual vanilla/TF native calls + independent real-model decisions, only in an explicitly isolated instance. */
+@EventBusSubscriber(modid="mineagent_runtime")
+public final class EntityInteropSmokeServer {
+ public static boolean enabled(){return Boolean.getBoolean("mineagent.entityInteropSmoke");}
+ public static volatile UUID nagaId,copyId;public static volatile String phase="BOOT",failure="";public static volatile boolean done,clientObserved;
+ private static MinecraftServer server;private static ServerPlayer viewer;private static Mob naga;private static net.minecraft.world.entity.ai.goal.Goal originalSmash;private static LivingEntity cow;private static UUID agent,conversation,tempRule;private static int started,at;private static CompletableFuture<Map<String,Object>> pending;private static final ObjectMapper JSON=new ObjectMapper();private static final List<String> failures=new ArrayList<>();private static final List<Object> results=new ArrayList<>();private static final List<String> tools=new ArrayList<>();
+ public static void observe(String name){if(enabled())tools.add(name);}
+ private static void check(boolean ok,String name){if(!ok)failures.add(name);}
+ private static void save(String name,Object value)throws Exception{Files.writeString(Files.createDirectories(server.getServerDirectory().resolve("entity-interop-smoke")).resolve(name+".json"),JSON.writeValueAsString(value));}
+ private static CompletableFuture<Map<String,Object>> call(String tool,ObjectNode a){return ConversationAgentTools.execute(viewer,agent,UUID.randomUUID(),tool,a.toString(),()->true);}
+ private static ObjectNode rule(Entity e,String...blocks){var r=JSON.createObjectNode().put("entity_id",e.getUUID().toString());var list=r.putArray("block");for(String b:blocks)list.add(b);return r;}
+ private static void createRule(Entity entity,String next,String...blocks){pending=call("set_entity_rule",JSON.createObjectNode().put("source",rule(entity,blocks).toString()));phase=next;}
+ private static LivingEntity spawn(String type,double x,double z){var value=BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(type));if(value==null)throw new IllegalStateException("SMOKE_MOD_ENTITY_NOT_INSTALLED");var e=value.create(viewer.level(),EntitySpawnReason.COMMAND);if(!(e instanceof LivingEntity living))throw new IllegalStateException("SMOKE_LIVING_ENTITY_REQUIRED");living.setPos(x,171,z);if(living instanceof Mob m){m.finalizeSpawn(viewer.level(),viewer.level().getCurrentDifficultyAt(living.blockPosition()),EntitySpawnReason.COMMAND,null);m.setNoAi(true);m.setPersistenceRequired();}if(!viewer.level().addFreshEntity(living))throw new IllegalStateException("SMOKE_ENTITY_SPAWN_FAILED");return living;}
+ private static void readyRule(){var result=pending.join();check("APPLIED".equals(result.get("status")),"RULE_NOT_APPLIED_"+phase);tempRule=UUID.fromString(result.get("ruleId").toString());results.add(result);}
+ @SubscribeEvent(priority=EventPriority.LOWEST) public static void tick(ServerTickEvent.Post event){if(!enabled()||done)return;server=event.getServer();viewer=server.getPlayerList().getPlayers().stream().filter(p->!(p instanceof MineAgentPlayer)).findFirst().orElse(null);if(viewer==null)return;try{
+  if(started==0)started=server.getTickCount();if(server.getTickCount()-started>18000)throw new IllegalStateException("ENTITY_INTEROP_TIMEOUT_"+phase);
+  if(phase.equals("BOOT")){
+   if(!net.neoforged.fml.ModList.get().isLoaded("twilightforest"))throw new IllegalStateException("REAL_TWILIGHT_FOREST_REQUIRED");server.getPlayerList().op(viewer.nameAndId());viewer.setGameMode(net.minecraft.world.level.GameType.CREATIVE);server.setDifficulty(net.minecraft.world.Difficulty.NORMAL,true);server.getCommands().performPrefixedCommand(viewer.createCommandSourceStack(),"ai accept");server.getCommands().performPrefixedCommand(viewer.createCommandSourceStack(),"time set noon");
+   for(int x=-16;x<=24;x++)for(int z=-16;z<=20;z++)for(int y=170;y<182;y++)viewer.level().setBlock(new BlockPos(x,y,z),y==170?Blocks.SMOOTH_STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),2);
+   viewer.teleportTo(viewer.level(),0,173,12,Set.of(),180,8,true);viewer.setNoGravity(true);agent=MineAgentRuntimeServices.bodies(server).createPersistentAt("实体工程师",viewer.getUUID(),viewer.level(),new Vec3(-10,171,8)).agentId();naga=(Mob)spawn("twilightforest:naga",4,0);nagaId=naga.getUUID();cow=spawn("minecraft:cow",6,0);phase="BASELINE";at=server.getTickCount();return;
+  }
+  if(phase.equals("BASELINE")&&server.getTickCount()-at>30){
+   originalSmash=((dev.mineagent.runtime.neoforge.mixin.EntityGoalsAccess)naga).mineagent$goals().getAvailableGoals().stream().map(net.minecraft.world.entity.ai.goal.WrappedGoal::getGoal).filter(g->g.getClass().getName().endsWith(".NagaSmashGoal")).findFirst().orElseThrow();
+   save("initial-logic",EntityLogicTools.inspect(viewer,JSON.createObjectNode().put("entity_id",nagaId.toString())));
+   cow.invulnerableTime=0;float before=cow.getHealth();naga.doHurtTarget(viewer.level(),cow);check(cow.getHealth()<before,"NAGA_NATIVE_ATTACK_BASELINE");cow.setHealth(cow.getMaxHealth());
+   double x=naga.getX();naga.move(MoverType.SELF,new Vec3(.5,0,0));check(naga.getX()>x+.1,"NAGA_MOVE_BASELINE");naga.setPos(4,171,0);naga.setDeltaMovement(Vec3.ZERO);
+   pending=call("set_entity_rule",JSON.createObjectNode().put("source",rule(cow,"hurt","knockback").toString()));phase="COW_BLOCK";return;
+  }
+  if(phase.equals("COW_BLOCK")&&pending.isDone()){
+   readyRule();cow.invulnerableTime=0;float before=cow.getHealth();cow.hurtServer(viewer.level(),viewer.level().damageSources().playerAttack(viewer),6);check(cow.getHealth()==before,"VANILLA_DAMAGE_CANCEL");cow.setDeltaMovement(Vec3.ZERO);cow.knockback(1,1,0);check(cow.getDeltaMovement().lengthSqr()<1e-8,"VANILLA_KNOCKBACK_CANCEL");
+   var r=rule(cow);r.put("damage_taken_multiplier",.5);pending=call("set_entity_rule",JSON.createObjectNode().put("source",r.toString()).put("rule_id",tempRule.toString()).put("expected_revision",1));phase="COW_SCALE";return;
+  }
+  if(phase.equals("COW_SCALE")&&pending.isDone()){
+   check("APPLIED".equals(pending.join().get("status")),"RULE_CAS_UPDATE");cow.invulnerableTime=0;float before=cow.getHealth();cow.hurtServer(viewer.level(),viewer.level().damageSources().playerAttack(viewer),6);check(Math.abs(before-cow.getHealth()-3)<.01,"VANILLA_DAMAGE_SCALE");pending=call("delete_entity_rule",JSON.createObjectNode().put("rule_id",tempRule.toString()).put("expected_revision",2));phase="COW_RESTORE";return;
+  }
+  if(phase.equals("COW_RESTORE")&&pending.isDone()){
+   cow.invulnerableTime=0;cow.setHealth(cow.getMaxHealth());float before=cow.getHealth();cow.hurtServer(viewer.level(),viewer.level().damageSources().playerAttack(viewer),6);check(Math.abs(before-cow.getHealth()-6)<.01,"VANILLA_DAMAGE_RESTORE");cow.setHealth(cow.getMaxHealth());
+   var r=rule(naga,"interact","hurt");r.putArray("blocked_goals").add(originalSmash.getClass().getName());r.putObject("callbacks").putArray("interact").addObject().put("type","effect").put("value","minecraft:glowing").put("ticks",200);pending=call("set_entity_rule",JSON.createObjectNode().put("source",r.toString()));phase="NAGA_INTERACTION";return;
+  }
+  if(phase.equals("NAGA_INTERACTION")&&pending.isDone()){
+   readyRule();check(((dev.mineagent.runtime.neoforge.mixin.EntityGoalsAccess)naga).mineagent$goals().getAvailableGoals().stream().noneMatch(g->g.getGoal()==originalSmash),"NAGA_GOAL_NOT_BLOCKED");var result=viewer.interactOn(naga,net.minecraft.world.InteractionHand.MAIN_HAND,Vec3.ZERO);check(result==net.minecraft.world.InteractionResult.FAIL,"NAGA_INTERACTION_CANCEL");var glowing=BuiltInRegistries.MOB_EFFECT.wrapAsHolder(BuiltInRegistries.MOB_EFFECT.getValue(Identifier.parse("minecraft:glowing")));check(naga.hasEffect(glowing),"NAGA_NATIVE_CALLBACK_EFFECT");
+   var parts=naga.getParts();check(parts!=null&&parts.length==12,"REAL_NAGA_MULTIPART_COUNT");naga.invulnerableTime=0;float before=naga.getHealth();parts[0].hurtServer(viewer.level(),viewer.level().damageSources().playerAttack(viewer),9);check(naga.getHealth()==before,"NAGA_PART_DAMAGE_RULE");pending=call("delete_entity_rule",JSON.createObjectNode().put("rule_id",tempRule.toString()).put("expected_revision",1));phase="NAGA_RESTORE";return;
+  }
+  if(phase.equals("NAGA_RESTORE")&&pending.isDone()){
+   check(((dev.mineagent.runtime.neoforge.mixin.EntityGoalsAccess)naga).mineagent$goals().getAvailableGoals().stream().anyMatch(g->g.getGoal()==originalSmash),"NAGA_GOAL_NOT_RESTORED");naga.invulnerableTime=0;float before=naga.getHealth();naga.getParts()[0].hurtServer(viewer.level(),viewer.level().damageSources().playerAttack(viewer),9);check(naga.getHealth()<before,"NAGA_PART_DAMAGE_RESTORED");naga.setHealth(naga.getMaxHealth());
+   EntityLogicTools.state(viewer,JSON.createObjectNode().put("entity_id",nagaId.toString()).put("native_action","naga.daze"));check(Boolean.TRUE.equals(dev.mineagent.runtime.neoforge.integration.TwilightNagaInterop.inspect(naga).get("isDazed")),"NAGA_NATIVE_DAZE");EntityLogicTools.state(viewer,JSON.createObjectNode().put("entity_id",nagaId.toString()).put("native_action","naga.circle"));
+   cow.setXRot(45);var visual=JSON.createObjectNode().put("entity_id",cow.getUUID().toString()).put("block_native",true);pending=call("set_entity_animation",JSON.createObjectNode().put("source",visual.toString()));phase="COW_VISUAL";at=server.getTickCount();return;
+
+  }
+  if(phase.equals("COW_VISUAL")||phase.equals("COW_VISUAL_PROBE"))cow.setXRot(45);
+  if(phase.equals("COW_VISUAL")&&pending.isDone()&&server.getTickCount()-at>30){pending=EntityAnimationProbe.request(viewer,JSON.createObjectNode().put("entity_id",cow.getUUID().toString()));phase="COW_VISUAL_PROBE";return;}
+  if(phase.equals("COW_VISUAL_PROBE")&&pending.isDone()){var receipt=pending.join();save("vanilla-blocked-animation",receipt);boolean blocked=false;Object values=receipt.get("parts");if(values instanceof List<?> nodes)for(Object n:nodes){var row=(Map<?,?>)n;if("root/head".equals(row.get("path"))){var before=(Map<?,?>)row.get("nativePose");var after=(Map<?,?>)row.get("renderedPose");double original=((Number)((List<?>)before.get("rotationDegrees")).get(0)).doubleValue(),changed=((Number)((List<?>)after.get("rotationDegrees")).get(0)).doubleValue();blocked=Math.abs(original)>20&&Math.abs(changed)<1;}}check(blocked,"VANILLA_NATIVE_ANIMATION_NOT_BLOCKED");
+   ServerConversations.get(server).submitNative(viewer,agent,"请使用新实体工具完成并读回：目标是真实暮色森林娜迦 "+nagaId+"。先inspect_entity_logic和inspect_entity_animation。创建规则阻断它发起攻击和移动（不要禁止全部Tick、不用no_ai替代）；用set_entity_animation让主实体root/head固定绕Z转30度，同时让整体root按40tick循环上下移动0到0.15方块。再derive_creature_template，创建名为借鉴娜迦的友好热生物，生命40，保留native_visual引用，只借用头部模型不冒充复制整个Boss；define_creature后在(-4,171,0)生成一个。给新生物root/head固定Z转-30度并读取动画确认。不要执行游戏命令或电脑命令，不破坏方块，不操控玩家。",true);phase="MODEL";return;
+  }
+  if(phase.equals("MODEL")){
+   var store=ServerConversations.get(server).store();var cs=store.list(viewer.getUUID(),agent,"ACTIVE","",0,20).conversations();if(cs.isEmpty()||cs.getFirst().messageCount()<2||!cs.getFirst().activeOperation().isEmpty())return;conversation=cs.getFirst().conversationId();var context=store.context(viewer.getUUID(),agent,conversation,null).orElseThrow();save("model-context",context);check(context.requestState().equals("COMPLETE"),"REAL_MODEL_"+context.errorCode());
+   for(String required:List.of("inspect_entity_logic","set_entity_rule","set_entity_animation","derive_creature_template","define_creature","control_creature"))check(tools.contains(required),"MODEL_TOOL_MISSING_"+required);
+   var copies=new ArrayList<RuntimeCreatureEntity>();for(var e:viewer.level().getAllEntities())if(e instanceof RuntimeCreatureEntity c&&viewer.getUUID().equals(c.owner()))copies.add(c);check(copies.size()==1,"OWN_CREATURE_COUNT");if(!copies.isEmpty())copyId=copies.getFirst().getUUID();
+   double x=naga.getX();naga.move(MoverType.SELF,new Vec3(.5,0,0));check(Math.abs(naga.getX()-x)<.01,"NAGA_NATIVE_MOVE_CANCEL");cow.invulnerableTime=0;cow.setHealth(cow.getMaxHealth());float hp=cow.getHealth();naga.doHurtTarget(viewer.level(),cow);check(cow.getHealth()==hp,"NAGA_NATIVE_ATTACK_CANCEL");
+   var r=JSON.createObjectNode().put("entity_id",nagaId.toString()).put("part_index",0).put("block_native",true).put("mode","replace");r.putObject("parts").putArray("root/head").addObject().put("tick",0).putArray("rotation").add(0).add(0).add(45);pending=call("set_entity_animation",JSON.createObjectNode().put("source",r.toString()));phase="VISUAL_READY";at=server.getTickCount();return;
+  }
+  if(phase.equals("VISUAL_READY")&&pending.isDone()&&server.getTickCount()-at>40){pending=EntityAnimationProbe.request(viewer,JSON.createObjectNode().put("entity_id",nagaId.toString()).put("part_index",0));phase="PART_PROBE";return;}
+  if(phase.equals("PART_PROBE")&&pending.isDone()){var receipt=pending.join();save("naga-part-render",receipt);check("OBSERVED_NATIVE_DRAW".equals(receipt.get("status")),"NAGA_PART_NOT_RENDERED");if(copyId!=null){pending=EntityAnimationProbe.request(viewer,JSON.createObjectNode().put("entity_id",copyId.toString()));phase="COPY_PROBE";}else finish();return;}
+  if(phase.equals("COPY_PROBE")&&pending.isDone()){var receipt=pending.join();save("borrowed-render",receipt);check("OBSERVED_NATIVE_DRAW".equals(receipt.get("status")),"BORROWED_MODEL_NOT_RENDERED");check(Objects.toString(receipt.get("modelClass"),"").contains("NagaModel"),"BORROWED_SOURCE_MODEL_NOT_USED");phase="CLIENT_FINAL";at=server.getTickCount();}
+  if(phase.equals("CLIENT_FINAL")&&(clientObserved||server.getTickCount()-at>160)){check(clientObserved,"CLIENT_VISUAL_VERIFICATION");finish();}
+ }catch(Exception e){failure=e.toString();failures.add(failure);try{finish();}catch(Exception ignored){done=true;}}}
+ private static void finish()throws Exception{save("rules",ServerEntityInterop.inspectRules(viewer,0));save("server-final",Map.of("status",failures.isEmpty()?"PASSED":"FAILED","failures",failures,"tools",tools,"nativeResults",results,"twilightVersion",net.neoforged.fml.ModList.get().getModContainerById("twilightforest").orElseThrow().getModInfo().getVersion().toString()));done=true;phase="DONE";}
+ private EntityInteropSmokeServer(){}
+}

@@ -1,0 +1,17 @@
+package dev.mineagent.runtime.neoforge.client.objects;
+import dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity;import net.minecraft.client.Minecraft;import net.minecraft.client.renderer.entity.*;import net.minecraft.client.renderer.entity.state.*;import net.minecraft.world.entity.*;import net.minecraft.resources.Identifier;import net.minecraft.core.registries.BuiltInRegistries;import java.util.*;import java.lang.ref.WeakReference;
+/** A client-only visual proxy. Never adds, ticks, or spawns the source Mod's entity in either world. */
+public final class BorrowedCreatureVisuals {
+ public record View(EntityRenderer<Entity,EntityRenderState> renderer,EntityRenderState state){}
+ private record Cached(String type,Entity entity){}
+ private static final Map<RuntimeCreatureEntity,Cached> CACHE=new WeakHashMap<>();private static final Map<Entity,WeakReference<RuntimeCreatureEntity>> OWNERS=new WeakHashMap<>();private static Object level;
+ public static RuntimeCreatureEntity owner(Entity e){var ref=OWNERS.get(e);return ref==null?null:ref.get();}
+ @SuppressWarnings("unchecked") public static View extract(RuntimeCreatureEntity carrier,float partial){var mc=Minecraft.getInstance();if(level!=mc.level){CACHE.clear();OWNERS.clear();level=mc.level;}var d=carrier.definition();if(d==null||d.nativeVisual().isEmpty()||mc.level==null)return null;try{
+  var cached=CACHE.get(carrier);if(cached==null||!cached.type().equals(d.nativeVisual())){var id=Identifier.parse(d.nativeVisual());if(!BuiltInRegistries.ENTITY_TYPE.containsKey(id))return null;var proxy=BuiltInRegistries.ENTITY_TYPE.getValue(id).create(mc.level,EntitySpawnReason.COMMAND);if(!(proxy instanceof LivingEntity)||proxy instanceof net.minecraft.world.entity.player.Player||proxy instanceof RuntimeCreatureEntity)return null;cached=new Cached(d.nativeVisual(),proxy);CACHE.put(carrier,cached);OWNERS.put(proxy,new WeakReference<>(carrier));}
+  Entity proxy=cached.entity();proxy.setPos(carrier.position());proxy.xo=carrier.xo;proxy.yo=carrier.yo;proxy.zo=carrier.zo;proxy.setYRot(carrier.getYRot());proxy.setXRot(carrier.getXRot());proxy.yRotO=carrier.yRotO;proxy.xRotO=carrier.xRotO;proxy.tickCount=carrier.tickCount;proxy.setDeltaMovement(carrier.getDeltaMovement());proxy.setCustomName(carrier.getCustomName());proxy.setCustomNameVisible(carrier.isCustomNameVisible());
+  var living=(LivingEntity)proxy;living.yBodyRot=carrier.yBodyRot;living.yBodyRotO=carrier.yBodyRotO;living.yHeadRot=carrier.yHeadRot;living.yHeadRotO=carrier.yHeadRotO;living.hurtTime=carrier.hurtTime;living.deathTime=carrier.deathTime;living.setPose(carrier.getPose());if(living instanceof AgeableMob ageable)ageable.setBaby(carrier.isBaby());
+  var renderer=(EntityRenderer<Entity,EntityRenderState>)(EntityRenderer<?,?>)mc.getEntityRenderDispatcher().getRenderer(proxy);if(!(renderer instanceof LivingEntityRenderer))return null;var state=renderer.createRenderState(proxy,partial);state.setRenderData(EntityVisualClient.KEY,EntityVisualClient.metadata(carrier,carrier.tickCount+partial));if(state instanceof LivingEntityRenderState s){s.walkAnimationPos=carrier.walkAnimation.position(partial);s.walkAnimationSpeed=carrier.walkAnimation.speed(partial);s.hasRedOverlay=carrier.hurtTime>0||carrier.deathTime>0;}
+  try{state.getClass().getField("attackTime").setFloat(state,carrier.getAttackAnim(partial));}catch(NoSuchFieldException ignored){}EntityVisualClient.blockNativeState(state);return new View(renderer,state);
+ }catch(Exception e){return null;}}
+ private BorrowedCreatureVisuals(){}
+}

@@ -9,11 +9,11 @@
 | Minecraft | 26.1.2 |
 | NeoForge | 26.1.2.106 |
 | Java | 25 |
-| 网络协议 | 8，客户端与服务端同步更新 |
+| 网络协议 | 9，客户端与服务端同步更新 |
 | Mod ID | `mineagent_runtime` |
 | 技术包名 | `dev.mineagent.runtime` |
 | Gradle Wrapper | 9.2.1 |
-| 当前 Mod 版本 | `1.0.10` |
+| 当前 Mod 版本 | `1.0.11` |
 
 ## 操作入口
 
@@ -204,3 +204,11 @@ The 1.0.9 no-thinking real-provider run passed: 20 observed in-place updates, on
 1.0.10 Actions run `36091081945` passed. The real high-thinking Native test observed 41 updates to one GuiMessage, with all 850 body / 1655 reasoning UTF-16 units matching storage. Tail mode added exactly one reasoning row (34 total wrapped rows vs 86 in full mode). The unchanged no-thinking implementation passed separately with 20 updates, one entry and 773 body units / zero reasoning. Receipt timestamps and scroll positions stayed stable.
 
 The AI consumed an actual 32128-character inventory tool result and returned its random tail marker, then applied `thinking=full` through the client-acknowledged tool. Active and promoted-queue interrupt buttons were checked against real requests; old buttons did not cancel newer requests or resend a queued message. The failed undersized fixture run was retained. Native screenshots are viewport observations, not proof that a whole long reply fits on screen; full data equality and native layout were verified separately. These are functional samples, not an unlimited-context or all-provider guarantee.
+
+## Entity interoperability preparation (1.0.11 / protocol 9)
+
+New AI tools inspect loaded vanilla/Mod entities, attributes, Goal/Brain observations, multipart identity, and actual client ModelPart draw poses. Persistent rules can block or modify interaction, attacks, incoming damage, knockback, targeting, base movement and selected goals; declared callbacks can add effects, sounds, messages or owner-authorized Minecraft commands. Animation overlays support whole-model and local-part tracks and restoration without leaking changes across shared model instances.
+
+The requested third-party target is Twilight Forest Naga. Its official Maven build 4.9.3722 declares Minecraft 26.1.2 compatibility; only an isolated test instance will load it. The optional adapter intercepts Naga's attack before shield effects and multipart contact before pushing/damage, and exposes its public daze/circle/crumble state transitions. Native tests and real DeepSeek verification are pending at this checkpoint.
+
+Derived hot creatures can reference the installed source living renderer/textures and mapped attributes/food traits. This does not copy private Java AI, boss progression, loot tables or multipart hitboxes. A Naga reference borrows its head renderer, not a complete multipart boss clone. Proprietary renderers outside the Model/ModelPart pipeline report unavailable rather than a fabricated success. Real players and AI-player bodies remain on their existing owner-scoped control/skin APIs.

@@ -33,7 +33,12 @@
     "client.McefTextureViewLifetimeMixin",
     "client.McefRetirementShutdownMixin",
     "client.WebGuiTranslucencyMixin",
-    "client.WorldBoardTextAccess"
+    "client.WorldBoardTextAccess",
+    "client.EntityModelPartsAccess",
+    "client.EntityModelRenderRulesMixin",
+    "client.EntityRenderContextMixin"
   ],
-  "injectors": { "defaultRequire": 1 }
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

@@ -44,6 +44,10 @@ public final class ConversationAgentTools {
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>16384)throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
+            if(tool.equals("inspect_entity_logic")){keys(args,"entity_id","offset","query");return CompletableFuture.completedFuture(EntityLogicTools.inspect(p,args));}
+            if(tool.equals("derive_creature_template")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(EntityLogicTools.template(p,args));}
+            if(tool.equals("inspect_entity_rules")){keys(args,"offset");return CompletableFuture.completedFuture(ServerEntityInterop.inspectRules(p,args.path("offset").asInt(0)));}
+            if(tool.equals("inspect_entity_animation")){keys(args,"entity_id","part_index","offset");return EntityAnimationProbe.request(p,args);}
             if(tool.equals("inspect_interaction_rules")){keys(args,"offset");return CompletableFuture.completedFuture(ServerInteractionRules.inspect(p,args.path("offset").asInt(0)));}
             if(tool.equals("inspect_chat_messages")){keys(args);return ServerChatMessageSettings.request(p,null,null,null,permit);}
             if(tool.equals("inspect_chat_settings")){keys(args);return CompletableFuture.completedFuture(ServerChatSettings.inspect(p,agent));}
@@ -139,6 +143,8 @@ public final class ConversationAgentTools {
             case "apply_world_geometry"->{return ConversationWorldGeometry.apply(p,agent,a,permit);}
             case "define_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.define(p,operation,a);}
             case "control_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.control(p,a);}
+            case "set_entity_rule","set_entity_animation","delete_entity_rule"->{keys(a,"source","rule_id","expected_revision");return ServerEntityInterop.set(p,operation,a,tool.equals("set_entity_animation")?"visual":"logic",tool.equals("delete_entity_rule"));}
+            case "set_entity_state"->{keys(a,"entity_id","attributes","no_ai","native_action");result=EntityLogicTools.state(p,a);}
             case "set_interaction_rule","delete_interaction_rule"->{keys(a,"source","rule_id","expected_revision");result=ServerInteractionRules.set(p,operation,a,tool.equals("delete_interaction_rule"));}
             case "set_chat_settings"->{keys(a,"show_thinking","thinking_depth","default_reply","response_agent");result=ServerChatSettings.set(p,agent,a);}
             case "set_persona"->{keys(a,"expected_revision","text");if(!a.path("expected_revision").canConvertToLong()||!a.path("expected_revision").isIntegralNumber()||a.path("expected_revision").asLong()<0||!a.path("text").isTextual()||a.path("text").asText().length()>8192)throw new IllegalArgumentException("PERSONA_ARGUMENTS");result=ConversationIdentityTools.setPersona(p,agent,operation,a.path("expected_revision").longValue(),a.path("text").textValue());}
