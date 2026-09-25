@@ -3739,8 +3739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/cinematic/CinematicCaptureClient.java",
-      "sha256": "0698e09832531627aa912d5c0dd0c9ea06fc930342a88869e6cf7a45fa886754",
-      "bytes": 12067
+      "sha256": "5c331c791518465d8a295b7ebe3c2fbb7f9751afdd82e55f7e431c159f5c87db",
+      "bytes": 12092
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/host/ClientHostCommands.java",

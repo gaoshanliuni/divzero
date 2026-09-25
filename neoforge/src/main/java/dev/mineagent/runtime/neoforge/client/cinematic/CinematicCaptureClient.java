@@ -140,7 +140,7 @@ public final class CinematicCaptureClient {
             }
             if (shot.has("entityField")) {
                 Object id = fixtureField(shot,shot.get("entityField").asText());
-                if (id instanceof List<?> list) { try { id=list.getFirst(); } catch(IndexOutOfBoundsException ignored) { id=null; } }
+                if (id instanceof List<?> list) { try { id=list.getFirst(); } catch(IndexOutOfBoundsException | NoSuchElementException ignored) { id=null; } }
                 if (id instanceof Entity entity) id=entity.getUUID();
                 if (id instanceof UUID uuid) for (Entity entity : mc.level.entitiesForRendering()) if (entity.getUUID().equals(uuid)) {
                     center = entity.position().add(0,shot.path("targetHeight").asDouble(1),0); break;
