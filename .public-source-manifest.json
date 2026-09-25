@@ -3739,8 +3739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/cinematic/CinematicCaptureClient.java",
-      "sha256": "6fe477e064afe4c3a3ceb5255ddfc24b151a0e8008b9cbc38d93cf6fe8c6b508",
-      "bytes": 11929
+      "sha256": "51d3c5e61002e8ad9a50a372b693a31fd75babbd1bafea4c94712896e894bea1",
+      "bytes": 11736
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/host/ClientHostCommands.java",
@@ -4821,6 +4821,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/ChatSuggestionsAccess.java",
       "sha256": "3061e81c8add617062bda38df9cda5e3f3ca37b95f33f7ef10499cc25458b4b9",
       "bytes": 403
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/CinematicCameraMixin.java",
+      "sha256": "238cc8e2a79b7de43884f798afa551812f839f751ff254470fcf7187321f2569",
+      "bytes": 1061
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/EntityModelPartsAccess.java",
@@ -6049,8 +6054,8 @@
     },
     {
       "path": "neoforge/src/main/resources/mineagent_runtime.mixins.json",
-      "sha256": "ffa6c6a8c0c576ee41ca8f41604e6c75a620f5b3449ade6aa3073a574b29bee3",
-      "bytes": 389
+      "sha256": "864e82d4e7adb3b57987f6a9b85956a634a143b9f3fdbf8548e68dac8cf6aeea",
+      "bytes": 424
     },
     {
       "path": "neoforge/src/main/resources/mineagent_webgui.mixins.json",

@@ -6,7 +6,6 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -23,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Explicit local filming mode. Captures the game framebuffer, never the desktop.
- * The unregistered client camera does not move a player or change a server action. */
+ * The render-only camera pose leaves the actual player as the input owner. */
 @EventBusSubscriber(modid = "mineagent_runtime", value = Dist.CLIENT)
 public final class CinematicCaptureClient {
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -35,7 +34,9 @@ public final class CinematicCaptureClient {
     private static volatile long frames, dropped;
     private static JsonNode plan;
     private static Path root;
-    private static ArmorStand camera;
+    public record CameraPose(Vec3 position, float yaw, float pitch) {}
+    private static volatile CameraPose desiredPose;
+    public static CameraPose cameraPose() { return enabled() ? desiredPose : null; }
     private static Process encoder;
     private static Thread writer;
     private static long started, lastCapture, stopAt, shotAt;
@@ -92,7 +93,7 @@ public final class CinematicCaptureClient {
             } catch (Exception e) { error = e.toString(); failed = true; }
         });
         Runtime.getRuntime().addShutdownHook(new Thread(CinematicCaptureClient::close, "cinematic-finalize"));
-        Files.writeString(root.resolve("started.json"), JSON.writeValueAsString(Map.of("width",width,"height",height,"fps",FPS,"source","Minecraft framebuffer","camera","client-only unregistered entity")));
+        Files.writeString(root.resolve("started.json"), JSON.writeValueAsString(Map.of("width",width,"height",height,"fps",FPS,"source","Minecraft framebuffer","camera","render-only pose; original player input owner")));
     }
 
     @SubscribeEvent public static void before(RenderFrameEvent.Pre event) {
@@ -121,12 +122,13 @@ public final class CinematicCaptureClient {
                 Files.writeString(root.resolve("markers.jsonl"), JSON.writeValueAsString(Map.of("seconds",(shotAt-started)/1e9,"phase",current)) + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             }
             if (shot.path("view").asText("orbit").equals("native")) {
+                desiredPose=null;
                 mc.setCameraEntity(mc.player); mc.options.setCameraType(CameraType.FIRST_PERSON);
                 mc.options.hideGui = false; smoothed = null; return;
             }
-            if (mc.screen != null) return; // Keep genuine UI interactions visible and operable.
             mc.options.hideGui = !shot.path("hud").asBoolean(false);
-            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.setCameraEntity(mc.player);
+            mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             mc.options.fov().set(shot.path("fov").asInt(50));
             Vec3 center = vector(shot.path("center"), mc.player.position().add(0, 1, 0));
             if (shot.has("centerFields")) {
@@ -135,6 +137,8 @@ public final class CinematicCaptureClient {
             }
             if (shot.has("entityField")) {
                 Object id = fixtureField(shot,shot.get("entityField").asText());
+                if (id instanceof List<?> list) { try { id=list.getFirst(); } catch(IndexOutOfBoundsException ignored) { id=null; } }
+                if (id instanceof Entity entity) id=entity.getUUID();
                 if (id instanceof UUID uuid) for (Entity entity : mc.level.entitiesForRendering()) if (entity.getUUID().equals(uuid)) {
                     center = entity.position().add(0,shot.path("targetHeight").asDouble(1),0); break;
                 }
@@ -145,16 +149,10 @@ public final class CinematicCaptureClient {
             Vec3 position = center.add(Math.sin(angle)*radius,elevation,Math.cos(angle)*radius);
             if (smoothed == null || smoothed.distanceTo(position)>35) smoothed=position;
             else smoothed=smoothed.add(position.subtract(smoothed).scale(.08));
-            if(camera==null || camera.level()!=mc.level) camera=new ArmorStand(mc.level,smoothed.x,smoothed.y,smoothed.z);
             Vec3 direction=center.subtract(smoothed);
             float yaw=(float)Math.toDegrees(Math.atan2(-direction.x,direction.z));
             float pitch=(float)-Math.toDegrees(Math.atan2(direction.y,Math.sqrt(direction.x*direction.x+direction.z*direction.z)));
-            camera.setPos(smoothed.x,smoothed.y-camera.getEyeHeight(),smoothed.z);
-            camera.xOld=camera.getX();camera.yOld=camera.getY();camera.zOld=camera.getZ();
-            camera.setYRot(yaw);camera.yRotO=yaw;camera.setXRot(pitch);camera.xRotO=pitch;
-            camera.yHeadRot=yaw;camera.yHeadRotO=yaw;camera.yBodyRot=yaw;camera.yBodyRotO=yaw;
-            camera.setOldPosAndRot();
-            mc.setCameraEntity(camera);
+            desiredPose=new CameraPose(smoothed,yaw,pitch);
         } catch(Exception e) { fail(e); }
     }
 
