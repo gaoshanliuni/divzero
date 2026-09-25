@@ -52,7 +52,7 @@ public final class MineAgentNetwork {
         SpeechInputPayloads.register(event);
         ObjectAssetPayloads.register(event);
         dev.mineagent.runtime.neoforge.ui.ServerUiRuntime.register(event);
-        var registrar = event.registrar("9").versioned("9").executesOn(HandlerThread.NETWORK);
+        var registrar = event.registrar("10").versioned("10").executesOn(HandlerThread.NETWORK);
         registrar.playToServer(ProviderModelsPayloads.Request.TYPE,ProviderModelsPayloads.Request.CODEC,(p,c)->serverWork(c,()->ProviderModelsPayloads.respond(p,(ServerPlayer)c.player(),c::reply)));
         registrar.playToClient(ProviderModelsPayloads.Response.TYPE,ProviderModelsPayloads.Response.CODEC,(p,c)->c.enqueueWork(()->dev.mineagent.runtime.neoforge.client.ProviderModelsClient.accept(p)));
         registrar.playToServer(MineAgentPayloads.SecretConfigWrite.TYPE,MineAgentPayloads.SecretConfigWrite.CODEC,(p,c)->serverWork(c,()->c.reply(applyNativeSecret(p,(ServerPlayer)c.player()))));

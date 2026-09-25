@@ -36,6 +36,7 @@
     "client.WorldBoardTextAccess",
     "client.EntityModelPartsAccess",
     "client.EntityModelRenderRulesMixin",
+    "client.LivingEntityPartsMixin",
     "client.EntityRenderContextMixin"
   ],
   "injectors": {

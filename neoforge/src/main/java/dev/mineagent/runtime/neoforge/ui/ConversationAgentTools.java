@@ -46,6 +46,7 @@ public final class ConversationAgentTools {
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
             if(tool.equals("inspect_native_entities")){keys(args,"query","offset","template_id");return CompletableFuture.completedFuture(NativeEntityTemplates.inspect(p,args));}
             if(tool.equals("derive_native_entity")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(NativeEntityTemplates.derive(p,args));}
+            if(tool.equals("inspect_entity_model")){keys(args,"entity_type","offset");return EntityModelProbe.request(p,args);}
             if(tool.equals("inspect_entity_logic")){keys(args,"entity_id","offset","query");return CompletableFuture.completedFuture(EntityLogicTools.inspect(p,args));}
             if(tool.equals("derive_creature_template")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(EntityLogicTools.template(p,args));}
             if(tool.equals("inspect_entity_rules")){keys(args,"offset");return CompletableFuture.completedFuture(ServerEntityInterop.inspectRules(p,args.path("offset").asInt(0)));}
@@ -148,6 +149,7 @@ public final class ConversationAgentTools {
             case "set_entity_rule","set_entity_animation","delete_entity_rule"->{keys(a,"source","rule_id","expected_revision");return ServerEntityInterop.set(p,operation,a,tool.equals("set_entity_animation")?"visual":"logic",tool.equals("delete_entity_rule"));}
             case "define_native_entity"->{keys(a,"source","template_id","expected_revision");return NativeEntityTemplates.define(p,operation,a);}
             case "control_native_entity"->{keys(a,"action","template_id","entity_id","position","encounter","expected_revision");result=NativeEntityTemplates.control(p,operation,a);}
+            case "replace_entity_part"->{keys(a,"entity_id","entity_type","part_index","target_part","source_type","source_part","translation","rotation","scale","rule_id","expected_revision");return EntityModelProbe.replace(p,operation,a);}
             case "set_entity_state"->{keys(a,"entity_id","attributes","no_ai","native_action");result=EntityLogicTools.state(p,a);}
             case "set_interaction_rule","delete_interaction_rule"->{keys(a,"source","rule_id","expected_revision");result=ServerInteractionRules.set(p,operation,a,tool.equals("delete_interaction_rule"));}
             case "set_chat_settings"->{keys(a,"show_thinking","thinking_depth","default_reply","response_agent");result=ServerChatSettings.set(p,agent,a);}

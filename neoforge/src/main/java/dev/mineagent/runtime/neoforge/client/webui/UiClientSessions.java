@@ -55,6 +55,7 @@ public final class UiClientSessions {
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(opening, "openShell", "{}"));
     }
     private static void accept(UiPayloads.Event packet) {
+        if(packet.channel().equals("entityModelInspect")){dev.mineagent.runtime.neoforge.client.objects.EntityPartModels.inspect(packet);return;}
         if(Set.of("entityVisualReset","entityVisualRule","entityAnimationInspect").contains(packet.channel())){dev.mineagent.runtime.neoforge.client.objects.EntityVisualClient.accept(packet);return;}
         if(packet.channel().equals("nativeChatStream")){dev.mineagent.runtime.neoforge.client.chat.NativeStreamingChat.accept(packet);return;}
         if(packet.channel().equals("chatMessageDisplay")){dev.mineagent.runtime.neoforge.client.chat.ChatMessageDisplayClient.accept(packet);return;}
