@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "files": [
     {
       "path": ".gitattributes",
@@ -3224,8 +3224,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "340fafa67498a9e5eec0d5176a81fe0dc56535188c2f6fc8294540a12c4fea6d",
-      "bytes": 22193
+      "sha256": "b9efdf772c2c48c4fe648fec0437d6c6eb16102b2f2300d537b73db46441d1a3",
+      "bytes": 22675
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3234,7 +3234,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "f106fbd0a59b295ba57f9a44a94c68f54907d1bc96d966a846cdda014958f44a",
+      "sha256": "e04e5cbea5781680124e2a7d6fa57a4db1a6f923dc03fb4da86e6205a72c7b4e",
       "bytes": 496
     },
     {
@@ -4618,6 +4618,11 @@
       "bytes": 11309
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/AgentClientPayloadSinkMixin.java",
+      "sha256": "a43eda0d56ec46ee78f1f3946a0b6a6b209773ade1f1355806eb986459834231",
+      "bytes": 1243
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/AgentDeathAcceptedMixin.java",
       "sha256": "4c0ffc9635e85e06119efd76a1a97f9333b39168f1b6ae57274157777450572a",
       "bytes": 749
@@ -5964,8 +5969,8 @@
     },
     {
       "path": "neoforge/src/main/resources/mineagent_actions.mixins.json",
-      "sha256": "c29476c449f919815def23a0003412c07b82414043b36926e10517eb1f1944de",
-      "bytes": 795
+      "sha256": "b08d77a6f9404abf5c1277e9dd504785fba767bf44bb229ca7467153f34367bf",
+      "bytes": 830
     },
     {
       "path": "neoforge/src/main/resources/mineagent_runtime.mixins.json",

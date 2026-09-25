@@ -22,7 +22,8 @@
     "EntityMotionRulesMixin",
     "MobAttackRulesMixin",
     "TwilightNagaAttackMixin",
-    "TwilightNagaSegmentAttackMixin"
+    "TwilightNagaSegmentAttackMixin",
+    "AgentClientPayloadSinkMixin"
   ],
   "injectors": {
     "defaultRequire": 1
