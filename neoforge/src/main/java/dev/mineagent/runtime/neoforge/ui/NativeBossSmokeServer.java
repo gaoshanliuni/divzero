@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 public final class NativeBossSmokeServer {
     private static final ObjectMapper JSON=new ObjectMapper();
     public static volatile boolean done;public static volatile String renderType="";public static volatile int captureSerial;
-    private static String phase="BOOT";private static int index,at,start;private static UUID agent,template;
+    private static String phase="BOOT";private static int index,at,start;private static UUID agent,template;private static boolean rejectJoin;
     private static CompletableFuture<Map<String,Object>> pending;private static ServerPlayer viewer;
     private static final List<Mob> entities=new ArrayList<>();private static final List<Object> evidence=new ArrayList<>();private static final List<String> failures=new ArrayList<>();
     private static final List<String> TYPES=new ArrayList<>();
@@ -33,6 +33,7 @@ public final class NativeBossSmokeServer {
     private static void save(String name,Object data)throws Exception{Files.createDirectories(root());Files.writeString(root().resolve(name+".json"),JSON.writerWithDefaultPrettyPrinter().writeValueAsString(data));}
     private static void check(boolean ok,String message){if(!ok)throw new IllegalStateException(message);}
     private static CompletableFuture<Map<String,Object>> call(String tool,com.fasterxml.jackson.databind.JsonNode args){return ConversationAgentTools.execute(viewer,agent,UUID.randomUUID(),tool,args.toString(),()->true);}
+    @SubscribeEvent public static void join(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent e){if(enabled()&&rejectJoin&&!e.getLevel().isClientSide()&&e.getEntity().getName().getString().equals("测试zombie"))e.setCanceled(true);}
     @SubscribeEvent public static void tick(ServerTickEvent.Post event){
         if(!enabled()||done)return;var server=event.getServer();viewer=server.getPlayerList().getPlayers().stream().filter(p->!(p instanceof MineAgentPlayer)).findFirst().orElse(null);if(viewer==null)return;
         try{
@@ -69,8 +70,11 @@ public final class NativeBossSmokeServer {
                     rows.add(Map.of("live",NativeEntityTemplates.observe(mob),"restored",NativeEntityTemplates.observe(restored),"nativeSaveLoad",true));restored.discard();
                 }
                 evidence.add(Map.of("type",TYPES.get(index),"status","SPAWN_TICK_SERIALIZATION_PASSED","entities",rows,"fullCombatVerified",false));save("progress",evidence);
-                for(var mob:entities)mob.discard();entities.clear();index++;phase="DEFINE";return;
+                for(var mob:entities)mob.discard();entities.clear();
+                if(index==0){rejectJoin=true;var args=JSON.createObjectNode().put("action","spawn").put("template_id",template.toString());args.putArray("position").add(10).add(171).add(0);pending=call("control_native_entity",args);phase="JOIN_CANCEL";return;}
+                index++;phase="DEFINE";return;
             }
+            if(phase.equals("JOIN_CANCEL")&&pending.isDone()){rejectJoin=false;var r=pending.join();save("join-cancel",r);check("UNKNOWN".equals(r.get("status"))&&Boolean.FALSE.equals(r.get("replayAllowed")),"JOIN_CANCEL_FALSE_SUCCESS");index++;phase="DEFINE";return;}
             if(phase.equals("MODEL_START")){
                 if(Boolean.getBoolean("mineagent.nativeBossZeroModel")){finish();return;}
                 ServerConversations.get(server).submitNative(viewer,agent,"请在坐标(0,171,0)复刻一只新的暮色森林娜迦，名字叫青玉守卫。我要真实完整身体与原生行为，不是只借用头部模型；不要修改其它实体，保持原生AI开启。创建独立可再用模板，然后生成一只，读取确认真实类型、多部件和模板归属。不要用游戏命令或电脑命令。",true);phase="MODEL";return;

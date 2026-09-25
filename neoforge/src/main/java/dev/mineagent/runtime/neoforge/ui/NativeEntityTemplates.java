@@ -118,7 +118,13 @@ public final class NativeEntityTemplates {
                 var data=mob.getPersistentData();data.putString(OWNER,p.getUUID().toString());data.putString(TEMPLATE,t.id().toString());data.putLong(REVISION,t.revision());data.putString(GROUP,operation.toString());
                 if(!p.level().noCollision(mob))throw new IllegalStateException("NATIVE_ENTITY_COLLISION");
             }
-            for(var mob:prepared){if(!p.level().tryAddFreshEntityWithPassengers(mob))throw new IllegalStateException("NATIVE_ENTITY_ADD_FAILED");added.add(mob);}
+            for(var mob:prepared){
+                if(!p.level().tryAddFreshEntityWithPassengers(mob))throw new IllegalStateException("NATIVE_ENTITY_ADD_FAILED");
+                // tryAddFreshEntityWithPassengers only checks duplicate IDs. A NeoForge join
+                // listener may reject a root/passenger even when that helper returns true.
+                if(mob.getSelfAndPassengers().anyMatch(e->p.level().getEntity(e.getUUID())!=e||e.isRemoved()))throw new IllegalStateException("NATIVE_ENTITY_JOIN_REJECTED");
+                added.add(mob);
+            }
             return Map.of("status","APPLIED","templateId",t.id(),"nativeType",d.type(),"entities",added.stream().map(NativeEntityTemplates::observe).toList(),"group",operation,"behavior","ORIGINAL_NATIVE_CLASS","fullCombatVerified",false);
         } catch(Exception error){
             // finalizeSpawn / third-party join hooks can have side effects. Never report a safe replay.
