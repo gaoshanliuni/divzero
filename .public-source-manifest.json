@@ -5364,8 +5364,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityAnimationProbe.java",
-      "sha256": "3d0458fbd67dad2ff6a13866ee58ebca8fc818ae434f58c30aa9f22babd955c6",
-      "bytes": 2142
+      "sha256": "9bfa87008ffb5c29a33d44375798456dd7f15262422ccb52eb358d94b56183b9",
+      "bytes": 2515
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityInteropSmokeServer.java",
@@ -5564,8 +5564,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEntityInterop.java",
-      "sha256": "3b5b41b666e8a47834bd020ac2936f136a29c82845666e33668362b3bf372a1b",
-      "bytes": 18155
+      "sha256": "bbf1e34f6491332619aa718390a738cca06a34a767fc1cb4f351a780f3a2c232",
+      "bytes": 18194
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerFileTools.java",
