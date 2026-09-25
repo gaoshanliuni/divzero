@@ -11,19 +11,21 @@ public final class ChatMessageDisplayClient {
     private static ChatMessagePreferences preferences;
     private static synchronized ChatMessagePreferences prefs(){if(preferences==null)try{preferences=new ChatMessagePreferences(Minecraft.getInstance().gameDirectory.toPath().resolve("config/mineagent-chat-messages.properties"));}catch(Exception e){throw new IllegalStateException("CHAT_MESSAGES_SETTINGS_UNAVAILABLE",e);}return preferences;}
     private static ChatMessageDisplay.State state(){try{return prefs().state();}catch(Exception e){return DEFAULT;}}
+    public static String thinkingMode(){return state().thinking();}
     public static int limit(){return state().limit();}
     public static Component decorate(Component original,long at){try{return AiNameHover.apply(original,ChatMessageDisplay.hover(state().mark(),Instant.ofEpochMilli(at),ZoneId.systemDefault()));}catch(Exception e){return original;}}
-    private static Map<String,Object> view(ChatMessageDisplay.State s,String status){return Map.of("status",status,"limit",s.limit(),"mark",s.mark(),"revision",s.revision(),"defaultLimit",1024,"maximumLimit",16384,"scope","CURRENT_CLIENT_ONLY","placement","AI_NAME_HOVER_ONLY","preview",ChatMessageDisplay.hover(s.mark(),Instant.now(),ZoneId.systemDefault()),"timezone",ZoneId.systemDefault().getId());}
+    private static Map<String,Object> view(ChatMessageDisplay.State s,String status){var value=new LinkedHashMap<String,Object>(Map.of("status",status,"limit",s.limit(),"mark",s.mark(),"revision",s.revision(),"defaultLimit",1024,"maximumLimit",16384,"scope","CURRENT_CLIENT_ONLY","placement","AI_NAME_HOVER_ONLY","thinking",s.thinking(),"thinkingModes",List.of("tail","full")));value.put("preview",ChatMessageDisplay.hover(s.mark(),Instant.now(),ZoneId.systemDefault()));value.put("timezone",ZoneId.systemDefault().getId());return value;}
     public static void accept(UiPayloads.Event packet){
         var mc=Minecraft.getInstance();var connection=mc.getConnection();if(connection==null)return;
         CompletableFuture.supplyAsync(()->{
-            try{var a=JsonParser.parseString(packet.json()).getAsJsonObject();if(!Set.of("kind","limit","mark","expectedRevision").containsAll(a.keySet()))throw new IllegalArgumentException("CHAT_MESSAGES_ARGUMENTS");
+            try{var a=JsonParser.parseString(packet.json()).getAsJsonObject();if(!Set.of("kind","limit","mark","thinking","expectedRevision").containsAll(a.keySet()))throw new IllegalArgumentException("CHAT_MESSAGES_ARGUMENTS");
                 String kind=a.get("kind").getAsString();if(kind.equals("read"))return view(prefs().state(),"OBSERVED");if(!kind.equals("set"))throw new IllegalArgumentException("CHAT_MESSAGES_ARGUMENTS");
-                Integer limit=null;String mark=null;Long revision=null;
+                Integer limit=null;String mark=null,thinking=null;Long revision=null;
                 if(a.has("limit")){if(!a.get("limit").isJsonPrimitive()||!a.getAsJsonPrimitive("limit").isNumber()||!a.get("limit").getAsString().matches("[0-9]{1,5}"))throw new IllegalArgumentException("CHAT_MESSAGES_LIMIT_1_16384");limit=a.get("limit").getAsInt();}
                 if(a.has("mark")){if(!a.get("mark").isJsonPrimitive()||!a.getAsJsonPrimitive("mark").isString())throw new IllegalArgumentException("CHAT_MESSAGES_MARK_INVALID");mark=a.get("mark").getAsString();}
+                if(a.has("thinking")){if(!a.get("thinking").isJsonPrimitive()||!a.getAsJsonPrimitive("thinking").isString())throw new IllegalArgumentException("CHAT_MESSAGES_THINKING_MODE");thinking=a.get("thinking").getAsString();ChatMessageDisplay.requireThinking(thinking);}
                 if(a.has("expectedRevision")){if(!a.get("expectedRevision").getAsString().matches("[0-9]{1,18}"))throw new IllegalArgumentException("CHAT_MESSAGES_REVISION");revision=a.get("expectedRevision").getAsLong();}
-                if(limit==null&&mark==null)throw new IllegalArgumentException("CHAT_MESSAGES_ARGUMENTS");return view(prefs().save(revision,limit,mark),"APPLIED");
+                if(limit==null&&mark==null&&thinking==null)throw new IllegalArgumentException("CHAT_MESSAGES_ARGUMENTS");return view(prefs().save(revision,limit,mark,thinking),"APPLIED");
             }catch(Exception e){String code=Objects.toString(e.getMessage(),"");return Map.<String,Object>of("status","REJECTED","error",code.matches("CHAT_MESSAGES_[A-Z_0-9]+")?code:"CHAT_MESSAGES_SETTINGS_UNAVAILABLE");}
         },IO).thenAccept(result->mc.execute(()->{
             if(mc.getConnection()!=connection)return;

@@ -10,7 +10,7 @@ class ConversationToolJournalTest {
     @Test void largeReceiptsArePagedWithoutLossAndRemainOwnerAgentScoped(@TempDir Path root)throws Exception{
         Path file=root.resolve("runtime.db");UUID world=UUID.randomUUID(),owner=UUID.randomUUID(),agent=UUID.randomUUID(),op=UUID.randomUUID();
         try(var ignored=new SqliteRuntimeRepository(file)){}
-        var json=new ObjectMapper();String source="🙂正文".repeat(6000);var receipt=Map.of("status","UNKNOWN","output",source);
+        var json=new ObjectMapper();String source="🙂正文".repeat(20000);var receipt=Map.of("status","UNKNOWN","output",source);
         ConversationToolJournal.save(file,world,op,0,json.writeValueAsString(Map.of("owner",owner,"agent",agent,"tool","large_receipt","state","UNKNOWN","receipt",receipt)));
         String listing=json.writeValueAsString(ConversationToolJournal.inspect(file,world,owner,agent,0));assertTrue(listing.length()<1000);assertFalse(listing.contains(source));
         var joined=new StringBuilder();int offset=0;do{var page=ConversationToolJournal.receipt(file,world,owner,agent,op,offset);assertEquals(false,page.get("replayAllowed"));joined.append(page.get("text"));offset=((Number)page.get("nextOffset")).intValue();}while(offset>=0);

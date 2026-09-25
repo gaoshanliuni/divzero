@@ -8,15 +8,16 @@ import java.util.*;import java.util.concurrent.*;import java.util.function.Boole
 /** Per-request acknowledgements bound to the requesting player's actual connection, independent of F2. */
 public final class ServerChatMessageSettings {
     private static final ObjectMapper JSON=new ObjectMapper();
-    private record Pending(ServerPlayer player,Integer limit,String mark,CompletableFuture<Map<String,Object>> result){}
+    private record Pending(ServerPlayer player,Integer limit,String mark,String thinking,CompletableFuture<Map<String,Object>> result){}
     private static final ConcurrentMap<UUID,Pending> PENDING=new ConcurrentHashMap<>();
-    public static CompletableFuture<Map<String,Object>> request(ServerPlayer player,Integer limit,String mark,Long expected,BooleanSupplier permit){
+    public static CompletableFuture<Map<String,Object>> request(ServerPlayer player,Integer limit,String mark,Long expected,BooleanSupplier permit){return request(player,limit,mark,null,expected,permit);}
+    public static CompletableFuture<Map<String,Object>> request(ServerPlayer player,Integer limit,String mark,String thinking,Long expected,BooleanSupplier permit){
         var server=player.level().getServer();
         if(!server.isSameThread()||!permit.getAsBoolean()||server.getPlayerList().getPlayer(player.getUUID())!=player)return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","CHAT_MESSAGES_CONTEXT_CHANGED"));
         try{
-            if(limit!=null)ChatMessageDisplay.requireLimit(limit);if(mark!=null)ChatMessageDisplay.validateMark(mark);if(expected!=null&&expected<0)throw new IllegalArgumentException("CHAT_MESSAGES_REVISION");
-            var args=new LinkedHashMap<String,Object>();boolean write=limit!=null||mark!=null;args.put("kind",write?"set":"read");if(limit!=null)args.put("limit",limit);if(mark!=null)args.put("mark",mark);if(expected!=null)args.put("expectedRevision",expected);
-            UUID id=UUID.randomUUID();var result=new CompletableFuture<Map<String,Object>>();var pending=new Pending(player,limit,mark,result);PENDING.put(id,pending);
+            if(thinking!=null)ChatMessageDisplay.requireThinking(thinking);if(limit!=null)ChatMessageDisplay.requireLimit(limit);if(mark!=null)ChatMessageDisplay.validateMark(mark);if(expected!=null&&expected<0)throw new IllegalArgumentException("CHAT_MESSAGES_REVISION");
+            var args=new LinkedHashMap<String,Object>();boolean write=limit!=null||mark!=null||thinking!=null;args.put("kind",write?"set":"read");if(limit!=null)args.put("limit",limit);if(mark!=null)args.put("mark",mark);if(thinking!=null)args.put("thinking",thinking);if(expected!=null)args.put("expectedRevision",expected);
+            UUID id=UUID.randomUUID();var result=new CompletableFuture<Map<String,Object>>();var pending=new Pending(player,limit,mark,thinking,result);PENDING.put(id,pending);
             result.orTimeout(10,TimeUnit.SECONDS).whenComplete((v,e)->PENDING.remove(id,pending));
             net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new UiPayloads.Event(id,"chatMessageDisplay",JSON.writeValueAsString(args)));
             return result.exceptionally(e->Map.of("status",write?"UNKNOWN":"REJECTED","error","CHAT_MESSAGES_CLIENT_ACK_TIMEOUT","replayed",false));
@@ -28,10 +29,11 @@ public final class ServerChatMessageSettings {
             var json=JSON.readTree(packet.json());String status=json.path("status").asText();
             if(Set.of("APPLIED","OBSERVED").contains(status)){
                 if(!json.path("limit").isIntegralNumber()||!json.path("limit").canConvertToInt()||!json.path("mark").isTextual()||!json.path("revision").isIntegralNumber()||!json.path("revision").canConvertToLong())throw new IllegalArgumentException();
-                var state=new ChatMessageDisplay.State(json.path("limit").intValue(),json.path("mark").textValue(),json.path("revision").longValue());
+                var state=new ChatMessageDisplay.State(json.path("limit").intValue(),json.path("mark").textValue(),json.path("revision").longValue(),json.path("thinking").asText("tail"));
+                if(pending.thinking()!=null&&!pending.thinking().equals(state.thinking()))throw new IllegalArgumentException();
                 if(pending.limit()!=null&&!pending.limit().equals(state.limit())||pending.mark()!=null&&!pending.mark().equals(state.mark()))throw new IllegalArgumentException();
-                if((pending.limit()!=null||pending.mark()!=null)!=status.equals("APPLIED"))throw new IllegalArgumentException();
-                pending.result().complete(Map.of("status",status,"limit",state.limit(),"mark",state.mark(),"revision",state.revision(),"scope","CURRENT_CLIENT_ONLY","placement","AI_NAME_HOVER_ONLY","defaultLimit",1024,"maximumLimit",16384));
+                if((pending.limit()!=null||pending.mark()!=null||pending.thinking()!=null)!=status.equals("APPLIED"))throw new IllegalArgumentException();
+                pending.result().complete(Map.of("status",status,"limit",state.limit(),"mark",state.mark(),"revision",state.revision(),"scope","CURRENT_CLIENT_ONLY","placement","AI_NAME_HOVER_ONLY","defaultLimit",1024,"maximumLimit",16384,"thinking",state.thinking(),"thinkingModes",List.of("tail","full")));
             }else{String code=json.path("error").asText();if(!Set.of("REJECTED","UNKNOWN").contains(status)||!code.matches("CHAT_MESSAGES_[A-Z_0-9]+"))throw new IllegalArgumentException();pending.result().complete(Map.of("status",status,"error",code));}
         }catch(Exception failure){pending.result().complete(Map.of("status","UNKNOWN","error","CHAT_MESSAGES_INVALID_ACK"));}
         PENDING.remove(packet.requestId(),pending);

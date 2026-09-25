@@ -41,4 +41,11 @@ class ConversationNativeSnapshotTest {
             assertEquals(next.operationId().toString(),s.operationConversation(owner,agent,next.operationId()).orElseThrow().activeOperation());
         }
     }
+    @Test void nativeWireChunksDoNotSplitAnEmojiAtThePayloadBoundary(@TempDir Path dir)throws Exception{
+        UUID owner=UUID.randomUUID(),agent=UUID.randomUUID();try(var s=ConversationStore.open(dir.resolve("unicode.db"),UUID.randomUUID(),Clock.systemUTC())){
+            var c=s.nativeConversation(owner,agent);var t=s.begin(owner,agent,c.conversationId(),UUID.randomUUID(),c.revision(),"question",0);String text="a".repeat(4095)+"😀END";s.streamDelta(t.operationId(),text,text,true,true);
+            var first=s.nativeSnapshot(owner,agent,c.conversationId(),t.assistantMessageId(),0,0);assertEquals(4095,first.body().text().length());assertEquals(4095,first.thought().text().length());
+            var second=s.nativeSnapshot(owner,agent,c.conversationId(),t.assistantMessageId(),4095,4095);assertEquals("😀END",second.body().text());assertEquals("😀END",second.thought().text());
+        }
+    }
 }

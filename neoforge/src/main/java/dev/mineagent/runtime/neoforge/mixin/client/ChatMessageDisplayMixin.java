@@ -10,6 +10,15 @@ public abstract class ChatMessageDisplayMixin implements ChatDisplayAccess {
     @Shadow protected abstract void refreshTrimmedMessages();
     @Shadow private int chatScrollbarPos;
     @Shadow public abstract void scrollChat(int amount);
+    @Override public boolean mineagent$replaceMessage(GuiMessage before,GuiMessage after){
+        int index=-1;for(int i=0;i<allMessages.size();i++)if(allMessages.get(i)==before){index=i;break;}if(index<0)return false;
+        allMessages.set(index,after);int start=-1,end=-1;for(int i=0;i<trimmedMessages.size();i++)if(trimmedMessages.get(i).parent()==before){if(start<0)start=i;end=i+1;}
+        if(start>=0){var mc=net.minecraft.client.Minecraft.getInstance();int width=net.minecraft.util.Mth.floor(net.minecraft.client.gui.components.ChatComponent.getWidth(mc.options.chatWidth().get())/((ChatComponent)(Object)this).getScale());
+            var lines=after.splitLines(mc.font,width);var replacement=new java.util.ArrayList<GuiMessage.Line>();for(int i=lines.size()-1;i>=0;i--)replacement.add(new GuiMessage.Line(after,lines.get(i),i==lines.size()-1));
+            int delta=replacement.size()-(end-start);trimmedMessages.subList(start,end).clear();trimmedMessages.addAll(start,replacement);
+            if(chatScrollbarPos>0&&start<=chatScrollbarPos)chatScrollbarPos=Math.max(start,chatScrollbarPos+delta);scrollChat(0);
+        }return true;
+    }
     @ModifyConstant(method="addMessageToQueue",constant=@Constant(intValue=100)) private int mineagent$messageLimit(int old){return ChatMessageDisplayClient.limit();}
     // Wrapped lines are retained with their parent, not counted as separate messages.
     @ModifyConstant(method="addMessageToDisplayQueue",constant=@Constant(intValue=100)) private int mineagent$lineLimit(int old){return Integer.MAX_VALUE;}

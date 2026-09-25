@@ -1,36 +1,32 @@
 package dev.mineagent.runtime.neoforge.client.chat;
-
 import dev.mineagent.runtime.neoforge.ui.NativeDeliverySmokeServer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.*;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.*;
+import dev.mineagent.runtime.neoforge.mixin.client.ChatHistoryAccess;
+import net.minecraft.client.Minecraft;import net.minecraft.client.multiplayer.chat.GuiMessage;
+import net.minecraft.network.chat.*;import net.minecraft.network.chat.contents.TranslatableContents;
+import net.neoforged.api.distmarker.Dist;import net.neoforged.bus.api.SubscribeEvent;import net.neoforged.fml.common.EventBusSubscriber;import net.neoforged.neoforge.client.event.*;
 import java.util.*;import java.nio.file.*;
-
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class NativeDeliverySmokeClient {
-    private static String active="",pending="";private static final StringBuilder body=new StringBuilder(),thinking=new StringBuilder();
-    private static int ticks,parts;private static boolean done;
-    private static void buttons(Component c){
-        if(c.getStyle().getClickEvent() instanceof ClickEvent.RunCommand run){String command=run.command();
-            if(command.startsWith("/ai interrupt "+NativeDeliverySmokeServer.a+" active:")&&active.isEmpty()){active=command;NativeDeliverySmokeServer.activeButtonReady=true;}
-            if(command.startsWith("/ai interrupt "+NativeDeliverySmokeServer.a+" pending:")){pending=command;NativeDeliverySmokeServer.pendingButtonReady=true;}
-        }for(var child:c.getSiblings())buttons(child);
-    }
-    @SubscribeEvent public static void chat(ClientChatReceivedEvent.System event){if(!NativeDeliverySmokeServer.enabled())return;buttons(event.getMessage());String text=event.getMessage().getString();
-        if(text.contains("CONVERSATION_REQUEST_FAILED")||text.contains("CONVERSATION_BUTTON_EXPIRED")||text.contains("CONVERSATION_PENDING_EXPIRED")||text.contains("聊天显示失败"))NativeDeliverySmokeServer.failure="NATIVE_CHAT_ERROR";
-        String prefix="[显示乙][思考]";if(text.startsWith(prefix)){thinking.append(text.substring(prefix.length()));parts++;}
-        else if(text.startsWith("[显示乙] ")&&!text.contains("正在处理")){body.append(text.substring("[显示乙] ".length()));parts++;}
-    }
-    @SubscribeEvent public static void tick(ClientTickEvent.Post event){if(!NativeDeliverySmokeServer.enabled()||done)return;var mc=Minecraft.getInstance();try{
-        var root=Files.createDirectories(mc.gameDirectory.toPath().resolve("native-delivery-smoke"));if(!NativeDeliverySmokeServer.failure.isEmpty())throw new IllegalStateException(NativeDeliverySmokeServer.failure);if(++ticks>13000)throw new IllegalStateException("CLIENT_DELIVERY_TIMEOUT");if(mc.player==null)return;
-        mc.options.pauseOnLostFocus=false;if(mc.screen!=null)mc.setScreen(null);
-        if(!NativeDeliverySmokeServer.clientCommandSent){String phase=NativeDeliverySmokeServer.phase;if(Set.of("INTERRUPT_A","OLD_BUTTON","PENDING_BUTTON").contains(phase)){String command=phase.equals("PENDING_BUTTON")?pending:active;if(command.isEmpty())throw new IllegalStateException("NATIVE_BUTTON_MISSING");mc.player.connection.sendCommand(command.substring(1));NativeDeliverySmokeServer.clientCommandSent=true;}}
-        if(NativeDeliverySmokeServer.complete&&body.toString().equals(NativeDeliverySmokeServer.expectedBody)&&thinking.toString().equals(NativeDeliverySmokeServer.expectedThinking)){
-            Files.writeString(root.resolve("client.json"),new com.google.gson.Gson().toJson(Map.of("status","PASSED","nativeButtonCommandsUsed",true,"bodyMatchesDatabase",true,"thinkingMatchesDatabase",true,"segments",parts,"bodyChars",body.length(),"thinkingChars",thinking.length(),"osInputInjected",false)));done=true;mc.stop();
-        }
-    }catch(Exception e){try{Files.writeString(mc.gameDirectory.toPath().resolve("native-delivery-smoke/client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",e.toString(),"phase",NativeDeliverySmokeServer.phase,"bodyChars",body.length(),"thinkingChars",thinking.length())));}catch(Exception ignored){}done=true;mc.stop();}}
-    private NativeDeliverySmokeClient(){}
+ private static String active="",pending="",lastBody="",lastThought="";private static int ticks,updates,stage,wait,fullLines,tailLines;private static boolean done,firstCapture,scrollTest;private static long receivedAt;private static volatile int captures;
+ private static void buttons(Component c){if(c.getStyle().getClickEvent() instanceof ClickEvent.RunCommand run){String command=run.command();if(command.startsWith("/ai interrupt "+NativeDeliverySmokeServer.a+" active:")&&active.isEmpty()){active=command;NativeDeliverySmokeServer.activeButtonReady=true;}if(command.startsWith("/ai interrupt "+NativeDeliverySmokeServer.a+" pending:")){pending=command;NativeDeliverySmokeServer.pendingButtonReady=true;}}for(var child:c.getSiblings())buttons(child);if(c.getContents() instanceof TranslatableContents t)for(var arg:t.getArgs())if(arg instanceof Component child)buttons(child);}
+ @SubscribeEvent public static void chat(ClientChatReceivedEvent.System event){if(!NativeDeliverySmokeServer.enabled())return;buttons(event.getMessage());String text=event.getMessage().getString();if(text.contains("CONVERSATION_REQUEST_FAILED")||text.contains("CONVERSATION_BUTTON_EXPIRED")||text.contains("CONVERSATION_PENDING_EXPIRED")||text.contains("聊天显示失败"))NativeDeliverySmokeServer.failure="NATIVE_CHAT_ERROR";}
+ private static void require(boolean value,String code){if(!value)throw new IllegalStateException(code);}
+ private static void capture(Minecraft mc,Path root,String name){captures++;net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(),img->{try(img){img.writeToFile(root.resolve(name+".png"));}catch(Exception e){NativeDeliverySmokeServer.failure="SCREENSHOT_FAILED";}finally{captures--;}});}
+ @SubscribeEvent public static void tick(ClientTickEvent.Post event){if(!NativeDeliverySmokeServer.enabled()||done)return;var mc=Minecraft.getInstance();try{
+  var root=Files.createDirectories(mc.gameDirectory.toPath().resolve("native-delivery-smoke"));if(!NativeDeliverySmokeServer.failure.isEmpty())throw new IllegalStateException(NativeDeliverySmokeServer.failure);if(++ticks>13000)throw new IllegalStateException("CLIENT_DELIVERY_TIMEOUT");if(mc.player==null)return;
+  mc.options.pauseOnLostFocus=false;if(mc.screen!=null)mc.setScreen(null);var chat=mc.gui.getChat();var access=(ChatHistoryAccess)chat;
+  for(var message:access.mineagent$messages())buttons(message.content());
+  if(!NativeDeliverySmokeServer.clientCommandSent){String phase=NativeDeliverySmokeServer.phase;if(Set.of("INTERRUPT_A","OLD_BUTTON","PENDING_BUTTON").contains(phase)){String command=phase.equals("PENDING_BUTTON")?pending:active;require(!command.isEmpty(),"NATIVE_BUTTON_MISSING");mc.player.connection.sendCommand(command.substring(1));NativeDeliverySmokeServer.clientCommandSent=true;}}
+  var messages=access.mineagent$messages().stream().filter(m->NativeStreamingChat.body(m.content())!=null&&NativeStreamingChat.body(m.content()).getString().startsWith("[显示乙]")).toList();require(messages.size()<=1,"STREAM_CREATED_MULTIPLE_HISTORY_ENTRIES");if(messages.isEmpty())return;GuiMessage current=messages.getFirst();String body=NativeStreamingChat.body(current.content()).getString().substring("[显示乙]".length());var thought=NativeStreamingChat.thinking(current.content());String reasoning=(String)((TranslatableContents)thought.getContents()).getArgs()[1];
+  long at=((ChatMessageClock)(Object)current).mineagent$receivedAt();if(receivedAt==0)receivedAt=at;require(at==receivedAt,"STREAM_CHANGED_RECEIPT_TIMESTAMP");
+  if(!body.equals(lastBody)||!reasoning.equals(lastThought)){updates++;lastBody=body;lastThought=reasoning;if(scrollTest&&!NativeDeliverySmokeServer.complete)require(access.mineagent$scrollPosition()>0,"STREAM_RESET_SCROLL");}
+  if(!firstCapture&&body.length()>100){firstCapture=true;capture(mc,root,"stream-in-progress");chat.scrollChat(2);scrollTest=access.mineagent$scrollPosition()>0;}
+  if(!NativeDeliverySmokeServer.complete||!body.equals(NativeDeliverySmokeServer.expectedBody)||!reasoning.equals(NativeDeliverySmokeServer.expectedThinking))return;
+  require(updates>1,"NOT_STREAMED");int width=net.minecraft.util.Mth.floor(net.minecraft.client.gui.components.ChatComponent.getWidth(mc.options.chatWidth().get())/chat.getScale());int bodyLines=net.minecraft.client.gui.components.ComponentRenderUtils.wrapComponents(NativeStreamingChat.body(current.content()),width,mc.font).size();
+  if(stage==0){chat.resetChatScroll();mc.player.connection.sendCommand("ai msg thinking full");stage=1;wait=0;return;}
+  if(stage==1&&ChatMessageDisplayClient.thinkingMode().equals("full")&&++wait>10){fullLines=current.splitLines(mc.font,width).size();if(!reasoning.isEmpty())require(fullLines>bodyLines+1,"FULL_THINKING_NOT_VISIBLE");capture(mc,root,"stream-full");mc.player.connection.sendCommand("ai msg thinking tail");stage=2;wait=0;return;}
+  if(stage==2&&ChatMessageDisplayClient.thinkingMode().equals("tail")&&++wait>10){tailLines=current.splitLines(mc.font,width).size();require(tailLines==bodyLines+(reasoning.isEmpty()?0:1),"TAIL_NOT_EXACTLY_ONE_LINE");capture(mc,root,"stream-tail");stage=3;return;}
+  if(stage==3&&captures==0){var result=new LinkedHashMap<String,Object>();result.put("status","PASSED");result.put("nativeButtonCommandsUsed",!NativeDeliverySmokeServer.plain());result.put("bodyMatchesDatabase",true);result.put("thinkingMatchesDatabase",true);result.put("updatesObserved",updates);result.put("historyEntries",messages.size());result.put("bodyChars",body.length());result.put("thinkingChars",reasoning.length());result.put("tailLines",tailLines);result.put("fullLines",fullLines);result.put("receiptTimeStable",true);result.put("scrollPreserved",scrollTest);result.put("osInputInjected",false);Files.writeString(root.resolve("client.json"),new com.google.gson.Gson().toJson(result));done=true;mc.stop();}
+ }catch(Exception e){try{Files.writeString(mc.gameDirectory.toPath().resolve("native-delivery-smoke/client-failure.json"),new com.google.gson.Gson().toJson(Map.of("error",e.toString(),"phase",NativeDeliverySmokeServer.phase,"bodyChars",lastBody.length(),"thinkingChars",lastThought.length(),"stage",stage)));}catch(Exception ignored){}done=true;mc.stop();}}
+ private NativeDeliverySmokeClient(){}
 }

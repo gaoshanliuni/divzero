@@ -10,9 +10,11 @@ public final class ChatMessageDisplay {
     public static final int DEFAULT_LIMIT=1024,MAX_LIMIT=16384;
     public static final String DEFAULT_MARK="time";
     private static final Map<String,Function<ZonedDateTime,String>> CACHE=new LinkedHashMap<>();
-    public record State(int limit,String mark,long revision){
-        public State{requireLimit(limit);validateMark(mark);if(revision<0)throw new IllegalArgumentException("CHAT_MESSAGES_REVISION");}
+    public record State(int limit,String mark,long revision,String thinking){
+        public State(int limit,String mark,long revision){this(limit,mark,revision,"tail");}
+        public State{requireThinking(thinking);requireLimit(limit);validateMark(mark);if(revision<0)throw new IllegalArgumentException("CHAT_MESSAGES_REVISION");}
     }
+    public static void requireThinking(String mode){if(mode==null||!Set.of("tail","full").contains(mode))throw new IllegalArgumentException("CHAT_MESSAGES_THINKING_MODE");}
     public static void requireLimit(int limit){if(limit<1||limit>MAX_LIMIT)throw new IllegalArgumentException("CHAT_MESSAGES_LIMIT_1_16384");}
     public static void validateMark(String mark){formatter(mark);}
     public static String hover(String mark,Instant receivedAt,ZoneId zone){return formatter(mark).apply(receivedAt.atZone(zone));}

@@ -26,7 +26,7 @@ public final class ConversationToolJournal {
         }
     }
     public static void save(Path dbFile,UUID world,UUID id,long expected,String payload)throws SQLException{
-        if(payload==null||payload.length()>65536)throw new IllegalArgumentException("AGENT_RECEIPT_BUDGET");
+        if(payload==null||payload.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>ConversationTools.MAX_TOOL_TRANSPORT_BYTES+8192)throw new IllegalArgumentException("AGENT_RECEIPT_BUDGET");
         var gate=dev.mineagent.runtime.core.persistence.SqliteWriteGate.forFile(dbFile);gate.lock();
         try(var db=DriverManager.getConnection("jdbc:sqlite:"+dbFile.toAbsolutePath());var s=db.createStatement()){
             s.execute("PRAGMA busy_timeout=1500");s.execute("BEGIN IMMEDIATE");

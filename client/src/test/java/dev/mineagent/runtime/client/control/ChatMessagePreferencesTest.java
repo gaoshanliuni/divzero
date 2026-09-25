@@ -8,4 +8,10 @@ class ChatMessagePreferencesTest {
   assertThrows(IllegalStateException.class,()->p.save(0L,1,"off"));assertEquals(second,p.state());assertThrows(IllegalArgumentException.class,()->p.save(null,16385,null));assertEquals(second,new ChatMessagePreferences(file).state());
   assertEquals("off",p.save(null,null,"off").mark());
  }
+ @Test void thinkingTailDefaultPersistsAndDoesNotChangeRetentionOrMark()throws Exception{
+  var file=directory.resolve("stream.properties");var p=new ChatMessagePreferences(file);assertEquals("tail",p.state().thinking());
+  var full=p.save(0L,null,null,"full");assertEquals("full",full.thinking());assertEquals(1024,full.limit());assertEquals("time",full.mark());
+  assertEquals(full,new ChatMessagePreferences(file).state());assertEquals("full",p.save(full.revision(),4096,null).thinking());
+  assertThrows(IllegalArgumentException.class,()->p.save(null,null,null,"invalid"));
+ }
 }

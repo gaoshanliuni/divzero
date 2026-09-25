@@ -8,7 +8,7 @@
   "key.categories.mineagent_runtime.control_center": "MineAgent Runtime",
   "mineagent.chat.agent_name": "[%s]",
   "mineagent.chat.thinking": "%s[Thinking]%s",
-  "mineagent.chat.messages.status": "Chat history: %s messages; AI-name hover format: %s (no extra prefix)",
+  "mineagent.chat.messages.status": "Chat history: %s messages; AI-name hover: %s (no extra prefix); thinking: %s",
   "mineagent.chat.messages.failed": "Chat display change not confirmed: %s",
   "mineagent.chat.messages.limit": "Chat history limit: ",
   "mineagent.chat.messages.mark": "Hover over the AI name for date/time: ",
@@ -17,5 +17,10 @@
   "mineagent.chat.queue_ended": " This message has ended or is no longer queued. Nothing was resent or interrupted.",
   "mineagent.chat.queue_interrupted": " The queued message had started and is now interrupted; it was not resent.",
   "mineagent.chat.interrupted": " Interrupted. Completed game or computer actions are not rolled back.",
-  "mineagent.chat.delivery_failed": " Chat display failed. View the saved conversation in F2; the request was not resent."
+  "mineagent.chat.delivery_failed": " Chat display failed. View the saved conversation in F2; the request was not resent.",
+  "mineagent.chat.stream": "%s",
+  "mineagent.chat.stream.stopped": "(Stopped)",
+  "mineagent.chat.messages.thinking": "Thinking display: ",
+  "mineagent.chat.thinking.tail": "Last line",
+  "mineagent.chat.thinking.full": "Full thinking"
 }

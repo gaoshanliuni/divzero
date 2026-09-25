@@ -199,11 +199,12 @@ public final class ConversationStore implements AutoCloseable {
     public synchronized NativeSnapshot nativeSnapshot(UUID viewer,UUID agent,UUID conversation,UUID assistant,int bodyOffset,int thinkingOffset)throws SQLException{
         var context=context(viewer,agent,conversation,assistant).orElseThrow(()->new IllegalStateException("CONVERSATION_CONTEXT_UNAVAILABLE"));
         var message=message(viewer,agent,conversation,assistant);var thinking=thinking(viewer,agent,conversation,assistant);
-        var body=chunk(viewer,agent,conversation,assistant,message.revision(),bodyOffset,512);
-        var thought=thinking.textLength()>thinkingOffset?thinkingChunk(viewer,agent,conversation,assistant,thinking.revision(),thinkingOffset,1024):null;
+        var body=chunk(viewer,agent,conversation,assistant,message.revision(),bodyOffset,4096);
+        var thought=thinking.textLength()>thinkingOffset?thinkingChunk(viewer,agent,conversation,assistant,thinking.revision(),thinkingOffset,4096):null;
         if(thinkingOffset<0||thinkingOffset>thinking.textLength())throw new IllegalArgumentException("CONVERSATION_CHUNK_OFFSET");
-        return new NativeSnapshot(context,message,thinking,body,thought);
+        return new NativeSnapshot(context,message,thinking,nativeSafeChunk(body),thought==null?null:nativeSafeChunk(thought));
     }
+    private static Chunk nativeSafeChunk(Chunk chunk){String text=chunk.text();if(!text.isEmpty()&&Character.isHighSurrogate(text.charAt(text.length()-1)))text=text.substring(0,text.length()-1);return new Chunk(chunk.messageId(),chunk.revision(),chunk.offset(),chunk.total(),text);}
     /** Buttons bind to a persisted request, never to a transient chat-delivery subscription. */
     public synchronized Optional<Conversation> operationConversation(UUID viewer,UUID agent,UUID operation)throws SQLException{
         var ids=query("SELECT c.id FROM mineagent_conversation_operations_v1 o JOIN mineagent_conversations_v1 c ON c.world_id=o.world_id AND c.id=o.conversation_id WHERE o.world_id=? AND o.id=? AND o.kind='send' AND c.player_id=? AND c.agent_id=?",r->uuid(r.getString(1)),world,operation,viewer,agent);
