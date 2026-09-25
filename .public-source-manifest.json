@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "files": [
     {
       "path": ".gitattributes",
@@ -3254,7 +3254,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "dc1b31d36405b1b6d2b843a95aa69966df4347ba91a58b6780a2ead66da8d694",
+      "sha256": "75de9b792240396b6b3bafa8a373b60436a3546539435c7ce4ace5dc6fdda305",
       "bytes": 496
     },
     {
@@ -3779,18 +3779,18 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/EntityPartModels.java",
-      "sha256": "a19fc84f69a570c08865b389b1e333d6871554ef57e038d62db9f36190e18513",
-      "bytes": 9926
+      "sha256": "dc70651c4cc9873d32fb4e5d9cfd930f71277fc39ce8021acb67807c200d5a4d",
+      "bytes": 9990
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/EntityPartsSmokeClient.java",
-      "sha256": "15052c11f108b20bc8d400519101218334055c29a4e39dcaa45ada7e2d3aac6d",
-      "bytes": 1404
+      "sha256": "dfe10a9081c86952bb8208df4d4ef8d8ed8ef6d720ac2cfae26b3c5368d3efee",
+      "bytes": 1428
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/EntityVisualClient.java",
-      "sha256": "341f94fd7af22e075153c694b93fb9ebef1162274df880c1ebc04accbf7c62a2",
-      "bytes": 11423
+      "sha256": "ad4276d92d3ddcc6e21312d609ead77bd5ad6393ad6c57f280f0504960faa7cb",
+      "bytes": 11811
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeAcceptanceClient.java",
@@ -5434,8 +5434,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityPartsSmokeServer.java",
-      "sha256": "bb78b69516e7fcb20d9edf1b7e48bff4a4b0cad1d1323ad30476e561ebb28335",
-      "bytes": 10838
+      "sha256": "6a8ca53f8f96e18a012f41ec5efbea52ffe512f9530fe1b144a7f59e4cd941cf",
+      "bytes": 11176
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/FeedbackApplicationSmokeServer.java",

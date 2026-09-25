@@ -82,7 +82,7 @@ public final class EntityPartModels {
     }
     public static boolean hasPlan(EntityRenderState state){var plan=state.getRenderData(KEY);return plan!=null&&(!plan.attachments().isEmpty()||!plan.errors().isEmpty());}
     public static List<String> errors(EntityRenderState state){var plan=state.getRenderData(KEY);return plan==null?List.of():plan.errors();}
-    public static void drawn(Draw d){DRAWN.put(d.meta().entity()+":"+d.meta().part()+":"+d.target(),Map.of("target",d.target(),"sourceType",d.sourceType(),"sourcePart",d.sourcePart(),"texture",d.texture(),"ageInTicks",d.meta().age(),"status","OBSERVED_REPLACEMENT_DRAW"));}
+    public static void drawn(Draw d,PoseStack poses){DRAWN.put(d.meta().entity()+":"+d.meta().part()+":"+d.target(),Map.of("target",d.target(),"sourceType",d.sourceType(),"sourcePart",d.sourcePart(),"texture",d.texture(),"ageInTicks",d.meta().age(),"status","OBSERVED_REPLACEMENT_DRAW","matrix",poses.last().pose().get(new float[16])));}
     public static List<Map<String,Object>> draws(EntityRenderState state,EntityVisualClient.Meta meta){var plan=state.getRenderData(KEY);if(plan==null)return List.of();var rows=new ArrayList<Map<String,Object>>();for(var a:plan.attachments()){var row=DRAWN.get(meta.entity()+":"+meta.part()+":"+a.target());if(row!=null&&meta.age()-((Number)row.get("ageInTicks")).doubleValue()<4&&row.get("sourceType").equals(a.spec().sourceType())&&row.get("sourcePart").equals(a.spec().sourcePart()))rows.add(row);}return rows;}
     private EntityPartModels(){}
 }
