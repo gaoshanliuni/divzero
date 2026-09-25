@@ -140,6 +140,7 @@ public final class CinematicCaptureClient {
             camera.setPos(smoothed.x,smoothed.y-camera.getEyeHeight(),smoothed.z);
             camera.xOld=camera.getX();camera.yOld=camera.getY();camera.zOld=camera.getZ();
             camera.setYRot(yaw);camera.yRotO=yaw;camera.setXRot(pitch);camera.xRotO=pitch;
+            camera.setOldPosAndRot();
             mc.setCameraEntity(camera);
         } catch(Exception e) { fail(e); }
     }
