@@ -41,6 +41,8 @@ public final class CinematicCaptureClient {
     private static long started, lastCapture, stopAt, shotAt;
     private static String marker = "";
     private static Vec3 smoothed;
+    private static boolean initialTrustHandled;
+    private static long previewAt;
     private record Frame(long index, byte[] rgba) {}
 
     public static boolean enabled() { return Boolean.getBoolean("mineagent.cinematic"); }
@@ -99,6 +101,16 @@ public final class CinematicCaptureClient {
         if (mc.level == null || mc.player == null || !mc.hasSingleplayerServer()) return;
         try {
             if (started == 0) start(mc);
+            if (!initialTrustHandled && mc.screen instanceof dev.mineagent.runtime.neoforge.client.screen.ControlCenterScreen screen) {
+                for (var child : List.copyOf(screen.children())) {
+                    if (child instanceof net.minecraft.client.gui.components.Button button && button.active
+                            && button.getMessage().getString().contains("信任此服务器")) {
+                        button.onPress(new net.minecraft.client.input.KeyEvent(257,0,0));
+                        initialTrustHandled=true; mc.setScreen(null); mc.player.connection.sendCommand("ai accept");
+                        break;
+                    }
+                }
+            }
             if (stopAt != 0 && System.nanoTime() >= stopAt) { close(); mc.stop(); return; }
             String current = "scene";
             if (plan.has("phaseField")) current = String.valueOf(fixtureField(plan, plan.get("phaseField").asText()));
@@ -155,6 +167,7 @@ public final class CinematicCaptureClient {
             var mc=Minecraft.getInstance();
             Screenshot.takeScreenshot(mc.getMainRenderTarget(),image->{
                 try(image){
+                    if (index-previewAt>=FPS*5) { image.writeToFile(root.resolve("preview.png")); previewAt=index; }
                     int[] pixels=image.getPixelsABGR();
                     byte[] bytes=new byte[pixels.length*4];
                     ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().put(pixels);
