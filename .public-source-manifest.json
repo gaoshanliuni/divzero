@@ -3243,6 +3243,11 @@
       "bytes": 2686
     },
     {
+      "path": "docs/CINEMATIC_FILMS.md",
+      "sha256": "c7a0f10dbc76e1ff9d4b1e97b5ca029c4ac725f5a4e4c96cbdf57ccb90af2a26",
+      "bytes": 7152
+    },
+    {
       "path": "docs/SOURCE_SNAPSHOT.md",
       "sha256": "958f884c2e0fa9da34746147db6aac16807e961437b4aaafe3abb3628a090011",
       "bytes": 27619
@@ -6243,9 +6248,24 @@
       "bytes": 1099
     },
     {
+      "path": "scripts/edit-feature-films.py",
+      "sha256": "8d21956f0eda875a371c2389779ae473a6a0a15f43030c14ae304d7f41fe3c83",
+      "bytes": 7660
+    },
+    {
+      "path": "scripts/finish-feature-films.py",
+      "sha256": "11b4e9dc8eaa3a79f05c9fa37693b9292e301cfaf4a85d6b044c53a11ca507d3",
+      "bytes": 7705
+    },
+    {
       "path": "scripts/prepare-media-tools.ps1",
       "sha256": "39ade9493d953b60697b780b03cdb3b9ef7a5094fa3b06e35a0d1f1208c38c90",
       "bytes": 1940
+    },
+    {
+      "path": "scripts/record-feature-video.py",
+      "sha256": "6c4a7efa1dacd3f277985eae7deabaa767337a645f03702bb532cd977139823e",
+      "bytes": 11396
     },
     {
       "path": "settings.gradle",
