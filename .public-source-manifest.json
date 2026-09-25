@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "files": [
     {
       "path": ".gitattributes",
@@ -3204,8 +3204,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "c3d7063f83651215cfc7daecea4cd9d9476ccd989118af665b09df974939730e",
-      "bytes": 19037
+      "sha256": "c5077e6ceb46e46db5c6fbf98d6574bfcbe6e35cdc3d5558a4a20ea965b7c44c",
+      "bytes": 19604
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3214,8 +3214,8 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "341ec7835f0736b3cb50f27235d4a536e555e7d8df1686b8fb3930862ecd68a9",
-      "bytes": 495
+      "sha256": "fc9a4186478d41dd6440767664e72a9339792c315050299955a2b0495297ec0a",
+      "bytes": 496
     },
     {
       "path": "gradle/wrapper/gradle-wrapper.jar",
@@ -5354,8 +5354,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeDeliverySmokeServer.java",
-      "sha256": "645ddc191fb1f812fec6b95781746cc785dc0ede0701e07f1606f7a3883da8c0",
-      "bytes": 9029
+      "sha256": "a5adc974150b893d5b2b5962bdc7dde93ff1f39b92da093a1021f5910fd4a1ab",
+      "bytes": 9470
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeFeedbackData.java",

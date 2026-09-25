@@ -12,8 +12,8 @@ import java.nio.file.*;
 @EventBusSubscriber(modid="mineagent_runtime")
 public final class NativeDeliverySmokeServer {
     public static boolean plain(){return Boolean.getBoolean("mineagent.nativeStreamPlainSmoke");}
-    public static volatile int largeToolChars;public static volatile boolean modelSetFull;
-    public static void observe(String tool,Map<String,Object> result){if(!enabled())return;if(tool.equals("inspect_creatures"))try{largeToolChars=Math.max(largeToolChars,JSON.writeValueAsString(result).length());}catch(Exception ignored){}if(tool.equals("set_chat_messages")&&"APPLIED".equals(result.get("status"))&&"full".equals(result.get("thinking")))modelSetFull=true;}
+    public static volatile String largeTail="";public static volatile int largeToolChars;public static volatile boolean modelSetFull;
+    public static void observe(String tool,Map<String,Object> result){if(!enabled())return;if(tool.equals("inspect_player"))try{largeToolChars=Math.max(largeToolChars,JSON.writeValueAsString(result).length());}catch(Exception ignored){}if(tool.equals("set_chat_messages")&&"APPLIED".equals(result.get("status"))&&"full".equals(result.get("thinking")))modelSetFull=true;}
     public static boolean enabled(){return Boolean.getBoolean("mineagent.nativeDeliverySmoke");}
     public static volatile String phase="BOOT",failure="",expectedBody="",expectedThinking="";
     public static volatile boolean complete,activeButtonReady,pendingButtonReady,clientCommandSent;
@@ -29,9 +29,13 @@ public final class NativeDeliverySmokeServer {
             if(phase.equals("BOOT")){
                 server.getPlayerList().op(player.nameAndId());server.getCommands().performPrefixedCommand(player.createCommandSourceStack(),"ai accept");
                 if(!plain()){
-                    String mesh="{\"version\":2,\"primitives\":[{\"type\":\"sphere\",\"center\":[0,1,0],\"radius\":1,\"segments\":32,\"rings\":16,\"color\":\"#38AADD\"}],\"collision\":[-1,0,-1,1,2,1]}";
-                    String source="{\"name\":\"LargeReadFixture\",\"bones\":[{\"name\":\"body\",\"pivot\":[0,0,0],\"model\":"+mesh+"}]}";
-                    dev.mineagent.runtime.neoforge.content.RuntimeCreatures.define(player,UUID.randomUUID(),JSON.createObjectNode().put("source",source));
+                    largeTail="LARGE_TOOL_TAIL_"+UUID.randomUUID().toString().substring(0,8);
+                    for(int slot=0;slot<16;slot++){
+                        var item=new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STONE);
+                        String lore="READ_ONLY_ROW_"+slot+":"+"x".repeat(1800)+(slot==15?largeTail:"_ROW_END");
+                        item.set(net.minecraft.core.component.DataComponents.LORE,new net.minecraft.world.item.component.ItemLore(List.of(net.minecraft.network.chat.Component.literal(lore))));
+                        player.getInventory().setItem(slot,item);
+                    }player.inventoryMenu.broadcastChanges();
                 }
                 a=MineAgentRuntimeServices.bodies(server).createPersistentAt("显示甲",player.getUUID(),player.level(),player.position().add(2,0,0)).agentId();
                 b=MineAgentRuntimeServices.bodies(server).createPersistentAt("显示乙",player.getUUID(),player.level(),player.position().add(-2,0,0)).agentId();
@@ -43,7 +47,7 @@ public final class NativeDeliverySmokeServer {
                 runtime.submitNative(player,a,"这是新的只读文本测试，不调用任何工具。请逐行列出1到10000，每行带一句中文解释；不要更改世界。",true);
                 ca=store.nativeConversation(player.getUUID(),a).conversationId();firstOperation=UUID.fromString(store.get(player.getUUID(),a,ca).activeOperation());
                 runtime.submitNative(player,a,"排队后的新文本任务，不调用任何工具：逐行列出1到10000，每行解释一次奇偶性。不更改世界。",true);
-                runtime.submitNative(player,b,"这是新测试。先调用inspect_creatures读取已经存在的LargeReadFixture物种（只读，不生成或修改生物），然后set_chat_messages将我的思考显示thinking设为full（不是thinking_depth），核对回执。最后写约600汉字解释Minecraft里房屋采光和动线，含😀，结尾原样写DISPLAY_STREAM_END。不要执行其它游戏或电脑操作。",true);
+                runtime.submitNative(player,b,"这是新测试。先调用inspect_player(section=inventory,offset=0)读取玩家前16个背包槽（只读，不修改或丢出物品），把第15槽Lore末尾的LARGE_TOOL_TAIL_开头的完整标记写入回复，不复述中间大量x。然后set_chat_messages将我的思考显示thinking设为full（不是thinking_depth），核对回执。最后写约600汉字解释Minecraft里房屋采光和动线，含😀，结尾原样写DISPLAY_STREAM_END。不要执行其它游戏或电脑操作。",true);
                 cb=store.nativeConversation(player.getUUID(),b).conversationId();phase="STREAM";return;
             }
             if(phase.equals("STREAM")&&activeButtonReady&&pendingButtonReady){
@@ -71,10 +75,10 @@ public final class NativeDeliverySmokeServer {
                 var msg=store.message(player.getUUID(),b,cb,context.assistantMessageId());var thought=store.thinking(player.getUUID(),b,cb,msg.messageId());
                 var body=new StringBuilder();var thinking=new StringBuilder();while(body.length()<msg.textLength())body.append(store.chunk(player.getUUID(),b,cb,msg.messageId(),msg.revision(),body.length(),4096).text());while(thinking.length()<thought.textLength())thinking.append(store.thinkingChunk(player.getUUID(),b,cb,msg.messageId(),thought.revision(),thinking.length(),4096).text());
                 expectedBody=body.toString();expectedThinking=thinking.toString();if(!expectedBody.contains("DISPLAY_STREAM_END")||(plain()?!expectedThinking.isEmpty():expectedThinking.isEmpty()))throw new IllegalStateException("REAL_STREAM_MISSING");
-                if(!plain()&&(largeToolChars<=24000||!modelSetFull))throw new IllegalStateException("LARGE_TOOL_OR_MODEL_DISPLAY_SETTING_NOT_VERIFIED");
+                if(!plain()&&(largeToolChars<=24000||!modelSetFull||!expectedBody.contains(largeTail)))throw new IllegalStateException("LARGE_TOOL_OR_MODEL_DISPLAY_SETTING_NOT_VERIFIED");
                 var root=Files.createDirectories(server.getServerDirectory().resolve("native-delivery-smoke"));Files.writeString(root.resolve("server.json"),JSON.writeValueAsString(Map.of("status","PASSED","lostSubscriptionInjected",dropped,"oldButtonLeftNewRequestRunning",verifiedOldButton,"queuedRequestCancelledWithoutResend",true,"aMessages",messages,"bContext",context,"body",expectedBody,"thinking",expectedThinking,"largeToolChars",largeToolChars,"modelSetFull",modelSetFull)));complete=true;phase="DRAIN";
             }
-        }catch(Exception e){failure=e.toString();try{Files.writeString(Files.createDirectories(server.getServerDirectory().resolve("native-delivery-smoke")).resolve("server-failure.json"),JSON.writeValueAsString(Map.of("phase",phase,"error",failure)));}catch(Exception ignored){}}
+        }catch(Exception e){failure=e.toString();try{Files.writeString(Files.createDirectories(server.getServerDirectory().resolve("native-delivery-smoke")).resolve("server-failure.json"),JSON.writeValueAsString(Map.of("phase",phase,"error",failure,"largeToolChars",largeToolChars,"modelSetFull",modelSetFull)));}catch(Exception ignored){}}
     }
     private NativeDeliverySmokeServer(){}
 }

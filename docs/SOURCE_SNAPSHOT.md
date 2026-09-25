@@ -13,7 +13,7 @@
 | Mod ID | `mineagent_runtime` |
 | 技术包名 | `dev.mineagent.runtime` |
 | Gradle Wrapper | 9.2.1 |
-| 当前 Mod 版本 | `1.0.9` |
+| 当前 Mod 版本 | `1.0.10` |
 
 ## 操作入口
 
@@ -196,3 +196,5 @@ Interrupt buttons resolve their exact persisted request rather than depending on
 Native replies now update one unsigned ChatComponent history entry per request; transport chunk boundaries do not add newlines or new messages. Both normal text and Provider-returned thinking stream through request-scoped packets. Thinking defaults to one live tail row above the answer; full thinking remains in F2 and in the local entry, with `/ai msg thinking` offering tail/full buttons. The AI can inspect/set the same client-acknowledged `thinking` preference via inspect_chat_messages / set_chat_messages. Name-hover timestamps, colors, interruption and history retention are preserved. Updating one entry reflows only its wrapped lines and retains the scroll anchor.
 
 The historical 24000-character tool-result rejection is removed. Full results can pass the existing 4 MiB tool transport envelope; mutation receipt storage also accepts those results and still exposes complete paged reads without replay. Provider context limits and transport safety boundaries remain; no output max_tokens or cumulative tool-round limit is introduced. Both client and server must update to protocol 8. Native real-provider verification is pending at this checkpoint.
+
+The 1.0.9 no-thinking real-provider run passed: 20 observed in-place updates, one native history entry, full text preserved, stable receipt time and scroll. The initial thinking/settings run completed its real model response and applied full thinking, but its test fixture produced a tool result below the intended 24k boundary, so that combined acceptance was marked failed rather than passed. The 1.0.10 fixture reads 16 actual inventory stacks and verifies a random marker at the end of the large result. No production data or failed paid requests are replayed.
