@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "files": [
     {
       "path": ".gitattributes",
@@ -3254,7 +3254,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "ee2eea8e2454c65c4b8b8b8ba435b073ee184711ce7208a31a85acfd617959eb",
+      "sha256": "dc1b31d36405b1b6d2b843a95aa69966df4347ba91a58b6780a2ead66da8d694",
       "bytes": 496
     },
     {
@@ -5434,8 +5434,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityPartsSmokeServer.java",
-      "sha256": "1d9512b272d629f177eeec8e219ba9b94fe46bce717ef6023ee54b1dcc51c598",
-      "bytes": 9189
+      "sha256": "bb78b69516e7fcb20d9edf1b7e48bff4a4b0cad1d1323ad30476e561ebb28335",
+      "bytes": 10838
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/FeedbackApplicationSmokeServer.java",
