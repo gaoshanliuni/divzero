@@ -3629,8 +3629,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/ConversationBuildSmokeClient.java",
-      "sha256": "4c1a7e7d815d33d4269c60fe55a92fcc47e36333164d961a9b3853fa145a1be7",
-      "bytes": 2792
+      "sha256": "edd4e8d34c683b3ce37118f7ed2c49eafbfe00a74a0c2b25b00b79b638a16df5",
+      "bytes": 2831
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/ConversationCreatureSmokeClient.java",
