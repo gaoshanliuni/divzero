@@ -112,6 +112,9 @@ public final class CinematicCaptureClient {
                     }
                 }
             }
+            // The trust reply can asynchronously reopen the overview once. Dismiss only that boot interval.
+            if(initialTrustHandled && System.nanoTime()-started<TimeUnit.SECONDS.toNanos(7)
+                    && mc.screen instanceof dev.mineagent.runtime.neoforge.client.screen.ControlCenterScreen) mc.setScreen(null);
             if (stopAt != 0 && System.nanoTime() >= stopAt) { close(); mc.stop(); return; }
             String current = "scene";
             if (plan.has("phaseField")) current = String.valueOf(fixtureField(plan, plan.get("phaseField").asText()));

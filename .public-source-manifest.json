@@ -3614,8 +3614,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/ConversationAgentSmokeClient.java",
-      "sha256": "95f263c178f857a2682e64eb28db7002301ec1321cb36c3e004ddb59a06e7f4f",
-      "bytes": 14575
+      "sha256": "d6db77d9d70996f2a9ea597976e35ff7e8e2d2cbb9f872a1af6a795482a5099d",
+      "bytes": 15236
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/ConversationAutonomySmokeClient.java",
@@ -3644,8 +3644,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/ConversationFeedbackSmokeClient.java",
-      "sha256": "a67b2efc4dde879d626d48593d29e9f935cd18dafcb71d9339474ed7703512e6",
-      "bytes": 7467
+      "sha256": "731167c12d7cb70270b137b133c9bedf46d07b91b47e5eaa45b36d7b0c6d7b73",
+      "bytes": 7617
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/ConversationHostSmokeClient.java",
@@ -3739,8 +3739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/cinematic/CinematicCaptureClient.java",
-      "sha256": "51d3c5e61002e8ad9a50a372b693a31fd75babbd1bafea4c94712896e894bea1",
-      "bytes": 11736
+      "sha256": "0698e09832531627aa912d5c0dd0c9ea06fc930342a88869e6cf7a45fa886754",
+      "bytes": 12067
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/host/ClientHostCommands.java",
