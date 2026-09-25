@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "files": [
     {
       "path": ".gitattributes",
@@ -3224,8 +3224,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "b9efdf772c2c48c4fe648fec0437d6c6eb16102b2f2300d537b73db46441d1a3",
-      "bytes": 22675
+      "sha256": "d7353f28949c7656966d74ee12ed5e13af515bc094e5acd067b8a3df97c05779",
+      "bytes": 23116
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3234,7 +3234,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "e04e5cbea5781680124e2a7d6fa57a4db1a6f923dc03fb4da86e6205a72c7b4e",
+      "sha256": "2c2f00ad6fd38281f76c1fe59e2101f09ecc4c4956bb79971833531cdded43dc",
       "bytes": 496
     },
     {
@@ -5374,8 +5374,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityInteropSmokeServer.java",
-      "sha256": "c819351a5acd7fe9b8a9a258d4ebda54185360a5b2788cae8b629ac25aca61ec",
-      "bytes": 15411
+      "sha256": "195d2d155f9df0c4684ff0098c51329e5a40fe86887113c355ac3daf8904326b",
+      "bytes": 15584
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityLogicTools.java",

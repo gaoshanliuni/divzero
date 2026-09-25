@@ -13,7 +13,7 @@
 | Mod ID | `mineagent_runtime` |
 | 技术包名 | `dev.mineagent.runtime` |
 | Gradle Wrapper | 9.2.1 |
-| 当前 Mod 版本 | `1.0.12` |
+| 当前 Mod 版本 | `1.0.13` |
 
 ## 操作入口
 
@@ -214,3 +214,5 @@ The requested third-party target is Twilight Forest Naga. Its official Maven bui
 Derived hot creatures can reference the installed source living renderer/textures and mapped attributes/food traits. This does not copy private Java AI, boss progression, loot tables or multipart hitboxes. A Naga reference borrows its head renderer, not a complete multipart boss clone. Proprietary renderers outside the Model/ModelPart pipeline report unavailable rather than a fabricated success. Real players and AI-player bodies remain on their existing owner-scoped control/skin APIs.
 
 Native preflight found Twilight Forest login synchronization sending custom payloads to the AI body's deliberately clientless connection. 1.0.12 drops these packets at that synthetic listener before client-channel validation, matching its existing packet sink. Real observer connections and terminal packet lifecycle are unchanged. The official Maven build also requires its declared Beanification 1.9.132 game library. No paid request had been started in either failed preflight.
+
+1.0.12 successfully loaded Twilight Forest and created the AI body. Its next preflight failed because the native damage-test cow was already unavailable; the Naga multipart contact lifecycle is independent of its disabled AI goals. 1.0.13 isolates the damage target farther away, gives it sufficient test health, and preserves rejected rule receipts without masking them with a null dereference. Real capability validation remains pending.
