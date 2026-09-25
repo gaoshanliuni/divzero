@@ -21,3 +21,14 @@
 原生模型页的 Key 输入框为空，保存后的 Key 以保密方式管理。模型设置同时支持 Ctrl+M 与 F2，详细路径见功能说明的“常用操作入口”。
 
 潜行、道路与梯子通过本地 Native 场景重现后拍摄；对话调用能力另有真实 DeepSeek 联验记录。截图和验证范围对应各自列出的场景。
+
+## 多 AI 并行与地形测试
+
+以下两张图片由用户提供，按原始 PNG 字节发布；已核对画面无 Key，PNG 仅含 IHDR / IDAT / IEND，不含文本或 EXIF 元数据。
+
+| 图片 | 对应能力 | 原图 SHA-256 |
+|---|---|---|
+| [multi-ai-parallel.png](multi-ai-parallel.png) | 多 AI 同场并行行动 | `83c1cfab4881a2928011673aa391b0b207d48ab6403e84aa91debe001636c11c` |
+| [multi-ai-terrain.png](multi-ai-terrain.png) | 独立寻路、复杂地形和低净空潜行 | `8c93e962ca496a2df86c050ac76b6aa3587b0ef8fa524e6fd271a996dbd101aa` |
+
+画面来自1.0.6 Native场景；1.0.7并发持久化修复另有新世界复验。实体数不等于同时运行的模型请求数，完整范围见[多 AI 并行说明](../MULTI_AI_PARALLEL.md)。
