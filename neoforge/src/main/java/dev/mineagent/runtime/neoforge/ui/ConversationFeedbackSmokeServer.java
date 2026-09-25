@@ -33,6 +33,7 @@ public final class ConversationFeedbackSmokeServer {
  private static void zero(MinecraftServer s,net.minecraft.server.level.ServerPlayer p)throws Exception{
   if(zeroStarted==0){zeroStarted=s.getTickCount();return;}if(s.getTickCount()-zeroStarted<30)return;
   if(zeroBusy||verified>=2)return;var b=MineAgentRuntimeServices.bodies(s).body(agent).orElseThrow();var json=new com.fasterxml.jackson.databind.ObjectMapper();String tool;var args=json.createObjectNode();
+  if(CinematicSmokeTiming.pause("basic-body",zeroStep,6500))return;
   switch(zeroStep){
    case 0->{tool="control_agent_body";args.put("action","follow");}
    case 1->{tool="control_agent_body";args.put("action","stop");}

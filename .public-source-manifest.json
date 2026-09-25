@@ -3739,8 +3739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/cinematic/CinematicCaptureClient.java",
-      "sha256": "8759efbd29f768b0b6ec96319bd57b9f8059d84f8b41ef61f4c7552b13a02b0a",
-      "bytes": 10934
+      "sha256": "11cdc9f648fe4511a444e4cebac68a9a94ed184086409ffc5a5795be4fe6237a",
+      "bytes": 11029
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/host/ClientHostCommands.java",
@@ -5228,6 +5228,11 @@
       "bytes": 2149
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CinematicSmokeTiming.java",
+      "sha256": "29305aa3b07f41e9d378586980cbc90b05a96d9f742e21f1de4d3ab1a90a2dc6",
+      "bytes": 860
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ClearancePathSmokeServer.java",
       "sha256": "1ed24189e750538c60a8ab48a2d0c3622e83545bf796d56cbbd1aa8d133966b2",
       "bytes": 14568
@@ -5304,8 +5309,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationCreatureSmokeServer.java",
-      "sha256": "5225b1511f2650eda0dfc7f338bc4a1613c7141a2293d533b809e5cd4d50e79a",
-      "bytes": 11953
+      "sha256": "8790d7eacabd943c5e7442523ddc22bbad0164495f06c1e37eb41bc0920020c4",
+      "bytes": 12054
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationDiamondSmokeServer.java",
@@ -5319,8 +5324,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationFeedbackSmokeServer.java",
-      "sha256": "b8b8c4d80f5d71e1985a0278ef8b9b0ec0d4434681e38bea779ecd3c6a53476f",
-      "bytes": 8069
+      "sha256": "82c47ce56d8f622d353df316bab144cce404b158b57279144edb03f902790561",
+      "bytes": 8137
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationHostSmokeServer.java",
