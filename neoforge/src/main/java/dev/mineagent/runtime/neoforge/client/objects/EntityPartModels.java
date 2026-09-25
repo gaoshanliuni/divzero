@@ -28,7 +28,7 @@ public final class EntityPartModels {
     private record Attachment(String target,EntityPartReplacement spec,Geometry geometry,Identifier texture){}
     private record Plan(List<Attachment> attachments,List<String> errors){}
     public record Draw(EntityVisualClient.Meta meta,String target,String sourceType,String sourcePart,String texture){}
-    private static final class Geometry extends Model<Draw>{Geometry(ModelPart root){super(root,RenderTypes::entityCutoutNoCull);}public void setupAnim(Draw state){}}
+    private static final class Geometry extends Model<Draw>{Geometry(ModelPart root){super(root,RenderTypes::entityCutout);}public void setupAnim(Draw state){}}
     private static final Map<String,Entity> PROXIES=new HashMap<>();
     private static final Map<GeometryKey,Geometry> GEOMETRY=new HashMap<>();
     private static final Map<String,Model<?>> MODELS=new HashMap<>();
@@ -71,7 +71,7 @@ public final class EntityPartModels {
             for(var a:attachments){poses.pushPose();try{
                 String prefix="";boolean visible=true;for(String segment:a.target().split("/")){prefix=prefix.isEmpty()?segment:prefix+"/"+segment;var part=targetParts.get(prefix);if(!part.visible){visible=false;break;}part.translateAndRotate(poses);}if(!visible)continue;
                 var tr=a.spec().translation();poses.translate(tr.get(0)/16,tr.get(1)/16,tr.get(2)/16);var rot=a.spec().rotation();poses.mulPose(Axis.XP.rotationDegrees(rot.get(0).floatValue()));poses.mulPose(Axis.YP.rotationDegrees(rot.get(1).floatValue()));poses.mulPose(Axis.ZP.rotationDegrees(rot.get(2).floatValue()));var scale=a.spec().scale();poses.scale(scale.get(0).floatValue(),scale.get(1).floatValue(),scale.get(2).floatValue());
-                var type=parentType.isOutline()?RenderTypes.outline(a.texture()):parentType.hasBlending()?RenderTypes.entityTranslucentCullItemTarget(a.texture()):RenderTypes.entityCutoutNoCull(a.texture());
+                var type=parentType.isOutline()?RenderTypes.outline(a.texture()):parentType.hasBlending()?RenderTypes.entityTranslucentCullItemTarget(a.texture()):RenderTypes.entityCutout(a.texture());
                 var draw=new Draw(meta,a.target(),a.spec().sourceType(),a.spec().sourcePart(),a.texture().toString());
                 collector.submitModel(a.geometry(),draw,poses,type,light,overlay,(color&0xff000000)|0x00ffffff,null,outline,crumble);
             }finally{poses.popPose();}}

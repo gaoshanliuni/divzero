@@ -3779,8 +3779,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/EntityPartModels.java",
-      "sha256": "d7e09298590eb7b0814f13e5a68b6a18bbe03408daab8dd7fa1fc33c74fe9435",
-      "bytes": 9938
+      "sha256": "a19fc84f69a570c08865b389b1e333d6871554ef57e038d62db9f36190e18513",
+      "bytes": 9926
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/EntityPartsSmokeClient.java",
