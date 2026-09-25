@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "files": [
     {
       "path": ".gitattributes",
@@ -1824,8 +1824,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationStore.java",
-      "sha256": "3fd858fc07fc1583f19a786a6e860c575cc2d858a5d5961f86ca17632b5b00b8",
-      "bytes": 43808
+      "sha256": "aeb51cff050c3072e0e7cc2262ab564b3f7901ad8b41c7a54c6f0c288c6e5dfd",
+      "bytes": 45552
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationSummaryStore.java",
@@ -3023,6 +3023,11 @@
       "bytes": 875
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationNativeSnapshotTest.java",
+      "sha256": "343a4a83820a18817f3794bd67c20761178eab30fe21013980903ab907d6b2a7",
+      "bytes": 4230
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationStoreTest.java",
       "sha256": "207877cb75f77cab0310be7b23272f690b9881e6f7e400d554c66171872bb736",
       "bytes": 14454
@@ -3199,8 +3204,8 @@
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
-      "sha256": "70c376daf6851b48450f1bcc0094688a0cf0c1c43889ab833e198574485286a2",
-      "bytes": 16940
+      "sha256": "51ffed56f89c5bbb17bbab08484a810297c9470c9a08372871795d5a0b47dd81",
+      "bytes": 17825
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3209,7 +3214,7 @@
     },
     {
       "path": "gradle.properties",
-      "sha256": "d28a0fa8439108730a7377b7d354731806130fcc96d56e59b852072d5db2749e",
+      "sha256": "7641f26caeba9e4dcfe3d6c64819c7f45701b11554d04415287ecc00c76a08d2",
       "bytes": 495
     },
     {
@@ -3661,6 +3666,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/NativeChatPreferencesClient.java",
       "sha256": "569b0102f9072c82dc8d56bd0717d570e9f5468a7c095ea95d2892f120cf230d",
       "bytes": 3078
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/NativeDeliverySmokeClient.java",
+      "sha256": "5c4372dffa8e10015820b7b00b1dd9f33f673e47f9462dcdd7c544d027fc2bc1",
+      "bytes": 3905
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/NativeMentionSmokeClient.java",
@@ -5338,6 +5348,11 @@
       "bytes": 2948
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeDeliverySmokeServer.java",
+      "sha256": "379b0283b1043a70164e81cd9aee2be1806db35a1af01f294a1954e8e4c12530",
+      "bytes": 6935
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeFeedbackData.java",
       "sha256": "2264bad5d872e62d035084761353d071872f9939e4e9d696939efe3f0de86048",
       "bytes": 8295
@@ -5444,8 +5459,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "9424d0ff8a0d7d20a54eb76de128e800c891ca0c4f2efe51ed5d97ea98eb24d6",
-      "bytes": 60991
+      "sha256": "564264b805a5fe5907c493080ae87f89abe9c96fcb774a83e7ecac810754878d",
+      "bytes": 62910
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerFileTools.java",
@@ -5714,13 +5729,13 @@
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/lang/en_us.json",
-      "sha256": "33965cc80a6059275f67924898a0fbb3bc34085b2da0bc6ec4792db4c4193bad",
-      "bytes": 1034
+      "sha256": "98ddb5eb9fe278500754580a7c43ca1402d3119b255228851a4c7f3e9604b15a",
+      "bytes": 1585
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/lang/zh_cn.json",
-      "sha256": "2c819ae34308aba0302d9ad3f3b2aa8d33d6ccbd50b490eae1780912e3dfe19a",
-      "bytes": 2192
+      "sha256": "0ac1c6d81cb708cf8017f34dbc0272b259fef8955c2eb0f327de8513b03918e9",
+      "bytes": 2722
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/models/block/automation_console.json",

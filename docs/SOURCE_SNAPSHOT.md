@@ -13,7 +13,7 @@
 | Mod ID | `mineagent_runtime` |
 | 技术包名 | `dev.mineagent.runtime` |
 | Gradle Wrapper | 9.2.1 |
-| 当前 Mod 版本 | `1.0.7` |
+| 当前 Mod 版本 | `1.0.8` |
 
 ## 操作入口
 
@@ -184,3 +184,9 @@ The expanded CI stress test also exposed writer starvation at the tool journal t
 Actions run `36037269439` succeeded. The focused new-world Native rerun used no credentials and zero model calls; the earlier failed run was preserved, not replayed. The full live batch used 21 official deepseek-flash requests, all high Thinking with no artificial output-token cap: 20 completed and one intentionally cancelled. Available completed usage was 318488 total tokens; the cancelled request's usage is unknown.
 
 Performance remains hardware-bound: the focused 64-body movement sample had median 18.56 ms / p95 37.70 ms per server tick, with a 186.04 ms peak; placement peak was 71.89 ms. This is not a stable-20-TPS or unlimited-scale guarantee. Bone support is rigid hierarchy, not weighted skinning. These results close the specified Native sample, not every outstanding V1 or third-party Mod compatibility case.
+
+## Native chat delivery and interruption correction (1.0.8)
+
+Native chat now reads message metadata, reasoning and body slices as a single synchronized snapshot, instead of racing background stream appends between revision reads. Strict Web revision checks remain. A display failure never retries the model request and no longer masquerades as a provider failure.
+
+Interrupt buttons resolve their exact persisted request rather than depending on a live display subscription. Automatically promoted queued messages retain their request identity: their original button can stop that request without resending it. Old buttons for completed requests never cancel newer requests; pending entries are authenticated before removal. Deterministic concurrent-store tests and an isolated real-provider Native button/stream regression are added; validation is pending at this source checkpoint.

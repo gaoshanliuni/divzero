@@ -12,5 +12,10 @@
   "mineagent.chat.messages.failed": "Chat display change not confirmed: %s",
   "mineagent.chat.messages.limit": "Chat history limit: ",
   "mineagent.chat.messages.mark": "Hover over the AI name for date/time: ",
-  "mineagent.chat.messages.help": "Example: /ai msg mark Sent at: {yyyy-MM-dd HH:mm:ss} (date-format template, not a regex)"
+  "mineagent.chat.messages.help": "Example: /ai msg mark Sent at: {yyyy-MM-dd HH:mm:ss} (date-format template, not a regex)",
+  "mineagent.chat.ended": " This request has ended; no other request was interrupted.",
+  "mineagent.chat.queue_ended": " This message has ended or is no longer queued. Nothing was resent or interrupted.",
+  "mineagent.chat.queue_interrupted": " The queued message had started and is now interrupted; it was not resent.",
+  "mineagent.chat.interrupted": " Interrupted. Completed game or computer actions are not rolled back.",
+  "mineagent.chat.delivery_failed": " Chat display failed. View the saved conversation in F2; the request was not resent."
 }

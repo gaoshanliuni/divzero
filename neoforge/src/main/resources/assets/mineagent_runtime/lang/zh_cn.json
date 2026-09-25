@@ -28,5 +28,10 @@
   "mineagent.chat.messages.failed": "聊天显示设置未确认：%s",
   "mineagent.chat.messages.limit": "聊天保留条数： ",
   "mineagent.chat.messages.mark": "悬停 AI 名称查看日期时间： ",
-  "mineagent.chat.messages.help": "自定义示例：/ai msg mark 消息时间：{yyyy-MM-dd HH:mm:ss}（日期格式模板，不是正则匹配）"
+  "mineagent.chat.messages.help": "自定义示例：/ai msg mark 消息时间：{yyyy-MM-dd HH:mm:ss}（日期格式模板，不是正则匹配）",
+  "mineagent.chat.ended": " 该请求已经结束；没有打断其他请求。",
+  "mineagent.chat.queue_ended": " 这条消息已结束或不再排队；未重复发送，也未打断其他请求。",
+  "mineagent.chat.queue_interrupted": " 这条排队消息已开始处理，现已打断；未重复发送。",
+  "mineagent.chat.interrupted": " 已打断；已发生的游戏/电脑操作不会回滚。",
+  "mineagent.chat.delivery_failed": " 聊天显示失败，可在 F2 查看已保存的对话；原请求未重发。"
 }

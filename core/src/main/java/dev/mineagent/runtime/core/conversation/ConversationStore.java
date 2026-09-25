@@ -194,6 +194,21 @@ public final class ConversationStore implements AutoCloseable {
             return true;
         });
     }
+    /** One local delivery read, atomic with streamDelta/finish; Web revision-CAS APIs remain strict. */
+    public record NativeSnapshot(ContextUsage context,Message message,Thinking thinking,Chunk body,Chunk thought){}
+    public synchronized NativeSnapshot nativeSnapshot(UUID viewer,UUID agent,UUID conversation,UUID assistant,int bodyOffset,int thinkingOffset)throws SQLException{
+        var context=context(viewer,agent,conversation,assistant).orElseThrow(()->new IllegalStateException("CONVERSATION_CONTEXT_UNAVAILABLE"));
+        var message=message(viewer,agent,conversation,assistant);var thinking=thinking(viewer,agent,conversation,assistant);
+        var body=chunk(viewer,agent,conversation,assistant,message.revision(),bodyOffset,512);
+        var thought=thinking.textLength()>thinkingOffset?thinkingChunk(viewer,agent,conversation,assistant,thinking.revision(),thinkingOffset,1024):null;
+        if(thinkingOffset<0||thinkingOffset>thinking.textLength())throw new IllegalArgumentException("CONVERSATION_CHUNK_OFFSET");
+        return new NativeSnapshot(context,message,thinking,body,thought);
+    }
+    /** Buttons bind to a persisted request, never to a transient chat-delivery subscription. */
+    public synchronized Optional<Conversation> operationConversation(UUID viewer,UUID agent,UUID operation)throws SQLException{
+        var ids=query("SELECT c.id FROM mineagent_conversation_operations_v1 o JOIN mineagent_conversations_v1 c ON c.world_id=o.world_id AND c.id=o.conversation_id WHERE o.world_id=? AND o.id=? AND o.kind='send' AND c.player_id=? AND c.agent_id=?",r->uuid(r.getString(1)),world,operation,viewer,agent);
+        return ids.isEmpty()?Optional.empty():Optional.of(get(viewer,agent,ids.getFirst()));
+    }
     public synchronized Thinking thinking(UUID viewer,UUID agent,UUID conversation,UUID message)throws SQLException{
         var m=message(viewer,agent,conversation,message);
         return query("SELECT revision,text_length,active FROM mineagent_conversation_thinking_v1 WHERE world_id=? AND message_id=?",r->new Thinking(message,r.getLong(1),r.getInt(2),r.getInt(3)==1&&Set.of("PENDING","GENERATING").contains(m.status())),world,message).stream().findFirst().orElse(new Thinking(message,0,0,false));
