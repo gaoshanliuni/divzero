@@ -61,6 +61,12 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 
 图中 Key 输入框为空，保存后的 Key 以保密方式管理。
 
+### 多 AI 并行与请求隔离
+
+不同 AI 并行、同一会话有序；每条请求独立取消和分发结果。已完成64实体、8个真实模型请求、16份同玩家几何计划的对应并发测试。数量是验收样本，不是上限；同一数据库短写事务等仍保序。
+
+[查看多 AI 实景、复杂地形截图与验证范围](MULTI_AI_PARALLEL.md)。
+
 ## 2. 人设、长期记忆与外观
 
 - **对话设置人设**：例如“以后你是星际向导”，保存后同轮后续和新对话读取最新人设。
@@ -291,6 +297,10 @@ The native Model page puts URL, model, and key on one page. DeepSeek/GLM/OpenAI/
 ![Native model settings: URL, model, and key on one page](images/native-model-settings.png)
 
 The key field in this screenshot is empty. Saved keys are managed confidentially.
+
+### Parallel AIs and request isolation
+
+Different AIs run concurrently while each conversation stays ordered, with per-request cancellation and independent result delivery. See the [native screenshots, 64-entity / eight-model-request / 16-plan samples, and scope](MULTI_AI_PARALLEL.md#english). These sample sizes are not product limits.
 
 ## 2. Personality, long-term memory, and appearance
 

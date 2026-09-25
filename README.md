@@ -59,6 +59,18 @@ F2 的 Key 按钮打开本机保密输入页；原生“模型”页提供同页
 | 导入建筑 | `@星河 把这个投影放到前方，正门朝北。` |
 | 人设与记忆 | `@星河 以后你是简洁友善的星际向导，记住我喜欢石英建筑。` |
 
+### 多 AI 并行行动
+
+不同 AI 可同时移动、处理对话和执行独立任务；同一会话保持有序，取消一个请求不影响其他 AI。已完成64实体同场、63次独立放置、16份并行计划，以及8个真实 DeepSeek 请求并发的对应验收。这些是测试样本，不是数量上限。
+
+![多个 AI 玩家在同一世界并行行动](docs/images/multi-ai-parallel.png)
+
+多个 AI 还可分别穿行高低差、半砖／楼梯／地毯、门和栅栏门；低净空时自动潜行，无法通过时报告受阻，不穿墙。
+
+![多 AI 独立进行复杂地形与低净空寻路测试](docs/images/multi-ai-terrain.png)
+
+[查看并行、取消隔离和地形验收详情 →](docs/MULTI_AI_PARALLEL.md)
+
 ### 搭好的路，玩家也能走
 
 AI 亲自放置方块并沿新路移动；支持搭桥、连续台阶、跳跃垫高和附梯子。方块保留在世界中，玩家与其他 AI 可复用。生存消耗 AI 背包材料，垂直搭高还需要梯子。
@@ -171,6 +183,18 @@ F2 opens a local confidential input screen for API keys; the native Model page h
 | Web research | `@Nova Look up how to defeat the Lich King and give me the sources.` |
 | Import a build | `@Nova Place this schematic in front of me with its entrance facing north.` |
 | Personality and memory | `@Nova Be a concise, friendly space guide, and remember that I like quartz buildings.` |
+
+### Multiple AIs working in parallel
+
+Different AIs can move, handle conversations, and perform independent tasks concurrently. Each conversation stays ordered, and cancelling one request does not stop the others. Verified samples include 64 entities, 63 independent placements, 16 parallel plans, and eight overlapping real DeepSeek requests. These are test sizes, not limits.
+
+![Multiple AI players acting concurrently in one world](docs/images/multi-ai-parallel.png)
+
+AIs navigate height changes, slabs, stairs, carpets, doors, and fence gates independently. They crouch for low clearance and report impassable routes rather than clipping through blocks.
+
+![Independent multi-AI terrain and clearance tests](docs/images/multi-ai-terrain.png)
+
+[Parallelism, cancellation isolation, and terrain test details →](docs/MULTI_AI_PARALLEL.md#english)
 
 ### Roads that players can use too
 
