@@ -13,7 +13,7 @@
 | Mod ID | `mineagent_runtime` |
 | 技术包名 | `dev.mineagent.runtime` |
 | Gradle Wrapper | 9.2.1 |
-| 当前 Mod 版本 | `1.0.13` |
+| 当前 Mod 版本 | `1.0.14` |
 
 ## 操作入口
 
@@ -216,3 +216,5 @@ Derived hot creatures can reference the installed source living renderer/texture
 Native preflight found Twilight Forest login synchronization sending custom payloads to the AI body's deliberately clientless connection. 1.0.12 drops these packets at that synthetic listener before client-channel validation, matching its existing packet sink. Real observer connections and terminal packet lifecycle are unchanged. The official Maven build also requires its declared Beanification 1.9.132 game library. No paid request had been started in either failed preflight.
 
 1.0.12 successfully loaded Twilight Forest and created the AI body. Its next preflight failed because the native damage-test cow was already unavailable; the Naga multipart contact lifecycle is independent of its disabled AI goals. 1.0.13 isolates the damage target farther away, gives it sufficient test health, and preserves rejected rule receipts without masking them with a null dereference. Real capability validation remains pending.
+
+The 1.0.13 real Naga run completed 11 official DeepSeek requests and passed interaction/callbacks, damage and restoration, selected-goal restoration, attack/movement blocking, native ModelPart inspection, a moving root overlay, and independent 30/45/-30-degree head/segment/derived-head draws. It retained a failed Naga daze assertion: the original helper only schedules a phase and relies on an AI tick to set its synchronized flags. 1.0.14 explicitly coordinates the documented public flags with that phase, preserving no_ai; a zero-model focused check is pending.
