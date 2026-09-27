@@ -1,5 +1,7 @@
 [简体中文](#chinese) · [English](#english)
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 <a id="chinese"></a>
 
 # 除零 · DivZero AI Runtime
@@ -114,6 +116,8 @@ Java 管理的专用 Python 可执行本机任务、安装第三方库，每次�
 ## 许可证与免责声明
 
 DivZero 使用 [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob/main/LICENSE) 开源许可。
+
+Copyright 2026 gaoshanliuni and DivZero contributors。项目版权与许可声明见 [NOTICE](NOTICE)；第三方组件遵循各自的许可证，详见[第三方声明](docs/THIRD_PARTY_NOTICES.md)。
 
 **本项目不包含任何第三方 AI 服务密钥。** 玩家需要自行配置服务提供商、API URL、Key 和模型，并承担相关 AI 服务产生的费用。模型的可用性、能力与价格以对应服务提供商为准。
 
@@ -239,6 +243,8 @@ Use **JavaScript** and runtime content packages to define custom interactions, c
 ## License and Disclaimer
 
 DivZero is open source under the [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob/main/LICENSE).
+
+Copyright 2026 gaoshanliuni and DivZero contributors. See [NOTICE](NOTICE) for the project copyright and license notice. Third-party components retain their respective licenses; see [Third-party notices](docs/THIRD_PARTY_NOTICES.md).
 
 **No third-party AI service keys are included.** Configure your own provider, API URL, key, and model. You are responsible for any charges from your chosen AI service. Model availability, capabilities, and pricing are determined by the provider.
 

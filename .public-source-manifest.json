@@ -18,6 +18,11 @@
       "bytes": 11358
     },
     {
+      "path": "NOTICE",
+      "sha256": "cba0cb9eebf033465353e8c6d328a0b2b33dc01075ee4d0b9271e02cce07259d",
+      "bytes": 806
+    },
+    {
       "path": "agent/build.gradle",
       "sha256": "a154fee687ad81f805461b487cb331d0ea9a28bcf09c156a8ffc60d6a5647aec",
       "bytes": 196
