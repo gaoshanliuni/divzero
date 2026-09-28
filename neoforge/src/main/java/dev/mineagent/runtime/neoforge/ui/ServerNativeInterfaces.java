@@ -84,6 +84,7 @@ public final class ServerNativeInterfaces {
                     if(!current(p,agent,level,guard)){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CONTEXT_CHANGED"));return;}
                     try{
                         require(ack.path("revision").asLong(-1)==expected+1&&ack.path("data").isObject()&&candidate.token().toString().equals(ack.path("activationToken").asText()),"NATIVE_UI_INVALID_ACK");
+                        if(Boolean.getBoolean("mineagent.nativeUiSmoke")&&Boolean.getBoolean("mineagent.nativeUiSmokeLoseCommit")){System.clearProperty("mineagent.nativeUiSmokeLoseCommit");result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_SMOKE_LOST_COMMIT","replayed",false));return;}
                         var activeData=new LinkedHashMap<String,JsonNode>();ack.get("data").properties().forEach(e->activeData.put(e.getKey(),e.getValue()));boolean visible=ack.path("visible").asBoolean(true);
                         io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),expected+1,activeData,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
                             if(saveError!=null){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_PERSISTENCE_FAILED","replayed",false));return;}
