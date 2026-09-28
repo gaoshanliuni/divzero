@@ -75,12 +75,13 @@ public final class NativeButtonFeedback {
         visual(keyArmed>=0?Button.State.PRESSED:Button.State.DEFAULT,false);
     }
     private static boolean activationKey(int key){return key==GLFW.GLFW_KEY_SPACE||key==GLFW.GLFW_KEY_ENTER||key==GLFW.GLFW_KEY_KP_ENTER;}
+    private static void unhandled(UIEvent event){if(event.captureListeners.isEmpty()&&event.bubbleListeners.size()==1)event.hasHandler=false;}
     private void keyDown(UIEvent event){
-        if(!activationKey(event.keyCode)||!button.isFocused()||!usable())return;
+        if(!activationKey(event.keyCode)||!button.isFocused()||!usable()){unhandled(event);return;}
         event.stopPropagation();if(!armed()){keyArmed=event.keyCode;HELD.add(this);visual(Button.State.PRESSED,false);}
     }
     private void keyUp(UIEvent event){
-        if(event.keyCode!=keyArmed)return;event.stopPropagation();
+        if(event.keyCode!=keyArmed){unhandled(event);return;}event.stopPropagation();
         boolean activate=button.isFocused()&&usable()&&Minecraft.getInstance().isWindowActive();keyArmed=-1;HELD.remove(this);
         visual(Button.State.DEFAULT,false);if(activate)activate(event);
     }

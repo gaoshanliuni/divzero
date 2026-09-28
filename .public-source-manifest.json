@@ -2889,8 +2889,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "c0bb4d8339a45c183ee91b61a33a015ca1c2d91b3bbbf3daff55e3cc66a53985",
-      "bytes": 44419
+      "sha256": "f608a84ff4a71204d89117adb80b794803b838c8e506be0de58f0f09e9a0a6fb",
+      "bytes": 45132
     },
     {
       "path": "docs/NATIVE_UI_MIGRATION_STATUS.md",
@@ -3459,13 +3459,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeButtonFeedback.java",
-      "sha256": "f315ef7729d5c44784ee4e74184d4ecbc0f55488931509e827094c874c406d12",
-      "bytes": 6689
+      "sha256": "1b089ffd382feb4b12ebc9260ae56941087515d0640a54324e59a6efeeaf38ba",
+      "bytes": 6870
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeButtonSmokeClient.java",
-      "sha256": "bb49766fd4f7ede280a30d8391e0522e76d9cae8e30c0ec6cb773cbe84d38adf",
-      "bytes": 8961
+      "sha256": "a614c70535a37748aaa35a1236487131ffb956a324db7f675e20682cfe77fff7",
+      "bytes": 9473
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeCodeEditor.java",
