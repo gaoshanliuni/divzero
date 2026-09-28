@@ -2079,8 +2079,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/geometry/WorldGeometry.java",
-      "sha256": "e3698608306834a6da119cb93886858fe770a0b9923d0e4ba3a0bb453d62d86c",
-      "bytes": 22998
+      "sha256": "d9fb1050831b082f13d42c52c2f400f5793a8ccbe7281220e9d4c8f2785e2def",
+      "bytes": 27481
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/host/HostCommandRequest.java",
@@ -2993,6 +2993,16 @@
       "bytes": 2371
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceDefinition.java",
+      "sha256": "ae3f5981f384128253f763f188f219eab0e78e806ae664c03fa95e753135bdd6",
+      "bytes": 8772
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceSession.java",
+      "sha256": "1aa085dadafdfb06f87e628dc73a6188929c55ce9b943d4cd007e5faffe43e7b",
+      "bytes": 6156
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/AgentPersonaServiceTest.java",
       "sha256": "7a169db9cacdca11fa19a7b6448804f4fb7d2e1286a646575e95b25afc76ad78",
       "bytes": 4654
@@ -3106,6 +3116,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/geometry/GeometrySpoolTest.java",
       "sha256": "192e786d9bda6887a89789229cbca3e7a18ea7be41967b46944b2de43e1a5477",
       "bytes": 3570
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/geometry/HollowGeometryTest.java",
+      "sha256": "de5e8e7dee42a75c567a010d70fe7638ea466cccb2fcca49b7227dd487c04825",
+      "bytes": 4560
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/geometry/WorldGeometryTest.java",
@@ -3248,9 +3263,19 @@
       "bytes": 2686
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceSessionTest.java",
+      "sha256": "08e2c0d2feea032bc4ea54066c436e38fba2ac2aa0964c34f978447dc8a92de9",
+      "bytes": 6010
+    },
+    {
       "path": "docs/CINEMATIC_FILMS.md",
       "sha256": "c7a0f10dbc76e1ff9d4b1e97b5ca029c4ac725f5a4e4c96cbdf57ccb90af2a26",
       "bytes": 7152
+    },
+    {
+      "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
+      "sha256": "c38852f647ebb74e10b7a56f779820f20663558a4910a6f70bbdecab235212c6",
+      "bytes": 5327
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3354,8 +3379,8 @@
     },
     {
       "path": "neoforge/build.gradle",
-      "sha256": "b881efaa97c397604150599a111170a55e755829336824a3178cba284466e70a",
-      "bytes": 56049
+      "sha256": "1df087f01993d793ba8354dfa5f24b6061e0e42034a7ef4088f0387f03c3f599",
+      "bytes": 56298
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/CommandBlockLimitRuntime.java",
@@ -3776,6 +3801,16 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/media/MineAgentMediaPlayback.java",
       "sha256": "423c1492e0669f49e1046f443f68224239f43f647b8a6c09cd1a56e7677d73a3",
       "bytes": 6113
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/KubeInterfaceRenderer.java",
+      "sha256": "a19946aaa15ab18aa9bf3bf873836a717b0b0b73f27962b62dbe6b1d4e248de1",
+      "bytes": 2447
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/LdInterfaceRenderer.java",
+      "sha256": "7980a82c3665087f761f8aa7f63ef95d672047bd746704c312b42927424c5a1a",
+      "bytes": 10716
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/BorrowedCreatureVisuals.java",
@@ -6001,6 +6036,11 @@
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/models/item/sentinel_summoner.json",
       "sha256": "79cb5d5b761d7389471df7305e1d88fc507d62fab0e6e18b5b89f27d032fcff0",
       "bytes": 87
+    },
+    {
+      "path": "neoforge/src/main/resources/assets/mineagent_runtime/nativeui/build.js",
+      "sha256": "a0f159964112843e804373e2c508180e633ac5ffd6e3af91cee2d70813aa1bbf",
+      "bytes": 821
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/textures/entity/creature_white.png",

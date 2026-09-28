@@ -32,6 +32,10 @@ public final class WorldGeometry {
         line: points至少2个三维点，radius>=0默认0，折线可多点。
         plane: points恰3个三维点，分别为原点、沿U的端点、沿V的端点，填充平行四边形。
         polygon: points为至少3个同Y平面三维点（不重复闭合点），height正整数向上拉伸，非自交多边形。
+        可选mode=solid|walls|shell（兼容默认solid），thickness正整数默认1，holes=[内轮廓points,...]。孔须严格位于外轮廓内，不能相交、相切或相互包含。
+        walls沿外轮廓及孔轮廓向建筑实体侧生成墙体；shell默认封顶/封底；cap_top/cap_bottom可分别覆盖默认值，封板厚度同thickness。
+        孔轮廓边界属于墙体，孔内部不生成方块；厚度以方块中心到线段的平面距离小于thickness计算。中空/孔内不输出air，不隐式清场。
+        普通房屋优先walls/shell与单独楼板/屋顶；只有地基、雕刻、洞穴或明确清场需求才使用实心填充/air减法。
         slope: min/max三整数，axis=x|z默认x，ascending默认true，thickness=0默认实心坡体，正数为顶部屋面厚度。
         curve: points恰4个三维点（三次Bezier控制点），radius>=0默认0。
         surface: points恰4个三维点，顺序p00,p10,p01,p11，双线性曲面（可非共面）。
@@ -69,11 +73,12 @@ public final class WorldGeometry {
     private static void bounds(Pos a,Pos b){if(a.x>b.x||a.y>b.y||a.z>b.z)throw bad("BOUNDS");}
     private Set<Pos> shape(JsonNode s){
         String kind=text(s.path("kind"));var allowed=new HashSet<>(Set.of("kind","material","transforms"));
-        allowed.addAll(switch(kind){case "box"->Set.of("min","max","mode","thickness");case "slope"->Set.of("min","max","axis","ascending","thickness");case "line","curve"->Set.of("points","radius");case "plane","surface"->Set.of("points");case "polygon"->Set.of("points","height");case "cylinder"->Set.of("center","radius","height","thickness");case "ellipsoid","dome"->Set.of("center","radius","thickness");default->throw bad("KIND");});keys(s,allowed.toArray(String[]::new));
+        allowed.addAll(switch(kind){case "box"->Set.of("min","max","mode","thickness");case "slope"->Set.of("min","max","axis","ascending","thickness");case "line","curve"->Set.of("points","radius");case "plane","surface"->Set.of("points");case "polygon"->Set.of("points","height","mode","thickness","holes","cap_top","cap_bottom");case "cylinder"->Set.of("center","radius","height","thickness");case "ellipsoid","dome"->Set.of("center","radius","thickness");default->throw bad("KIND");});keys(s,allowed.toArray(String[]::new));
         Set<Pos> out=positionSink==null?new LinkedHashSet<>():new AbstractSet<>(){long emitted;public boolean add(Pos p){positionSink.accept(p);emitted++;return true;}public int size(){return emitted==0?0:1;}public Iterator<Pos> iterator(){throw new UnsupportedOperationException();}};
         switch(kind){
             case "box","slope"->{
                 Pos a=pos(s.path("min"),4096),b=pos(s.path("max"),4096);bounds(a,b);boolean slope=kind.equals("slope"),asc=bool(s,"ascending",true);String mode=choice(s,"mode","solid","solid","walls","shell"),axis=choice(s,"axis","x","x","z");int thick=integer(s,"thickness",slope?0:1,slope?0:1,4096);
+                if(!slope){box(out,a,b,mode,thick);break;}
                 for(int x=a.x;x<=b.x;x++)for(int y=a.y;y<=b.y;y++)for(int z=a.z;z<=b.z;z++){
                     step();boolean edge=x-a.x<thick||b.x-x<thick||z-a.z<thick||b.z-z<thick;
                     if(slope){int lo=axis.equals("x")?a.x:a.z,hi=axis.equals("x")?b.x:b.z,v=axis.equals("x")?x:z;double t=hi==lo?1:(v-lo)/(double)(hi-lo);if(!asc)t=1-t;int top=a.y+(int)Math.floor((b.y-a.y)*t+1e-9);if(y<=top&&(thick==0||y>top-thick))emit(out,new Pos(x,y,z));}
@@ -91,10 +96,32 @@ public final class WorldGeometry {
                 for(int i=0;i<=u;i++)for(int j=0;j<=v;j++){step();double t=i/(double)u,w=j/(double)v;emit(out,round(a.mul((1-t)*(1-w)).add(b.mul(t*(1-w))).add(c.mul((1-t)*w)).add(d.mul(t*w))));}
             }
             case "polygon"->{
-                var ps=points(s.path("points"),3,128);int height=integer(s.path("height"),1,4096);double y=ps.getFirst().y;for(var p:ps)if(Math.abs(p.y-y)>1e-8)throw bad("POLYGON_PLANE");
-                double area=0;for(int i=0;i<ps.size();i++){Vec a=ps.get(i),b=ps.get((i+1)%ps.size());area+=a.x*b.z-b.x*a.z;for(int j=i+2;j<ps.size();j++){if(i==0&&j==ps.size()-1)continue;Vec c=ps.get(j),d=ps.get((j+1)%ps.size());if(segmentsCross(a,b,c,d))throw bad("POLYGON_SELF_INTERSECTION");}}if(Math.abs(area)<1e-8)throw bad("POLYGON_AREA");
+                var ps=points(s.path("points"),3,128);int height=integer(s.path("height"),1,4096);double y=ps.getFirst().y;validateRing(ps,y);
+                String mode=choice(s,"mode","solid","solid","walls","shell");int thickness=integer(s,"thickness",1,1,4096);
+                boolean top=bool(s,"cap_top",mode.equals("shell")),bottom=bool(s,"cap_bottom",mode.equals("shell"));
+                var holes=new ArrayList<List<Vec>>();
+                if(s.has("holes")){
+                    if(!s.get("holes").isArray()||s.get("holes").size()>32)throw bad("POLYGON_HOLES");
+                    for(var hole:s.get("holes")){
+                        var ring=points(hole,3,128);validateRing(ring,y);
+                        if(ringsTouch(ps,ring)||classify(ps,ring.getFirst())!=1)throw bad("POLYGON_HOLE_OUTSIDE");
+                        for(var other:holes)if(ringsTouch(other,ring)||classify(other,ring.getFirst())!=-1||classify(ring,other.getFirst())!=-1)throw bad("POLYGON_HOLES_OVERLAP");
+                        holes.add(ring);
+                    }
+                }
                 int minX=(int)Math.floor(ps.stream().mapToDouble(p->p.x).min().orElseThrow()),maxX=(int)Math.ceil(ps.stream().mapToDouble(p->p.x).max().orElseThrow()),minZ=(int)Math.floor(ps.stream().mapToDouble(p->p.z).min().orElseThrow()),maxZ=(int)Math.ceil(ps.stream().mapToDouble(p->p.z).max().orElseThrow());
-                for(int x=minX;x<=maxX;x++)for(int z=minZ;z<=maxZ;z++){step();boolean inside=false,edge=false;for(int i=0,j=ps.size()-1;i<ps.size();j=i++){step();Vec a=ps.get(i),b=ps.get(j);if(Math.abs(cross(a,b,new Vec(x,y,z)))<1e-8&&x>=Math.min(a.x,b.x)&&x<=Math.max(a.x,b.x)&&z>=Math.min(a.z,b.z)&&z<=Math.max(a.z,b.z))edge=true;if((a.z>z)!=(b.z>z)&&x<(b.x-a.x)*(z-a.z)/(b.z-a.z)+a.x)inside=!inside;}if(edge||inside)for(int dy=0;dy<height;dy++)emit(out,new Pos(x,(int)Math.round(y)+dy,z));}
+                for(int x=minX;x<=maxX;x++)for(int z=minZ;z<=maxZ;z++){
+                    step();Vec sample=new Vec(x,y,z);if(classify(ps,sample)==-1)continue;
+                    boolean excluded=false,wall=distanceToRing(ps,sample)<thickness-1e-8;
+                    for(var hole:holes){if(classify(hole,sample)==1){excluded=true;break;}wall|=distanceToRing(hole,sample)<thickness-1e-8;}
+                    if(excluded)continue;
+                    if(mode.equals("solid")||wall){for(int dy=0;dy<height;dy++)emit(out,new Pos(x,(int)Math.round(y)+dy,z));}
+                    else{
+                        int lower=bottom?Math.min(height,thickness):0,upper=top?Math.max(lower,height-thickness):height;
+                        for(int dy=0;dy<lower;dy++)emit(out,new Pos(x,(int)Math.round(y)+dy,z));
+                        for(int dy=upper;dy<height;dy++)emit(out,new Pos(x,(int)Math.round(y)+dy,z));
+                    }
+                }
             }
             case "cylinder","ellipsoid","dome"->{
                 Vec c=vec(s.path("center"));boolean cyl=kind.equals("cylinder");JsonNode r=s.path("radius");if(!r.isArray()||r.size()!=(cyl?2:3))throw bad("RADIUS");double rx=num(r.get(0),.5,4096),ry=cyl?1:num(r.get(1),.5,4096),rz=num(r.get(cyl?1:2),.5,4096),th=s.has("thickness")?num(s.get("thickness"),0,4096):0;int height=cyl?integer(s.path("height"),1,4096):0;
@@ -108,7 +135,52 @@ public final class WorldGeometry {
         if(out.isEmpty())throw bad("EMPTY");return out;
     }
     private static double cross(Vec a,Vec b,Vec c){return (b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);}
+    /** Emits disjoint boundary spans in the original x/y/z order, never visits the interior volume. */
+    private void box(Set<Pos> out,Pos a,Pos b,String mode,int thickness){
+        for(int x=a.x;x<=b.x;x++)for(int y=a.y;y<=b.y;y++){
+            step();boolean full=mode.equals("solid")||x-a.x<thickness||b.x-x<thickness
+                    ||mode.equals("shell")&&(y-a.y<thickness||b.y-y<thickness);
+            int lower=full?b.z+1:Math.min(b.z+1,a.z+thickness);
+            for(int z=a.z;z<lower;z++)emit(out,new Pos(x,y,z));
+            if(!full)for(int z=Math.max(lower,b.z-thickness+1);z<=b.z;z++)emit(out,new Pos(x,y,z));
+        }
+    }
     private static boolean segmentsCross(Vec a,Vec b,Vec c,Vec d){double ab=cross(a,b,c)*cross(a,b,d),cd=cross(c,d,a)*cross(c,d,b);return ab<=0&&cd<=0&&Math.max(Math.min(a.x,b.x),Math.min(c.x,d.x))<=Math.min(Math.max(a.x,b.x),Math.max(c.x,d.x))&&Math.max(Math.min(a.z,b.z),Math.min(c.z,d.z))<=Math.min(Math.max(a.z,b.z),Math.max(c.z,d.z));}
+    private static void validateRing(List<Vec> ring,double y){
+        double area=0;
+        for(int i=0;i<ring.size();i++){
+            Vec a=ring.get(i),b=ring.get((i+1)%ring.size());if(Math.abs(a.y-y)>1e-8)throw bad("POLYGON_PLANE");
+            if(Math.hypot(a.x-b.x,a.z-b.z)<1e-8)throw bad("POLYGON_DUPLICATE_VERTEX");
+            Vec previous=ring.get((i+ring.size()-1)%ring.size());
+            if(Math.abs(cross(previous,a,b))<1e-8&&(previous.x-a.x)*(b.x-a.x)+(previous.z-a.z)*(b.z-a.z)>0)throw bad("POLYGON_SELF_INTERSECTION");
+            area+=a.x*b.z-b.x*a.z;
+            for(int j=i+2;j<ring.size();j++)if(!(i==0&&j==ring.size()-1)&&segmentsCross(a,b,ring.get(j),ring.get((j+1)%ring.size())))throw bad("POLYGON_SELF_INTERSECTION");
+        }
+        if(Math.abs(area)<1e-8)throw bad("POLYGON_AREA");
+    }
+    private static boolean ringsTouch(List<Vec> a,List<Vec> b){
+        for(int i=0;i<a.size();i++)for(int j=0;j<b.size();j++)if(segmentsCross(a.get(i),a.get((i+1)%a.size()),b.get(j),b.get((j+1)%b.size())))return true;
+        return false;
+    }
+    /** -1 outside, 0 boundary, 1 strictly inside. */
+    private static int classify(List<Vec> ring,Vec p){
+        boolean inside=false;
+        for(int i=0,j=ring.size()-1;i<ring.size();j=i++){
+            Vec a=ring.get(i),b=ring.get(j);
+            if(Math.abs(cross(a,b,p))<1e-8&&p.x>=Math.min(a.x,b.x)&&p.x<=Math.max(a.x,b.x)&&p.z>=Math.min(a.z,b.z)&&p.z<=Math.max(a.z,b.z))return 0;
+            if((a.z>p.z)!=(b.z>p.z)&&p.x<(b.x-a.x)*(p.z-a.z)/(b.z-a.z)+a.x)inside=!inside;
+        }
+        return inside?1:-1;
+    }
+    private static double distanceToRing(List<Vec> ring,Vec p){
+        double distance=Double.POSITIVE_INFINITY;
+        for(int i=0;i<ring.size();i++){
+            Vec a=ring.get(i),b=ring.get((i+1)%ring.size());double dx=b.x-a.x,dz=b.z-a.z;
+            double t=Math.clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz),0,1);
+            distance=Math.min(distance,Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz));
+        }
+        return distance;
+    }
     private static final class Material {
         String mode="solid",axis="x";int width=1,seed;List<String> states=new ArrayList<>();int[] weights;long total;
         Material(JsonNode n){if(n.isTextual())states.add(text(n));else{keys(n,"mode","states","axis","width","seed","weights");mode=choice(n,"mode","checker","checker","stripe","layers","weighted");axis=choice(n,"axis","x","x","y","z");width=integer(n,"width",1,1,4096);seed=integer(n,"seed",0,Integer.MIN_VALUE,Integer.MAX_VALUE);var a=n.path("states");if(!a.isArray()||a.isEmpty()||a.size()>32)throw bad("MATERIAL");a.forEach(v->states.add(text(v)));if(n.has("weights")&&!mode.equals("weighted"))throw bad("WEIGHTS");}

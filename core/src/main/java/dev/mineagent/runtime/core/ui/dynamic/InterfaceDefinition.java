@@ -1,0 +1,100 @@
+package dev.mineagent.runtime.core.ui.dynamic;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.*;
+import java.util.*;
+
+/** Data contract for arbitrary native widget trees. No HTML, executable Java or remote script URLs. */
+public record InterfaceDefinition(String id, String title, Surface surface, JsonNode root,
+                                  Map<String, JsonNode> data, String stylesheet) {
+    public enum Surface { SCREEN, HUD }
+    public static final int MAX_SOURCE_BYTES=256*1024, MAX_NODES=2048, MAX_DEPTH=48;
+    private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+    public static final Set<String> TYPES=Set.of("panel","row","column","scroll","label","button","input","toggle","progress","image");
+    private static final Set<String> NODE_FIELDS=Set.of("id","type","text","value","bind","style","classes","resource","events","children","visible","enabled");
+    public static final String CONTRACT="""
+        DivZero native UI v1: JSON, rendered with LDLib2 and built by the DivZero KubeJS bridge.
+        {"id":"shop","title":"Shop","surface":"SCREEN","root":{"id":"root","type":"row","children":[...]},"data":{},"stylesheet":""}
+        surface=SCREEN or HUD. HUD is passive by default; it never grabs the mouse or blocks movement.
+        Arbitrary nested panel/row/column/scroll/label/button/input/toggle/progress/image nodes, each with a stable unique id.
+        Node fields: id,type,text,value,bind,style,classes,resource,events,children,visible,enabled.
+        style and stylesheet use LDLib2 LSS, not browser CSS. resource is a Minecraft namespaced resource, never a URL or local path.
+        bind refers to one data key; text/value are defaults. Keep node ids and bind keys when restyling to preserve live input.
+        events: {"click" or "change":[{"op":"set","key":"query","value":"..."},
+          {"op":"set","key":"query","from":"$event"},{"op":"toggle","key":"expanded"},
+          {"op":"emit","action":"purchase","args":{"item":"..."}}]}.
+        emit is an intent; the server must validate owner, world, agent, view and current revision, then enforce action permissions.
+        UI definitions do not grant game or host permissions. Actions must be registered by the owning application.
+        Data changes update bound controls without rebuilding. Structure changes build and validate a candidate before replacing the old tree.
+        Bad candidates preserve the working UI and return a path-specific error. No restart, world exit, copied scripts or global reload.
+        """;
+
+    public InterfaceDefinition {
+        root=root.deepCopy();
+        var copy=new LinkedHashMap<String,JsonNode>();data.forEach((k,v)->copy.put(k,v.deepCopy()));data=Collections.unmodifiableMap(copy);
+    }
+    @Override public JsonNode root(){return root.deepCopy();}
+    @Override public Map<String,JsonNode> data(){var copy=new LinkedHashMap<String,JsonNode>();data.forEach((k,v)->copy.put(k,v.deepCopy()));return Collections.unmodifiableMap(copy);}
+
+    public static InterfaceDefinition parse(String source) {
+        if(source==null||source.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>MAX_SOURCE_BYTES)throw error("$","SOURCE_SIZE");
+        final JsonNode doc;
+        try {doc=JSON.readTree(source);}catch(Exception e){throw error("$","INVALID_JSON");}
+        fields(doc,Set.of("id","title","surface","root","data","stylesheet"),"$");
+        String id=id(doc.path("id"),"$.id"),title=string(doc.path("title"),"$.title",256);
+        Surface surface;
+        try {surface=Surface.valueOf(doc.path("surface").textValue());}catch(Exception e){throw error("$.surface","SCREEN_OR_HUD");}
+        var ids=new HashSet<String>();validateNode(doc.path("root"),"$.root",0,ids);
+        var data=new LinkedHashMap<String,JsonNode>();
+        if(doc.has("data")){
+            if(!doc.get("data").isObject()||doc.get("data").size()>MAX_NODES)throw error("$.data","DATA_OBJECT");
+            for(var e:doc.get("data").properties()){checkId(e.getKey(),"$.data");data.put(e.getKey(),e.getValue().deepCopy());}
+        }
+        String stylesheet=doc.has("stylesheet")?style(doc.get("stylesheet"),"$.stylesheet",65536):"";
+        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet);
+    }
+    public Map<String,String> inputBindings(){
+        var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);
+    }
+    public Optional<JsonNode> node(String id){var found=new ArrayList<JsonNode>();walk(root,n->{if(n.path("id").asText().equals(id))found.add(n.deepCopy());});return found.stream().findFirst();}
+    public static void walk(JsonNode n,java.util.function.Consumer<JsonNode> visitor){visitor.accept(n);for(var child:n.path("children"))walk(child,visitor);}
+    private static void validateNode(JsonNode n,String path,int depth,Set<String> ids){
+        if(depth>MAX_DEPTH)throw error(path,"TREE_DEPTH");fields(n,NODE_FIELDS,path);
+        String nodeId=id(n.path("id"),path+".id");if(!ids.add(nodeId))throw error(path+".id","DUPLICATE_ID");if(ids.size()>MAX_NODES)throw error(path,"NODE_COUNT");
+        String type=string(n.path("type"),path+".type",24);if(!TYPES.contains(type))throw error(path+".type","UNKNOWN_WIDGET");
+        if(n.has("text"))string(n.get("text"),path+".text",16384);
+        if(n.has("bind"))id(n.get("bind"),path+".bind");
+        if(n.has("style"))style(n.get("style"),path+".style",8192);
+        if(n.has("resource")&&!string(n.get("resource"),path+".resource",512).matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))throw error(path+".resource","RESOURCE_ID");
+        if(n.has("resource")&&n.get("resource").asText().contains(".."))throw error(path+".resource","RESOURCE_PATH");
+        for(String b:List.of("visible","enabled"))if(n.has(b)&&!n.get(b).isBoolean())throw error(path+"."+b,"BOOLEAN");
+        if(n.has("classes")){if(!n.get("classes").isArray()||n.get("classes").size()>32)throw error(path+".classes","CLASSES");for(var c:n.get("classes"))id(c,path+".classes");}
+        if(n.has("events")){
+            fields(n.get("events"),Set.of("click","change"),path+".events");
+            for(var e:n.get("events").properties()){
+                if(!e.getValue().isArray()||e.getValue().size()>32)throw error(path+".events."+e.getKey(),"ACTION_LIST");
+                int i=0;for(var action:e.getValue())validateAction(action,path+".events."+e.getKey()+"["+(i++)+"]");
+            }
+        }
+        if(n.has("children")){
+            if(!n.get("children").isArray()||!Set.of("panel","row","column","scroll").contains(type))throw error(path+".children","CONTAINER_REQUIRED");
+            int i=0;for(var child:n.get("children"))validateNode(child,path+".children["+(i++)+"]",depth+1,ids);
+        }
+    }
+    private static void validateAction(JsonNode a,String path){
+        String op=a.path("op").asText();
+        switch(op){
+            case "set"->{fields(a,Set.of("op","key","value","from"),path);id(a.path("key"),path+".key");if(a.has("value")==a.has("from")||a.has("from")&&!a.path("from").asText().equals("$event"))throw error(path,"SET_VALUE_OR_EVENT");}
+            case "toggle"->{fields(a,Set.of("op","key"),path);id(a.path("key"),path+".key");}
+            case "emit"->{fields(a,Set.of("op","action","args"),path);id(a.path("action"),path+".action");if(a.has("args")&&!a.get("args").isObject())throw error(path+".args","OBJECT");}
+            default->throw error(path+".op","UNKNOWN_ACTION");
+        }
+    }
+    private static String style(JsonNode n,String p,int max){String s=string(n,p,max);if(s.contains("\u0000")||s.toLowerCase(Locale.ROOT).matches("(?s).*(https?:|file:|javascript:|@import).*"))throw error(p,"EXTERNAL_RESOURCE");return s;}
+    private static String id(JsonNode n,String p){String s=string(n,p,96);checkId(s,p);return s;}
+    private static void checkId(String s,String p){if(!s.matches("[A-Za-z][A-Za-z0-9_-]{0,95}"))throw error(p,"IDENTIFIER");}
+    private static String string(JsonNode n,String p,int max){if(!n.isTextual()||n.textValue().length()>max)throw error(p,"STRING");return n.textValue();}
+    private static void fields(JsonNode n,Set<String> allowed,String p){if(n==null||!n.isObject())throw error(p,"OBJECT");for(var e:n.properties())if(!allowed.contains(e.getKey()))throw error(p+"."+e.getKey(),"UNKNOWN_FIELD");}
+    public static IllegalArgumentException error(String path,String code){return new IllegalArgumentException("INTERFACE_"+code+" at "+path);}
+}

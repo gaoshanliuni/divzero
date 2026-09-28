@@ -123,7 +123,7 @@ jobs:
   publish:
     name: Publish installable JAR assets only
     needs: build
-    if: github.repository == 'gaoshanliuni/divzero' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.build_only))
+    if: github.repository == 'gaoshanliuni/divzero' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' && !inputs.build_only)
     runs-on: windows-2025
     timeout-minutes: 30
     permissions:
