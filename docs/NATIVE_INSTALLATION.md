@@ -15,4 +15,4 @@ First entry into a world/server presents Enable and Disable chat actions. Enable
 
 Dependency sources and licenses are recorded in `DEPENDENCIES.json` in the build artifacts. [LDLib2](https://github.com/Low-Drag-MC/LDLib2) and [KubeJS](https://github.com/KubeJS-Mods/KubeJS) use LGPL-3.0-only; [Better Advanced Tooltips](https://github.com/latvian-dev/better-advanced-tooltips) uses MIT. Exact downloads are hash-verified during packaging.
 
-This installation description does not certify every migration scenario. Current acceptance evidence and remaining work are in [the migration record](NATIVE_UI_BUILDING_MIGRATION.md). Existing release documents describe their own historical versions.
+This installation description does not certify every migration scenario. The [current capability and acceptance status](NATIVE_UI_MIGRATION_STATUS.md) summarizes the migration; exact evidence and historical failures remain in [the migration record](NATIVE_UI_BUILDING_MIGRATION.md). Existing release documents describe their own historical versions.

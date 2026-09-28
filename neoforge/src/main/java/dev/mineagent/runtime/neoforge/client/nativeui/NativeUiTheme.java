@@ -12,7 +12,7 @@ import java.util.List;
 /** Minecraft is the explicit default theme for built-ins and generated UI. */
 public final class NativeUiTheme {
     public static final int TEXT=0xff262626,MUTED=0xff4a4a4a,ACCENT=0xff264b20;
-    public static String state(String code){return dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(switch(code){case "READY"->"就绪";case "CREATOR"->"创造模式";case "SURVIVAL"->"生存模式";case "NOT_LOADED","UNLOADED"->"身体未加载";default->code;});}
+    public static String state(String code){return dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(switch(code){case "READY"->"就绪";case "CREATOR"->"创造模式";case "SURVIVAL"->"生存模式";case "NOT_LOADED","UNLOADED"->"身体未加载";case "PLANNED"->"待施工";case "PREPARING"->"准备中";case "APPLYING"->"施工中";case "VERIFIED"->"验证通过";case "UNVERIFIED"->"尚未验证";case "PAUSED"->"已暂停";case "UNDONE"->"已撤销";case "PARTIAL"->"部分完成";case "CONFLICT"->"发生冲突";case "UNKNOWN"->"结果待核对";case "REJECTED"->"已拒绝";case "EMPTY"->"尚无计划";default->code;});}
     private NativeUiTheme(){}
     public static Stylesheet mc(){return StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.MC);}
     public static UI ui(UIElement root){return UI.of(root,List.of(mc()),size->size);}

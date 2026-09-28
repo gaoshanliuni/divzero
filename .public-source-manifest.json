@@ -914,8 +914,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "e96ecf0f1525e65d68e9b96d0bfa467c8d9ab122c8708b3b1d6e080bae45dc8a",
-      "bytes": 290394
+      "sha256": "c09ff5868eba573a2d378a7d80c49004cb78317b5c549f55f3f640a2d90c38ce",
+      "bytes": 290618
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -2884,13 +2884,18 @@
     },
     {
       "path": "docs/NATIVE_INSTALLATION.md",
-      "sha256": "52cf79102ba0c44769e835b44b315529060aa057b52434371e3a0a1dfdb92146",
-      "bytes": 1664
+      "sha256": "9daa72f4352be933d4bc9846bf00fb14a6c8ae03cf342acbb262858633f95151",
+      "bytes": 1763
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "55fd8fb1e475d46b89a223754e9de79d74d6a65ebb308f9ca4cd04dd610508c2",
-      "bytes": 42318
+      "sha256": "f19e9b6b5829968c53d129533f282ed4b429c37a0e697f4126c6ab44d313326a",
+      "bytes": 43455
+    },
+    {
+      "path": "docs/NATIVE_UI_MIGRATION_STATUS.md",
+      "sha256": "5a54a72a768bf404342cd0e775b0a94af09e9c356e32d894fe0249a0944416bc",
+      "bytes": 4257
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3449,8 +3454,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",
-      "sha256": "52e575d8c1260d08691f3ff934fcf7b6426bd591b5f7ab081b1471023e9c70e6",
-      "bytes": 17370
+      "sha256": "0e5f5e65d8266c6c2f5aabd4861dbca63bd5f1f55dac91047fcbe4aea2534e45",
+      "bytes": 17424
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeCodeEditor.java",
@@ -3599,8 +3604,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
-      "sha256": "05f390622b3e62e95e42ae4d4c1f5f836d7e38da4227d0c80ac9970dbaa859bf",
-      "bytes": 3016
+      "sha256": "09b780942471db4c156f80cc83d0a06e26bc60db3b35fe290c03fe3af55d50f5",
+      "bytes": 3378
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewCapture.java",
@@ -5409,13 +5414,13 @@
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/lang/en_us.json",
-      "sha256": "95e9d0f1b654ad17573e0c4866ce9dca0e35c095af3050e5602f8988972d0969",
-      "bytes": 2268
+      "sha256": "3cb73ae04773c706c78d4248b7c1a47a82185f83167affbb3b5375e17dcac065",
+      "bytes": 2244
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/lang/zh_cn.json",
-      "sha256": "0c425c6fe51c31799ecbee744d4d4b030484323804b0090e6b2a8cb0a2f6ed3c",
-      "bytes": 3425
+      "sha256": "45fb3f98faed1b61f861682c36ffc732dd3daa56143ca57dfe1ffcb52bd16455",
+      "bytes": 3398
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/models/block/automation_console.json",

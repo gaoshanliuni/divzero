@@ -1986,7 +1986,7 @@
   "绑定已有计分目标（只创建视图，不修改分数）": "Bind existing Scoreboard objective (creates a view only, does not modify scores)",
   "绑定视图 {0}/{1} · {2} 个": "Bound views {0}/{1} · {2} total",
   "绑定视图使用当前分页数据；可在内容生成页翻页，再刷新此面板。不会把未返回的视图当作不存在。": "Bound views use current paginated data; you can turn pages on the Content Generation page, then refresh this panel. Views not returned are not treated as nonexistent.",
-  "结果待核对": "Result pending verification",
+  "结果待核对": "Outcome needs verification",
   "结果收束未知；不要重发原操作。先查看文件 / Loader 状态，必要时停机恢复。": "Result finalization unknown; do not resend the original operation. First check file / Loader status; stop and recover if necessary.",
   "结果未知。先刷新查看状态，不自动重发。": "Result unknown. Refresh to check status first; do not automatically resend.",
   "结果未知，请返回设置核对": "Result unknown; return to Settings to verify",
@@ -2980,5 +2980,12 @@
   "退出交互": "Leave interaction mode",
   "该 AI 的已保存界面": "Saved interfaces for this AI",
   "已保存界面": "Saved interfaces",
-  "查看已保存界面不会调用模型。显示动态界面需要 KubeJS。": "Browsing saved interfaces makes no model requests. Displaying dynamic interfaces requires KubeJS."
+  "查看已保存界面不会调用模型。显示动态界面需要 KubeJS。": "Browsing saved interfaces makes no model requests. Displaying dynamic interfaces requires KubeJS.",
+  "待施工": "Ready to build",
+  "准备中": "Preparing",
+  "施工中": "Building",
+  "已撤销": "Undone",
+  "部分完成": "Partially complete",
+  "发生冲突": "Conflict detected",
+  "尚无计划": "No plan yet"
 }

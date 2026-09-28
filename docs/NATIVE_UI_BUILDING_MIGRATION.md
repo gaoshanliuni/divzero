@@ -1,6 +1,6 @@
 # Native UI and component construction migration
 
-Status: implementation in progress. This document is not a release or an assertion of feature parity.
+Current consolidated status: [native migration status](NATIVE_UI_MIGRATION_STATUS.md). The entries below retain the chronological implementation and failure history; earlier pending statements refer to those checkpoints. This document is not a Release announcement.
 
 ## Accepted target (2026-09-28)
 
@@ -193,3 +193,10 @@ The player manager now also lists persistent per-AI interface definitions, inclu
 Public `5fd8e052f288034071b8ce48c028e73187d3e7db` passed Actions `36472700467`, JAR SHA-256 `cb97a3afb7c4655e1876d5574f0428d04963afda4a199de60baa536300f641af`. Native UI run `ea9f2090-9985-45b0-9886-8ff5ac75d61c` passed the full zero-model suite, including an actual select value change and the persisted interface catalog. A second launch of that exact saved world passed passive HUD restoration, saved revision and live score readback with zero model calls. Native studio run `dd0fefd1-dcc5-4049-a16d-549bae15d716` passed without KubeJS: editing/search/replace/save/readback, unsaved draft retention after F2 reopening, and resource/client-code pages. No script was executed or locally compiled by this fixture.
 
 The final package-local-state checks cover save/readback, stale CAS rejection, entry isolation and passive-HUD write refusal. Native value size is now preflighted against its response envelope before storage; a known validation/permission/CAS rejection releases the action with a precise not-applied receipt, while actual I/O/context uncertainty remains unknown. Read buttons use read request tracking. Existing oversized legacy values expose error plus revision metadata without pretending the value is empty. This last state-transport refinement is awaiting its final build/game check.
+
+
+### Native local-state completion and delivery
+
+Public `17216f16cc8caf0246ef75179ad7c6d3be17baa6` passed Actions `36475802156`, JAR SHA-256 `2aa4137cae225ea90d75f9876bb92afbd1702f784a389da54e909182dab7d7f9`. Native package run `04f2c088-43ff-46ad-b88c-d50b41f77f7f` passed the expanded suite with zero model calls: local state save/readback, known stale-CAS rejection without overwriting, oversized response-envelope rejection before storage, entry isolation and passive-HUD write denial, plus the existing signed transfer/score/capture/layout/opacity/draft/HUD checks.
+
+The final source polish unifies both keybinding labels under DivZero workspace and translates construction status labels. A consolidated current capability/status document replaces the need to interpret old pending notes as current limitations. Public README, past release documents and feedback templates remain preserved. No production instance is modified and no Release is created automatically.
