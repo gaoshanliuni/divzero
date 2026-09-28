@@ -21,11 +21,15 @@ public final class NativeInterfacesClient {
         Slot(Key key,long revision){this.key=key;wireRevision=revision;session=new InterfaceSession<>(new InterfaceSession.Scope(key.world,key.owner,key.agent,connectionId,key.id));}
     }
     private static final Map<Key,Slot> VIEWS=new LinkedHashMap<>();
+    private static UUID restoreRequest;private static boolean restoreReady;private static long nextRestore;
+    public static void restoreAcknowledged(UUID id){if(id.equals(restoreRequest))restoreReady=true;}
     private static Object connection,level;private static UUID connectionId=UUID.randomUUID();
     public static void tick(){
-        var mc=Minecraft.getInstance();if(connection==mc.getConnection()&&level==mc.level)return;
+        var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level){restoreReady=false;restoreRequest=null;nextRestore=0;
         for(var slot:VIEWS.values())slot.session.close();VIEWS.clear();connection=mc.getConnection();level=mc.level;connectionId=UUID.randomUUID();
         if(mc.screen instanceof NativeScreen screen){screen.detach();mc.setScreen(null);}
+        }
+        if(mc.player!=null&&mc.level!=null&&mc.getConnection()!=null&&!restoreReady&&System.currentTimeMillis()>=nextRestore){nextRestore=System.currentTimeMillis()+5000;restoreRequest=UUID.randomUUID();ClientPacketDistributor.sendToServer(new UiPayloads.Command(restoreRequest,"nativeInterfaceReady","{}"));}
     }
     public static void accept(UiPayloads.Event packet){
         tick();var mc=Minecraft.getInstance();Map<String,Object> reply;boolean changed=false;
@@ -36,6 +40,15 @@ public final class NativeInterfacesClient {
             if(kind.equals("inspect")){
                 var views=new ArrayList<Map<String,Object>>();for(var slot:VIEWS.values())if(slot.key.world.equals(world)&&slot.key.owner.equals(owner)&&slot.key.agent.equals(agent)&&(!args.has("id")||slot.key.id.equals(args.get("id").asText())))views.add(snapshot(slot));
                 reply=Map.of("status","OBSERVED","views",views,"ldlib2",true,"kubejs",net.neoforged.fml.ModList.get().isLoaded("kubejs"));
+            }else if(kind.equals("restore")){
+                String id=args.path("id").asText();long revision=args.path("revision").asLong();if(revision<1)throw new IllegalArgumentException("NATIVE_UI_REVISION");var key=new Key(world,owner,agent,id);var present=VIEWS.get(key);
+                if(present!=null){reply=new LinkedHashMap<>(snapshot(present));reply.put("status","OBSERVED");}
+                else{
+                    if(!net.neoforged.fml.ModList.get().isLoaded("kubejs"))throw new IllegalStateException("NATIVE_UI_KUBEJS_REQUIRED");
+                    var source=(ObjectNode)JSON.readTree(args.path("source").asText());source.set("data",args.path("data"));if(InterfaceDefinition.parse(source.toString()).surface()!=InterfaceDefinition.Surface.HUD)throw new IllegalArgumentException("NATIVE_UI_RESTORE_PASSIVE_ONLY");var slot=new Slot(key,revision);long renderedRevision=1;
+                    var built=slot.session.replace(slot.session.scope(),0,source.toString(),(definition,data)->KubeInterfaceRenderer.build(definition,data,(node,event,value)->handle(slot,renderedRevision,node,event,value)));if(!built.applied())throw new IllegalArgumentException(built.error());
+                    changed=true;slot.session.interactive(false);VIEWS.put(key,slot);LdHudRegistry.attach(slot.session,slot.session.definition().order());reply=new LinkedHashMap<>(snapshot(slot));reply.put("status","APPLIED");
+                }
             }else if(kind.equals("feed")||kind.equals("revoke")){
                 var key=new Key(world,owner,agent,args.path("id").asText());var slot=VIEWS.get(key);if(slot==null||slot.wireRevision!=args.path("expectedRevision").asLong(-1))throw new IllegalStateException("NATIVE_UI_STALE_CLIENT_REVISION");
                 if(kind.equals("revoke")){if(slot.screen!=null&&mc.screen==slot.screen){slot.screen.detach();mc.setScreen(null);}slot.session.close();VIEWS.remove(key);reply=Map.of("status","APPLIED");}

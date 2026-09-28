@@ -16,6 +16,7 @@ class NativeUiStoreTest {
         try(var a=new NativeUiStore(db);var b=new NativeUiStore(db)){
             assertEquals(1,a.save(scope,"quest",0,"minecraft:overworld",SOURCE,Map.of("points",IntNode.valueOf(3)),true).revision());
             assertEquals(3,b.get(scope,"quest").orElseThrow().data().get("points").intValue());
+            assertEquals(scope.agent(),b.owned(scope.world(),scope.owner()).getFirst().agent());assertTrue(b.owned(scope.world(),UUID.randomUUID()).isEmpty());
             assertThrows(IllegalStateException.class,()->b.save(scope,"quest",0,"minecraft:overworld",SOURCE,Map.of(),true));
             assertTrue(b.list(new NativeUiStore.Scope(scope.world(),scope.owner(),UUID.randomUUID())).isEmpty());
             assertTrue(b.get(new NativeUiStore.Scope(UUID.randomUUID(),scope.owner(),scope.agent()),"quest").isEmpty());

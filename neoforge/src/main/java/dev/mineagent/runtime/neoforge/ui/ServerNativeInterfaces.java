@@ -106,5 +106,18 @@ public final class ServerNativeInterfaces {
         var pending=PENDING.get(packet.requestId());if(pending==null||pending.player!=p||!current(p,pending.agent,pending.level,pending.permit))return;
         try{JsonNode value=JSON.readTree(packet.json());require(value.isObject(),"NATIVE_UI_ACK");pending.future.complete(value);}catch(Exception invalid){pending.future.completeExceptionally(invalid);}
     }
+    static void restoreHud(ServerPlayer player,UUID agent,String id){
+        var server=player.level().getServer();var level=player.level();var scope=scope(player,agent);var guard=lease(player,()->true);String lock=scope+":"+id;if(!BUSY.add(lock))return;
+        var db=server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");
+        io(()->{try(var store=new NativeUiStore(db)){return store.pending(scope,id).isPresent()?null:store.get(scope,id).orElse(null);}}).whenComplete((saved,error)->server.execute(()->{
+            try{
+                if(error!=null||saved==null||!saved.visible()||!saved.dimension().equals(level.dimension().identifier().toString())||!current(player,agent,level,guard)){BUSY.remove(lock);return;}
+                var definition=InterfaceDefinition.parse(saved.source());if(definition.surface()!=InterfaceDefinition.Surface.HUD){BUSY.remove(lock);return;}
+                var data=new LinkedHashMap<String,JsonNode>(saved.data());data.putAll(ServerNativeInterfaceSources.read(player,agent,definition).data());
+                var message=JSON.createObjectNode().put("kind","restore").put("id",id).put("world",scope.world().toString()).put("owner",scope.owner().toString()).put("agent",agent.toString()).put("dimension",saved.dimension()).put("source",saved.source()).put("revision",saved.revision());message.set("data",JSON.valueToTree(data));
+                request(player,agent,message,guard).whenComplete((receipt,failure)->server.execute(()->{BUSY.remove(lock);if(failure==null&&current(player,agent,level,guard)&&receipt.path("status").asText().equals("APPLIED")&&receipt.path("revision").asLong()==saved.revision())ServerNativeInterfaceSources.register(player,agent,definition,saved.revision());}));
+            }catch(Exception failure){BUSY.remove(lock);dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Native HUD restore failed: {}",failure.getClass().getSimpleName());}
+        }));
+    }
     private ServerNativeInterfaces(){}
 }

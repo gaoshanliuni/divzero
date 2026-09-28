@@ -12,6 +12,7 @@ public final class NativeUiStore implements AutoCloseable {
     private static final String CANDIDATES="native_ui_candidates";
     public record Scope(UUID world,UUID owner,UUID agent){}
     public record Candidate(UUID token,long expectedRevision,String dimension,String source){}
+    public record Owned(UUID agent,String id,Saved saved){}
     public record Saved(long revision,String dimension,String source,Map<String,JsonNode> data,boolean visible){
         public Saved{data=Map.copyOf(data);}
     }
@@ -26,6 +27,11 @@ public final class NativeUiStore implements AutoCloseable {
             result.add(Map.of("id",definition.id(),"title",definition.title(),"surface",definition.surface().name(),"revision",v.revision,"dimension",v.dimension,"visible",v.visible));
         }
         return List.copyOf(result);
+    }
+    public List<Owned> owned(UUID world,UUID owner)throws Exception{
+        var result=new ArrayList<Owned>();String prefix=owner+":";for(var row:repository.list(world,NS))if(row.recordId().startsWith(prefix)){
+            String[] parts=row.recordId().split(":",3);if(parts.length!=3)throw new IllegalStateException("NATIVE_UI_STORED_SCOPE");result.add(new Owned(UUID.fromString(parts[1]),parts[2],JSON.readValue(row.payload(),Saved.class)));
+        }return List.copyOf(result);
     }
     public Saved save(Scope scope,String id,long expected,String dimension,String source,Map<String,JsonNode> data,boolean visible)throws Exception{
         if(expected<0||expected==Long.MAX_VALUE||!InterfaceDefinition.parse(source).id().equals(id))throw new IllegalArgumentException("NATIVE_UI_DEFINITION");

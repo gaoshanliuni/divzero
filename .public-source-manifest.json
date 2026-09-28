@@ -3054,8 +3054,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/NativeUiStore.java",
-      "sha256": "9ff62fe86a9ee6a95be3851f192a6acfb15da0c7be791b2140a546ad10522fa7",
-      "bytes": 5938
+      "sha256": "08e3301813070403744fc1f2ac8d6a21f98e62b0fa04f636b7793b7f17dbf892",
+      "bytes": 6486
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/AgentPersonaServiceTest.java",
@@ -3354,8 +3354,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/dynamic/NativeUiStoreTest.java",
-      "sha256": "9fb4ba971d7054b5b81dea2b657f2cb2eca1d24c1bbbb1ba7d67ec2696ea5beb",
-      "bytes": 3432
+      "sha256": "74a7082f62124c05d90c49f862c3565b27172553384bc693ac350d378710e1dc",
+      "bytes": 3592
     },
     {
       "path": "docs/CINEMATIC_FILMS.md",
@@ -3364,8 +3364,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "e7c27056155b12cd2e3733e38753865179bdd0dd30dd72a13050d82591a56e2b",
-      "bytes": 15485
+      "sha256": "5f646152339be107b9b0180b7bd0f7e5e53270f2fb417e58932fa99c4a472f36",
+      "bytes": 16093
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3924,8 +3924,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeInterfacesClient.java",
-      "sha256": "60280811fbe2d66fdd1961aac781f70494b766c0f5f3875062aa7c2dbf79163b",
-      "bytes": 13830
+      "sha256": "6f3c4f8095fb90c95afd369a0bc321897ff8269dad2c90d5adf937023ddfa3d8",
+      "bytes": 15837
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePreview.java",
@@ -3934,8 +3934,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiSmokeClient.java",
-      "sha256": "16a58bfc04f5de42f982e18dbdd5489f0b388a2cf9c81c195419d4b91e24c79d",
-      "bytes": 19646
+      "sha256": "249d7d878108d44cab7e9ea9064806551e40b249b03973cefaeec0cfb3a427b8",
+      "bytes": 20516
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
@@ -4479,8 +4479,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/UiClientSessions.java",
-      "sha256": "d14f1e6f9e64ba249e52f480b3c8506416bd1cb19b7323b219ccb31df1beea13",
-      "bytes": 22336
+      "sha256": "946516d564b2d7f1504170136daa4c44130cc670023ebc9a87adbbe6e2cf552d",
+      "bytes": 22509
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/UiMultiplayerSmokeClient.java",
@@ -5898,14 +5898,19 @@
       "bytes": 42748
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerNativeInterfaceRestore.java",
+      "sha256": "fc4ce727f19abcd7a27ec5ba9e4c75132d7a2e2e033374f7f8e140678b3d735d",
+      "bytes": 3299
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerNativeInterfaceSources.java",
       "sha256": "d7509386d24fe3336bd7024aa70cfa39726107bb67a28df739bf9f886b6bc471",
       "bytes": 7246
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerNativeInterfaces.java",
-      "sha256": "9c10cc97904c532bb329c5ac50c89e29e73396b48cd993aa9164938b8e852fa1",
-      "bytes": 13340
+      "sha256": "290d0b058c8836fd60418e1e9cc155a92250c1c20a1e645fd9587332919448b3",
+      "bytes": 15302
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageAssets.java",
@@ -5964,8 +5969,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiRuntime.java",
-      "sha256": "8044ea8c85a2137331b91a7a50355a074abd413a502ba8abccf141b70e3d22b5",
-      "bytes": 126244
+      "sha256": "2b624c3edba775cad6668c99db644138e7f21bf4105f4f9d563c706becc14a1c",
+      "bytes": 126421
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerWorldUiRuntime.java",

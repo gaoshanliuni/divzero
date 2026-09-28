@@ -45,6 +45,7 @@ public final class UiClientSessions {
     @SubscribeEvent public static void register(RegisterClientPayloadHandlersEvent event) {
         event.register(UiPayloads.Event.TYPE, (p, ctx) -> {var source=ctx.connection();ctx.enqueueWork(() -> {
             var mc=Minecraft.getInstance();if(mc.getConnection()==null||mc.getConnection().getConnection()!=source)return;
+            if(p.channel().equals("nativeInterfaceReady")){dev.mineagent.runtime.neoforge.client.nativeui.NativeInterfacesClient.restoreAcknowledged(p.requestId());return;}
             if(dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.accept(p))return;
             if(!StatePushClient.accept(p)&&!ClientCodeDeliverySmokeClient.accept(p)&&!DeliverySmokeClient.accept(p)&&!ContentDeliveryClient.accept(p)&&!SharedMultiplayerSmokeClient.accept(p)&&!WorldUiClient.accept(p,source)&&!TaskAuthoritySmokeClient.accept(p)&&!UiWorldSwitchSmokeClient.accept(p)&&!UiMultiplayerSmokeClient.accept(p)&&!HudPersistenceClient.accept(p,source))accept(p);
         });});
