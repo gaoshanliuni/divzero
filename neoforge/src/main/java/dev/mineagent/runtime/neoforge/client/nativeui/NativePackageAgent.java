@@ -17,7 +17,7 @@ public final class NativePackageAgent {
     private NativePackageAgent(){}
     public static UiAgentController.Port control(String id,boolean presentationOnly){
         if(controls.containsKey(id))throw new IllegalStateException("UI_CONTROL_BUSY");
-        if(!NativePackageViews.rendered(id))throw new IllegalStateException("VIEW_NOT_RENDERED");
+        if(!NativePackageViews.presentationReady(id))throw new IllegalStateException("VIEW_NOT_RENDERED");
         var port=new Port(id,presentationOnly);controls.put(id,port);return port;
     }
     public static CompletableFuture<String> inspect(String id){return onClient(()->CompletableFuture.completedFuture(observe(id).toString()));}

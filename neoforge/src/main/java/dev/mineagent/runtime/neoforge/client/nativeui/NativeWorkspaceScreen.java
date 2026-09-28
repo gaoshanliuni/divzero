@@ -49,6 +49,8 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         search.textFieldStyle(style->style.placeholder(Component.literal(t("搜索对话"))));search.registerValueListener(value->{listBefore=0;nextList=System.currentTimeMillis()+350;});
         agentChoice.setOnValueChanged(choice->{if(choice!=null&&!choice.key().equals(model.agent))selectAgent(choice.key());});
         history.viewPort.getStyle().backgroundTexture(NativeUiTheme.inset());
+        var frameWitness=new UIElement(){@Override protected void drawBackgroundAdditional(com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext context){NativePackageViews.workspacePainted(NativeWorkspaceScreen.this);}};
+        frameWitness.getLayout().positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE).left(0).top(0).width(1).height(1);frameWitness.setActive(false);root.addChild(frameWitness);
         showChat();drawAgents();
     }
     WorkspaceWindow window(String id,String title,float width,float height){

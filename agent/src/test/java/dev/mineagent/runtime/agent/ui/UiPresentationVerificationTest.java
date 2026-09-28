@@ -2,6 +2,17 @@ package dev.mineagent.runtime.agent.ui;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class UiPresentationVerificationTest {
+    @Test void nativeCullWitnessOnlyProvesZeroOpacity()throws Exception{
+        var json=new com.fasterxml.jackson.databind.ObjectMapper();String op="00000000-0000-0000-0000-000000000001";
+        for(double alpha:new double[]{0,0.5}){
+            var proof=new UiPresentationVerification();String action="{\"action\":\"present\",\"operationId\":\""+op+"\",\"expectedLayoutRevision\":3,\"placement\":{\"anchor\":\"TOP_RIGHT\",\"width\":560,\"height\":440,\"offsetX\":-24,\"offsetY\":12,\"opacity\":"+alpha+"}}";
+            var paint=json.createObjectNode().put("status","NATIVE_LDLIB2_CULLED_ZERO_ALPHA").put("hostDocumentId",op).put("viewId","native-view").put("paintSequence",20).put("layoutRevision",4).put("opacity",alpha).put("alpha",Math.round(alpha*255));
+            var receipt=json.createObjectNode().put("status","APPLIED_HOST").put("executionMode","HOST_PRESENTATION").put("operationId",op).put("documentId","doc").put("afterLayoutRevision",4).put("persisted",true).put("nativePainted",false).put("nativeCulled",true);receipt.set("opacityPaint",paint);
+            var observed=(com.fasterxml.jackson.databind.node.ObjectNode)json.readTree(observation(604));var host=(com.fasterxml.jackson.databind.node.ObjectNode)observed.path("hostPresentation");host.put("opacity",alpha);host.set("opacityPaint",paint);
+            proof.action(action,receipt.toString());assertEquals(alpha==0,proof.matches(observed.toString()));
+        }
+    }
+
     @Test void opacityNeedsNativePaintInTheReceiptAndInTheSameViewFreshObservation()throws Exception{
         var json=new com.fasterxml.jackson.databind.ObjectMapper();var proof=new UiPresentationVerification();
         String op="00000000-0000-0000-0000-000000000001";

@@ -11,6 +11,7 @@ public final class WorkspaceWindow {
     public WorkspaceWindow(UIElement desktop,UIElement dock,String title,float x,float y,float width,float height,Consumer<WorkspaceWindow> onClose){
         lastPlacement=new Placement(x,y,width,height,false);
         dialog=new Dialog().setAutoClose(false).allowInteraction().windowMode(x,y,width,height).setClickOutsideClose(false);
+        dialog.getLayout().left(0).top(0).alignSelf(AlignItems.FLEX_START);
         dialog.overlay.getStyle().backgroundTexture(NativeUiTheme.panel());
         dialog.titleBar.clearAllChildren();dialog.titleBar.getLayout().height(29).paddingHorizontal(9).paddingVertical(4);
         dialog.titleBar.getStyle().backgroundTexture(NativeUiTheme.title());

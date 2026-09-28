@@ -64,7 +64,7 @@ public final class PackageContentClient {
             PageControlClient.rendered(id);ContentTakeoverClient.ready(id);HudPersistenceClient.ready(id);ContentDeliveryClient.rendered(id);
         }));
     }
-    public static void tick(){for(var entry:List.copyOf(views.entrySet())){var v=entry.getValue();if(!v.ready&&!v.blocked&&v.visible&&!v.admitting&&!v.reopening&&NativePackageViews.painted(entry.getKey()))loaded(entry.getKey());}}
+    public static void tick(){for(var entry:List.copyOf(views.entrySet())){var v=entry.getValue();if(!v.ready&&!v.blocked&&v.visible&&!v.admitting&&!v.reopening&&NativePackageViews.layoutTraversed(entry.getKey()))loaded(entry.getKey());}}
     private static boolean readmitHud(String id,View view,long load){
         var descriptor=WebGuiHostAdapter.INSTANCE.viewPackage(id);var old=view.session;
         if(descriptor==null||!descriptor.passive()||view.reopening||view.readmissionAttempts>=1||!dev.mineagent.runtime.api.ui.ReadOnlyUiLease.eligible(old.binding()))return false;

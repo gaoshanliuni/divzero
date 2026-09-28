@@ -20,7 +20,7 @@ public final class NativePackageViews {
     private static Object connection,level,player;private static long tick;
     private static final class View {
         final String id,document=UUID.randomUUID().toString();final PackagePreviewTransfer.Resolved asset;final InterfaceSession<LdInterfaceRenderer.Rendered> content;
-        NativePackageDefinition definition;NativePackageResources resources;Session session;Transport transport;WorkspaceWindow window;NativeWorkspaceScreen host;HudScreen projection;boolean ready,blocked,closed,visible=true,observedVisibility;long paintedTick=-1,lifecycle=1;
+        NativePackageDefinition definition;NativePackageResources resources;Session session;Transport transport;WorkspaceWindow window;NativeWorkspaceScreen host;HudScreen projection;boolean ready,blocked,closed,visible=true,observedVisibility;long paintedTick=-1,culledTick=-1,lifecycle=1;
         String hostDocument=UUID.randomUUID().toString(),layoutSignature="",layoutSource="PLAYER";long layoutRevision=1,layoutSaveAt,presentAfter,presentDeadline;double opacity=1;boolean savingPresentation;CompletableFuture<com.google.gson.JsonObject> presentation;dev.mineagent.runtime.core.ui.UiPresentationAction presentAction;boolean agentDispatch;Map<String,Object> sealedDraft;final Set<String> refreshing=new HashSet<>();final Map<String,Long> nextRead=new HashMap<>();final Set<String> reading=new HashSet<>();final Map<String,UUID> writes=new HashMap<>();String error="";
         View(String id,PackagePreviewTransfer.Resolved asset,Session session,NativePackageDefinition definition,Transport transport){
             this.id=id;this.asset=asset;this.session=session;this.definition=definition;this.transport=transport;
@@ -44,7 +44,7 @@ public final class NativePackageViews {
             var receipt=view.content.replace(view.content.scope(),0,JSON.writeValueAsString(definition.view()),(d,data)->KubeInterfaceRenderer.build(d,data,(node,event,value)->event(view,node,event,value),view.resources.textures(),!passive));
             if(!receipt.applied())throw new IllegalArgumentException(receipt.error());paintWitness(view);
             VIEWS.put(id,view);
-            if(passive){view.content.interactive(false);LdHudRegistry.attach(view.content,definition.view().order());}
+            if(passive){view.content.rendered().onCanvasPaint(()->culledFrame(view));view.content.interactive(false);LdHudRegistry.attach(view.content,definition.view().order());}
             else mount(view);
             if(session==null)view.ready=true;NativePackagePlacement.restore(id);
             return id;
@@ -57,12 +57,17 @@ public final class NativePackageViews {
         view.hostDocument=UUID.randomUUID().toString();view.host=host;view.window=host.window("native-package-"+view.id,view.definition.view().title(),480,340);view.window.body.clearAllChildren();view.content.rendered().root.getLayout().widthPercent(100).heightPercent(100);view.window.body.addChild(view.content.rendered().root);view.content.interactive(!view.blocked);view.paintedTick=-1;
     }
     public static void workspaceOpened(NativeWorkspaceScreen host){for(var view:List.copyOf(VIEWS.values()))if(view.host!=null&&view.visible&&view.definition.view().surface()==InterfaceDefinition.Surface.SCREEN)try{mount(view,host);}catch(Exception error){block(view.id,error.getMessage());}}
+    public static void workspacePainted(NativeWorkspaceScreen host){for(var view:List.copyOf(VIEWS.values()))if(view.host==host)culledFrame(view);}
+    private static void culledFrame(View view){var root=view.window==null?view.content.rendered().root:view.window.dialog.overlay;if(current(view)&&visible(view)&&!view.blocked&&view.opacity==0&&root.getStyle().opacity()==0&&root.getSizeWidth()>0&&root.getSizeHeight()>0)view.culledTick=tick;}
+    private static boolean zeroAlphaFrame(View view){var root=view.window==null?view.content.rendered().root:view.window.dialog.overlay;return current(view)&&visible(view)&&!view.blocked&&view.opacity==0&&root.getStyle().opacity()==0&&view.culledTick>=0&&tick-view.culledTick<=2;}
+    public static boolean layoutTraversed(String id){var view=VIEWS.get(id);return view!=null&&(painted(id)||zeroAlphaFrame(view));}
+    public static boolean presentationReady(String id){var view=VIEWS.get(id);return view!=null&&view.ready&&layoutTraversed(id);}
     private static void paintWitness(View view){view.content.rendered().onPaint(()->{if(current(view)&&visible(view)&&!view.blocked)view.paintedTick=tick;});}
     private static boolean visible(View view){return view.visible&&(view.definition.view().surface()==InterfaceDefinition.Surface.HUD?!Minecraft.getInstance().options.hideGui:NativeWorkspaceScreen.visible()&&view.host!=null&&view.host.activeContext()&&view.window!=null&&view.window.visible());}
     public static void admitted(String id){var view=require(id);view.ready=true;view.nextRead.clear();}
     public static boolean owns(String id){return VIEWS.containsKey(id);}
-    public static boolean rendered(String id){var v=VIEWS.get(id);return v!=null&&current(v)&&v.ready&&visible(v)&&!v.blocked&&v.paintedTick>=0&&tick-v.paintedTick<=2;}
-    public static boolean painted(String id){var v=VIEWS.get(id);return v!=null&&current(v)&&visible(v)&&!v.blocked&&v.paintedTick>=0&&tick-v.paintedTick<=2;}
+    public static boolean rendered(String id){var v=VIEWS.get(id);return v!=null&&current(v)&&v.ready&&v.opacity>0&&visible(v)&&!v.blocked&&v.paintedTick>=0&&tick-v.paintedTick<=2;}
+    public static boolean painted(String id){var v=VIEWS.get(id);return v!=null&&current(v)&&v.opacity>0&&visible(v)&&!v.blocked&&v.paintedTick>=0&&tick-v.paintedTick<=2;}
     public static boolean visible(String id){var v=VIEWS.get(id);return v!=null&&visible(v);}
     public static PackagePreviewTransfer.Resolved asset(String id){return require(id).asset;}
     static Map<String,JsonNode> smokeData(String id){return require(id).content.data();}
@@ -73,7 +78,7 @@ public final class NativePackageViews {
     public static Session rawSession(String id){var view=VIEWS.get(id);return view==null?null:view.session;}
     public static void rebind(String id,Session source,Session target){var view=require(id);if(!Objects.equals(view.session,source))throw new SecurityException("NATIVE_PACKAGE_STALE_SESSION");if(!dev.mineagent.runtime.api.ui.ReadOnlyUiLease.sameContext(source,target)){view.lifecycle++;view.reading.clear();view.refreshing.clear();}view.session=target;view.ready=true;view.blocked=false;view.content.rendered().root.setActive(true);view.nextRead.clear();}
     public static void block(String id,String error){var view=VIEWS.get(id);if(view!=null){view.blocked=true;view.error=error;view.content.interactive(false);view.content.rendered().root.setActive(false);}}
-    public static void show(String id){var view=require(id);view.visible=true;view.content.visible(true);dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.visible(id,true);if(view.definition.view().surface()==InterfaceDefinition.Surface.HUD){view.content.interactive(false);LdHudRegistry.attach(view.content,view.definition.view().order());}else if(view.window==null||view.window.closed()||view.content.rendered().root.getParent()==null)mount(view);else view.window.reveal();}
+    public static void show(String id){var view=require(id);if(view.opacity==0){view.opacity=1;view.paintedTick=view.culledTick=-1;(view.window==null?view.content.rendered().root:view.window.dialog.overlay).getStyle().opacity(1);}view.visible=true;view.content.visible(true);dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.visible(id,true);if(view.definition.view().surface()==InterfaceDefinition.Surface.HUD){view.content.interactive(false);LdHudRegistry.attach(view.content,view.definition.view().order());}else if(view.window==null||view.window.closed()||view.content.rendered().root.getParent()==null)mount(view);else view.window.reveal();}
     public static void hide(String id){var view=require(id);view.visible=false;view.content.visible(false);dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.visible(id,false);view.content.interactive(false);if(view.window!=null)view.window.dialog.setDisplay(false);}
     public static void close(String id){close(id,true);}
     private static void close(String id,boolean user){var view=VIEWS.remove(id);if(view==null)return;view.closed=true;if(view.projection!=null&&Minecraft.getInstance().screen==view.projection)Minecraft.getInstance().setScreen(null);if(view.presentation!=null)view.presentation.completeExceptionally(new IllegalStateException("VIEW_CLOSED"));PackageContentClient.close(id);if(user)dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.closed(id);else dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.retired(id);if(view.window!=null)view.window.close();view.content.close();view.resources.close();}
@@ -105,10 +110,10 @@ public final class NativePackageViews {
     private static View require(String id){var value=VIEWS.get(id);if(value==null||!current(value))throw new IllegalStateException("VIEW_NOT_RENDERED");return value;}
     private static boolean current(View view){var mc=Minecraft.getInstance();return !view.closed&&connection==mc.getConnection()&&level==mc.level&&player==mc.player&&VIEWS.get(view.id)==view;}
     public static Map<String,Object> inspect(String id){
-        var view=require(id);var nodes=new ArrayList<Map<String,Object>>();inspect(view,view.definition.view().root(),nodes,true,false,0,0,view.content.rendered().root.getSizeWidth(),view.content.rendered().root.getSizeHeight());
+        var view=require(id);var nodes=new ArrayList<Map<String,Object>>();inspect(view,view.definition.view().root(),nodes,view.opacity>0,false,0,0,view.content.rendered().root.getSizeWidth(),view.content.rendered().root.getSizeHeight());
         var root=view.content.rendered().root;
         var text=new StringBuilder();for(var row:nodes)if(Boolean.TRUE.equals(row.get("visible"))&&!Boolean.TRUE.equals(row.get("secret"))&&!Objects.toString(row.get("text"),"").isBlank())text.append(row.get("text")).append('\n');
-        var out=new LinkedHashMap<String,Object>();out.put("status",rendered(id)?"OBSERVED":"VIEW_NOT_RENDERED");out.put("documentId",view.document);out.put("renderer","LDLIB2");out.put("elements",nodes.stream().filter(n->Boolean.TRUE.equals(n.get("visible"))).limit(128).toList());out.put("candidateElements",nodes.size());out.put("elementBudget",128);out.put("visibleText",text.substring(0,Math.min(8192,text.length())));out.put("visibleTextTruncated",text.length()>8192);out.put("sensitiveVisible",nodes.stream().anyMatch(n->Boolean.TRUE.equals(n.get("visible"))&&Boolean.TRUE.equals(n.get("secret"))));out.put("viewport",Map.of("width",root.getSizeWidth(),"height",root.getSizeHeight(),"elementRef",root.getId(),"scrollX",0,"scrollY",0));out.put("supportedActions",List.of("click","clickAt","fill","select","toggle","scroll","capture","waitFor","verify","present","done"));out.put("visible",visible(view));out.put("interactive",view.content.interactive());out.put("paintedTick",view.paintedTick);out.put("error",view.error);return out;
+        var out=new LinkedHashMap<String,Object>();out.put("status",presentationReady(id)?"OBSERVED":"VIEW_NOT_RENDERED");out.put("documentId",view.document);out.put("renderer","LDLIB2");out.put("elements",nodes.stream().filter(n->Boolean.TRUE.equals(n.get("visible"))).limit(128).toList());out.put("candidateElements",nodes.size());out.put("elementBudget",128);out.put("visibleText",text.substring(0,Math.min(8192,text.length())));out.put("visibleTextTruncated",text.length()>8192);out.put("sensitiveVisible",nodes.stream().anyMatch(n->Boolean.TRUE.equals(n.get("visible"))&&Boolean.TRUE.equals(n.get("secret"))));out.put("viewport",Map.of("width",root.getSizeWidth(),"height",root.getSizeHeight(),"elementRef",root.getId(),"scrollX",0,"scrollY",0));out.put("supportedActions",view.opacity==0?List.of("waitFor","verify","present","done"):List.of("click","clickAt","fill","select","toggle","scroll","capture","waitFor","verify","present","done"));out.put("contentVisible",view.opacity>0&&visible(view));out.put("visible",visible(view));out.put("interactive",view.content.interactive());out.put("paintedTick",view.paintedTick);out.put("error",view.error);return out;
     }
     private static boolean secret(JsonNode spec){return spec.path("secret").asBoolean(false);}
     private static void inspect(View view,JsonNode spec,List<Map<String,Object>> rows,boolean ancestorVisible,boolean ancestorDisabled,float clipX,float clipY,float clipR,float clipB){
@@ -123,7 +128,7 @@ public final class NativePackageViews {
     }
 
     private static void event(View view,String node,String event,String value){
-        if(!current(view)||!view.ready||view.blocked||!visible(view))return;
+        if(!current(view)||!view.ready||view.blocked||view.opacity<=0||!visible(view))return;
         try{
             view.error="";if(!view.agentDispatch){PackageContentClient.humanInput(view.id);dev.mineagent.runtime.neoforge.client.webui.ContentTakeoverClient.humanInput(view.id);dev.mineagent.runtime.neoforge.client.webui.ContentHotSwapClient.humanInput(view.id);if(view.session!=null&&view.session.binding().actorKind()==ActorKind.AGENT){dev.mineagent.runtime.neoforge.client.webui.UiAgentClient.stop(view.id,true,"HUMAN_INPUT");return;}}
             long revision=view.content.revision();var actions=view.content.actions(view.content.scope(),revision,node,event);
@@ -161,7 +166,7 @@ public final class NativePackageViews {
         var bounds=Map.of("x",root.getPositionX(),"y",root.getPositionY(),"width",root.getSizeWidth(),"height",root.getSizeHeight());String signature=bounds+"|"+view.opacity;
         if(!signature.equals(view.layoutSignature)){if(!view.layoutSignature.isEmpty()){view.layoutRevision++;view.layoutSaveAt=tick+12;if(view.presentation==null)view.layoutSource="PLAYER";}view.layoutSignature=signature;}
         var result=new com.google.gson.Gson().toJsonTree(Map.of("viewId",id,"hostDocumentId",view.hostDocument,"revision",view.layoutRevision,"source",view.layoutSource,"visible",visible(view),"minimized",!visible(view),"bounds",bounds,"area",Map.of("x",7,"y",48,"width",Math.max(240,mc.getWindow().getGuiScaledWidth()-14),"height",Math.max(160,mc.getWindow().getGuiScaledHeight()-130)),"opacity",view.opacity)).getAsJsonObject();
-        if(rendered(id))result.add("opacityPaint",new com.google.gson.Gson().toJsonTree(Map.of("status","NATIVE_LDLIB2_PAINTED","hostDocumentId",view.hostDocument,"viewId",id,"layoutRevision",view.layoutRevision,"paintSequence",view.paintedTick+1,"opacity",view.opacity,"alpha",Math.round(view.opacity*255))));return result;
+        if(presentationReady(id))result.add("opacityPaint",new com.google.gson.Gson().toJsonTree(Map.of("status",view.opacity==0?"NATIVE_LDLIB2_CULLED_ZERO_ALPHA":"NATIVE_LDLIB2_PAINTED","hostDocumentId",view.hostDocument,"viewId",id,"layoutRevision",view.layoutRevision,"paintSequence",(view.opacity==0?view.culledTick:view.paintedTick)+1,"opacity",view.opacity,"alpha",Math.round(view.opacity*255))));return result;
     }
     public static void restoreLayout(String id,com.google.gson.JsonObject saved){
         var view=require(id);if(view.layoutRevision>1||!saved.has("bounds"))return;
@@ -173,7 +178,7 @@ public final class NativePackageViews {
         if(!Float.isFinite(x)||!Float.isFinite(y)||!Float.isFinite(w)||!Float.isFinite(h)||!Double.isFinite(opacity)||opacity<0||opacity>1)throw new IllegalArgumentException("UI_LAYOUT_INVALID");
         var mc=Minecraft.getInstance();w=Math.clamp(w,64,Math.max(64,mc.getWindow().getGuiScaledWidth()-14));h=Math.clamp(h,64,Math.max(64,mc.getWindow().getGuiScaledHeight()-82));x=Math.clamp(x,0,Math.max(0,mc.getWindow().getGuiScaledWidth()-w));y=Math.clamp(y,0,Math.max(0,mc.getWindow().getGuiScaledHeight()-h));
         if(view.window!=null){view.window.restore(new WorkspaceWindow.Placement(x,y,w,h,false));view.window.dialog.overlay.getStyle().opacity((float)opacity);}else{view.content.rendered().root.getLayout().left(x).top(y).width(w).height(h);view.content.rendered().root.getStyle().opacity((float)opacity);}
-        view.opacity=opacity;view.paintedTick=-1;
+        view.opacity=opacity;view.paintedTick=-1;view.culledTick=-1;
     }
     public static CompletableFuture<com.google.gson.JsonObject> present(String id,dev.mineagent.runtime.core.ui.UiPresentationAction action){
         var view=require(id);var layout=layout(id);if(layout.get("revision").getAsLong()!=action.expectedLayoutRevision()||view.presentation!=null)throw new IllegalStateException("STALE_LAYOUT");
@@ -187,12 +192,12 @@ public final class NativePackageViews {
             if(!visible(view))return;var actual=layout(view.id);
             if(view.presentation!=null){
                 if(tick>view.presentDeadline){view.presentation.completeExceptionally(new IllegalStateException("UI_PRESENTATION_UNKNOWN"));view.presentation=null;return;}
-                if(tick<view.presentAfter||!rendered(view.id)||view.savingPresentation)return;
+                if(tick<view.presentAfter||!presentationReady(view.id)||view.savingPresentation)return;
                 view.savingPresentation=true;var pending=view.presentation;var action=view.presentAction;
                 NativePackagePlacement.save(view.id,actual).whenComplete((ignored,error)->{
                     view.savingPresentation=false;if(view.presentation!=pending)return;view.presentation=null;
-                    if(error!=null||!current(view)||!rendered(view.id)||!stableLayout(actual).equals(stableLayout(layout(view.id)))){pending.completeExceptionally(error==null?new IllegalStateException("UI_PRESENTATION_UNKNOWN"):error);return;}
-                    view.layoutSaveAt=0;var receipt=new com.google.gson.JsonObject();receipt.addProperty("operationId",action.operationId().toString());receipt.addProperty("documentId",view.document);receipt.addProperty("status","APPLIED_HOST");receipt.addProperty("persisted",true);receipt.addProperty("nativePainted",true);receipt.addProperty("executionMode","HOST_PRESENTATION");receipt.addProperty("afterLayoutRevision",actual.get("revision").getAsLong());receipt.add("opacityPaint",layout(view.id).get("opacityPaint"));receipt.add("actual",actual);pending.complete(receipt);
+                    if(error!=null||!current(view)||!presentationReady(view.id)||!stableLayout(actual).equals(stableLayout(layout(view.id)))){pending.completeExceptionally(error==null?new IllegalStateException("UI_PRESENTATION_UNKNOWN"):error);return;}
+                    view.layoutSaveAt=0;var receipt=new com.google.gson.JsonObject();receipt.addProperty("operationId",action.operationId().toString());receipt.addProperty("documentId",view.document);receipt.addProperty("status","APPLIED_HOST");receipt.addProperty("persisted",true);receipt.addProperty("nativePainted",view.opacity>0);receipt.addProperty("nativeCulled",view.opacity==0);receipt.addProperty("executionMode","HOST_PRESENTATION");receipt.addProperty("afterLayoutRevision",actual.get("revision").getAsLong());receipt.add("opacityPaint",layout(view.id).get("opacityPaint"));receipt.add("actual",actual);pending.complete(receipt);
                 });
             }else if(view.layoutSaveAt>0&&tick>=view.layoutSaveAt){view.layoutSaveAt=0;NativePackagePlacement.save(view.id,actual).exceptionally(error->{NativeWorkspaceScreen.notice("UI_LAYOUT_SAVE_FAILED");return null;});}
         }catch(Exception error){if(view.presentation!=null){view.presentation.completeExceptionally(error);view.presentation=null;}}

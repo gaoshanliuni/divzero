@@ -139,10 +139,12 @@ public final class LdInterfaceRenderer {
                 if(Math.abs((a.getPositionX()-root.getPositionX())-(b.getPositionX()-target.root.getPositionX()))>1||Math.abs((a.getPositionY()-root.getPositionY())-(b.getPositionY()-target.root.getPositionY()))>1||Math.abs(a.getSizeWidth()-b.getSizeWidth())>1||Math.abs(a.getSizeHeight()-b.getSizeHeight())>1)return false;
             }return true;
         }
-        public void onPaint(Runnable witness){
+        public void onCanvasPaint(Runnable witness){if(root.getParent()!=null)paintMarker(root.getParent(),witness);}
+        public void onPaint(Runnable witness){paintMarker(root,witness);}
+        private void paintMarker(UIElement parent,Runnable witness){
             var marker=new UIElement(){@Override protected void drawBackgroundAdditional(com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext context){if(!closed&&root.getSizeWidth()>0&&root.getSizeHeight()>0)witness.run();}};
             marker.getLayout().positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE).left(0).top(0).width(1).height(1);
-            root.addChild(marker);
+            parent.addChild(marker);
         }
         @Override public void close(){if(!closed){closed=true;bridge.ready=false;if(ui!=null&&!ui.isRemoved())ui.onRemoved();else root.removeSelf();}}
     }
