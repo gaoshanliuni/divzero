@@ -18,7 +18,8 @@ final class WorkspacePanels {
     private static final Gson JSON=new Gson();
     private WorkspacePanels(){}
     private static String t(String text){return ClientLanguage.t(text);}
-    static CompletableFuture<Receipt> request(String action,Map<String,String> args){return NativeWorkspaceConnection.command(action,args,UUID.randomUUID()).thenApply(receipt->{
+    static CompletableFuture<Receipt> request(String action,Map<String,String> args){return request(action,args,UUID.randomUUID());}
+    static CompletableFuture<Receipt> request(String action,Map<String,String> args,UUID operation){return NativeWorkspaceConnection.command(action,args,operation).thenApply(receipt->{
         if(!Set.of(Code.OBSERVED,Code.APPLIED,Code.ACCEPTED,Code.OK).contains(receipt.code())||!receipt.values().getOrDefault("errorCode","").isBlank())throw new IllegalStateException(receipt.values().getOrDefault("errorCode",receipt.code().name()));return receipt;
     });}
     static JsonObject state(Receipt receipt){return JsonParser.parseString(receipt.values().getOrDefault("state","{}")).getAsJsonObject();}
@@ -91,8 +92,5 @@ final class WorkspacePanels {
         load[0]=()->request("task.historyRead",Map.of("kind","packages","search",search.getValue(),"offset",Integer.toString(offset[0]))).whenComplete((receipt,error)->{if(window.closed())return;if(error!=null){failure(notice,error);return;}var data=state(receipt);list.clearAllScrollViewChildren();for(var raw:data.getAsJsonArray("items")){var item=raw.getAsJsonObject();var card=card(list,item.has("name")?item.get("name").getAsString():t("不可用的内容包"));if(item.has("version"))card.addChild(text(item.get("version").getAsString()));if(item.has("revision"))card.addChild(NativeUiTheme.button(t("查看详情"),()->packageDetail(host,item)));else card.addChild(text(item.has("reason")?item.get("reason").getAsString():t("不可用")));}int count=data.has("total")?data.get("total").getAsInt():0;notice.setText(Component.literal(t("包管理")+" · "+count));});
         tools.addChild(NativeUiTheme.button(t("搜索"),()->{offset[0]=0;load[0].run();}));var pager=row();pager.getLayout().height(25);pager.addChild(NativeUiTheme.button(t("上一页"),()->{offset[0]=Math.max(0,offset[0]-8);load[0].run();}));pager.addChild(NativeUiTheme.button(t("下一页"),()->{offset[0]+=8;load[0].run();}));window.body.addChild(pager);load[0].run();
     }
-    static void packageDetail(NativeWorkspaceScreen host,JsonObject item){
-        var window=host.window("package-"+item.get("packageId").getAsString(),item.get("name").getAsString(),440,330);window.body.clearAllChildren();var notice=text(t("读取内容…"));window.body.addChild(notice);var list=scroller(window.body);
-        request("task.historyRead",Map.of("kind","package","packageId",item.get("packageId").getAsString(),"headRevision",item.get("revision").getAsString(),"headHash",item.get("canonicalSha256").getAsString())).whenComplete((receipt,error)->{if(window.closed())return;if(error!=null){failure(notice,error);return;}var data=state(receipt);notice.setText(Component.literal(item.get("name").getAsString()));for(var e:data.entrySet())if(e.getValue().isJsonPrimitive()&&!Set.of("packageId","canonicalSha256","ownerPlayerId","sourceOperationId").contains(e.getKey())){var line=card(list,t(e.getKey()));line.addChild(text(e.getValue().getAsString()));}});
-    }
+    static void packageDetail(NativeWorkspaceScreen host,JsonObject item){NativePackagePanel.open(host,item);}
 }

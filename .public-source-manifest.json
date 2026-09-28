@@ -964,8 +964,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "c9506b3bd074010b4b51f7ab2eb8439dab230d4ba70fa5fa922aa8e0b55ae0be",
-      "bytes": 262190
+      "sha256": "425baae69eb73dc96130e15b55c13bcbe6af08c2901770578cc7c52715e98d91",
+      "bytes": 263106
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/about-cards.mjs",
@@ -1174,8 +1174,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/i18n-messages.mjs",
-      "sha256": "7a9c35bc125bea4e810f88bc33dd5b89250c73832543c31253f165b5b779e977",
-      "bytes": 262292
+      "sha256": "e058f39d01fb7d7ad3bc4e921d7ce42fa0eaf5c4dc01a1689812ebd30a514189",
+      "bytes": 263208
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/i18n.mjs",
@@ -3379,8 +3379,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "9bee7b7a8f7e03d24eccf8dcaee70b90fde42302b3418da04715b9a5e52917ce",
-      "bytes": 19036
+      "sha256": "f7280e660fce8c00b46c10b652c7eb165aea813c8f4556dd5f040bd9e924afb9",
+      "bytes": 19961
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3958,19 +3958,24 @@
       "bytes": 21322
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackagePanel.java",
+      "sha256": "9544a9d0f12a2a3805319c3c5bf155993c85673560a30d2b399ac1f5ed36d779",
+      "bytes": 16366
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePreview.java",
       "sha256": "38628ab8a43ccd98019d4022df0e4ba6834ecd4d0cbbe71c4282cbfd61e13e7d",
       "bytes": 7968
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiSmokeClient.java",
-      "sha256": "e66b67c83a0ac97c5863df5a0f108fe303a75b84a2a4050fd7315ede349fbd2c",
-      "bytes": 22260
+      "sha256": "193337c6c7565fcac161e88594c5c8fac630f72eb7ed2f5d0d6209e8432a163b",
+      "bytes": 26246
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
-      "sha256": "e83c6ad4c94a7ed30cf61548cae8ecf7fc21c8f50cecd77b05af58d75ac4694e",
-      "bytes": 2757
+      "sha256": "9464738418826028525fa8c71009a9224e505b3eb8ff427d4590dbe66bdbc72e",
+      "bytes": 2735
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceConnection.java",
@@ -3979,8 +3984,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "sha256": "431fe6f18916b11e66b05db614e20fbabf66d9a592397f70c29f05db685cd710",
-      "bytes": 37392
+      "sha256": "2bf9c1710c03111da4f3c8415107d9fbe63716359e4c10e636f619fa1ccad6e6",
+      "bytes": 37439
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PersonaLibraryBar.java",
@@ -3989,8 +3994,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
-      "sha256": "7ab2ee878bae6cb1e1895b1e08549c8786f95830d54b64cd3b0a5675a19fece1",
-      "bytes": 16623
+      "sha256": "031cbf2ee8ee91f926c009c6f98775dbb26a9bfa33ca247ef0cf9fec5213ee59",
+      "bytes": 15895
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspaceSetupScreen.java",
