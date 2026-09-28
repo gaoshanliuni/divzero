@@ -15,8 +15,15 @@ public final class ServerSettings {
     private static final ObjectMapper JSON=new ObjectMapper();private ServerSettings(){}
     private static boolean allowed(ServerPlayer p,PermissionAction action){return !(p instanceof MineAgentPlayer)&&MineAgentRuntimeServices.permissions(p.level().getServer()).allowed(p.getUUID(),p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),action);}
     public static void authorize(ServerPlayer viewer,Map<String,String> args)throws Exception{
+        if("workflow".equals(args.get("kind"))){if(!allowed(viewer,PermissionAction.MANAGE_PROVIDERS))throw new SecurityException("SETTINGS_FORBIDDEN");return;}
         if("permissions".equals(args.get("kind"))){if(!allowed(viewer,PermissionAction.MANAGE_PERMISSIONS))throw new SecurityException("SETTINGS_FORBIDDEN");return;}
         var node=JSON.readTree(args.getOrDefault("values","{}"));for(var entry:node.properties()){var field=WebSettingsCatalog.FIELDS.stream().filter(f->f.key().equals(entry.getKey())).findFirst().orElseThrow(()->new SecurityException("SETTINGS_FIELD_DENIED"));if(!allowed(viewer,field.permission()))throw new SecurityException("SETTINGS_FORBIDDEN");}
+    }
+    public static Map<String,String> workflow(ServerPlayer viewer){
+        if(!allowed(viewer,PermissionAction.MANAGE_PROVIDERS))throw new SecurityException("SETTINGS_FORBIDDEN");
+        var snapshot=MineAgentRuntimeServices.config(viewer.level().getServer()).snapshot();String source=snapshot.values().getOrDefault("provider.comfyui.workflow","");
+        if(source.length()>32768)throw new IllegalArgumentException("WORKFLOW_SIZE");
+        return Map.of("revision",Long.toString(snapshot.revision()),"source.0",source.substring(0,Math.min(16000,source.length())),"source.1",source.substring(Math.min(16000,source.length())));
     }
     public static Map<String,Object> version(ServerPlayer viewer){return Map.of("revision",MineAgentRuntimeServices.config(viewer.level().getServer()).snapshot().revision(),"providers",allowed(viewer,PermissionAction.MANAGE_PROVIDERS),"permissions",allowed(viewer,PermissionAction.MANAGE_PERMISSIONS),"media",allowed(viewer,PermissionAction.CONTROL_PUBLIC_MEDIA),"resources",MineAgentRuntimeServices.bodies(viewer.level().getServer()).resourceStatus());}
     public static Map<String,Object> read(ServerPlayer viewer){
@@ -41,6 +48,11 @@ public final class ServerSettings {
             if(!args.keySet().equals(Set.of("kind","revision","playerId","actions","confirmed"))||!"true".equals(args.get("confirmed")))throw new IllegalArgumentException("SETTINGS_CONFIRM_REQUIRED");
             var nodes=JSON.readTree(args.get("actions"));if(!nodes.isArray()||nodes.size()>PermissionAction.values().length)throw new IllegalArgumentException("PERMISSION_ACTIONS_INVALID");var grants=EnumSet.noneOf(PermissionAction.class);for(var node:nodes){if(!node.isTextual())throw new IllegalArgumentException();grants.add(PermissionAction.valueOf(node.textValue()));}
             result=PermissionConfig.apply(config,MineAgentRuntimeServices.permissions(server),Long.parseLong(args.get("revision")),UUID.fromString(args.get("playerId")),grants,true);
+        }else if("workflow".equals(kind)){
+            if(!allowed(viewer,PermissionAction.MANAGE_PROVIDERS))throw new SecurityException("SETTINGS_FORBIDDEN");
+            if(!args.keySet().equals(Set.of("kind","revision","source.0","source.1")))throw new IllegalArgumentException("SETTINGS_ARGUMENTS");
+            String source=args.get("source.0")+args.get("source.1");if(source.length()>32768)throw new IllegalArgumentException("WORKFLOW_SIZE");
+            result=config.apply(new ConfigPatch(Long.parseLong(args.get("revision")),Map.of("provider.comfyui.workflow",source)),true);
         }else if("save".equals(kind)){
             if(!args.keySet().equals(Set.of("kind","revision","values","providerChangeConfirmed")))throw new IllegalArgumentException("SETTINGS_ARGUMENTS");
             var node=JSON.readTree(args.get("values"));if(!node.isObject()||node.isEmpty()||node.size()>WebSettingsCatalog.FIELDS.size())throw new IllegalArgumentException("SETTINGS_ARGUMENTS");var changes=new LinkedHashMap<String,String>();

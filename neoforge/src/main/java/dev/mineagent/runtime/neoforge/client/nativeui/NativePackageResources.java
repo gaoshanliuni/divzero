@@ -9,6 +9,8 @@ import java.util.*;
 
 /** Assets are supplied only to their authorized view. Unrelated private dynamic texture IDs are not resolvable. */
 final class NativePackageResources implements AutoCloseable {
+    private static long decodedBytes;
+    private long ownedBytes;
     private final Map<String,IGuiTexture> textures=new HashMap<>();
     private final List<Identifier> registered=new ArrayList<>();
     NativePackageResources(Map<String,PackageUiResolver.Asset> assets,Set<String> requested)throws Exception {
@@ -20,7 +22,7 @@ final class NativePackageResources implements AutoCloseable {
                 // Check header dimensions before allocating a decoded native image.
                 try(var input=javax.imageio.ImageIO.createImageInputStream(new java.io.ByteArrayInputStream(asset.bytes()))){
                     var readers=javax.imageio.ImageIO.getImageReaders(input);if(!readers.hasNext())throw new IllegalArgumentException("NATIVE_PACKAGE_IMAGE_FORMAT");var reader=readers.next();
-                    try{reader.setInput(input);int width=reader.getWidth(0),height=reader.getHeight(0);if(width<1||height<1||(long)width*height>4_194_304)throw new IllegalArgumentException("NATIVE_PACKAGE_IMAGE_DIMENSIONS");}finally{reader.dispose();}
+                    try{reader.setInput(input);int width=reader.getWidth(0),height=reader.getHeight(0);if(width<1||height<1||(long)width*height>4_194_304)throw new IllegalArgumentException("NATIVE_PACKAGE_IMAGE_DIMENSIONS");long bytes=(long)width*height*4;if(ownedBytes+bytes>32L*1024*1024||decodedBytes+bytes>128L*1024*1024)throw new IllegalArgumentException("NATIVE_PACKAGE_TEXTURE_BUDGET");ownedBytes+=bytes;decodedBytes+=bytes;}finally{reader.dispose();}
                 }
                 var image=com.mojang.blaze3d.platform.NativeImage.read(asset.bytes());
                 if(image.getWidth()<1||image.getHeight()<1||(long)image.getWidth()*image.getHeight()>4_194_304){image.close();throw new IllegalArgumentException("NATIVE_PACKAGE_IMAGE_DIMENSIONS");}
@@ -29,5 +31,5 @@ final class NativePackageResources implements AutoCloseable {
         }catch(Exception failure){close();throw failure;}
     }
     Map<String,IGuiTexture> textures(){return Map.copyOf(textures);}
-    @Override public void close(){for(var texture:registered)Minecraft.getInstance().getTextureManager().release(texture);registered.clear();textures.clear();}
+    @Override public void close(){for(var texture:registered)Minecraft.getInstance().getTextureManager().release(texture);registered.clear();textures.clear();decodedBytes-=ownedBytes;ownedBytes=0;}
 }

@@ -180,6 +180,7 @@ public final class ServerUiRuntime {
                 send(viewer, packet.requestId(), "session", sessions.interrupt(viewer.getUUID(), request.sessionId())); return;
             }
             if (!packet.channel().equals("command")) throw new IllegalArgumentException("UI_CHANNEL");
+            if(Set.of("interface.read","interface.control").contains(request.action())){nativeInterfaces(viewer,packet.requestId(),request);return;}
             if(Set.of("building.read","building.write").contains(request.action())){buildings(viewer,packet.requestId(),request);return;}
             if(Set.of("studio.read","studio.write").contains(request.action())){javaStudio(viewer,packet.requestId(),request);return;}
             if(Set.of("preferences.read","preferences.write").contains(request.action())){preferences(viewer,packet.requestId(),request);return;}
@@ -294,6 +295,26 @@ public final class ServerUiRuntime {
             send(viewer, packet.requestId(), "receipt", receipt);
         } catch (Exception failure) { send(viewer, packet.requestId(), "error", Map.of("code", "INVALID_UI_REQUEST")); }
     }
+    private void nativeInterfaces(ServerPlayer viewer,UUID packet,Request request){
+        boolean write=request.action().equals("interface.control"),begun=false;String capability="task.manage";
+        try{
+            restoreScope(viewer,request);Code access=sessions.checkRead(viewer.getUUID(),request,capability);if(access!=Code.OK){send(viewer,packet,"receipt",Receipt.of(request.operationId(),access));return;}
+            var source=sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow();if(source.binding().actorKind()!=ActorKind.PLAYER||!source.binding().actorId().equals(viewer.getUUID()))throw new SecurityException("INTERFACE_PLAYER_REQUIRED");
+            var args=request.arguments();if(!args.keySet().equals(write?Set.of("agentId","id","revision","action"):Set.of("agentId","id")))throw new IllegalArgumentException("INTERFACE_ARGUMENTS");UUID agent=UUID.fromString(args.get("agentId"));var input=json.createObjectNode().put("id",args.get("id"));
+            if(write){String action=args.get("action");if(!Set.of("show","hide","interact","release").contains(action))throw new IllegalArgumentException("INTERFACE_ACTION");input.put("action",action).put("expected_revision",Long.parseLong(args.get("revision")));var reserved=sessions.begin(viewer.getUUID(),request,capability,true);if(reserved.code()!=Code.OK){send(viewer,packet,"receipt",reserved);return;}begun=true;}
+            java.util.function.BooleanSupplier permit=()->sessions.checkRead(viewer.getUUID(),request,capability)==Code.OK;
+            var future=write?ServerNativeInterfaces.mutate(viewer,agent,"control_native_ui",input,permit):ServerNativeInterfaces.inspect(viewer,agent,input,permit);
+            future.whenComplete((value,error)->server.execute(()->{try{
+                if(!permit.getAsBoolean())return;var result=new LinkedHashMap<String,Object>();
+                if(error==null){var node=json.valueToTree(value);for(String field:List.of("status","error","revision","reconciliation"))if(node.has(field))result.put(field,node.get(field));result.put("pending",node.has("pending")&&!node.get("pending").isNull());
+                    if(node.hasNonNull("saved")){var saved=node.get("saved");result.put("saved",Map.of("id",saved.path("id").asText(),"revision",saved.path("revision").asLong(),"visible",saved.path("visible").asBoolean()));}
+                    var views=new ArrayList<Object>();for(var view:node.path("client").path("views"))views.add(Map.of("id",view.path("id").asText(),"revision",view.path("revision").asLong(),"visible",view.path("visible").asBoolean(),"interactive",view.path("interactive").asBoolean()));result.put("views",views);
+                }
+                var values=error==null?Map.of("state",json.writeValueAsString(result)):Map.of("errorCode",Objects.toString(error.getMessage(),"INTERFACE_OUTCOME_UNKNOWN"));var code=error==null?(write?Code.APPLIED:Code.OBSERVED):Code.FAILED;
+                send(viewer,packet,"receipt",write?sessions.complete(request,code,values):new Receipt(request.operationId(),code,values));
+            }catch(Exception failure){send(viewer,packet,"receipt",new Receipt(request.operationId(),Code.FAILED,Map.of("errorCode","INTERFACE_RESULT_UNAVAILABLE")));}}));
+        }catch(Exception error){var values=Map.of("errorCode",Objects.toString(error.getMessage(),"INTERFACE_FAILED"));send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}
+    }
     private void buildings(ServerPlayer viewer,UUID packet,Request request){
         boolean write=request.action().equals("building.write");boolean begun=false;String capability="task.manage";
         try{
@@ -335,6 +356,7 @@ public final class ServerUiRuntime {
             return desktopPlans.handle(viewer,request.action().substring("desktop.".length()),UUID.fromString(request.arguments().get("operationId")),request.arguments(),()->sessions.checkRead(viewer.getUUID(),request,"task.manage")==Code.OK);
         }
         Map<String, String> args = request.arguments();
+        if(request.action().equals("settings.read")&&"workflow".equals(args.get("kind")))return ServerSettings.workflow(viewer);
         if(request.action().equals("settings.read"))return Map.of("state",json.writeValueAsString(ServerSettings.read(viewer)));
         if(request.action().equals("settings.write"))return ServerSettings.write(viewer,args);
         if(Set.of("conversation.read","conversation.write").contains(request.action())){

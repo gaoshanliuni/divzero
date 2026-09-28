@@ -87,7 +87,18 @@ final class NativeBuildingPanel {
         if(!Boolean.getBoolean("mineagent.nativeExtrasSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
         var panel=new NativeBuildingPanel(host,agent);String building=dev.mineagent.runtime.core.building.BuildingDesign.parse(source).id();
         var editor=host.window("large-building-fixture",t("编辑建筑计划"),550,385);var input=new NativeCodeEditor("JAVA");editor.body.addChild(input);input.load(source);
-        return panel.upload(building,"0",input.source(),editor).thenCompose(receipt->panel.document("design",building,"1"));
+        return panel.upload(building,"0",input.source(),editor).thenCompose(receipt->panel.smokeAwaitPlan(building,60));
+    }
+    private java.util.concurrent.CompletableFuture<String> smokeAwaitPlan(String building,int tries){
+        var result=new java.util.concurrent.CompletableFuture<String>();
+        java.util.concurrent.CompletableFuture.delayedExecutor(200,java.util.concurrent.TimeUnit.MILLISECONDS).execute(()->net.minecraft.client.Minecraft.getInstance().execute(()->{
+            WorkspacePanels.request("building.read",Map.of("kind","inspect","agentId",agent,"id",building,"offset","0")).whenComplete((reply,error)->{
+                if(error!=null){result.completeExceptionally(error);return;}var current=WorkspacePanels.state(reply);
+                if(current.has("revision")&&current.get("revision").getAsInt()==1&&current.get("status").getAsString().equals("PLANNED"))document("design",building,"1").whenComplete((source,failure)->{if(failure==null)result.complete(source);else result.completeExceptionally(failure);});
+                else if(tries>0)smokeAwaitPlan(building,tries-1).whenComplete((source,failure)->{if(failure==null)result.complete(source);else result.completeExceptionally(failure);});
+                else result.completeExceptionally(new IllegalStateException("BUILDING_PLAN_DID_NOT_COMPLETE:"+current));
+            });
+        }));return result;
     }
     static void changed(JsonObject event){for(var panel:List.copyOf(OPEN))if(panel.live()&&(!event.has("agentId")||event.get("agentId").getAsString().equals(panel.agent))){if(event.has("errorCode"))panel.notice.setText(Component.literal(event.get("errorCode").getAsString()));else panel.read();}}
     static void tick(){OPEN.removeIf(p->!p.live());if(!NativeWorkspaceScreen.visible())return;for(var panel:OPEN)if(!panel.id.isBlank()&&panel.state!=null&&Set.of("PREPARING","APPLYING","PAUSED").contains(panel.state.get("status").getAsString())&&System.currentTimeMillis()>=panel.nextPoll)panel.read();}

@@ -13,6 +13,13 @@ public final class NativePackagePlacement {
     private static final Gson JSON=new Gson();
     private static UiStateStore store(){return new UiStateStore(Minecraft.getInstance().gameDirectory.toPath().resolve("mineagent-runtime-data/native-package-layouts"));}
     private static String scope(String id){var mc=Minecraft.getInstance();var shell=NativeWorkspaceConnection.current();if(shell==null)throw new IllegalStateException("VIEW_NOT_RENDERED");var asset=NativePackageViews.asset(id);var session=NativePackageViews.rawSession(id);return JSON.toJson(List.of(mc.getCurrentServer()==null?"integrated":mc.getCurrentServer().ip,shell.binding().worldId(),shell.binding().viewerPlayerId(),asset.runtimePackage().packageId(),asset.entry(),session==null?"preview":WorldUiProtocol.localStateTarget(session.binding()),session!=null&&session.binding().preview()));}
+    public static void defaults(String id){
+        var asset=NativePackageViews.asset(id);var settings=asset.assets().get(dev.mineagent.runtime.core.ui.UiViewSettings.PATH);if(settings==null)return;
+        var entries=asset.runtimePackage().entrypoints().values().stream().map(dev.mineagent.runtime.api.packages.RuntimeEntrypoint::path).collect(java.util.stream.Collectors.toSet());
+        var value=dev.mineagent.runtime.core.ui.UiViewSettings.parse(new String(settings.bytes(),java.nio.charset.StandardCharsets.UTF_8),entries).get(asset.entry());if(value==null)return;
+        var area=NativePackageViews.layout(id).getAsJsonObject("area");var bounds=new dev.mineagent.runtime.core.ui.UiPresentationAction.Placement(value.anchor(),value.width(),value.height(),value.offsetX(),value.offsetY(),value.opacity()).resolve(new dev.mineagent.runtime.core.ui.UiPresentationAction.Bounds(area.get("x").getAsDouble(),area.get("y").getAsDouble(),area.get("width").getAsDouble(),area.get("height").getAsDouble()));
+        var layout=new JsonObject();layout.add("bounds",JSON.toJsonTree(bounds));layout.addProperty("opacity",value.opacity()==null?1:value.opacity());NativePackageViews.restoreLayout(id,layout);
+    }
     public static void restore(String id){
         String key=scope(id),document=NativePackageViews.document(id);var storage=store();
         CompletableFuture.supplyAsync(()->{try{return storage.load(key);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((encoded,error)->Minecraft.getInstance().execute(()->{

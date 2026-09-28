@@ -139,3 +139,10 @@ The native workspace now exposes pending decisions and paginated history, single
 Conversation secondary windows expose summaries and source revisions, current/historical request budgets, message details and audited imports into separate archived conversations. Reads/imports never call a model or replay historical actions. Two hundred additional native labels now have English translations, and AI profile body/mode codes have readable labels. The large building editor keeps its history page fixed across chunk reads, and HUD restoration controls are disabled for ineligible delivery views.
 
 The earlier expanded no-browser native UI run `44d7a891-ca57-4812-be1b-3b1a9686afbe` passed with zero model calls, including player/world/block live sources. This new batch adds decision draft unit tests and an isolated native decision/large-building-editor fixture. Their Actions build and game acceptance are still pending; remaining migration and model-driven acceptance are not declared complete.
+
+
+### Native provider and view management follow-up
+
+Actions `36464412406` passed for public `c2dcc65803324393ef132448cd3d3cd22bd73f44`. The initial extras game run `7338790e-fe70-4eda-9765-f8fef064b2cb` was stopped because its fixture omitted client trust preparation; it made zero model calls and is not a passing acceptance result.
+
+The next source batch adds the trusted ComfyUI workflow editor, provider URL presets and routing/budget readouts. It also exposes direct AI-generated interfaces in the player view manager, with versioned server show/hide/interaction controls and explicit state reconciliation. Native package defaults now read signed view settings before applying saved player placement. Texture allocations are bounded across all open package views as well as per image and per view. The extras fixture now prepares the isolated signed client trust and waits for asynchronous plan completion before reading the large document. This follow-up still requires its Actions/game checks.

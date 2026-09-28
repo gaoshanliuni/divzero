@@ -2961,5 +2961,21 @@
   "就绪": "Ready",
   "创造模式": "Creator mode",
   "生存模式": "Survival mode",
-  "身体未加载": "Body not loaded"
+  "身体未加载": "Body not loaded",
+  "ComfyUI Workflow": "ComfyUI Workflow",
+  "保存 Workflow 不会发起模型请求。JSON 需包含 ${prompt}。": "Saving a workflow makes no model request. The JSON must contain ${prompt}.",
+  "已确认服务器保存了该 Workflow。草稿仍保留。": "The server has saved this workflow. Your draft is retained.",
+  "服务器版本已读取，草稿保留；请核对后再保存。": "Server revision loaded; draft retained. Review it before saving again.",
+  "用服务器版本替换当前未保存草稿。": "Replace the unsaved draft with the server version.",
+  "保存 Workflow": "Save workflow",
+  "Workflow 超过 32768 字符。": "Workflow exceeds 32768 characters.",
+  "Workflow 已保存；没有调用模型。": "Workflow saved. No model was called.",
+  "Provider 状态": "Provider status",
+  "配置状态不代表连接测试；读取与保存不会调用模型。": "Configuration status is not a connection test. Reading and saving do not call a model.",
+  "路由、预算与运行状态": "Routing, budgets and runtime status",
+  "Workflow 已配置": "Workflow configured",
+  "编辑 Workflow": "Edit workflow",
+  "界面操作回执": "Interface operation receipt",
+  "界面实际状态": "Actual interface state",
+  "退出交互": "Leave interaction mode"
 }

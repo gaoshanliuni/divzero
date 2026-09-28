@@ -46,7 +46,7 @@ public final class NativePackageViews {
             VIEWS.put(id,view);
             if(passive){view.content.interactive(false);LdHudRegistry.attach(view.content,definition.view().order());}
             else mount(view);
-            if(session==null)view.ready=true;NativePackagePlacement.restore(id);
+            if(session==null)view.ready=true;NativePackagePlacement.defaults(id);NativePackagePlacement.restore(id);
             return id;
         }catch(Exception failure){VIEWS.remove(id,view);view.content.close();view.resources.close();throw failure;}
     }
