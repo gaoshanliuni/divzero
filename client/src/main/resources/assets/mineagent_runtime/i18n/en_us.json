@@ -2999,5 +2999,11 @@
   "已填入输入框，尚未发送": "Input filled; not sent",
   "原生实体预览": "Native entity preview",
   "原生物品预览": "Native item preview",
-  "药水配方产物预览": "Brewing recipe output preview"
+  "药水配方产物预览": "Brewing recipe output preview",
+  "现场建筑范围": "World structure bounds",
+  "选区过大，仅显示范围；请选择较小区域查看材质细节": "Selection is too large; bounds only. Select a smaller region for textured detail.",
+  "现场建筑预览": "World structure preview",
+  "选区没有非空气方块": "No non-air blocks in this region",
+  "现场结构快照 / 原生材质 / 不复制容器内容": "World snapshot / Native textures / No container contents copied",
+  "未解析状态使用紫色占位": "unresolved states use magenta placeholders"
 }

@@ -54,6 +54,8 @@ public final class ServerPreviews {
     else {var encoded=net.minecraft.world.item.ItemStack.CODEC.encodeStart(p.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE),stack).getOrThrow();var nativeSource=JSON.createObjectNode().put("kind","item");nativeSource.set("stack",JSON.readTree(encoded.toString()));generated=CompletableFuture.completedFuture(new Data(title,List.of(),List.of(),"原生物品预览",nativeSource));}
    }else if(kind.equals("model")){
     if(!args.path("source").isTextual())throw new IllegalArgumentException("PREVIEW_MODEL_SOURCE");String source=args.path("source").asText();generated=CompletableFuture.supplyAsync(()->mesh("模型预览",RuntimeMesh.parse(source)),IO);
+   }else if(kind.equals("building")&&!args.has("file_id")){
+    generated=worldPreview(p,agent,args,state,permit);
    }else if(kind.equals("building")){
     generated=ServerBuildingFiles.previewSource(p,agent,args).thenCompose(source->{var result=new CompletableFuture<Data>();server.execute(()->{
      if(state.closed){result.completeExceptionally(new IllegalStateException("PREVIEW_CONTEXT_CHANGED"));return;}
@@ -85,6 +87,21 @@ public final class ServerPreviews {
    }catch(Exception e){result.completeExceptionally(e);}});return result;});
   }catch(Exception e){return CompletableFuture.failedFuture(e);}
  }
+ private static CompletableFuture<Data> worldPreview(ServerPlayer player,UUID agent,JsonNode args,State state,BooleanSupplier permit){
+  var result=new CompletableFuture<Data>();var level=player.level();if(!args.path("dimension").asText(level.dimension().identifier().toString()).equals(level.dimension().identifier().toString()))throw new IllegalArgumentException("PREVIEW_DIMENSION");
+  var min=point(args.path("min"));var max=point(args.path("max"));for(int axis=0;axis<3;axis++)if(max.get(axis)<min.get(axis)||(long)max.get(axis)-min.get(axis)>=2048)throw new IllegalArgumentException("PREVIEW_BOUNDS");
+  if(!level.isInWorldBounds(new BlockPos(min.get(0),min.get(1),min.get(2)))||!level.isInWorldBounds(new BlockPos(max.get(0),max.get(1),max.get(2))))throw new IllegalArgumentException("PREVIEW_WORLD_BOUNDS");
+  int sx=max.get(0)-min.get(0)+1,sy=max.get(1)-min.get(1)+1,sz=max.get(2)-min.get(2)+1;long volume=(long)sx*sy*sz;
+  if(volume>2_000_000){var vertices=new ArrayList<double[]>();var faces=new ArrayList<int[]>();addBox(vertices,faces,0,0,0,sx,sy,sz,0x556bb9cd);return CompletableFuture.completedFuture(new Data("现场建筑范围",vertices,faces,"选区过大，仅显示范围；请选择较小区域查看材质细节"));}
+  state.jobs.add(new Job(){long cursor;final com.fasterxml.jackson.databind.node.ArrayNode cells=JSON.createArrayNode();
+   public void cancel(){result.completeExceptionally(new IllegalStateException("PREVIEW_CONTEXT_CHANGED"));}
+   public boolean step(){try{current(player,agent,level,state,permit);long deadline=System.nanoTime()+1500000;for(int count=0;count<512&&cursor<volume;count++,cursor++){
+    int x=(int)(cursor%sx),y=(int)(cursor/sx%sy),z=(int)(cursor/(sx*(long)sy));var pos=new BlockPos(min.get(0)+x,min.get(1)+y,min.get(2)+z);if(!level.getChunkSource().hasChunk(pos.getX()>>4,pos.getZ()>>4))throw new IllegalArgumentException("PREVIEW_CHUNK_UNLOADED");var block=level.getBlockState(pos);
+    if(!block.isAir()){if(cells.size()>=8192)throw new IllegalArgumentException("PREVIEW_DETAIL_LIMIT");var cell=cells.addObject().put("state",BlockStateParser.serialize(block));cell.putArray("position").add(x).add(y).add(z);}if(System.nanoTime()>=deadline){cursor++;break;}
+   }if(cursor<volume)return false;var source=JSON.createObjectNode().put("kind","blocks");source.set("blocks",cells);source.putArray("size").add(sx).add(sy).add(sz);result.complete(new Data("现场建筑预览",List.of(),List.of(),cells.isEmpty()?"选区没有非空气方块":"现场结构快照 / 原生材质 / 不复制容器内容",source));return true;}catch(Exception error){result.completeExceptionally(error);return true;}}
+  });return result;
+ }
+ private static List<Integer> point(JsonNode node){if(!node.isArray()||node.size()!=3)throw new IllegalArgumentException("PREVIEW_BOUNDS");var result=new ArrayList<Integer>();for(var value:node){if(!value.isIntegralNumber()||!value.canConvertToInt()||Math.abs(value.longValue())>30_000_000)throw new IllegalArgumentException("PREVIEW_BOUNDS");result.add(value.intValue());}return result;}
  public static int show(ServerPlayer player,UUID id){
   read(player,Map.of("previewId",id.toString(),"offset","0"));
   net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(UUID.randomUUID(),"previewOpen","{\"previewId\":\""+id+"\"}"));return 1;

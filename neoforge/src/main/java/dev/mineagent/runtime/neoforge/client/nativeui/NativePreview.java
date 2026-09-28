@@ -55,6 +55,16 @@ public final class NativePreview {
     });}
     private void nativeScene(com.fasterxml.jackson.databind.JsonNode data){
         var mc=Minecraft.getInstance();var source=data.path("nativeSource");net.minecraft.world.entity.Entity entity;
+        if(source.path("kind").asText().equals("blocks")){
+            var world=new com.lowdragmc.lowdraglib2.utils.virtuallevel.TrackedDummyWorld(mc.level);var positions=new ArrayList<net.minecraft.core.BlockPos>();int missing=0;
+            if(!source.path("blocks").isArray()||source.path("blocks").size()>8192)throw new IllegalArgumentException("PREVIEW_DETAIL_LIMIT");
+            for(var cell:source.path("blocks")){var xyz=cell.path("position");var pos=new net.minecraft.core.BlockPos(xyz.path(0).asInt(),xyz.path(1).asInt(),xyz.path(2).asInt());net.minecraft.world.level.block.state.BlockState state;
+                try{state=net.minecraft.commands.arguments.blocks.BlockStateParser.parseForBlock(mc.level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK),cell.path("state").asText(),false).blockState();}catch(Exception absent){state=net.minecraft.world.level.block.Blocks.MAGENTA_STAINED_GLASS.defaultBlockState();missing++;}
+                world.addBlock(pos,new com.lowdragmc.lowdraglib2.utils.data.BlockInfo(state));positions.add(pos);
+            }
+            nativeScene=new Scene().setTickWorld(false).setRenderFacing(false).setRenderSelect(false).setAllowXEILookup(false);nativeScene.setAfterWorldRender(scene->nativeFrames++);nativeScene.getLayout().widthPercent(100).heightPercent(100);nativeScene.createScene(world,true,null).setRenderedCore(positions).useCacheBuffer();
+            nativeCenter=new org.joml.Vector3f(nativeScene.getCenter());nativeZoom=nativeScene.getZoom();nativeScene.addEventListener(UIEvents.MOUSE_DOWN,event->{if(event.button==1)event.button=2;},true);canvas.addChild(nativeScene);title.setText(Component.literal(t(data.path("title").asText())));note.setText(Component.literal(t(data.path("detail").asText())+(missing==0?"":" · "+missing+" "+t("未解析状态使用紫色占位"))));return;
+        }
         if(source.path("kind").asText().equals("entity")){
             UUID id=UUID.fromString(source.path("entityId").asText());entity=null;for(var candidate:mc.level.entitiesForRendering())if(candidate.getUUID().equals(id)){entity=candidate;break;}
             if(entity==null||!net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString().equals(source.path("entityType").asText()))throw new IllegalStateException("PREVIEW_ENTITY_NOT_TRACKED");

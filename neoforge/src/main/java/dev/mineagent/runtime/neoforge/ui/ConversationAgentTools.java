@@ -153,7 +153,7 @@ public final class ConversationAgentTools {
             case "open_skin_ui"->{keys(a);return CompletableFuture.completedFuture(ServerAgentSkins.openUi(p,agent));}
             case "create_skin_png"->{keys(a,"name","model","base_file_id","base_color","rects");return ServerAgentSkins.create(p,agent,operation,a,permit);}
             case "set_skin_png"->{keys(a,"file_id","model","expected_revision");return ServerAgentSkins.apply(p,agent,operation,a,permit);}
-            case "open_preview"->{keys(a,"kind","file_id","entry","dimension","min","max","source","slot","species_id","expected_revision","entity_id","display","recipe_id");return ServerPreviews.open(p,agent,a,permit,conversation);}
+            case "open_preview"->{keys(a,"kind","file_id","entry","dimension","min","max","source","slot","species_id","expected_revision","entity_id","display","recipe_id","package_id","definition_id","model_path");return ServerPreviews.open(p,agent,a,permit,conversation);}
             case "request_files"->{keys(a,"reason");return ServerBuildingFiles.request(p,agent,permit,text(a,"reason",200));}
             case "write_file"->{keys(a,"name","content","encoding");return ServerFileTools.write(p,agent,operation,a,permit);}
             case "offer_file_download"->{keys(a,"file_id");return ServerFileTools.offer(p,agent,a,permit);}

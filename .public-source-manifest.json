@@ -919,8 +919,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "591bdd81bbb7915b2e657f28e8718ccbdd5f88787fa12b757183054b2b5c6035",
-      "bytes": 291284
+      "sha256": "82039c3f4a6f60a8e7ba266c7aca2d2c759f4b6ac697158580609c8bc2a83338",
+      "bytes": 291832
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1374,8 +1374,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "824ad5dbd85d79d49945ea7e255faf937626f1ae7c4efb067018eb86ae658017",
-      "bytes": 70377
+      "sha256": "c888bf896761ab2e3387228ae705e94f89bd84fe57d01a86f16c24fe6d5141b2",
+      "bytes": 71044
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/NativeChatSegments.java",
@@ -2934,8 +2934,8 @@
     },
     {
       "path": "docs/NATIVE_TEN_SCENARIOS.md",
-      "sha256": "8b2621a7d89005001e05d9e20c8d84d642ed4b380386a59c1deece2eaedd103f",
-      "bytes": 4026
+      "sha256": "c56c91193b886f08f66c62fe53529ebfb16be8c4b9153fdf12cdd2c54b214372",
+      "bytes": 4518
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
@@ -3634,8 +3634,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePreview.java",
-      "sha256": "e2ee423d26aa16337c022fa2ba25d258380043799085691cadbc78b7ff84bc81",
-      "bytes": 11662
+      "sha256": "533457e6aca381ca9339b21dc5d45058b470b9f9bb736263971cf74e0e045e61",
+      "bytes": 13541
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeReadout.java",
@@ -3673,9 +3673,14 @@
       "bytes": 17428
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeTenModelSmokeClient.java",
+      "sha256": "2ab92a27a3afcec6b7373561a4d7dc26a3753a75944870c93c03a3f47110186d",
+      "bytes": 13846
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeTenScenarioSmokeClient.java",
-      "sha256": "c9000f44daa14bf4b5d8d80ac6a9c152d2395c1b6f0d0deeca0cb915f1a5ba7c",
-      "bytes": 25829
+      "sha256": "c2b1061c560062a3889030942a5aba4d52d8e153d9c925fde0ae059df5f841a4",
+      "bytes": 27303
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiSmokeClient.java",
@@ -4859,8 +4864,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "332e75ee5a888075f4e6d6e70c09202107b9118caf62da075dcf7b1d18f0ff55",
-      "bytes": 64040
+      "sha256": "7fcb6f4048805343f378088f03a016c5c004945ade25c35a0bca6c87024da977",
+      "bytes": 64082
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -5254,8 +5259,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "82b25ad7f0e5ebbd28130d0dddfa2dace8690db529fbeb4d3fb8918183b29d4f",
-      "bytes": 70059
+      "sha256": "a706eaf4c5461c8c23c7b1d010735c8b6ba2025443c1a77b63b27649a991a7dc",
+      "bytes": 70584
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEntityInterop.java",
@@ -5319,8 +5324,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreviews.java",
-      "sha256": "e814b97aa908b23ae65380bbcdd84468850a79190be07e69489f420d20af11a5",
-      "bytes": 13517
+      "sha256": "d051f3f09d63b6915acf065a6e3940fff69cdad849512477d5d3439729de77c2",
+      "bytes": 16694
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerProviderModels.java",
