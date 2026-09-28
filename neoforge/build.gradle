@@ -15,6 +15,26 @@ repositories {
 
 configurations { webguiLocked }
 
+configurations { nativeUiLocked }
+def nativeUiHashes = [
+    'B1CBVXHX-15aCZh6V.jar': '613f7e5d890c3c6c89f62e52a6336e775d83766c39cd52d5e1822e45c3520826',
+    'umyGl7zF-FzLyIIBB.jar': '36df262649e53c4b8256193198e7f5d225a6fec05f4b1e74e55c271e657ea5f0'
+]
+tasks.register('verifyNativeUiDependencies') {
+    group = 'verification'
+    inputs.files(configurations.nativeUiLocked)
+    inputs.property('hashes', nativeUiHashes)
+    doLast {
+        def hashes = inputs.properties['hashes']
+        if (inputs.files.files.size() != hashes.size()) throw new GradleException('Unexpected native UI dependency set')
+        inputs.files.files.each { jar ->
+            def actual = java.security.MessageDigest.getInstance('SHA-256').digest(jar.bytes).encodeHex().toString()
+            if (hashes[jar.name] != actual) throw new GradleException("Native UI integrity mismatch: ${jar.name}")
+        }
+    }
+}
+tasks.named('compileJava') { dependsOn 'verifyNativeUiDependencies' }
+
 def webguiArtifacts = [
         'tDw1xQja-SVU4eUap.jar': 'fd7feec4c60b74c9c6fc0d831fa0599267a2204353b9958e36649351a90dd7b0',
         'bQhBuv7x-h38n5aI0.jar': '7043d21c4deaf4149401aa4d1761b73ca63386874c0c5ce1fa80d6ae601e65d0'
@@ -561,6 +581,8 @@ dependencies {
     // Locked upstream native UI APIs. Runtime cutover is gated on workspace feature parity.
     implementation('maven.modrinth:B1CBVXHX:15aCZh6V') { transitive = false }
     implementation('maven.modrinth:umyGl7zF:FzLyIIBB') { transitive = false }
+    nativeUiLocked('maven.modrinth:B1CBVXHX:15aCZh6V') { transitive = false }
+    nativeUiLocked('maven.modrinth:umyGl7zF:FzLyIIBB') { transitive = false }
     // Both are already supplied at runtime (Rhino below; Taffy inside LDLib2).
     compileOnly "dev.latvian.mods:rhino:${rhino_version}"
     compileOnly 'dev.vfyjxf:taffy:1.1.4'

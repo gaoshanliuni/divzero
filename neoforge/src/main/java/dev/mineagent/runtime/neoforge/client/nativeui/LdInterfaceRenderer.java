@@ -97,7 +97,7 @@ public final class LdInterfaceRenderer {
             try{updates.forEach(LdInterfaceRenderer::set);}finally{bridge.ready=true;}
         }
         public UIElement node(String id){return nodes.get(id);}
-        @Override public void close(){if(!closed){closed=true;bridge.ready=false;ui.onRemoved();}}
+        @Override public void close(){if(!closed){closed=true;bridge.ready=false;if(!ui.isRemoved())ui.onRemoved();}}
     }
     private static JsonNode value(JsonNode spec,Map<String,JsonNode> data){
         JsonNode fallback=spec.has("value")?spec.get("value"):switch(spec.path("type").asText()){

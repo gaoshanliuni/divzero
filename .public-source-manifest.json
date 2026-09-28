@@ -3014,13 +3014,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceDefinition.java",
-      "sha256": "ae3f5981f384128253f763f188f219eab0e78e806ae664c03fa95e753135bdd6",
-      "bytes": 8772
+      "sha256": "056587b552e3f135545742b5849637ef1edc0afa44a1edebebdc0eacbd1950a3",
+      "bytes": 9249
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceSession.java",
-      "sha256": "1aa085dadafdfb06f87e628dc73a6188929c55ce9b943d4cd007e5faffe43e7b",
-      "bytes": 6156
+      "sha256": "9836893264a78c166be0064f171c63cc17611f9eced34e2268e1e4a53dbe2147",
+      "bytes": 7140
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/AgentPersonaServiceTest.java",
@@ -3299,8 +3299,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceSessionTest.java",
-      "sha256": "08e2c0d2feea032bc4ea54066c436e38fba2ac2aa0964c34f978447dc8a92de9",
-      "bytes": 6010
+      "sha256": "c45f6598a79ff9949d00ff3c5d377dd0777c9897c87d48351970590ea46704bc",
+      "bytes": 7350
     },
     {
       "path": "docs/CINEMATIC_FILMS.md",
@@ -3309,8 +3309,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "5f013fd569b62f852298c2bd2b8fb70526426539eb1c9be104adae90113c5d95",
-      "bytes": 6624
+      "sha256": "ff9ec048da38a6757aff4870e00c7f3237701462cbcc3f6a6c0970a45f191e92",
+      "bytes": 7262
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3414,8 +3414,8 @@
     },
     {
       "path": "neoforge/build.gradle",
-      "sha256": "7deb0c9f66bc55349ce41abe26fced51fbf2827a3d67f452f4a64ec48d407ea8",
-      "bytes": 56477
+      "sha256": "ef1e554af31c05ae7368a0114bdc3553ba19bc314f3a85ac54ed67f5a63f2ea6",
+      "bytes": 57598
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/CommandBlockLimitRuntime.java",
@@ -3569,8 +3569,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientMod.java",
-      "sha256": "79d249f39b852d1199c1fbe9cc152413bd2599d638906fee46983a2dfa94353e",
-      "bytes": 28054
+      "sha256": "cea35bca89473ce3ca75e0c2a164a4bfc5679a4eb164cbb5af8cd6e69de50e86",
+      "bytes": 28500
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientNavigation.java",
@@ -3843,9 +3843,14 @@
       "bytes": 2097
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/LdHudRegistry.java",
+      "sha256": "ba636192f99d61c942e90289a5ce019f6fa86de8a9daa39c52bc23bb2fbd7087",
+      "bytes": 3078
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/LdInterfaceRenderer.java",
-      "sha256": "7980a82c3665087f761f8aa7f63ef95d672047bd746704c312b42927424c5a1a",
-      "bytes": 10716
+      "sha256": "ff3362b269dc07720e9b701f0759ec1abb91d55dfb2d109f3003853d1e8fa89b",
+      "bytes": 10735
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/BorrowedCreatureVisuals.java",

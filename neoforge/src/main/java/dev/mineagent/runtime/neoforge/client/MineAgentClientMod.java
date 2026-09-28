@@ -83,6 +83,12 @@ public final class MineAgentClientMod {
     }
 
     @SubscribeEvent
+    static void registerNativeInterfaceHud(net.neoforged.neoforge.client.event.RegisterGuiLayersEvent event) {
+        if(net.neoforged.fml.ModList.get().isLoaded("ldlib2"))
+            dev.mineagent.runtime.neoforge.client.nativeui.LdHudRegistry.register(event);
+    }
+
+    @SubscribeEvent
     @SuppressWarnings({"rawtypes", "unchecked"})
     static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(MineAgentRegistries.RUNTIME_THROWN_ITEM.get(),dev.mineagent.runtime.neoforge.client.objects.RuntimeThrownItemRenderer::new);
@@ -105,6 +111,8 @@ public final class MineAgentClientMod {
 
     @SubscribeEvent
     static void afterClientTick(ClientTickEvent.Post event) {
+        if(net.neoforged.fml.ModList.get().isLoaded("ldlib2"))
+            dev.mineagent.runtime.neoforge.client.nativeui.LdHudRegistry.maintainContext();
         dev.mineagent.runtime.neoforge.client.MineAgentClientPackages.tick(++packageTick);
         dev.mineagent.runtime.neoforge.client.webui.WebGuiWorkspaceInput.tick();
         while (OPEN_CONTROL_CENTER.consumeClick()) {

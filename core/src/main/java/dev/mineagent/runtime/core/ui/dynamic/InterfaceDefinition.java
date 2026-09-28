@@ -58,6 +58,13 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);
     }
     public Optional<JsonNode> node(String id){var found=new ArrayList<JsonNode>();walk(root,n->{if(n.path("id").asText().equals(id))found.add(n.deepCopy());});return found.stream().findFirst();}
+    public boolean interactiveNode(String id){return interactiveNode(root,id,true);}
+    private static boolean interactiveNode(JsonNode node,String id,boolean ancestorsActive){
+        boolean active=ancestorsActive&&node.path("visible").asBoolean(true)&&node.path("enabled").asBoolean(true);
+        if(node.path("id").asText().equals(id))return active;
+        for(var child:node.path("children"))if(interactiveNode(child,id,active))return true;
+        return false;
+    }
     public static void walk(JsonNode n,java.util.function.Consumer<JsonNode> visitor){visitor.accept(n);for(var child:n.path("children"))walk(child,visitor);}
     private static void validateNode(JsonNode n,String path,int depth,Set<String> ids){
         if(depth>MAX_DEPTH)throw error(path,"TREE_DEPTH");fields(n,NODE_FIELDS,path);

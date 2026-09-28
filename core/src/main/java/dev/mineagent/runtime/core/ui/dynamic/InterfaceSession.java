@@ -5,7 +5,7 @@ import java.util.*;
 
 /** One owner/world/agent/view session. Callers serialize this on their UI thread. */
 public final class InterfaceSession<T extends AutoCloseable> implements AutoCloseable {
-    public record Scope(UUID world,UUID owner,UUID agent,UUID connection,String view){}
+    public record Scope(UUID world,UUID owner,UUID agent,UUID connection,String view){public Scope{Objects.requireNonNull(world);Objects.requireNonNull(owner);Objects.requireNonNull(agent);Objects.requireNonNull(connection);if(view==null||!view.matches("[A-Za-z][A-Za-z0-9_-]{0,95}"))throw new IllegalArgumentException("INTERFACE_VIEW_ID");}}
     public interface Builder<T>{T build(InterfaceDefinition definition,Map<String,JsonNode> data) throws Exception;}
     public record Receipt(boolean applied,long revision,long dataRevision,String error){}
     private final Scope scope;
@@ -39,9 +39,10 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
             candidate=Objects.requireNonNull(builder.build(next,copy(values)),"INTERFACE_NULL_CANDIDATE");
             // Candidate construction can call user code. Recheck after it returns.
             require(expected,expectedRevision);
+            boolean changedSurface=definition==null||definition.surface()!=next.surface();
             T previous=rendered;rendered=candidate;candidate=null;definition=next;data=values;revision++;dataRevision++;
             dirtyInputs.retainAll(kept);
-            if(revision==1)interactive=next.surface()==InterfaceDefinition.Surface.SCREEN;
+            if(changedSurface)interactive=next.surface()==InterfaceDefinition.Surface.SCREEN;
             dispose(previous);return new Receipt(true,revision,dataRevision,"");
         }catch(Exception failure){dispose(candidate);return new Receipt(false,revision,dataRevision,String.valueOf(failure.getMessage()));}
     }
@@ -54,18 +55,24 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
             if(!dirtyInputs.contains(e.getKey()))next.put(e.getKey(),e.getValue().deepCopy());
         }
         if(next.size()>InterfaceDefinition.MAX_NODES)throw InterfaceDefinition.error("$.data","DATA_SIZE");
-        try{apply.accept(Collections.unmodifiableMap(copy(next)));data=next;dataRevision++;return new Receipt(true,revision,dataRevision,"");}
-        catch(Exception e){return new Receipt(false,revision,dataRevision,String.valueOf(e.getMessage()));}
+        try{apply.accept(Collections.unmodifiableMap(copy(next)));require(expected,expectedRevision);if(dataRevision!=expectedDataRevision)throw new IllegalStateException("INTERFACE_STALE_DATA");data=next;dataRevision++;return new Receipt(true,revision,dataRevision,"");}
+        catch(Exception e){
+            try{apply.accept(Collections.unmodifiableMap(copy(data)));}
+            catch(Exception rollback){return new Receipt(false,revision,dataRevision,"INTERFACE_DATA_ROLLBACK_FAILED: "+e.getMessage());}
+            return new Receipt(false,revision,dataRevision,String.valueOf(e.getMessage()));
+        }
     }
     public void input(Scope expected,long expectedRevision,String nodeId,JsonNode value){
         require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");
         String binding=definition.inputBindings().get(nodeId);if(binding==null)throw new IllegalArgumentException("INTERFACE_INPUT_NODE");
+        if(!definition.interactiveNode(nodeId))throw new IllegalStateException("INTERFACE_DISABLED");
+        if(value==null||binding.startsWith("toggle:")&&!value.isBoolean()||binding.startsWith("input:")&&(!value.isTextual()||value.textValue().length()>16384))throw new IllegalArgumentException("INTERFACE_INPUT_VALUE");
         String key=binding.substring(binding.indexOf(':')+1);data.put(key,value.deepCopy());dirtyInputs.add(key);dataRevision++;
     }
     public JsonNode actions(Scope expected,long expectedRevision,String node,String event){
         require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");
         var element=definition.node(node).orElseThrow(()->new IllegalArgumentException("INTERFACE_UNKNOWN_NODE"));
-        if(!element.path("visible").asBoolean(true)||!element.path("enabled").asBoolean(true))throw new IllegalStateException("INTERFACE_DISABLED");
+        if(!definition.interactiveNode(node))throw new IllegalStateException("INTERFACE_DISABLED");
         return element.path("events").path(event).deepCopy();
     }
     private void require(Scope expected,long rev){requireOpen();if(!scope.equals(expected))throw new SecurityException("INTERFACE_SCOPE_CHANGED");if(revision!=rev)throw new IllegalStateException("INTERFACE_STALE_REVISION");}
