@@ -1653,9 +1653,14 @@
       "bytes": 6325
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionCatalog.java",
+      "sha256": "a9ed255e36233e3504f2e649fa53794ab634cea8cc391217ab2e86c13a6b92f8",
+      "bytes": 2701
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionLedger.java",
-      "sha256": "0bdec387f3daf2ecacda6226a246f45ae1182b315c8eb3bff7009967e966e4ab",
-      "bytes": 17267
+      "sha256": "e73b3080d1373d479eb395f42175e4c2d8f02cfbd66a9623da73de7dad6a27a3",
+      "bytes": 17927
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionVerification.java",
@@ -3119,8 +3124,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/ConstructionLedgerTest.java",
-      "sha256": "1ec79a356bcef6b46c3bb80dfb1e4b7281155bd47108b81528c411b52dd1fe03",
-      "bytes": 4934
+      "sha256": "3edd0f3fac9a7734410a8c7bd2709d2c2576cc247722600d1d2e5c2b441a1e26",
+      "bytes": 5631
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/AgentModelSettingsTest.java",
@@ -5589,8 +5594,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "70238a274d41c16d14c1864f16ef46592befe67890507825758014e6db275817",
-      "bytes": 61891
+      "sha256": "631ae39b5acee698c437765a2391b324eedf0c991a931496530e461a90fb094b",
+      "bytes": 62037
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -5929,8 +5934,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildings.java",
-      "sha256": "167353091e933b8e03954991f0b92f5850048c27db6e14166591c1e7e5a36a7f",
-      "bytes": 19825
+      "sha256": "61543deef60beddc34c9057e135faa5cc18f742ac2180ff07577b803fa2a83d7",
+      "bytes": 20042
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerChatAccess.java",

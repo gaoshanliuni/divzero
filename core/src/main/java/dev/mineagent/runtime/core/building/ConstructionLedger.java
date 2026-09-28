@@ -35,6 +35,12 @@ public final class ConstructionLedger implements AutoCloseable {
             r.next();return new Head(r.getLong("revision"),r.getLong("active_revision"),r.getString("status"),r.getString("mode"),r.getString("phase"),r.getLong("cursor"),r.getString("operation"),r.getLong("mutation_tick"),r.getString("report"));
         }
     }
+    public synchronized void bind(ConstructionCatalog.Scope scope,String id)throws Exception {
+        String expected=scope.world()+"/"+scope.owner()+"/"+scope.agent()+"/"+id;
+        try(var s=db.createStatement()){s.execute("CREATE TABLE IF NOT EXISTS binding(id INTEGER PRIMARY KEY CHECK(id=1),scope TEXT NOT NULL)");}
+        try(var p=db.prepareStatement("INSERT OR IGNORE INTO binding VALUES(1,?)")){p.setString(1,expected);p.executeUpdate();}
+        try(var s=db.createStatement();var r=s.executeQuery("SELECT scope FROM binding WHERE id=1")){if(!r.next()||!expected.equals(r.getString(1)))throw new SecurityException("BUILDING_LEDGER_SCOPE");}
+    }
     public synchronized BuildingDesign design(long revision) throws Exception {
         try(var p=db.prepareStatement("SELECT source FROM designs WHERE revision=?")){p.setLong(1,revision);try(var r=p.executeQuery()){if(!r.next())throw new IllegalArgumentException("BUILDING_REVISION_MISSING");return BuildingDesign.parse(r.getString(1));}}
     }

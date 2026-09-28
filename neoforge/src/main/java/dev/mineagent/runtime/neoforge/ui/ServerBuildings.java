@@ -28,8 +28,8 @@ public final class ServerBuildings {
     private static final Map<MinecraftServer,Map<Key,Handle>> LIVE=new IdentityHashMap<>();
     private static final class Handle {
         final Key key;final CompletableFuture<ConstructionLedger> opened;Work job;boolean busy,closed;
-        Handle(Key key,Path file){this.key=key;opened=io(()->{
-            var ledger=new ConstructionLedger(file);var h=ledger.head();
+        Handle(Key key,Path directory,ConstructionCatalog.Scope scope){this.key=key;opened=io(()->{
+            var ledger=new ConstructionLedger(ConstructionCatalog.register(directory,scope,key.id));ledger.bind(scope,key.id);var h=ledger.head();
             if(Set.of("PREPARING","APPLYING").contains(h.status())){
                 if(h.phase().equals("RESERVED"))ledger.fail("UNKNOWN","PROCESS_STOPPED_WITH_RESERVED_BATCH");
                 else ledger.progress("PAUSED",h.phase(),h.cursor(),h.mutationTick());
@@ -41,8 +41,8 @@ public final class ServerBuildings {
     private static void require(boolean allowed,String code){if(!allowed)throw new IllegalStateException("BUILDING_"+code);}
     private static String id(JsonNode args){String value=args.path("id").asText();if(!value.matches("[A-Za-z][A-Za-z0-9_-]{0,95}"))throw new IllegalArgumentException("BUILDING_ID");return value;}
     private static long revision(JsonNode args){var n=args.path("revision");if(!n.isIntegralNumber()||!n.canConvertToLong()||n.longValue()<0)throw new IllegalArgumentException("BUILDING_REVISION");return n.longValue();}
-    private static Path directory(ServerPlayer player,UUID agent){var s=player.level().getServer();return s.getServerDirectory().resolve("mineagent-runtime-data/buildings").resolve(MineAgentRuntimeServices.worldId(s).toString()).resolve(player.getUUID().toString()).resolve(agent.toString());}
-    private static Handle handle(ServerPlayer player,UUID agent,String id){var key=new Key(player.getUUID(),agent,id);return LIVE.computeIfAbsent(player.level().getServer(),s->new HashMap<>()).computeIfAbsent(key,k->new Handle(k,directory(player,agent).resolve(id+".db")));}
+    private static Path directory(ServerPlayer player,UUID agent){var s=player.level().getServer();return s.getServerDirectory().resolve("mineagent-runtime-data/buildings");}
+    private static Handle handle(ServerPlayer player,UUID agent,String id){var key=new Key(player.getUUID(),agent,id);return LIVE.computeIfAbsent(player.level().getServer(),s->new HashMap<>()).computeIfAbsent(key,k->new Handle(k,directory(player,agent),new ConstructionCatalog.Scope(MineAgentRuntimeServices.worldId(player.level().getServer()),player.getUUID(),agent)));}
     private static void authorize(ServerPlayer p,UUID agent,boolean mutate){require(p.level().getServer().isSameThread()&&ServerTaskStart.allowed(p,agent),"PERMISSION");if(mutate)require(p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),"GAME_PERMISSION");}
     private static Map<String,Object> view(Handle handle,ConstructionLedger ledger,int offset)throws Exception {
         var h=ledger.head();var out=new LinkedHashMap<String,Object>();out.put("id",handle.key.id);out.put("revision",h.revision());out.put("activeRevision",h.activeRevision());out.put("status",h.status());out.put("operation",h.operation());out.put("phase",h.phase());out.put("cursor",h.cursor());out.put("verification",h.status().equals("VERIFIED")?"VERIFIED":"UNVERIFIED");out.put("report",h.report());
@@ -51,9 +51,12 @@ public final class ServerBuildings {
     public static CompletableFuture<Map<String,Object>> inspect(ServerPlayer p,UUID agent,JsonNode args){
         authorize(p,agent,false);int offset=args.path("offset").asInt(0);require(offset>=0,"OFFSET");
         if(!args.has("id")){
-            Path directory=directory(p,agent);return io(()->{
+            Path directory=directory(p,agent);var scope=new ConstructionCatalog.Scope(MineAgentRuntimeServices.worldId(p.level().getServer()),p.getUUID(),agent);return io(()->{
                 if(!Files.isDirectory(directory))return Map.of("status","OBSERVED","buildings",List.of(),"contract",contract());
-                try(var files=Files.list(directory)){var names=files.filter(f->f.getFileName().toString().matches("[A-Za-z][A-Za-z0-9_-]{0,95}\\.db")).sorted().toList();var items=new ArrayList<Object>();for(var path:names.stream().skip(offset).limit(16).toList())try(var ledger=new ConstructionLedger(path)){var head=ledger.head();items.add(Map.of("id",path.getFileName().toString().replaceFirst("\\.db$",""),"name",head.revision()>0?ledger.design(head.revision()).name():"","revision",head.revision(),"activeRevision",head.activeRevision(),"status",head.status()));}return Map.of("status","OBSERVED","buildings",items,"nextOffset",offset+items.size(),"more",offset+items.size()<names.size(),"contract",contract());}
+                var names=ConstructionCatalog.list(directory,scope,offset);var items=new ArrayList<Object>();for(var entry:names.stream().limit(16).toList()){
+                    Path path=directory.resolve(entry.filename());if(!Files.exists(path))continue;
+                    try(var ledger=new ConstructionLedger(path)){ledger.bind(scope,entry.id());var head=ledger.head();if(head.revision()>0)items.add(Map.of("id",entry.id(),"name",ledger.design(head.revision()).name(),"revision",head.revision(),"activeRevision",head.activeRevision(),"status",head.status()));}
+                }return Map.of("status","OBSERVED","buildings",items,"nextOffset",offset+Math.min(16,names.size()),"more",names.size()>16,"contract",contract());
             });
         }
         var handle=handle(p,agent,id(args));return handle.opened.thenCompose(ledger->io(()->view(handle,ledger,offset)));

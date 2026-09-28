@@ -18,6 +18,11 @@ class ConstructionLedgerTest {
         var samples=new ArrayList<ConstructionLedger.Sample>();for(var cell:ledger.page(revision,0,false)){String before=cell.expected()==null?"minecraft:dirt":cell.expected();samples.add(new ConstructionLedger.Sample(cell.sequence(),before,cell.material(),cell.baseline()==null?before:cell.baseline()));}ledger.samples(samples);
     }
     private static void finish(ConstructionLedger ledger,long tick)throws Exception {ledger.progress("APPLYING","VERIFY",0,tick);ledger.finish(tick);}
+    @Test void compactFilesKeepFullWorldOwnerAgentBinding()throws Exception {
+        var scope=new ConstructionCatalog.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID());var other=new ConstructionCatalog.Scope(UUID.randomUUID(),scope.owner(),scope.agent());
+        var file=ConstructionCatalog.register(directory,scope,"home");assertEquals(46,file.getFileName().toString().length());assertFalse(file.equals(ConstructionCatalog.register(directory,other,"home")));
+        assertEquals(1,ConstructionCatalog.list(directory,scope,0).size());try(var ledger=new ConstructionLedger(file)){ledger.bind(scope,"home");assertThrows(SecurityException.class,()->ledger.bind(other,"home"));}
+    }
     @Test void localRoofChangeKeepsFloorAndRestoresOriginalWorldInsteadOfAir()throws Exception {
         try(var ledger=new ConstructionLedger(directory.resolve("house.db"))){
             ledger.plan(0,SOURCE,()->true);assertEquals(18,ledger.count(1));ledger.start(1,"APPLY");sampled(ledger,1);finish(ledger,100);
