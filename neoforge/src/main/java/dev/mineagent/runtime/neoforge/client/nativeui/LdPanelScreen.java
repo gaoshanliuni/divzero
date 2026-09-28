@@ -71,7 +71,7 @@ public abstract class LdPanelScreen extends Screen {
         if(ui!=null){super.clearWidgets();if(!ui.isRemoved())ui.onRemoved();}
         var root=new UIElement();root.getLayout().widthPercent(100).heightPercent(100);root.getStyle().backgroundTexture(new ColorRectTexture(0xce151c28));elements.clear();
         for(var control:controls){var element=create(control);elements.put(control,element);root.addChild(element);}
-        ui=new ModularUI(UI.of(root,size->size),minecraft.player);sync();ModularUIClientAccess.setScreenAndInit(ui,this);
+        NativeUiTheme.controls(root);ui=new ModularUI(UI.of(root,size->size),minecraft.player);sync();ModularUIClientAccess.setScreenAndInit(ui,this);
         super.addRenderableWidget(ModularUIClientAccess.getWidget(ui));super.setFocused(ModularUIClientAccess.getWidget(ui));
         if(requestedFocus!=null&&elements.containsKey(requestedFocus)){ui.requestFocus(elements.get(requestedFocus));requestedFocus=null;}
     }

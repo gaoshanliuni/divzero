@@ -16,12 +16,12 @@ import java.util.*;
 
 /** Right-click profile for one immutable AI id; no global control-center menu is exposed. */
 public final class AgentProfileScreen extends ModularUIScreen {
-    private final UUID agent;private final Object connection;private final UIElement content=new UIElement();
+    private final UUID agent;private final Object connection;private UIElement root;private final UIElement content=new UIElement();
     private final TextElement title,summary,status;private final ProgressBar health=new ProgressBar();
     private JsonObject snapshot;private String tab="overview";private int inventoryOffset,contentOffset;private long nextRead;private boolean busy;private long personaRevision=-1,uiEpoch;
     private AgentProfileScreen(UUID agent,String name){this(agent,name,new UIElement());}
     private AgentProfileScreen(UUID agent,String name,UIElement root){
-        super(new ModularUI(UI.of(root,size->size),Minecraft.getInstance().player),Component.literal(name));this.agent=agent;connection=Minecraft.getInstance().getConnection();
+        super(new ModularUI(UI.of(root,size->size),Minecraft.getInstance().player),Component.literal(name));this.agent=agent;this.root=root;connection=Minecraft.getInstance().getConnection();
         root.getLayout().widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER);
         var card=NativeUiTheme.card(new UIElement());card.getLayout().widthPercent(86).heightPercent(86).maxWidth(650).paddingAll(14);root.addChild(card);
         var top=WorkspacePanels.row();top.getLayout().height(30);card.addChild(top);title=NativeUiTheme.text(name,NativeUiTheme.TEXT,14);title.getLayout().flex(1);top.addChild(title);top.addChild(NativeUiTheme.button("×",this::onClose));
@@ -36,7 +36,7 @@ public final class AgentProfileScreen extends ModularUIScreen {
     public static void open(UUID agent,String name){Minecraft.getInstance().setScreen(new AgentProfileScreen(agent,name));NativeWorkspaceConnection.open();}
     private static String t(String text){return ClientLanguage.t(text);}
     private boolean current(){return connection==Minecraft.getInstance().getConnection()&&Minecraft.getInstance().screen==this;}
-    @Override public void tick(){super.tick();if(!current())return;long now=System.currentTimeMillis();if(busy||now<nextRead||!NativeWorkspaceConnection.ready())return;busy=true;nextRead=now+1000;
+    @Override public void tick(){super.tick();NativeUiTheme.controls(root);if(!current())return;long now=System.currentTimeMillis();if(busy||now<nextRead||!NativeWorkspaceConnection.ready())return;busy=true;nextRead=now+1000;
         WorkspacePanels.request("agent.panelRead",Map.of("agentId",agent.toString(),"inventoryOffset",Integer.toString(inventoryOffset),"contentOffset",Integer.toString(contentOffset))).whenComplete((receipt,error)->{
             busy=false;if(!current())return;if(error!=null){WorkspacePanels.failure(status,error);return;}var value=WorkspacePanels.state(receipt);boolean first=snapshot==null;boolean changed=first||tab.equals("inventory")&&!value.get("inventory").equals(snapshot.get("inventory"))||tab.equals("content")&&!value.get("contents").equals(snapshot.get("contents"));snapshot=value;title.setText(Component.literal(value.get("name").getAsString()));float max=value.get("maxHealth").getAsFloat(),hp=value.get("health").getAsFloat();health.setProgress(max<=0?0:hp/max);summary.setText(Component.literal(t(value.get("bodyState").getAsString())+"  ·  "+t("生命值")+" "+(int)hp+" / "+(int)max+"  ·  "+t("饱食度")+" "+value.get("food").getAsInt()));if(!tab.equals("persona"))status.setText(Component.literal(""));if(changed&&(!tab.equals("persona")||first))draw();
         });

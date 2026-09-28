@@ -17,4 +17,12 @@ public final class PendingConversationSends {
     public void accepted(UUID operation){pending.values().removeIf(p->p.operation.equals(operation));}
     public List<Pending> snapshot(){return List.copyOf(pending.values());}
     public void restore(Collection<Pending> values){for(var value:values)pending.putIfAbsent(value.conversation,value);}
+    /** Adopt the browser draft's operation unchanged. Importing is read-only and never sends it. */
+    public void restoreLegacy(Map<String,String> request){
+        UUID operation=UUID.fromString(request.get("requestId")),agent=UUID.fromString(request.get("agentId")),conversation=UUID.fromString(request.get("conversationId"));
+        long revision=Long.parseLong(request.get("expectedRevision"));if(revision<1)throw new IllegalArgumentException("CONVERSATION_SEND_REVISION");
+        var args=new LinkedHashMap<String,String>();args.put("kind","send");for(var key:List.of("agentId","conversationId","expectedRevision","text"))args.put(key,request.get(key));
+        if(request.containsKey("speechOperation"))args.put("speechOperation",UUID.fromString(request.get("speechOperation")).toString());
+        restore(List.of(new Pending(operation,agent,conversation,request.get("text"),args)));
+    }
 }

@@ -56,11 +56,14 @@ public final class NativeInterfacesClient {
                     VIEWS.put(key,slot);
                     if(fresh&&!Set.of("replace","show","interact").contains(kind))slot.session.visible(false);
                 }else if(kind.equals("data")){
+                    if(args.has("patch")){values.clear();args.get("patch").properties().forEach(e->values.put(e.getKey(),e.getValue()));}
                     final Slot target=slot;var receipt=slot.session.patch(slot.session.scope(),slot.session.revision(),slot.session.dataRevision(),values,data->update(target,data));
                     if(!receipt.applied())throw new IllegalArgumentException(receipt.error());
                     changed=true;
                 }
                 boolean hud=slot.session.definition().surface()==InterfaceDefinition.Surface.HUD;
+                // From this point screen/HUD activation can have side effects even for control-only operations.
+                changed=true;
                 switch(kind){
                     case "replace"->{slot.session.visible(wasVisible);if(wasVisible){if(hud&&wasInteractive)open(slot,true);else if(hud){slot.session.interactive(false);LdHudRegistry.attach(slot.session,slot.session.definition().order());}else open(slot,false);}}
                     case "show"->{slot.session.visible(true);if(hud){slot.session.interactive(false);LdHudRegistry.attach(slot.session,slot.session.definition().order());}else open(slot,false);}

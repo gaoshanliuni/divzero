@@ -60,7 +60,7 @@ public final class ServerNativeInterfaces {
                 require(Set.of("replace","data","show","hide","interact","release").contains(kind),"NATIVE_UI_ACTION");
                 if(old!=null&&!tool.equals("set_native_ui"))require(old.dimension().equals(level.dimension().identifier().toString()),"NATIVE_UI_DIMENSION_CHANGED");
                 var message=JSON.createObjectNode().put("kind",kind).put("id",id).put("world",scope.world().toString()).put("owner",scope.owner().toString()).put("agent",agent.toString()).put("dimension",level.dimension().identifier().toString()).put("expectedRevision",expected).put("revision",expected+1).put("source",source);
-                message.set("data",JSON.valueToTree(values));
+                message.set("data",JSON.valueToTree(values));if(kind.equals("data"))message.set("patch",args.get("data").deepCopy());
                 request(p,agent,message,guard).whenComplete((ack,error)->server.execute(()->{
                     if(error!=null){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CLIENT_ACK_TIMEOUT","replayed",false));return;}
                     if(!ack.path("status").asText().equals("APPLIED")){result.complete(Map.of("status",ack.path("status").asText().equals("UNKNOWN")?"UNKNOWN":"REJECTED","error",ack.path("error").asText("NATIVE_UI_BUILD_FAILED"),"revision",expected));return;}

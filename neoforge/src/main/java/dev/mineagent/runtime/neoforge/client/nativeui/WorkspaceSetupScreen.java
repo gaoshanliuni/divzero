@@ -36,7 +36,7 @@ public final class WorkspaceSetupScreen extends ModularUIScreen {
         }else notice.setText(Component.literal(t("进入世界后可管理 AI 与模型设置。")));
         card.addChild(NativeUiTheme.button(t("语言"),()->mc.setScreen(new dev.mineagent.runtime.neoforge.client.screen.LanguageScreen(this))));
         card.addChild(NativeUiTheme.button(t("关于"),()->mc.setScreen(new dev.mineagent.runtime.neoforge.client.screen.AboutScreen(this))));
-        card.addChild(NativeUiTheme.button(t("返回"),this::onClose));
+        card.addChild(NativeUiTheme.button(t("返回"),this::onClose));NativeUiTheme.controls(root);
     }
     private static ServerTrustStore store()throws java.io.IOException{return new ServerTrustStore(Minecraft.getInstance().gameDirectory.toPath().resolve("config/mineagent-trusted-servers.properties"));}
     private static String t(String value){return ClientLanguage.t(value);}
