@@ -51,7 +51,6 @@ public final class NativeButtonSmokeClient {
         later(5,"return-after-outside-release-does-not-activate",()->{release(test,0);require(clicks==1,"STALE_PRESS_ACTIVATED");press(test,0);move(8,8);});
         later(5,"drag-back-inside",()->move(test));
         later(5,"release-after-drag-back",()->{release(test,0);require(clicks==2,"DRAG_BACK_RELEASE");press(test,1);release(test,1);require(clicks==2,"RIGHT_CLICK_ACTIVATED");require(!screen.getModularUI().getDragHandler().isDragging(),"BUTTON_STARTED_WINDOW_DRAG");press(test,0);test.setActive(false);release(test,0);require(clicks==2,"DISABLED_RELEASE_ACTIVATED");test.setActive(true);screen.getModularUI().requestFocus(test);});
-        later(4,"unrelated-key-fallthrough",()->{require(!screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_A,0,0)),"UNRELATED_KEY_DOWN_SWALLOWED");require(!screen.keyReleased(new KeyEvent(GLFW.GLFW_KEY_A,0,0)),"UNRELATED_KEY_UP_SWALLOWED");});
         later(4,"keyboard-hold",()->{for(int i=0;i<4;i++)screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_SPACE,0,0));require(clicks==2,"KEY_REPEAT_ACTIVATED");require(test.getState()==Button.State.PRESSED,"KEY_PRESS_FEEDBACK");});
         later(4,"keyboard-release",()->{screen.keyReleased(new KeyEvent(GLFW.GLFW_KEY_SPACE,0,0));require(clicks==3,"KEY_RELEASE");screen.keyReleased(new KeyEvent(GLFW.GLFW_KEY_SPACE,0,0));require(clicks==3,"KEY_RELEASE_DUPLICATED");screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_ENTER,0,0));screen.getModularUI().requestFocus(null);screen.keyReleased(new KeyEvent(GLFW.GLFW_KEY_ENTER,0,0));require(clicks==3,"FOCUS_LOSS_ACTIVATED");move(minimize);});
         later(5,"minimize-press",()->{press(minimize,0);require(window.visible()&&minimize.getState()==Button.State.PRESSED,"MINIMIZED_ON_PRESS");});
@@ -64,6 +63,9 @@ public final class NativeButtonSmokeClient {
         later(3,"other-mod-policy",()->{var other=new UIElement();screen=new TestScreen(other,false);test=new Button().setText("Unowned button").setOnClick(event->clicks++);test.getLayout().width(180).height(30);other.addChild(test);Minecraft.getInstance().setScreen(screen);});
         later(5,"unowned-hover",()->move(test));
         later(5,"unowned-button-unchanged",()->{press(test,0);require(clicks==4,"OTHER_MOD_BUTTON_POLICY_CHANGED");release(test,0);});
+        // Dialog has its own KEY_DOWN handler; isolate button fallthrough from that library policy.
+        later(3,"owned-flat-screen",()->{var root=new UIElement();screen=new TestScreen(root,true);test=new Button().setText("Keyboard fallthrough");root.addChild(test);Minecraft.getInstance().setScreen(screen);});
+        later(5,"unrelated-key-fallthrough",()->{screen.getModularUI().requestFocus(test);require(!screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_A,0,0)),"UNRELATED_KEY_DOWN_SWALLOWED");require(!screen.keyReleased(new KeyEvent(GLFW.GLFW_KEY_A,0,0)),"UNRELATED_KEY_UP_SWALLOWED");screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_ESCAPE,0,0));require(Minecraft.getInstance().screen!=screen,"ESCAPE_CLOSE_SWALLOWED");});
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
         if(!Boolean.getBoolean("mineagent.nativeButtonSmoke")||done)return;
