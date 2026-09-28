@@ -31,6 +31,7 @@ public final class ConversationStore implements AutoCloseable {
         this.db=db;this.world=Objects.requireNonNull(world);this.clock=Objects.requireNonNull(clock);
         try(var s=db.createStatement()){
             s.execute("PRAGMA journal_mode=WAL");s.execute("PRAGMA busy_timeout=5000");
+            s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversation_titles_v1(world_id TEXT NOT NULL,conversation_id TEXT NOT NULL,state TEXT NOT NULL,operation_id TEXT NOT NULL DEFAULT '',source_title TEXT NOT NULL,model_receipt TEXT NOT NULL DEFAULT '',PRIMARY KEY(world_id,conversation_id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversations_v1(ordinal INTEGER PRIMARY KEY AUTOINCREMENT,world_id TEXT NOT NULL,id TEXT NOT NULL,player_id TEXT NOT NULL,agent_id TEXT NOT NULL,title TEXT NOT NULL,revision INTEGER NOT NULL,state TEXT NOT NULL,message_count INTEGER NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL,UNIQUE(world_id,id))");
             s.execute("CREATE INDEX IF NOT EXISTS mineagent_conversations_scope_v1 ON mineagent_conversations_v1(world_id,player_id,agent_id,ordinal)");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversation_messages_v1(world_id TEXT NOT NULL,conversation_id TEXT NOT NULL,id TEXT NOT NULL,sequence INTEGER NOT NULL,role TEXT NOT NULL,text TEXT NOT NULL,status TEXT NOT NULL,revision INTEGER NOT NULL,text_length INTEGER NOT NULL,error_code TEXT NOT NULL,persona_revision INTEGER NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL,PRIMARY KEY(world_id,id),UNIQUE(world_id,conversation_id,sequence))");
@@ -95,12 +96,35 @@ public final class ConversationStore implements AutoCloseable {
         var rows=query("SELECT conversation_id FROM mineagent_native_conversation_v1 WHERE world_id=? AND player_id=? AND agent_id=?",r->uuid(r.getString(1)),world,viewer,agent);
         if(!rows.isEmpty()){var current=get(viewer,agent,rows.getFirst());if(current.state().equals("ACTIVE"))return current;}
         else {UUID legacy=UUID.nameUUIDFromBytes(("native-mention-v1|"+world+"|"+viewer+"|"+agent).getBytes(java.nio.charset.StandardCharsets.UTF_8));var operation=operation(legacy,null);if(operation!=null&&operation.kind().equals("create")){var current=get(viewer,agent,operation.conversation());if(current.state().equals("ACTIVE")){bindNative(viewer,agent,current.conversationId());return current;}}}
-        var created=create(viewer,agent,UUID.randomUUID(),"原生 @ 对话");bindNative(viewer,agent,created.conversationId());return created;
+        var created=create(viewer,agent,UUID.randomUUID(),"原生 @ 对话",true);bindNative(viewer,agent,created.conversationId());return created;
     }
     public synchronized void bindNative(UUID viewer,UUID agent,UUID conversation)throws SQLException{var c=get(viewer,agent,conversation);if(!c.state().equals("ACTIVE"))throw new IllegalStateException("CONVERSATION_READ_ONLY");execute("INSERT INTO mineagent_native_conversation_v1 VALUES(?,?,?,?) ON CONFLICT(world_id,player_id,agent_id) DO UPDATE SET conversation_id=excluded.conversation_id",world,viewer,agent,conversation);}
-    public synchronized Conversation create(UUID viewer,UUID agent,UUID op,String title)throws Exception{
-        Objects.requireNonNull(viewer);Objects.requireNonNull(agent);Objects.requireNonNull(op);text(title,128,false);String fp=fingerprint("create",viewer,agent,title);
-        return transaction(()->{var old=operation(op,fp);if(old!=null)return get(viewer,agent,old.conversation());UUID id=UUID.randomUUID();long now=clock.millis();execute("INSERT INTO mineagent_conversations_v1(world_id,id,player_id,agent_id,title,revision,state,message_count,created_at,updated_at) VALUES(?,?,?,?,?,1,'ACTIVE',0,?,?)",world,id,viewer,agent,title,now,now);remember(op,fp,"create",id,null,null,0);return get(viewer,agent,id);});
+    public synchronized Conversation create(UUID viewer,UUID agent,UUID op,String title)throws Exception{return create(viewer,agent,op,title,false);}
+    public synchronized Conversation create(UUID viewer,UUID agent,UUID op,String title,boolean automaticTitle)throws Exception{
+        Objects.requireNonNull(viewer);Objects.requireNonNull(agent);Objects.requireNonNull(op);text(title,128,false);String fp=fingerprint(automaticTitle?"create_auto":"create",viewer,agent,title);
+        return transaction(()->{var old=operation(op,fp);if(old!=null)return get(viewer,agent,old.conversation());UUID id=UUID.randomUUID();long now=clock.millis();execute("INSERT INTO mineagent_conversations_v1(world_id,id,player_id,agent_id,title,revision,state,message_count,created_at,updated_at) VALUES(?,?,?,?,?,1,'ACTIVE',0,?,?)",world,id,viewer,agent,title,now,now);if(automaticTitle)execute("INSERT INTO mineagent_conversation_titles_v1(world_id,conversation_id,state,source_title) VALUES(?,?,'PENDING',?)",world,id,title);remember(op,fp,"create",id,null,null,0);return get(viewer,agent,id);});
+    }
+    public synchronized void requestAutomaticTitle(UUID viewer,UUID agent,UUID conversation)throws Exception{
+        var c=get(viewer,agent,conversation);
+        execute("INSERT INTO mineagent_conversation_titles_v1(world_id,conversation_id,state,source_title) VALUES(?,?,'PENDING',?) ON CONFLICT(world_id,conversation_id) DO NOTHING",world,conversation,c.title());
+    }
+    public synchronized boolean claimAutomaticTitle(UUID viewer,UUID agent,UUID conversation,UUID operation)throws Exception{
+        var c=get(viewer,agent,conversation);if(!c.state().equals("ACTIVE")||c.messageCount()<2)return false;
+        return execute("UPDATE mineagent_conversation_titles_v1 SET state='GENERATING',operation_id=? WHERE world_id=? AND conversation_id=? AND state='PENDING' AND source_title=?",operation,world,conversation,c.title())==1;
+    }
+    public synchronized boolean finishAutomaticTitle(UUID viewer,UUID agent,UUID conversation,UUID operation,String title,String receipt)throws Exception{
+        text(title,48,false);if(title.codePoints().anyMatch(Character::isISOControl)||receipt==null||receipt.length()>16384)throw new IllegalArgumentException("CONVERSATION_TITLE_RESULT");
+        return transaction(()->{
+            var c=get(viewer,agent,conversation);if(!c.state().equals("ACTIVE"))return false;
+            var pending=query("SELECT source_title FROM mineagent_conversation_titles_v1 WHERE world_id=? AND conversation_id=? AND state='GENERATING' AND operation_id=?",r->r.getString(1),world,conversation,operation);
+            if(pending.isEmpty()||!pending.getFirst().equals(c.title()))return false;
+            execute("UPDATE mineagent_conversations_v1 SET title=?,revision=revision+1,updated_at=? WHERE world_id=? AND id=?",title,clock.millis(),world,conversation);
+            execute("UPDATE mineagent_conversation_titles_v1 SET state='AUTO',model_receipt=? WHERE world_id=? AND conversation_id=? AND operation_id=?",receipt,world,conversation,operation);return true;
+        });
+    }
+    public synchronized void failAutomaticTitle(UUID viewer,UUID agent,UUID conversation,UUID operation,String outcome)throws Exception{
+        get(viewer,agent,conversation);if(!Set.of("FAILED","UNKNOWN","CANCELLED").contains(outcome))throw new IllegalArgumentException("CONVERSATION_TITLE_OUTCOME");
+        execute("UPDATE mineagent_conversation_titles_v1 SET state=? WHERE world_id=? AND conversation_id=? AND operation_id=? AND state='GENERATING'",outcome,world,conversation,operation);
     }
     public synchronized Listing list(UUID viewer,UUID agent,String state,String search,long before,int count)throws SQLException{
         limit(count);text(search,256,true);if(before<0||!Set.of("ACTIVE","ARCHIVED","DELETED","ALL").contains(state))throw new IllegalArgumentException("CONVERSATION_LIST_INPUT");
@@ -111,7 +135,9 @@ public final class ConversationStore implements AutoCloseable {
         if(expected<1||!Set.of("rename","archive","delete","restore").contains(action))throw new IllegalArgumentException("CONVERSATION_CHANGE_INPUT");if(action.equals("rename"))text(title,128,false);
         String fp=fingerprint(action,viewer,agent,id,expected,title);
         return transaction(()->{var c=get(viewer,agent,id);if(operation(op,fp)!=null)return c;if(c.revision()!=expected)throw new IllegalStateException("STALE_CONVERSATION_REVISION");String next=action.equals("archive")?"ARCHIVED":action.equals("delete")?"DELETED":action.equals("restore")?"ACTIVE":c.state();
-            execute("UPDATE mineagent_conversations_v1 SET title=?,state=?,revision=revision+1,updated_at=? WHERE world_id=? AND id=?",action.equals("rename")?title:c.title(),next,clock.millis(),world,id);remember(op,fp,action,id,null,null,0);return get(viewer,agent,id);});
+            execute("UPDATE mineagent_conversations_v1 SET title=?,state=?,revision=revision+1,updated_at=? WHERE world_id=? AND id=?",action.equals("rename")?title:c.title(),next,clock.millis(),world,id);
+            if(action.equals("rename"))execute("INSERT INTO mineagent_conversation_titles_v1(world_id,conversation_id,state,source_title) VALUES(?,?,'MANUAL',?) ON CONFLICT(world_id,conversation_id) DO UPDATE SET state='MANUAL',source_title=excluded.source_title",world,id,title);
+            remember(op,fp,action,id,null,null,0);return get(viewer,agent,id);});
     }
     public synchronized Turn begin(UUID viewer,UUID agent,UUID id,UUID op,long expected,String original,long personaRevision)throws Exception{
         return begin(viewer,agent,id,op,expected,original,personaRevision,null);

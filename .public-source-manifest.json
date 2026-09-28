@@ -1844,8 +1844,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationStore.java",
-      "sha256": "c6852d73a0b0970eb6e8994ab6dbd5f37cbee5bc1772ae942894e763d1123df7",
-      "bytes": 45889
+      "sha256": "feca879273e2a406881914a8f954c74e638159f0926c99b60935a50aa003921e",
+      "bytes": 49358
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationSummaryStore.java",
@@ -3113,6 +3113,11 @@
       "bytes": 1952
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationTitleTest.java",
+      "sha256": "8da1215da48898678d569daaa3e02171c966818d9d0e3f946a6a1bc466c5ba4b",
+      "bytes": 2493
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationToolJournalTest.java",
       "sha256": "28aa7de675b1bbddac91f4d2500ad368efe2acf1c14ab4057456eef9b1e519df",
       "bytes": 1911
@@ -3889,8 +3894,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "sha256": "1096eea41450e5388786c0097b124a8dd824b2b7037ec04480347ed69ec42905",
-      "bytes": 22873
+      "sha256": "569a8a7211371522e5fe19ff00fa3a2308a20ee0dafba2290c5cadf09218cf29",
+      "bytes": 22944
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspaceWindow.java",
@@ -5783,9 +5788,14 @@
       "bytes": 45461
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversationTitles.java",
+      "sha256": "0137332ceb8e6f8eab4ed6ef05c51f5cc32d0a45db258ec3e2fc9abe33a6827c",
+      "bytes": 4257
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "2c5c5afaaf0d62771a535c381479bd2fe2bbbd4c313fec0e3e4601e82b19b066",
-      "bytes": 63018
+      "sha256": "c4b691b01e6fb587734ea39420ee86aabdbea296537b9fc1df774ce392d58f4b",
+      "bytes": 63189
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEntityInterop.java",
