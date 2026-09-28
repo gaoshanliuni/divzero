@@ -20,8 +20,8 @@ public final class NativePackageViews {
     private static Object connection,level;private static long tick;
     private static final class View {
         final String id,document=UUID.randomUUID().toString();final PackagePreviewTransfer.Resolved asset;final InterfaceSession<LdInterfaceRenderer.Rendered> content;
-        NativePackageDefinition definition;NativePackageResources resources;Session session;Transport transport;WorkspaceWindow window;NativeWorkspaceScreen host;boolean ready,blocked,closed,visible=true,observedVisibility;long paintedTick=-1,lifecycle=1;
-        boolean agentDispatch;Map<String,Object> sealedDraft;final Set<String> refreshing=new HashSet<>();final Map<String,Long> nextRead=new HashMap<>();final Set<String> reading=new HashSet<>();final Map<String,UUID> writes=new HashMap<>();String error="";
+        NativePackageDefinition definition;NativePackageResources resources;Session session;Transport transport;WorkspaceWindow window;NativeWorkspaceScreen host;HudScreen projection;boolean ready,blocked,closed,visible=true,observedVisibility;long paintedTick=-1,lifecycle=1;
+        String hostDocument=UUID.randomUUID().toString(),layoutSignature="";long layoutRevision=1,layoutSaveAt,presentAfter,presentDeadline;double opacity=1;boolean savingPresentation;CompletableFuture<com.google.gson.JsonObject> presentation;dev.mineagent.runtime.core.ui.UiPresentationAction presentAction;boolean agentDispatch;Map<String,Object> sealedDraft;final Set<String> refreshing=new HashSet<>();final Map<String,Long> nextRead=new HashMap<>();final Set<String> reading=new HashSet<>();final Map<String,UUID> writes=new HashMap<>();String error="";
         View(String id,PackagePreviewTransfer.Resolved asset,Session session,NativePackageDefinition definition,Transport transport){
             this.id=id;this.asset=asset;this.session=session;this.definition=definition;this.transport=transport;
             var mc=Minecraft.getInstance();var world=session==null?NativeWorkspaceConnection.current().binding().worldId():session.binding().worldId();
@@ -30,7 +30,7 @@ public final class NativePackageViews {
     }
     public static String open(PackagePreviewTransfer.Resolved asset,Session session,boolean passive,Transport transport)throws Exception {
         thread();context();var mc=Minecraft.getInstance();if(mc.player==null||!NativeWorkspaceConnection.ready())throw new IllegalStateException("VIEW_NOT_RENDERED");
-        if(session!=null&&(!session.binding().viewerPlayerId().equals(mc.player.getUUID())||!session.binding().ownerPackageId().equals(asset.runtimePackage().packageId())||session.binding().packageRevision()!=asset.runtimePackage().revision()||!session.binding().entryPath().equals(asset.entry())))throw new SecurityException("NATIVE_PACKAGE_BINDING");
+        if(session!=null&&(!session.serverInstanceId().equals(NativeWorkspaceConnection.current().serverInstanceId())||!session.binding().worldId().equals(NativeWorkspaceConnection.current().binding().worldId())||!session.binding().viewerPlayerId().equals(mc.player.getUUID())||!session.binding().ownerPackageId().equals(asset.runtimePackage().packageId())||session.binding().packageRevision()!=asset.runtimePackage().revision()||!session.binding().entryPath().equals(asset.entry())))throw new SecurityException("NATIVE_PACKAGE_BINDING");
         var entry=asset.assets().get(asset.entry());if(entry==null)throw new IllegalArgumentException("UI_ENTRYPOINT_MISSING");
         if(!asset.entry().endsWith(".json"))throw new IllegalArgumentException("LEGACY_UI_REWRITE_REQUIRED: "+asset.entry());
         var definition=NativePackageDefinition.parse(new String(entry.bytes(),StandardCharsets.UTF_8));
@@ -46,7 +46,7 @@ public final class NativePackageViews {
             VIEWS.put(id,view);
             if(passive){view.content.interactive(false);LdHudRegistry.attach(view.content,definition.view().order());}
             else mount(view);
-            if(session==null)view.ready=true;
+            if(session==null)view.ready=true;NativePackagePlacement.restore(id);
             return id;
         }catch(Exception failure){VIEWS.remove(id,view);view.content.close();view.resources.close();throw failure;}
     }
@@ -54,7 +54,7 @@ public final class NativePackageViews {
     private static void mount(View view){mount(view,NativeWorkspaceScreen.previewHost());}
     private static void mount(View view,NativeWorkspaceScreen host){
         if(view.host!=null&&view.host!=host){var receipt=view.content.remount((d,data)->KubeInterfaceRenderer.build(d,data,(node,event,value)->event(view,node,event,value),view.resources.textures(),true));if(!receipt.applied())throw new IllegalStateException(receipt.error());paintWitness(view);}
-        view.host=host;view.window=host.window("native-package-"+view.id,view.definition.view().title(),480,340);view.window.body.clearAllChildren();view.content.rendered().root.getLayout().widthPercent(100).heightPercent(100);view.window.body.addChild(view.content.rendered().root);view.content.interactive(!view.blocked);view.paintedTick=-1;
+        view.hostDocument=UUID.randomUUID().toString();view.host=host;view.window=host.window("native-package-"+view.id,view.definition.view().title(),480,340);view.window.body.clearAllChildren();view.content.rendered().root.getLayout().widthPercent(100).heightPercent(100);view.window.body.addChild(view.content.rendered().root);view.content.interactive(!view.blocked);view.paintedTick=-1;
     }
     public static void workspaceOpened(NativeWorkspaceScreen host){for(var view:List.copyOf(VIEWS.values()))if(view.host!=null&&view.visible&&view.definition.view().surface()==InterfaceDefinition.Surface.SCREEN)try{mount(view,host);}catch(Exception error){block(view.id,error.getMessage());}}
     private static void paintWitness(View view){view.content.rendered().onPaint(()->{if(current(view)&&visible(view)&&!view.blocked)view.paintedTick=tick;});}
@@ -75,8 +75,31 @@ public final class NativePackageViews {
     public static void block(String id,String error){var view=VIEWS.get(id);if(view!=null){view.blocked=true;view.error=error;view.content.interactive(false);view.content.rendered().root.setActive(false);}}
     public static void show(String id){var view=require(id);view.visible=true;view.content.visible(true);if(view.definition.view().surface()==InterfaceDefinition.Surface.HUD){view.content.interactive(false);LdHudRegistry.attach(view.content,view.definition.view().order());}else if(view.window==null||view.window.closed()||view.content.rendered().root.getParent()==null)mount(view);else view.window.reveal();}
     public static void hide(String id){var view=require(id);view.visible=false;view.content.visible(false);view.content.interactive(false);if(view.window!=null)view.window.dialog.setDisplay(false);}
-    public static void close(String id){var view=VIEWS.remove(id);if(view==null)return;view.closed=true;PackageContentClient.close(id);if(view.window!=null)view.window.close();view.content.close();view.resources.close();}
+    public static void close(String id){var view=VIEWS.remove(id);if(view==null)return;view.closed=true;if(view.projection!=null&&Minecraft.getInstance().screen==view.projection)Minecraft.getInstance().setScreen(null);if(view.presentation!=null)view.presentation.completeExceptionally(new IllegalStateException("VIEW_CLOSED"));PackageContentClient.close(id);if(view.window!=null)view.window.close();view.content.close();view.resources.close();}
     public static Set<String> ids(){return Set.copyOf(VIEWS.keySet());}
+    public static void hostEvent(String channel,com.google.gson.JsonElement payload){
+        if(!payload.isJsonObject())return;var data=payload.getAsJsonObject();String id=data.has("viewId")?data.get("viewId").getAsString():"";if(!owns(id))return;
+        switch(channel){
+            case "closeManagedView"->close(id);
+            case "revealPackage"->show(id);
+            case "packageViewOutdated"->invalidate(id);
+            case "contentError"->{String error=data.has("code")?data.get("code").getAsString():"NATIVE_PACKAGE_ERROR";block(id,error);NativeWorkspaceScreen.notice(error);}
+            case "hudRestoreLayout"->{var saved=data.getAsJsonObject("layout");var value=new com.google.gson.JsonObject();value.add("bounds",saved);restoreLayout(id,value);}
+            case "contentHotSwap"->{
+                String prior=data.get("oldViewId").getAsString();var target=require(id);var old=require(prior);
+                if(!target.asset.runtimePackage().packageId().equals(old.asset.runtimePackage().packageId())||target.asset.runtimePackage().revision()!=old.asset.runtimePackage().revision()+1||!rendered(id))throw new IllegalStateException("STALE_TRANSITION");
+                var bounds=layout(prior);restoreLayout(id,bounds);awaitPaint(id,System.currentTimeMillis()+5000).whenComplete((unused,error)->{
+                    var receipt=new com.google.gson.JsonObject();receipt.add("id",data.get("id"));receipt.addProperty("status",error==null?"SWAPPED":"FAILED");
+                    if(error==null)close(prior);try{dev.mineagent.runtime.neoforge.client.webui.ContentHotSwapClient.acknowledge(receipt);}catch(IllegalStateException retired){NativeWorkspaceScreen.notice("UI_TRANSITION_CONTEXT_CHANGED");}
+                });
+            }
+            default->{}
+        }
+    }
+    private static CompletableFuture<Void> awaitPaint(String id,long deadline){
+        if(!owns(id)||System.currentTimeMillis()>deadline)return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));if(rendered(id))return CompletableFuture.completedFuture(null);
+        var result=new CompletableFuture<Void>();CompletableFuture.delayedExecutor(50,TimeUnit.MILLISECONDS).execute(()->Minecraft.getInstance().execute(()->awaitPaint(id,deadline).whenComplete((v,error)->{if(error!=null)result.completeExceptionally(error);else result.complete(null);})));return result;
+    }
     public static void invalidate(String id){block(id,"NATIVE_PACKAGE_OUTDATED");}
     private static View require(String id){var value=VIEWS.get(id);if(value==null||!current(value))throw new IllegalStateException("VIEW_NOT_RENDERED");return value;}
     private static boolean current(View view){var mc=Minecraft.getInstance();return !view.closed&&connection==mc.getConnection()&&level==mc.level&&VIEWS.get(view.id)==view;}
@@ -96,12 +119,12 @@ public final class NativePackageViews {
     private static void event(View view,String node,String event,String value){
         if(!current(view)||!view.ready||view.blocked||!visible(view))return;
         try{
-            view.error="";if(!view.agentDispatch){PackageContentClient.humanInput(view.id);if(view.session!=null&&view.session.binding().actorKind()==ActorKind.AGENT){dev.mineagent.runtime.neoforge.client.webui.UiAgentClient.stop(view.id,true,"HUMAN_INPUT");return;}}
+            view.error="";if(!view.agentDispatch){PackageContentClient.humanInput(view.id);dev.mineagent.runtime.neoforge.client.webui.ContentTakeoverClient.humanInput(view.id);dev.mineagent.runtime.neoforge.client.webui.ContentHotSwapClient.humanInput(view.id);if(view.session!=null&&view.session.binding().actorKind()==ActorKind.AGENT){dev.mineagent.runtime.neoforge.client.webui.UiAgentClient.stop(view.id,true,"HUMAN_INPUT");return;}}
             long revision=view.content.revision();var actions=view.content.actions(view.content.scope(),revision,node,event);
-            var spec=view.definition.view().node(node).orElseThrow();if(event.equals("change")&&spec.has("bind"))view.content.input(view.content.scope(),revision,node,spec.path("type").asText().equals("toggle")?BooleanNode.valueOf(Boolean.parseBoolean(value)):TextNode.valueOf(value),view.content.rendered()::update);
+            var spec=view.definition.view().node(node).orElseThrow();if(event.equals("change")&&spec.has("bind"))view.content.input(view.content.scope(),revision,node,spec.path("type").asText().equals("toggle")?BooleanNode.valueOf(Boolean.parseBoolean(value)):TextNode.valueOf(value),values->update(view,values));
             var data=view.content.data();var patch=new LinkedHashMap<String,JsonNode>();var emitted=new ArrayList<Map.Entry<String,Map<String,JsonNode>>>();
             for(var action:actions){String op=action.path("op").asText(),key=action.path("key").asText();if(op.equals("set")){var next=action.has("expr")?InterfaceExpression.evaluate(action.get("expr"),data):action.has("from")?spec.path("type").asText().equals("toggle")?BooleanNode.valueOf(Boolean.parseBoolean(value)):TextNode.valueOf(value):action.get("value");data.put(key,next);patch.put(key,next);}else if(op.equals("toggle")){var next=BooleanNode.valueOf(!data.getOrDefault(key,BooleanNode.FALSE).asBoolean());data.put(key,next);patch.put(key,next);}else if(op.equals("emit")){var context=new LinkedHashMap<>(data);context.put("event",action.path("args").deepCopy());context.put("eventValue",TextNode.valueOf(value));emitted.add(Map.entry(action.path("action").asText(),Map.copyOf(context)));}}
-            if(!patch.isEmpty()){var applied=view.content.localData(view.content.scope(),revision,patch,view.content.rendered()::update);if(!applied.applied())throw new IllegalArgumentException(applied.error());}
+            if(!patch.isEmpty()){var applied=view.content.localData(view.content.scope(),revision,patch,values->update(view,values));if(!applied.applied())throw new IllegalArgumentException(applied.error());}
             for(var action:emitted){var request=view.definition.actions().get(action.getKey());if(request==null)throw new IllegalArgumentException("NATIVE_PACKAGE_ACTION_UNDECLARED");dispatch(view,action.getKey(),request,action.getValue(),true);}
         }catch(Exception failure){view.error=Objects.toString(failure.getMessage(),"NATIVE_PACKAGE_EVENT_FAILED");}
     }
@@ -117,13 +140,64 @@ public final class NativePackageViews {
                 var value=JSON.createObjectNode().put("code",receipt.code().name());var values=value.putObject("values");
                 for(var entry:receipt.values().entrySet()){JsonNode decoded;try{decoded=JSON.readTree(entry.getValue());if(decoded==null)decoded=TextNode.valueOf(entry.getValue());}catch(Exception ignored){decoded=TextNode.valueOf(entry.getValue());}values.set(entry.getKey(),decoded);}
                 value.set("data",values.has("state")?values.get("state").deepCopy():values.deepCopy());
-                var applied=view.content.patch(view.content.scope(),view.content.revision(),view.content.dataRevision(),Map.of(request.result(),value),view.content.rendered()::update);
+                var applied=view.content.patch(view.content.scope(),view.content.revision(),view.content.dataRevision(),Map.of(request.result(),value),values->update(view,values));
                 if(!applied.applied())throw new IllegalStateException(applied.error());view.error="";
                 if(request.action().equals("delivery.read")&&receipt.code()==Code.OBSERVED&&receipt.values().containsKey("nativeDeliveryReadToken")){
                     String token=receipt.values().get("nativeDeliveryReadToken");dev.mineagent.runtime.neoforge.client.webui.ContentDeliveryClient.acknowledgeData(view.id,source,Map.of("token",token),UUID.fromString(token)).exceptionally(failure->null);
                 }
             }catch(Exception failure){view.error=Objects.toString(failure.getMessage(),"NATIVE_PACKAGE_RECEIPT_INVALID");}
         }));
+    }
+    public static com.google.gson.JsonObject layout(String id){
+        var view=require(id);var mc=Minecraft.getInstance();var root=view.window==null?view.content.rendered().root:view.window.dialog.overlay;
+        if(root.getSizeWidth()<=0||root.getSizeHeight()<=0)throw new IllegalStateException("LAYOUT_PENDING");
+        var bounds=Map.of("x",root.getPositionX(),"y",root.getPositionY(),"width",root.getSizeWidth(),"height",root.getSizeHeight());String signature=bounds+"|"+view.opacity;
+        if(!signature.equals(view.layoutSignature)){if(!view.layoutSignature.isEmpty()){view.layoutRevision++;view.layoutSaveAt=tick+12;}view.layoutSignature=signature;}
+        return new com.google.gson.Gson().toJsonTree(Map.of("viewId",id,"hostDocumentId",view.hostDocument,"revision",view.layoutRevision,"visible",visible(view),"minimized",!visible(view),"bounds",bounds,"area",Map.of("x",7,"y",48,"width",Math.max(240,mc.getWindow().getGuiScaledWidth()-14),"height",Math.max(160,mc.getWindow().getGuiScaledHeight()-130)),"opacity",view.opacity)).getAsJsonObject();
+    }
+    public static void restoreLayout(String id,com.google.gson.JsonObject saved){
+        var view=require(id);if(view.layoutRevision>1||!saved.has("bounds"))return;
+        var b=saved.getAsJsonObject("bounds");applyBounds(view,b.get("x").getAsFloat(),b.get("y").getAsFloat(),b.get("width").getAsFloat(),b.get("height").getAsFloat(),saved.has("opacity")?saved.get("opacity").getAsDouble():1);
+    }
+    private static void applyBounds(View view,float x,float y,float w,float h,double opacity){
+        if(!Float.isFinite(x)||!Float.isFinite(y)||!Float.isFinite(w)||!Float.isFinite(h)||!Double.isFinite(opacity)||opacity<0||opacity>1)throw new IllegalArgumentException("UI_LAYOUT_INVALID");
+        var mc=Minecraft.getInstance();w=Math.clamp(w,64,Math.max(64,mc.getWindow().getGuiScaledWidth()-14));h=Math.clamp(h,64,Math.max(64,mc.getWindow().getGuiScaledHeight()-82));x=Math.clamp(x,0,Math.max(0,mc.getWindow().getGuiScaledWidth()-w));y=Math.clamp(y,0,Math.max(0,mc.getWindow().getGuiScaledHeight()-h));
+        if(view.window!=null){view.window.restore(new WorkspaceWindow.Placement(x,y,w,h,false));view.window.dialog.overlay.getStyle().opacity((float)opacity);}else{view.content.rendered().root.getLayout().left(x).top(y).width(w).height(h);view.content.rendered().root.getStyle().opacity((float)opacity);}
+        view.opacity=opacity;view.paintedTick=-1;
+    }
+    public static CompletableFuture<com.google.gson.JsonObject> present(String id,dev.mineagent.runtime.core.ui.UiPresentationAction action){
+        var view=require(id);var layout=layout(id);if(layout.get("revision").getAsLong()!=action.expectedLayoutRevision()||view.presentation!=null)throw new IllegalStateException("STALE_LAYOUT");
+        var a=layout.getAsJsonObject("area");var bounds=action.placement().resolve(new dev.mineagent.runtime.core.ui.UiPresentationAction.Bounds(a.get("x").getAsDouble(),a.get("y").getAsDouble(),a.get("width").getAsDouble(),a.get("height").getAsDouble()));
+        applyBounds(view,(float)bounds.x(),(float)bounds.y(),(float)bounds.width(),(float)bounds.height(),action.placement().opacity()==null?view.opacity:action.placement().opacity());
+        view.presentation=new CompletableFuture<>();view.presentAction=action;view.presentAfter=tick+3;view.presentDeadline=tick+100;return view.presentation;
+    }
+    private static void placementTick(View view){
+        try{
+            if(!visible(view))return;var actual=layout(view.id);
+            if(view.presentation!=null){
+                if(tick>view.presentDeadline){view.presentation.completeExceptionally(new IllegalStateException("UI_PRESENTATION_UNKNOWN"));view.presentation=null;return;}
+                if(tick<view.presentAfter||!rendered(view.id)||view.savingPresentation)return;
+                view.savingPresentation=true;var pending=view.presentation;var action=view.presentAction;
+                NativePackagePlacement.save(view.id,actual).whenComplete((ignored,error)->{
+                    view.savingPresentation=false;if(view.presentation!=pending)return;view.presentation=null;
+                    if(error!=null||!current(view)||!rendered(view.id)||!actual.equals(layout(view.id))){pending.completeExceptionally(error==null?new IllegalStateException("UI_PRESENTATION_UNKNOWN"):error);return;}
+                    view.layoutSaveAt=0;var receipt=new com.google.gson.JsonObject();receipt.addProperty("operationId",action.operationId().toString());receipt.addProperty("documentId",view.document);receipt.addProperty("status","APPLIED_HOST");receipt.addProperty("persisted",true);receipt.addProperty("nativePainted",true);receipt.add("actual",actual);pending.complete(receipt);
+                });
+            }else if(view.layoutSaveAt>0&&tick>=view.layoutSaveAt){view.layoutSaveAt=0;NativePackagePlacement.save(view.id,actual).exceptionally(error->{NativeWorkspaceScreen.notice("UI_LAYOUT_SAVE_FAILED");return null;});}
+        }catch(Exception error){if(view.presentation!=null){view.presentation.completeExceptionally(error);view.presentation=null;}}
+    }
+
+    public static void interact(String id)throws Exception{
+        var view=require(id);if(!view.ready||view.blocked||!passive(id))throw new IllegalStateException("HUD_NOT_READY");
+        var rendered=KubeInterfaceRenderer.build(view.definition.view(),view.content.data(),(node,event,value)->event(view,node,event,value),view.resources.textures(),false);
+        if(view.projection!=null&&Minecraft.getInstance().screen==view.projection)Minecraft.getInstance().setScreen(null);
+        var screen=new HudScreen(view,rendered);view.projection=screen;view.content.interactive(true);rendered.onPaint(()->{if(current(view)&&Minecraft.getInstance().screen==screen)view.paintedTick=tick;});Minecraft.getInstance().setScreen(screen);
+    }
+    private static void update(View view,Map<String,JsonNode> data){view.content.rendered().update(data);if(view.projection!=null&&Minecraft.getInstance().screen==view.projection)view.projection.rendered.update(data);}
+    private static final class HudScreen extends NativeInputScreen {
+        final View view;final LdInterfaceRenderer.Rendered rendered;
+        HudScreen(View view,LdInterfaceRenderer.Rendered rendered){super(rendered.ui,net.minecraft.network.chat.Component.literal(view.definition.view().title()));this.view=view;this.rendered=rendered;}
+        @Override public void removed(){if(view.projection==this){view.projection=null;if(!view.closed){view.content.interactive(false);if(view.content.visible())LdHudRegistry.attach(view.content,view.definition.view().order());}}super.removed();rendered.close();}
     }
     public static void refresh(String id,String action){var view=VIEWS.get(id);if(view==null)return;for(var read:view.definition.reads().entrySet())if(read.getValue().action().equals(action))view.nextRead.put(read.getKey(),0L);}
     public static void refreshWorld(String id){var view=VIEWS.get(id);if(view==null)return;for(var read:view.definition.reads().entrySet())if(read.getValue().action().equals("worldui.read")){view.refreshing.add(read.getKey());view.nextRead.put(read.getKey(),0L);}}
@@ -154,7 +228,7 @@ public final class NativePackageViews {
             String type=spec.path("type").asText();if(!control.path("attribute").asText().equals("id")||!control.path("tag").asText().equals("input")||!Set.of("input","toggle").contains(type)||!control.path("type").asText().equals(type.equals("toggle")?"checkbox":"text")||!control.path("name").asText().equals(spec.path("bind").asText())||!spec.has("bind")||secret(spec)||!view.definition.view().interactiveNode(node,view.content.data()))throw new IllegalArgumentException("DRAFT_TARGET_CHANGED");
             var value=type.equals("toggle")?control.path("checked"):control.path("value");if(type.equals("toggle")?!value.isBoolean():!value.isTextual()||value.asText().length()>8192)throw new IllegalArgumentException("DRAFT_BUDGET");values.put(node,value);
         }
-        var receipt=view.content.restoreInputs(view.content.scope(),view.content.revision(),values,view.content.rendered()::update);if(!receipt.applied())throw new IllegalStateException(receipt.error());
+        var receipt=view.content.restoreInputs(view.content.scope(),view.content.revision(),values,values->update(view,values));if(!receipt.applied())throw new IllegalStateException(receipt.error());
         return Map.of("status","DRAFT_RESTORED","count",values.size(),"eventsDispatched",false);
     }
     public static Map<String,Object> act(String id,JsonNode action,String expected){
@@ -166,7 +240,7 @@ public final class NativePackageViews {
         if(!view.error.isBlank())throw new IllegalStateException(view.error);return Map.of("status","APPLIED","businessVerified",false,"inputMode","LDLIB2");
     }
 
-    public static void tick(){thread();context();tick++;for(var view:List.copyOf(VIEWS.values())){if(view.window!=null&&view.window.closed()){close(view.id);continue;}boolean shown=visible(view);if(shown!=view.observedVisibility){view.observedVisibility=shown;PackageContentClient.visibility(view.id,shown);}if(!current(view)||!view.ready||!shown||view.blocked)continue;for(var entry:view.definition.reads().entrySet()){var request=entry.getValue();if(tick<view.nextRead.getOrDefault(entry.getKey(),0L))continue;view.nextRead.put(entry.getKey(),request.intervalTicks()==0?Long.MAX_VALUE:tick+request.intervalTicks());dispatch(view,entry.getKey(),request,view.content.data(),false);}}}
+    public static void tick(){thread();context();tick++;for(var view:List.copyOf(VIEWS.values())){if(view.window!=null&&view.window.closed()){close(view.id);continue;}boolean shown=visible(view);if(shown!=view.observedVisibility){view.observedVisibility=shown;PackageContentClient.visibility(view.id,shown);}if(!current(view)||!view.ready||!shown||view.blocked)continue;placementTick(view);for(var entry:view.definition.reads().entrySet()){var request=entry.getValue();if(tick<view.nextRead.getOrDefault(entry.getKey(),0L))continue;view.nextRead.put(entry.getKey(),request.intervalTicks()==0?Long.MAX_VALUE:tick+request.intervalTicks());dispatch(view,entry.getKey(),request,view.content.data(),false);}}}
     private static void context(){var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level){for(String id:List.copyOf(VIEWS.keySet()))close(id);connection=mc.getConnection();level=mc.level;}}
     public static void clear(){thread();for(String id:List.copyOf(VIEWS.keySet()))close(id);}
     private static void thread(){if(!Minecraft.getInstance().isSameThread())throw new IllegalStateException("NATIVE_PACKAGE_CLIENT_THREAD");}

@@ -55,6 +55,9 @@ public final class LdInterfaceRenderer {
                 case "row","column","panel","image"->new UIElement();default->throw new IllegalArgumentException("INTERFACE_WIDGET_TYPE: "+type);
             };
             element.setId(id);nodes.put(id,element);specs.put(id,n);
+            if(element instanceof TextElement label){label.textStyle(style->style.adaptiveWidth(false).adaptiveHeight(true).textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP));label.getLayout().widthPercent(100).minHeight(12).flexShrink(0);}
+            if(element instanceof TextField||element instanceof Button||element instanceof Toggle)element.getLayout().minHeight(22).flexShrink(0);
+            if(element instanceof ProgressBar)element.getLayout().minHeight(18);
             if(element instanceof TextField field)field.textFieldStyle(style->style.placeholder(Component.empty()));
             if(element instanceof TextField field&&n.path("secret").asBoolean(false))field.setFormatter(value->Component.literal("•".repeat(value.length())));
             if(element instanceof ProgressBar progress){progress.label.setText(Component.literal(n.path("text").asText("")));progress.label.setDisplay(n.has("text"));}

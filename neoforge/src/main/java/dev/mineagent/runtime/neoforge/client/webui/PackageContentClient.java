@@ -51,7 +51,7 @@ public final class PackageContentClient {
             }));
         }catch(Exception failed){result.completeExceptionally(failed);}return result;
     }
-    private static void setSession(String id,View view,Session target){var source=NativePackageViews.rawSession(id);if(source!=null)NativePackageViews.rebind(id,source,target);view.session=target;}
+    private static void setSession(String id,View view,Session target){var source=NativePackageViews.rawSession(id);if(NativePackageViews.owns(id))NativePackageViews.rebind(id,source,target);view.session=target;}
     public static void loaded(String id){var view=views.get(id);if(view==null||view.blocked||view.admitting)return;if(!view.initialized){view.initialized=true;++view.load;}render(id,view,view.load);}
     private static void render(String id,View view,long load){
         if(!NativePackageViews.painted(id)||view.admitting||view.blocked||!view.visible)return;

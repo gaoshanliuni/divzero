@@ -67,7 +67,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     public boolean packageLoaded(String viewId) { return loadedPackages.contains(viewId); }
     public java.util.List<String> loadedPreviewViews(){return loadedPackages.stream().filter(view->!PackageContentClient.owns(view)).sorted().toList();}
     public ViewPackage viewPackage(String view){return viewPackages.get(view);}
-    public JsonObject viewLayout(String view){var value=viewLayouts.get(view);return value==null?null:value.deepCopy();}
+    public JsonObject viewLayout(String view){if(dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.owns(view))return dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.layout(view);var value=viewLayouts.get(view);return value==null?null:value.deepCopy();}
     public boolean packageHidden(String view){return dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.owns(view)?!dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.visible(view):hiddenPackages.contains(view);}
     public long readyMillis() { return readyMillis; }
     public boolean owns(CefBrowser candidate) { return gate.owns(candidate); }
@@ -751,7 +751,8 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     public void emit(String channel, Object data) {
         requireClientThread();
         dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.push(channel,JSON.toJsonTree(data));
-        if (!ready() || !shell.entry("index.html").toString().equals(browser.getURL())) return;
+        dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.hostEvent(channel,JSON.toJsonTree(data));
+        if (browser==null || shell==null || !ready || !shell.entry("index.html").toString().equals(browser.getURL())) return;
         String detail = JSON.toJson(Map.of("channel", channel, "data", data));
         // Serialize as a string then JSON.parse: data is never inserted as executable script.
         browser.executeJavaScript("window.dispatchEvent(new CustomEvent('mineagent:host',{detail:JSON.parse("

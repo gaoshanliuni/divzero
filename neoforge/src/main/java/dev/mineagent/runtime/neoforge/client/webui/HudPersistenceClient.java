@@ -1,6 +1,5 @@
 package dev.mineagent.runtime.neoforge.client.webui;
 
-import com.cinemamod.mcef.MCEF;
 import com.google.gson.*;
 import dev.mineagent.runtime.api.ui.UiProtocol.*;
 import dev.mineagent.runtime.client.webui.*;
@@ -38,11 +37,7 @@ public final class HudPersistenceClient {
         }
         if(!loaded||saved.isEmpty()||writes>0)return;
         var host=WebGuiHostAdapter.INSTANCE;
-        if(host.browser()==null){
-            if(!hostAttempted){hostAttempted=true;hostDeadline=System.currentTimeMillis()+20000;}
-            if(System.currentTimeMillis()>hostDeadline)return;
-            if(MCEF.isInitialized()){hostDeadline=0;host.openPassive();}return;
-        }
+        if(!dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready()){dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.open();return;}
         var shell=UiClientSessions.current();
         if(shell==null||!shell.binding().worldId().equals(world)||!shell.binding().viewerPlayerId().equals(viewer)||busy||!PackagePreviewClient.idle())return;
         for(var entry:List.copyOf(saved.values())){

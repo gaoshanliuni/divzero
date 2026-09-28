@@ -23,7 +23,7 @@ public final class NativePackageAgent {
     public static CompletableFuture<String> inspect(String id){return onClient(()->CompletableFuture.completedFuture(observe(id).toString()));}
     private static JsonObject observe(String id){
         var result=JSON.toJsonTree(NativePackageViews.inspect(id)).getAsJsonObject();if(!result.get("status").getAsString().equals("OBSERVED"))throw new IllegalStateException("VIEW_NOT_RENDERED");
-        result.addProperty("observationId",NativePackageViews.identity(id));result.addProperty("title",NativePackageViews.asset(id).runtimePackage().name());
+        result.add("hostPresentation",UiPresentationClient.observe(id));result.addProperty("observationId",NativePackageViews.identity(id));result.addProperty("title",NativePackageViews.asset(id).runtimePackage().name());
         if(result.toString().length()>60000)throw new IllegalStateException("NATIVE_OBSERVATION_BUDGET");return result;
     }
     public static CompletableFuture<PackageViewCapture.Captured> capture(String id){return onClient(()->NativePackageViews.capture(id).thenApply(shot->new PackageViewCapture.Captured(shot.documentId(),shot.layoutIdentity(),shot.width(),shot.height(),shot.frameX(),shot.frameY(),shot.scaleX(),shot.scaleY(),shot.png())));}
@@ -51,7 +51,9 @@ public final class NativePackageAgent {
             try{
                 if(observation==null)throw new IllegalStateException("OBSERVE_FIRST");if(presentationOnly&&!action.get("action").getAsString().equals("present"))throw new SecurityException("PRESENTATION_ONLY");
                 if(action.get("action").getAsString().equals("clickAt")){coordinate(action).whenComplete((value,error)->{if(error!=null)result.complete(failed(error));else result.complete(value);});return result;}
-                if(action.get("action").getAsString().equals("present"))throw new IllegalStateException("NATIVE_PRESENTATION_ACTION_PENDING");
+                if(action.get("action").getAsString().equals("present")){
+                    UiPresentationClient.apply(id,"native:"+id,document,observation.getAsJsonObject("hostPresentation"),encoded,()->!cancelled&&controls.get(id)==this&&NativePackageViews.owns(id)&&document.equals(NativePackageViews.document(id))).whenComplete((value,error)->{if(error!=null)result.complete(failed(error));else result.complete(value);});return result;
+                }
                 image=null;var request=new com.fasterxml.jackson.databind.ObjectMapper().readTree(action.toString());
                 result.complete(JSON.toJson(NativePackageViews.act(id,request,observation.get("observationId").getAsString())));
             }catch(Exception error){result.complete(failed(error));}return result;
@@ -67,7 +69,7 @@ public final class NativePackageAgent {
                 var value=new LinkedHashMap<>(NativePackageViews.act(id,request,observation.get("observationId").getAsString()));image=null;value.put("targetPixelsVerified",true);return CompletableFuture.completedFuture(JSON.toJson(value));
             }));
         }
-        @Override public void cancel(){if(!Minecraft.getInstance().isSameThread()){Minecraft.getInstance().execute(this::cancel);return;}if(cancelled)return;cancelled=true;image=null;controls.remove(id,this);operations.values().forEach(value->value.result.complete("{\"status\":\"USER_INTERRUPTED\"}"));interrupt.run();}
+        @Override public void cancel(){if(!Minecraft.getInstance().isSameThread()){Minecraft.getInstance().execute(this::cancel);return;}if(cancelled)return;cancelled=true;image=null;UiPresentationClient.cancel(id);controls.remove(id,this);operations.values().forEach(value->value.result.complete("{\"status\":\"USER_INTERRUPTED\"}"));interrupt.run();}
     }
     private static String failed(Throwable error){while(error.getCause()!=null)error=error.getCause();String code=Objects.toString(error.getMessage(),"FAILED");return JSON.toJson(Map.of("status",code.matches("[A-Z_]{1,80}")?code:"FAILED","businessVerified",false));}
     private static <T> CompletableFuture<T> onClient(Supplier<CompletableFuture<T>> action){var result=new CompletableFuture<T>();Minecraft.getInstance().execute(()->{try{action.get().whenComplete((value,error)->{if(error!=null)result.completeExceptionally(error);else result.complete(value);});}catch(Exception failure){result.completeExceptionally(failure);}});return result;}

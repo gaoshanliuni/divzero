@@ -28,6 +28,7 @@ public final class NativePackageSmokeClient {
         if(!Boolean.getBoolean("mineagent.nativePackageSmoke")||done)return;var mc=Minecraft.getInstance();
         try{
             if(++ticks>6000)throw new IllegalStateException("NATIVE_PACKAGE_TIMEOUT_"+stage);if(mc.player==null||mc.getSingleplayerServer()==null||busy)return;
+            Files.writeString(root().resolve("steps.json"),JSON.writeValueAsString(Map.of("stage",stage,"evidence",evidence)));
             if(ticks%40==0)Files.writeString(root().resolve("progress.json"),JSON.writeValueAsString(Map.of("stage",stage,"ready",NativeWorkspaceConnection.ready(),"view",Objects.toString(view,""),"rendered",view!=null&&NativePackageViews.rendered(view))));
             if(stage==0){var snapshot=dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox.snapshot();String fingerprint=snapshot.values().getOrDefault("security.identityFingerprint","");if(fingerprint.isBlank()||!dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox.signatureValid())return;
                 new dev.mineagent.runtime.client.trust.ServerTrustStore(mc.gameDirectory.toPath().resolve("config/mineagent-trusted-servers.properties")).confirm("local-integrated",fingerprint,Base64.getDecoder().decode(snapshot.values().get("security.identityPublicKey")));

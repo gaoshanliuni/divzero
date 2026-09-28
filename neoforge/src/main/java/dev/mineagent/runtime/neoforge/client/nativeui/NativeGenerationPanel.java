@@ -1,0 +1,47 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+
+import com.google.gson.*;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
+import dev.mineagent.runtime.neoforge.client.language.ClientLanguage;
+import dev.mineagent.runtime.neoforge.client.webui.ContentHotSwapClient;
+import net.minecraft.network.chat.Component;
+import java.util.*;
+
+/** Creation, repair and candidate application are distinct explicit actions; history reads never call a model. */
+final class NativeGenerationPanel {
+    private static final Set<NativeGenerationPanel> PANELS=new HashSet<>();private final NativeWorkspaceScreen host;private final WorkspaceWindow window;private final ScrollerView list;private final TextElement notice=WorkspacePanels.text("");
+    private String category="GENERATION";private int offset,next;private boolean busy,more;private long epoch,nextPoll;private final Map<String,UUID> pending=new HashMap<>();
+    private record Agent(String id,String name){@Override public String toString(){return name;}}
+    static void open(NativeWorkspaceScreen host){if(!host.revealWindow("generation"))new NativeGenerationPanel(host);}
+    private NativeGenerationPanel(NativeWorkspaceScreen host){this.host=host;window=host.window("generation",t("创建与改版"),600,395);PANELS.add(this);var toolbar=WorkspacePanels.row();toolbar.getLayout().height(25);window.body.addChild(toolbar);
+        var categories=new Selector<String>();categories.setCandidates(List.of("GENERATION","UI_PATCH","WORLD_PATCH","LINK"));categories.setValue(category,false);categories.setOnValueChanged(value->{category=value;offset=0;load();});toolbar.addChild(categories);toolbar.addChild(button("创建内容",()->prompt(host,null,null)));toolbar.addChild(button("刷新",this::load));window.body.addChild(notice);list=WorkspacePanels.scroller(window.body);
+        var nav=WorkspacePanels.row();nav.getLayout().height(25);window.body.addChild(nav);nav.addChild(button("上一页",()->{offset=Math.max(0,offset-8);load();}));nav.addChild(button("下一页",()->{if(more){offset=next;load();}}));load();
+    }
+    static void prompt(NativeWorkspaceScreen host,JsonObject head,JsonObject repair){
+        String key="generate-prompt-"+(head==null?"new":text(head,"packageId"));if(host.revealWindow(key))return;var window=host.window(key,head==null?t("创建内容"):t("描述改版需求"),520,355);var notice=WorkspacePanels.text(t("提交后会调用所选 AI 的模型。"));window.body.addChild(notice);
+        var selector=new Selector<Agent>();selector.getLayout().height(25).widthPercent(100);window.body.addChild(selector);var purpose=new Selector<String>();purpose.setCandidates(head==null?List.of("UI_PACKAGE","WORLD_CONTENT"):List.of("UI_PATCH","WORLD_PATCH"));purpose.setValue(head==null?"UI_PACKAGE":"UI_PATCH",false);purpose.getLayout().height(25).widthPercent(100);window.body.addChild(purpose);
+        var editor=new TextArea();editor.getLayout().flex(1).widthPercent(100);if(head!=null)editor.setValue(new String[]{t("使用 LDLib2 MC 主题重建并美化界面，保留原有交互、数据和权限；稳定控件 ID 保留输入。")},false);window.body.addChild(editor);UUID[] operation={null};
+        WorkspacePanels.request("shell.read",Map.of()).whenComplete((r,e)->{if(window.closed()||!host.activeContext())return;if(e!=null){WorkspacePanels.failure(notice,e);return;}var values=new ArrayList<Agent>();for(var raw:JsonParser.parseString(r.values().get("agents")).getAsJsonArray()){var a=raw.getAsJsonObject();values.add(new Agent(text(a,"id"),text(a,"name")));}selector.setCandidates(values);values.stream().filter(a->a.id().equals(host.selectedAgentId())).findFirst().or(()->values.stream().findFirst()).ifPresent(a->selector.setValue(a,false));});
+        window.body.addChild(button(repair==null?"提交需求":"生成修复候选",()->{if(operation[0]!=null||selector.getValue()==null)return;String source=String.join("\n",editor.getValue());if(source.isBlank()||source.length()>8192)return;operation[0]=UUID.randomUUID();var args=new LinkedHashMap<String,String>();args.put("agentId",selector.getValue().id());args.put("prompt",source);String action;
+            if(repair!=null){action="package.generate";args.put("repairSourceOperationId",text(repair,"operationId"));args.put("repairSourceRevision",text(repair,"revision"));args.put("repairSourceSha256",text(repair,"rawHash"));args.put("confirmed","true");}
+            else if(head==null){action="package.generate";args.put("purpose",purpose.getValue());}
+            else{action=purpose.getValue().equals("WORLD_PATCH")?"package.worldPatchSubmit":"package.patchSubmit";args.put("packageId",text(head,"packageId"));args.put("packageRevision",text(head,"revision"));}
+            WorkspacePanels.request(action,args,operation[0]).whenComplete((r,e)->{if(window.closed())return;if(e!=null){WorkspacePanels.failure(notice,e);notice.setText(Component.literal(notice.getText().getString()+" · "+t("请在生成历史核对，未知结果不会重复提交。")));}else{window.close();open(host);for(var panel:PANELS)panel.nextPoll=0;}});
+        }));
+    }
+    private void load(){if(busy)return;busy=true;long token=++epoch;nextPoll=System.currentTimeMillis()+2000;WorkspacePanels.request("task.historyRead",Map.of("kind","jobs","category",category,"state","ALL","archive","ALL","offset",Integer.toString(offset))).whenComplete((r,e)->{busy=false;if(!host.activeContext()||window.closed()||token!=epoch)return;if(e!=null){WorkspacePanels.failure(notice,e);return;}var data=WorkspacePanels.state(r);more=data.get("more").getAsBoolean();next=data.get("nextOffset").getAsInt();list.clearAllScrollViewChildren();for(var raw:data.getAsJsonArray("items"))row(raw.getAsJsonObject());notice.setText(Component.literal(t("生成记录")+" · "+data.get("total").getAsString()));});}
+    private void row(JsonObject job){String operation=text(job,"operationId"),state=text(job,"state");var card=WorkspacePanels.card(list,text(job,"promptPreview"));card.addChild(WorkspacePanels.text(t(state)+" · "+text(job,"error")));var actions=WorkspacePanels.row();actions.getLayout().height(25);card.addChild(actions);
+        actions.addChild(button("详情",()->NativeReadout.show(host,"job-"+operation,"生成详情",job)));actions.addChild(button("完整需求",()->jobText(job,"jobPrompt")));if(!text(job,"rawHash").isBlank())actions.addChild(button("原始输出",()->jobText(job,"jobRaw")));
+        if(category.equals("GENERATION")){if(state.equals("GENERATING"))actions.addChild(button("取消",()->act(operation,"package.cancel",Map.of("operationId",operation))));else if(!text(job,"rawHash").isBlank()&&!state.equals("PUBLISHED"))actions.addChild(button("修复候选",()->prompt(host,null,job)));}
+        else if(category.equals("UI_PATCH")){if(state.equals("READY"))actions.addChild(button("验证并应用",()->transition(job,false)));if(state.equals("APPLIED"))actions.addChild(button("回退界面",()->transition(job,true)));if(Set.of("PENDING","READY").contains(state))actions.addChild(button("取消",()->act(operation,"package.patchCancel",Map.of("operationId",operation))));}
+        else if(category.equals("WORLD_PATCH")){actions.addChild(button("检查差异",()->NativeReadout.open(host,"world-patch-"+operation,"世界内容差异","package.worldPatchInspect",i->Map.of("operationId",operation,"offset",Integer.toString(i)),16)));if(Set.of("READY","APPLIED").contains(state))actions.addChild(button(state.equals("READY")?"应用":"回退",()->Dialog.showCheckBox(t("确认世界内容改版"),text(job,"promptPreview"),yes->{if(yes)act(operation,state.equals("READY")?"package.worldPatchApply":"package.worldPatchRollback",Map.of("operationId",operation,"confirmed","true","canonicalSha256",text(job,state.equals("READY")?"candidateHash":"baseHash")));}).show(window.body)));}
+        if(!text(job,"packageId").isBlank())actions.addChild(button("内容包",()->WorkspacePanels.request("task.historyRead",Map.of("kind","package","packageId",text(job,"packageId"),"headRevision","0","headHash","")).whenComplete((r,e)->{if(e!=null)WorkspacePanels.failure(notice,e);else NativePackagePanel.open(host,WorkspacePanels.state(r));})));
+    }
+    private void jobText(JsonObject job,String kind){String type=category;NativeReadout.open(host,"job-text-"+text(job,"operationId")+kind,"生成记录","task.historyRead",i->Map.of("kind",kind,"category",type,"operation",text(job,"operationId"),"revision",text(job,"revision"),"offset",Integer.toString(i)),1024);}
+    private void act(String key,String action,Map<String,String> args){if(pending.containsKey(key))return;UUID op=UUID.randomUUID();pending.put(key,op);WorkspacePanels.request(action,args,op).whenComplete((r,e)->{if(e!=null)WorkspacePanels.failure(notice,e);else{pending.remove(key);load();}});}
+    private void transition(JsonObject job,boolean rollback){String id=text(job,"operationId");if(pending.containsKey(id))return;pending.put(id,UUID.randomUUID());ContentHotSwapClient.apply(UUID.fromString(id),UUID.fromString(text(job,"packageId")),job.get(rollback?"headRevision":"packageRevision").getAsLong(),rollback).whenComplete((r,e)->{if(e!=null)WorkspacePanels.failure(notice,e);else pending.remove(id);load();});}
+    static void tick(){for(var panel:List.copyOf(PANELS)){if(!panel.host.activeContext()||panel.window.closed()){PANELS.remove(panel);continue;}if(System.currentTimeMillis()>=panel.nextPoll)panel.load();}}
+    private static String text(JsonObject value,String key){return value.has(key)&&!value.get(key).isJsonNull()?value.get(key).getAsString():"";}
+    private static String t(String value){return ClientLanguage.t(value);}
+    private static Button button(String value,Runnable action){return NativeUiTheme.button(t(value),action);}
+}
