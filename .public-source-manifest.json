@@ -3379,8 +3379,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "03c0f2947af10e887438447c7784d19a120e6fb9d1f41172afb036a383d5b4da",
-      "bytes": 18449
+      "sha256": "9bee7b7a8f7e03d24eccf8dcaee70b90fde42302b3418da04715b9a5e52917ce",
+      "bytes": 19036
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3944,8 +3944,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeImeSupport.java",
-      "sha256": "6cbdca958ac92e65626b2dc8934eb9cec1bc017e85e4ef156ce335d9587e0d67",
-      "bytes": 3563
+      "sha256": "b638b8df569dee6e39344bcd198f3741a723c11b0add1de7934339de71c3e28b",
+      "bytes": 3881
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeInputScreen.java",
