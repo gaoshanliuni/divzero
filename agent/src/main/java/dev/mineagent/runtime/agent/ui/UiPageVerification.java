@@ -2,15 +2,16 @@ package dev.mineagent.runtime.agent.ui;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Set;
 
-/** Literal page-only postcondition after real DOM mutations; never a world/business verifier. */
+/** Literal view-only postcondition after a native UI action; never a world/business verifier. */
 public final class UiPageVerification {
     private static final ObjectMapper JSON=new ObjectMapper();
     private final String expected;private String document;private int applied;
     public UiPageVerification(String expected){if(expected==null||expected.isBlank()||expected.length()>256)throw new IllegalArgumentException("UI_PAGE_EXPECTATION");this.expected=normalize(expected);}
     public void action(String action,String receipt){
         try{var a=JSON.readTree(action);var r=JSON.readTree(receipt);
-            if(Set.of("click","clickAt","fill","select","toggle","key","drag").contains(a.path("action").asText())&&r.path("status").asText().equals("APPLIED_DOM")
-                    &&Set.of("DOM","DOM_COORDINATE_EVENTS").contains(r.path("executionMode").asText()))applied++;
+            boolean nativeAction=r.path("status").asText().equals("APPLIED_NATIVE")&&r.path("executionMode").asText().equals("LDLIB2");
+            boolean historicalAction=r.path("status").asText().equals("APPLIED_DOM")&&Set.of("DOM","DOM_COORDINATE_EVENTS").contains(r.path("executionMode").asText());
+            if(Set.of("click","clickAt","fill","select","toggle","key","drag").contains(a.path("action").asText())&&(nativeAction||historicalAction))applied++;
         }catch(Exception invalid){throw new IllegalArgumentException("UI_PAGE_RECEIPT");}
     }
     public boolean matches(String observation){

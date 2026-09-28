@@ -11,8 +11,8 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
     public static final int MAX_SOURCE_BYTES=256*1024, MAX_NODES=2048, MAX_DEPTH=48;
     private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
-    public static final Set<String> TYPES=Set.of("panel","row","column","scroll","label","button","input","toggle","progress","image");
-    private static final Set<String> NODE_FIELDS=Set.of("id","type","text","value","bind","bindings","style","classes","resource","events","children","visible","enabled","secret");
+    public static final Set<String> TYPES=Set.of("panel","row","column","scroll","label","button","input","toggle","select","progress","image");
+    private static final Set<String> NODE_FIELDS=Set.of("id","type","text","value","bind","bindings","style","classes","resource","events","children","visible","enabled","secret","options");
     public static final String CONTRACT="""
         DivZero native UI v1: JSON, rendered with LDLib2 and built by the DivZero KubeJS bridge.
         {"id":"shop","title":"Shop","surface":"SCREEN","root":{"id":"root","type":"row","children":[...]},"data":{},"stylesheet":""}
@@ -24,10 +24,11 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         Score sources require the existing MANAGE_SCOREBOARD permission; declaring a source never grants it.
         agent fields: health/max_health/food/name, scoped to this UI's AI. task sources use task_id plus status/title/revision/completed_steps/total_steps and must belong to this owner and AI.
         Sources only read world data. Setting a local bound number never changes the real score, health or task.
-        Arbitrary nested panel/row/column/scroll/label/button/input/toggle/progress/image nodes, each with a stable unique id.
+        Arbitrary nested panel/row/column/scroll/label/button/input/toggle/select/progress/image nodes, each with a stable unique id.
         Node fields: id,type,text,value,bind,style,classes,resource,events,children,visible,enabled.
         style and stylesheet use LDLib2 LSS, not browser CSS. resource is a Minecraft namespaced resource, never a URL or local path.
         bind refers to one data key; text/value are defaults. Keep node ids and bind keys when restyling to preserve live input.
+        select requires options:[{"value":"oak","label":"Oak"},...], up to256 unique nonempty values; bind stores the selected value. Its change event behaves like input. Secret inputs use secret:true and are excluded from observation/capture/drafts.
         Optional bindings map text/value/visible/enabled to bounded expressions, evaluated on each data update.
         Expressions: primitive literal; {"data":"key"}; {"literal":anyJSON}; {"op":"contains","args":["Stone bricks",{"data":"query"}]}.
         Operators: add/sub/mul/div/min/max/eq/ne/lt/lte/gt/gte/and/or/not/if/contains/startsWith/lower/upper/concat/length/at/get/number/string/join/clamp/round/object/array/json. number explicitly converts numeric input text; arithmetic never silently coerces strings.
@@ -78,7 +79,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet,order,sources,handlers);
     }
     public Map<String,String> inputBindings(){
-        var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);
+        var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle","select").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);
     }
     public Optional<JsonNode> node(String id){var found=new ArrayList<JsonNode>();walk(root,n->{if(n.path("id").asText().equals(id))found.add(n.deepCopy());});return found.stream().findFirst();}
     public boolean interactiveNode(String id){return interactiveNode(id,data);}
@@ -91,6 +92,8 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         String nodeId=id(n.path("id"),path+".id");if(!ids.add(nodeId))throw error(path+".id","DUPLICATE_ID");if(ids.size()>MAX_NODES)throw error(path,"NODE_COUNT");
         String type=string(n.path("type"),path+".type",24);if(!TYPES.contains(type))throw error(path+".type","UNKNOWN_WIDGET");
         if(n.has("text"))string(n.get("text"),path+".text",16384);
+        if(type.equals("select")){var options=n.path("options");if(!options.isArray()||options.isEmpty()||options.size()>256)throw error(path+".options","SELECT_OPTIONS");var values=new HashSet<String>();for(var option:options){fields(option,Set.of("value","label"),path+".options");String value=string(option.path("value"),path+".options.value",256);string(option.path("label"),path+".options.label",512);if(value.isEmpty()||!values.add(value))throw error(path+".options","SELECT_DUPLICATE");}}
+        else if(n.has("options"))throw error(path+".options","SELECT_REQUIRED");
         if(n.has("secret")&&(!type.equals("input")||!n.get("secret").isBoolean()))throw error(path+".secret","SECRET_INPUT_REQUIRED");
         if(n.has("bind"))id(n.get("bind"),path+".bind");
         if(n.has("bindings")){fields(n.get("bindings"),Set.of("text","value","visible","enabled"),path+".bindings");for(var entry:n.get("bindings").properties())InterfaceExpression.validate(entry.getValue());}

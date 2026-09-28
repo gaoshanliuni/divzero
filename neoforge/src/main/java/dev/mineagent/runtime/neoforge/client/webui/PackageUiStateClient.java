@@ -37,7 +37,7 @@ public final class PackageUiStateClient {
                 catch(Exception error){throw new CompletionException(error);}
             },IO);}).orTimeout(10,TimeUnit.SECONDS).whenComplete((snapshot,error)->Minecraft.getInstance().execute(()->{
                 pending.remove(operation,f);if(error!=null||!current(f)){f.valid().set(false);result.completeExceptionally(new IllegalStateException(error==null?"UI_STATE_STALE_VIEW":code(error)));}
-                else result.complete(new Receipt(operation,write?Code.APPLIED:Code.OBSERVED,Map.of("state",JSON.toJson(snapshot),"localOnly","true")));
+                else try{var state=JSON.toJsonTree(snapshot).getAsJsonObject();state.remove("valueJson");state.add("value",snapshot.exists()?JsonParser.parseString(snapshot.valueJson()):JsonNull.INSTANCE);String encoded=state.toString();if(encoded.length()>24000)throw new IllegalStateException("UI_STATE_VALUE_EXCEEDS_VIEW_LIMIT");result.complete(new Receipt(operation,write?Code.APPLIED:Code.OBSERVED,Map.of("state",encoded,"localOnly","true")));}catch(Exception invalid){result.completeExceptionally(invalid);}
             }));
         }catch(Exception error){if(flight!=null){flight.valid().set(false);pending.remove(operation,flight);}result.completeExceptionally(error);}return result;
     }

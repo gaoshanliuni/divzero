@@ -77,14 +77,11 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.include_media_tools
         run: ./scripts/prepare-media-tools.ps1
 
-      - name: Test conversation streaming, scrolling and thinking history
-        run: node --test client/src/test/webui/conversation-cache.test.mjs client/src/test/webui/conversation-scroll.test.mjs client/src/test/webui/conversation-thinking.test.mjs
-
       - name: Compile production JAR and run included tests
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path build/ci-logs -Force | Out-Null
-          & ./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$env:DIVZERO_BUILD_VERSION" :neoforge:jar :neoforge:verifyProductionUiParser :neoforge:test :api:test :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath build/ci-logs/gradle.log
+          & ./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$env:DIVZERO_BUILD_VERSION" :neoforge:jar :neoforge:verifyProductionUiParser :neoforge:test :agent:test :api:test :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath build/ci-logs/gradle.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload development Mod

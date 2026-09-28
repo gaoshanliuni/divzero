@@ -22,7 +22,8 @@ public final class NativePackagePlacement {
         }));
     }
     public static CompletableFuture<Void> save(String id,JsonObject layout){
-        String key=scope(id),document=NativePackageViews.document(id),encoded=layout.toString();var storage=store();var result=new CompletableFuture<Void>();
+        var saved=layout.deepCopy();saved.remove("opacityPaint");saved.remove("hostDocumentId");saved.remove("viewId");
+        String key=scope(id),document=NativePackageViews.document(id),encoded=saved.toString();var storage=store();var result=new CompletableFuture<Void>();
         CompletableFuture.runAsync(()->{try{storage.save(key,encoded);if(!storage.load(key).equals(encoded))throw new IllegalStateException("UI_LAYOUT_READBACK_FAILED");}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((ignored,error)->Minecraft.getInstance().execute(()->{
             if(error!=null)result.completeExceptionally(error);else if(!NativePackageViews.owns(id)||!document.equals(NativePackageViews.document(id)))result.completeExceptionally(new IllegalStateException("STALE_VIEW"));else result.complete(null);
         }));return result;

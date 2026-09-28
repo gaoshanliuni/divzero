@@ -22,7 +22,7 @@ import java.util.function.BooleanSupplier;
 public final class NativeViewCapture {
     public record Captured(String documentId,String layoutIdentity,int width,int height,double frameX,double frameY,double scaleX,double scaleY,byte[] png){public Captured{png=png.clone();}@Override public byte[] png(){return png.clone();}}
     private static boolean busy;
-    public static CompletableFuture<Captured> capture(LdInterfaceRenderer.Rendered isolated,String document,String layout,int guiWidth,int guiHeight,BooleanSupplier current){
+    public static CompletableFuture<Captured> capture(LdInterfaceRenderer.Rendered isolated,String document,String layout,int guiWidth,int guiHeight,BooleanSupplier current,LdInterfaceRenderer.Rendered source){
         var mc=Minecraft.getInstance();if(!mc.isSameThread())return CompletableFuture.failedFuture(new IllegalStateException("NATIVE_CAPTURE_CLIENT_THREAD"));
         if(busy||!current.getAsBoolean()){isolated.close();return CompletableFuture.failedFuture(new IllegalStateException("NATIVE_CAPTURE_UNAVAILABLE"));}
         double scale=mc.getWindow().getGuiScale();int width=(int)Math.ceil(guiWidth*scale),height=(int)Math.ceil(guiHeight*scale);
@@ -30,7 +30,7 @@ public final class NativeViewCapture {
         var result=new CompletableFuture<Captured>();busy=true;OffscreenSurface surface=null;GuiRenderer renderer=null;
         try {
             surface=new OffscreenSurface(mc.getWindow().handle(),width,height,width,height);
-            var ui=isolated.ui;isolated.root.getLayout().width(guiWidth).height(guiHeight).left(0).top(0);ui.init(guiWidth,guiHeight);
+            var ui=isolated.ui;isolated.root.getLayout().width(guiWidth).height(guiHeight).left(0).top(0);ui.init(guiWidth,guiHeight);source.copyScrollTo(isolated);
             var state=new GuiRenderState();var graphics=new GuiGraphicsExtractor(mc,state,-10000,-10000);
             var main=((GameRendererAccessor)(Object)mc.gameRenderer).ldlib2$getGuiRenderer();var shared=(IGuiRendererExt)(Object)main;
             renderer=new GuiRenderer(state,shared.ldlib2$getBufferSource(),shared.ldlib2$getSubmitNodeCollector(),shared.ldlib2$getFeatureRenderDispatcher(),List.of());
@@ -40,6 +40,7 @@ public final class NativeViewCapture {
             var target=surface.target();var fog=IGuiRendererExt.ldlib2$getLastFogBuffer();if(fog==null)throw new IllegalStateException("CAPTURE_PAINT_PENDING");
             try(var selected=UISurface.push(surface);var active=ModularUI.scopedActive(ui)){
                 ModularUIClientAccess.getWidget(ui).extractRenderState(graphics,-10000,-10000,0);
+                if(!source.sameGeometry(isolated))throw new IllegalStateException("NATIVE_CAPTURE_LAYOUT_CHANGED");
                 RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(target.getColorTexture(),0,target.getDepthTexture(),1.0);
                 try(var output=RenderTargetScope.redirect(target.getColorTextureView(),target.getDepthTextureView())){
                     IGuiRendererExt.ldlib2$pushTargetOverride(target);IGuiRendererExt.ldlib2$pushOrthoOverride(guiWidth,guiHeight,width,height,(int)scale);

@@ -30,7 +30,7 @@ public final class LdInterfaceRenderer {
         var element=bridge.create(node.toString());
         for(var child:node.path("children"))bridge.add(element,buildNode(child,bridge));
         String id=node.path("id").asText(),type=node.path("type").asText();
-        if(type.equals("input")||type.equals("toggle"))bridge.listen(element,"change",value->bridge.dispatch(id,"change",value));
+        if(type.equals("input")||type.equals("toggle")||type.equals("select"))bridge.listen(element,"change",value->bridge.dispatch(id,"change",value));
         if(node.path("events").has("click"))bridge.listen(element,"click",value->bridge.dispatch(id,"click",value));
         return element;
     }
@@ -51,13 +51,14 @@ public final class LdInterfaceRenderer {
             JsonNode n=JSON.readTree(json);String id=n.path("id").asText(),type=n.path("type").asText();
             UIElement element=switch(type){
                 case "label"->new TextElement();case "button"->new Button();case "input"->new TextField();
-                case "toggle"->new Toggle();case "progress"->new ProgressBar();case "scroll"->new ScrollerView();
+                case "toggle"->new Toggle();case "select"->new Selector<String>();case "progress"->new ProgressBar();case "scroll"->new ScrollerView();
                 case "row","column","panel","image"->new UIElement();default->throw new IllegalArgumentException("INTERFACE_WIDGET_TYPE: "+type);
             };
             element.setId(id);nodes.put(id,element);specs.put(id,n);
             if(element instanceof TextElement label){label.textStyle(style->style.adaptiveWidth(false).adaptiveHeight(true).textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP));label.getLayout().widthPercent(100).minHeight(12).flexShrink(0);}
             if(element instanceof TextField||element instanceof Button||element instanceof Toggle)element.getLayout().minHeight(22).flexShrink(0);
             if(element instanceof ProgressBar)element.getLayout().minHeight(18);
+            if(element instanceof Selector<?> raw){@SuppressWarnings("unchecked")var selector=(Selector<String>)raw;var labels=new LinkedHashMap<String,String>();for(var option:n.path("options"))labels.put(option.path("value").asText(),option.path("label").asText());selector.setCandidateUIProvider(value->new TextElement().setText(Component.literal(value==null?"":labels.getOrDefault(value,value))));selector.setCandidates(List.copyOf(labels.keySet()));selector.getLayout().minHeight(22).flexShrink(0);}
             if(element instanceof TextField field)field.textFieldStyle(style->style.placeholder(Component.empty()));
             if(element instanceof TextField field&&n.path("secret").asBoolean(false))field.setFormatter(value->Component.literal("•".repeat(value.length())));
             if(element instanceof ProgressBar progress){progress.label.setText(Component.literal(n.path("text").asText("")));progress.label.setDisplay(n.has("text"));}
@@ -84,6 +85,7 @@ public final class LdInterfaceRenderer {
             if(event.equals("change")){
                 if(element instanceof TextField input)input.registerValueListener(value->{if(ready)listener.accept(value);});
                 else if(element instanceof Toggle toggle)toggle.registerValueListener(value->{if(ready)listener.accept(value.toString());});
+                else if(element instanceof Selector<?> selector)selector.registerValueListener(value->{if(ready&&value!=null)listener.accept(value.toString());});
             }else if(element instanceof Button button)button.setOnClick(e->{if(ready)listener.accept("");});
             else element.addEventListener(UIEvents.MOUSE_DOWN,e->{if(ready)listener.accept("");});
         }
@@ -122,6 +124,15 @@ public final class LdInterfaceRenderer {
             try{updates.forEach((node,update)->{set(node,update.value);node.setDisplay(update.visible);node.setActive(update.enabled);});}finally{bridge.ready=true;}
         }
         public UIElement node(String id){return nodes.get(id);}
+        public boolean popupOpen(){return nodes.values().stream().anyMatch(element->element instanceof Selector<?> selector&&selector.isOpen());}
+        public void copyScrollTo(Rendered target){
+            for(var entry:nodes.entrySet())if(entry.getValue() instanceof ScrollerView source&&target.node(entry.getKey()) instanceof ScrollerView next){next.horizontalScroller.setNormalizedValue(source.horizontalScroller.getNormalizedValue());next.verticalScroller.setNormalizedValue(source.verticalScroller.getNormalizedValue());}
+        }
+        public boolean sameGeometry(Rendered target){
+            for(var entry:nodes.entrySet()){var a=entry.getValue();var b=target.node(entry.getKey());if(b==null||a.isDisplayed()!=b.isDisplayed())return false;if(!a.isDisplayed())continue;
+                if(Math.abs((a.getPositionX()-root.getPositionX())-(b.getPositionX()-target.root.getPositionX()))>1||Math.abs((a.getPositionY()-root.getPositionY())-(b.getPositionY()-target.root.getPositionY()))>1||Math.abs(a.getSizeWidth()-b.getSizeWidth())>1||Math.abs(a.getSizeHeight()-b.getSizeHeight())>1)return false;
+            }return true;
+        }
         public void onPaint(Runnable witness){
             var marker=new UIElement(){@Override protected void drawBackgroundAdditional(com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext context){if(!closed&&root.getSizeWidth()>0&&root.getSizeHeight()>0)witness.run();}};
             marker.getLayout().positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE).left(0).top(0).width(1).height(1);
@@ -163,6 +174,7 @@ public final class LdInterfaceRenderer {
     private static void validateValue(UIElement element,JsonNode value){
         if(value.isMissingNode()||value.isNull())return;
         if(element instanceof ProgressBar&&(!value.isNumber()||!Double.isFinite(value.doubleValue())||value.doubleValue()<0||value.doubleValue()>1))throw new IllegalArgumentException("INTERFACE_PROGRESS_VALUE: "+element.getId());
+        if(element instanceof Selector<?> selector&&(!value.isTextual()||!value.asText().isEmpty()&&!selector.getCandidates().contains(value.asText())))throw new IllegalArgumentException("INTERFACE_SELECT_VALUE: "+element.getId());
         if(element instanceof Toggle&&!value.isBoolean())throw new IllegalArgumentException("INTERFACE_TOGGLE_VALUE: "+element.getId());
         if((element instanceof TextField||element instanceof TextElement||element instanceof Button)&&!value.isValueNode())throw new IllegalArgumentException("INTERFACE_TEXT_VALUE: "+element.getId());
     }
@@ -172,6 +184,7 @@ public final class LdInterfaceRenderer {
         else if(element instanceof Button button)button.setText(Component.literal(text));
         else if(element instanceof TextField input){if(!input.getValue().equals(text))input.setText(text,false);}
         else if(element instanceof Toggle toggle)toggle.setOn(value.asBoolean(false),false);
+        else if(element instanceof Selector<?> raw){@SuppressWarnings("unchecked")var selector=(Selector<String>)raw;selector.setValue(text.isEmpty()?null:text,false);}
         else if(element instanceof ProgressBar progress)progress.setProgress((float)value.asDouble(0));
     }
 }

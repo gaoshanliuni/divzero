@@ -7,7 +7,7 @@
         for (const child of (node.children || [])) {
             bridge.add(element, build(child));
         }
-        if (node.type === 'input' || node.type === 'toggle') {
+        if (node.type === 'input' || node.type === 'toggle' || node.type === 'select') {
             bridge.listen(element, 'change', value => bridge.dispatch(node.id, 'change', value));
         }
         if (node.events && node.events.click) {

@@ -17,6 +17,9 @@ public final class UiPresentationVerification {
         return Math.abs(actual.x()-expected.x())<=1&&Math.abs(actual.y()-expected.y())<=1&&Math.abs(actual.width()-expected.width())<=1&&Math.abs(actual.height()-expected.height())<=1;
     }catch(Exception ignored){return false;}}
     private static boolean validPaint(JsonNode paint,double alpha){
+        if(paint.path("status").asText().equals("NATIVE_LDLIB2_PAINTED")){
+            try{java.util.UUID.fromString(paint.path("hostDocumentId").asText());return !paint.path("viewId").asText().isBlank()&&paint.path("paintSequence").asLong()>0&&paint.path("layoutRevision").asLong()>0&&paint.path("opacity").isNumber()&&Double.compare(paint.path("opacity").asDouble(),alpha)==0&&paint.path("alpha").asLong(-1)==Math.round(alpha*255);}catch(Exception invalid){return false;}
+        }
         try{java.util.UUID.fromString(paint.path("hostDocumentId").asText());return paint.path("status").asText().equals("NATIVE_ATLAS_PAINTED")&&paint.path("token").asText().matches("[a-f0-9]{24}")&&!paint.path("token").asText().equals("0".repeat(24))&&!paint.path("viewId").asText().isBlank()&&paint.path("paintSequence").asLong()>0&&paint.path("opacity").isNumber()&&Double.compare(paint.path("opacity").asDouble(),alpha)==0&&paint.path("alpha").asLong(-1)==Math.round(alpha*255);}catch(Exception bad){return false;}
     }
 

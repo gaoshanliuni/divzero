@@ -11,7 +11,7 @@ public record NativePackageDefinition(InterfaceDefinition view,Map<String,Reques
     public static final Set<String> ACTIONS=Set.of("scoreview.patch","container.act","worldui.action","delivery.dataRead","feedback.submit","state.put","state.remove");
     public record Request(String action,Map<String,JsonNode> arguments,String result,int intervalTicks) {
         public Request{arguments=Map.copyOf(arguments);}
-        public Map<String,String> arguments(Map<String,JsonNode> data){var values=new LinkedHashMap<String,String>();arguments.forEach((key,expression)->{var value=InterfaceExpression.evaluate(expression,data);values.put(key,value.isTextual()?value.asText():value.toString());});return Map.copyOf(values);}
+        public Map<String,String> arguments(Map<String,JsonNode> data){var values=new LinkedHashMap<String,String>();arguments.forEach((key,expression)->{var value=InterfaceExpression.evaluate(expression,data);values.put(key,key.equals("valueJson")?value.toString():value.isTextual()?value.asText():value.toString());});return Map.copyOf(values);}
     }
     public NativePackageDefinition{reads=Map.copyOf(reads);actions=Map.copyOf(actions);}
     public static NativePackageDefinition parse(String source){
@@ -35,7 +35,7 @@ public record NativePackageDefinition(InterfaceDefinition view,Map<String,Reques
         var out=new LinkedHashMap<String,Request>();
         for(var entry:node.properties()){
             id(entry.getKey());var value=entry.getValue();fields(value,Set.of("action","arguments","result","intervalTicks"));
-            String action=value.path("action").asText();if(!(read?READS:ACTIONS).contains(action))throw new IllegalArgumentException("NATIVE_PACKAGE_ACTION");
+            String action=value.path("action").asText();if(!(read?READS.contains(action):ACTIONS.contains(action)||READS.contains(action)))throw new IllegalArgumentException("NATIVE_PACKAGE_ACTION");
             var arguments=value.path("arguments");if(!arguments.isObject()||arguments.size()>32)throw new IllegalArgumentException("NATIVE_PACKAGE_ARGUMENTS");
             var expressions=new LinkedHashMap<String,JsonNode>();for(var argument:arguments.properties()){if(argument.getKey().isBlank()||argument.getKey().length()>128)throw new IllegalArgumentException("NATIVE_PACKAGE_ARGUMENT_NAME");InterfaceExpression.validate(argument.getValue());expressions.put(argument.getKey(),argument.getValue().deepCopy());}
             String result=value.path("result").asText(entry.getKey());id(result);int ticks=value.path("intervalTicks").asInt(0);
