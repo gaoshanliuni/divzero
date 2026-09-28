@@ -64,7 +64,7 @@ public final class NativeButtonSmokeClient {
         later(5,"unowned-hover",()->move(test));
         later(5,"unowned-button-unchanged",()->{press(test,0);require(clicks==4,"OTHER_MOD_BUTTON_POLICY_CHANGED");release(test,0);});
         // Dialog has its own KEY_DOWN handler; isolate button fallthrough from that library policy.
-        later(3,"owned-flat-screen",()->{var root=new UIElement();screen=new TestScreen(root,true);test=new Button().setText("Keyboard fallthrough");root.addChild(test);Minecraft.getInstance().setScreen(screen);});
+        later(3,"owned-flat-screen",()->{var plainRoot=new UIElement();screen=new TestScreen(plainRoot,true);test=new Button().setText("Keyboard fallthrough");plainRoot.addChild(test);Minecraft.getInstance().setScreen(screen);});
         later(5,"unrelated-key-fallthrough",()->{screen.getModularUI().requestFocus(test);require(!screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_A,0,0)),"UNRELATED_KEY_DOWN_SWALLOWED");require(!screen.keyReleased(new KeyEvent(GLFW.GLFW_KEY_A,0,0)),"UNRELATED_KEY_UP_SWALLOWED");screen.keyPressed(new KeyEvent(GLFW.GLFW_KEY_ESCAPE,0,0));require(Minecraft.getInstance().screen!=screen,"ESCAPE_CLOSE_SWALLOWED");});
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
