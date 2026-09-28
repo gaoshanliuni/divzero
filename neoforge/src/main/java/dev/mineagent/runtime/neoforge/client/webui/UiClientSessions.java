@@ -56,6 +56,7 @@ public final class UiClientSessions {
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(opening, "openShell", "{}"));
     }
     private static void accept(UiPayloads.Event packet) {
+        if(packet.channel().equals("agentPanelOpen")){var data=JsonParser.parseString(packet.json()).getAsJsonObject();dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen.open(UUID.fromString(data.get("agentId").getAsString()),data.get("name").getAsString());return;}
         if(packet.channel().equals("nativeInterface")){
             if(net.neoforged.fml.ModList.get().isLoaded("ldlib2"))dev.mineagent.runtime.neoforge.client.nativeui.NativeInterfacesClient.accept(packet);
             else ClientPacketDistributor.sendToServer(new UiPayloads.Command(packet.requestId(),"nativeInterfaceReply","{\"status\":\"REJECTED\",\"error\":\"NATIVE_UI_LDLIB2_REQUIRED\"}"));

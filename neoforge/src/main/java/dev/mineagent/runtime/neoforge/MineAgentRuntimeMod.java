@@ -551,8 +551,10 @@ public final class MineAgentRuntimeMod {
                 || !(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)) {
             return;
         }
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
-                player, new dev.mineagent.runtime.neoforge.network.MineAgentPayloads.OpenPanel("AGENTS"));
+        var agent=(dev.mineagent.runtime.neoforge.body.MineAgentPlayer)event.getTarget();
+        var payload=new com.google.gson.JsonObject();payload.addProperty("agentId",agent.agentId().toString());payload.addProperty("name",agent.getName().getString());
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(java.util.UUID.randomUUID(),"agentPanelOpen",payload.toString()));
         event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
         event.setCanceled(true);
     }

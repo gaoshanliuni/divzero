@@ -44,7 +44,10 @@ public final class NativeUiSmokeClient {
             if(stage==6){screenshot("03-revised.png");call("set_native_ui",base(1).put("source",SOURCE),r->{require("REJECTED".equals(r.get("status")),"STALE_UPDATE_ACCEPTED");stage=7;});return;}
             if(stage==7){call("control_native_ui",base(4).put("action","release"),r->{applied(r,5);require(mc.screen==null,"HUD_RELEASE_LEFT_SCREEN");stage=8;});return;}
             if(stage==8){if(++wait<25)return;wait=0;screenshot("04-restored-hud.png");call("inspect_native_ui",JSON.createObjectNode().put("id","quest"),r->{var n=JSON.valueToTree(r);require(n.path("saved").path("revision").asLong()==5,"STORE_REVISION");require(!n.path("client").path("views").get(0).path("interactive").asBoolean(),"HUD_STILL_INTERACTIVE");stage=9;});return;}
-            if(stage==9){if(++wait<20)return;Files.writeString(output().resolve("result.json"),JSON.writeValueAsString(Map.of("status","PASS","modelCalls",0,"receipts",receipts,"coverage",List.of("server_rpc","persistent_revision","kubejs_tree","native_hud","explicit_interaction","live_input","button_binding","incremental_data","hot_structure","retained_draft","bad_candidate_rollback","stale_rejection"))));finished=true;mc.stop();}
+            if(stage==9){if(++wait<20)return;wait=0;NativeWorkspaceScreen.open();stage=10;return;}
+            if(stage==10){if(++wait<35)return;wait=0;require(mc.screen instanceof NativeWorkspaceScreen,"NATIVE_WORKSPACE_NOT_OPEN");screenshot("05-native-workspace.png");AgentProfileScreen.open(agent,"NativeUiBuilder");stage=11;return;}
+            if(stage==11){if(++wait<35)return;wait=0;require(mc.screen instanceof AgentProfileScreen,"AI_PROFILE_NOT_OPEN");screenshot("06-agent-profile.png");stage=12;return;}
+            if(stage==12){if(++wait<20)return;Files.writeString(output().resolve("result.json"),JSON.writeValueAsString(Map.of("status","PASS","modelCalls",0,"receipts",receipts,"coverage",List.of("server_rpc","persistent_revision","kubejs_tree","native_hud","explicit_interaction","live_input","button_binding","incremental_data","hot_structure","retained_draft","bad_candidate_rollback","stale_rejection"))));finished=true;mc.stop();}
         }catch(Exception error){fail(error);}
     }
     private static ObjectNode base(long revision){return JSON.createObjectNode().put("id","quest").put("expected_revision",revision);}

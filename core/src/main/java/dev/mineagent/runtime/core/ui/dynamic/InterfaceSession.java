@@ -32,6 +32,7 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
         try{
             var next=InterfaceDefinition.parse(source);if(!scope.view.equals(next.id()))throw InterfaceDefinition.error("$.id","VIEW_MISMATCH");
             var values=new LinkedHashMap<>(next.data());
+            if(definition!=null){var priorDefaults=definition.data();for(var entry:data.entrySet())if(!dirtyInputs.contains(entry.getKey())&&values.containsKey(entry.getKey())&&Objects.equals(priorDefaults.get(entry.getKey()),values.get(entry.getKey())))values.put(entry.getKey(),entry.getValue().deepCopy());}
             // Only matching stable input identities inherit drafts. A renamed/type-changed binding is a new control.
             var kept=new HashSet<String>();
             if(definition!=null){var old=definition.inputBindings();for(var entry:next.inputBindings().entrySet())
@@ -64,11 +65,16 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
         }
     }
     public void input(Scope expected,long expectedRevision,String nodeId,JsonNode value){
+        input(expected,expectedRevision,nodeId,value,ignored->{});
+    }
+    public void input(Scope expected,long expectedRevision,String nodeId,JsonNode value,java.util.function.Consumer<Map<String,JsonNode>> apply){
         require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");
         String binding=definition.inputBindings().get(nodeId);if(binding==null)throw new IllegalArgumentException("INTERFACE_INPUT_NODE");
-        if(!definition.interactiveNode(nodeId))throw new IllegalStateException("INTERFACE_DISABLED");
+        if(!definition.interactiveNode(nodeId,data))throw new IllegalStateException("INTERFACE_DISABLED");
         if(value==null||binding.startsWith("toggle:")&&!value.isBoolean()||binding.startsWith("input:")&&(!value.isTextual()||value.textValue().length()>16384))throw new IllegalArgumentException("INTERFACE_INPUT_VALUE");
-        String key=binding.substring(binding.indexOf(':')+1);data.put(key,value.deepCopy());dirtyInputs.add(key);dataRevision++;
+        String key=binding.substring(binding.indexOf(':')+1);var next=copy(data);next.put(key,value.deepCopy());long expectedData=dataRevision;
+        try{apply.accept(Collections.unmodifiableMap(copy(next)));require(expected,expectedRevision);if(dataRevision!=expectedData)throw new IllegalStateException("INTERFACE_STALE_DATA");data=next;dirtyInputs.add(key);dataRevision++;}
+        catch(RuntimeException error){apply.accept(Collections.unmodifiableMap(copy(data)));throw error;}
     }
     /** Explicit local script actions may update a draft; unsolicited server patches may not. */
     public Receipt localData(Scope expected,long expectedRevision,Map<String,JsonNode> values,java.util.function.Consumer<Map<String,JsonNode>> apply){
@@ -79,7 +85,7 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
     public JsonNode actions(Scope expected,long expectedRevision,String node,String event){
         require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");
         var element=definition.node(node).orElseThrow(()->new IllegalArgumentException("INTERFACE_UNKNOWN_NODE"));
-        if(!definition.interactiveNode(node))throw new IllegalStateException("INTERFACE_DISABLED");
+        if(!definition.interactiveNode(node,data))throw new IllegalStateException("INTERFACE_DISABLED");
         return element.path("events").path(event).deepCopy();
     }
     private void require(Scope expected,long rev){requireOpen();if(!scope.equals(expected))throw new SecurityException("INTERFACE_SCOPE_CHANGED");if(revision!=rev)throw new IllegalStateException("INTERFACE_STALE_REVISION");}

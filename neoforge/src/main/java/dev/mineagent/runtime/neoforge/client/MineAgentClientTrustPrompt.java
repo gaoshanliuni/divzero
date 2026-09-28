@@ -3,7 +3,8 @@ package dev.mineagent.runtime.neoforge.client;
 import dev.mineagent.runtime.api.config.PanelSection;
 import dev.mineagent.runtime.client.trust.ServerTrustStore;
 import dev.mineagent.runtime.client.trust.TrustStatus;
-import dev.mineagent.runtime.neoforge.client.screen.ControlCenterScreen;
+import dev.mineagent.runtime.neoforge.client.nativeui.WorkspaceSetupScreen;
+import dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen;
 import dev.mineagent.runtime.neoforge.network.MineAgentPayloads;
 import dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox;
 import net.minecraft.client.Minecraft;
@@ -26,7 +27,7 @@ public final class MineAgentClientTrustPrompt {
             TrustStatus status = store.status(serverId, fingerprint);
             pendingWebNotice = java.util.Map.of("trust", status.name(), "fingerprint", fingerprint,
                     "initialized", Boolean.parseBoolean(payload.values().getOrDefault("runtime.initialized", "false")));
-            if (dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE.browser() != null) {
+            if (minecraft.screen instanceof NativeWorkspaceScreen || minecraft.screen instanceof WorkspaceSetupScreen) {
                 // Do not steal focus from a player's managed form. This notice grants no trust or permissions.
                 flushWebNotice();
                 return;
@@ -44,16 +45,16 @@ public final class MineAgentClientTrustPrompt {
                 }
                 return;
             }
-            if (status != TrustStatus.TRUSTED && !(minecraft.screen instanceof ControlCenterScreen)) {
-                minecraft.setScreen(ControlCenterScreen.create(minecraft.screen, PanelSection.PERMISSIONS));
+            if (status != TrustStatus.TRUSTED && !(minecraft.screen instanceof WorkspaceSetupScreen)) {
+                minecraft.setScreen(new WorkspaceSetupScreen(minecraft.screen));
             } else if (status == TrustStatus.TRUSTED
                     && !Boolean.parseBoolean(payload.values().getOrDefault("runtime.initialized", "false"))
-                    && !(minecraft.screen instanceof ControlCenterScreen)) {
-                minecraft.setScreen(ControlCenterScreen.create(minecraft.screen, PanelSection.PROVIDERS));
+                    && !(minecraft.screen instanceof WorkspaceSetupScreen)) {
+                minecraft.setScreen(new WorkspaceSetupScreen(minecraft.screen));
             }
         } catch (Exception ignored) {
-            if (!(minecraft.screen instanceof ControlCenterScreen)) {
-                minecraft.setScreen(ControlCenterScreen.create(minecraft.screen, PanelSection.PERMISSIONS));
+            if (!(minecraft.screen instanceof WorkspaceSetupScreen)) {
+                minecraft.setScreen(new WorkspaceSetupScreen(minecraft.screen));
             }
         }
     }

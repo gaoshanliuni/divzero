@@ -42,7 +42,13 @@ References: [KubeJS UI support](https://low-drag-mc.github.io/LowDragMC-Doc/en/l
 
 ## Pending integration and acceptance
 
-The foundations above do not yet replace production F2/Ctrl+M or remove MCEF. Required remaining work includes complete workspace port, server lifecycle/persistence/synchronization and application action routing, native HUD registration/restoration, migration of generated HTML content and tools, preview/IME/accessibility parity, MCEF removal and packaging cleanup, persistent construction components/diffs/history, semantic verification gating, and actual in-game acceptance.
+F2/Ctrl+M now route to the direct LDLib2 workspace. Its current desktop has draggable/resizable windows, a dock, conversation/AI selection, complete message reads, files and basic settings. Right-clicking an AI opens its own native profile with health, food, persona, conversations, content and inventory. Built-in screens do not use KubeJS. The port is incomplete; these entry changes are not feature parity or MCEF removal.
+
+Remaining work includes advanced workspace/package actions and previews, server lifecycle/reconciliation and application action routing, native HUD feed/restoration, migration of generated HTML content and tools, IME/accessibility acceptance, MCEF removal and packaging cleanup, persistent construction components/diffs/history, semantic verification gating, and actual in-game acceptance.
+
+Current candidate adds shared slate/mint styling, retained drafts and uncertain-send operation IDs, per-server/world/player window positions, pixel-based chat anchors, bounded dynamic data expressions, and a dedicated trust/setup screen instead of global control-center navigation. Reopening an existing settings window preserves unsaved edits. Automatic conversation titles use the agent's provider after its first response; player renames win any race. These changes still need the candidate's Actions/native results below before being described as verified.
+
+The previous `1d51228` native fixture successfully created a passive KubeJS/LDLib2 HUD and persisted its revision, then failed entering interaction because two null screens compared equal. The candidate guards null screen ownership. The failed fixture and screenshots are retained; they are not final workspace acceptance or a polished F2 preview. No real model calls have been made in this migration batch.
 
 Core tests cover geometry equivalence, holes/caps/rejections, failed replacement, retained input, incremental data updates, scope/revision rejection and passive interaction. Tests must run on public GitHub Actions under the repository's no-local-compilation rule; native rendering and KubeJS execution require separate in-game evidence. Until such evidence exists, this is not a usable replacement build.
 

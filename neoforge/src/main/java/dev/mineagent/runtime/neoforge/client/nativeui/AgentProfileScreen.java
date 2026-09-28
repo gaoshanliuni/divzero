@@ -1,0 +1,83 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+
+import com.google.gson.*;
+import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
+import com.lowdragmc.lowdraglib2.gui.texture.ItemStackTexture;
+import com.lowdragmc.lowdraglib2.gui.ui.*;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
+import dev.mineagent.runtime.neoforge.client.language.ClientLanguage;
+import dev.vfyjxf.taffy.style.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import java.util.*;
+
+/** Right-click profile for one immutable AI id; no global control-center menu is exposed. */
+public final class AgentProfileScreen extends ModularUIScreen {
+    private final UUID agent;private final Object connection;private final UIElement content=new UIElement();
+    private final TextElement title,summary,status;private final ProgressBar health=new ProgressBar();
+    private JsonObject snapshot;private String tab="overview";private int inventoryOffset,contentOffset;private long nextRead;private boolean busy;private long personaRevision=-1,uiEpoch;
+    private AgentProfileScreen(UUID agent,String name){this(agent,name,new UIElement());}
+    private AgentProfileScreen(UUID agent,String name,UIElement root){
+        super(new ModularUI(UI.of(root,size->size),Minecraft.getInstance().player),Component.literal(name));this.agent=agent;connection=Minecraft.getInstance().getConnection();
+        root.getLayout().widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER);
+        var card=NativeUiTheme.card(new UIElement());card.getLayout().widthPercent(86).heightPercent(86).maxWidth(650).paddingAll(14);root.addChild(card);
+        var top=WorkspacePanels.row();top.getLayout().height(30);card.addChild(top);title=NativeUiTheme.text(name,NativeUiTheme.TEXT,14);title.getLayout().flex(1);top.addChild(title);top.addChild(NativeUiTheme.button("×",this::onClose));
+        var identity=WorkspacePanels.row();identity.getLayout().height(76);card.addChild(identity);var portrait=NativeUiTheme.card(new UIElement());portrait.getLayout().width(56).height(72);portrait.getStyle().overlayTexture(com.lowdragmc.lowdraglib2.gui.texture.GuiTexture.of((context,x,y,w,h)->{var mc=Minecraft.getInstance();if(mc.level!=null&&mc.level.getEntity(agent) instanceof net.minecraft.world.entity.LivingEntity entity)net.minecraft.client.gui.screens.inventory.InventoryScreen.renderEntityInInventoryFollowsAngle(context.graphics,(int)x,(int)y,(int)(x+w),(int)(y+h),28,0,0,0,entity);}));identity.addChild(portrait);
+        var metrics=new UIElement();metrics.getLayout().flex(1).paddingLeft(9).paddingTop(12);identity.addChild(metrics);summary=NativeUiTheme.text("",NativeUiTheme.MUTED,9);metrics.addChild(summary);health.getLayout().height(8).widthPercent(100).marginTop(6).marginBottom(10);health.label.setDisplay(false);metrics.addChild(health);
+        var body=WorkspacePanels.row();body.getLayout().flex(1);card.addChild(body);var navigation=new UIElement();navigation.getLayout().width(108).heightPercent(100);body.addChild(navigation);content.getLayout().flex(1).heightPercent(100).paddingLeft(12);body.addChild(content);
+        for(var item:List.of(new String[]{"overview","状态"},new String[]{"persona","人设"},new String[]{"chat","对话"},new String[]{"content","创建的内容"},new String[]{"inventory","背包"})){
+            var button=NativeUiTheme.button(t(item[1]),()->{tab=item[0];draw();});button.getLayout().widthPercent(100).marginBottom(5);navigation.addChild(button);
+        }
+        status=NativeUiTheme.text(t("读取 AI…"),NativeUiTheme.MUTED,8);status.getLayout().height(18);card.addChild(status);draw();
+    }
+    public static void open(UUID agent,String name){Minecraft.getInstance().setScreen(new AgentProfileScreen(agent,name));NativeWorkspaceConnection.open();}
+    private static String t(String text){return ClientLanguage.t(text);}
+    private boolean current(){return connection==Minecraft.getInstance().getConnection()&&Minecraft.getInstance().screen==this;}
+    @Override public void tick(){super.tick();if(!current())return;long now=System.currentTimeMillis();if(busy||now<nextRead||!NativeWorkspaceConnection.ready())return;busy=true;nextRead=now+1000;
+        WorkspacePanels.request("agent.panelRead",Map.of("agentId",agent.toString(),"inventoryOffset",Integer.toString(inventoryOffset),"contentOffset",Integer.toString(contentOffset))).whenComplete((receipt,error)->{
+            busy=false;if(!current())return;if(error!=null){WorkspacePanels.failure(status,error);return;}var value=WorkspacePanels.state(receipt);boolean first=snapshot==null;boolean changed=first||tab.equals("inventory")&&!value.get("inventory").equals(snapshot.get("inventory"))||tab.equals("content")&&!value.get("contents").equals(snapshot.get("contents"));snapshot=value;title.setText(Component.literal(value.get("name").getAsString()));float max=value.get("maxHealth").getAsFloat(),hp=value.get("health").getAsFloat();health.setProgress(max<=0?0:hp/max);summary.setText(Component.literal(t(value.get("bodyState").getAsString())+"  ·  "+t("生命值")+" "+(int)hp+" / "+(int)max+"  ·  "+t("饱食度")+" "+value.get("food").getAsInt()));if(!tab.equals("persona"))status.setText(Component.literal(""));if(changed&&(!tab.equals("persona")||first))draw();
+        });
+    }
+    private void draw(){
+        uiEpoch++;content.clearAllChildren();
+        switch(tab){
+            case "persona"->persona();
+            case "chat"->conversations();
+            case "inventory"->inventory();
+            case "content"->contents();
+            default->{content.addChild(NativeUiTheme.text(t("AI 专属面板"),NativeUiTheme.ACCENT,12));content.addChild(WorkspacePanels.text(t("在这里查看该 AI 的状态、切换人设和管理对话。")));content.addChild(NativeUiTheme.button(t("选择对话"),()->NativeWorkspaceScreen.openForAgent(agent.toString(),title.getText().getString())));if(snapshot!=null)content.addChild(WorkspacePanels.text(t("模式")+" · "+t(snapshot.get("mode").getAsString())));}
+        }
+    }
+    private void persona(){
+        if(snapshot!=null&&!snapshot.get("canEditPersona").getAsBoolean()){content.addChild(WorkspacePanels.text(t("没有权限")));return;}
+        long epoch=uiEpoch;var editor=new TextArea();editor.getLayout().flex(1).widthPercent(100);content.addChild(editor);personaRevision=-1;
+        WorkspacePanels.request("persona.read",Map.of("agentId",agent.toString())).whenComplete((receipt,error)->{if(!current()||uiEpoch!=epoch||!tab.equals("persona"))return;if(error!=null){WorkspacePanels.failure(status,error);return;}var value=WorkspacePanels.state(receipt);personaRevision=value.get("revision").getAsLong();editor.setValue(value.get("text").getAsString().split("\n",-1),false);});
+        content.addChild(NativeUiTheme.button(t("保存人设"),()->{if(personaRevision<0)return;WorkspacePanels.request("persona.save",Map.of("agentId",agent.toString(),"expectedRevision",Long.toString(personaRevision),"text",String.join("\n",editor.getValue()))).whenComplete((receipt,error)->{if(!current()||uiEpoch!=epoch)return;if(error!=null)WorkspacePanels.failure(status,error);else{status.setText(Component.literal(t("已保存")));personaRevision=WorkspacePanels.state(receipt).get("appliedRevision").getAsLong();}});}));
+    }
+    private void conversations(){
+        long epoch=uiEpoch;content.addChild(WorkspacePanels.text(t("选择已有对话，或让 AI 为新对话生成简称。")));var list=WorkspacePanels.scroller(content);
+        content.addChild(NativeUiTheme.button(t("新建对话"),()->WorkspacePanels.request("conversation.write",Map.of("kind","create","agentId",agent.toString(),"title",t("新的对话"),"autoTitle","true")).whenComplete((receipt,error)->{if(!current())return;if(error!=null)WorkspacePanels.failure(status,error);else NativeWorkspaceScreen.openConversation(agent.toString(),title.getText().getString(),WorkspacePanels.state(receipt).get("conversationId").getAsString());})));
+        WorkspacePanels.request("conversation.read",Map.of("kind","list","agentId",agent.toString(),"state","ACTIVE","search","","before","0")).whenComplete((receipt,error)->{if(!current()||uiEpoch!=epoch)return;if(error!=null){WorkspacePanels.failure(status,error);return;}for(var raw:WorkspacePanels.state(receipt).getAsJsonArray("conversations")){var value=raw.getAsJsonObject();list.addScrollViewChild(NativeUiTheme.button(value.get("title").getAsString(),()->NativeWorkspaceScreen.openConversation(agent.toString(),title.getText().getString(),value.get("conversationId").getAsString())));}});
+    }
+    private void inventory(){
+        if(snapshot==null)return;if(!snapshot.get("inventoryVisible").getAsBoolean()){content.addChild(WorkspacePanels.text(t("没有权限或 AI 当前离线")));return;}
+        var list=WorkspacePanels.scroller(content);
+        for(var raw:snapshot.getAsJsonArray("inventory")){
+            var slot=raw.getAsJsonObject();var row=WorkspacePanels.row();row.getLayout().height(32).marginBottom(5);list.addScrollViewChild(row);var icon=new UIElement();icon.getLayout().width(28).height(28);row.addChild(icon);
+            if(!slot.get("empty").getAsBoolean())try{
+                ItemStack stack=slot.get("stack").getAsString().isEmpty()?new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(slot.get("item").getAsString())),slot.get("count").getAsInt()):ItemStack.CODEC.parse(Minecraft.getInstance().level.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),net.minecraft.nbt.TagParser.parseCompoundFully(slot.get("stack").getAsString())).getOrThrow();
+                icon.getStyle().backgroundTexture(new ItemStackTexture(stack));icon.getStyle().tooltips(Component.literal(slot.get("name").getAsString()));
+            }catch(Exception invalid){status.setText(Component.literal(t("部分物品预览不可用，名称与数量仍保留。")));}
+            row.addChild(WorkspacePanels.text(slot.get("empty").getAsBoolean()?"—":slot.get("name").getAsString()+" × "+slot.get("count").getAsInt()));
+        }
+        var pager=WorkspacePanels.row();pager.getLayout().height(26);content.addChild(pager);pager.addChild(NativeUiTheme.button(t("上一页"),()->{inventoryOffset=Math.max(0,inventoryOffset-9);nextRead=0;}));if(snapshot.get("nextInventoryOffset").getAsInt()>=0)pager.addChild(NativeUiTheme.button(t("下一页"),()->{inventoryOffset=snapshot.get("nextInventoryOffset").getAsInt();nextRead=0;}));
+    }
+    private void contents(){
+        if(snapshot==null)return;var data=snapshot.getAsJsonObject("contents");if(data.get("private").getAsBoolean()){content.addChild(WorkspacePanels.text(t("创建的内容仅对所有者可见。")));return;}
+        var list=WorkspacePanels.scroller(content);for(var raw:data.getAsJsonArray("items")){var item=raw.getAsJsonObject();var card=WorkspacePanels.card(list,item.get("name").getAsString());card.addChild(WorkspacePanels.text(item.get("version").getAsString()));card.addChild(NativeUiTheme.button(t("在工作区查看"),()->NativeWorkspaceScreen.openPackage(item)));}
+        var pager=WorkspacePanels.row();pager.getLayout().height(26);content.addChild(pager);pager.addChild(NativeUiTheme.button(t("上一页"),()->{contentOffset=Math.max(0,contentOffset-8);nextRead=0;}));if(data.get("nextOffset").getAsInt()>=0)pager.addChild(NativeUiTheme.button(t("下一页"),()->{contentOffset=data.get("nextOffset").getAsInt();nextRead=0;}));
+    }
+}

@@ -63,7 +63,7 @@ public final class ServerNativeInterfaces {
                 message.set("data",JSON.valueToTree(values));
                 request(p,agent,message,guard).whenComplete((ack,error)->server.execute(()->{
                     if(error!=null){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CLIENT_ACK_TIMEOUT","replayed",false));return;}
-                    if(!ack.path("status").asText().equals("APPLIED")){result.complete(Map.of("status","REJECTED","error",ack.path("error").asText("NATIVE_UI_BUILD_FAILED"),"revision",expected));return;}
+                    if(!ack.path("status").asText().equals("APPLIED")){result.complete(Map.of("status",ack.path("status").asText().equals("UNKNOWN")?"UNKNOWN":"REJECTED","error",ack.path("error").asText("NATIVE_UI_BUILD_FAILED"),"revision",expected));return;}
                     if(!current(p,agent,level,guard)){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CONTEXT_CHANGED"));return;}
                     try{
                         require(ack.path("revision").asLong(-1)==expected+1&&ack.path("data").isObject(),"NATIVE_UI_INVALID_ACK");

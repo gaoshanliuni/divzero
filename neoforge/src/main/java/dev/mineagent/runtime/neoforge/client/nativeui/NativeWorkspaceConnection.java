@@ -59,10 +59,11 @@ public final class NativeWorkspaceConnection {
         command("shell.read",Map.of("viewPage","0","decisionPage","0"),UUID.randomUUID()).whenComplete((receipt,error)->{
             if(session!=expected)return;polling=false;
             if(error!=null){NativeWorkspaceScreen.notice(error.getMessage());return;}
-            if(Set.of(Code.EXPIRED,Code.STALE_VIEW,Code.VIEW_NOT_RENDERED).contains(receipt.code())){reset();open();return;}
+            if(Set.of(Code.EXPIRED,Code.STALE_VIEW,Code.VIEW_NOT_RENDERED).contains(receipt.code())){reset(false);open();return;}
             if(receipt.code()==Code.OBSERVED)NativeWorkspaceScreen.snapshot(receipt.values());else NativeWorkspaceScreen.notice(receipt.values().getOrDefault("errorCode",receipt.code().name()));
         });
     }
-    public static void reset(){for(var pending:PENDING.values())pending.future.completeExceptionally(new IllegalStateException("NATIVE_WORKSPACE_CONTEXT_CHANGED"));PENDING.clear();session=null;opening=null;connection=level=null;rendered=polling=false;NativeWorkspaceScreen.disconnected();}
+    public static void reset(){reset(true);}
+    private static void reset(boolean contextChanged){var copy=List.copyOf(PENDING.values());PENDING.clear();session=null;opening=null;connection=level=null;rendered=polling=false;if(contextChanged)NativeWorkspaceScreen.disconnected();for(var pending:copy)pending.future.completeExceptionally(new IllegalStateException("NATIVE_WORKSPACE_CONTEXT_CHANGED"));}
     private NativeWorkspaceConnection(){}
 }

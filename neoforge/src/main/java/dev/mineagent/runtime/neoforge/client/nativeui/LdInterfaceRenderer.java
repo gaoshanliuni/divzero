@@ -49,10 +49,12 @@ public final class LdInterfaceRenderer {
                 case "row","column","panel","image"->new UIElement();default->throw new IllegalArgumentException("INTERFACE_WIDGET_TYPE: "+type);
             };
             element.setId(id);nodes.put(id,element);specs.put(id,n);
+            if(element instanceof TextField field)field.textFieldStyle(style->style.placeholder(Component.empty()));
+            if(element instanceof ProgressBar progress){progress.label.setText(Component.literal(n.path("text").asText("")));progress.label.setDisplay(n.has("text"));}
             if(type.equals("row")||type.equals("column"))element.addLocalStylesheet(strictStyles("#"+id+" { flex-direction: "+type+"; }"));
             if(n.has("style"))element.addLocalStylesheet(strictStyles("#"+id+" { "+n.get("style").asText()+" }"));
             for(var cls:n.path("classes"))element.addClass(cls.asText());
-            element.setDisplay(n.path("visible").asBoolean(true));element.setActive(n.path("enabled").asBoolean(true));
+            element.setDisplay(InterfaceDefinition.boundBoolean(n,"visible",data));element.setActive(InterfaceDefinition.boundBoolean(n,"enabled",data));
             if(type.equals("image")){
                 if(!n.has("resource"))throw new IllegalArgumentException("INTERFACE_IMAGE_RESOURCE: "+id);
                 var resource=net.minecraft.resources.Identifier.parse(n.get("resource").asText());
@@ -72,7 +74,11 @@ public final class LdInterfaceRenderer {
         }
         public void dispatch(String node,String event,String value){if(ready)events.dispatch(node,event,value);}
         public void finish(UIElement root){
-            var ui=new ModularUI(UI.of(root,List.of(strictStyles(definition.stylesheet()))),Minecraft.getInstance().player);
+            ModularUI ui;
+            if(definition.surface()==InterfaceDefinition.Surface.HUD){
+                var canvas=new UIElement();canvas.getLayout().widthPercent(100).heightPercent(100);root.addClass("native_hud_root");canvas.addChild(root);
+                ui=new ModularUI(UI.of(canvas,List.of(strictStyles(".native_hud_root { position: absolute; left: 8; top: 8; }"),strictStyles(definition.stylesheet())),size->size),Minecraft.getInstance().player);
+            }else ui=new ModularUI(UI.of(root,List.of(strictStyles(definition.stylesheet()))),Minecraft.getInstance().player);
             result=new Rendered(ui,nodes,specs,this);
             var window=Minecraft.getInstance().getWindow();
             ui.init(window.getGuiScaledWidth(),window.getGuiScaledHeight());
@@ -88,18 +94,20 @@ public final class LdInterfaceRenderer {
         Rendered(ModularUI ui,Map<String,UIElement> nodes,Map<String,JsonNode> specs,BuilderBridge bridge){this.ui=ui;this.nodes=Map.copyOf(nodes);this.specs=Map.copyOf(specs);this.bridge=bridge;}
         public void update(Map<String,JsonNode> data){
             if(closed)throw new IllegalStateException("INTERFACE_RENDERER_CLOSED");
-            var updates=new LinkedHashMap<UIElement,JsonNode>();
-            for(var e:specs.entrySet())if(e.getValue().has("bind")){
-                var node=nodes.get(e.getKey());var value=value(e.getValue(),data);validateValue(node,value);updates.put(node,value);
+            record Update(JsonNode value,boolean visible,boolean enabled){}
+            var updates=new LinkedHashMap<UIElement,Update>();
+            for(var e:specs.entrySet())if(e.getValue().has("bind")||e.getValue().has("bindings")){
+                var node=nodes.get(e.getKey());var value=value(e.getValue(),data);validateValue(node,value);updates.put(node,new Update(value,InterfaceDefinition.boundBoolean(e.getValue(),"visible",data),InterfaceDefinition.boundBoolean(e.getValue(),"enabled",data)));
             }
             // Validate all bindings before mutating any control; setters never notify server-originated changes.
             bridge.ready=false;
-            try{updates.forEach(LdInterfaceRenderer::set);}finally{bridge.ready=true;}
+            try{updates.forEach((node,update)->{set(node,update.value);node.setDisplay(update.visible);node.setActive(update.enabled);});}finally{bridge.ready=true;}
         }
         public UIElement node(String id){return nodes.get(id);}
         @Override public void close(){if(!closed){closed=true;bridge.ready=false;if(!ui.isRemoved())ui.onRemoved();}}
     }
     private static JsonNode value(JsonNode spec,Map<String,JsonNode> data){
+        var bindings=spec.path("bindings");if(bindings.has("value")||bindings.has("text"))return dev.mineagent.runtime.core.ui.dynamic.InterfaceExpression.evaluate(bindings.get(bindings.has("value")?"value":"text"),data);
         JsonNode fallback=spec.has("value")?spec.get("value"):switch(spec.path("type").asText()){
             case "toggle"->com.fasterxml.jackson.databind.node.BooleanNode.FALSE;
             case "progress"->com.fasterxml.jackson.databind.node.IntNode.valueOf(0);

@@ -6,24 +6,32 @@ import java.util.*;
 
 /** Data contract for arbitrary native widget trees. No HTML, executable Java or remote script URLs. */
 public record InterfaceDefinition(String id, String title, Surface surface, JsonNode root,
-                                  Map<String, JsonNode> data, String stylesheet) {
+                                  Map<String, JsonNode> data, String stylesheet,int order) {
     public enum Surface { SCREEN, HUD }
     public static final int MAX_SOURCE_BYTES=256*1024, MAX_NODES=2048, MAX_DEPTH=48;
     private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     public static final Set<String> TYPES=Set.of("panel","row","column","scroll","label","button","input","toggle","progress","image");
-    private static final Set<String> NODE_FIELDS=Set.of("id","type","text","value","bind","style","classes","resource","events","children","visible","enabled");
+    private static final Set<String> NODE_FIELDS=Set.of("id","type","text","value","bind","bindings","style","classes","resource","events","children","visible","enabled");
     public static final String CONTRACT="""
         DivZero native UI v1: JSON, rendered with LDLib2 and built by the DivZero KubeJS bridge.
         {"id":"shop","title":"Shop","surface":"SCREEN","root":{"id":"root","type":"row","children":[...]},"data":{},"stylesheet":""}
         surface=SCREEN or HUD. HUD is passive by default; it never grabs the mouse or blocks movement.
+        Optional order is an integer -10000..10000 for ordering independent HUD panels. HUD coordinates use GUI-scaled screen units; root LSS left/top/right/bottom can position the panel.
         Arbitrary nested panel/row/column/scroll/label/button/input/toggle/progress/image nodes, each with a stable unique id.
         Node fields: id,type,text,value,bind,style,classes,resource,events,children,visible,enabled.
         style and stylesheet use LDLib2 LSS, not browser CSS. resource is a Minecraft namespaced resource, never a URL or local path.
         bind refers to one data key; text/value are defaults. Keep node ids and bind keys when restyling to preserve live input.
+        Optional bindings map text/value/visible/enabled to bounded expressions, evaluated on each data update.
+        Expressions: primitive literal; {"data":"key"}; {"literal":anyJSON}; {"op":"contains","args":["Stone bricks",{"data":"query"}]}.
+        Operators: add/sub/mul/div/min/max/eq/ne/lt/lte/gt/gte/and/or/not/if/contains/startsWith/lower/upper/concat/length/at/join/clamp/round.
+        contains is case-insensitive; if is lazy. Numeric operations are finite, booleans are typed. Expressions have bounded depth/work/output; they never execute Java or access files.
+        Example working search: an input binds query, and each product card binds visible to contains(productName, query).
         events: {"click" or "change":[{"op":"set","key":"query","value":"..."},
           {"op":"set","key":"query","from":"$event"},{"op":"toggle","key":"expanded"},
           {"op":"emit","action":"purchase","args":{"item":"..."}}]}.
+        set may use expr instead of value/from, e.g. {"op":"set","key":"counter","expr":{"op":"add","args":[{"data":"counter"},1]}}.
+        Arithmetic here changes UI data only. Never represent local balance or an emit intent as an executed world transaction.
         emit is an intent; the server must validate owner, world, agent, view and current revision, then enforce action permissions.
         UI definitions do not grant game or host permissions. Actions must be registered by the owning application.
         Data changes update bound controls without rebuilding. Structure changes build and validate a candidate before replacing the old tree.
@@ -41,7 +49,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         if(source==null||source.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>MAX_SOURCE_BYTES)throw error("$","SOURCE_SIZE");
         final JsonNode doc;
         try {doc=JSON.readTree(source);}catch(Exception e){throw error("$","INVALID_JSON");}
-        fields(doc,Set.of("id","title","surface","root","data","stylesheet"),"$");
+        fields(doc,Set.of("id","title","surface","root","data","stylesheet","order"),"$");
         String id=id(doc.path("id"),"$.id"),title=string(doc.path("title"),"$.title",256);
         Surface surface;
         try {surface=Surface.valueOf(doc.path("surface").textValue());}catch(Exception e){throw error("$.surface","SCREEN_OR_HUD");}
@@ -52,19 +60,17 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
             for(var e:doc.get("data").properties()){checkId(e.getKey(),"$.data");data.put(e.getKey(),e.getValue().deepCopy());}
         }
         String stylesheet=doc.has("stylesheet")?style(doc.get("stylesheet"),"$.stylesheet",65536):"";
-        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet);
+        int order=0;if(doc.has("order")){var value=doc.get("order");if(!value.isIntegralNumber()||!value.canConvertToInt()||Math.abs((long)value.intValue())>10000)throw error("$.order","ORDER");order=value.intValue();}
+        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet,order);
     }
     public Map<String,String> inputBindings(){
         var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);
     }
     public Optional<JsonNode> node(String id){var found=new ArrayList<JsonNode>();walk(root,n->{if(n.path("id").asText().equals(id))found.add(n.deepCopy());});return found.stream().findFirst();}
-    public boolean interactiveNode(String id){return interactiveNode(root,id,true);}
-    private static boolean interactiveNode(JsonNode node,String id,boolean ancestorsActive){
-        boolean active=ancestorsActive&&node.path("visible").asBoolean(true)&&node.path("enabled").asBoolean(true);
-        if(node.path("id").asText().equals(id))return active;
-        for(var child:node.path("children"))if(interactiveNode(child,id,active))return true;
-        return false;
-    }
+    public boolean interactiveNode(String id){return interactiveNode(id,data);}
+    public boolean interactiveNode(String id,Map<String,JsonNode> values){var path=new ArrayList<JsonNode>();if(!path(root,id,path))return false;for(var node:path)if(!boundBoolean(node,"visible",values)||!boundBoolean(node,"enabled",values))return false;return true;}
+    private static boolean path(JsonNode node,String id,List<JsonNode> path){path.add(node);if(node.path("id").asText().equals(id))return true;for(var child:node.path("children"))if(path(child,id,path))return true;path.removeLast();return false;}
+    public static boolean boundBoolean(JsonNode node,String key,Map<String,JsonNode> values){return node.path("bindings").has(key)?InterfaceExpression.truth(InterfaceExpression.evaluate(node.get("bindings").get(key),values)):node.path(key).asBoolean(true);}
     public static void walk(JsonNode n,java.util.function.Consumer<JsonNode> visitor){visitor.accept(n);for(var child:n.path("children"))walk(child,visitor);}
     private static void validateNode(JsonNode n,String path,int depth,Set<String> ids){
         if(depth>MAX_DEPTH)throw error(path,"TREE_DEPTH");fields(n,NODE_FIELDS,path);
@@ -72,6 +78,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         String type=string(n.path("type"),path+".type",24);if(!TYPES.contains(type))throw error(path+".type","UNKNOWN_WIDGET");
         if(n.has("text"))string(n.get("text"),path+".text",16384);
         if(n.has("bind"))id(n.get("bind"),path+".bind");
+        if(n.has("bindings")){fields(n.get("bindings"),Set.of("text","value","visible","enabled"),path+".bindings");for(var entry:n.get("bindings").properties())InterfaceExpression.validate(entry.getValue());}
         if(n.has("style"))style(n.get("style"),path+".style",8192);
         if(n.has("resource")&&!string(n.get("resource"),path+".resource",512).matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))throw error(path+".resource","RESOURCE_ID");
         if(n.has("resource")&&n.get("resource").asText().contains(".."))throw error(path+".resource","RESOURCE_PATH");
@@ -92,7 +99,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
     private static void validateAction(JsonNode a,String path){
         String op=a.path("op").asText();
         switch(op){
-            case "set"->{fields(a,Set.of("op","key","value","from"),path);id(a.path("key"),path+".key");if(a.has("value")==a.has("from")||a.has("from")&&!a.path("from").asText().equals("$event"))throw error(path,"SET_VALUE_OR_EVENT");}
+            case "set"->{fields(a,Set.of("op","key","value","from","expr"),path);id(a.path("key"),path+".key");if((a.has("value")?1:0)+(a.has("from")?1:0)+(a.has("expr")?1:0)!=1||a.has("from")&&!a.path("from").asText().equals("$event"))throw error(path,"SET_VALUE_OR_EVENT");if(a.has("expr"))InterfaceExpression.validate(a.get("expr"));}
             case "toggle"->{fields(a,Set.of("op","key"),path);id(a.path("key"),path+".key");}
             case "emit"->{fields(a,Set.of("op","action","args"),path);id(a.path("action"),path+".action");if(a.has("args")&&!a.get("args").isObject())throw error(path+".args","OBJECT");}
             default->throw error(path+".op","UNKNOWN_ACTION");

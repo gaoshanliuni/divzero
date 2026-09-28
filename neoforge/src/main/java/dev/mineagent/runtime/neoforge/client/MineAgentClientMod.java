@@ -72,7 +72,7 @@ public final class MineAgentClientMod {
         }
         dev.mineagent.runtime.neoforge.client.ysm.YsmRenderFallback.initialize();
         container.registerExtensionPoint(IConfigScreenFactory.class,
-                (ignored, parent) -> ControlCenterScreen.create(parent));
+                (ignored, parent) -> new dev.mineagent.runtime.neoforge.client.nativeui.WorkspaceSetupScreen(parent));
     }
 
     @SubscribeEvent
