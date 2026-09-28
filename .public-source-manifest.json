@@ -4069,8 +4069,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeStudioSmokeClient.java",
-      "sha256": "646f5b58b75b13fa653c149a380d4a53fc02cfcdaf0b73eef61321986c79462d",
-      "bytes": 6197
+      "sha256": "d3de68e0dadab6b186be04045ceea07ad7e2a832aa6b3cf1463fc9510683e807",
+      "bytes": 6547
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiSmokeClient.java",
@@ -6124,8 +6124,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiRuntime.java",
-      "sha256": "ccb24348cae5ac36873de0026a0839ba2c6f31e529aa6b00c5240e3df4607993",
-      "bytes": 130245
+      "sha256": "4c9ae439c12a1557a990f51a0bb5d887fe109e1a1b0bb20dc9da26deb7f1d570",
+      "bytes": 130209
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerWorldUiRuntime.java",
@@ -6504,8 +6504,8 @@
     },
     {
       "path": "neoforge/src/test/java/dev/mineagent/runtime/neoforge/NativeAcceptanceFixtureTest.java",
-      "sha256": "67d14c7dbb455222a4d986a09ff3857f49229f85fa0fc540e3d36909fa19cb34",
-      "bytes": 916
+      "sha256": "87436bab3d10f5328df8fb3fcb388e1b73fb39fe8194e9959a5a089db319a3ba",
+      "bytes": 1431
     },
     {
       "path": "neoforge/src/test/java/dev/mineagent/runtime/neoforge/client/chat/AiNameHoverTest.java",

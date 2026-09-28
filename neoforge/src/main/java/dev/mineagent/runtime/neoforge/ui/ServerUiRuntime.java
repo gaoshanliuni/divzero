@@ -28,7 +28,7 @@ import java.util.*;
 @EventBusSubscriber(modid = "mineagent_runtime")
 public final class ServerUiRuntime {
     public static final UUID TRUSTED_SHELL_PACKAGE = UUID.fromString("00000000-0000-0000-0000-000000000002");
-    public static final Set<String> SHELL_CAPABILITIES=Set.of("building.read","building.write","feedback.read","delivery.list","delivery.transfer","delivery.lifecycle","shell.read", "conversation.read", "conversation.write", "persona.manage", "settings.manage", "appearance.read", "appearance.apply", "appearance.decide", "chat.send", "chat.refresh", "decision.submit", "decision.defer", "decision.resume", "decision.cancelTask", "worldui.open", "worldui.agent", "worldui.chunk", "worldui.release", "world.inspect", "world.activate", "world.disable", "world.restoreOff", "world.list", "world.moveInspect", "world.move",
+    public static final Set<String> SHELL_CAPABILITIES=Set.of("feedback.read","delivery.list","delivery.transfer","delivery.lifecycle","shell.read", "conversation.read", "conversation.write", "persona.manage", "settings.manage", "appearance.read", "appearance.apply", "appearance.decide", "chat.send", "chat.refresh", "decision.submit", "decision.defer", "decision.resume", "decision.cancelTask", "worldui.open", "worldui.agent", "worldui.chunk", "worldui.release", "world.inspect", "world.activate", "world.disable", "world.restoreOff", "world.list", "world.moveInspect", "world.move",
                                 "agent.manage", "task.manage", "package.generate", "package.cancel", "package.preview", "package.chunk", "package.release", "scoreview.bind", "container.open", "container.agent", "scoreview.worldFront", "scoreview.worldMove", "scoreview.worldDetach", "scoreview.worldDelete", "package.open", "package.hud", "package.hudLease", "package.restore", "package.patchSubmit","package.patchApply","package.patchRollback","package.patchCancel","package.patchPreview","package.patchRebuild", "package.worldPatchSubmit", "package.worldPatchInspect", "package.worldPatchApply", "package.worldPatchRollback", "package.worldPatchCancel", "ui.statePermit", "ui.presentationPermit", "ui.bindPage", "ui.takeoverActivate", "ui.delegate", "ui.stop");
     private static final Map<MinecraftServer, ServerUiRuntime> RUNTIMES = new IdentityHashMap<>();
     private final MinecraftServer server;
@@ -294,7 +294,7 @@ public final class ServerUiRuntime {
         } catch (Exception failure) { send(viewer, packet.requestId(), "error", Map.of("code", "INVALID_UI_REQUEST")); }
     }
     private void buildings(ServerPlayer viewer,UUID packet,Request request){
-        boolean write=request.action().equals("building.write");boolean begun=false;String capability=request.action();
+        boolean write=request.action().equals("building.write");boolean begun=false;String capability="task.manage";
         try{
             restoreScope(viewer,request);Code access=sessions.checkRead(viewer.getUUID(),request,capability);if(access!=Code.OK){send(viewer,packet,"receipt",Receipt.of(request.operationId(),access));return;}
             if(write){var reserved=sessions.begin(viewer.getUUID(),request,capability,true);if(reserved.code()!=Code.OK){send(viewer,packet,"receipt",reserved);return;}begun=true;}
