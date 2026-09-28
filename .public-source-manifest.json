@@ -2889,8 +2889,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "7be4b0dce62d4dbfc7d1ccbcbf5560c643bc0a78197bfc02d7484cb145c5a65d",
-      "bytes": 40970
+      "sha256": "55fd8fb1e475d46b89a223754e9de79d74d6a65ebb308f9ca4cd04dd610508c2",
+      "bytes": 42318
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3544,13 +3544,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageSmokeClient.java",
-      "sha256": "0044577a2982bd9b335906d221739c253ea083636dc9fcaa2408a91732c5acb9",
-      "bytes": 13300
+      "sha256": "33533666ce2e24e1da8e9b0659848b584a9ccf6afab0bb0a1c27e5b4d3fcc2b7",
+      "bytes": 16225
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageViews.java",
-      "sha256": "9e562f0e040c5a1436a2f39b4adf71afa7ca04803a7b363cd8515085d3cfc9f9",
-      "bytes": 42939
+      "sha256": "b593f16520b6783596a7be856b2d21883925cba6097a9af41524a2712ced4976",
+      "bytes": 42992
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePreferencesPanel.java",
@@ -3844,8 +3844,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PackageUiStateClient.java",
-      "sha256": "4e4d7c3902710564b07c655fddf131fb7b3631199b62e7050dfc554f0bc07963",
-      "bytes": 7290
+      "sha256": "7538f109b87bd2f6091208c5d10f39f1fd94940f60d9cc2e573236da40e10f72",
+      "bytes": 8870
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PackageViewCapture.java",
@@ -5959,8 +5959,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/UiStateContract.java",
-      "sha256": "3b8838e4f06d3557a0c33d5ca007c00288551b97a34b78e931e2a0c16de34641",
-      "bytes": 1163
+      "sha256": "0bd8b49bb04cd4a50ee7cb8f1a4665cc1f97b6d46b13735563db1630d159fe06",
+      "bytes": 1431
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorkerPackageResult.java",
