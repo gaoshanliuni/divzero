@@ -45,7 +45,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         var spacer=new UIElement();spacer.getLayout().flex(1);toolbar.addChild(spacer);toolbar.addChild(decisions);toolbar.addChild(button(t("设置"),()->WorkspacePanels.settings(this)));toolbar.addChild(NativeUiTheme.iconButton("×",this::onClose));
         desktop.getLayout().flex(1).widthPercent(100);root.addChild(desktop);
         dock.getLayout().height(28).widthPercent(100).flexDirection(FlexDirection.ROW).paddingVertical(3);dock.getStyle().zIndex(2000);root.addChild(dock);
-        status.getLayout().height(13).widthPercent(100);status.textStyle(style->style.fontSize(8).textColor(0xffffffff));root.addChild(status);
+        status.setId("workspace-status");status.getLayout().height(13).widthPercent(100);status.textStyle(style->style.fontSize(8).textColor(0xffffffff));root.addChild(status);
         search.textFieldStyle(style->style.placeholder(Component.literal(t("搜索对话"))));search.registerValueListener(value->{listBefore=0;nextList=System.currentTimeMillis()+350;});
         agentChoice.setOnValueChanged(choice->{if(choice!=null&&!choice.key().equals(model.agent))selectAgent(choice.key());});
         history.viewPort.getStyle().backgroundTexture(NativeUiTheme.inset());
@@ -80,7 +80,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     public static void toggle(){if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()){Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);return;}if(Minecraft.getInstance().screen instanceof NativeWorkspaceScreen screen)screen.onClose();else open();}
     public static boolean visible(){return Minecraft.getInstance().screen instanceof NativeWorkspaceScreen;}
     public static void notice(String text){model.notice=text;if(active!=null)active.status.setText(Component.literal(text));}
-    public static void sessionReady(){loadState();NativeDecisionPanel.sessionReady();if(active!=null){active.nextMessages=0;active.list();}}
+    public static void sessionReady(){loadState();NativeDecisionPanel.sessionReady();if(active!=null){active.nextMessages=0;active.list();active.focusConversation();}}
     public static void disconnected(){persistState();NativeDecisionPanel.reset();stateScope=null;model=new Model();active=null;connection=level=null;}
     public static void snapshot(Map<String,String> values){
         NativeDecisionPanel.snapshot(values);if(active!=null)active.decisions.setText(Component.literal(NativeDecisionPanel.label()));
@@ -175,7 +175,16 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
             long next=state.get("nextBefore").getAsLong();if(next>0)conversationList.addScrollViewChild(button(t("下一页"),()->{listBefore=next;list();}));
         });
     }
-    private void select(String id){saveDraft();releaseConversationFocus();model.conversation=id;model.generation++;rows.clear();loading.clear();history.clearAllScrollViewChildren();pinBottom=true;anchor=null;pinPixel=-1;model.selected=null;composer.setValue(draftText().split("\n",-1),false);nextMessages=0;messages(0);request(true,"focus",Map.of("contextId",context.toString())).thenAccept(f->{var session=NativeWorkspaceConnection.current();if(session!=null&&current())dev.mineagent.runtime.neoforge.client.audio.ConversationVoicePlayback.focus(session.binding().worldId(),UUID.fromString(model.agent),UUID.fromString(model.conversation),context);}).exceptionally(error->{notice(error.getMessage());return null;});}
+    private void select(String id){saveDraft();releaseConversationFocus();model.conversation=id;model.generation++;rows.clear();loading.clear();history.clearAllScrollViewChildren();pinBottom=true;anchor=null;pinPixel=-1;model.selected=null;composer.setValue(draftText().split("\n",-1),false);nextMessages=0;messages(0);focusConversation();}
+    private void focusConversation(){
+        if(!current()||model.conversation.isEmpty()||!NativeWorkspaceConnection.ready())return;
+        String agent=model.agent,conversation=model.conversation;long generation=model.generation;
+        request(true,"focus",Map.of("contextId",context.toString())).whenComplete((value,error)->{
+            if(!current()||generation!=model.generation||!agent.equals(model.agent)||!conversation.equals(model.conversation))return;
+            if(error!=null){notice(error.getMessage());return;}
+            var session=NativeWorkspaceConnection.current();if(session!=null)dev.mineagent.runtime.neoforge.client.audio.ConversationVoicePlayback.focus(session.binding().worldId(),UUID.fromString(agent),UUID.fromString(conversation),context);
+        });
+    }
     private void releaseConversationFocus(){dev.mineagent.runtime.neoforge.client.audio.ConversationVoicePlayback.clear(context);if(model.conversation.isEmpty()||!NativeWorkspaceConnection.ready())return;request(true,"unfocus",Map.of("contextId",context.toString()));}
     private void changeConversation(String kind){if(model.selected==null)return;write(kind,Map.of(),state->{model.selected=state;list();});}
     private void send(){
@@ -190,7 +199,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
 
     private void cancel(){if(model.selected==null)return;String target=model.selected.has("activeOperation")?model.selected.get("activeOperation").getAsString():"";if(!target.isEmpty())write("cancel",Map.of("targetOperation",target),state->model.selected=state);}
     private void messages(long before){
-        if(!current()||model.conversation.isEmpty()||messagesBusy||!page.equals("chat"))return;messagesBusy=true;long generation=model.generation;String conversation=model.conversation;
+        if(!current()||!NativeWorkspaceConnection.ready()||model.conversation.isEmpty()||messagesBusy||!page.equals("chat"))return;messagesBusy=true;long generation=model.generation;String conversation=model.conversation;
         request(false,"messages",Map.of("before",Long.toString(before))).whenComplete((state,error)->{
             messagesBusy=false;if(!current()||generation!=model.generation||!conversation.equals(model.conversation))return;if(error!=null){notice(error.getMessage());return;}
             model.selected=state.getAsJsonObject("conversation");heading.setText(Component.literal(model.selected.get("title").getAsString()));nextBefore=state.get("nextBefore").getAsLong();boolean changed=false;
