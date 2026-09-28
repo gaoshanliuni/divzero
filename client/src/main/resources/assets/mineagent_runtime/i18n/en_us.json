@@ -2987,5 +2987,14 @@
   "已撤销": "Undone",
   "部分完成": "Partially complete",
   "发生冲突": "Conflict detected",
-  "尚无计划": "No plan yet"
+  "尚无计划": "No plan yet",
+  "确认选择": "Confirm choice",
+  "填入输入框": "Fill input",
+  "正在提交选择…": "Submitting choice…",
+  "选择已提交": "Choice submitted",
+  "选择已排队": "Choice queued",
+  "选项已过期": "Options expired",
+  "归档会话不能提交选择": "Archived conversations cannot submit choices",
+  "选择结果待核对，不会自动重发": "Choice result needs checking; it will not be resent automatically",
+  "已填入输入框，尚未发送": "Input filled; not sent"
 }

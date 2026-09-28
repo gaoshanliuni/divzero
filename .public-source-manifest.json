@@ -914,8 +914,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "c09ff5868eba573a2d378a7d80c49004cb78317b5c549f55f3f640a2d90c38ce",
-      "bytes": 290618
+      "sha256": "b743db3ff5b561cd3969ce02d9ae4540654137a1f9d3ed6142d3d15bb5a686df",
+      "bytes": 291125
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1343,9 +1343,14 @@
       "bytes": 1462
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationRichMessage.java",
+      "sha256": "10b5cff20ec52698ea52308cfff6e5a17e34bc57ec0305d08c914519af71df75",
+      "bytes": 1444
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationStore.java",
-      "sha256": "9e4143358c064e29c3b092197252d390d6a859afd2b9c5b7fe8f0669aeaeba5b",
-      "bytes": 49394
+      "sha256": "9ef7ac0f447690c4355c27d3bd41077b7e4319ff26cbff39c5c7ff17194efe17",
+      "bytes": 55050
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationSummaryStore.java",
@@ -1359,8 +1364,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "5a5135aba4f1035eac4f6420a9767733422e12a466e8cd6732186594a1d1caa7",
-      "bytes": 63058
+      "sha256": "1338a1cf14cbb530e18a9807911dc4f69b1fa33e215a11e69253d4f6893ae625",
+      "bytes": 63187
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/NativeChatSegments.java",
@@ -2638,6 +2643,11 @@
       "bytes": 5140
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationRichMessageTest.java",
+      "sha256": "3c007ff2769c74eee7b7955b718aa5d69a9a254d93ace90e944e109a9aa4dbb3",
+      "bytes": 5448
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationStoreTest.java",
       "sha256": "ed7ae1bcdac0674fca412e097638f766dd90dd9e2c503c0b6550855bf4f389c6",
       "bytes": 15143
@@ -2889,8 +2899,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "a5c6460c4479545c4cb3758389d8cfbcc439127b1afe0d4ea2c380560e789f98",
-      "bytes": 47149
+      "sha256": "74ef24ab0c73f21d0eeb3daf2cefad6c79c63def09e66646a44e6f0657d06573",
+      "bytes": 49005
     },
     {
       "path": "docs/NATIVE_UI_MIGRATION_STATUS.md",
@@ -3583,6 +3593,11 @@
       "bytes": 2692
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeRichMessageSmokeClient.java",
+      "sha256": "8a8fef72ca803ac961cbffb6c44f28a858d2bd6ad0c40be03b6ffa4719e093a3",
+      "bytes": 11291
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeSavedInterfacesPanel.java",
       "sha256": "61630bd31e1f7b73a18642a0d82e14f4e12233fcbf8e9c0b77330ace2c048e17",
       "bytes": 4506
@@ -3639,8 +3654,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "sha256": "62ee469418f913a49b8473173824fb59377b31d832528cf6fef7225411432632",
-      "bytes": 41095
+      "sha256": "9371b5da2bcb197b490308361903b2203b3c1e8bd5d287dcd1a6f171dfe47343",
+      "bytes": 45578
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PersonaLibraryBar.java",
@@ -4754,8 +4769,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "fc7a7055a1eb3df8033aa30d783e45fbe31213be35e48c7cd0f6e4c373c9232f",
-      "bytes": 62073
+      "sha256": "0f6e67b404cbab30b5370400ccf01a58c784896b9498f6e8860626dcf0ed50dc",
+      "bytes": 62380
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -5134,8 +5149,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "31b1d7ad3878b2fa0c6cb9c3120d40f36ceecdacea62aa30a0bbc696f78cc242",
-      "bytes": 63970
+      "sha256": "28c8c2b4ae6455d388dbb2a06774645d8c6392350c3213820d89a91848739558",
+      "bytes": 68420
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEntityInterop.java",

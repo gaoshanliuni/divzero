@@ -34,10 +34,10 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private final Button decisions=button(NativeDecisionPanel.label(),()->NativeDecisionPanel.open(this));
     private final Map<String,MessageRow> rows=new LinkedHashMap<>();private final Map<String,Long> loading=new HashMap<>();
     private PanelSection pendingSection;private final UUID context=UUID.randomUUID();private String page="chat",agentSignature="";private long nextMessages,nextList;private boolean messagesBusy,listBusy,writing;private long nextBefore,listBefore;private int fileOffset;private float pinPixel=-1,anchorOffset;private UIElement anchor;private boolean pinBottom;private int restoreScrollFrames;private long nextLayoutSave;
-    private record MessageRow(long sequence,UIElement root,TextElement text,TextElement thinking,Button thinkingButton){}
+    private record MessageRow(long sequence,UIElement root,TextElement text,TextElement thinking,Button thinkingButton,MessageActions actions){}
     private NativeWorkspaceScreen(){this(new UIElement());}
     private NativeWorkspaceScreen(UIElement root){
-        super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal("DivZero"));this.root=root;composer.registerValueListener(value->saveDraft());
+        super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal("DivZero"));this.root=root;composer.setId("conversation-composer");composer.registerValueListener(value->saveDraft());
         root.getLayout().widthPercent(100).heightPercent(100).paddingAll(7);root.getStyle().backgroundTexture(new ColorRectTexture(0x35080d15));
         var toolbar=NativeUiTheme.card(row());toolbar.getLayout().height(36).paddingAll(6).marginBottom(5);toolbar.getStyle().zIndex(2000);root.addChild(toolbar);
         var brand=NativeUiTheme.text("DivZero",NativeUiTheme.ACCENT,13);brand.getLayout().width(72);toolbar.addChild(brand);
@@ -204,13 +204,58 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
                     var body=label("");var thought=label("");thought.setDisplay(false);var toggle=button(t("思考"),()->{captureScroll();thought.setDisplay(!thought.isDisplayed());restoreScrollFrames=3;});toggle.getLayout().height(19).width(42);header.addChild(toggle);
                     if(!user){String detailAgent=model.agent,detailConversation=model.conversation;var details=button(t("详情"),()->NativeConversationExtras.context(this,detailAgent,detailConversation,id));details.getLayout().height(19).width(42);header.addChild(details);}
                     if(!user){var voice=button(t("朗读"),()->write("voice",Map.of("messageId",id,"contextId",context.toString()),value->notice(t("正在处理…"))));voice.getLayout().height(19).width(42);header.addChild(voice);}
-                    container.addChild(body);container.addChild(thought);entry=new MessageRow(message.get("sequence").getAsLong(),container,body,thought,toggle);rows.put(id,entry);changed=true;
+                    var actionPanel=new MessageActions(id,generation);container.addChild(body);container.addChild(thought);container.addChild(actionPanel.root);entry=new MessageRow(message.get("sequence").getAsLong(),container,body,thought,toggle,actionPanel);rows.put(id,entry);changed=true;
                 }
+                var rich=state.has("richMessages")?state.getAsJsonObject("richMessages"):new JsonObject();entry.actions.refresh(rich.has(id)?rich.get(id).getAsString():null);
                 var th=thinking.get(id);entry.thinkingButton.setDisplay(th!=null&&th.get("textLength").getAsInt()>0);if(th!=null&&entry.thinking.isDisplayed()&&!Objects.equals(loading.get("thinking:"+id),th.get("revision").getAsLong())){loading.put("thinking:"+id,th.get("revision").getAsLong());textChunk(id,th.get("revision").getAsLong(),"thinking",entry.thinking,generation,0,new StringBuilder());}
                 if(!Objects.equals(loading.get(id),revision)){loading.put(id,revision);textChunk(id,revision,"message",entry.text,generation,0,new StringBuilder());}
             }
             if(changed){captureScroll();history.clearAllScrollViewChildren();rows.values().stream().sorted(Comparator.comparingLong(MessageRow::sequence)).forEach(row->history.addScrollViewChild(row.root));restoreScrollFrames=3;}
         }).exceptionally(failure->{notice(Objects.toString(failure.getCause()==null?failure.getMessage():failure.getCause().getMessage(),"CONVERSATION_RENDER_FAILED"));return null;});
+    }
+    private final class MessageActions {
+        final String message, agent=model.agent, conversation=model.conversation; final long generation;
+        final UIElement root=new UIElement(); JsonObject data; String signature=""; boolean loading, pending;
+        MessageActions(String message,long generation){this.message=message;this.generation=generation;root.getLayout().widthPercent(100).gapAll(3).marginTop(4);root.setDisplay(false);}
+        boolean valid(){return current()&&generation==model.generation&&agent.equals(model.agent)&&conversation.equals(model.conversation);}
+        void refresh(String next){
+            if(next==null||!valid())return;
+            if(loading||pending||next.equals(signature))return;loading=true;
+            request(false,"richMessage",Map.of("messageId",message)).whenComplete((value,error)->{
+                loading=false;if(!valid())return;if(error!=null){notice(error.getMessage());return;}
+                data=value;signature=next;draw();
+            });
+        }
+        void draw(){
+            if(!valid()||data==null)return;captureScroll();root.clearAllChildren();root.setDisplay(true);
+            String state=data.get("state").getAsString();int selected=data.get("selected").getAsInt();
+            for(var raw:data.getAsJsonArray("buttons")){
+                var option=raw.getAsJsonObject();int index=option.get("index").getAsInt();String action=option.get("action").getAsString();
+                String verb=switch(action){case "confirm"->"确认选择";case "suggest"->"填入输入框";case "copy"->"复制";default->"";};
+                var control=button(t(verb)+" · "+option.get("label").getAsString(),()->activate(index,action));
+                control.setId("rich-"+message+"-"+index);control.getLayout().widthPercent(100).heightAuto().minHeight(23).marginAll(0).paddingVertical(4);
+                control.text.getLayout().widthPercent(100).heightAuto();control.text.textStyle(style->style.adaptiveWidth(false).adaptiveHeight(true).textWrap(TextWrap.WRAP));
+                control.setActive(!pending&&(!action.equals("confirm")||state.equals("OPEN")));root.addChild(control);
+            }
+            if(pending)root.addChild(label(t("正在提交选择…")));
+            else if(!state.equals("OPEN"))root.addChild(label(t(switch(state){case "ACCEPTED"->"选择已提交";case "EXPIRED"->"选项已过期";case "READ_ONLY"->"归档会话不能提交选择";default->"选择结果待核对，不会自动重发";})+(selected<0?"":" · "+data.getAsJsonArray("buttons").get(selected).getAsJsonObject().get("label").getAsString())));
+            restoreScrollFrames=3;
+        }
+        void activate(int index,String action){
+            if(!valid()||pending||data==null||action.equals("confirm")&&!data.get("state").getAsString().equals("OPEN"))return;
+            pending=true;draw();boolean confirm=action.equals("confirm");
+            request(confirm,confirm?"richConfirm":"richButton",Map.of("messageId",message,"index",Integer.toString(index))).whenComplete((value,error)->{
+                pending=false;if(!valid())return;
+                if(error!=null){signature="";notice(error.getMessage());draw();return;}
+                if(confirm){data=value.getAsJsonObject("choice");signature="";notice(value.has("error")&&!value.get("error").getAsString().isBlank()?t("选择已提交")+" · "+value.get("error").getAsString():t(value.has("queued")&&value.get("queued").getAsBoolean()?"选择已排队":"选择已提交"));nextMessages=0;}
+                else if(action.equals(value.get("action").getAsString())){
+                    String text=value.get("value").getAsString();
+                    if(action.equals("copy")){Minecraft.getInstance().keyboardHandler.setClipboard(text);notice(t("已复制"));}
+                    else if(action.equals("suggest")){String draft=String.join("\n",composer.getValue());composer.setValue((draft.isBlank()?text:draft+"\n"+text).split("\n",-1),false);saveDraft();getModularUI().requestFocus(composer);notice(t("已填入输入框，尚未发送"));}
+                }
+                draw();
+            });
+        }
     }
     private void textChunk(String id,long revision,String kind,TextElement target,long generation,int offset,StringBuilder text){
         request(false,kind,Map.of("messageId",id,"messageRevision",Long.toString(revision),"offset",Integer.toString(offset))).whenComplete((chunk,error)->{

@@ -31,6 +31,7 @@ public final class ConversationStore implements AutoCloseable {
         this.db=db;this.world=Objects.requireNonNull(world);this.clock=Objects.requireNonNull(clock);
         try(var s=db.createStatement()){
             s.execute("PRAGMA journal_mode=WAL");s.execute("PRAGMA busy_timeout=5000");
+            s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversation_actions_v1(world_id TEXT NOT NULL,conversation_id TEXT NOT NULL,message_id TEXT NOT NULL,definition TEXT NOT NULL,expires_at INTEGER NOT NULL,selected INTEGER NOT NULL DEFAULT -1,selection_operation TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'OPEN',revision INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(world_id,message_id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversation_titles_v1(world_id TEXT NOT NULL,conversation_id TEXT NOT NULL,state TEXT NOT NULL,operation_id TEXT NOT NULL DEFAULT '',source_title TEXT NOT NULL,model_receipt TEXT NOT NULL DEFAULT '',PRIMARY KEY(world_id,conversation_id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversations_v1(ordinal INTEGER PRIMARY KEY AUTOINCREMENT,world_id TEXT NOT NULL,id TEXT NOT NULL,player_id TEXT NOT NULL,agent_id TEXT NOT NULL,title TEXT NOT NULL,revision INTEGER NOT NULL,state TEXT NOT NULL,message_count INTEGER NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL,UNIQUE(world_id,id))");
             s.execute("CREATE INDEX IF NOT EXISTS mineagent_conversations_scope_v1 ON mineagent_conversations_v1(world_id,player_id,agent_id,ordinal)");
@@ -200,6 +201,70 @@ public final class ConversationStore implements AutoCloseable {
         return transaction(()->{var c=get(viewer,agent,id);var old=operation(operation,fp);if(old!=null)return message(viewer,agent,id,old.assistant());if(!c.state().equals("ACTIVE"))throw new IllegalStateException("CONVERSATION_READ_ONLY");if(!c.activeOperation().isEmpty())throw new IllegalStateException("CONVERSATION_BUSY");UUID message=UUID.randomUUID();long now=clock.millis();message(id,message,c.messageCount()+1,"ASSISTANT",reply,"COMPLETE",0,now);execute("UPDATE mineagent_conversations_v1 SET message_count=message_count+1,updated_at=? WHERE world_id=? AND id=?",now,world,id);remember(operation,fp,"feedback-reply",id,null,message,0);return message(viewer,agent,id,message);});
     }
     public synchronized Message feedbackReply(UUID viewer,UUID agent,UUID id,UUID operation)throws Exception{get(viewer,agent,id);var op=operation(operation,null);if(op==null||!op.kind().equals("feedback-reply")||!op.conversation().equals(id))throw new SecurityException("FEEDBACK_REPLY_NOT_OWNED");return message(viewer,agent,id,op.assistant());}
+    /** A tool notice is its own persistent message, even while the parent reply is streaming. */
+    public synchronized ConversationRichMessage.Saved publishRich(UUID viewer, UUID agent, UUID conversation,
+            UUID operation, ConversationRichMessage definition) throws Exception {
+        var json = new com.fasterxml.jackson.databind.ObjectMapper();
+        String encoded = json.writeValueAsString(definition);
+        String fp = fingerprint("rich-message", viewer, agent, conversation, encoded);
+        return transaction(() -> {
+            var c = get(viewer, agent, conversation);
+            var previous = operation(operation, fp);
+            if (previous != null) return richMessage(viewer, agent, conversation, previous.assistant());
+            if (!c.state().equals("ACTIVE")) throw new IllegalStateException("CONVERSATION_READ_ONLY");
+            UUID id = UUID.randomUUID(), selection = UUID.randomUUID();
+            long now = clock.millis();
+            message(conversation, id, c.messageCount() + 1, "ASSISTANT", definition.text(), "COMPLETE", 0, now);
+            execute("INSERT INTO mineagent_conversation_actions_v1(world_id,conversation_id,message_id,definition,expires_at,selection_operation) VALUES(?,?,?,?,?,?)",
+                    world, conversation, id, encoded, now + 300_000, selection);
+            execute("UPDATE mineagent_conversations_v1 SET message_count=message_count+1,updated_at=? WHERE world_id=? AND id=?", now, world, conversation);
+            remember(operation, fp, "rich-message", conversation, null, id, 0);
+            return richMessage(viewer, agent, conversation, id);
+        });
+    }
+    public synchronized ConversationRichMessage.Saved richMessage(UUID viewer, UUID agent, UUID conversation, UUID id) throws Exception {
+        var c = get(viewer, agent, conversation);
+        var rows = query("SELECT * FROM mineagent_conversation_actions_v1 WHERE world_id=? AND conversation_id=? AND message_id=?", r -> {
+            try {
+                var definition = new com.fasterxml.jackson.databind.ObjectMapper().readValue(r.getString("definition"), ConversationRichMessage.class);
+                String state = r.getString("state"); long expires = r.getLong("expires_at");
+                if (state.equals("OPEN")) state = !c.state().equals("ACTIVE") ? "READ_ONLY" : clock.millis() >= expires ? "EXPIRED" : "OPEN";
+                return new ConversationRichMessage.Saved(id, definition, expires, r.getInt("selected"), uuid(r.getString("selection_operation")), state, r.getLong("revision"));
+            } catch (java.io.IOException error) { throw new SQLException("CONVERSATION_BUTTON_STORAGE", error); }
+        }, world, conversation, id);
+        if (rows.isEmpty()) throw new SecurityException("CONVERSATION_MESSAGE_NOT_OWNED");
+        return rows.getFirst();
+    }
+    public synchronized Map<String,String> richSummaries(UUID viewer, UUID agent, UUID conversation, List<Message> messages) throws Exception {
+        get(viewer, agent, conversation);
+        var result = new LinkedHashMap<String,String>();
+        for (var message : messages) {
+            if (query("SELECT 1 FROM mineagent_conversation_actions_v1 WHERE world_id=? AND conversation_id=? AND message_id=?", r -> 1, world, conversation, message.messageId()).isEmpty()) continue;
+            var saved = richMessage(viewer, agent, conversation, message.messageId());
+            result.put(message.messageId().toString(), saved.revision() + ":" + saved.state());
+        }
+        return result;
+    }
+    /** Claim before dispatch; an uncertain or repeated click must never send another model request. */
+    public synchronized ConversationRichMessage.Claim claimRich(UUID viewer, UUID agent, UUID conversation, UUID id, int index) throws Exception {
+        return transaction(() -> {
+            var saved = richMessage(viewer, agent, conversation, id);
+            if (index < 0 || index >= saved.definition().buttons().size() || !saved.definition().buttons().get(index).action().equals("confirm"))
+                throw new IllegalArgumentException("CONVERSATION_BUTTON_ACTION");
+            if (saved.selected() >= 0) {
+                if (saved.selected() != index) throw new IllegalStateException("CONVERSATION_BUTTON_ALREADY_USED");
+                return new ConversationRichMessage.Claim(saved, false);
+            }
+            if (!saved.state().equals("OPEN")) throw new IllegalStateException("CONVERSATION_BUTTON_" + saved.state());
+            execute("UPDATE mineagent_conversation_actions_v1 SET selected=?,state='CLAIMED',revision=revision+1 WHERE world_id=? AND message_id=?", index, world, id);
+            return new ConversationRichMessage.Claim(richMessage(viewer, agent, conversation, id), true);
+        });
+    }
+    public synchronized void finishRich(UUID viewer, UUID agent, UUID conversation, UUID id, String state) throws Exception {
+        richMessage(viewer, agent, conversation, id);
+        if (!Set.of("ACCEPTED", "UNKNOWN").contains(state)) throw new IllegalArgumentException("CONVERSATION_BUTTON_STATE");
+        execute("UPDATE mineagent_conversation_actions_v1 SET state=?,revision=revision+1 WHERE world_id=? AND message_id=? AND state='CLAIMED'", state, world, id);
+    }
     private Operation turn(UUID op)throws SQLException{var value=operation(op,null);if(value==null||!value.kind().equals("send"))throw new IllegalArgumentException("CONVERSATION_TURN_UNKNOWN");return value;}
     public synchronized boolean pending(UUID op)throws SQLException{var t=turn(op);return !query("SELECT 1 FROM mineagent_conversation_messages_v1 WHERE world_id=? AND id=? AND status IN ('PENDING','GENERATING')",r->1,world,t.assistant()).isEmpty();}
     public synchronized boolean delta(UUID op,String delta)throws Exception{return streamDelta(op,delta,"",false,false);}
