@@ -71,6 +71,7 @@ public final class PlayerBodyAgent {
         return PlayerControlPlan.instructions()+"\n当前真实玩家状态（不是独立AI身体）："+JSON.writeValueAsString(Map.of("dimension",p.level().dimension().identifier().toString(),"position",List.of(p.getX(),p.getY(),p.getZ()),"yaw",p.getYRot(),"pitch",p.getXRot(),"health",p.getHealth(),"hotbar",hotbar,"nearbyBlocks",nearby))+"\n仅生成一次短操作序列；不能保证寻路或任务完成。LOOK按ticks逐步相对旋转。ATTACK/USE为真实左/右键，可能挖掘、攻击、放置或使用当前物品。\n请求："+prompt;
     }
     public static int review(ServerPlayer p,UUID operation){var j=jobs(p.level().getServer()).get(p.getUUID());if(j==null||!j.operation.equals(operation)||!j.state.equals("REVIEW")||!current(j)){say(p,"没有有效待审计划；旧计划不会重放。");return 0;}PacketDistributor.sendToPlayer(p,new PlayerBodyPayloads.Offer(j.operation,j.world,p.getUUID(),j.dimension,j.name,j.encoded));return 1;}
+    public static void stopIfPresent(ServerPlayer p){AutonomousPlayerAgent.stopForPlayer(p);var existing=JOBS.get(p.level().getServer());var job=existing==null?null:existing.get(p.getUUID());if(job!=null&&LIVE.contains(job.state))finish(job,"STOPPED","WORLD_DISABLED");}
     public static int stop(ServerPlayer p){if(AutonomousPlayerAgent.stopForPlayer(p))return 1;var j=jobs(p.level().getServer()).get(p.getUUID());if(j!=null&&LIVE.contains(j.state))finish(j,"STOPPED","USER_STOP");else say(p,"当前没有接管操作。");return 1;}
     public static int status(ServerPlayer p){say(p,observe(p).toString());return 1;}
     public static void decide(ServerPlayer p,PlayerBodyPayloads.Decision d){

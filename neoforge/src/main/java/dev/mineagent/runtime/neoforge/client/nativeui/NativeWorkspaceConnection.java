@@ -18,6 +18,7 @@ public final class NativeWorkspaceConnection {
     public static boolean ready(){return rendered&&session!=null&&connection==Minecraft.getInstance().getConnection()&&level==Minecraft.getInstance().level;}
     public static void open(){
         var mc=Minecraft.getInstance();if(mc.getConnection()==null||mc.player==null||ready()||opening!=null)return;
+        if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()){dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);return;}
         connection=mc.getConnection();level=mc.level;opening=UUID.randomUUID();deadline=System.currentTimeMillis()+10000;
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(opening,"openShell","{}"));
     }
@@ -64,6 +65,7 @@ public final class NativeWorkspaceConnection {
         });
     }
     public static void reset(){reset(true);}
+    public static void activationChanged(boolean enabled){reset(false);if(enabled&&NativeWorkspaceScreen.visible())open();}
     private static void reset(boolean contextChanged){var copy=List.copyOf(PENDING.values());PENDING.clear();session=null;opening=null;connection=level=null;rendered=polling=false;if(contextChanged)NativeWorkspaceScreen.disconnected();for(var pending:copy)pending.future.completeExceptionally(new IllegalStateException("NATIVE_WORKSPACE_CONTEXT_CHANGED"));}
     private NativeWorkspaceConnection(){}
 }

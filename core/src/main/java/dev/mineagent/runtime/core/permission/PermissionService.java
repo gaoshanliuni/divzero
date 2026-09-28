@@ -16,9 +16,19 @@ public final class PermissionService {
     private final Map<UUID, Set<PermissionAction>> trustedActions = new LinkedHashMap<>();
     private final Map<UUID, Map<PermissionAction,Long>> actionRevisions = new LinkedHashMap<>();
     private final Map<UUID, Ownership> ownership = new LinkedHashMap<>();
+    private final Set<UUID> inactivePlayers = new java.util.HashSet<>();
+
+    public synchronized void setPlayerEnabled(UUID playerId, boolean enabled) {
+        java.util.Objects.requireNonNull(playerId);
+        boolean changed = enabled ? inactivePlayers.remove(playerId) : inactivePlayers.add(playerId);
+        if (changed) {
+            var revisions = actionRevisions.computeIfAbsent(playerId, ignored -> new java.util.EnumMap<>(PermissionAction.class));
+            for (var action : PermissionAction.values()) revisions.put(action, Math.addExact(revisions.getOrDefault(action, 0L), 1));
+        }
+    }
 
     public synchronized boolean allowed(UUID playerId, boolean operator, PermissionAction action) {
-        if (playerId == null || action == null) {
+        if (playerId == null || action == null || inactivePlayers.contains(playerId)) {
             return false;
         }
         return operator
@@ -85,6 +95,7 @@ public final class PermissionService {
     }
 
     public synchronized boolean canMutateAgent(UUID agentId, UUID playerId, boolean operator) {
+        if (inactivePlayers.contains(playerId)) return false;
         if (operator) {
             return true;
         }
@@ -92,8 +103,8 @@ public final class PermissionService {
         return value != null && (value.ownerId().equals(playerId) || value.collaborators().contains(playerId));
     }
     /** Use the authoritative persisted definition on server paths; the legacy UUID cache may be empty after restart. */
-    public boolean canMutateAgent(dev.mineagent.runtime.api.agent.AgentDefinition definition,UUID playerId,boolean operator){
-        return definition!=null&&playerId!=null&&(operator||definition.ownerPlayerId().equals(playerId)||definition.collaboratorPlayerIds().contains(playerId));
+    public synchronized boolean canMutateAgent(dev.mineagent.runtime.api.agent.AgentDefinition definition,UUID playerId,boolean operator){
+        return definition!=null&&playerId!=null&&!inactivePlayers.contains(playerId)&&(operator||definition.ownerPlayerId().equals(playerId)||definition.collaboratorPlayerIds().contains(playerId));
     }
 
     public synchronized void removeOwnership(UUID agentId) {

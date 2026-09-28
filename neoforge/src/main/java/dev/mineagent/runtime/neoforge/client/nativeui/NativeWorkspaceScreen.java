@@ -72,7 +72,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         if(active!=null&&connection==mc.getConnection()&&level==mc.level){active.saveDraft();persistState();}
         active=new NativeWorkspaceScreen();mc.setScreen(active);NativeWorkspaceConnection.open();if(NativeWorkspaceConnection.ready())active.list();
     }
-    public static void toggle(){if(Minecraft.getInstance().screen instanceof NativeWorkspaceScreen screen)screen.onClose();else open();}
+    public static void toggle(){if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()){Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);return;}if(Minecraft.getInstance().screen instanceof NativeWorkspaceScreen screen)screen.onClose();else open();}
     public static boolean visible(){return Minecraft.getInstance().screen instanceof NativeWorkspaceScreen;}
     public static void notice(String text){model.notice=text;if(active!=null)active.status.setText(Component.literal(text));}
     public static void sessionReady(){loadState();if(active!=null){active.nextMessages=0;active.list();}}

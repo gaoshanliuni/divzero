@@ -28,17 +28,19 @@ public final class NativeInterfacesClient {
     private static UUID restoreRequest;private static boolean restoreReady;private static long nextRestore;
     public static void restoreAcknowledged(UUID id){if(id.equals(restoreRequest))restoreReady=true;}
     private static Object connection,level,player;private static UUID connectionId=UUID.randomUUID();
+    public static void activationChanged(){for(var slot:VIEWS.values())slot.session.close();VIEWS.clear();CALLBACKS.clear();restoreReady=false;restoreRequest=null;nextRestore=0;var mc=Minecraft.getInstance();if(mc.screen instanceof NativeScreen screen){screen.detach();mc.setScreen(null);}}
     public static void tick(){
         var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level||player!=mc.player){restoreReady=false;restoreRequest=null;nextRestore=0;
         for(var slot:VIEWS.values())slot.session.close();VIEWS.clear();CALLBACKS.clear();connection=mc.getConnection();level=mc.level;player=mc.player;connectionId=UUID.randomUUID();
         if(mc.screen instanceof NativeScreen screen){screen.detach();mc.setScreen(null);}
         }
         for(var callback:CALLBACKS.values())if(System.currentTimeMillis()>=callback.deadline){callback.deadline=Long.MAX_VALUE;callback.record.put("state","UNKNOWN");callback.slot.error="NATIVE_EVENT_ACK_TIMEOUT_INSPECT_DO_NOT_REPLAY";publish(callback,JSON.createObjectNode().put("status","UNKNOWN").put("error",callback.slot.error));}
-        if(mc.player!=null&&mc.level!=null&&mc.getConnection()!=null&&!restoreReady&&System.currentTimeMillis()>=nextRestore){nextRestore=System.currentTimeMillis()+5000;restoreRequest=UUID.randomUUID();ClientPacketDistributor.sendToServer(new UiPayloads.Command(restoreRequest,"nativeInterfaceReady","{}"));}
+        if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()&&mc.player!=null&&mc.level!=null&&mc.getConnection()!=null&&!restoreReady&&System.currentTimeMillis()>=nextRestore){nextRestore=System.currentTimeMillis()+5000;restoreRequest=UUID.randomUUID();ClientPacketDistributor.sendToServer(new UiPayloads.Command(restoreRequest,"nativeInterfaceReady","{}"));}
     }
     public static void accept(UiPayloads.Event packet){
         tick();var mc=Minecraft.getInstance();Map<String,Object> reply;boolean changed=false;
         try{
+            if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())throw new IllegalStateException("WORLD_DISABLED");
             var args=JSON.readTree(packet.json());UUID owner=UUID.fromString(args.path("owner").asText()),world=UUID.fromString(args.path("world").asText()),agent=UUID.fromString(args.path("agent").asText());
             if(mc.player==null||mc.level==null||!owner.equals(mc.player.getUUID())||!args.path("dimension").asText().equals(mc.level.dimension().identifier().toString()))throw new IllegalStateException("NATIVE_UI_CONTEXT_CHANGED");
             String kind=args.path("kind").asText();

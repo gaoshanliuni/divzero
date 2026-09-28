@@ -32,6 +32,7 @@ final class WorkspacePanels {
     static void settings(NativeWorkspaceScreen host){
         if(host.revealWindow("settings"))return;
         var window=host.window("settings",t("设置"),470,380);var body=window.body;body.clearAllChildren();
+        body.addChild(NativeUiTheme.button(t("此世界启用设置"),()->{Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);}));
         var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);var footer=row();footer.getLayout().height(25);body.addChild(footer);
         var values=new LinkedHashMap<String,String>();final JsonObject[] snapshot={null};final String[] group={"Provider"};final boolean[] busy={false};
         Runnable[] draw={null},load={null};

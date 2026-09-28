@@ -2602,5 +2602,13 @@
   "查看内容": "View content",
   "概览": "Overview",
   "版本": "Version",
-  "结果尚未确认，请勿重复提交。": "The outcome is not yet confirmed. Do not submit again."
+  "结果尚未确认，请勿重复提交。": "The outcome is not yet confirmed. Do not submit again.",
+  "是否为你在这个世界中启用 DivZero？": "Enable DivZero for you in this world?",
+  "按 T 点击按钮；选择仅对你在此世界生效，可用 /divzero_setup 更改。": "Press T to click. This choice only applies to you in this world; change it with /divzero_setup.",
+  "启用不改变服务器权限，电脑操作仍需单独确认。": "Enabling does not change server permissions. Computer actions still require separate approval.",
+  "此按钮已失效，请用 /divzero_setup 重新选择。": "This button has expired. Use /divzero_setup to choose again.",
+  "无法读取世界启用状态：": "Could not read world activation: ",
+  "无法保存世界选择：": "Could not save world choice: ",
+  "此世界启用设置": "Enable or disable in this world",
+  "禁用": "Disable"
 }

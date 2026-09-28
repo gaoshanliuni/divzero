@@ -252,6 +252,14 @@ public final class ServerConfigService implements AutoCloseable {
                     }
                 }
                 default -> {
+                    if (key.startsWith("runtime.activation.")) {
+                        try {
+                            String[] scope=key.substring("runtime.activation.".length()).split("\\.");
+                            if(scope.length!=2)throw new IllegalArgumentException();
+                            java.util.UUID.fromString(scope[0]);java.util.UUID.fromString(scope[1]);
+                            if (!java.util.Set.of("ENABLED", "DISABLED").contains(value)) throw new IllegalArgumentException();
+                        } catch (IllegalArgumentException invalid) { errors.put(key, "Invalid world activation choice"); }
+                    }
                     if (key.startsWith("agent.") && key.endsWith(".voice")) {
                         validateVoice(key, value, errors);
                     }

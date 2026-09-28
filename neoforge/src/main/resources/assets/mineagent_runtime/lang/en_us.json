@@ -22,5 +22,9 @@
   "mineagent.chat.stream.stopped": "(Stopped)",
   "mineagent.chat.messages.thinking": "Thinking display: ",
   "mineagent.chat.thinking.tail": "Last line",
-  "mineagent.chat.thinking.full": "Full thinking"
+  "mineagent.chat.thinking.full": "Full thinking",
+  "mineagent.activation.stale": "This activation button has expired. Use /divzero_setup to choose again.",
+  "mineagent.activation.enabled": "DivZero is enabled for you in this world. Press F2 now; no rejoin needed. Server permissions still apply.",
+  "mineagent.activation.disabled": "DivZero is disabled for you in this world. Use /divzero_setup to enable it again.",
+  "mineagent.activation.failed": "World choice was not saved: %s"
 }

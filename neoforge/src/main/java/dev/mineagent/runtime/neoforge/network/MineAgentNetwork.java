@@ -70,10 +70,11 @@ public final class MineAgentNetwork {
         registrar.playToClient(
                 MineAgentPayloads.PanelSnapshot.TYPE,
                 MineAgentPayloads.PanelSnapshot.CODEC,
-                (payload, context) -> context.enqueueWork(() -> {
+                (payload, context) -> {var connection=context.connection();context.enqueueWork(() -> {
+                    if(net.minecraft.client.Minecraft.getInstance().getConnection()==null||net.minecraft.client.Minecraft.getInstance().getConnection().getConnection()!=connection)return;
                     PanelSnapshotInbox.accept(payload);
                     dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.onSnapshot(payload);
-                })
+                });}
         );
         registrar.playToServer(
                 MineAgentPayloads.PromptRequest.TYPE,
@@ -308,6 +309,7 @@ public final class MineAgentNetwork {
                 .encodeToString(MineAgentRuntimeMod.SECRET_TRANSPORT_KEYS.getPublic().getEncoded()));
         var server = player.level().getServer();
         values.put("security.configInstance",MineAgentRuntimeServices.config(server).instanceId().toString());values.put("security.worldId",MineAgentRuntimeServices.worldId(server).toString());
+        dev.mineagent.runtime.neoforge.WorldActivationRuntime.snapshot(player, values);
         var allAgents = MineAgentRuntimeServices.bodies(server).definitions();
         int offset=Math.min(AGENT_PAGES.getOrDefault(player,0),Math.max(0,((allAgents.size()-1)/8)*8));
         var agents = allAgents.stream().skip(offset).limit(8).toList();

@@ -18,6 +18,10 @@ public final class MineAgentCommands {
         dispatcher.register(Commands.literal("ai")
                 .then(Commands.literal("files").then(Commands.argument("agent",net.minecraft.commands.arguments.UuidArgument.uuid()).executes(c->dev.mineagent.runtime.neoforge.ui.ServerBuildingFiles.open(c.getSource().getPlayerOrException(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent"))).then(Commands.argument("file",net.minecraft.commands.arguments.UuidArgument.uuid()).executes(c->dev.mineagent.runtime.neoforge.ui.ServerBuildingFiles.open(c.getSource().getPlayerOrException(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent"),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"file").toString())))))
                 .then(Commands.literal("accept").executes(c->accept(c.getSource())))
+                .then(Commands.literal("setup").executes(c->{dev.mineagent.runtime.neoforge.network.MineAgentNetwork.sendPanelSnapshot(c.getSource().getPlayerOrException());return 1;}))
+                .then(Commands.literal("activation")
+                    .then(Commands.literal("enable").then(Commands.argument("token", StringArgumentType.word()).executes(c->dev.mineagent.runtime.neoforge.WorldActivationRuntime.decide(c.getSource(),true,StringArgumentType.getString(c,"token")))))
+                    .then(Commands.literal("disable").then(Commands.argument("token", StringArgumentType.word()).executes(c->dev.mineagent.runtime.neoforge.WorldActivationRuntime.decide(c.getSource(),false,StringArgumentType.getString(c,"token"))))))
                 .then(Commands.literal("interrupt").then(Commands.argument("agent",net.minecraft.commands.arguments.UuidArgument.uuid())
                     .executes(c->interrupt(c.getSource(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent"),""))
                     .then(Commands.argument("message",StringArgumentType.greedyString()).executes(c->interrupt(c.getSource(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent"),StringArgumentType.getString(c,"message"))))))
@@ -61,12 +65,7 @@ public final class MineAgentCommands {
         try{return dev.mineagent.runtime.neoforge.ui.ServerConversations.get(source.getServer()).interruptNative(source.getPlayerOrException(),agent,message);}catch(Exception e){source.sendFailure(Component.literal("无法打断："+e.getMessage()));return 0;}
     }
     private static int accept(CommandSourceStack source){
-        try{var p=source.getPlayerOrException();if(!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)){source.sendFailure(Component.literal("只有启用作弊模式（服务器需管理员权限）才可以使用模组；此命令不会自动提权。"));return 0;}
-            var s=source.getServer();var config=MineAgentRuntimeServices.config(s);var actions=java.util.EnumSet.allOf(PermissionAction.class);
-            var result=config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(config.snapshot().revision(),java.util.Map.of("runtime.initialized","true","permission.player."+p.getUUID(),actions.stream().map(Enum::name).sorted().collect(java.util.stream.Collectors.joining(",")))),true);
-            if(!result.accepted())throw new IllegalStateException(result.errorCode());MineAgentRuntimeServices.permissions(s).setTrustedActions(p.getUUID(),actions);
-            source.sendSuccess(()->Component.literal("已授权本人使用模组。电脑命令仍按本机确认执行。"),false);dev.mineagent.runtime.neoforge.network.MineAgentNetwork.sendPanelSnapshot(p);return 1;
-        }catch(Exception e){source.sendFailure(Component.literal("授权未完成："+e.getMessage()));return 0;}
+        return dev.mineagent.runtime.neoforge.WorldActivationRuntime.decide(source,true,null);
     }
     private static int openPanel(CommandSourceStack source) {
         if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);

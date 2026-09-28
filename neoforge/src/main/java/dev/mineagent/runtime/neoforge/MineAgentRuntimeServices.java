@@ -240,6 +240,10 @@ public final class MineAgentRuntimeServices {
             }
         });
         PERMISSIONS.put(server, created);
+        if(WorldIdentityRuntime.ready(server))config(server).snapshot().values().forEach((key,value)->{
+            String prefix=dev.mineagent.runtime.core.permission.WorldActivation.prefix(worldId(server));
+            if(key.startsWith(prefix))try{created.setPlayerEnabled(java.util.UUID.fromString(key.substring(prefix.length())),value.equals("ENABLED"));}catch(IllegalArgumentException ignored){}
+        });
         return created;
     }
 

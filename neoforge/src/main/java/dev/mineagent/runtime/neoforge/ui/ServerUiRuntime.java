@@ -135,6 +135,7 @@ public final class ServerUiRuntime {
                 var data=json.readTree(packet.json());uiAgents.interrupt(viewer.getUUID(),UUID.fromString(data.path("sessionId").asText()),dev.mineagent.runtime.api.ui.UiInterruptSignal.normalize(data.path("signal").asText()));return;
             }
             if (packet.channel().equals("openShell")) {
+                if(!MineAgentRuntimeServices.permissions(server).allowed(viewer.getUUID(),viewer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),PermissionAction.CHAT))throw new SecurityException("WORLD_DISABLED");
                 ServerPackageRuntime.disconnect(server, viewer.getUUID());
                 dev.mineagent.runtime.neoforge.compile.NativeLiveClassAccess.clear(viewer.getUUID());
                 for (Session old : sessions.list(viewer.getUUID())) if (old.binding().ownerPackageId().equals(TRUSTED_SHELL_PACKAGE))
@@ -854,13 +855,14 @@ public final class ServerUiRuntime {
         return new ScoreAudienceContext(viewer.getUUID(),team==null?Set.of():Set.of(team.getName()),Set.of(),Set.of());
     }
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
+        if (event.getEntity() instanceof ServerPlayer player) disconnect(player);
+    }
+    public static void disconnect(ServerPlayer player) {
             ServerUiRuntime runtime;
             synchronized (ServerUiRuntime.class) { runtime = RUNTIMES.get(player.level().getServer()); }
             if (runtime != null) { runtime.desktopPlans.disconnect(player.getUUID());runtime.deliveries.disconnect(player.getUUID());runtime.worldUi.disconnect(player.getUUID());runtime.containers.closeViewer(player.getUUID());runtime.candidateViews.disconnect(player.getUUID());runtime.takeovers.disconnect(player.getUUID());runtime.uiAgents.disconnect(player.getUUID());runtime.sessions.disconnect(player.getUUID()); runtime.rateWindows.remove(player.getUUID()); runtime.rateCounts.remove(player.getUUID()); }
             dev.mineagent.runtime.neoforge.compile.NativeLiveClassAccess.clear(player.getUUID());
             ServerPackageRuntime.disconnect(player.level().getServer(), player.getUUID());
-        }
     }
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){ServerUiRuntime runtime;synchronized(ServerUiRuntime.class){runtime=RUNTIMES.get(event.getServer());}if(runtime!=null){runtime.desktopPlans.tick();runtime.deliveries.tick();runtime.worldUi.expire();runtime.containers.tick();runtime.candidateViews.expire();runtime.uiAgents.tick();if(event.getServer().getTickCount()%20==0)try{MineAgentNetwork.reconcileAppearanceDecisions(event.getServer());}catch(RuntimeException failure){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Appearance decision reconciliation failed: {}",failure.getClass().getSimpleName());}}}
     @SubscribeEvent public static synchronized void stopped(ServerStoppedEvent event) {var r=RUNTIMES.remove(event.getServer());if(r!=null){r.desktopPlans.close();r.deliveries.close();r.worldUi.close();r.containers.close();r.candidateViews.clear();r.takeovers.clear();r.uiAgents.close();}}
