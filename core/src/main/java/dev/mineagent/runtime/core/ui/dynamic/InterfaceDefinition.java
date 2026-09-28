@@ -6,17 +6,20 @@ import java.util.*;
 
 /** Data contract for arbitrary native widget trees. No HTML, executable Java or remote script URLs. */
 public record InterfaceDefinition(String id, String title, Surface surface, JsonNode root,
-                                  Map<String, JsonNode> data, String stylesheet,int order,Map<String,InterfaceSources.Source> sources,Map<String,InterfaceHandlers.Handler> handlers) {
-    public enum Surface { SCREEN, HUD }
+                                  Map<String, JsonNode> data, String stylesheet,int order,Map<String,InterfaceSources.Source> sources,Map<String,InterfaceHandlers.Handler> handlers,InterfaceAttachment attachment) {
+    public enum Surface { SCREEN, HUD, SCREEN_OVERLAY, ENTITY_HUD }
     public static final int MAX_SOURCE_BYTES=256*1024, MAX_NODES=2048, MAX_DEPTH=48;
     private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
-    public static final Set<String> TYPES=Set.of("panel","row","column","scroll","label","button","input","toggle","select","progress","image");
+    public static final Set<String> TYPES=Set.of("panel","row","column","scroll","label","button","input","toggle","select","progress","image","window");
     private static final Set<String> NODE_FIELDS=Set.of("id","type","text","value","bind","bindings","style","classes","resource","events","children","visible","enabled","secret","options");
     public static final String CONTRACT="""
         DivZero native UI v1: JSON, rendered with LDLib2 and built by the DivZero KubeJS bridge.
         {"id":"shop","title":"Shop","surface":"SCREEN","root":{"id":"root","type":"row","children":[...]},"data":{},"stylesheet":""}
-        surface=SCREEN or HUD. HUD is passive by default; it never grabs the mouse or blocks movement.
+        surface=SCREEN, HUD, SCREEN_OVERLAY or ENTITY_HUD. HUD is passive by default; it never grabs the mouse or blocks movement.
+        SCREEN_OVERLAY attaches arbitrary controls to an existing game screen, without replacing its menu or slots. attachment:{"menu":"minecraft:furnace","anchor":"top","x":0,"y":-6}; menu="furnace" matches furnace/blast furnace/smoker. Or use exact screen_class discovered by inspect_native_screen. anchor=top/left/right/bottom/center/absolute, offsets are GUI units. It renders/interacts only while the target screen is open. Optional host_stylesheet applies LSS to a real LDLib2 host root and is removed when detached; other screen types still support injected decorations/controls, not arbitrary host-style mutation.
+        ENTITY_HUD renders one passive copy of the root above each visible tracked living entity. attachment:{"range":64,"through_walls":false}; range1..256, hidden/behind-camera/out-of-range entities are skipped. Read-only data.entity has id/name/health/maxHealth/distance. Use get(data.entity,"health") and division by maxHealth for bars; no events/handlers are allowed. It does not grab mouse input.
+        window is an arbitrary child-control container with draggable title, resize border, minimize/restore task button, maximize and close. It can be combined with panels, launchers and styles for a desktop. The default theme is MC; an explicit desktop request may style its local tree.
         Optional order is an integer -10000..10000 for ordering independent HUD panels. HUD coordinates use GUI-scaled screen units; root LSS left/top/right/bottom can position the panel.
         Optional sources binds data keys to live server data, without AI polling or reload:
         "sources":{"balance":{"kind":"score","objective":"coins","holder":"$viewer"},"health":{"kind":"agent","field":"health"}}.
@@ -27,6 +30,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         world fields: game_time/dimension/raining/thundering in that viewer's current dimension.
         block fields id/state/solid/fluid/position/loaded read an optional relative offset:[dx,dy,dz] from the viewer's feet, each axis -2047..2047. Unloaded chunks are never forced to load; inventories and block-entity NBT are not exposed.
         blocks sources use radius:1..2047, offset:nonnegative page cursor (default0). Values contain center/dimension/radius/offset/nextOffset/totalCells/counts/unknown/gameTick, at most4096 cells per read. -1 nextOffset means that page finishes the region; other pages are not included. Do not combine pages from different centers or ticks into one claimed instantaneous observation. Per-view declarations share a4096-cell read budget and server ticks schedule them fairly.
+        menu fields read the currently open real menu: type, furnace_remaining_seconds, furnace_progress (0..1), furnace_lit_seconds, furnace_lit, brewing_seconds, brewing_fuel. Inactive machine fields are zero/false. Use inspect_brewing_recipes to discover registered recipes, then buttons with open_preview(kind=recipe,recipe_id=...) handlers in a SCREEN_OVERLAY anchored left of minecraft:brewing_stand.
         Sources only read world data. Setting a local bound number never changes the real score, health or task.
         Arbitrary nested panel/row/column/scroll/label/button/input/toggle/select/progress/image nodes, each with a stable unique id.
         Node fields: id,type,text,value,bind,style,classes,resource,events,children,visible,enabled.
@@ -53,6 +57,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         Bad candidates preserve the working UI and return a path-specific error. No restart, world exit, copied scripts or global reload.
         """;
 
+    public InterfaceDefinition(String id,String title,Surface surface,JsonNode root,Map<String,JsonNode> data,String stylesheet,int order,Map<String,InterfaceSources.Source> sources,Map<String,InterfaceHandlers.Handler> handlers){this(id,title,surface,root,data,stylesheet,order,sources,handlers,InterfaceAttachment.NONE);}
     public InterfaceDefinition {
         root=root.deepCopy();
         sources=Map.copyOf(sources);
@@ -66,10 +71,10 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         if(source==null||source.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>MAX_SOURCE_BYTES)throw error("$","SOURCE_SIZE");
         final JsonNode doc;
         try {doc=JSON.readTree(source);}catch(Exception e){throw error("$","INVALID_JSON");}
-        fields(doc,Set.of("id","title","surface","root","data","stylesheet","order","sources","handlers"),"$");
+        fields(doc,Set.of("id","title","surface","root","data","stylesheet","order","sources","handlers","attachment"),"$");
         String id=id(doc.path("id"),"$.id"),title=string(doc.path("title"),"$.title",256);
         Surface surface;
-        try {surface=Surface.valueOf(doc.path("surface").textValue());}catch(Exception e){throw error("$.surface","SCREEN_OR_HUD");}
+        try {surface=Surface.valueOf(doc.path("surface").textValue());}catch(Exception e){throw error("$.surface","SCREEN_HUD_OVERLAY_OR_ENTITY");}
         var ids=new HashSet<String>();validateNode(doc.path("root"),"$.root",0,ids);
         var data=new LinkedHashMap<String,JsonNode>();
         if(doc.has("data")){
@@ -80,7 +85,8 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         int order=0;if(doc.has("order")){var value=doc.get("order");if(!value.isIntegralNumber()||!value.canConvertToInt()||Math.abs((long)value.intValue())>10000)throw error("$.order","ORDER");order=value.intValue();}
         var sources=InterfaceSources.parse(doc.path("sources"));var handlers=InterfaceHandlers.parse(doc.path("handlers"));
         for(var handler:handlers.values())if(sources.containsKey(handler.resultKey()))throw error("$.handlers","READ_ONLY_RESULT_KEY");
-        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet,order,sources,handlers);
+        if(surface==Surface.ENTITY_HUD){data.put("entity",JSON.createObjectNode().put("id","").put("name","").put("health",0).put("maxHealth",1).put("distance",0));if(!handlers.isEmpty())throw error("$.handlers","ENTITY_HUD_PASSIVE");walk(doc.get("root"),node->{if(node.has("events"))throw error("$.root","ENTITY_HUD_PASSIVE");});}
+        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet,order,sources,handlers,InterfaceAttachment.parse(doc.path("attachment"),surface));
     }
     public Map<String,String> inputBindings(){
         var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle","select").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);
@@ -117,7 +123,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
             }
         }
         if(n.has("children")){
-            if(!n.get("children").isArray()||!Set.of("panel","row","column","scroll").contains(type))throw error(path+".children","CONTAINER_REQUIRED");
+            if(!n.get("children").isArray()||!Set.of("panel","row","column","scroll","window").contains(type))throw error(path+".children","CONTAINER_REQUIRED");
             int i=0;for(var child:n.get("children"))validateNode(child,path+".children["+(i++)+"]",depth+1,ids);
         }
     }

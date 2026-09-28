@@ -240,7 +240,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
             String state=data.get("state").getAsString();int selected=data.get("selected").getAsInt();
             for(var raw:data.getAsJsonArray("buttons")){
                 var option=raw.getAsJsonObject();int index=option.get("index").getAsInt();String action=option.get("action").getAsString();
-                String verb=switch(action){case "confirm"->"确认选择";case "suggest"->"填入输入框";case "copy"->"复制";default->"";};
+                String verb=switch(action){case "confirm"->"确认选择";case "suggest"->"填入输入框";case "copy"->"复制";case "preview"->"预览";default->"";};
                 var control=button(t(verb)+" · "+option.get("label").getAsString(),()->activate(index,action));
                 control.setId("rich-"+message+"-"+index);control.getLayout().widthPercent(100).heightAuto().minHeight(23).marginAll(0).paddingVertical(4);
                 control.text.getLayout().widthPercent(100).heightAuto();control.text.textStyle(style->style.adaptiveWidth(false).adaptiveHeight(true).textWrap(TextWrap.WRAP));
@@ -259,7 +259,8 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
                 if(confirm){data=value.getAsJsonObject("choice");signature="";notice(value.has("error")&&!value.get("error").getAsString().isBlank()?t("选择已提交")+" · "+value.get("error").getAsString():t(value.has("queued")&&value.get("queued").getAsBoolean()?"选择已排队":"选择已提交"));nextMessages=0;}
                 else if(action.equals(value.get("action").getAsString())){
                     String text=value.get("value").getAsString();
-                    if(action.equals("copy")){Minecraft.getInstance().keyboardHandler.setClipboard(text);notice(t("已复制"));}
+                    if(action.equals("preview")){NativePreview.open(text);}
+                    else if(action.equals("copy")){Minecraft.getInstance().keyboardHandler.setClipboard(text);notice(t("已复制"));}
                     else if(action.equals("suggest")){String draft=String.join("\n",composer.getValue());composer.setValue((draft.isBlank()?text:draft+"\n"+text).split("\n",-1),false);saveDraft();getModularUI().requestFocus(composer);notice(t("已填入输入框，尚未发送"));}
                 }
                 draw();

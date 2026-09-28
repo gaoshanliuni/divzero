@@ -26,7 +26,8 @@
     "client.EntityModelRenderRulesMixin",
     "client.LivingEntityPartsMixin",
     "client.EntityRenderContextMixin",
-    "client.NativeButtonMixin"
+    "client.NativeButtonMixin",
+    "client.ContainerScreenGeometry"
   ],
   "injectors": {
     "defaultRequire": 1

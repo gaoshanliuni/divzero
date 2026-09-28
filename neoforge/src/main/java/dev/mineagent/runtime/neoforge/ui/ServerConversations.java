@@ -28,7 +28,7 @@ public final class ServerConversations implements AutoCloseable {
     private final ConversationFocusRegistry focus=new ConversationFocusRegistry(java.time.Clock.systemUTC());
     private static final java.util.concurrent.ExecutorService STREAM_IO=java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
     private static final class Flight {final dev.mineagent.runtime.core.building.BuildingCompletionGate buildings=new dev.mineagent.runtime.core.building.BuildingCompletionGate();java.util.concurrent.CompletableFuture<Void> persisted=java.util.concurrent.CompletableFuture.completedFuture(null);final UUID op,agent;final ServerPlayer viewer;final Object level;final java.util.List<java.util.Map<String,Object>> tools=new java.util.ArrayList<>();final StringBuilder reply=new StringBuilder();long rounds,calls;dev.mineagent.runtime.core.memory.PlayerPreferenceStore.Snapshot preferences;final AtomicBoolean permit=new AtomicBoolean(true);final StringBuilder buffer=new StringBuilder(),thinkingBuffer=new StringBuilder();int thinkingLength;boolean thinkingActive,thinkingDirty,roundThinking;volatile String error="";UUID summaryJob,conversation;int summaryCalls;Flight(UUID op,ServerPlayer viewer,UUID agent){this.op=op;this.agent=agent;this.viewer=viewer;this.level=viewer.level();}}
-    private record Generation(UUID viewer,dev.mineagent.runtime.api.agent.AgentDefinition agent,UUID conversation,ConversationStore.Turn turn,dev.mineagent.runtime.core.agent.AgentPersonaService.Persona persona,String original,ConversationBudget policy,ConversationContext.Plan initial,dev.mineagent.runtime.core.memory.PlayerPreferenceStore.Snapshot preferences){int budget(){return Math.max(1024,policy.contextTokenBudget()-12288);}}
+    private record Generation(UUID viewer,dev.mineagent.runtime.api.agent.AgentDefinition agent,UUID conversation,ConversationStore.Turn turn,dev.mineagent.runtime.core.agent.AgentPersonaService.Persona persona,String original,ConversationBudget policy,ConversationContext.Plan initial,dev.mineagent.runtime.core.memory.PlayerPreferenceStore.Snapshot preferences,String memories){int budget(){return Math.max(1024,policy.contextTokenBudget()-12288);}}
     private ServerConversations(MinecraftServer server)throws Exception{this.server=server;var path=server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");store=ConversationStore.open(path,MineAgentRuntimeServices.worldId(server),java.time.Clock.systemUTC());summaries=ConversationSummaryStore.open(path,MineAgentRuntimeServices.worldId(server),java.time.Clock.systemUTC());}
     public static synchronized ServerConversations get(MinecraftServer server){return LIVE.computeIfAbsent(server,s->{try{return new ServerConversations(s);}catch(Exception e){throw new IllegalStateException("CONVERSATION_STORE_UNAVAILABLE",e);}});}
     public static synchronized void stop(MinecraftServer server){var r=LIVE.remove(server);if(r!=null)r.close();}
@@ -110,6 +110,7 @@ public final class ServerConversations implements AutoCloseable {
         for (int i = 0; i < options.size(); i++) {
             var b = options.get(i);
             net.minecraft.network.chat.ClickEvent click = switch (b.action()) {
+                case "preview" -> new net.minecraft.network.chat.ClickEvent.RunCommand("/ai preview "+b.value());
                 case "copy" -> new net.minecraft.network.chat.ClickEvent.CopyToClipboard(b.value());
                 case "suggest" -> new net.minecraft.network.chat.ClickEvent.SuggestCommand(b.value());
                 case "confirm" -> new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt " + agent + " choice:" + boundConversation + ":" + saved.messageId() + ":" + i);
@@ -271,8 +272,8 @@ public final class ServerConversations implements AutoCloseable {
             var preferences=MineAgentRuntimeServices.preferences(server).snapshot(viewer.getUUID(),MineAgentRuntimeServices.worldId(server),agent,"CONVERSATION");var plan=ConversationContext.build(store,viewer.getUUID(),definition,id,turn,persona,original,budget,null,preferences.section());var flight=new Flight(operation,viewer,agent);flight.conversation=id;flight.preferences=preferences;flights.put(operation,flight);
             store.recordContext(operation,plan);
             MineAgentRuntimeServices.audit(server).record(viewer.getUUID().toString(),"CONVERSATION_GENERATION_ACCEPTED",operation.toString(),json.writeValueAsString(Map.of("conversationId",id,"agentId",agent,"personaRevision",persona.revision(),"estimatedTokens",plan.estimatedTokens(),"estimateMode",plan.estimateMode(),"omittedThrough",plan.omittedThrough(),"summaryStatus",plan.summaryStatus(),"budget",policy,"inputSource",input.source(),"speechOperation",speech==null?"":speech)));
-            var generation=new Generation(viewer.getUUID(),definition,id,turn,persona,original,policy,plan,preferences);
-            advance(flight,generation,null);
+            var generation=new Generation(viewer.getUUID(),definition,id,turn,persona,original,policy,plan,preferences,"");
+            prepareMemories(flight,generation);
             return Map.of("state",json.writeValueAsString(store.get(viewer.getUUID(),agent,id)),"operationId",operation.toString(),"duplicate","false","contextStatus",plan.summaryStatus(),"omittedThrough",Long.toString(plan.omittedThrough()),"estimatedTokens",Integer.toString(plan.estimatedTokens()));
         }catch(Exception failure){var f=flights.remove(operation);if(f!=null)f.permit.set(false);String code=failure.getMessage();if(code==null||!dev.mineagent.runtime.core.memory.PlayerPreferenceStore.ERRORS.contains(code)&&!Set.of("PROVIDER_NOT_CONFIGURED","CURRENT_CONTEXT_EXCEEDS_BUDGET","CONVERSATION_CONTEXT_BUDGET","CONVERSATION_GENERATION_BUDGET").contains(code))code=summaryError(failure).equals("SUMMARY_GENERATION_FAILED")?"CONVERSATION_DISPATCH_FAILED":summaryError(failure);store.finish(operation,"FAILED",null,code);return Map.of("state",json.writeValueAsString(store.get(viewer.getUUID(),agent,id)),"operationId",operation.toString(),"acceptedError",code);}
     }
@@ -323,6 +324,21 @@ public final class ServerConversations implements AutoCloseable {
         boolean enabled=voices.isEmpty()||Boolean.parseBoolean(MineAgentRuntimeServices.config(server).snapshot().values().getOrDefault("voice.output.enabled","true"));
         for(var voice:voices.values())if(voice.permit.get()&&(!voice.focus.current()||!enabled||System.currentTimeMillis()>=voice.deadline)){voice.permit.set(false);try{store.voiceOutcome(voice.op,"CANCELLED","",System.currentTimeMillis()>=voice.deadline?"VOICE_REQUEST_EXPIRED":enabled?"CONVERSATION_FOCUS_CHANGED":"VOICE_OUTPUT_DISABLED");}catch(Exception ignored){}}
     }
+    private void prepareMemories(Flight flight,Generation g){
+        var path=server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");var world=MineAgentRuntimeServices.worldId(server);
+        java.util.concurrent.CompletableFuture.supplyAsync(()->{
+            try(var memory=new dev.mineagent.runtime.core.memory.DialogueMemoryStore(path,world,g.viewer(),g.agent().agentId(),java.time.Clock.systemUTC())){
+                if(!flight.permit.get())throw new IllegalStateException("CONVERSATION_CANCELLED");return memory.context(g.original(),Math.min(8000,Math.max(256,g.budget()/4)));
+            }catch(Exception error){throw new java.util.concurrent.CompletionException(error);}
+        },STREAM_IO).whenComplete((memories,error)->server.execute(()->{
+            if(!live(flight)){if(!closed)failGeneration(flight,"CONVERSATION_CONTEXT_CHANGED");return;}
+            try{if(error!=null)throw new IllegalStateException("CONVERSATION_MEMORY_READ_FAILED");
+                var plan=ConversationContext.build(store,g.viewer(),g.agent(),g.conversation(),g.turn(),g.persona(),g.original(),g.budget(),null,g.preferences().section()+"\n"+memories);
+                store.recordContext(flight.op,plan);
+                advance(flight,new Generation(g.viewer(),g.agent(),g.conversation(),g.turn(),g.persona(),g.original(),g.policy(),plan,g.preferences(),memories),null);
+            }catch(Exception failure){failGeneration(flight,agentError(failure));}
+        }));
+    }
     private void advance(Flight flight,Generation g,ConversationSummaryStore.Summary previous)throws Exception{
         thread();if(!flight.permit.get()||!store.pending(flight.op)){retire(flight);return;}
         if(g.initial().omittedThrough()==0){startReply(flight,g,g.initial());return;}
@@ -330,7 +346,7 @@ public final class ServerConversations implements AutoCloseable {
         long target=g.initial().omittedThrough();if(previous!=null&&previous.endOffset()>0)target=Math.max(target,previous.endSequence());
         if(previous!=null&&previous.endOffset()==0&&previous.endSequence()>target){
             if(!summaries.valid(store,g.viewer(),g.agent().agentId(),previous))throw new IllegalStateException("SUMMARY_SOURCE_CHANGED");
-            var plan=ConversationContext.build(store,g.viewer(),g.agent(),g.conversation(),g.turn(),g.persona(),g.original(),g.budget(),previous,g.preferences().section());
+            var plan=ConversationContext.build(store,g.viewer(),g.agent(),g.conversation(),g.turn(),g.persona(),g.original(),g.budget(),previous,g.preferences().section()+"\n"+g.memories());
             if(!plan.summaryStatus().equals("READY"))throw new IllegalStateException("SUMMARY_COVERAGE_INCOMPLETE");startReply(flight,g,plan);return;
         }
         int maximum=g.policy().summaryMaxCalls(),input=g.policy().summaryInputBudget();

@@ -50,7 +50,7 @@ public final class LdInterfaceRenderer {
         public UIElement create(String json) throws Exception {
             JsonNode n=JSON.readTree(json);String id=n.path("id").asText(),type=n.path("type").asText();
             UIElement element=switch(type){
-                case "label"->new TextElement();case "button"->new Button();case "input"->new TextField();
+                case "window"->new NativeDesktopWindow(n.path("text").asText("Window"));case "label"->new TextElement();case "button"->new Button();case "input"->new TextField();
                 case "toggle"->new Toggle();case "select"->new Selector<String>();case "progress"->new ProgressBar();case "scroll"->new ScrollerView();
                 case "row","column","panel","image"->new UIElement();default->throw new IllegalArgumentException("INTERFACE_WIDGET_TYPE: "+type);
             };
@@ -80,7 +80,7 @@ public final class LdInterfaceRenderer {
             if(element instanceof Toggle toggle)toggle.setText(Component.literal(n.path("text").asText("")));
             set(element,value(n,data));return element;
         }
-        public void add(UIElement parent,UIElement child){if(child instanceof TextElement&&specs.get(parent.getId()).path("type").asText().equals("row"))Style.defaultPipeline(child.getLayout(),layout->layout.width(0).minWidth(0).flexGrow(1).flexShrink(1));if(parent instanceof ScrollerView scroller)scroller.addScrollViewChild(child);else parent.addChild(child);}
+        public void add(UIElement parent,UIElement child){if(child instanceof TextElement&&specs.get(parent.getId()).path("type").asText().equals("row"))Style.defaultPipeline(child.getLayout(),layout->layout.width(0).minWidth(0).flexGrow(1).flexShrink(1));if(parent instanceof NativeDesktopWindow window)window.content.addChild(child);else if(parent instanceof ScrollerView scroller)scroller.addScrollViewChild(child);else parent.addChild(child);}
         public void listen(UIElement element,String event,Consumer<String> listener){
             if(event.equals("change")){
                 if(element instanceof TextField input)input.registerValueListener(value->{if(ready)listener.accept(value);});
@@ -92,10 +92,13 @@ public final class LdInterfaceRenderer {
         public void dispatch(String node,String event,String value){if(ready)events.dispatch(node,event,value);}
         private void installButtons(UIElement element){if(element instanceof Button button)NativeButtonFeedback.install(button);for(var child:element.getChildren())installButtons(child);}
         public void finish(UIElement root){
+            if(!definition.attachment().hostStylesheet().isBlank())strictStyles(definition.attachment().hostStylesheet());
+            var windows=nodes.values().stream().filter(NativeDesktopWindow.class::isInstance).map(NativeDesktopWindow.class::cast).toList();
+            if(!windows.isEmpty()){var dock=new UIElement();dock.addClass("divzero-desktop-dock");dock.getLayout().positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE).left(0).right(0).bottom(0).height(27).flexDirection(dev.vfyjxf.taffy.style.FlexDirection.ROW).gapAll(3);dock.getStyle().zIndex(10000).backgroundTexture(NativeUiTheme.panel());root.addChild(dock);windows.forEach(window->window.dock(dock));}
             root.addClass("panel_bg").addClass(NativeButtonFeedback.ROOT_CLASS);installButtons(root);
             if(embedded){root.addLocalStylesheet(strictStyles(definition.stylesheet()));result=new Rendered(null,root,nodes,specs,this);ready=true;return;}
             ModularUI ui;
-            if(definition.surface()==InterfaceDefinition.Surface.HUD){
+            if(definition.surface()!=InterfaceDefinition.Surface.SCREEN){
                 var canvas=new UIElement();canvas.getLayout().widthPercent(100).heightPercent(100);root.addClass("native_hud_root");canvas.addChild(root);
                 ui=new ModularUI(UI.of(canvas,List.of(NativeUiTheme.mc(),strictStyles(".native_hud_root { position: absolute; left: 8; top: 8; }"),strictStyles(definition.stylesheet())),size->size),Minecraft.getInstance().player);
             }else ui=new ModularUI(UI.of(root,List.of(NativeUiTheme.mc(),strictStyles(definition.stylesheet()))),Minecraft.getInstance().player);
@@ -133,6 +136,7 @@ public final class LdInterfaceRenderer {
         public boolean popupOpen(){return nodes.values().stream().anyMatch(element->element instanceof Selector<?> selector&&selector.isOpen());}
         public void copyScrollTo(Rendered target){
             target.note(diagnosticText);
+            for(var entry:nodes.entrySet())if(entry.getValue() instanceof NativeDesktopWindow window&&target.node(entry.getKey()) instanceof NativeDesktopWindow next)window.copyPlacementTo(next);
             for(var entry:nodes.entrySet())if(entry.getValue() instanceof ScrollerView source&&target.node(entry.getKey()) instanceof ScrollerView next){next.horizontalScroller.setNormalizedValue(source.horizontalScroller.getNormalizedValue());next.verticalScroller.setNormalizedValue(source.verticalScroller.getNormalizedValue());}
         }
         public boolean sameGeometry(Rendered target){
@@ -159,7 +163,7 @@ public final class LdInterfaceRenderer {
         return data.getOrDefault(spec.path("bind").asText(),fallback);
     }
     /** LDLib's permissive parser logs and skips bad declarations; dynamic revisions must fail instead. */
-    private static Stylesheet strictStyles(String source){
+    static Stylesheet strictStyles(String source){
         var rules=new ArrayList<StyleRule>();var matcher=Stylesheet.RULE.matcher(source);int end=0;
         while(matcher.find()){
             if(!source.substring(end,matcher.start()).isBlank())throw new IllegalArgumentException("INTERFACE_LSS_SYNTAX at "+end);

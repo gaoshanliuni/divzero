@@ -28,12 +28,13 @@ public final class NativeInterfacesClient {
     private static UUID restoreRequest;private static boolean restoreReady;private static long nextRestore;
     public static void restoreAcknowledged(UUID id){if(id.equals(restoreRequest))restoreReady=true;}
     private static Object connection,level,player;private static UUID connectionId=UUID.randomUUID();
-    public static void activationChanged(){for(var slot:VIEWS.values())slot.session.close();VIEWS.clear();CALLBACKS.clear();restoreReady=false;restoreRequest=null;nextRestore=0;var mc=Minecraft.getInstance();if(mc.screen instanceof NativeScreen screen){screen.detach();mc.setScreen(null);}}
+    public static void activationChanged(){NativeAttachedLayers.clear();for(var slot:VIEWS.values())slot.session.close();VIEWS.clear();CALLBACKS.clear();restoreReady=false;restoreRequest=null;nextRestore=0;var mc=Minecraft.getInstance();if(mc.screen instanceof NativeScreen screen){screen.detach();mc.setScreen(null);}}
     public static void tick(){
         var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level||player!=mc.player){restoreReady=false;restoreRequest=null;nextRestore=0;
         for(var slot:VIEWS.values())slot.session.close();VIEWS.clear();CALLBACKS.clear();connection=mc.getConnection();level=mc.level;player=mc.player;connectionId=UUID.randomUUID();
         if(mc.screen instanceof NativeScreen screen){screen.detach();mc.setScreen(null);}
         }
+        NativeAttachedLayers.tick();
         for(var callback:CALLBACKS.values())if(System.currentTimeMillis()>=callback.deadline){callback.deadline=Long.MAX_VALUE;callback.record.put("state","UNKNOWN");callback.slot.error="NATIVE_EVENT_ACK_TIMEOUT_INSPECT_DO_NOT_REPLAY";publish(callback,JSON.createObjectNode().put("status","UNKNOWN").put("error",callback.slot.error));}
         if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()&&mc.player!=null&&mc.level!=null&&mc.getConnection()!=null&&!restoreReady&&System.currentTimeMillis()>=nextRestore){nextRestore=System.currentTimeMillis()+5000;restoreRequest=UUID.randomUUID();ClientPacketDistributor.sendToServer(new UiPayloads.Command(restoreRequest,"nativeInterfaceReady","{}"));}
     }
@@ -46,15 +47,15 @@ public final class NativeInterfacesClient {
             String kind=args.path("kind").asText();if(args.has("id"))affected=VIEWS.get(new Key(world,owner,agent,args.path("id").asText()));
             if(kind.equals("inspect")){
                 var views=new ArrayList<Map<String,Object>>();for(var slot:VIEWS.values())if(slot.key.world.equals(world)&&slot.key.owner.equals(owner)&&slot.key.agent.equals(agent)&&(!args.has("id")||slot.key.id.equals(args.get("id").asText())))views.add(snapshot(slot));
-                reply=Map.of("status","OBSERVED","views",views,"ldlib2",true,"kubejs",net.neoforged.fml.ModList.get().isLoaded("kubejs"));
+                reply=Map.of("status","OBSERVED","views",views,"ldlib2",true,"kubejs",net.neoforged.fml.ModList.get().isLoaded("kubejs"),"screen",NativeAttachedLayers.screenInfo());
             }else if(kind.equals("restore")){
                 String id=args.path("id").asText();long revision=args.path("revision").asLong();if(revision<1)throw new IllegalArgumentException("NATIVE_UI_REVISION");var key=new Key(world,owner,agent,id);var present=VIEWS.get(key);
                 if(present!=null){reply=new LinkedHashMap<>(snapshot(present));reply.put("status","OBSERVED");}
                 else{
                     if(!net.neoforged.fml.ModList.get().isLoaded("kubejs"))throw new IllegalStateException("NATIVE_UI_KUBEJS_REQUIRED");
-                    var source=(ObjectNode)JSON.readTree(args.path("source").asText());source.set("data",args.path("data"));if(InterfaceDefinition.parse(source.toString()).surface()!=InterfaceDefinition.Surface.HUD)throw new IllegalArgumentException("NATIVE_UI_RESTORE_PASSIVE_ONLY");var slot=new Slot(key,revision);long renderedRevision=1;
+                    var source=(ObjectNode)JSON.readTree(args.path("source").asText());source.set("data",args.path("data"));if(InterfaceDefinition.parse(source.toString()).surface()==InterfaceDefinition.Surface.SCREEN)throw new IllegalArgumentException("NATIVE_UI_RESTORE_PASSIVE_ONLY");var slot=new Slot(key,revision);long renderedRevision=1;
                     var built=slot.session.replace(slot.session.scope(),0,source.toString(),(definition,data)->KubeInterfaceRenderer.build(definition,data,(node,event,value)->handle(slot,renderedRevision,node,event,value)));if(!built.applied())throw new IllegalArgumentException(built.error());
-                    changed=true;applySourceErrors(slot,args);slot.session.interactive(false);VIEWS.put(key,slot);LdHudRegistry.attach(slot.session,slot.session.definition().order());reply=new LinkedHashMap<>(snapshot(slot));reply.put("status","APPLIED");
+                    changed=true;applySourceErrors(slot,args);slot.session.interactive(false);VIEWS.put(key,slot);if(NativeAttachedLayers.attached(slot.session.definition()))NativeAttachedLayers.attach(slot.session);else LdHudRegistry.attach(slot.session,slot.session.definition().order());reply=new LinkedHashMap<>(snapshot(slot));reply.put("status","APPLIED");
                 }
             }else if(kind.equals("feed")||kind.equals("revoke")){
                 var key=new Key(world,owner,agent,args.path("id").asText());var slot=VIEWS.get(key);if(slot==null||slot.wireRevision!=args.path("expectedRevision").asLong(-1))throw new IllegalStateException("NATIVE_UI_STALE_CLIENT_REVISION");
@@ -87,9 +88,14 @@ public final class NativeInterfacesClient {
                     changed=true;
                 }
                 boolean hud=slot.session.definition().surface()==InterfaceDefinition.Surface.HUD;
+                boolean attached=NativeAttachedLayers.attached(slot.session.definition());
                 // From this point screen/HUD activation can have side effects even for control-only operations.
                 changed=true;
-                switch(kind){
+                if(attached){
+                    if(kind.equals("interact")&&slot.session.definition().surface()==InterfaceDefinition.Surface.ENTITY_HUD)throw new IllegalArgumentException("NATIVE_ENTITY_HUD_PASSIVE");
+                    if(Set.of("replace","show","interact").contains(kind)){slot.session.visible(kind.equals("replace")?wasVisible:true);NativeAttachedLayers.attach(slot.session);}
+                    else if(kind.equals("hide")||kind.equals("release")){slot.session.visible(false);NativeAttachedLayers.tick();}
+                }else switch(kind){
                     case "replace"->{slot.session.visible(wasVisible);if(wasVisible){if(hud&&wasInteractive)open(slot,true);else if(hud){slot.session.interactive(false);LdHudRegistry.attach(slot.session,slot.session.definition().order());}else open(slot,false);}}
                     case "show"->{slot.session.visible(true);if(hud){slot.session.interactive(false);LdHudRegistry.attach(slot.session,slot.session.definition().order());}else open(slot,false);}
                     case "hide"->{slot.session.visible(false);if(slot.screen!=null&&mc.screen==slot.screen){slot.screen.detach();mc.setScreen(null);}slot.session.interactive(false);}
@@ -109,7 +115,7 @@ public final class NativeInterfacesClient {
     private static void sourceDiagnostic(Slot slot){String value=slot.sourceErrors.isEmpty()?"":dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("实时数据暂不可用")+" · "+String.join(", ",slot.sourceErrors.keySet());slot.session.rendered().note(value);if(slot.screen!=null&&Minecraft.getInstance().screen==slot.screen)slot.screen.rendered.note(value);}
     public record ManagedView(UUID agent,String id,String title,long revision,String surface,boolean visible,boolean interactive,String error){}
     public static List<ManagedView> managedViews(){return VIEWS.values().stream().filter(slot->slot.session.definition()!=null).map(slot->new ManagedView(slot.key.agent,slot.key.id,slot.session.definition().title(),slot.wireRevision,slot.session.definition().surface().name(),slot.session.visible(),slot.session.interactive(),slot.error)).toList();}
-    private static Map<String,Object> snapshot(Slot slot){var out=new LinkedHashMap<String,Object>();out.put("id",slot.key.id);out.put("revision",slot.wireRevision);out.put("activationToken",slot.activationToken);out.put("dataRevision",slot.session.dataRevision());out.put("visible",slot.session.visible());out.put("interactive",slot.session.interactive());out.put("data",slot.session.definition().observableData(slot.session.data()));out.put("events",List.copyOf(slot.events));out.put("error",slot.error);out.put("sourceErrors",slot.sourceErrors);return out;}
+    private static Map<String,Object> snapshot(Slot slot){var out=new LinkedHashMap<String,Object>();out.put("id",slot.key.id);out.put("revision",slot.wireRevision);out.put("activationToken",slot.activationToken);out.put("dataRevision",slot.session.dataRevision());out.put("visible",slot.session.visible());out.put("interactive",slot.session.interactive());out.put("data",slot.session.definition().observableData(slot.session.data()));out.put("events",List.copyOf(slot.events));out.put("error",slot.error);out.put("sourceErrors",slot.sourceErrors);out.put("attachment",NativeAttachedLayers.observation(slot.session));return out;}
     static com.lowdragmc.lowdraglib2.gui.ui.UIElement smokeWidget(String id,String node){
         if(!Boolean.getBoolean("mineagent.nativeUiSmoke")&&!Boolean.getBoolean("mineagent.nativeMigrationModelSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
         var slot=VIEWS.values().stream().filter(s->s.key.id.equals(id)).findFirst().orElseThrow();
@@ -131,7 +137,7 @@ public final class NativeInterfacesClient {
     }
     private static void handle(Slot slot,long revision,String node,String event,String value){
         try{
-            if(!VIEWS.containsValue(slot)||Minecraft.getInstance().screen!=slot.screen)throw new IllegalStateException("NATIVE_UI_NOT_INTERACTING");
+            if(!VIEWS.containsValue(slot)||Minecraft.getInstance().screen!=slot.screen&&!NativeAttachedLayers.interacting(slot.session))throw new IllegalStateException("NATIVE_UI_NOT_INTERACTING");
             var actions=slot.session.actions(slot.session.scope(),revision,node,event);
             if(event.equals("change")){
                 var spec=slot.session.definition().node(node).orElseThrow();if(spec.has("bind"))slot.session.input(slot.session.scope(),revision,node,spec.path("type").asText().equals("toggle")?BooleanNode.valueOf(Boolean.parseBoolean(value)):TextNode.valueOf(value),data->update(slot,data));

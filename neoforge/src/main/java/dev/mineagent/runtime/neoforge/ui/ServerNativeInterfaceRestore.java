@@ -28,7 +28,7 @@ public final class ServerNativeInterfaceRestore {
                 if(error!=null){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Native HUD restoration could not read saved definitions: {}",error.getClass().getSimpleName());return;}
                 if(server.getPlayerList().getPlayer(player.getUUID())!=player||player.level()!=context.level||!world.equals(MineAgentRuntimeServices.worldId(server)))return;
                 for(var record:records)if(record.saved().visible()&&record.saved().dimension().equals(player.level().dimension().identifier().toString())&&ServerTaskStart.allowed(player,record.agent()))try{
-                    if(InterfaceDefinition.parse(record.saved().source()).surface()==InterfaceDefinition.Surface.HUD)ServerNativeInterfaces.restoreHud(player,record.agent(),record.id());
+                    if(InterfaceDefinition.parse(record.saved().source()).surface()!=InterfaceDefinition.Surface.SCREEN)ServerNativeInterfaces.restoreHud(player,record.agent(),record.id());
                 }catch(Exception invalid){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Native HUD restoration rejected an invalid definition");}
             }));
         }

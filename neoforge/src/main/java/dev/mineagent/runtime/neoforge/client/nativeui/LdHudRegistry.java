@@ -17,6 +17,7 @@ public final class LdHudRegistry {
     public static void register(RegisterGuiLayersEvent event){
         event.registerAboveAll(Identifier.fromNamespaceAndPath("mineagent_runtime","native_interfaces"),(graphics,delta)->{
             maintainContext();
+            NativeAttachedLayers.entityHud(graphics,delta);
             for(var entry:ENTRIES.values().stream().sorted(Comparator.comparingInt(Entry::order).thenComparing(e->e.session.scope().agent().toString()).thenComparing(e->e.session.scope().view())).toList())entry.layer.render(graphics,delta);
         });
     }

@@ -22,7 +22,7 @@ public final class ServerPreviews {
  private static final ExecutorService IO=Executors.newFixedThreadPool(2,r->{var t=new Thread(r,"mineagent-preview");t.setDaemon(true);return t;});
  private static final Map<MinecraftServer,State> STATES=new WeakHashMap<>();
  private record Scene(UUID owner,String json,long expires){}
- private record Data(String title,List<double[]> vertices,List<int[]> faces,String detail){}
+ private record Data(String title,List<double[]> vertices,List<int[]> faces,String detail,JsonNode nativeSource){Data(String title,List<double[]> vertices,List<int[]> faces,String detail){this(title,vertices,faces,detail,null);}}
  private record Shape(int color,List<AABB> boxes){}
  private interface Job {boolean step();void cancel();}
  private static final class State {final Map<UUID,Scene> scenes=new LinkedHashMap<>();final ArrayDeque<Job> jobs=new ArrayDeque<>();boolean closed;}
@@ -34,15 +34,24 @@ public final class ServerPreviews {
  }
  private static Data mesh(String title,RuntimeMesh mesh){return new Data(title,mesh.vertices().stream().map(v->new double[]{v.x(),v.y(),v.z()}).toList(),mesh.triangles().stream().map(t->new int[]{t.a(),t.b(),t.c(),t.color()}).toList(),"模型几何 / 颜色");}
  private static void current(ServerPlayer p,UUID agent,Object level,State state,BooleanSupplier permit){if(state.closed||!permit.getAsBoolean()||p.level()!=level||p.level().getServer().getPlayerList().getPlayer(p.getUUID())!=p||(agent!=null&&!dev.mineagent.runtime.neoforge.task.ServerTaskStart.allowed(p,agent)))throw new IllegalStateException("PREVIEW_CONTEXT_CHANGED");}
- public static CompletableFuture<Map<String,Object>> open(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){
+ public static CompletableFuture<Map<String,Object>> open(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){return open(p,agent,args,permit,null);}
+ public static CompletableFuture<Map<String,Object>> open(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit,UUID conversation){
   var server=p.level().getServer();var level=p.level();var state=state(server);
   try{
-   current(p,agent,level,state,permit);String kind=args.path("kind").asText("building");CompletableFuture<Data> generated;
-   if(kind.equals("creature")){var species=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.get(server).get(p.getUUID(),UUID.fromString(args.path("species_id").asText())).orElseThrow(()->new SecurityException("PREVIEW_SPECIES_NOT_OWNED"));if(args.has("expected_revision")&&species.revision()!=args.path("expected_revision").asLong())throw new IllegalStateException("PREVIEW_STALE");var definition=species.definition();generated=CompletableFuture.supplyAsync(()->mesh(definition.name(),RuntimeMesh.parse(definition.model())),IO);
+   current(p,agent,level,state,permit);String display=args.path("display").asText("open");if(!Set.of("open","chat").contains(display))throw new IllegalArgumentException("PREVIEW_DISPLAY");String kind=args.path("kind").asText("building");CompletableFuture<Data> generated;
+   if(kind.equals("recipe")){
+    var stack=NativeMenuData.preview(p,args.path("recipe_id").asText());var encoded=net.minecraft.world.item.ItemStack.CODEC.encodeStart(p.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE),stack).getOrThrow();var nativeSource=JSON.createObjectNode().put("kind","item");nativeSource.set("stack",JSON.readTree(encoded.toString()));generated=CompletableFuture.completedFuture(new Data(stack.getHoverName().getString(),List.of(),List.of(),"药水配方产物预览",nativeSource));
+   }else if(kind.equals("entity")){
+    var entity=level.getEntity(UUID.fromString(args.path("entity_id").asText()));if(entity==null||entity.distanceToSqr(p)>128*128)throw new IllegalArgumentException("PREVIEW_ENTITY_NOT_NEARBY");
+    var nativeSource=JSON.createObjectNode().put("kind","entity").put("entityId",entity.getUUID().toString()).put("entityType",net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
+    generated=CompletableFuture.completedFuture(new Data(entity.getName().getString(),List.of(),List.of(),"原生实体预览",nativeSource));
+   }else if(kind.equals("creature")){var species=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.get(server).get(p.getUUID(),UUID.fromString(args.path("species_id").asText())).orElseThrow(()->new SecurityException("PREVIEW_SPECIES_NOT_OWNED"));if(args.has("expected_revision")&&species.revision()!=args.path("expected_revision").asLong())throw new IllegalStateException("PREVIEW_STALE");var definition=species.definition();generated=CompletableFuture.supplyAsync(()->mesh(definition.name(),RuntimeMesh.parse(definition.model())),IO);
    }else if(kind.equals("package_model")){var runtime=ServerPackageRuntime.get(server);var pack=runtime.ownedPackage(p.getUUID(),UUID.fromString(args.path("package_id").asText()),args.path("expected_revision").asLong()).orElseThrow(()->new SecurityException("PREVIEW_PACKAGE_NOT_OWNED_OR_STALE"));var definition=pack.definitions().get(UUID.fromString(args.path("definition_id").asText()));if(definition==null)throw new IllegalArgumentException("PREVIEW_DEFINITION");String path=args.path("model_path").asText();var contentStore=runtime.worldContent();generated=CompletableFuture.supplyAsync(()->{try{return mesh(definition.name(),dev.mineagent.runtime.core.objects.RuntimeModelBundle.load(pack,definition,path,contentStore).mesh());}catch(Exception e){throw new CompletionException(e);}},IO);
    }else if(kind.equals("item")){
     int slot=args.has("slot")?args.path("slot").asInt(-1):p.getInventory().getSelectedSlot();if(slot<0||slot>=p.getInventory().getContainerSize())throw new IllegalArgumentException("PREVIEW_ITEM_SLOT");
-    var stack=p.getInventory().getItem(slot);var binding=dev.mineagent.runtime.neoforge.content.RuntimeItem.binding(stack);if(binding==null)throw new IllegalArgumentException("PREVIEW_RUNTIME_ITEM_REQUIRED");String title=stack.getHoverName().getString();generated=CompletableFuture.supplyAsync(()->mesh(title,binding.mesh()),IO);
+    var stack=p.getInventory().getItem(slot);if(stack.isEmpty())throw new IllegalArgumentException("PREVIEW_ITEM_EMPTY");var binding=dev.mineagent.runtime.neoforge.content.RuntimeItem.binding(stack);String title=stack.getHoverName().getString();
+    if(binding!=null)generated=CompletableFuture.supplyAsync(()->mesh(title,binding.mesh()),IO);
+    else {var encoded=net.minecraft.world.item.ItemStack.CODEC.encodeStart(p.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE),stack).getOrThrow();var nativeSource=JSON.createObjectNode().put("kind","item");nativeSource.set("stack",JSON.readTree(encoded.toString()));generated=CompletableFuture.completedFuture(new Data(title,List.of(),List.of(),"原生物品预览",nativeSource));}
    }else if(kind.equals("model")){
     if(!args.path("source").isTextual())throw new IllegalArgumentException("PREVIEW_MODEL_SOURCE");String source=args.path("source").asText();generated=CompletableFuture.supplyAsync(()->mesh("模型预览",RuntimeMesh.parse(source)),IO);
    }else if(kind.equals("building")){
@@ -68,11 +77,17 @@ public final class ServerPreviews {
      });
     });return result;});
    }else throw new IllegalArgumentException("PREVIEW_KIND");
-   return generated.thenApplyAsync(data->{try{String json=JSON.writeValueAsString(Map.of("title",data.title,"vertices",data.vertices,"faces",data.faces,"detail",data.detail));if(json.length()>8*1024*1024)throw new IllegalArgumentException("PREVIEW_SCENE_SIZE");return Map.entry(data,json);}catch(Exception e){throw new CompletionException(e);}},IO).thenCompose(pair->{var result=new CompletableFuture<Map<String,Object>>();server.execute(()->{try{
+   return generated.thenApplyAsync(data->{try{var sceneData=new LinkedHashMap<String,Object>();sceneData.put("title",data.title);sceneData.put("vertices",data.vertices);sceneData.put("faces",data.faces);sceneData.put("detail",data.detail);if(data.nativeSource!=null)sceneData.put("nativeSource",data.nativeSource);String json=JSON.writeValueAsString(sceneData);if(json.length()>8*1024*1024)throw new IllegalArgumentException("PREVIEW_SCENE_SIZE");return Map.entry(data,json);}catch(Exception e){throw new CompletionException(e);}},IO).thenCompose(pair->{var result=new CompletableFuture<Map<String,Object>>();server.execute(()->{try{
     current(p,agent,level,state,permit);var table=state.scenes;table.values().removeIf(s->s.expires<System.currentTimeMillis());while(table.values().stream().filter(s->s.owner.equals(p.getUUID())).count()>=4){UUID oldest=table.entrySet().stream().filter(e->e.getValue().owner.equals(p.getUUID())).findFirst().orElseThrow().getKey();table.remove(oldest);}
-    UUID id=UUID.randomUUID();table.put(id,new Scene(p.getUUID(),pair.getValue(),System.currentTimeMillis()+1800000));net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(UUID.randomUUID(),"previewOpen","{\"previewId\":\""+id+"\"}"));result.complete(Map.of("status","PREVIEW_OPENED","previewId",id,"vertices",pair.getKey().vertices.size(),"triangles",pair.getKey().faces.size(),"worldChanged",false,"renderConfirmation","CLIENT_REQUIRED"));
+    UUID id=UUID.randomUUID();table.put(id,new Scene(p.getUUID(),pair.getValue(),System.currentTimeMillis()+1800000));
+    if(display.equals("chat")){var offer=JSON.createObjectNode().put("text","预览："+pair.getKey().title);offer.putArray("buttons").addObject().put("label","打开预览").put("action","preview").put("value",id.toString());ServerConversations.get(server).richMessage(p,agent,conversation,UUID.randomUUID(),offer);}else show(p,id);
+    result.complete(Map.of("status",display.equals("chat")?"PREVIEW_OFFERED":"PREVIEW_OPENED","previewId",id,"vertices",pair.getKey().vertices.size(),"triangles",pair.getKey().faces.size(),"worldChanged",false,"renderConfirmation","CLIENT_REQUIRED"));
    }catch(Exception e){result.completeExceptionally(e);}});return result;});
   }catch(Exception e){return CompletableFuture.failedFuture(e);}
+ }
+ public static int show(ServerPlayer player,UUID id){
+  read(player,Map.of("previewId",id.toString(),"offset","0"));
+  net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(UUID.randomUUID(),"previewOpen","{\"previewId\":\""+id+"\"}"));return 1;
  }
  @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){var state=STATES.get(event.getServer());if(state==null)return;long deadline=System.nanoTime()+4000000;int count=state.jobs.size();while(count-->0&&!state.jobs.isEmpty()){var job=state.jobs.removeFirst();if(!job.step())state.jobs.addLast(job);if(System.nanoTime()>=deadline)break;}}
  @SubscribeEvent public static void stop(net.neoforged.neoforge.event.server.ServerStoppedEvent event){var state=STATES.remove(event.getServer());if(state!=null){state.closed=true;for(var job:state.jobs)job.cancel();state.jobs.clear();state.scenes.clear();}}

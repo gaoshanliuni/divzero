@@ -23,7 +23,10 @@
     "MobAttackRulesMixin",
     "TwilightNagaAttackMixin",
     "TwilightNagaSegmentAttackMixin",
-    "AgentClientPayloadSinkMixin"
+    "AgentClientPayloadSinkMixin",
+    "FurnaceMenuDataAccess",
+    "PotionBrewingAccess",
+    "PotionMixAccess"
   ],
   "injectors": {
     "defaultRequire": 1

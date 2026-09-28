@@ -49,7 +49,8 @@ public final class ConversationAgentTools {
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
             if(tool.equals("inspect_buildings")){keys(args,"id","offset");return ServerBuildings.inspect(p,agent,args);}
             if(tool.equals("verify_building")){keys(args,"id","revision");return ServerBuildings.verify(p,agent,args,permit);}
-            if(tool.equals("inspect_native_ui")){keys(args,"id");return ServerNativeInterfaces.inspect(p,agent,args,permit);}
+            if(tool.equals("inspect_brewing_recipes")){keys(args,"query","offset");return CompletableFuture.completedFuture(NativeMenuData.inspect(p,args));}
+            if(tool.equals("inspect_native_ui")||tool.equals("inspect_native_screen")){keys(args,"id");return ServerNativeInterfaces.inspect(p,agent,args,permit);}
             if(tool.equals("inspect_native_entities")){keys(args,"query","offset","template_id");return CompletableFuture.completedFuture(NativeEntityTemplates.inspect(p,args));}
             if(tool.equals("derive_native_entity")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(NativeEntityTemplates.derive(p,args));}
             if(tool.equals("inspect_entity_model")){keys(args,"entity_type","offset");return EntityModelProbe.request(p,args);}
@@ -144,7 +145,7 @@ public final class ConversationAgentTools {
             case "open_skin_ui"->{keys(a);return CompletableFuture.completedFuture(ServerAgentSkins.openUi(p,agent));}
             case "create_skin_png"->{keys(a,"name","model","base_file_id","base_color","rects");return ServerAgentSkins.create(p,agent,operation,a,permit);}
             case "set_skin_png"->{keys(a,"file_id","model","expected_revision");return ServerAgentSkins.apply(p,agent,operation,a,permit);}
-            case "open_preview"->{keys(a,"kind","file_id","entry","dimension","min","max","source","slot","species_id","expected_revision");return ServerPreviews.open(p,agent,a,permit);}
+            case "open_preview"->{keys(a,"kind","file_id","entry","dimension","min","max","source","slot","species_id","expected_revision","entity_id","display","recipe_id");return ServerPreviews.open(p,agent,a,permit,conversation);}
             case "request_files"->{keys(a,"reason");return ServerBuildingFiles.request(p,agent,permit,text(a,"reason",200));}
             case "write_file"->{keys(a,"name","content","encoding");return ServerFileTools.write(p,agent,operation,a,permit);}
             case "offer_file_download"->{keys(a,"file_id");return ServerFileTools.offer(p,agent,a,permit);}

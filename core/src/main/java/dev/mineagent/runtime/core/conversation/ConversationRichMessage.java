@@ -8,8 +8,8 @@ import java.util.UUID;
 public record ConversationRichMessage(String text, String color, List<Option> buttons) {
     public record Option(String label, String action, String value) {
         public Option {
-            check(label, 80); check(value, 2048);
-            if (action == null || !Set.of("confirm", "suggest", "copy").contains(action))
+            check(label, 80); check(value, 2048);if("preview".equals(action))UUID.fromString(value);
+            if (action == null || !Set.of("confirm", "suggest", "copy", "preview").contains(action))
                 throw new IllegalArgumentException("CONVERSATION_BUTTON_ACTION");
         }
     }
