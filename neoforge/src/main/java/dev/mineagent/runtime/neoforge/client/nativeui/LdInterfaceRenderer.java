@@ -55,8 +55,8 @@ public final class LdInterfaceRenderer {
                 case "row","column","panel","image"->new UIElement();default->throw new IllegalArgumentException("INTERFACE_WIDGET_TYPE: "+type);
             };
             element.setId(id);nodes.put(id,element);specs.put(id,n);
-            if(element instanceof TextElement label){label.textStyle(style->style.adaptiveWidth(false).adaptiveHeight(true).textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP));label.getLayout().widthPercent(100).minHeight(12).flexShrink(0);}
-            if(element instanceof TextField||element instanceof Button||element instanceof Toggle)element.getLayout().minHeight(22).flexShrink(0);
+            if(element instanceof TextElement label){Style.defaultPipeline(label.getTextStyle(),style->style.adaptiveWidth(false).adaptiveHeight(true).textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP));Style.defaultPipeline(label.getLayout(),layout->layout.widthPercent(100).minHeight(12).flexShrink(0));}
+            if(element instanceof TextField||element instanceof Button||element instanceof Toggle)Style.defaultPipeline(element.getLayout(),layout->layout.minHeight(22).flexShrink(0));
             if(element instanceof ProgressBar)element.getLayout().minHeight(18);
             if(element instanceof Selector<?> raw){@SuppressWarnings("unchecked")var selector=(Selector<String>)raw;var labels=new LinkedHashMap<String,String>();for(var option:n.path("options"))labels.put(option.path("value").asText(),option.path("label").asText());selector.setCandidateUIProvider(value->new TextElement().setText(Component.literal(value==null?"":labels.getOrDefault(value,value))));selector.setCandidates(List.copyOf(labels.keySet()));selector.getLayout().minHeight(22).flexShrink(0);}
             if(element instanceof TextField field)field.textFieldStyle(style->style.placeholder(Component.empty()));
@@ -80,7 +80,7 @@ public final class LdInterfaceRenderer {
             if(element instanceof Toggle toggle)toggle.setText(Component.literal(n.path("text").asText("")));
             set(element,value(n,data));return element;
         }
-        public void add(UIElement parent,UIElement child){if(parent instanceof ScrollerView scroller)scroller.addScrollViewChild(child);else parent.addChild(child);}
+        public void add(UIElement parent,UIElement child){if(child instanceof TextElement&&specs.get(parent.getId()).path("type").asText().equals("row"))Style.defaultPipeline(child.getLayout(),layout->layout.width(0).minWidth(0).flexGrow(1).flexShrink(1));if(parent instanceof ScrollerView scroller)scroller.addScrollViewChild(child);else parent.addChild(child);}
         public void listen(UIElement element,String event,Consumer<String> listener){
             if(event.equals("change")){
                 if(element instanceof TextField input)input.registerValueListener(value->{if(ready)listener.accept(value);});
