@@ -7,8 +7,8 @@ import java.util.*;
 /** Signed package GUI contract. Rendering is native; data and actions use the existing scoped UI protocol. */
 public record NativePackageDefinition(InterfaceDefinition view,Map<String,Request> reads,Map<String,Request> actions) {
     private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION).enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
-    public static final Set<String> READS=Set.of("scoreview.read","container.read","worldui.read","delivery.read","feedback.read","feedback.stateRead");
-    public static final Set<String> ACTIONS=Set.of("scoreview.patch","container.act","worldui.action","delivery.dataRead","feedback.submit");
+    public static final Set<String> READS=Set.of("scoreview.read","container.read","worldui.read","delivery.read","feedback.read","feedback.stateRead","state.get");
+    public static final Set<String> ACTIONS=Set.of("scoreview.patch","container.act","worldui.action","delivery.dataRead","feedback.submit","state.put","state.remove");
     public record Request(String action,Map<String,JsonNode> arguments,String result,int intervalTicks) {
         public Request{arguments=Map.copyOf(arguments);}
         public Map<String,String> arguments(Map<String,JsonNode> data){var values=new LinkedHashMap<String,String>();arguments.forEach((key,expression)->{var value=InterfaceExpression.evaluate(expression,data);values.put(key,value.isTextual()?value.asText():value.toString());});return Map.copyOf(values);}

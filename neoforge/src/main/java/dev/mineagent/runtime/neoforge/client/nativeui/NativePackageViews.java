@@ -65,6 +65,7 @@ public final class NativePackageViews {
     public static boolean painted(String id){var v=VIEWS.get(id);return v!=null&&current(v)&&visible(v)&&!v.blocked&&v.paintedTick>=0&&tick-v.paintedTick<=2;}
     public static boolean visible(String id){var v=VIEWS.get(id);return v!=null&&visible(v);}
     public static PackagePreviewTransfer.Resolved asset(String id){return require(id).asset;}
+    static Map<String,JsonNode> smokeData(String id){return require(id).content.data();}
     public static boolean passive(String id){return require(id).definition.view().surface()==InterfaceDefinition.Surface.HUD;}
     public static long lifecycle(String id){var v=VIEWS.get(id);return v==null?-1:v.lifecycle;}
     public static String document(String id){return require(id).document;}
@@ -105,7 +106,7 @@ public final class NativePackageViews {
         }catch(Exception failure){view.error=Objects.toString(failure.getMessage(),"NATIVE_PACKAGE_EVENT_FAILED");}
     }
     private static void dispatch(View view,String key,NativePackageDefinition.Request request,Map<String,JsonNode> data,boolean write){
-        if(!current(view)||!view.ready||view.blocked||view.session==null||view.transport==null){view.error="PREVIEW_READ_ONLY";return;}
+        if(!current(view)||!view.ready||view.blocked||view.session==null&&!request.action().equals("state.get")||view.transport==null){view.error="PREVIEW_READ_ONLY";return;}
         if(write&&view.writes.containsKey(key)){view.error="NATIVE_PACKAGE_OUTCOME_PENDING";return;}if(!write&&!view.reading.add(key))return;UUID operation=UUID.randomUUID();if(write)view.writes.put(key,operation);
         Session source=view.session;long generation=view.lifecycle;
         view.transport.request(view.id,source,request.action(),!write&&view.refreshing.remove(key)?Map.of("refresh","true"):request.arguments(data),operation).whenComplete((receipt,error)->Minecraft.getInstance().execute(()->{

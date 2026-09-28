@@ -25,6 +25,7 @@ public final class PackageContentClient {
         if(views.putIfAbsent(session.binding().viewId(),new View(session))!=null)throw new IllegalStateException("CONTENT_VIEW_EXISTS");
     }
     public static CompletableFuture<Receipt> request(String id,Session source,String action,Map<String,String> arguments,UUID operation){
+        if(action.startsWith("state."))return PackageUiStateClient.request(id,action,arguments,operation);
         var result=new CompletableFuture<Receipt>();
         try{
             var view=views.get(id);if(view==null||!view.ready||view.blocked||!view.visible||!ReadOnlyUiLease.sameContext(source,view.session)||!allowMessage())throw new SecurityException("CONTENT_SOURCE_REJECTED");

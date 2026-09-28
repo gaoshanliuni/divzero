@@ -9,7 +9,7 @@ public record HudRestoreEntry(UUID packageId,long packageRevision,UUID targetId,
     public HudRestoreEntry {
         Objects.requireNonNull(packageId);Objects.requireNonNull(targetId);Objects.requireNonNull(layout);
         PackageUiResolver.requirePath(entryPath);
-        if(packageRevision<1||!entryPath.startsWith("ui/")||!entryPath.endsWith(".html")||canonicalSha256==null||!canonicalSha256.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("HUD_BOOKMARK_INVALID");
+        if(packageRevision<1||!entryPath.startsWith("ui/")||!(entryPath.endsWith(".html")||entryPath.endsWith(".json"))||canonicalSha256==null||!canonicalSha256.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("HUD_BOOKMARK_INVALID");
     }
     public record Layout(double x,double y,double width,double height,boolean minimized) {
         public Layout {

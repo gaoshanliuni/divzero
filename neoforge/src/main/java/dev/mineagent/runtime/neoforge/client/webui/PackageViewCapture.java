@@ -32,7 +32,7 @@ public final class PackageViewCapture {
     private static CompletableFuture<Captured> active;
     private static final int MAX_READ_PIXELS=2_097_152;
     private PackageViewCapture(){}
-    static CompletableFuture<Boolean> sameTarget(byte[] before,byte[] after,dev.mineagent.runtime.api.ui.UiCapture.Manifest manifest,dev.mineagent.runtime.client.webui.UiCaptureCoordinates.Bounds bounds){
+    public static CompletableFuture<Boolean> sameTarget(byte[] before,byte[] after,dev.mineagent.runtime.api.ui.UiCapture.Manifest manifest,dev.mineagent.runtime.client.webui.UiCaptureCoordinates.Bounds bounds){
         return CompletableFuture.supplyAsync(()->{try{return dev.mineagent.runtime.client.webui.UiCaptureCoordinates.sameTarget(before,after,manifest,bounds);}
             catch(IOException invalid){throw new IllegalStateException("CAPTURE_PNG_DECODE",invalid);}},ENCODER);
     }
