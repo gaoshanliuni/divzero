@@ -16,7 +16,7 @@ final class NativeImeSupport {
     NativeImeSupport(Screen screen,Supplier<ModularUI> ui){this.screen=screen;this.ui=ui;}
     void update(){
         var mc=Minecraft.getInstance();UIElement next=null;
-        if(mc.screen==screen&&mc.isWindowActive()&&ui.get()!=null){var focus=ui.get().getFocusedElement();for(var p=focus;p!=null;p=p.getParent()){if(!p.isDisplayed()||!p.isActive()){next=null;break;}if(p instanceof TextField||p instanceof TextArea)next=p;}}
+        if(mc.screen==screen&&mc.isWindowActive()&&ui.get()!=null){var focus=ui.get().getFocusedElement();for(var p=focus;p!=null;p=p.getParent()){if(!p.isDisplayed()||!p.isActive()){next=null;break;}if((p instanceof TextField||p instanceof TextArea)&&p.isFocused()&&p.isVisible())next=p;}}
         if(next!=editor){release();editor=next;if(editor!=null)mc.onTextInputFocusChange(screen,true);}
         if(editor==null)return;float caretX=editor.getContentX(),caretY=editor.getContentY(),line=10;
         if(editor instanceof TextField field){String value=field.getValue();line=field.getTextFieldStyle().fontSize();caretX+=mc.font.width(value.substring(0,Math.clamp(field.getCursorPos(),0,value.length())))*line/9-field.getDisplayOffset();}
