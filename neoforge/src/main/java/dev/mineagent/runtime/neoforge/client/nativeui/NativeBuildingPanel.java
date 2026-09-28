@@ -53,13 +53,13 @@ final class NativeBuildingPanel {
     private void write(String kind,String source,String revision){if(busy||!live())return;busy=true;var args=args(kind);args.remove("offset");args.put("revision",revision);if(source!=null){args.remove("id");args.put("source",source);}WorkspacePanels.request("building.write",args).whenComplete((receipt,error)->{busy=false;if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}notice.setText(Component.literal(t("已受理，正在读取实际进度。")));read();});}
     private void verify(){if(busy)return;busy=true;var args=args("verify");args.remove("offset");args.put("revision",state.get("revision").getAsString());WorkspacePanels.request("building.read",args).whenComplete((receipt,error)->{busy=false;if(!live())return;if(error!=null)WorkspacePanels.failure(notice,error);else read();});}
     private java.util.concurrent.CompletableFuture<String> document(String section,String building,String revision){
-        var result=new java.util.concurrent.CompletableFuture<String>();documentPart(section,building,revision,"",0,new StringBuilder(),result);return result;
+        var result=new java.util.concurrent.CompletableFuture<String>();documentPart(section,building,revision,offset,"",0,new StringBuilder(),result);return result;
     }
-    private void documentPart(String section,String building,String revision,String hash,int at,StringBuilder source,java.util.concurrent.CompletableFuture<String> result){
+    private void documentPart(String section,String building,String revision,int historyOffset,String hash,int at,StringBuilder source,java.util.concurrent.CompletableFuture<String> result){
         if(!live()){result.completeExceptionally(new IllegalStateException("BUILDING_VIEW_CLOSED"));return;}
-        WorkspacePanels.request("building.read",Map.of("kind","document","agentId",agent,"id",building,"revision",revision,"section",section,"sha256",hash,"offset",Integer.toString(at),"historyOffset",Integer.toString(offset))).whenComplete((receipt,error)->{
+        WorkspacePanels.request("building.read",Map.of("kind","document","agentId",agent,"id",building,"revision",revision,"section",section,"sha256",hash,"offset",Integer.toString(at),"historyOffset",Integer.toString(historyOffset))).whenComplete((receipt,error)->{
             if(error!=null){result.completeExceptionally(error);return;}try{if(!live())throw new IllegalStateException("BUILDING_VIEW_CLOSED");var data=WorkspacePanels.state(receipt);String expected=data.get("sha256").getAsString();if(!hash.isEmpty()&&!hash.equals(expected))throw new IllegalStateException("BUILDING_DOCUMENT_CHANGED");int next=data.get("nextOffset").getAsInt();String text=data.get("text").getAsString();if(next-at!=text.codePointCount(0,text.length()))throw new IllegalStateException("BUILDING_DOCUMENT_OFFSET");source.append(text);if(source.length()>2*1024*1024)throw new IllegalStateException("BUILDING_DOCUMENT_LIMIT");
-                if(data.get("more").getAsBoolean()){if(next<=at)throw new IllegalStateException("BUILDING_DOCUMENT_OFFSET");documentPart(section,building,revision,expected,next,source,result);}else{String value=source.toString();if(!dev.mineagent.runtime.api.ui.UiCapture.sha256(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)).equals(expected))throw new IllegalStateException("BUILDING_DOCUMENT_HASH");result.complete(value);}
+                if(data.get("more").getAsBoolean()){if(next<=at)throw new IllegalStateException("BUILDING_DOCUMENT_OFFSET");documentPart(section,building,revision,historyOffset,expected,next,source,result);}else{String value=source.toString();if(!dev.mineagent.runtime.api.ui.UiCapture.sha256(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)).equals(expected))throw new IllegalStateException("BUILDING_DOCUMENT_HASH");result.complete(value);}
             }catch(Exception failed){result.completeExceptionally(failed);}
         });
     }
@@ -83,6 +83,12 @@ final class NativeBuildingPanel {
         }));load.run();
     }
 
+    static java.util.concurrent.CompletableFuture<String> smokeRoundTrip(NativeWorkspaceScreen host,String agent,String source){
+        if(!Boolean.getBoolean("mineagent.nativeExtrasSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
+        var panel=new NativeBuildingPanel(host,agent);String building=dev.mineagent.runtime.core.building.BuildingDesign.parse(source).id();
+        var editor=host.window("large-building-fixture",t("编辑建筑计划"),550,385);var input=new NativeCodeEditor("JAVA");editor.body.addChild(input);input.load(source);
+        return panel.upload(building,"0",input.source(),editor).thenCompose(receipt->panel.document("design",building,"1"));
+    }
     static void changed(JsonObject event){for(var panel:List.copyOf(OPEN))if(panel.live()&&(!event.has("agentId")||event.get("agentId").getAsString().equals(panel.agent))){if(event.has("errorCode"))panel.notice.setText(Component.literal(event.get("errorCode").getAsString()));else panel.read();}}
     static void tick(){OPEN.removeIf(p->!p.live());if(!NativeWorkspaceScreen.visible())return;for(var panel:OPEN)if(!panel.id.isBlank()&&panel.state!=null&&Set.of("PREPARING","APPLYING","PAUSED").contains(panel.state.get("status").getAsString())&&System.currentTimeMillis()>=panel.nextPoll)panel.read();}
     private static String t(String value){return ClientLanguage.t(value);}

@@ -99,6 +99,7 @@ public final class HudPersistenceClient {
         // Remove this failed document, but not the saved preference. A later retry uses a new Session/frame.
         WebGuiHostAdapter.INSTANCE.emit("closeManagedView",Map.of("viewId",view));publish();
     }
+    public static boolean canRemember(String view){return loaded&&scope!=null&&writes==0&&mounted.containsKey(view)&&PackageContentClient.session(view)!=null;}
     public static CompletableFuture<Map<String,String>> remember(String view,boolean enabled,HudRestoreEntry.Layout layout){
         var entry=mounted.get(view);var session=PackageContentClient.session(view);var descriptor=WebGuiHostAdapter.INSTANCE.viewPackage(view);
         if(!enabled&&loaded&&scope!=null&&entry!=null)return forget(entry.key());

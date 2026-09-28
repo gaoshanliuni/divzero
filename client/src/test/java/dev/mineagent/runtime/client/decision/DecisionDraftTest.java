@@ -1,0 +1,16 @@
+package dev.mineagent.runtime.client.decision;
+
+import dev.mineagent.runtime.api.decision.*;
+import org.junit.jupiter.api.Test;
+import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+class DecisionDraftTest {
+    private DecisionRequest question(DecisionKind kind,SelectionMode mode){return new DecisionRequest(UUID.randomUUID(),1,UUID.randomUUID(),2,kind,"Design","Choose",List.of(new DecisionOption("a","A",""),new DecisionOption("b","B","")),mode,1,mode==SelectionMode.SINGLE?1:2,true,DecisionStatus.OPEN);}
+    @Test void authorizationCannotBeGrantedByFreeText(){var d=new DecisionDraft(question(DecisionKind.AUTHORIZATION,SelectionMode.SINGLE));d.edit("yes");assertThrows(IllegalArgumentException.class,d::submission);d.toggle("b");assertEquals(List.of("b"),d.submission().selectedOptionIds());}
+    @Test void designAllowsTextAndSingleChoiceReplacesPrevious(){var d=new DecisionDraft(question(DecisionKind.DESIGN,SelectionMode.SINGLE));d.edit("custom");assertTrue(d.submission().selectedOptionIds().isEmpty());d.toggle("a");d.toggle("b");assertEquals(Set.of("b"),d.selected());}
+    @Test void explicitRetryUsesSameNonceAndEditInvalidatesIt(){var d=new DecisionDraft(question(DecisionKind.DESIGN,SelectionMode.MULTIPLE));d.toggle("b");d.toggle("a");var s=d.submission();assertEquals(List.of("a","b"),s.selectedOptionIds());assertEquals(s,d.submission());var restored=new DecisionDraft(d.request());restored.restore(d.snapshot());assertEquals(s,restored.submission());restored.edit("changed");assertNotEquals(s.submissionId(),restored.submission().submissionId());}
+    @Test void deferredAndInvalidatedDraftsAreRetainedButNeverSubmitted(){var d=new DecisionDraft(question(DecisionKind.DESIGN,SelectionMode.SINGLE));d.toggle("a");d.edit("keep");var nonce=d.submission().submissionId();d.update(d.request().withStatus(DecisionStatus.DEFERRED));assertEquals("keep",d.customText());assertThrows(IllegalStateException.class,d::submission);d.update(d.request().withStatus(DecisionStatus.OPEN));assertNotEquals(nonce,d.submission().submissionId());d.update(d.request().withStatus(DecisionStatus.CANCELLED));assertEquals(Set.of("a"),d.selected());assertThrows(IllegalStateException.class,()->d.edit("no"));}
+    @Test void staleRestoreDoesNotOverwriteEditsOrAnotherQuestion(){var q=question(DecisionKind.DESIGN,SelectionMode.SINGLE);var d=new DecisionDraft(q);d.edit("current");d.restore(new DecisionDraft.Saved(q.decisionId(),q.revision(),List.of("a"),"old",UUID.randomUUID()));assertEquals("current",d.customText());assertThrows(IllegalArgumentException.class,()->d.update(question(DecisionKind.DESIGN,SelectionMode.SINGLE)));d.update(q.withStatus(DecisionStatus.DEFERRED));assertFalse(d.update(q));}
+    @Test void serverAcceptedAnswerSupersedesTheLocalDraft(){var q=question(DecisionKind.DESIGN,SelectionMode.SINGLE);var d=new DecisionDraft(q);d.toggle("a");var accepted=new DecisionAnswerSubmission(q.decisionId(),q.revision(),UUID.randomUUID(),List.of("b"),"remote accepted",AnswerSource.UI);d.update(q.withStatus(DecisionStatus.RESOLVED));d.restoreAccepted(accepted);assertEquals(Set.of("b"),d.selected());assertEquals("remote accepted",d.customText());assertThrows(IllegalStateException.class,d::submission);}
+}
