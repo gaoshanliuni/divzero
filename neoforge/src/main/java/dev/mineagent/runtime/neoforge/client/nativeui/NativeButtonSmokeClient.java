@@ -30,10 +30,10 @@ public final class NativeButtonSmokeClient {
     private static void require(boolean yes,String error){if(!yes)throw new IllegalStateException(error);}
     private static void later(int delay,String name,Runnable action){steps.addLast(new Step(delay,name,action));}
     private static void move(Button button){move(button.getPositionX()+button.getSizeWidth()/2,button.getPositionY()+button.getSizeHeight()/2);}
-    private static void move(double x,double y){var mc=Minecraft.getInstance();double scale=mc.getWindow().getGuiScale();GLFW.glfwSetCursorPos(mc.getWindow().handle(),x*scale,y*scale);mc.screen.mouseMoved(x,y);}
+    private static void move(double x,double y){var mc=Minecraft.getInstance();double scale=mc.getWindow().getGuiScale();GLFW.glfwSetCursorPos(mc.getWindow().handle(),x*scale,y*scale);screen.getModularUI().refreshHoveredElementAtScreen((float)x,(float)y);mc.screen.mouseMoved(x,y);}
     private static MouseButtonEvent mouse(Button button,int key){return new MouseButtonEvent(button.getPositionX()+button.getSizeWidth()/2,button.getPositionY()+button.getSizeHeight()/2,new MouseButtonInfo(key,0));}
-    private static void press(Button button,int key){require(Minecraft.getInstance().isWindowActive(),"TEST_WINDOW_NOT_FOCUSED");screen.mouseClicked(mouse(button,key),false);}
-    private static void release(Button button,int key){screen.mouseReleased(mouse(button,key));}
+    private static void press(Button button,int key){require(Minecraft.getInstance().isWindowActive(),"TEST_WINDOW_NOT_FOCUSED");var event=mouse(button,key);screen.getModularUI().refreshHoveredElementAtScreen((float)event.x(),(float)event.y());screen.mouseClicked(event,false);}
+    private static void release(Button button,int key){var event=mouse(button,key);screen.getModularUI().refreshHoveredElementAtScreen((float)event.x(),(float)event.y());screen.mouseReleased(event);}
     private static void screenshot(String name){try{net.minecraft.client.Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget(),image->{try(image){image.writeToFile(output().resolve(name+".png"));}catch(Exception error){fail(error);}});}catch(Exception error){fail(error);}}
     private static void setup(){
         var root=new UIElement();screen=new TestScreen(root,true);var desktop=new UIElement();desktop.getLayout().widthPercent(100).flex(1);root.addChild(desktop);var dock=new UIElement();dock.getLayout().height(25).widthPercent(100);root.addChild(dock);

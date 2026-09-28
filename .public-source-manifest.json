@@ -3464,8 +3464,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeButtonSmokeClient.java",
-      "sha256": "33f4f037f66df778e961bbc35533afe9d00132eedeb4fc62e6ba6639e4062470",
-      "bytes": 9976
+      "sha256": "7c864cb3cec0b0c11652ee6e8c84cbd2416b0dbbf4bf9f44e4de43af3c999ade",
+      "bytes": 10253
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeCodeEditor.java",
