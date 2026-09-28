@@ -13,7 +13,7 @@ import dev.vfyjxf.taffy.style.*;
 import java.util.*;
 
 /** The first-connection trust prompt and mod-list entry; never a second control center. */
-public final class WorkspaceSetupScreen extends ModularUIScreen {
+public final class WorkspaceSetupScreen extends NativeInputScreen {
     private final Screen parent;
     public WorkspaceSetupScreen(Screen parent){this(parent,new UIElement());}
     private WorkspaceSetupScreen(Screen parent,UIElement root){

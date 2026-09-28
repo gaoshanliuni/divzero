@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /** F2/Ctrl+M share this direct LDLib2 workspace. No HTML, browser or KubeJS is used here. */
-public final class NativeWorkspaceScreen extends ModularUIScreen {
+public final class NativeWorkspaceScreen extends NativeInputScreen {
     private static final Gson JSON=new Gson();
     private static final class Model {
         String agent="",conversation="",filter="ACTIVE",notice="";JsonObject selected;
@@ -113,6 +113,13 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
     private void renameConversation(){if(model.selected==null)return;Dialog.stringEditorDialog(t("重命名"),model.selected.get("title").getAsString(),value->!value.isBlank()&&value.length()<=128,value->write("rename",Map.of("title",value),state->{model.selected=state;heading.setText(Component.literal(state.get("title").getAsString()));list();})).show(root);}
 
     Map<String,Object> smokeState(){if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return Map.of("agents",model.agents.size(),"agent",model.agent,"conversation",model.conversation,"selected",model.selected==null?"":model.selected.get("title").getAsString(),"draft",String.join("\n",composer.getValue()),"messageRows",rows.size(),"bodyChars",rows.values().stream().mapToInt(row->row.text.getText().getString().length()).sum(),"visibleRows",rows.values().stream().filter(row->row.root.getSizeHeight()>0&&row.text.getSizeHeight()>0).count());}
+    Map<String,Object> smokeIme(){
+        if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");if(!Minecraft.getInstance().isWindowActive())return Map.of("status","SKIPPED_WINDOW_NOT_ACTIVE");
+        String original=String.join("\n",composer.getValue());composer.setValue(new String[]{""},false);modularUI.requestFocus(composer.contentView);
+        if(!preeditUpdated(new net.minecraft.client.input.PreeditEvent("拼",1,List.of("拼"),0))||!nativeComposing()||!String.join("\n",composer.getValue()).isEmpty())throw new IllegalStateException("NATIVE_PREEDIT_INSERTED_TEXT");
+        keyPressed(new net.minecraft.client.input.KeyEvent(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER,0,0));if(!String.join("\n",composer.getValue()).isEmpty())throw new IllegalStateException("NATIVE_PREEDIT_ENTER_INSERTED");preeditUpdated(null);charTyped(new net.minecraft.client.input.CharacterEvent('测'));if(!String.join("\n",composer.getValue()).equals("测"))throw new IllegalStateException("NATIVE_COMMIT_NOT_EXACTLY_ONCE");
+        composer.setValue(original.split("\n",-1),false);saveDraft();modularUI.requestFocus(null);return Map.of("status","PASS","kind","NATIVE_PREEDIT_CALLBACK_NOT_OS_IME_QUALITY","preeditSeparate",true,"commitOnce",true);
+    }
     private ScrollerView conversationList;
     private String draftKey(){return model.agent+"/"+model.conversation;}
     private String draftText(){return model.drafts.getOrDefault(draftKey(),model.drafts.getOrDefault("legacy/"+model.conversation,""));}

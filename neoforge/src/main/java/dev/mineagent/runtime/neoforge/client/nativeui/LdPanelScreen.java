@@ -22,7 +22,8 @@ import net.minecraft.network.chat.Component;
 import java.util.*;
 
 /** Existing Java panel controllers feed LDLib2 controls; no vanilla widget is rendered or receives input. */
-public abstract class LdPanelScreen extends Screen {
+public abstract class LdPanelScreen extends Screen implements NativeComposition {
+    private final NativeImeSupport ime=new NativeImeSupport(this,()->this.ui);
     private final List<AbstractWidget> controls=new ArrayList<>();
     private final Set<EditBox> secrets=Collections.newSetFromMap(new IdentityHashMap<>());
     private final Map<AbstractWidget,UIElement> elements=new IdentityHashMap<>();
@@ -89,8 +90,11 @@ public abstract class LdPanelScreen extends Screen {
             }
         }finally{syncing=false;}
     }
-    @Override public void tick(){mount();sync();super.tick();}
-    @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partialTick){mount();sync();super.extractRenderState(graphics,mouseX,mouseY,partialTick);}
+    @Override public void tick(){mount();sync();super.tick();ime.update();}
+    @Override public boolean preeditUpdated(net.minecraft.client.input.PreeditEvent event){return ime.preedit(event);}
+    @Override public boolean nativeComposing(){return ime.composing();}
+    @Override public boolean keyPressed(KeyEvent event){return ime.consume(event)||super.keyPressed(event);}
+    @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partialTick){mount();sync();super.extractRenderState(graphics,mouseX,mouseY,partialTick);ime.render(graphics,mouseX,mouseY,partialTick);}
     @Override public boolean isPauseScreen(){return false;}
-    @Override public void removed(){super.removed();for(var secret:secrets)secret.setValue("");if(ui!=null&&!ui.isRemoved())ui.onRemoved();}
+    @Override public void removed(){ime.release();super.removed();for(var secret:secrets)secret.setValue("");if(ui!=null&&!ui.isRemoved())ui.onRemoved();}
 }

@@ -131,10 +131,11 @@ public final class NativeInterfacesClient {
             else update(slot,slot.session.data());
         }catch(Exception error){slot.error=Objects.toString(error.getMessage(),"NATIVE_UI_EVENT_FAILED");try{update(slot,slot.session.data());}catch(Exception ignored){}}
     }
-    private static final class NativeScreen extends ModularUIScreen {
+    private static final class NativeScreen extends NativeInputScreen {
         final Slot slot;final LdInterfaceRenderer.Rendered rendered;final boolean projection;
         NativeScreen(Slot slot,LdInterfaceRenderer.Rendered rendered,boolean projection){super(rendered.ui,Component.literal(slot.session.definition().title()));this.slot=slot;this.rendered=rendered;this.projection=projection;}
         void detach(){clearWidgets();if(projection)rendered.close();}
+        @Override public void removed(){if(slot.session.rendered()!=null){slot.session.interactive(false);if(projection&&slot.session.definition().surface()==InterfaceDefinition.Surface.HUD&&slot.session.visible())LdHudRegistry.attach(slot.session,slot.session.definition().order());else if(!projection)slot.session.visible(false);}super.removed();}
         @Override public void onClose(){slot.session.interactive(false);if(!projection)slot.session.visible(false);super.onClose();}
     }
     private NativeInterfacesClient(){}

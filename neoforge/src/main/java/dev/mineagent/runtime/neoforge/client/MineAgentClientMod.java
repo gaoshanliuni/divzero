@@ -121,6 +121,7 @@ public final class MineAgentClientMod {
         dev.mineagent.runtime.neoforge.client.MineAgentClientPackages.tick(++packageTick);
         dev.mineagent.runtime.neoforge.client.webui.WebGuiWorkspaceInput.tick();
         while (OPEN_CONTROL_CENTER.consumeClick()) {
+            if(Minecraft.getInstance().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeComposition composition&&composition.nativeComposing())continue;
             dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.open();
         }
         if (Boolean.getBoolean("mineagent.clientSmokeTest")) {

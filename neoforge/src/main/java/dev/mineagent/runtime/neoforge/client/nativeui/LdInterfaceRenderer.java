@@ -74,6 +74,7 @@ public final class LdInterfaceRenderer {
         }
         public void dispatch(String node,String event,String value){if(ready)events.dispatch(node,event,value);}
         public void finish(UIElement root){
+            root.addClass("panel_bg");
             ModularUI ui;
             if(definition.surface()==InterfaceDefinition.Surface.HUD){
                 var canvas=new UIElement();canvas.getLayout().widthPercent(100).heightPercent(100);root.addClass("native_hud_root");canvas.addChild(root);

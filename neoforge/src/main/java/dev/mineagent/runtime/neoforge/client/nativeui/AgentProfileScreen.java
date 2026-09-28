@@ -15,7 +15,7 @@ import net.minecraft.resources.Identifier;
 import java.util.*;
 
 /** Right-click profile for one immutable AI id; no global control-center menu is exposed. */
-public final class AgentProfileScreen extends ModularUIScreen {
+public final class AgentProfileScreen extends NativeInputScreen {
     private final UUID agent;private final Object connection;private UIElement root;private final UIElement content=new UIElement();
     private final TextElement title,summary,status;private final ProgressBar health=new ProgressBar();
     private String personaDraft;private long personaDraftRevision=-1;private boolean personaSaving;private JsonObject snapshot;private String tab="overview";private int inventoryOffset,contentOffset;private long nextRead;private boolean busy;private long personaRevision=-1,uiEpoch;
