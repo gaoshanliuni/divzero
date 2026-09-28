@@ -21,7 +21,7 @@ final class NativePackagePanel {
     private NativePackagePanel(NativeWorkspaceScreen host,JsonObject head){
         if(Boolean.getBoolean("mineagent.nativeUiSmoke"))smokeLast=this;this.host=host;this.head=head.deepCopy();window=host.window("package-"+head.get("packageId").getAsString(),head.get("name").getAsString(),545,385);
         var navigation=WorkspacePanels.row();navigation.getLayout().height(25);window.body.addChild(navigation);
-        navigation.addChild(NativeUiTheme.button(t("概览"),this::overview));navigation.addChild(NativeUiTheme.button(t("模型预览"),()->models(0)));navigation.addChild(NativeUiTheme.button(t("历史版本"),()->versions(0)));navigation.addChild(NativeUiTheme.button(t("运行实例"),this::instances));navigation.addChild(NativeUiTheme.button(t("刷新"),this::refresh));
+        navigation.addChild(NativeUiTheme.button(t("概览"),this::overview));navigation.addChild(NativeUiTheme.button(t("模型预览"),()->models(0)));navigation.addChild(NativeUiTheme.button(t("历史版本"),()->versions(0)));navigation.addChild(NativeUiTheme.button(t("运行实例"),()->NativeInstancePanel.open(host,head)));navigation.addChild(NativeUiTheme.button(t("刷新"),this::refresh));
         check=NativeUiTheme.button(t("核对上次操作"),this::checkAsset);check.setDisplay(false);window.body.addChild(check);window.body.addChild(status);content=WorkspacePanels.scroller(window.body);overview();
     }
     private Map<String,String> args(String kind,int offset){var args=new LinkedHashMap<String,String>();args.put("kind",kind);args.put("packageId",head.get("packageId").getAsString());args.put("headRevision",head.get("revision").getAsString());args.put("headHash",head.get("canonicalSha256").getAsString());if(offset>=0)args.put("offset",Integer.toString(offset));return args;}
@@ -33,7 +33,12 @@ final class NativePackagePanel {
     private void refresh(){long ticket=begin();read(Map.of("kind","package","packageId",head.get("packageId").getAsString(),"headRevision","0","headHash","")).whenComplete((value,error)->{if(!current(ticket))return;if(error!=null){failed(error);return;}head=value;overview();});}
     private void overview(){
         long ticket=begin();read(args("package",-1)).whenComplete((value,error)->{if(!current(ticket))return;if(error!=null){failed(error);return;}head=value;var details=card(value.get("name").getAsString());details.addChild(WorkspacePanels.text(t("版本")+" · "+value.get("version").getAsString()));details.addChild(WorkspacePanels.text(t("启用方式")+" · "+value.get("activationMode").getAsString()));
-            var actions=WorkspacePanels.row();actions.getLayout().height(25);details.addChild(actions);actions.addChild(NativeUiTheme.button(t("模型预览"),()->models(0)));actions.addChild(NativeUiTheme.button(t("历史版本"),()->versions(0)));actions.addChild(NativeUiTheme.button(t("运行实例"),this::instances));
+            var actions=WorkspacePanels.row();actions.getLayout().height(25);details.addChild(actions);actions.addChild(NativeUiTheme.button(t("模型预览"),()->models(0)));actions.addChild(NativeUiTheme.button(t("历史版本"),()->versions(0)));actions.addChild(NativeUiTheme.button(t("运行实例"),()->NativeInstancePanel.open(host,head)));
+            var lifecycle=WorkspacePanels.row();lifecycle.getLayout().height(25);details.addChild(lifecycle);
+            if(value.get("resourcePackAvailable").getAsBoolean())lifecycle.addChild(NativeUiTheme.button(t("本机资源包"),()->NativeLifecyclePanel.open(host,head,NativeLifecyclePanel.Kind.RESOURCE)));
+            if(value.get("dataPackAvailable").getAsBoolean())lifecycle.addChild(NativeUiTheme.button(t("数据包与世界计划"),()->NativeLifecyclePanel.open(host,head,NativeLifecyclePanel.Kind.DATA)));
+            if(value.get("bootAvailable").getAsBoolean())lifecycle.addChild(NativeUiTheme.button(t("启动扩展"),()->NativeLifecyclePanel.open(host,head,NativeLifecyclePanel.Kind.BOOT)));
+            if(value.get("clientScriptAvailable").getAsBoolean()||value.get("clientJavaAvailable").getAsBoolean())lifecycle.addChild(NativeUiTheme.button(t("本机客户端代码"),()->NativeLifecyclePanel.open(host,head,NativeLifecyclePanel.Kind.CLIENT)));
             var library=card(t("资产管理"));var buttons=WorkspacePanels.row();buttons.getLayout().height(25);library.addChild(buttons);buttons.addChild(NativeUiTheme.button(t("库名称"),this::rename));buttons.addChild(NativeUiTheme.button(t("保存为副本"),()->nameDialog("COPY",head)));
             var technical=card(t("版本校验"));technical.addChild(WorkspacePanels.text(value.get("canonicalSha256").getAsString()));status.setText(Component.literal(""));
         });

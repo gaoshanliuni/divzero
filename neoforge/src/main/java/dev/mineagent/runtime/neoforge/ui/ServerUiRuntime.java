@@ -416,9 +416,10 @@ public final class ServerUiRuntime {
             UUID pkg=UUID.fromString(args.get("packageId"));long revision=Long.parseLong(args.get("packageRevision"));
             var pack=ServerPackageRuntime.get(server).ownedPackage(viewer.getUUID(),pkg,revision).orElseThrow(()->new SecurityException("PACKAGE_NOT_OWNED"));
             var a=viewer.blockPosition();var runtime=dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(server);
+            var activations=runtime.list(viewer.getUUID()).stream().filter(r->r.packageId().equals(pkg)).toList();int offset=Integer.parseInt(args.getOrDefault("offset","0"));if(offset<0)throw new IllegalArgumentException("INSTANCE_PAGE_RANGE");
             return Map.of("definitions",json.writeValueAsString(pack.definitions().values().stream().map(d->Map.of("id",d.definitionId(),"name",d.name().substring(0,Math.min(80,d.name().length())),"kind",d.kind(),"restoreAvailable",pack.entrypoints().get(d.entrypointId())!=null&&pack.entrypoints().get(d.entrypointId()).equals(pack.entrypoints().get(d.entrypointId()+".restore")))).toList()),
                     "activationMode",pack.activationMode().name(),"anchor",json.writeValueAsString(Map.of("dimension",viewer.level().dimension().identifier().toString(),"x",a.getX()+2,"y",a.getY(),"z",a.getZ())),
-                    "activations",json.writeValueAsString(runtime.list(viewer.getUUID()).stream().filter(r->r.packageId().equals(pkg)).skip(Long.parseLong(args.getOrDefault("offset","0"))).limit(16).toList()));
+                    "activations",json.writeValueAsString(activations.stream().skip(offset).limit(16).toList()),"nextOffset",Integer.toString(Math.min(activations.size(),offset+16)),"more",Boolean.toString(offset+16<activations.size()),"total",Integer.toString(activations.size()));
         }
         if(Set.of("dataPack.read","dataPack.change").contains(request.action())){
             try{restoreScope(viewer,request);var runtime=dev.mineagent.runtime.neoforge.content.NativeDataPackRuntime.get(server);return Map.of("state",json.writeValueAsString(request.action().equals("dataPack.read")?runtime.read(viewer,args):runtime.submit(viewer,request.operationId(),args)),"executionMode",request.action().equals("dataPack.read")?"OBSERVE_REAL_DATA_PACK_STATE":"EXPLICIT_DATA_RELOAD_JOB");}

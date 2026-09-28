@@ -33,6 +33,10 @@ final class WorkspacePanels {
         if(host.revealWindow("settings"))return;
         var window=host.window("settings",t("设置"),470,380);var body=window.body;body.clearAllChildren();
         body.addChild(NativeUiTheme.button(t("此世界启用设置"),()->{Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);}));
+        var local=row();local.getLayout().height(25);body.addChild(local);
+        local.addChild(NativeUiTheme.button(t("本机资源包"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.RESOURCE)));
+        local.addChild(NativeUiTheme.button(t("本机客户端代码"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.CLIENT)));
+        local.addChild(NativeUiTheme.button(t("启动扩展"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.BOOT)));
         var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);var footer=row();footer.getLayout().height(25);body.addChild(footer);
         var values=new LinkedHashMap<String,String>();final JsonObject[] snapshot={null};final String[] group={"Provider"};final boolean[] busy={false};
         Runnable[] draw={null},load={null};

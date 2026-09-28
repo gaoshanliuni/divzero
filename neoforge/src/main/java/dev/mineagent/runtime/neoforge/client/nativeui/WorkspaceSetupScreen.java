@@ -26,7 +26,11 @@ public final class WorkspaceSetupScreen extends NativeInputScreen {
         if(mc.level!=null){
             card.addChild(NativeUiTheme.button(t("此世界启用设置"),()->{mc.setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);}));
             if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())card.addChild(NativeUiTheme.button(t("打开工作区设置"),()->NativeWorkspaceScreen.openSection(dev.mineagent.runtime.api.config.PanelSection.PROVIDERS)));
-        }else notice.setText(Component.literal(t("进入世界后可管理 AI 与模型设置。")));
+        }else {
+            notice.setText(Component.literal(t("进入世界后可管理 AI 与模型设置。")));
+            card.addChild(NativeUiTheme.button(t("本机资源包"),()->mc.setScreen(new dev.mineagent.runtime.neoforge.client.screen.LocalResourcePackScreen(this))));
+            card.addChild(NativeUiTheme.button(t("世界重开恢复"),()->mc.setScreen(new dev.mineagent.runtime.neoforge.client.screen.WorldReopenRecoveryScreen(this))));
+        }
         card.addChild(NativeUiTheme.button(t("语言"),()->mc.setScreen(new dev.mineagent.runtime.neoforge.client.screen.LanguageScreen(this))));
         card.addChild(NativeUiTheme.button(t("关于"),()->mc.setScreen(new dev.mineagent.runtime.neoforge.client.screen.AboutScreen(this))));
         card.addChild(NativeUiTheme.button(t("返回"),this::onClose));NativeUiTheme.controls(root);
