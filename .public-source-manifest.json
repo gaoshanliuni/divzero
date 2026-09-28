@@ -2889,8 +2889,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "0fb9f3d2a7b3c63dfdb1ac7b11e695b1e317d37bac67b2c2cf4639eb203ae17a",
-      "bytes": 38910
+      "sha256": "2fe367c821aa8886aeafe2971ee72163689af8b604ace2384a8fcb8867550033",
+      "bytes": 39219
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3484,8 +3484,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeExtrasSmokeClient.java",
-      "sha256": "bbe4e5ed11a55177ac5b4890f139873ad00adc89b6c4ab75825c16efac84352f",
-      "bytes": 8995
+      "sha256": "bec08bce9bb46cad4ddd75340255c3cf15a3d0cf0b6cdc165225861b54699257",
+      "bytes": 13520
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeGenerationPanel.java",
