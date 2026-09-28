@@ -149,3 +149,14 @@ The next source batch adds the trusted ComfyUI workflow editor, provider URL pre
 
 
 Actions `36465692000` passed for `aa70760fc754a2b9eadbd43a95c9e74b9dd22a24`. A separate opt-in model fixture now sends ordinary conversation requests to create a shop, add search and purchase controls, restyle while retaining player input, build a component house, and change only its roof. The fixture performs independent readback rather than writing a reference interface/building. No model requests have yet been made for this new fixture; the provider audit and actual run results are required before claiming model acceptance.
+
+
+### Native and model evidence, plus contract repair
+
+Public `729640ab3e9b1b38505aaf641268bba820988977` passed Actions `36466328630`; development JAR SHA-256 `b43f3b4d347f648ce1d4e7432dad9dcef504997a9f50b4db84e364110b2e373f`.
+
+Zero-model run `e562ce85-e4cb-4148-85ea-b5e47784f82b` passed without browsers or KubeJS. It checked rejection of free-text-only authorization, closing without submission, retained drafts through defer/resume, authoritative accepted answers, and a 200-component Unicode plan (24,787 characters / 26,799 UTF-8 bytes) uploaded and read back through the native editor packet path.
+
+Real-model run `f161060c-b17e-4e2f-9c86-09eb931dc7ca` completed shop creation, search addition and dark restyling with the player's input retained. Building attempts exposed an insufficient contract: validation returned only field error codes, so the model guessed incorrect check shapes and eventually asked to inspect local code with Python. That request was not approved. The run was closed cleanly after all 32 official DeepSeek calls had completed, with high thinking and no artificial output limit; no building plan had committed. Failed evidence and screenshots are retained. A fresh continuation must inspect the old operations and actual state, rather than replaying any unknown action.
+
+The source repair publishes the precise BuildingDesign/check contract and a validated syntax example, returns offending field paths on validation rejection, and states whether a plan or world change occurred. It also fixes window size persistence after close (removed widgets had been reporting zero dimensions), restores legacy decision drafts, guards tab changes during reads, corrects feedback receipt documentation, and defers package layout application until native dimensions exist. New package presentation checks exercise half, zero and full opacity. These follow-up changes await build/game acceptance.

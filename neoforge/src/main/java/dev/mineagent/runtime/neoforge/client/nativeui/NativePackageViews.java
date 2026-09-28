@@ -46,7 +46,7 @@ public final class NativePackageViews {
             VIEWS.put(id,view);
             if(passive){view.content.interactive(false);LdHudRegistry.attach(view.content,definition.view().order());}
             else mount(view);
-            if(session==null)view.ready=true;NativePackagePlacement.defaults(id);NativePackagePlacement.restore(id);
+            if(session==null)view.ready=true;NativePackagePlacement.restore(id);
             return id;
         }catch(Exception failure){VIEWS.remove(id,view);view.content.close();view.resources.close();throw failure;}
     }
@@ -165,6 +165,8 @@ public final class NativePackageViews {
     }
     public static void restoreLayout(String id,com.google.gson.JsonObject saved){
         var view=require(id);if(view.layoutRevision>1||!saved.has("bounds"))return;
+        var root=view.window==null?view.content.rendered().root:view.window.dialog.overlay;
+        if(root.getSizeWidth()<=0||root.getSizeHeight()<=0){var deferred=saved.deepCopy();root.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.LAYOUT_CHANGED,event->{event.currentElement.removeEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.LAYOUT_CHANGED,event.currentListener);if(current(view))restoreLayout(id,deferred);});return;}
         var b=saved.getAsJsonObject("bounds");applyBounds(view,b.get("x").getAsFloat(),b.get("y").getAsFloat(),b.get("width").getAsFloat(),b.get("height").getAsFloat(),saved.has("opacity")?saved.get("opacity").getAsDouble():1);if(saved.has("minimized")&&saved.get("minimized").getAsBoolean())hide(id);
     }
     private static void applyBounds(View view,float x,float y,float w,float h,double opacity){

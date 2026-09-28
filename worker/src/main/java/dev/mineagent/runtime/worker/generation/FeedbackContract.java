@@ -10,7 +10,7 @@ public final class FeedbackContract {
         schema=1，最多8入口/入口8事件/事件16字段，事件名ASCII标识符；实际原生JSON入口必须存在。mode=RECORD_ONLY、DETERMINISTIC、AGENT_WAKE；lifecycle=PAGE_BOUND或INDEPENDENT；max_events=1..64，cooldown_ms=0..600000。
         字段type=string/boolean/number。string需max_length=1..2048，number可带minimum/maximum；payload仅声明的标量字段，UTF8<=8192，不包含身份、taskId、权限、SQL或代码。
         只有 offer_content feedback_enabled=true且策略匹配才可提交。actions中声明 feedback.submit arguments={event:"answer",payload:动态对象表达式}，只在明确按钮交互emit，不自动提交。文档身份和作者由Native确定。
-        提交回执data={feedbackId,state,revision,conversationId,...}；ACCEPTED/PROCESSING不表示业务完成。reads可用 feedback.read arguments={feedbackId:真实ID表达式} 回读payload/result；feedback.stateRead回读该反馈获准共享字段（revision/schemaVersion/values）。首次反馈前不得伪造ID或共享值。
+        提交回执data={feedback:{feedbackId,state,revision,conversationId,...},businessVerified,modelDispatched}；真实反馈摘要位于 data.feedback（也等于 values.feedback），不能把 feedbackId/state 当作 data 的直接字段。ACCEPTED/PROCESSING不表示业务完成。reads可用 feedback.read arguments={feedbackId:真实ID表达式} 回读data={feedback:摘要,payload:原始标量字段对象,result:实际完成结果,recovery:恢复信息}；feedback.stateRead回读该反馈获准共享字段（revision/schemaVersion/values）。首次反馈前不得伪造ID或共享值。
         确定性成功需state=COMPLETED且result.receipt.status=APPLIED；冲突为REJECTED/CONFLICT。显示实际拒绝，不伪称回滚，也不自动重放未知结果。
         AGENT_WAKE需要发送者为准确package/revision/hash/entry/policy/event配置独立消费者/预算；专用任务不能继承owner私有信息或世界写权限。result.reply作为纯文字显示。
         DETERMINISTIC需同包已有SERVER世界规则、RUN_CODE/state.shared声明，并由发送者指定已授权feedback_binding。UI改版不能偷偷新增规则/权限。

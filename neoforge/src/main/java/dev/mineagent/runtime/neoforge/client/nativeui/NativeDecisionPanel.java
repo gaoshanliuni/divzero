@@ -49,7 +49,7 @@ final class NativeDecisionPanel {
     }
     private static void load(Entry entry){
         if(scope.isBlank()||entry.loadedScope.equals(scope))return;String expected=scope;entry.loadedScope=scope;String key=scope+"|"+entry.draft.request().decisionId();var storage=store();
-        CompletableFuture.supplyAsync(()->{try{return JSON.fromJson(storage.load(key),DecisionDraft.Saved.class);}catch(Exception failure){throw new CompletionException(failure);}},IO).whenComplete((saved,error)->Minecraft.getInstance().execute(()->{
+        CompletableFuture.supplyAsync(()->{try{var saved=JSON.fromJson(storage.load(key),DecisionDraft.Saved.class);if(saved==null||saved.decisionId()==null){var oldStore=new UiStateStore(Minecraft.getInstance().gameDirectory.toPath().resolve("mineagent-runtime-data/ui-state"));var old=JsonParser.parseString(oldStore.load(expected)).getAsJsonObject();String id=entry.draft.request().decisionId().toString();if(old.has("drafts")&&old.getAsJsonObject("drafts").has(id))saved=JSON.fromJson(old.getAsJsonObject("drafts").get(id),DecisionDraft.Saved.class);}return saved;}catch(Exception failure){throw new CompletionException(failure);}},IO).whenComplete((saved,error)->Minecraft.getInstance().execute(()->{
             if(!scope.equals(expected)||ENTRIES.get(entry.draft.request().decisionId())!=entry)return;
             if(error==null){entry.draft.restore(saved);if(entry.card!=null&&entry.card.current())entry.card.draw();}
             else if(entry.card!=null&&entry.card.current())entry.card.notice.setText(Component.literal(t("草稿读取失败，当前输入仍保留。")));

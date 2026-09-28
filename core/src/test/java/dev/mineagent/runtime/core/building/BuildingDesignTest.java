@@ -5,6 +5,14 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BuildingDesignTest {
+    @org.junit.jupiter.api.Test void publishedExampleAndFieldDiagnosticsAreUsable(){
+        var sample=BuildingDesign.parse(BuildingDesign.MINIMAL_EXAMPLE);
+        org.junit.jupiter.api.Assertions.assertEquals(java.util.Set.of("floor"),sample.componentIds());
+        var issues=BuildingDesign.fieldIssues(BuildingDesign.MINIMAL_EXAMPLE.replace("\"id\":\"floor_size\"","\"name\":\"floor_size\""));
+        org.junit.jupiter.api.Assertions.assertEquals("/checks/0",issues.getFirst().get("path"));
+        org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of("name"),issues.getFirst().get("unknownFields"));
+    }
+
     private static final String DESIGN="""
         {"id":"house","name":"Home","dimension":"minecraft:overworld","origin":[10,80,20],
         "templates":{"window":[{"kind":"box","min":[0,0,0],"max":[1,1,0],"material":"minecraft:glass"}]},

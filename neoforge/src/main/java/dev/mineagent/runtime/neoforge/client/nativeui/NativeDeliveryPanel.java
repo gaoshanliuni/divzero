@@ -18,10 +18,10 @@ final class NativeDeliveryPanel {
     static void open(NativeWorkspaceScreen host){if(!host.revealWindow("deliveries"))new NativeDeliveryPanel(host);}
     private NativeDeliveryPanel(NativeWorkspaceScreen host){this.host=host;window=host.window("deliveries",t("内容与反馈"),570,385);PANELS.add(this);
         var tabs=WorkspacePanels.row();tabs.getLayout().height(25);window.body.addChild(tabs);tabs.addChild(button("收件箱",()->select("INBOX")));tabs.addChild(button("已发送",()->select("OUTBOX")));tabs.addChild(button("反馈记录",()->select("FEEDBACK")));tabs.addChild(button("刷新",this::load));
-        var filter=new Selector<String>();filter.setCandidates(List.of("HOT","ARCHIVED","ALL"));filter.setValue(archive,false);filter.setOnValueChanged(value->{archive=value;offset=0;load();});filter.getLayout().width(105);tabs.addChild(filter);
+        var filter=new Selector<String>();filter.setCandidates(List.of("HOT","ARCHIVED","ALL"));filter.setValue(archive,false);filter.setOnValueChanged(value->{if(busy){filter.setValue(archive,false);return;}archive=value;offset=0;load();});filter.getLayout().width(105);tabs.addChild(filter);
         window.body.addChild(notice);list=WorkspacePanels.scroller(window.body);var pager=WorkspacePanels.row();pager.getLayout().height(25);window.body.addChild(pager);pager.addChild(button("上一页",()->{offset=Math.max(0,offset-16);load();}));pager.addChild(button("下一页",()->{if(more){offset=next;load();}}));load();
     }
-    private void select(String value){mode=value;offset=0;load();}
+    private void select(String value){if(busy)return;mode=value;offset=0;load();}
     private boolean current(long token){return host.activeContext()&&!window.closed()&&token==epoch;}
     private void load(){
         if(busy)return;busy=true;long token=++epoch;nextPoll=System.currentTimeMillis()+5000;

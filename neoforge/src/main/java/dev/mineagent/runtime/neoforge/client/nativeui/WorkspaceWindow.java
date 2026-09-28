@@ -7,8 +7,9 @@ import java.util.function.Consumer;
 
 /** In-game draggable/resizable window with a dock entry; it never creates a separate OS window. */
 public final class WorkspaceWindow {
-    public final Dialog dialog;public final UIElement body;private final Button dockButton;private boolean closed;
+    public final Dialog dialog;public final UIElement body;private final Button dockButton;private boolean closed;private Placement lastPlacement;
     public WorkspaceWindow(UIElement desktop,UIElement dock,String title,float x,float y,float width,float height,Consumer<WorkspaceWindow> onClose){
+        lastPlacement=new Placement(x,y,width,height,false);
         dialog=new Dialog().setAutoClose(false).allowInteraction().windowMode(x,y,width,height).setClickOutsideClose(false);
         dialog.overlay.getStyle().backgroundTexture(NativeUiTheme.panel());
         dialog.titleBar.clearAllChildren();dialog.titleBar.getLayout().height(29).paddingHorizontal(9).paddingVertical(4);
@@ -23,10 +24,10 @@ public final class WorkspaceWindow {
     }
     private static int zOrder=10;
     public record Placement(float x,float y,float width,float height,boolean minimized){}
-    public Placement placement(){var box=dialog.overlay;return new Placement(box.getPositionX(),box.getPositionY(),box.getSizeWidth(),box.getSizeHeight(),!dialog.isDisplayed());}
+    public Placement placement(){var box=dialog.overlay;if(box.getSizeWidth()>0&&box.getSizeHeight()>0)lastPlacement=new Placement(box.getPositionX(),box.getPositionY(),box.getSizeWidth(),box.getSizeHeight(),!dialog.isDisplayed());return new Placement(lastPlacement.x(),lastPlacement.y(),lastPlacement.width(),lastPlacement.height(),!dialog.isDisplayed());}
     public void restore(Placement value){
         var mc=net.minecraft.client.Minecraft.getInstance();float width=mc.getWindow().getGuiScaledWidth(),height=mc.getWindow().getGuiScaledHeight();
-        if(!Float.isFinite(value.x())||!Float.isFinite(value.y())||!Float.isFinite(value.width())||!Float.isFinite(value.height()))return;
+        if(value.width()<=0||value.height()<=0||!Float.isFinite(value.x())||!Float.isFinite(value.y())||!Float.isFinite(value.width())||!Float.isFinite(value.height()))return;
         var box=dialog.overlay;box.getLayout().width(Math.clamp(value.width(),220,Math.max(220,width-14))).height(Math.clamp(value.height(),160,Math.max(160,height-82)));
         float x=Math.clamp(value.x(),7,Math.max(7,width-150)),y=Math.clamp(value.y(),48,Math.max(48,height-95));
         var parent=dialog.getParent();if(parent!=null){var local=parent.worldToLocalLayoutOffset(new org.joml.Vector2f(x,y));box.getLayout().left(local.x).top(local.y);}
@@ -35,5 +36,5 @@ public final class WorkspaceWindow {
     public boolean visible(){return !closed&&dialog.isDisplayed();}
     public boolean closed(){return closed;}
     public void reveal(){if(!closed){dialog.setDisplay(true);dialog.getStyle().zIndex(++zOrder);}}
-    public void close(){if(!closed)dialog.close();}
+    public void close(){if(!closed){placement();dialog.close();}}
 }

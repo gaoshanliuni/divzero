@@ -7,6 +7,35 @@ import java.util.*;
 
 /** Persistent, addressable construction intent; geometry and world edits have separate lifecycles. */
 public final class BuildingDesign {
+    public static final String CONTRACT="""
+        source is a JSON STRING containing exactly one BuildingDesign object. Its required root fields are:
+        id (ASCII identifier), name (nonempty display text), dimension (e.g. minecraft:overworld),
+        origin ([absolute integer x,y,z]), components (nonempty array), checks (nonempty array for plan_building).
+        Optional root fields: templates (identifier -> array of geometry parts), clear_existing (boolean, default false).
+        No root schema/version/type/metadata fields. No checks nested inside a component.
+        Every component is {id, parts:[geometry part,...]} OR {id,template:"templateId"}.
+        Optional component fields: name, material, transforms:[geometry transform,...], depends_on:[componentId,...], parent:componentId.
+        Geometry parts use inspect_world_geometry's exact format, for example
+        {"kind":"box","min":[0,0,0],"max":[4,0,4],"mode":"solid","material":"minecraft:stone"}.
+        All component/check coordinates are RELATIVE to origin. Materials are full block-state strings.
+        Each check has required id, component and kind. The identifier key is id, NOT name.
+        kind=states: {id,component,kind:"states",min:[x,y,z],max:[x,y,z],expected:"minecraft:stone"}.
+        kind=clearance: {id,component,kind:"clearance",min:[x,y,z],max:[x,y,z]}.
+        kind=bounds: {id,component,kind:"bounds",min:[x,y,z],max:[x,y,z]} verifies the component's exact bounds.
+        kind=path: {id,component,kind:"path",path:[[x,y,z],[x,y,z],...],headroom:2}; adjacent standing cells, at least 2.
+        kind=support: {id,component,kind:"support",min:[x,y,z],max:[x,y,z],allow_floating:true|false}.
+        A check may also have description. There is no nested bounds, shape, target, box, type, position or name field.
+        Checks may cover doorways just outside a component but must remain within the building's scoped footprint bounds.
+        IDs match [A-Za-z][A-Za-z0-9_-]{0,95}. Limits: 512 components/checks, 128 templates, 64 parts/component,
+        32 transforms/component, checks within relative +/-4096, path <=4096 cells and headroom 1..16.
+        Preserve stable IDs on edits. Hollow geometry never implicitly clears existing interiors.
+        Rejected validation returns field paths and this contract; correct the source rather than guessing fields or reading local program files.
+        """;
+    public static final String MINIMAL_EXAMPLE="""
+        {"id":"example","name":"Syntax example","dimension":"minecraft:overworld","origin":[0,80,0],
+         "components":[{"id":"floor","parts":[{"kind":"box","min":[0,0,0],"max":[4,0,4],"material":"minecraft:stone"}]}],
+         "checks":[{"id":"floor_size","component":"floor","kind":"bounds","min":[0,0,0],"max":[4,0,4]}]}
+        """;
     private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     private final ObjectNode document;
@@ -71,6 +100,20 @@ public final class BuildingDesign {
             }
             return result;
         }catch(IllegalArgumentException e){throw e;}catch(Exception e){throw bad("JSON");}
+    }
+    /** Concrete field paths supplement stable error codes without echoing the entire submitted source. */
+    public static List<Map<String,Object>> fieldIssues(String source){
+        var issues=new ArrayList<Map<String,Object>>();
+        try{var root=JSON.readTree(source);fieldIssues(root,"/",Set.of("id","name","dimension","origin","templates","components","checks","clear_existing"),issues);
+            int i=0;for(var component:root.path("components"))fieldIssues(component,"/components/"+i++,Set.of("id","name","parts","template","material","transforms","depends_on","parent"),issues);
+            i=0;for(var check:root.path("checks"))fieldIssues(check,"/checks/"+i++,Set.of("id","component","kind","min","max","expected","path","headroom","allow_floating","description"),issues);
+        }catch(Exception invalid){issues.add(Map.of("path","/","expected","One valid JSON object with unique keys"));}
+        return issues.stream().limit(16).toList();
+    }
+    private static void fieldIssues(JsonNode node,String path,Set<String> allowed,List<Map<String,Object>> issues){
+        if(node==null||!node.isObject()){issues.add(Map.of("path",path,"expected","object"));return;}
+        var extra=node.properties().stream().map(Map.Entry::getKey).filter(key->!allowed.contains(key)).sorted().limit(16).toList();
+        if(!extra.isEmpty())issues.add(Map.of("path",path,"unknownFields",extra,"allowedFields",allowed.stream().sorted().toList()));
     }
     private void visit(String id,Set<String> visiting,Set<String> seen,List<String> order){
         if(seen.contains(id))return;if(!visiting.add(id))throw bad("DEPENDENCY_CYCLE");JsonNode c=components.get(id);if(c==null)throw bad("DEPENDENCY_NOT_FOUND");
