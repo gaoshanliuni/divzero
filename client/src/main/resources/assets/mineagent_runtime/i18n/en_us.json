@@ -2977,5 +2977,8 @@
   "编辑 Workflow": "Edit workflow",
   "界面操作回执": "Interface operation receipt",
   "界面实际状态": "Actual interface state",
-  "退出交互": "Leave interaction mode"
+  "退出交互": "Leave interaction mode",
+  "该 AI 的已保存界面": "Saved interfaces for this AI",
+  "已保存界面": "Saved interfaces",
+  "查看已保存界面不会调用模型。显示动态界面需要 KubeJS。": "Browsing saved interfaces makes no model requests. Displaying dynamic interfaces requires KubeJS."
 }

@@ -175,3 +175,14 @@ Native package run `166ad5cc-565a-45b4-b242-33d1241047fb` confirmed half-opacity
 
 
 Actions `36470431542` passed for public `995da4fd298cad4ee37821855ef7e0525c60e3c3`. The extras fixture is being extended to cover actual workflow save/readback, preference save/preview/disable/delete and a native skin preset apply/readback, without making model calls. Final game results are still pending.
+
+
+### Verified native presentation, dedicated server and model construction
+
+Public `995da4fd298cad4ee37821855ef7e0525c60e3c3` JAR SHA-256 `f95238261435b27319ae2dd8e0ff612fc6b4ca3b7cb3ebacc28d90d58542dae3` passed:
+
+- Package run `79eb71db-9086-44e0-9e65-fcf5ed2ef919`: signed placement defaults, actual anchor coordinates, opacity 0.5/0/1 with distinct paint/cull proofs, persisted geometry, real score mutation/readback, private capture, retained input and passive HUD. Zero model calls.
+- Official dedicated NeoForge 26.1.2.106: only main Mod + LDLib2 (plus embedded Rhino), real world loading, Worker readiness and clean automatic shutdown. No browsers or KubeJS; zero model calls. Windows-only test JVM socket workarounds remained isolated to the launch environment.
+- Model continuation in `f161060c-b17e-4e2f-9c86-09eb931dc7ca`: the unchanged saved shop rendered with its search field inside the root and input retained; the model then planned/built/verified house revision 1 and changed only `roof`, with revision 2 independently read back as `VERIFIED`. The fixture neither supplied a reference building nor wrote those blocks. This successful continuation used 13 new audited high-thinking DeepSeek calls. Including the preserved 32-call contract failure and 7-call fixture-permission failure, the batch used 52 calls, all with provider-default output length and no unknown request replay.
+
+The player manager now also lists persistent per-AI interface definitions, including closed screens after reconnecting, with pagination and existing revision/permission checks. The AI profile links to its saved interface library. This new entry still requires build/native acceptance; it does not invoke a model just to reopen an existing definition.

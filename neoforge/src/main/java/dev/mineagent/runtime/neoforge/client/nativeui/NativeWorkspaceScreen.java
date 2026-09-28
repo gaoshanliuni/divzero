@@ -65,6 +65,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     boolean activeContext(){return current();}
     String selectedAgentId(){return model.agent;}
     boolean revealWindow(String id){var window=windows.get(id);if(window==null||window.closed())return false;window.reveal();return true;}
+    String agentName(String id){return knownAgents.getOrDefault(id,t("AI 玩家"));}
     void rememberAgent(String id,String name){knownAgents.put(id,name);}
     void conversationWith(String id){if(!knownAgents.containsKey(id))knownAgents.put(id,"AI");selectAgent(id);if(chatWindow!=null)chatWindow.reveal();}
 
