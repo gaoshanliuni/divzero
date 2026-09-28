@@ -1629,8 +1629,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionVerification.java",
-      "sha256": "c2edc5885754d0f92cc3e07864f580150e52be7511413bb9306d8d4fd5651c41",
-      "bytes": 2398
+      "sha256": "ad5862f3fa829ba8608d25a93057eeb891aadc89afdd281769783fc84d4e2a77",
+      "bytes": 2866
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/ClassFileMethodBody.java",
@@ -3019,8 +3019,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceSession.java",
-      "sha256": "9836893264a78c166be0064f171c63cc17611f9eced34e2268e1e4a53dbe2147",
-      "bytes": 7140
+      "sha256": "1e1f8e7936ce4d99f6c90ab6e93460299c01d39f8560c83a0e7a7a2fe67c889d",
+      "bytes": 7301
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/AgentPersonaServiceTest.java",
@@ -3044,8 +3044,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/BuildingDesignTest.java",
-      "sha256": "f3ebd1b8ba4ca952f89fddc4596c354914bf89ff295254a829131d3b871fcffa",
-      "bytes": 3807
+      "sha256": "93e824454c12ea3bd552acead7eec057792290c8fa04a6684bc0cd355f2acdea",
+      "bytes": 4460
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/BuildingFormatsTest.java",
@@ -3299,8 +3299,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceSessionTest.java",
-      "sha256": "c45f6598a79ff9949d00ff3c5d377dd0777c9897c87d48351970590ea46704bc",
-      "bytes": 7350
+      "sha256": "9c14dc36ca5b20b83e66e83c865862de77339ff00d0b7bd73aad9d706a1b0c4a",
+      "bytes": 7864
     },
     {
       "path": "docs/CINEMATIC_FILMS.md",

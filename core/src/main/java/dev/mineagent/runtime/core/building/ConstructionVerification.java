@@ -14,19 +14,23 @@ public final class ConstructionVerification {
     private final Scope scope;
     private final long changeCount,mutationTick;
     private final Set<String> requiredChecks;
+    private long requiredAfterTick,latestCompletedTick;
     private Report accepted;
     public ConstructionVerification(Scope scope,long changeCount,long mutationTick,Set<String> requiredChecks){
         if(changeCount<0||mutationTick<0||requiredChecks.isEmpty())throw new IllegalArgumentException("BUILDING_VERIFICATION_REQUIREMENTS");
         this.scope=scope;this.changeCount=changeCount;this.mutationTick=mutationTick;this.requiredChecks=Set.copyOf(requiredChecks);
+        requiredAfterTick=latestCompletedTick=mutationTick;
     }
     public String status(){return accepted==null?"UNVERIFIED":"VERIFIED";}
     public Optional<Report> accepted(){return Optional.ofNullable(accepted);}
     public boolean accept(Report report){
-        if(!scope.equals(report.scope)||report.observedAfterTick<=mutationTick||report.completedTick<report.observedAfterTick||report.coveredChanges!=changeCount)throw new IllegalArgumentException("BUILDING_VERIFICATION_STALE_OR_UNRELATED");
+        if(!scope.equals(report.scope)||report.observedAfterTick<=requiredAfterTick||report.completedTick<report.observedAfterTick||report.completedTick<latestCompletedTick||report.coveredChanges!=changeCount)throw new IllegalArgumentException("BUILDING_VERIFICATION_STALE_OR_UNRELATED");
         var checks=new HashMap<String,Check>();for(var check:report.checks)if(checks.putIfAbsent(check.id,check)!=null)throw new IllegalArgumentException("BUILDING_VERIFICATION_DUPLICATE_CHECK");
         if(!checks.keySet().equals(requiredChecks))throw new IllegalArgumentException("BUILDING_VERIFICATION_INCOMPLETE_CHECKS");
+        latestCompletedTick=report.completedTick;
         if(!report.blocksMatch||checks.values().stream().anyMatch(c->!c.passed)){accepted=null;return false;}
         accepted=report;return true;
     }
-    public void invalidate(){accepted=null;}
+    public void invalidate(){invalidate(latestCompletedTick);}
+    public void invalidate(long worldChangeTick){if(worldChangeTick<mutationTick)throw new IllegalArgumentException("BUILDING_VERIFICATION_INVALIDATION_TICK");accepted=null;requiredAfterTick=Math.max(requiredAfterTick,worldChangeTick);}
 }

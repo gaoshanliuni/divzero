@@ -28,7 +28,7 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
     public void visible(boolean value){requireOpen();visible=value;}
 
     public Receipt replace(Scope expected,long expectedRevision,String source,Builder<T> builder){
-        require(expected,expectedRevision);T candidate=null;
+        require(expected,expectedRevision);long expectedDataRevision=dataRevision;T candidate=null;
         try{
             var next=InterfaceDefinition.parse(source);if(!scope.view.equals(next.id()))throw InterfaceDefinition.error("$.id","VIEW_MISMATCH");
             var values=new LinkedHashMap<>(next.data());
@@ -39,6 +39,7 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
             candidate=Objects.requireNonNull(builder.build(next,copy(values)),"INTERFACE_NULL_CANDIDATE");
             // Candidate construction can call user code. Recheck after it returns.
             require(expected,expectedRevision);
+            if(dataRevision!=expectedDataRevision)throw new IllegalStateException("INTERFACE_DATA_CHANGED_DURING_BUILD");
             boolean changedSurface=definition==null||definition.surface()!=next.surface();
             T previous=rendered;rendered=candidate;candidate=null;definition=next;data=values;revision++;dataRevision++;
             dirtyInputs.retainAll(kept);
