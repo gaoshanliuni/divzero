@@ -2899,13 +2899,13 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "641f6ac146650d85fd62a117c33b7f1f1ff32e5f54c3705941cc2a554c3ed931",
-      "bytes": 50017
+      "sha256": "e48eb197baaa023bc80c0b4322a6826ab3c90a7e72d4581a273a4c089a6e828b",
+      "bytes": 50834
     },
     {
       "path": "docs/NATIVE_UI_MIGRATION_STATUS.md",
-      "sha256": "5a54a72a768bf404342cd0e775b0a94af09e9c356e32d894fe0249a0944416bc",
-      "bytes": 4257
+      "sha256": "10b29367c0ea24a2d9ad01591cda650f233e8a8698db780dce1c76c0c067e135",
+      "bytes": 4805
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
