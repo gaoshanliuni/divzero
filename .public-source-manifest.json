@@ -964,8 +964,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "425baae69eb73dc96130e15b55c13bcbe6af08c2901770578cc7c52715e98d91",
-      "bytes": 263106
+      "sha256": "f77091b0840a938b543b0dd9cc3a85673740f2e30a89fc2eab058327182f6110",
+      "bytes": 263327
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/about-cards.mjs",
@@ -1174,8 +1174,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/i18n-messages.mjs",
-      "sha256": "e058f39d01fb7d7ad3bc4e921d7ce42fa0eaf5c4dc01a1689812ebd30a514189",
-      "bytes": 263208
+      "sha256": "fba46688878cce570a3e2b03fc8749f703d6ddd7b3b1674eab2f4d8202824aea",
+      "bytes": 263429
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/webui/i18n.mjs",
@@ -3379,8 +3379,8 @@
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
-      "sha256": "f7280e660fce8c00b46c10b652c7eb165aea813c8f4556dd5f040bd9e924afb9",
-      "bytes": 19961
+      "sha256": "ffd3970ae7885a7fb5ec7b7f028bcc22dc20beab96663549bd5f642f13200285",
+      "bytes": 20355
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",

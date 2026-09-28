@@ -2598,5 +2598,10 @@ export const messages=Object.freeze({
   "此包使用独立的重载或启动流程。": "This package has its own reload or startup workflow.",
   "核对上次操作": "Check last operation",
   "库名称": "Library name",
-  "原点": "Origin"
+  "原点": "Origin",
+  "打开预览": "Open preview",
+  "查看内容": "View content",
+  "概览": "Overview",
+  "版本": "Version",
+  "结果尚未确认，请勿重复提交。": "The outcome is not yet confirmed. Do not submit again."
 });
