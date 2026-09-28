@@ -118,7 +118,7 @@ public final class LdInterfaceRenderer {
                 if(!block.substring(declarationEnd,declarations.start()).isBlank())throw new IllegalArgumentException("INTERFACE_LSS_DECLARATION: "+matcher.group(1));
                 String name=declarations.group(1),raw=declarations.group(2).trim();var property=PropertyRegistry.byName(name);
                 if(property==null)throw new IllegalArgumentException("INTERFACE_LSS_UNKNOWN_PROPERTY: "+name+" at "+matcher.group(1));
-                try{properties.put(property,Objects.requireNonNull(property.valueParser.parse(raw)));}
+                try{var parsed=Objects.requireNonNull(property.valueParser.parse(raw));Objects.requireNonNull(parsed.compute());properties.put(property,parsed);}
                 catch(Exception e){throw new IllegalArgumentException("INTERFACE_LSS_INVALID_VALUE: "+name+"="+raw+" at "+matcher.group(1),e);}
                 declarationEnd=declarations.end();
             }

@@ -44,6 +44,7 @@ public final class ConversationAgentTools {
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>16384)throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
+            if(tool.equals("inspect_native_ui")){keys(args,"id");return ServerNativeInterfaces.inspect(p,agent,args,permit);}
             if(tool.equals("inspect_native_entities")){keys(args,"query","offset","template_id");return CompletableFuture.completedFuture(NativeEntityTemplates.inspect(p,args));}
             if(tool.equals("derive_native_entity")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(NativeEntityTemplates.derive(p,args));}
             if(tool.equals("inspect_entity_model")){keys(args,"entity_type","offset");return EntityModelProbe.request(p,args);}
@@ -143,6 +144,7 @@ public final class ConversationAgentTools {
             case "offer_file_download"->{keys(a,"file_id");return ServerFileTools.offer(p,agent,a,permit);}
             case "request_building_file"->{keys(a,"reason");return ServerBuildingFiles.request(p,agent,permit,text(a,"reason",200));}
             case "fetch_building_file"->{keys(a,"url","name");return ServerBuildingFiles.download(p,agent,a,permit);}
+            case "set_native_ui","patch_native_ui_data","control_native_ui"->{keys(a,"id","expected_revision","source","data","action");return ServerNativeInterfaces.mutate(p,agent,tool,a,permit);}
             case "apply_world_geometry"->{return ConversationWorldGeometry.apply(p,agent,a,permit);}
             case "define_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.define(p,operation,a);}
             case "control_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.control(p,a);}

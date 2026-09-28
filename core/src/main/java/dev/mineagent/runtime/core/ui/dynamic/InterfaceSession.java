@@ -70,6 +70,12 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
         if(value==null||binding.startsWith("toggle:")&&!value.isBoolean()||binding.startsWith("input:")&&(!value.isTextual()||value.textValue().length()>16384))throw new IllegalArgumentException("INTERFACE_INPUT_VALUE");
         String key=binding.substring(binding.indexOf(':')+1);data.put(key,value.deepCopy());dirtyInputs.add(key);dataRevision++;
     }
+    /** Explicit local script actions may update a draft; unsolicited server patches may not. */
+    public Receipt localData(Scope expected,long expectedRevision,Map<String,JsonNode> values,java.util.function.Consumer<Map<String,JsonNode>> apply){
+        require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");
+        var dirty=new HashSet<>(dirtyInputs);dirtyInputs.removeAll(values.keySet());
+        try{return patch(expected,expectedRevision,dataRevision,values,apply);}finally{dirtyInputs.addAll(dirty);}
+    }
     public JsonNode actions(Scope expected,long expectedRevision,String node,String event){
         require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");
         var element=definition.node(node).orElseThrow(()->new IllegalArgumentException("INTERFACE_UNKNOWN_NODE"));

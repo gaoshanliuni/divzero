@@ -111,8 +111,11 @@ public final class MineAgentClientMod {
 
     @SubscribeEvent
     static void afterClientTick(ClientTickEvent.Post event) {
-        if(net.neoforged.fml.ModList.get().isLoaded("ldlib2"))
+        if(net.neoforged.fml.ModList.get().isLoaded("ldlib2")){
             dev.mineagent.runtime.neoforge.client.nativeui.LdHudRegistry.maintainContext();
+            dev.mineagent.runtime.neoforge.client.nativeui.NativeInterfacesClient.tick();
+            if(Boolean.getBoolean("mineagent.nativeUiSmoke"))dev.mineagent.runtime.neoforge.client.nativeui.NativeUiSmokeClient.tick();
+        }
         dev.mineagent.runtime.neoforge.client.MineAgentClientPackages.tick(++packageTick);
         dev.mineagent.runtime.neoforge.client.webui.WebGuiWorkspaceInput.tick();
         while (OPEN_CONTROL_CENTER.consumeClick()) {
