@@ -112,7 +112,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
     }
     private void renameConversation(){if(model.selected==null)return;Dialog.stringEditorDialog(t("重命名"),model.selected.get("title").getAsString(),value->!value.isBlank()&&value.length()<=128,value->write("rename",Map.of("title",value),state->{model.selected=state;heading.setText(Component.literal(state.get("title").getAsString()));list();})).show(root);}
 
-    Map<String,Object> smokeState(){if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return Map.of("agents",model.agents.size(),"agent",model.agent,"conversation",model.conversation,"selected",model.selected==null?"":model.selected.get("title").getAsString(),"draft",String.join("\n",composer.getValue()));}
+    Map<String,Object> smokeState(){if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return Map.of("agents",model.agents.size(),"agent",model.agent,"conversation",model.conversation,"selected",model.selected==null?"":model.selected.get("title").getAsString(),"draft",String.join("\n",composer.getValue()),"messageRows",rows.size(),"bodyChars",rows.values().stream().mapToInt(row->row.text.getText().getString().length()).sum(),"visibleRows",rows.values().stream().filter(row->row.root.getSizeHeight()>0&&row.text.getSizeHeight()>0).count());}
     private ScrollerView conversationList;
     private String draftKey(){return model.agent+"/"+model.conversation;}
     private String draftText(){return model.drafts.getOrDefault(draftKey(),model.drafts.getOrDefault("legacy/"+model.conversation,""));}
@@ -172,7 +172,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
         request(false,"messages",Map.of("before",Long.toString(before))).whenComplete((state,error)->{
             messagesBusy=false;if(!current()||generation!=model.generation||!conversation.equals(model.conversation))return;if(error!=null){notice(error.getMessage());return;}
             model.selected=state.getAsJsonObject("conversation");heading.setText(Component.literal(model.selected.get("title").getAsString()));nextBefore=state.get("nextBefore").getAsLong();boolean changed=false;
-            var thinking=new HashMap<String,JsonObject>();if(state.has("thinking"))for(var v:state.getAsJsonArray("thinking")){var q=v.getAsJsonObject();thinking.put(q.get("messageId").getAsString(),q);}
+            var thinking=new HashMap<String,JsonObject>();if(state.has("thinking"))for(var item:state.getAsJsonObject("thinking").entrySet()){var q=item.getValue().getAsJsonObject();thinking.put(item.getKey(),q);}
             for(var item:state.getAsJsonArray("messages")){
                 var message=item.getAsJsonObject();String id=message.get("messageId").getAsString();long revision=message.get("revision").getAsLong();var entry=rows.get(id);
                 if(entry==null){var container=new UIElement();container.getLayout().widthPercent(100).paddingAll(5).marginBottom(4);container.getStyle().backgroundTexture(NativeUiTheme.inset());container.addChild(label(message.get("role").getAsString().equals("USER")?t("你"):"AI"));var body=label("");container.addChild(body);var thought=label("");thought.setDisplay(false);var toggle=button(t("思考"),()->thought.setDisplay(!thought.isDisplayed()));container.addChild(toggle);container.addChild(thought);if(!message.get("role").getAsString().equals("USER"))container.addChild(button(t("朗读"),()->write("voice",Map.of("messageId",id,"contextId",context.toString()),voice->notice(t("正在处理…")))));entry=new MessageRow(message.get("sequence").getAsLong(),container,body,thought,toggle);rows.put(id,entry);changed=true;}
@@ -180,7 +180,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
                 if(!Objects.equals(loading.get(id),revision)){loading.put(id,revision);textChunk(id,revision,"message",entry.text,generation,0,new StringBuilder());}
             }
             if(changed){captureScroll();history.clearAllScrollViewChildren();rows.values().stream().sorted(Comparator.comparingLong(MessageRow::sequence)).forEach(row->history.addScrollViewChild(row.root));restoreScrollFrames=3;}
-        });
+        }).exceptionally(failure->{notice(Objects.toString(failure.getCause()==null?failure.getMessage():failure.getCause().getMessage(),"CONVERSATION_RENDER_FAILED"));return null;});
     }
     private void textChunk(String id,long revision,String kind,TextElement target,long generation,int offset,StringBuilder text){
         request(false,kind,Map.of("messageId",id,"messageRevision",Long.toString(revision),"offset",Integer.toString(offset))).whenComplete((chunk,error)->{
