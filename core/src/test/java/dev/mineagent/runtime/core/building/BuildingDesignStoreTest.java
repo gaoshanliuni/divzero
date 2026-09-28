@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BuildingDesignStoreTest {
     @TempDir Path directory;
     private static final String SOURCE="""
-        {"id":"home","name":"House","origin":[0,80,0],"components":[{"id":"floor","parts":[{"kind":"box","min":[0,0,0],"max":[4,0,4],"material":"minecraft:stone"}]}]}
+        {"id":"home","name":"House","dimension":"minecraft:overworld","origin":[0,80,0],"components":[{"id":"floor","parts":[{"kind":"box","min":[0,0,0],"max":[4,0,4],"material":"minecraft:stone"}]}]}
         """;
     @Test void designSurvivesRestartAndStaleWritersCannotOverwrite()throws Exception{
         Path db=directory.resolve("designs.db");var scope=new BuildingDesignStore.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID());

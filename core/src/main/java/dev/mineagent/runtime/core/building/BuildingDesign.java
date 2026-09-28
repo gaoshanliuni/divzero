@@ -14,6 +14,7 @@ public final class BuildingDesign {
     private BuildingDesign(ObjectNode document,Map<String,JsonNode> components){this.document=document.deepCopy();this.components=Map.copyOf(components);}
     public String id(){return document.path("id").asText();}
     public String name(){return document.path("name").asText();}
+    public String dimension(){return document.path("dimension").asText();}
     public String source(){return document.toString();}
     public Set<String> componentIds(){return components.keySet();}
     public JsonNode component(String id){var component=components.get(id);if(component==null)throw bad("COMPONENT_NOT_FOUND");return component.deepCopy();}
@@ -31,13 +32,14 @@ public final class BuildingDesign {
     public Set<String> changedComponents(BuildingDesign previous){
         if(previous==null)return componentIds();if(!id().equals(previous.id()))throw bad("DESIGN_ID_CHANGED");
         var changed=new TreeSet<String>();var ids=new HashSet<>(componentIds());ids.addAll(previous.componentIds());
-        for(String id:ids)if(!components.containsKey(id)||!previous.components.containsKey(id)||!geometry(id).equals(previous.geometry(id)))changed.add(id);
+        for(String id:ids)if(!dimension().equals(previous.dimension())||!components.containsKey(id)||!previous.components.containsKey(id)||!geometry(id).equals(previous.geometry(id)))changed.add(id);
         return Set.copyOf(changed);
     }
     public static BuildingDesign parse(String source){
         if(source==null||source.length()>131072)throw bad("SOURCE_SIZE");
         try{
-            JsonNode n=JSON.readTree(source);fields(n,"id","name","origin","templates","components","checks");id(n.path("id"));
+            JsonNode n=JSON.readTree(source);fields(n,"id","name","dimension","origin","templates","components","checks");id(n.path("id"));
+            if(!n.path("dimension").isTextual()||!n.get("dimension").asText().matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))throw bad("DIMENSION");
             if(!n.path("name").isTextual()||n.get("name").asText().isBlank()||n.get("name").asText().length()>256)throw bad("NAME");vector(n.path("origin"),30_000_000);
             if(n.has("templates")){if(!n.get("templates").isObject()||n.get("templates").size()>128)throw bad("TEMPLATES");for(var e:n.get("templates").properties()){id(TextNode.valueOf(e.getKey()));parts(e.getValue());}}
             JsonNode list=n.path("components");if(!list.isArray()||list.isEmpty()||list.size()>512)throw bad("COMPONENTS");

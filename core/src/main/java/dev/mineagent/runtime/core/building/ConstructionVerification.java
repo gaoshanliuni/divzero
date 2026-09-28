@@ -4,8 +4,8 @@ import java.util.*;
 
 /** Completion evidence covers exact mutations and semantic requirements, never an unrelated readback. */
 public final class ConstructionVerification {
-    public record Scope(UUID world,UUID owner,UUID agent,String building,long revision,String footprintHash){
-        public Scope{Objects.requireNonNull(world);Objects.requireNonNull(owner);Objects.requireNonNull(agent);if(building==null||building.isBlank()||revision<1||footprintHash==null||!footprintHash.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("BUILDING_VERIFICATION_SCOPE");}
+    public record Scope(UUID world,UUID owner,UUID agent,String dimension,String building,long revision,String footprintHash){
+        public Scope{Objects.requireNonNull(world);Objects.requireNonNull(owner);Objects.requireNonNull(agent);if(dimension==null||!dimension.matches("[a-z0-9_.-]+:[a-z0-9_./-]+")||building==null||building.isBlank()||revision<1||footprintHash==null||!footprintHash.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("BUILDING_VERIFICATION_SCOPE");}
     }
     public record Check(String id,boolean passed,String detail){}
     public record Report(Scope scope,long observedAfterTick,long completedTick,long coveredChanges,boolean blocksMatch,List<Check> checks){

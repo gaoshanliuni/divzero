@@ -1609,8 +1609,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/BuildingDesign.java",
-      "sha256": "698a35ee509390c70fd536a492e888afe9be46a25235894c804dfb5e28adac05",
-      "bytes": 7683
+      "sha256": "be12229fc720cfe9c4c09a24fb9ed8cf9944137939ad7e1538c83377875df259",
+      "bytes": 7953
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/BuildingDesignStore.java",
@@ -1629,8 +1629,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionVerification.java",
-      "sha256": "ad5862f3fa829ba8608d25a93057eeb891aadc89afdd281769783fc84d4e2a77",
-      "bytes": 2866
+      "sha256": "8f66461e777b1e89c7cc380f89205b7de45b45d10b7d644fb2e1405fbea7b3e1",
+      "bytes": 2950
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/ClassFileMethodBody.java",
@@ -3039,13 +3039,13 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/BuildingDesignStoreTest.java",
-      "sha256": "62d5c1215ea98eca3672204693c44e7651eae3fecbe1cd5de4628e743e1198c8",
-      "bytes": 1753
+      "sha256": "c7fc612b7db5127e5fcd6042bfda58b1a85c75ca9d36ba2197745b32dc36dd0a",
+      "bytes": 1787
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/BuildingDesignTest.java",
-      "sha256": "93e824454c12ea3bd552acead7eec057792290c8fa04a6684bc0cd355f2acdea",
-      "bytes": 4460
+      "sha256": "3e69c5a39f355a6e490da28445b34340197b028e62355bf0feb3019e21e4a12e",
+      "bytes": 4843
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/BuildingFormatsTest.java",
