@@ -10,13 +10,13 @@ public final class WorkspaceWindow {
     public final Dialog dialog;public final UIElement body;private final Button dockButton;private boolean closed;
     public WorkspaceWindow(UIElement desktop,UIElement dock,String title,float x,float y,float width,float height,Consumer<WorkspaceWindow> onClose){
         dialog=new Dialog().setAutoClose(false).allowInteraction().windowMode(x,y,width,height).setClickOutsideClose(false);
-        dialog.overlay.getStyle().backgroundTexture(NativeUiTheme.surface(NativeUiTheme.SURFACE,8));
+        dialog.overlay.getStyle().backgroundTexture(NativeUiTheme.panel());
         dialog.titleBar.clearAllChildren();dialog.titleBar.getLayout().height(29).paddingHorizontal(9).paddingVertical(4);
-        dialog.titleBar.getStyle().backgroundTexture(NativeUiTheme.surface(0xf0203045,8));
-        var heading=NativeUiTheme.text(title,NativeUiTheme.TEXT,10);heading.getLayout().flex(1);dialog.titleBar.addChild(heading);
+        dialog.titleBar.getStyle().backgroundTexture(NativeUiTheme.title());
+        var heading=NativeUiTheme.text(title,0xffffffff,10);heading.getLayout().flex(1);dialog.titleBar.addChild(heading);
         dialog.titleBar.addChild(NativeUiTheme.button("—",()->dialog.setDisplay(false)));
         dialog.titleBar.addChild(NativeUiTheme.button("×",this::close));
-        body=dialog.contentContainer;body.getStyle().backgroundTexture(NativeUiTheme.surface(NativeUiTheme.SURFACE,5));body.getLayout().flex(1).paddingAll(9).alignItems(AlignItems.STRETCH).justifyContent(AlignContent.FLEX_START);
+        body=dialog.contentContainer;body.getStyle().backgroundTexture(com.lowdragmc.lowdraglib2.gui.ui.styletemplate.MCSprites.RECT_THIN.copy().setColor(0xedffffff));body.getLayout().flex(1).paddingAll(9).alignItems(AlignItems.STRETCH).justifyContent(AlignContent.FLEX_START);
         dialog.buttonContainer.setDisplay(false);dialog.show(desktop);body.setDisplay(true);
         dockButton=NativeUiTheme.button(title,()->{dialog.setDisplay(true);dialog.getStyle().zIndex(++zOrder);});dock.addChild(dockButton);
         dialog.setOnClose(()->{closed=true;dockButton.removeSelf();onClose.accept(this);});dialog.getStyle().zIndex(++zOrder);

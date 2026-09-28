@@ -77,8 +77,8 @@ public final class LdInterfaceRenderer {
             ModularUI ui;
             if(definition.surface()==InterfaceDefinition.Surface.HUD){
                 var canvas=new UIElement();canvas.getLayout().widthPercent(100).heightPercent(100);root.addClass("native_hud_root");canvas.addChild(root);
-                ui=new ModularUI(UI.of(canvas,List.of(strictStyles(".native_hud_root { position: absolute; left: 8; top: 8; }"),strictStyles(definition.stylesheet())),size->size),Minecraft.getInstance().player);
-            }else ui=new ModularUI(UI.of(root,List.of(strictStyles(definition.stylesheet()))),Minecraft.getInstance().player);
+                ui=new ModularUI(UI.of(canvas,List.of(NativeUiTheme.mc(),strictStyles(".native_hud_root { position: absolute; left: 8; top: 8; }"),strictStyles(definition.stylesheet())),size->size),Minecraft.getInstance().player);
+            }else ui=new ModularUI(UI.of(root,List.of(NativeUiTheme.mc(),strictStyles(definition.stylesheet()))),Minecraft.getInstance().player);
             result=new Rendered(ui,nodes,specs,this);
             var window=Minecraft.getInstance().getWindow();
             ui.init(window.getGuiScaledWidth(),window.getGuiScaledHeight());

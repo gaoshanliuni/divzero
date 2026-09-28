@@ -36,18 +36,18 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
     private record MessageRow(long sequence,UIElement root,TextElement text,TextElement thinking,Button thinkingButton){}
     private NativeWorkspaceScreen(){this(new UIElement());}
     private NativeWorkspaceScreen(UIElement root){
-        super(new ModularUI(UI.of(root,size->size),Minecraft.getInstance().player),Component.literal("DivZero"));this.root=root;composer.registerValueListener(value->saveDraft());
+        super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal("DivZero"));this.root=root;composer.registerValueListener(value->saveDraft());
         root.getLayout().widthPercent(100).heightPercent(100).paddingAll(7);root.getStyle().backgroundTexture(new ColorRectTexture(0x35080d15));
         var toolbar=NativeUiTheme.card(row());toolbar.getLayout().height(36).paddingAll(6).marginBottom(5);toolbar.getStyle().zIndex(2000);root.addChild(toolbar);
         var brand=NativeUiTheme.text("DivZero",NativeUiTheme.ACCENT,13);brand.getLayout().width(72);toolbar.addChild(brand);
-        toolbar.addChild(button(t("对话"),this::showChat));toolbar.addChild(button(t("AI 玩家"),()->WorkspacePanels.agents(this)));toolbar.addChild(button(t("内容包"),()->WorkspacePanels.packages(this)));toolbar.addChild(button(t("文件"),this::showFiles));
+        toolbar.addChild(button(t("对话"),this::showChat));toolbar.addChild(button(t("AI 玩家"),()->WorkspacePanels.agents(this)));toolbar.addChild(button(t("包管理"),()->WorkspacePanels.packages(this)));toolbar.addChild(button(t("文件"),this::showFiles));
         var spacer=new UIElement();spacer.getLayout().flex(1);toolbar.addChild(spacer);toolbar.addChild(button(t("设置"),()->WorkspacePanels.settings(this)));toolbar.addChild(button("×",this::onClose));
         desktop.getLayout().flex(1).widthPercent(100);root.addChild(desktop);
         dock.getLayout().height(28).widthPercent(100).flexDirection(FlexDirection.ROW).paddingVertical(3);dock.getStyle().zIndex(2000);root.addChild(dock);
-        status.getLayout().height(13).widthPercent(100);status.textStyle(style->style.fontSize(8).textColor(NativeUiTheme.MUTED));root.addChild(status);
+        status.getLayout().height(13).widthPercent(100);status.textStyle(style->style.fontSize(8).textColor(0xffffffff));root.addChild(status);
         search.textFieldStyle(style->style.placeholder(Component.literal(t("搜索对话"))));search.registerValueListener(value->{listBefore=0;nextList=System.currentTimeMillis()+350;});
         agentChoice.setOnValueChanged(choice->{if(choice!=null&&!choice.key().equals(model.agent))selectAgent(choice.key());});
-        history.viewPort.getStyle().backgroundTexture(NativeUiTheme.surface(0x66101824,5));
+        history.viewPort.getStyle().backgroundTexture(NativeUiTheme.inset());
         showChat();drawAgents();
     }
     WorkspaceWindow window(String id,String title,float width,float height){
@@ -102,7 +102,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
         search.getLayout().height(24).widthPercent(100).marginTop(5);directory.addChild(search);
         var filter=new Selector<Choice>();filter.setCandidates(List.of(new Choice("ACTIVE",t("进行中")),new Choice("ARCHIVED",t("已归档")),new Choice("DELETED",t("已删除"))));filter.setValue(new Choice(model.filter,t(model.filter.equals("ACTIVE")?"进行中":model.filter.equals("ARCHIVED")?"已归档":"已删除")),false);filter.setOnValueChanged(choice->{model.filter=choice.key();listBefore=0;list();});filter.getLayout().height(23).widthPercent(100);directory.addChild(filter);
         conversationList=new ScrollerView();conversationList.getLayout().flex(1).widthPercent(100);directory.addChild(conversationList);
-        content.clearAllChildren();content.getLayout().flex(1).heightPercent(100).paddingLeft(8);body.addChild(content);heading.setText(Component.literal(model.selected==null?t("选择或新建对话"):model.selected.get("title").getAsString()));heading.textStyle(style->style.fontSize(12));content.addChild(heading);
+        content.clearAllChildren();content.getLayout().flex(1).heightPercent(100).paddingLeft(8);body.addChild(content);heading.setText(Component.literal(model.selected==null?t("选择或新建对话"):model.selected.get("title").getAsString()));heading.textStyle(style->style.fontSize(12).textColor(NativeUiTheme.TEXT));content.addChild(heading);
         var controls=row();controls.getLayout().height(26);controls.addChild(button(t("更早"),()->messages(nextBefore)));controls.addChild(button(t("最新"),()->{rows.clear();history.clearAllScrollViewChildren();messages(0);}));controls.addChild(button(t("重命名"),this::renameConversation));controls.addChild(button(t("归档"),()->changeConversation("archive")));controls.addChild(button(t("恢复"),()->changeConversation("restore")));content.addChild(controls);
         history.getLayout().flex(1).widthPercent(100).marginVertical(6);content.addChild(history);
         composer.getLayout().height(62).widthPercent(100);composer.setValue(draftText().split("\n",-1),false);content.addChild(composer);
@@ -174,7 +174,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
             var thinking=new HashMap<String,JsonObject>();if(state.has("thinking"))for(var v:state.getAsJsonArray("thinking")){var q=v.getAsJsonObject();thinking.put(q.get("messageId").getAsString(),q);}
             for(var item:state.getAsJsonArray("messages")){
                 var message=item.getAsJsonObject();String id=message.get("messageId").getAsString();long revision=message.get("revision").getAsLong();var entry=rows.get(id);
-                if(entry==null){var container=new UIElement();container.getLayout().widthPercent(100).paddingAll(5).marginBottom(4);container.getStyle().backgroundTexture(new ColorRectTexture(0x772b3544));container.addChild(label(message.get("role").getAsString().equals("USER")?t("你"):"AI"));var body=label("");container.addChild(body);var thought=label("");thought.setDisplay(false);var toggle=button(t("思考"),()->thought.setDisplay(!thought.isDisplayed()));container.addChild(toggle);container.addChild(thought);if(!message.get("role").getAsString().equals("USER"))container.addChild(button(t("朗读"),()->write("voice",Map.of("messageId",id,"contextId",context.toString()),voice->notice(t("正在处理…")))));entry=new MessageRow(message.get("sequence").getAsLong(),container,body,thought,toggle);rows.put(id,entry);changed=true;}
+                if(entry==null){var container=new UIElement();container.getLayout().widthPercent(100).paddingAll(5).marginBottom(4);container.getStyle().backgroundTexture(NativeUiTheme.inset());container.addChild(label(message.get("role").getAsString().equals("USER")?t("你"):"AI"));var body=label("");container.addChild(body);var thought=label("");thought.setDisplay(false);var toggle=button(t("思考"),()->thought.setDisplay(!thought.isDisplayed()));container.addChild(toggle);container.addChild(thought);if(!message.get("role").getAsString().equals("USER"))container.addChild(button(t("朗读"),()->write("voice",Map.of("messageId",id,"contextId",context.toString()),voice->notice(t("正在处理…")))));entry=new MessageRow(message.get("sequence").getAsLong(),container,body,thought,toggle);rows.put(id,entry);changed=true;}
                 var th=thinking.get(id);entry.thinkingButton.setDisplay(th!=null&&th.get("textLength").getAsInt()>0);if(th!=null&&entry.thinking.isDisplayed()&&!Objects.equals(loading.get("thinking:"+id),th.get("revision").getAsLong())){loading.put("thinking:"+id,th.get("revision").getAsLong());textChunk(id,th.get("revision").getAsLong(),"thinking",entry.thinking,generation,0,new StringBuilder());}
                 if(!Objects.equals(loading.get(id),revision)){loading.put(id,revision);textChunk(id,revision,"message",entry.text,generation,0,new StringBuilder());}
             }

@@ -17,7 +17,7 @@ public final class WorkspaceSetupScreen extends ModularUIScreen {
     private final Screen parent;
     public WorkspaceSetupScreen(Screen parent){this(parent,new UIElement());}
     private WorkspaceSetupScreen(Screen parent,UIElement root){
-        super(new ModularUI(UI.of(root,size->size),Minecraft.getInstance().player),Component.literal("DivZero"));this.parent=parent;
+        super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal("DivZero"));this.parent=parent;
         root.getLayout().widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER);
         var card=NativeUiTheme.card(new UIElement());card.getLayout().widthPercent(85).maxWidth(420).paddingAll(18).gapAll(9);root.addChild(card);
         card.addChild(NativeUiTheme.text("DivZero",NativeUiTheme.ACCENT,18));

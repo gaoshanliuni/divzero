@@ -21,7 +21,7 @@ public final class AgentProfileScreen extends ModularUIScreen {
     private String personaDraft;private long personaDraftRevision=-1;private boolean personaSaving;private JsonObject snapshot;private String tab="overview";private int inventoryOffset,contentOffset;private long nextRead;private boolean busy;private long personaRevision=-1,uiEpoch;
     private AgentProfileScreen(UUID agent,String name){this(agent,name,new UIElement());}
     private AgentProfileScreen(UUID agent,String name,UIElement root){
-        super(new ModularUI(UI.of(root,size->size),Minecraft.getInstance().player),Component.literal(name));this.agent=agent;this.root=root;connection=Minecraft.getInstance().getConnection();
+        super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal(name));this.agent=agent;this.root=root;connection=Minecraft.getInstance().getConnection();
         root.getLayout().widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER);
         var card=NativeUiTheme.card(new UIElement());card.getLayout().widthPercent(86).heightPercent(86).maxWidth(650).paddingAll(14);root.addChild(card);
         var top=WorkspacePanels.row();top.getLayout().height(30);card.addChild(top);title=NativeUiTheme.text(name,NativeUiTheme.TEXT,14);title.getLayout().flex(1);top.addChild(title);top.addChild(NativeUiTheme.button("×",this::onClose));
