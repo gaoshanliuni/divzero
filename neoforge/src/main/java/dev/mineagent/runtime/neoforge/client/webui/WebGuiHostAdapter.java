@@ -60,7 +60,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     public String diagnostic() { return diagnostic; }
     public boolean compositionActive(){return compositionActive||Minecraft.getInstance().screen instanceof WebGuiInteractionScreen screen&&screen.nativeComposing();}
     public boolean workspaceShown(){return dev.mineagent.runtime.client.webui.WorkspaceShortcut.shown(workspaceVisible,Minecraft.getInstance().screen instanceof WebGuiInteractionScreen,Minecraft.getInstance().screen instanceof WebGuiDiagnosticScreen);}
-    public boolean ready() { return ready && browser != null && gate.owns(browser); }
+    public boolean ready() { return dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready() || ready && browser != null && gate.owns(browser); }
     public MCEFBrowser browser() { return browser; }
     public String packageUrl(String viewId) { return packageUrls.get(viewId); }
     public String viewForPackageUrl(String url){return packageUrls.entrySet().stream().filter(e->e.getValue().equals(url)).map(Map.Entry::getKey).findFirst().orElse(null);}
@@ -68,7 +68,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     public java.util.List<String> loadedPreviewViews(){return loadedPackages.stream().filter(view->!PackageContentClient.owns(view)).sorted().toList();}
     public ViewPackage viewPackage(String view){return viewPackages.get(view);}
     public JsonObject viewLayout(String view){var value=viewLayouts.get(view);return value==null?null:value.deepCopy();}
-    public boolean packageHidden(String view){return hiddenPackages.contains(view);}
+    public boolean packageHidden(String view){return dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.owns(view)?!dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.visible(view):hiddenPackages.contains(view);}
     public long readyMillis() { return readyMillis; }
     public boolean owns(CefBrowser candidate) { return gate.owns(candidate); }
     public boolean acceptsTrustedFrame(CefBrowser browser,CefFrame frame,int size){return frame!=null&&gate.accepts(browser,frame.isMain(),frame.getURL(),size);}
@@ -169,27 +169,13 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     }
     private String openResolved(dev.mineagent.runtime.client.webui.PackagePreviewTransfer.Resolved resolved,boolean passive,dev.mineagent.runtime.api.ui.UiProtocol.Session session) {
         requireClientThread();
-        if (!ready()) throw new IllegalStateException("VIEW_NOT_RENDERED");
-        var runtimePackage = resolved.runtimePackage();
-        String entry = resolved.entry();
-        var settingsAsset=resolved.assets().get(dev.mineagent.runtime.core.ui.UiViewSettings.PATH);
-        if(settingsAsset!=null){var ref=runtimePackage.resources().get(dev.mineagent.runtime.core.ui.UiViewSettings.PATH);if(ref==null||ref.side()!=dev.mineagent.runtime.api.packages.RuntimeResourceSide.CLIENT||!settingsAsset.mediaType().equals("application/json"))throw new IllegalArgumentException("UI_VIEW_SETTINGS_RESOURCE");}
-        var defaults=settingsAsset==null?null:dev.mineagent.runtime.core.ui.UiViewSettings.parse(new String(settingsAsset.bytes(),java.nio.charset.StandardCharsets.UTF_8),runtimePackage.entrypoints().values().stream().filter(e->e.side()==dev.mineagent.runtime.api.packages.RuntimeResourceSide.CLIENT&&e.path().endsWith(".html")).map(e->e.path()).collect(java.util.stream.Collectors.toSet())).get(entry);
-        if(defaults!=null&&defaults.opacity()!=null&&!WebGuiAtlasCompositor.automatic()&&!WebGuiAtlasCompositor.inputAvailable())throw new IllegalStateException("UI_OPACITY_BACKEND_REQUIRED");
-        var mount = resources.mount(resolved.assets(), false);
-        String view = session==null?UUID.randomUUID().toString():session.binding().viewId();
-        packageMounts.put(view, mount);
-        packageUrls.put(view, mount.entry(entry).toString());
-        viewPackages.put(view,new ViewPackage(runtimePackage.packageId(),runtimePackage.revision(),entry,passive));
-        if(defaults!=null)viewSettings.put(view,defaults);
-        if(session!=null)PackageContentClient.mount(session,mount.entry(entry).toString());
-        if(!passive&&!(Minecraft.getInstance().screen instanceof WebGuiInteractionScreen)){hiddenPackages.add(view);PackageContentClient.visibility(view,false);}
-        var message=new LinkedHashMap<String,Object>(Map.of("viewId", view, "title", runtimePackage.name() + " · " + runtimePackage.version()+" · r"+runtimePackage.revision(),
-                "url", mount.entry(entry).toString(), "mode", passive?"PASSIVE_HUD":session!=null?"CONTENT":"PREVIEW",
-                "targetObjectId",session==null?"":session.binding().targetObjectId(),"packageId",runtimePackage.packageId(),"packageRevision",runtimePackage.revision(),"candidatePreview",session!=null&&session.binding().preview(),"contentKind",session!=null&&dev.mineagent.runtime.api.ui.DeliveryProtocol.bound(session.binding())?"DELIVERY":session!=null&&dev.mineagent.runtime.api.ui.WorldUiProtocol.bound(session.binding())?"WORLD":session!=null&&dev.mineagent.runtime.api.ui.ContainerProtocol.bound(session.binding())?"CONTAINER":"SCORE","actorKind",session==null?"":session.binding().actorKind().name()));
-        message.put("layoutKey",dev.mineagent.runtime.core.ui.UiViewSettings.layoutKey(runtimePackage.packageId(),entry,session==null?"":dev.mineagent.runtime.api.ui.WorldUiProtocol.localStateTarget(session.binding()),session!=null&&session.binding().preview()));
-        if(defaults!=null)message.put("placement",defaults);emit("openPackage",message);
-        return view;
+        try{
+            String view=dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.open(resolved,session,passive,PackageContentClient::request);
+            viewPackages.put(view,new ViewPackage(resolved.runtimePackage().packageId(),resolved.runtimePackage().revision(),resolved.entry(),passive));
+            packageUrls.put(view,"native:"+view);loadedPackages.add(view);
+            if(session!=null&&!PackageContentClient.owns(view))PackageContentClient.mount(session,"native:"+view);
+            return view;
+        }catch(RuntimeException error){throw error;}catch(Exception error){throw new IllegalArgumentException("NATIVE_PACKAGE_BUILD_FAILED: "+error.getMessage(),error);}
     }
 
     private void ensureRouter() {

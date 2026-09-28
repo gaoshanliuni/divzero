@@ -24,6 +24,15 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
     public boolean visible(){return visible&&!closed;}
     public boolean interactive(){return interactive&&!closed;}
     public Map<String,JsonNode> data(){return copy(data);}
+    /** Recreate renderer ownership after the enclosing workspace closes, without changing the document/data revision. */
+    public Receipt remount(Builder<T> builder){
+        requireOpen();if(definition==null)throw new IllegalStateException("INTERFACE_NOT_BUILT");
+        long expected=revision,expectedData=dataRevision;T candidate=null;
+        try{candidate=Objects.requireNonNull(builder.build(definition,copy(data)));require(scope,expected);
+            if(dataRevision!=expectedData)throw new IllegalStateException("INTERFACE_DATA_CHANGED_DURING_BUILD");
+            T previous=rendered;rendered=candidate;candidate=null;dispose(previous);return new Receipt(true,revision,dataRevision,"");
+        }catch(Exception failure){dispose(candidate);return new Receipt(false,revision,dataRevision,String.valueOf(failure.getMessage()));}
+    }
     public void interactive(boolean value){requireOpen();interactive=value;}
     public void visible(boolean value){requireOpen();visible=value;}
 
@@ -67,6 +76,19 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
     }
     public void input(Scope expected,long expectedRevision,String nodeId,JsonNode value){
         input(expected,expectedRevision,nodeId,value,ignored->{});
+    }
+    /** Validate an entire restored form before applying it. Restoration never dispatches actions. */
+    public Receipt restoreInputs(Scope expected,long expectedRevision,Map<String,JsonNode> inputs,java.util.function.Consumer<Map<String,JsonNode>> apply){
+        require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");
+        var values=new LinkedHashMap<String,JsonNode>();
+        for(var entry:inputs.entrySet()){
+            var binding=definition.inputBindings().get(entry.getKey());var value=entry.getValue();
+            if(binding==null||!definition.interactiveNode(entry.getKey(),data))throw new IllegalArgumentException("INTERFACE_INPUT_NODE");
+            if(value==null||binding.startsWith("toggle:")&&!value.isBoolean()||binding.startsWith("input:")&&(!value.isTextual()||value.textValue().length()>16384))throw new IllegalArgumentException("INTERFACE_INPUT_VALUE");
+            String key=binding.substring(binding.indexOf(':')+1);if(definition.sources().containsKey(key))throw new IllegalStateException("INTERFACE_SOURCE_READ_ONLY");
+            if(values.putIfAbsent(key,value)!=null)throw new IllegalArgumentException("INTERFACE_DUPLICATE_INPUT_BINDING");
+        }
+        var receipt=localData(expected,expectedRevision,values,apply);if(receipt.applied())dirtyInputs.addAll(values.keySet());return receipt;
     }
     public void input(Scope expected,long expectedRevision,String nodeId,JsonNode value,java.util.function.Consumer<Map<String,JsonNode>> apply){
         require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");

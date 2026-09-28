@@ -6,6 +6,18 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InterfaceSessionTest {
+    @Test void workspaceRemountPreservesVersionDataAndInputIdentity(){
+        var scope=scope();var session=new InterfaceSession<Render>(scope);var old=new Render();session.replace(scope,0,SOURCE,(d,v)->old);session.input(scope,1,"search",TextNode.valueOf("oak"));long dataRevision=session.dataRevision();
+        var failed=session.remount((d,v)->{throw new IllegalArgumentException("bad renderer");});assertFalse(failed.applied());assertSame(old,session.rendered());assertFalse(old.closed);
+        assertTrue(session.remount((d,v)->{assertEquals("oak",v.get("query").asText());return new Render();}).applied());assertTrue(old.closed);assertEquals(1,session.revision());assertEquals(dataRevision,session.dataRevision());
+        session.patch(scope,1,dataRevision,Map.of("query",TextNode.valueOf("server")),v->{});assertEquals("oak",session.data().get("query").asText());
+    }
+    @Test void restoredFormValidatesAllFieldsBeforeChangingAnyInput(){
+        var scope=scope();var session=new InterfaceSession<Render>(scope);session.replace(scope,0,SOURCE,(d,v)->new Render());
+        var values=new LinkedHashMap<String,com.fasterxml.jackson.databind.JsonNode>();values.put("search",TextNode.valueOf("oak"));values.put("missing",TextNode.valueOf("bad"));
+        assertThrows(IllegalArgumentException.class,()->session.restoreInputs(scope,1,values,v->fail("must validate entire form first")));assertEquals("",session.data().get("query").asText());
+        assertTrue(session.restoreInputs(scope,1,Map.of("search",TextNode.valueOf("oak")),v->{}).applied());session.patch(scope,1,session.dataRevision(),Map.of("query",TextNode.valueOf("server")),v->{});assertEquals("oak",session.data().get("query").asText());
+    }
     static final String SOURCE="""
         {"id":"shop","title":"Shop","surface":"SCREEN","data":{"query":"","balance":50},
          "root":{"id":"root","type":"row","children":[

@@ -14,7 +14,7 @@ public final class WorldUiProtocol {
         public Launch{
             Objects.requireNonNull(id);Objects.requireNonNull(packageId);Objects.requireNonNull(worldId);Objects.requireNonNull(viewerId);Objects.requireNonNull(instanceId);Objects.requireNonNull(entityId);
             if(viewId==null||viewId.isBlank()||viewId.length()>128||packageRevision<1||packageVersion==null||packageVersion.isBlank()||packageVersion.length()>64||part==null||!part.matches("[A-Za-z0-9_.-]{1,64}")||canonicalSha256==null||!canonicalSha256.matches("[a-f0-9]{64}")||expiresAt<1)throw new IllegalArgumentException("WORLD_UI_LAUNCH");
-            RuntimeEntrypoint.requireRelativePath(entryPath);if(!entryPath.startsWith("ui/")||!entryPath.endsWith(".html"))throw new IllegalArgumentException("WORLD_UI_ENTRYPOINT");
+            RuntimeEntrypoint.requireRelativePath(entryPath);if(!entryPath.startsWith("ui/")||!(entryPath.endsWith(".html")||entryPath.endsWith(".json")))throw new IllegalArgumentException("WORLD_UI_ENTRYPOINT");
             if(actorId==null&&actorKind==null&&taskId==null&&taskRevision==0){actorId=viewerId;actorKind=ActorKind.PLAYER;}
             if(actorId==null||actorKind==null||(actorKind==ActorKind.PLAYER?(!actorId.equals(viewerId)||taskId!=null||taskRevision!=0):(actorId.equals(viewerId)||taskId==null||taskRevision<1)))throw new IllegalArgumentException("WORLD_UI_ACTOR");
         }

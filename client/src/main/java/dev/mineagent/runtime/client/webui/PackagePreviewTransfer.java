@@ -20,7 +20,7 @@ public final class PackagePreviewTransfer {
         if (!RuntimePackageCanonicalizer.sha256(pkg).equals(pkg.canonicalSha256())) throw new IllegalArgumentException("MANIFEST_HASH");
         if (!verifier.verify(pkg.canonicalSha256().getBytes(StandardCharsets.US_ASCII), Base64.getDecoder().decode(pkg.signature())))
             throw new SecurityException("PACKAGE_SIGNATURE_UNTRUSTED");
-        if (pkg.resources().size() > 256 || bundle.files().size() > 256 || !bundle.entry().startsWith("ui/") || !bundle.entry().endsWith(".html")
+        if (pkg.resources().size() > 256 || bundle.files().size() > 256 || !bundle.entry().startsWith("ui/") || !(bundle.entry().endsWith(".html")||bundle.entry().endsWith(".json"))
                 || pkg.entrypoints().values().stream().noneMatch(e -> e.path().equals(bundle.entry()) && e.side() != RuntimeResourceSide.SERVER))
             throw new IllegalArgumentException("UI_ENTRYPOINT");
         var hashes = new HashSet<String>();

@@ -23,6 +23,10 @@ public record NativePackageDefinition(InterfaceDefinition view,Map<String,Reques
             if(!view.handlers().isEmpty()||!view.sources().isEmpty())throw new IllegalArgumentException("NATIVE_PACKAGE_USE_SCOPED_READS_AND_ACTIONS");
             var reads=requests(document.path("reads"),true);var actions=requests(document.path("actions"),false);
             var keys=new HashSet<String>();for(var request:reads.values())if(!keys.add(request.result()))throw new IllegalArgumentException("NATIVE_PACKAGE_DUPLICATE_RESULT");
+            var inputKeys=new HashSet<String>();view.inputBindings().values().forEach(binding->inputKeys.add(binding.substring(binding.indexOf(':')+1)));
+            for(var request:actions.values())keys.add(request.result());
+            if(keys.stream().anyMatch(inputKeys::contains))throw new IllegalArgumentException("NATIVE_PACKAGE_RESULT_IS_INPUT");
+            InterfaceDefinition.walk(view.root(),node->{for(var event:node.path("events"))for(var action:event)if(action.path("op").asText().equals("emit")&&!actions.containsKey(action.path("action").asText()))throw new IllegalArgumentException("NATIVE_PACKAGE_ACTION_UNDECLARED: "+action.path("action").asText());});
             return new NativePackageDefinition(view,reads,actions);
         }catch(IllegalArgumentException failure){throw failure;}catch(Exception failure){throw new IllegalArgumentException("NATIVE_PACKAGE_JSON",failure);}
     }

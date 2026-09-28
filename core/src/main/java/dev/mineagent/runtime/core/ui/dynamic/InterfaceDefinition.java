@@ -12,7 +12,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
     private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     public static final Set<String> TYPES=Set.of("panel","row","column","scroll","label","button","input","toggle","progress","image");
-    private static final Set<String> NODE_FIELDS=Set.of("id","type","text","value","bind","bindings","style","classes","resource","events","children","visible","enabled");
+    private static final Set<String> NODE_FIELDS=Set.of("id","type","text","value","bind","bindings","style","classes","resource","events","children","visible","enabled","secret");
     public static final String CONTRACT="""
         DivZero native UI v1: JSON, rendered with LDLib2 and built by the DivZero KubeJS bridge.
         {"id":"shop","title":"Shop","surface":"SCREEN","root":{"id":"root","type":"row","children":[...]},"data":{},"stylesheet":""}
@@ -91,6 +91,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         String nodeId=id(n.path("id"),path+".id");if(!ids.add(nodeId))throw error(path+".id","DUPLICATE_ID");if(ids.size()>MAX_NODES)throw error(path,"NODE_COUNT");
         String type=string(n.path("type"),path+".type",24);if(!TYPES.contains(type))throw error(path+".type","UNKNOWN_WIDGET");
         if(n.has("text"))string(n.get("text"),path+".text",16384);
+        if(n.has("secret")&&(!type.equals("input")||!n.get("secret").isBoolean()))throw error(path+".secret","SECRET_INPUT_REQUIRED");
         if(n.has("bind"))id(n.get("bind"),path+".bind");
         if(n.has("bindings")){fields(n.get("bindings"),Set.of("text","value","visible","enabled"),path+".bindings");for(var entry:n.get("bindings").properties())InterfaceExpression.validate(entry.getValue());}
         if(n.has("style"))style(n.get("style"),path+".style",8192);

@@ -165,7 +165,7 @@ public final class PackagePreviewClient {
     }
     private static boolean current(Download d) {
         if (!active.contains(d)) return false;
-        if (UiClientSessions.current() != d.session || !WebGuiHostAdapter.INSTANCE.ready() || System.currentTimeMillis() >= d.deadline || !d.restoreCurrent.getAsBoolean()) {
+        if (UiClientSessions.current() != d.session || !dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready() || System.currentTimeMillis() >= d.deadline || !d.restoreCurrent.getAsBoolean()) {
             fail(d, new IllegalStateException("UI_TRANSFER_EXPIRED")); return false;
         }
         return true;

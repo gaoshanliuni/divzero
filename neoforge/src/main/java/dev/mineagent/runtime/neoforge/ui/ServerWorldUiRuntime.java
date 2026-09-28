@@ -34,7 +34,7 @@ public final class ServerWorldUiRuntime implements AutoCloseable {
             if(pending.offered==null)pending.offered=original.forAgent(pending.task.agentId(),pending.task.taskId(),pending.task.intentRevision(),Math.min(pending.source.expires,System.currentTimeMillis()+60_000));return;
         }
         var target=WorldContentRuntime.get(server).uiTarget(instance,entity,part,viewer);var pkg=target.pack();var entry=pkg.entrypoints().get(entryId);
-        if(entry==null||entry.side()!=RuntimeResourceSide.CLIENT||!entry.path().startsWith("ui/")||!entry.path().endsWith(".html"))throw new IllegalArgumentException("WORLD_UI_ENTRYPOINT");
+        if(entry==null||entry.side()!=RuntimeResourceSide.CLIENT||!entry.path().startsWith("ui/")||!(entry.path().endsWith(".html")||entry.path().endsWith(".json")))throw new IllegalArgumentException("WORLD_UI_ENTRYPOINT");
         expire();
         var old=views.values().stream().filter(v->v.launch.actorKind()==ActorKind.PLAYER&&v.launch.viewerId().equals(viewer.getUUID())&&v.launch.instanceId().equals(instance)&&v.launch.entityId().equals(entity)&&v.launch.entryPath().equals(entry.path())&&valid(v)).findFirst().orElse(null);
         if(old!=null){send(viewer,old.launch.id(),"worldUiLaunch",old.launch);return;}

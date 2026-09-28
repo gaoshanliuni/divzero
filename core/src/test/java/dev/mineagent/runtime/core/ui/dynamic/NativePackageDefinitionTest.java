@@ -26,6 +26,7 @@ class NativePackageDefinitionTest {
         assertThrows(IllegalArgumentException.class,()->NativePackageDefinition.parse(SOURCE.replace("\"intervalTicks\":20","\"intervalTicks\":1")));
     }
     @Test void executableOrAmbiguousDocumentsFailClosed(){
+        assertThrows(IllegalArgumentException.class,()->NativePackageDefinition.parse(SOURCE.replace("\"result\":\"purchase\"","\"result\":\"query\"")));
         assertThrows(IllegalArgumentException.class,()->NativePackageDefinition.parse(SOURCE.replace("\"format\":","\"script\":\"Java.loadClass('System')\",\"format\":")));
         assertThrows(IllegalArgumentException.class,()->NativePackageDefinition.parse(SOURCE.replace("\"title\":\"Shop\"","\"title\":\"Shop\",\"title\":\"Other\"")));
     }

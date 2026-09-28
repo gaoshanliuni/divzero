@@ -18,8 +18,11 @@ public final class LdInterfaceRenderer {
     @FunctionalInterface public interface Events {void dispatch(String node,String event,String value);}
     private LdInterfaceRenderer(){}
     public static Rendered build(InterfaceDefinition definition,Map<String,JsonNode> data,Events events) throws Exception {
+        return build(definition,data,events,Map.of(),false);
+    }
+    public static Rendered build(InterfaceDefinition definition,Map<String,JsonNode> data,Events events,Map<String,com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture> resources,boolean embedded) throws Exception {
         if(!Minecraft.getInstance().isSameThread())throw new IllegalStateException("INTERFACE_CLIENT_THREAD_REQUIRED");
-        var bridge=new BuilderBridge(definition,data,events);
+        var bridge=new BuilderBridge(definition,data,events,resources,embedded);
         try{bridge.finish(buildNode(definition.root(),bridge));return bridge.result();}
         catch(Exception failure){if(bridge.result!=null)bridge.result.close();throw failure;}
     }
@@ -35,12 +38,15 @@ public final class LdInterfaceRenderer {
         private final InterfaceDefinition definition;
         private final Map<String,JsonNode> data;
         private final Events events;
+        private final Map<String,com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture> resources;
+        private final boolean embedded;
         private final Map<String,UIElement> nodes=new LinkedHashMap<>();
         private final Map<String,JsonNode> specs=new LinkedHashMap<>();
         private Rendered result;
         public Rendered result(){return result;}
         private boolean ready;
-        BuilderBridge(InterfaceDefinition definition,Map<String,JsonNode> data,Events events){this.definition=definition;this.data=data;this.events=events;}
+        BuilderBridge(InterfaceDefinition definition,Map<String,JsonNode> data,Events events){this(definition,data,events,Map.of(),false);}
+        BuilderBridge(InterfaceDefinition definition,Map<String,JsonNode> data,Events events,Map<String,com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture> resources,boolean embedded){this.definition=definition;this.data=data;this.events=events;this.resources=Map.copyOf(resources);this.embedded=embedded;}
         public UIElement create(String json) throws Exception {
             JsonNode n=JSON.readTree(json);String id=n.path("id").asText(),type=n.path("type").asText();
             UIElement element=switch(type){
@@ -50,6 +56,7 @@ public final class LdInterfaceRenderer {
             };
             element.setId(id);nodes.put(id,element);specs.put(id,n);
             if(element instanceof TextField field)field.textFieldStyle(style->style.placeholder(Component.empty()));
+            if(element instanceof TextField field&&n.path("secret").asBoolean(false))field.setFormatter(value->Component.literal("•".repeat(value.length())));
             if(element instanceof ProgressBar progress){progress.label.setText(Component.literal(n.path("text").asText("")));progress.label.setDisplay(n.has("text"));}
             if(type.equals("row")||type.equals("column"))element.addLocalStylesheet(strictStyles("#"+id+" { flex-direction: "+type+"; }"));
             if(n.has("style"))element.addLocalStylesheet(strictStyles("#"+id+" { "+n.get("style").asText()+" }"));
@@ -57,9 +64,14 @@ public final class LdInterfaceRenderer {
             element.setDisplay(InterfaceDefinition.boundBoolean(n,"visible",data));element.setActive(InterfaceDefinition.boundBoolean(n,"enabled",data));
             if(type.equals("image")){
                 if(!n.has("resource"))throw new IllegalArgumentException("INTERFACE_IMAGE_RESOURCE: "+id);
-                var resource=net.minecraft.resources.Identifier.parse(n.get("resource").asText());
-                if(Minecraft.getInstance().getResourceManager().getResource(resource).isEmpty())throw new IllegalArgumentException("INTERFACE_RESOURCE_MISSING: "+resource);
-                element.getStyle().backgroundTexture(SpriteTexture.of(resource));
+                String name=n.get("resource").asText();
+                var texture=resources.get(name);
+                if(texture!=null)element.getStyle().backgroundTexture(texture);
+                else {
+                    var resource=net.minecraft.resources.Identifier.parse(name);
+                    if(Minecraft.getInstance().getResourceManager().getResource(resource).isEmpty())throw new IllegalArgumentException("INTERFACE_RESOURCE_MISSING: "+resource);
+                    element.getStyle().backgroundTexture(SpriteTexture.of(resource));
+                }
             }
             if(element instanceof Toggle toggle)toggle.setText(Component.literal(n.path("text").asText("")));
             set(element,value(n,data));return element;
@@ -75,12 +87,13 @@ public final class LdInterfaceRenderer {
         public void dispatch(String node,String event,String value){if(ready)events.dispatch(node,event,value);}
         public void finish(UIElement root){
             root.addClass("panel_bg");
+            if(embedded){root.addLocalStylesheet(strictStyles(definition.stylesheet()));result=new Rendered(null,root,nodes,specs,this);ready=true;return;}
             ModularUI ui;
             if(definition.surface()==InterfaceDefinition.Surface.HUD){
                 var canvas=new UIElement();canvas.getLayout().widthPercent(100).heightPercent(100);root.addClass("native_hud_root");canvas.addChild(root);
                 ui=new ModularUI(UI.of(canvas,List.of(NativeUiTheme.mc(),strictStyles(".native_hud_root { position: absolute; left: 8; top: 8; }"),strictStyles(definition.stylesheet())),size->size),Minecraft.getInstance().player);
             }else ui=new ModularUI(UI.of(root,List.of(NativeUiTheme.mc(),strictStyles(definition.stylesheet()))),Minecraft.getInstance().player);
-            result=new Rendered(ui,nodes,specs,this);
+            result=new Rendered(ui,root,nodes,specs,this);
             var window=Minecraft.getInstance().getWindow();
             ui.init(window.getGuiScaledWidth(),window.getGuiScaledHeight());
             ready=true;
@@ -88,11 +101,12 @@ public final class LdInterfaceRenderer {
     }
     public static final class Rendered implements AutoCloseable {
         public final ModularUI ui;
+        public final UIElement root;
         private final Map<String,UIElement> nodes;
         private final Map<String,JsonNode> specs;
         private final BuilderBridge bridge;
         private boolean closed;
-        Rendered(ModularUI ui,Map<String,UIElement> nodes,Map<String,JsonNode> specs,BuilderBridge bridge){this.ui=ui;this.nodes=Map.copyOf(nodes);this.specs=Map.copyOf(specs);this.bridge=bridge;}
+        Rendered(ModularUI ui,UIElement root,Map<String,UIElement> nodes,Map<String,JsonNode> specs,BuilderBridge bridge){this.ui=ui;this.root=root;this.nodes=Map.copyOf(nodes);this.specs=Map.copyOf(specs);this.bridge=bridge;}
         public void update(Map<String,JsonNode> data){
             if(closed)throw new IllegalStateException("INTERFACE_RENDERER_CLOSED");
             record Update(JsonNode value,boolean visible,boolean enabled){}
@@ -105,7 +119,12 @@ public final class LdInterfaceRenderer {
             try{updates.forEach((node,update)->{set(node,update.value);node.setDisplay(update.visible);node.setActive(update.enabled);});}finally{bridge.ready=true;}
         }
         public UIElement node(String id){return nodes.get(id);}
-        @Override public void close(){if(!closed){closed=true;bridge.ready=false;if(!ui.isRemoved())ui.onRemoved();}}
+        public void onPaint(Runnable witness){
+            var marker=new UIElement(){@Override protected void drawBackgroundAdditional(com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext context){if(!closed&&root.getSizeWidth()>0&&root.getSizeHeight()>0)witness.run();}};
+            marker.getLayout().positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE).left(0).top(0).width(1).height(1);
+            root.addChild(marker);
+        }
+        @Override public void close(){if(!closed){closed=true;bridge.ready=false;if(ui!=null&&!ui.isRemoved())ui.onRemoved();else root.removeSelf();}}
     }
     private static JsonNode value(JsonNode spec,Map<String,JsonNode> data){
         var bindings=spec.path("bindings");if(bindings.has("value")||bindings.has("text"))return dev.mineagent.runtime.core.ui.dynamic.InterfaceExpression.evaluate(bindings.get(bindings.has("value")?"value":"text"),data);

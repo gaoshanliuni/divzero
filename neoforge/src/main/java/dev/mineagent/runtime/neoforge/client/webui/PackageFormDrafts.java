@@ -46,6 +46,11 @@ public final class PackageFormDrafts {
         return query(view,kind,draft,freeze,false,null);
     }
     private static CompletableFuture<JsonObject> query(String view,String kind,JsonObject draft,boolean freeze,boolean silent,JsonObject expectedCurrent){
+        if(dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.owns(view)){
+            try{var json=new com.fasterxml.jackson.databind.ObjectMapper();var value=kind.equals("capture")?dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.draft(view,freeze):dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.restoreDraft(view,json.readTree(draft.toString()),expectedCurrent==null?null:json.readTree(expectedCurrent.toString()));return CompletableFuture.completedFuture(JSON.toJsonTree(value).getAsJsonObject());}
+            catch(Exception failure){return CompletableFuture.failedFuture(failure);}
+        }
+
         if(pending.size()>=8)return CompletableFuture.failedFuture(new IllegalStateException("DRAFT_QUERY_BUDGET"));
         var host=WebGuiHostAdapter.INSTANCE;String url=host.packageUrl(view);if(url==null||!host.ready())return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));
         CefFrame frame=null;for(long id:PackagePageAgent.frameIds(host.browser().getFrameIdentifiers())){var f=host.browser().getFrame(id);if(f!=null&&!f.isMain()&&url.equals(f.getURL())){frame=f;break;}}

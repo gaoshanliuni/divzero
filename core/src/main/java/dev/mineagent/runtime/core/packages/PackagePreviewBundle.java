@@ -18,7 +18,7 @@ public record PackagePreviewBundle(RuntimePackage manifest, String entry, Map<St
         return new ObjectMapper().readValue(body, PackagePreviewBundle.class);
     }
     public static byte[] encode(RuntimePackage pkg, String entry, ContentAddressedStore store) throws Exception {
-        if (!entry.startsWith("ui/") || !entry.endsWith(".html") || pkg.entrypoints().values().stream()
+        if (!entry.startsWith("ui/") || !(entry.endsWith(".html")||entry.endsWith(".json")) || pkg.entrypoints().values().stream()
                 .noneMatch(e -> e.path().equals(entry) && e.side() != RuntimeResourceSide.SERVER))
             throw new IllegalArgumentException("UI_ENTRYPOINT");
         long total = 0;

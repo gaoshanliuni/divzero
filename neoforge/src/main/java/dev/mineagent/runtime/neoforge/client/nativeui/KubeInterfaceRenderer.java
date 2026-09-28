@@ -12,6 +12,9 @@ public final class KubeInterfaceRenderer {
     private static final ObjectMapper JSON=new ObjectMapper();
     private KubeInterfaceRenderer(){}
     public static LdInterfaceRenderer.Rendered build(InterfaceDefinition definition,Map<String,JsonNode> data,LdInterfaceRenderer.Events events) throws Exception {
+        return build(definition,data,events,Map.of(),false);
+    }
+    public static LdInterfaceRenderer.Rendered build(InterfaceDefinition definition,Map<String,JsonNode> data,LdInterfaceRenderer.Events events,Map<String,com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture> resources,boolean embedded) throws Exception {
         if(!Minecraft.getInstance().isSameThread())throw new IllegalStateException("INTERFACE_CLIENT_THREAD_REQUIRED");
         String program;
         try(var stream=KubeInterfaceRenderer.class.getResourceAsStream("/assets/mineagent_runtime/nativeui/build.js")){
@@ -21,7 +24,7 @@ public final class KubeInterfaceRenderer {
         var manager=new ScriptManager(ScriptType.CLIENT);
         var factory=new KubeJSContextFactory(manager);manager.contextFactory=factory;
         var context=(KubeJSContext)factory.enter();
-        var bridge=new LdInterfaceRenderer.BuilderBridge(definition,data,events);
+        var bridge=new LdInterfaceRenderer.BuilderBridge(definition,data,events,resources,embedded);
         var bindings=new BindingRegistry(context,context.topLevelScope);
         bindings.add("bridge",bridge);
         bindings.add("definitionJson",JSON.createObjectNode().set("root",definition.root()).toString());

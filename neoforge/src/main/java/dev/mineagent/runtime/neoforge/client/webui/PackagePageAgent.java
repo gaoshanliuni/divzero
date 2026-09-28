@@ -52,6 +52,7 @@ public final class PackagePageAgent {
     public static UiAgentController.Port controlPreview(String viewId) {
         requireClient();
         if (PackageContentClient.owns(viewId)) throw new SecurityException("CONTENT_AUTOMATION_REQUIRES_AGENT_DELEGATION");
+        if(dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.owns(viewId))return dev.mineagent.runtime.neoforge.client.nativeui.NativePackageAgent.control(viewId,false);
         return control(viewId);
     }
     public static UiAgentController.Port controlDelegated(String viewId,UUID sessionId){return controlDelegated(viewId,sessionId,false);}
@@ -59,6 +60,7 @@ public final class PackagePageAgent {
         if(WebGuiAtlasCompositor.active()&&!WebGuiAtlasCompositor.inputAvailable())throw new SecurityException("ATLAS_AGENT_INPUT_NOT_AVAILABLE");
         requireClient();var session=PackageContentClient.session(viewId);
         if(session==null||session.binding().actorKind()!=dev.mineagent.runtime.api.ui.UiProtocol.ActorKind.AGENT||!session.sessionId().equals(sessionId))throw new SecurityException("CONTENT_AGENT_SESSION_REQUIRED");
+        if(dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.owns(viewId))return dev.mineagent.runtime.neoforge.client.nativeui.NativePackageAgent.control(viewId,presentationOnly);
         return control(viewId,presentationOnly);
     }
     private static UiAgentController.Port control(String viewId){return control(viewId,false);}
@@ -74,6 +76,7 @@ public final class PackagePageAgent {
     }
     /** Native read-only observer; never returns an act-capable Port or grants an Agent the PLAYER binding. */
     public static CompletableFuture<String> inspectManagedView(String viewId) {
+        if(dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.owns(viewId))return dev.mineagent.runtime.neoforge.client.nativeui.NativePackageAgent.inspect(viewId);
         requireClient();
         String url=WebGuiHostAdapter.INSTANCE.packageUrl(viewId);
         if(url==null)return CompletableFuture.failedFuture(new IllegalArgumentException("NOT_A_MANAGED_VIEW"));
@@ -83,15 +86,16 @@ public final class PackagePageAgent {
     }
     /** Native read-only capture; acquiring this observer never grants a business-write Port. */
     public static CompletableFuture<PackageViewCapture.Captured> captureManagedView(String viewId){
+        if(dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.owns(viewId))return dev.mineagent.runtime.neoforge.client.nativeui.NativePackageAgent.capture(viewId);
         requireClient();String url=WebGuiHostAdapter.INSTANCE.packageUrl(viewId);
         if(url==null||!(Minecraft.getInstance().screen instanceof WebGuiInteractionScreen))return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));
         if(controls.containsKey(viewId))return CompletableFuture.failedFuture(new IllegalStateException("UI_CONTROL_BUSY"));
         Port port=new Port(viewId,url,true);controls.put(viewId,port);port.ready=port.query("reset",null);
         return port.inspect().thenCompose(ignored->port.capturePixels()).whenComplete((value,error)->port.cancel());
     }
-    public static void cancel(String viewId) { requireClient(); Port port=controls.get(viewId); if(port!=null) port.cancel(); }
+    public static void cancel(String viewId) { requireClient();dev.mineagent.runtime.neoforge.client.nativeui.NativePackageAgent.cancel(viewId); Port port=controls.get(viewId); if(port!=null) port.cancel(); }
     static void interruptControls() { requireClient(); new ArrayList<>(controls.values()).forEach(Port::cancel); }
-    public static void clear() { interruptControls(); scopeKeys.clear(); }
+    public static void clear() { dev.mineagent.runtime.neoforge.client.nativeui.NativePackageAgent.clear();interruptControls(); scopeKeys.clear(); }
     private static final class Port implements UiAgentController.Port {
         final String viewId,url;final boolean readOnly,presentationOnly; boolean cancelled;
         CompletableFuture<String> ready;

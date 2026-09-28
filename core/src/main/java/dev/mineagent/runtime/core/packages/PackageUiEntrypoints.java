@@ -14,6 +14,6 @@ public final class PackageUiEntrypoints {
                 .map(Map.Entry::getValue).filter(PackageUiEntrypoints::browser).map(RuntimeEntrypoint::path).sorted().findFirst();
     }
     private static boolean browser(RuntimeEntrypoint entry) {
-        return entry.side() != RuntimeResourceSide.SERVER && entry.path().startsWith("ui/") && entry.path().endsWith(".html");
+        return entry.side() != RuntimeResourceSide.SERVER && entry.path().startsWith("ui/") && (entry.path().endsWith(".html")||entry.path().endsWith(".json"));
     }
 }

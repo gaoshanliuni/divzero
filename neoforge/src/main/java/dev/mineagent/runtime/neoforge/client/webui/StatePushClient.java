@@ -40,8 +40,7 @@ public final class StatePushClient {
             if(!session.sessionId().toString().equals(value.get("sessionId").getAsString())||!session.serverInstanceId().toString().equals(value.get("serverInstanceId").getAsString())||session.pageGeneration()!=value.get("pageGeneration").getAsLong()||session.controlEpoch()!=value.get("controlEpoch").getAsLong())return true;
             String token=StatePushToken.parse(value.get("token").getAsString()).wire();var entry=current(session,false);if(entry==null||!entry.listening)return true;if(entry.delivered.contains(token)){acknowledge(session,token);return true;}
             if(!entry.pending.containsKey(token)&&entry.pending.size()>=16)return true;entry.pending.put(token,value.get("expiresAt").getAsLong());
-            var host=WebGuiHostAdapter.INSTANCE;var browser=host.browser();if(browser==null)return true;String url=host.packageUrl(id);
-            for(long frameId:PackagePageAgent.frameIds(browser.getFrameIdentifiers())){var frame=browser.getFrame(frameId);if(frame!=null&&!frame.isMain()&&Objects.equals(url,frame.getURL())&&PackageContentClient.statePushFrame(browser,frameId,url,session)&&ReadOnlyUiLease.sameContext(session,PackageContentClient.session(id))&&entry.lifecycle==PackageContentClient.lifecycle(id)){frame.executeJavaScript("window.dispatchEvent(new Event('mineagent:world-refresh'));",url,0);break;}}
+            if(ReadOnlyUiLease.sameContext(session,PackageContentClient.session(id))&&entry.lifecycle==PackageContentClient.lifecycle(id))dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.refreshWorld(id);
         }catch(RuntimeException invalid){/* Untrusted or retired hints never create a view, change focus, or carry data. */}return true;
     }
     public static void close(String view){entries.remove(view);}public static void clear(){entries.clear();}

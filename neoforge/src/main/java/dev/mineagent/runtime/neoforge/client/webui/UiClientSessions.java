@@ -72,7 +72,7 @@ public final class UiClientSessions {
         if(packet.channel().equals("skinUiOpen")){SkinUiClient.open(JsonParser.parseString(packet.json()).getAsJsonObject().get("agentId").getAsString());return;}
         if(packet.channel().equals("previewOpen")){PreviewClient.open(JsonParser.parseString(packet.json()).getAsJsonObject().get("previewId").getAsString());return;}
         if(packet.channel().equals("buildingFilesOpen")){var fileEvent=JsonParser.parseString(packet.json()).getAsJsonObject();BuildingFilesClient.requestOpen(fileEvent.get("agentId").getAsString(),fileEvent.has("fileId")?fileEvent.get("fileId").getAsString():"");return;}
-        if (connection != Minecraft.getInstance().getConnection() || !WebGuiHostAdapter.INSTANCE.ready()) return;
+        if (!dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready()&&(connection != Minecraft.getInstance().getConnection() || !WebGuiHostAdapter.INSTANCE.ready())) return;
         try {
             if(packet.channel().equals("conversationChanged")){WebGuiHostAdapter.INSTANCE.emit("conversationChanged",JsonParser.parseString(packet.json()));return;}
             if(packet.channel().equals("conversationVoiceStatus")){WebGuiHostAdapter.INSTANCE.emit("conversationVoiceStatus",JsonParser.parseString(packet.json()));return;}
