@@ -32,6 +32,7 @@ final class BuildingVerifier implements ServerBuildings.VerificationWork {
         rows=io(()->ledger.page(head.revision(),0,true));
     }
     public void pause(){paused=true;}
+    public boolean completed(){return done&&result.isDone();}
     public CompletableFuture<?> pending(){return done?result:CompletableFuture.allOf(rows,componentBounds);}
     public boolean tick(){
         if(done)return result.isDone();if(!rows.isDone()||!componentBounds.isDone()||level.getGameTime()<=head.mutationTick())return false;

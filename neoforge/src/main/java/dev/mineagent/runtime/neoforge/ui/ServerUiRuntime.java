@@ -32,6 +32,7 @@ public final class ServerUiRuntime {
                                 "agent.manage", "task.manage", "package.generate", "package.cancel", "package.preview", "package.chunk", "package.release", "scoreview.bind", "container.open", "container.agent", "scoreview.worldFront", "scoreview.worldMove", "scoreview.worldDetach", "scoreview.worldDelete", "package.open", "package.hud", "package.hudLease", "package.restore", "package.patchSubmit","package.patchApply","package.patchRollback","package.patchCancel","package.patchPreview","package.patchRebuild", "package.worldPatchSubmit", "package.worldPatchInspect", "package.worldPatchApply", "package.worldPatchRollback", "package.worldPatchCancel", "ui.statePermit", "ui.presentationPermit", "ui.bindPage", "ui.takeoverActivate", "ui.delegate", "ui.stop");
     private static final Map<MinecraftServer, ServerUiRuntime> RUNTIMES = new IdentityHashMap<>();
     private final MinecraftServer server;
+    private final BuildingUiDocuments buildingDocuments=new BuildingUiDocuments();
     private final ObjectMapper json = new ObjectMapper();
     private final UiSessionService sessions;
     private final ServerContainerRuntime containers;
@@ -299,10 +300,16 @@ public final class ServerUiRuntime {
             restoreScope(viewer,request);Code access=sessions.checkRead(viewer.getUUID(),request,capability);if(access!=Code.OK){send(viewer,packet,"receipt",Receipt.of(request.operationId(),access));return;}
             if(write){var reserved=sessions.begin(viewer.getUUID(),request,capability,true);if(reserved.code()!=Code.OK){send(viewer,packet,"receipt",reserved);return;}begun=true;}
             var args=new LinkedHashMap<>(request.arguments());UUID agent=UUID.fromString(args.remove("agentId"));String kind=args.remove("kind");
+            if(write&&Set.of("planBegin","planChunk","planCommit").contains(kind)){
+                ServerBuildings.authorize(viewer,agent,true);var sourceSession=sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow();
+                if(kind.equals("planBegin")||kind.equals("planChunk")){var result=kind.equals("planBegin")?buildingDocuments.begin(sourceSession,agent,args):buildingDocuments.append(sourceSession,agent,args);send(viewer,packet,"receipt",sessions.complete(request,Code.APPLIED,result));return;}
+                var uploaded=buildingDocuments.finish(sourceSession,agent,args);args.clear();args.put("source",uploaded.source());args.put("revision",Long.toString(uploaded.revision()));kind="plan";
+            }
             var node=json.createObjectNode();for(var entry:args.entrySet())if(Set.of("revision","offset").contains(entry.getKey()))node.put(entry.getKey(),Long.parseLong(entry.getValue()));else node.put(entry.getKey(),entry.getValue());
             java.util.function.BooleanSupplier permit=()->sessions.checkRead(viewer.getUUID(),request,capability)==Code.OK;
             java.util.concurrent.CompletableFuture<Map<String,Object>> future;
-            if(!write&&kind.equals("inspect"))future=ServerBuildings.inspect(viewer,agent,node);
+            if(!write&&kind.equals("inspect"))future=ServerBuildings.inspectUi(viewer,agent,node);
+            else if(!write&&kind.equals("document"))future=ServerBuildings.document(viewer,agent,node);
             else if(!write&&kind.equals("verify"))future=ServerBuildings.verify(viewer,agent,node,permit);
             else if(write&&kind.equals("plan"))future=ServerBuildings.plan(viewer,agent,node,permit);
             else if(write&&kind.equals("apply"))future=ServerBuildings.apply(viewer,agent,node,permit);
@@ -311,7 +318,11 @@ public final class ServerUiRuntime {
             if(write){send(viewer,packet,"receipt",sessions.complete(request,Code.ACCEPTED,Map.of("status","ACCEPTED")));}
             future.whenComplete((value,error)->server.execute(()->{
                 try{
-                    Map<String,String> result=error==null?Map.of("state",json.writeValueAsString(value)):Map.of("errorCode",Objects.toString(error.getMessage(),"BUILDING_FAILED"));
+                    if(!permit.getAsBoolean())return;ServerBuildings.authorize(viewer,agent,false);
+                    var compact=value;if(value!=null&&value.containsKey("report")&&!value.containsKey("design")&&Objects.toString(value.get("report"),"").length()>4096){compact=new LinkedHashMap<>(value);compact.remove("report");compact.put("reportDeferred",true);}
+                    Map<String,String> result=error==null?Map.of("state",json.writeValueAsString(write?Map.of("status",Objects.toString(compact.get("status"),"CHANGED"),"id",Objects.toString(compact.get("id"),"")):compact)):Map.of("errorCode",Objects.toString(error.getMessage(),"BUILDING_FAILED"));
+                    if(write&&compact!=null&&"REJECTED".equals(compact.get("status")))result=Map.of("errorCode",Objects.toString(compact.get("error"),"BUILDING_PLAN_REJECTED"));
+                    if(write){result=new LinkedHashMap<>(result);result.put("agentId",agent.toString());}
                     if(write)send(viewer,UUID.randomUUID(),"buildingChanged",result);
                     else send(viewer,packet,"receipt",new Receipt(request.operationId(),error==null?Code.OBSERVED:Code.FAILED,result));
                 }catch(Exception failure){send(viewer,packet,"receipt",new Receipt(request.operationId(),Code.FAILED,Map.of("errorCode","BUILDING_RESULT_UNAVAILABLE")));}

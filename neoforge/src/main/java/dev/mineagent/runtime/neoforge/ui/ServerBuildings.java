@@ -36,14 +36,20 @@ public final class ServerBuildings {
             }return ledger;
         });}
     }
-    interface Work{boolean tick();void pause();CompletableFuture<?> pending();}
+    interface Work{boolean tick();void pause();CompletableFuture<?> pending();default boolean completed(){return false;}}
+    private static void retireCompleted(Handle handle){if(handle.job!=null&&handle.job.completed()){handle.job=null;handle.busy=false;}}
     private static <T> CompletableFuture<T> io(Callable<T> action){return CompletableFuture.supplyAsync(()->{try{return action.call();}catch(Exception failure){throw new CompletionException(failure);}},IO);}
     private static void require(boolean allowed,String code){if(!allowed)throw new IllegalStateException("BUILDING_"+code);}
     private static String id(JsonNode args){String value=args.path("id").asText();if(!value.matches("[A-Za-z][A-Za-z0-9_-]{0,95}"))throw new IllegalArgumentException("BUILDING_ID");return value;}
     private static long revision(JsonNode args){var n=args.path("revision");if(!n.isIntegralNumber()||!n.canConvertToLong()||n.longValue()<0)throw new IllegalArgumentException("BUILDING_REVISION");return n.longValue();}
     private static Path directory(ServerPlayer player,UUID agent){var s=player.level().getServer();return s.getServerDirectory().resolve("mineagent-runtime-data/buildings");}
     private static Handle handle(ServerPlayer player,UUID agent,String id){var key=new Key(player.getUUID(),agent,id);return LIVE.computeIfAbsent(player.level().getServer(),s->new HashMap<>()).computeIfAbsent(key,k->new Handle(k,directory(player,agent),new ConstructionCatalog.Scope(MineAgentRuntimeServices.worldId(player.level().getServer()),player.getUUID(),agent)));}
-    private static void authorize(ServerPlayer p,UUID agent,boolean mutate){require(p.level().getServer().isSameThread()&&ServerTaskStart.allowed(p,agent),"PERMISSION");if(mutate)require(p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),"GAME_PERMISSION");}
+    static void authorize(ServerPlayer p,UUID agent,boolean mutate){require(p.level().getServer().isSameThread()&&ServerTaskStart.allowed(p,agent),"PERMISSION");if(mutate)require(p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),"GAME_PERMISSION");}
+    public static CompletableFuture<Map<String,Object>> inspectUi(ServerPlayer player,UUID agent,JsonNode args){return inspect(player,agent,args).thenApply(value->{try{return BuildingUiDocuments.summary(value,args.path("offset").asInt(0));}catch(Exception error){throw new CompletionException(error);}});}
+    public static CompletableFuture<Map<String,Object>> document(ServerPlayer player,UUID agent,JsonNode args){
+        authorize(player,agent,false);var handle=handle(player,agent,id(args));long revision=revision(args);String section=args.path("section").asText(),expected=args.path("sha256").asText();int offset=args.path("offset").asInt(0);
+        return handle.opened.thenCompose(ledger->io(()->{require(ledger.head().revision()==revision,"STALE_REVISION");String source=switch(section){case "design"->ledger.design(revision).source();case "report"->ledger.head().report();case "history"->JSON.writeValueAsString(ledger.history(args.path("historyOffset").asInt(0)));default->throw new IllegalArgumentException("BUILDING_DOCUMENT_SECTION");};return BuildingUiDocuments.part(source,offset,expected);}));
+    }
     private static Map<String,Object> view(Handle handle,ConstructionLedger ledger,int offset)throws Exception {
         var h=ledger.head();var out=new LinkedHashMap<String,Object>();out.put("id",handle.key.id);out.put("revision",h.revision());out.put("activeRevision",h.activeRevision());out.put("status",h.status());out.put("operation",h.operation());out.put("phase",h.phase());out.put("cursor",h.cursor());out.put("verification",h.status().equals("VERIFIED")?"VERIFIED":"UNVERIFIED");out.put("report",h.report());
         if(h.revision()>0){out.put("design",JSON.readTree(ledger.design(h.revision()).source()));out.put("steps",ledger.steps(h.revision()));out.put("history",ledger.history(offset));}return out;
@@ -64,7 +70,7 @@ public final class ServerBuildings {
     private static Map<String,Object> contract(){return Map.of("source","BuildingDesign JSON: id/name/dimension/origin/templates/components/checks. Component parts use inspect_world_geometry geometry; reuse templates with transforms and stable IDs.","defaultHouse","Use box mode shell/walls or polygon mode walls with thickness, holes and optional caps. Interior air is not emitted. Explicit subtraction remains possible.","checks","Required named component checks: states(expected full state), clearance(min/max), path(adjacent relative standing cells, headroom), bounds(exact component min/max), support(allow_floating only when intended). All coordinates are relative to design origin and constrained to its actual footprint bounds.","flow",List.of("inspect_buildings","plan_building","apply_building","verify_building","local revision if verification fails"),"control",List.of("pause","resume","undo","redo","recover"),"unknown","recover only observes before/after states, then explicit undo can roll back matching cells. It does not replay an uncertain write.");}
     public static CompletableFuture<Map<String,Object>> plan(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){
         authorize(p,agent,true);require(permit.getAsBoolean(),"CANCELLED");var design=BuildingDesign.parse(args.path("source").asText());require(!design.checks().isMissingNode()&&!design.checks().isEmpty(),"CHECKS_REQUIRED");
-        require(design.dimension().equals(p.level().dimension().identifier().toString()),"DIMENSION");var h=handle(p,agent,design.id());require(h.job==null&&!h.busy,"BUSY");h.busy=true;
+        require(design.dimension().equals(p.level().dimension().identifier().toString()),"DIMENSION");var h=handle(p,agent,design.id());retireCompleted(h);require(h.job==null&&!h.busy,"BUSY");h.busy=true;
         var server=p.level().getServer();var level=p.level();var valid=new java.util.concurrent.atomic.AtomicBoolean(true);long generation=MineAgentRuntimeServices.permissions(server).actionRevision(p.getUUID(),PermissionAction.RUN_CODE);
         var future=h.opened.thenCompose(ledger->io(()->{
             var before=ledger.head();
@@ -78,12 +84,12 @@ public final class ServerBuildings {
                 return Map.<String,Object>of("id",design.id(),"status","REJECTED","error",error,"revision",before.revision(),"persistentStatus",before.status(),"planCommitted",false,"worldModified",false,"retryGuidance","Correct the definition and explicitly submit a new plan with the unchanged revision.");
             }
         }));
-        h.job=new Work(){public boolean tick(){if(!permit.getAsBoolean()||p.level()!=level||server.getPlayerList().getPlayer(p.getUUID())!=p||!ServerTaskStart.allowed(p,agent)||MineAgentRuntimeServices.permissions(server).actionRevision(p.getUUID(),PermissionAction.RUN_CODE)!=generation)valid.set(false);return future.isDone();}public void pause(){valid.set(false);}public CompletableFuture<?> pending(){return future;}};
+        h.job=new Work(){public boolean completed(){return future.isDone();}public boolean tick(){if(!permit.getAsBoolean()||p.level()!=level||server.getPlayerList().getPlayer(p.getUUID())!=p||!ServerTaskStart.allowed(p,agent)||MineAgentRuntimeServices.permissions(server).actionRevision(p.getUUID(),PermissionAction.RUN_CODE)!=generation)valid.set(false);return future.isDone();}public void pause(){valid.set(false);}public CompletableFuture<?> pending(){return future;}};
         return future.whenComplete((v,e)->server.execute(()->h.busy=false));
     }
     public static CompletableFuture<Map<String,Object>> apply(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){return control(p,agent,args,"APPLY",permit);}
     public static CompletableFuture<Map<String,Object>> control(ServerPlayer p,UUID agent,JsonNode args,String action,BooleanSupplier permit){
-        authorize(p,agent,true);require(permit.getAsBoolean(),"CANCELLED");var h=handle(p,agent,id(args));var server=p.level().getServer();
+        authorize(p,agent,true);require(permit.getAsBoolean(),"CANCELLED");var h=handle(p,agent,id(args));retireCompleted(h);var server=p.level().getServer();
         if(action.equals("pause")){require(h.job!=null,"NOT_RUNNING");h.job.pause();return CompletableFuture.completedFuture(Map.of("id",h.key.id,"status","PAUSE_REQUESTED","verification","UNVERIFIED"));}
         require(h.job==null&&!h.busy,"BUSY");h.busy=true;var result=new CompletableFuture<Map<String,Object>>();
         h.opened.thenCompose(ledger->io(()->{var head=ledger.head();require(head.revision()==revision(args),"STALE_REVISION");if(action.equals("resume"))head=ledger.resume();else if(action.equals("recover")){require(Set.of("UNKNOWN","PARTIAL").contains(head.status()),"NOT_RECOVERABLE");}else head=ledger.start(head.revision(),action.toUpperCase(Locale.ROOT));return new Object[]{ledger,head,ledger.design(head.revision())};})).whenComplete((bundle,error)->server.execute(()->{
@@ -99,6 +105,7 @@ public final class ServerBuildings {
             this.player=p;this.agent=agent;this.handle=handle;this.ledger=ledger;initial=head;level=p.level();permission=MineAgentRuntimeServices.permissions(level.getServer()).actionRevision(p.getUUID(),PermissionAction.RUN_CODE);this.permit=permit;this.result=result;phase=recover?"RECOVER":head.phase();cursor=recover?0:head.cursor();read=io(()->ledger.page(initial.revision(),cursor,false));
         }
         public void pause(){paused=true;}
+        public boolean completed(){return done&&result.isDone();}
         public CompletableFuture<?> pending(){return done?result:read;}
         private boolean current(){return permit.getAsBoolean()&&level.getServer().getPlayerList().getPlayer(player.getUUID())==player&&player.level()==level&&player.isAlive()&&ServerTaskStart.allowed(player,agent)&&player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)&&MineAgentRuntimeServices.permissions(level.getServer()).actionRevision(player.getUUID(),PermissionAction.RUN_CODE)==permission;}
         private BlockState parse(String value)throws Exception {var old=states.get(value);if(old!=null)return old;var parsed=ConversationWorldGeometry.parse(player,value,false);states.put(value,parsed);return parsed;}
@@ -156,7 +163,7 @@ public final class ServerBuildings {
         }
     }
     public static CompletableFuture<Map<String,Object>> verify(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){
-        authorize(p,agent,false);var h=handle(p,agent,id(args));require(!h.busy&&h.job==null,"BUSY");h.busy=true;var result=new CompletableFuture<Map<String,Object>>();var server=p.level().getServer();
+        authorize(p,agent,false);var h=handle(p,agent,id(args));retireCompleted(h);require(!h.busy&&h.job==null,"BUSY");h.busy=true;var result=new CompletableFuture<Map<String,Object>>();var server=p.level().getServer();
         h.opened.thenCompose(ledger->io(()->{var head=ledger.head();require(head.revision()==revision(args)&&head.activeRevision()==head.revision(),"VERIFICATION_REVISION");require(Set.of("UNVERIFIED","VERIFIED").contains(head.status()),"NOT_APPLIED");ledger.verified(head.operation(),head.revision(),false,"");return new Object[]{ledger,head,ledger.design(head.revision()),ledger.bounds(head.revision(),null),ledger.footprintHash(head.revision()),ledger.count(head.revision())};})).whenComplete((data,error)->server.execute(()->{
             h.busy=false;if(error!=null){result.completeExceptionally(error);return;}if(h.closed){result.completeExceptionally(new IllegalStateException("BUILDING_SERVER_STOPPED"));return;}
             h.job=new BuildingVerifier(p,agent,h.key.id,(ConstructionLedger)data[0],(ConstructionLedger.Head)data[1],(BuildingDesign)data[2],(int[])data[3],(String)data[4],(Long)data[5],permit,result);
@@ -164,7 +171,7 @@ public final class ServerBuildings {
     }
     static Map<String,Object> finishedView(String id,ConstructionLedger ledger)throws Exception {var h=ledger.head();return Map.of("id",id,"revision",h.revision(),"status",h.status(),"verification",h.status().equals("VERIFIED")?"VERIFIED":"UNVERIFIED","operation",h.operation(),"report",h.report());}
     interface VerificationWork extends Work {}
-    @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){var handles=LIVE.get(event.getServer());if(handles!=null)for(var handle:List.copyOf(handles.values()))if(handle.job!=null&&handle.job.tick())handle.job=null;}
+    @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){var handles=LIVE.get(event.getServer());if(handles!=null)for(var handle:List.copyOf(handles.values())){var work=handle.job;if(work!=null&&work.tick()&&handle.job==work)handle.job=null;}}
     @SubscribeEvent public static void stop(net.neoforged.neoforge.event.server.ServerStoppedEvent event){var handles=LIVE.remove(event.getServer());if(handles==null)return;for(var handle:handles.values()){handle.closed=true;var pending=handle.job==null?CompletableFuture.completedFuture(null):handle.job.pending();pending.handle((v,e)->null).thenCompose(v->handle.opened).thenCompose(ledger->io(()->{ledger.close();return null;}));}}
     private ServerBuildings(){}
 }
