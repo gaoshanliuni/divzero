@@ -23,7 +23,7 @@ public final class NativeUiTheme {
         var button=new Button().setText(Component.literal(text));button.getLayout().height(23).paddingHorizontal(8).marginRight(5);
         button.text.textStyle(s->s.textColor(0xffffffff).fontSize(9));button.setOnClick(event->click.run());return button;
     }
-    public static TextElement text(String value,int color,float size){var text=new TextElement().setText(Component.literal(value));text.textStyle(s->s.textColor(color).fontSize(size).textWrap(TextWrap.WRAP).adaptiveWidth(false).adaptiveHeight(true));text.getLayout().widthPercent(100);return text;}
+    public static TextElement text(String value,int color,float size){var text=new TextElement().setText(Component.literal(value));text.textStyle(s->s.textColor(color).textShadow(false).fontSize(size).textWrap(TextWrap.WRAP).adaptiveWidth(false).adaptiveHeight(true));text.getLayout().widthPercent(100);return text;}
     /** Preserve MC stylesheet textures; only set content-specific typography and empty placeholders. */
     public static void controls(UIElement root){
         if(!root.hasClass("divzero-control-style")){

@@ -57,6 +57,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
     }
     public static void openForAgent(String id,String name){open();active.knownAgents.put(id,name);active.conversationWith(id);}
     public static void openConversation(String agent,String name,String conversation){openForAgent(agent,name);active.select(conversation);}
+    static NativeWorkspaceScreen previewHost(){open();return active;}
     public static void openPackage(JsonObject item){open();WorkspacePanels.packageDetail(active,item);}
     boolean revealWindow(String id){var window=windows.get(id);if(window==null||window.closed())return false;window.reveal();return true;}
     void rememberAgent(String id,String name){knownAgents.put(id,name);}
@@ -102,7 +103,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
         search.getLayout().height(24).widthPercent(100).marginTop(5);directory.addChild(search);
         var filter=new Selector<Choice>();filter.setCandidates(List.of(new Choice("ACTIVE",t("进行中")),new Choice("ARCHIVED",t("已归档")),new Choice("DELETED",t("已删除"))));filter.setValue(new Choice(model.filter,t(model.filter.equals("ACTIVE")?"进行中":model.filter.equals("ARCHIVED")?"已归档":"已删除")),false);filter.setOnValueChanged(choice->{model.filter=choice.key();listBefore=0;list();});filter.getLayout().height(23).widthPercent(100);directory.addChild(filter);
         conversationList=new ScrollerView();conversationList.getLayout().flex(1).widthPercent(100);directory.addChild(conversationList);
-        content.clearAllChildren();content.getLayout().flex(1).heightPercent(100).paddingLeft(8);body.addChild(content);heading.setText(Component.literal(model.selected==null?t("选择或新建对话"):model.selected.get("title").getAsString()));heading.textStyle(style->style.fontSize(12).textColor(NativeUiTheme.TEXT));content.addChild(heading);
+        content.clearAllChildren();content.getLayout().flex(1).heightPercent(100).paddingLeft(8);body.addChild(content);heading.setText(Component.literal(model.selected==null?t("选择或新建对话"):model.selected.get("title").getAsString()));heading.textStyle(style->style.fontSize(12).textColor(NativeUiTheme.TEXT).textShadow(false));content.addChild(heading);
         var controls=row();controls.getLayout().height(26);controls.addChild(button(t("更早"),()->messages(nextBefore)));controls.addChild(button(t("最新"),()->{rows.clear();history.clearAllScrollViewChildren();messages(0);}));controls.addChild(button(t("重命名"),this::renameConversation));controls.addChild(button(t("归档"),()->changeConversation("archive")));controls.addChild(button(t("恢复"),()->changeConversation("restore")));content.addChild(controls);
         history.getLayout().flex(1).widthPercent(100).marginVertical(6);content.addChild(history);
         composer.getLayout().height(62).widthPercent(100);composer.setValue(draftText().split("\n",-1),false);content.addChild(composer);
