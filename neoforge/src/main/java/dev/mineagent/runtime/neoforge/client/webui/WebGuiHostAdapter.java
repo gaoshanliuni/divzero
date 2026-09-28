@@ -179,12 +179,12 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     }
 
     private void ensureRouter() {
-        PackagePageAgent.register();
+
         PackageContentClient.register();
-        PackageFormDrafts.register();
+
         PackageUiStateClient.register();
         WebGuiNativeInput.register();
-        PackageViewCapture.register();
+
         if (router != null) return;
         WebGuiPaintComposition.register();
         router = CefMessageRouter.create(new CefMessageRouter.CefMessageRouterConfig("mineagentQuery", "mineagentQueryCancel"));
@@ -806,7 +806,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
         PageControlClient.clear();
         UiPresentationClient.clear();RendererSettingsClient.clear();
         WebGuiNativeInput.clear();
-        PackageViewCapture.clear();
+
         PackagePageAgent.clear();
         dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.clearWebNotice();
         gate.clear(); ready = false;

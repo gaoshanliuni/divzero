@@ -4069,8 +4069,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackagePanel.java",
-      "sha256": "382f8cb521dca078962123d28735ace86b5074e322a848e90a92e93e66be354f",
-      "bytes": 19709
+      "sha256": "61fcc0f44e217366b81042ff579eac9ad7e0a0561bf38ed81cc47795014423f2",
+      "bytes": 19733
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackagePlacement.java",
@@ -4089,8 +4089,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageViews.java",
-      "sha256": "4d7a267b29422e0908fa60940c03bbf5c205786dce9bebace428d3dafa40cc7b",
-      "bytes": 35724
+      "sha256": "9227ecdbedea1c79d0047970e6b4847e280da5fe01bb27e91ccdff2de4b689a7",
+      "bytes": 35780
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePreview.java",
@@ -4379,8 +4379,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ContentTakeoverClient.java",
-      "sha256": "d1e3082e0ad30f5c0d85b8b3df4eede1eece9f96db849dfdc3d3f6690d45c874",
-      "bytes": 12270
+      "sha256": "8182e8bbd1f08fa9d7c3d626b5d06c1a7bbe368cd65bd6d1a3d5919310d104ed",
+      "bytes": 12244
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ConversationSmokeClient.java",
@@ -4549,13 +4549,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PackageFormDrafts.java",
-      "sha256": "dbc2f0233f3de1dba78e15496f17b1d754488cf6f5a90781589b8437857e61a5",
-      "bytes": 6313
+      "sha256": "25722b25f79ee70b531a1ede49d953497cfe955f94d9d4e427e11e2007eb9f04",
+      "bytes": 2087
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PackagePageAgent.java",
-      "sha256": "eb1dc77310dd63a92cce6ae2cf22743ae9d499ef19ed18bebfd65c9e83156526",
-      "bytes": 24957
+      "sha256": "ab1569c371d29748b633a0190ddcfc0408362525bcd7858ee41ff2a8620da823",
+      "bytes": 1776
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PackagePreviewClient.java",
@@ -4569,8 +4569,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PackageViewCapture.java",
-      "sha256": "446afacca1ed249262e1b5b6fe7a4ce683639568ddb1a568460adec9cbea6200",
-      "bytes": 15222
+      "sha256": "7843fde6550a4f58289eb3d4f7d476186b76d54a3668113f09cf20de8463b940",
+      "bytes": 1263
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PageControlClient.java",
@@ -4729,8 +4729,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/WebGuiHostAdapter.java",
-      "sha256": "24bf64059575d0431d952b8bb105b10291413c64aed7faa86ec8bddf347437f7",
-      "bytes": 91451
+      "sha256": "e037fcfeb775712a3f99d07aa95e06749fd909f1b6bdbbf3f5a0d9d3302904bb",
+      "bytes": 91305
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/WebGuiInteractionScreen.java",

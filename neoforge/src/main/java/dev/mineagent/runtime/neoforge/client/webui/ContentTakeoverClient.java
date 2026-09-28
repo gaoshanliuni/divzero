@@ -115,7 +115,7 @@ public final class ContentTakeoverClient {
     public static boolean hasHumanEdits(String view){var state=restores.get(view);return state!=null&&state.humanEdited;}
     public static void reloading(String view){var state=restores.get(view);if(state!=null&&!state.activated&&!state.activating){state.generation++;state.restored=false;state.restoring=false;state.userEdited=false;WebGuiHostAdapter.INSTANCE.emit("takeoverPending",Map.of("viewId",view));}}
     public static void close(String view){var state=restores.remove(view);if(state!=null)state.completion.completeExceptionally(new IllegalStateException("VIEW_NOT_RENDERED"));}
-    public static void clear(){for(var view:List.copyOf(restores.keySet()))close(view);PackageFormDrafts.clear();}
+    public static void clear(){for(var view:List.copyOf(restores.keySet()))close(view);}
     private static void requireCaptured(JsonObject draft){if(draft==null||!draft.has("status")||!draft.get("status").getAsString().equals("DRAFT_CAPTURED")||draft.toString().length()>49152)throw new IllegalStateException("DRAFT_CAPTURE_FAILED");}
     private static void failed(String view,String code){var s=restores.get(view);if(s!=null){s.restoring=false;s.completion.completeExceptionally(new IllegalStateException(code));}WebGuiHostAdapter.INSTANCE.emit("contentError",Map.of("viewId",view,"code",code));}
     private static void later(Runnable work){CompletableFuture.delayedExecutor(200,TimeUnit.MILLISECONDS).execute(()->Minecraft.getInstance().execute(work));}

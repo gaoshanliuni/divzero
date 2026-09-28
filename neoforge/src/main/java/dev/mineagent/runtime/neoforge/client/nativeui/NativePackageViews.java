@@ -121,10 +121,10 @@ public final class NativePackageViews {
         try{
             view.error="";if(!view.agentDispatch){PackageContentClient.humanInput(view.id);dev.mineagent.runtime.neoforge.client.webui.ContentTakeoverClient.humanInput(view.id);dev.mineagent.runtime.neoforge.client.webui.ContentHotSwapClient.humanInput(view.id);if(view.session!=null&&view.session.binding().actorKind()==ActorKind.AGENT){dev.mineagent.runtime.neoforge.client.webui.UiAgentClient.stop(view.id,true,"HUMAN_INPUT");return;}}
             long revision=view.content.revision();var actions=view.content.actions(view.content.scope(),revision,node,event);
-            var spec=view.definition.view().node(node).orElseThrow();if(event.equals("change")&&spec.has("bind"))view.content.input(view.content.scope(),revision,node,spec.path("type").asText().equals("toggle")?BooleanNode.valueOf(Boolean.parseBoolean(value)):TextNode.valueOf(value),values->update(view,values));
+            var spec=view.definition.view().node(node).orElseThrow();if(event.equals("change")&&spec.has("bind"))view.content.input(view.content.scope(),revision,node,spec.path("type").asText().equals("toggle")?BooleanNode.valueOf(Boolean.parseBoolean(value)):TextNode.valueOf(value),updatedValues->update(view,updatedValues));
             var data=view.content.data();var patch=new LinkedHashMap<String,JsonNode>();var emitted=new ArrayList<Map.Entry<String,Map<String,JsonNode>>>();
             for(var action:actions){String op=action.path("op").asText(),key=action.path("key").asText();if(op.equals("set")){var next=action.has("expr")?InterfaceExpression.evaluate(action.get("expr"),data):action.has("from")?spec.path("type").asText().equals("toggle")?BooleanNode.valueOf(Boolean.parseBoolean(value)):TextNode.valueOf(value):action.get("value");data.put(key,next);patch.put(key,next);}else if(op.equals("toggle")){var next=BooleanNode.valueOf(!data.getOrDefault(key,BooleanNode.FALSE).asBoolean());data.put(key,next);patch.put(key,next);}else if(op.equals("emit")){var context=new LinkedHashMap<>(data);context.put("event",action.path("args").deepCopy());context.put("eventValue",TextNode.valueOf(value));emitted.add(Map.entry(action.path("action").asText(),Map.copyOf(context)));}}
-            if(!patch.isEmpty()){var applied=view.content.localData(view.content.scope(),revision,patch,values->update(view,values));if(!applied.applied())throw new IllegalArgumentException(applied.error());}
+            if(!patch.isEmpty()){var applied=view.content.localData(view.content.scope(),revision,patch,updatedValues->update(view,updatedValues));if(!applied.applied())throw new IllegalArgumentException(applied.error());}
             for(var action:emitted){var request=view.definition.actions().get(action.getKey());if(request==null)throw new IllegalArgumentException("NATIVE_PACKAGE_ACTION_UNDECLARED");dispatch(view,action.getKey(),request,action.getValue(),true);}
         }catch(Exception failure){view.error=Objects.toString(failure.getMessage(),"NATIVE_PACKAGE_EVENT_FAILED");}
     }
@@ -140,7 +140,7 @@ public final class NativePackageViews {
                 var value=JSON.createObjectNode().put("code",receipt.code().name());var values=value.putObject("values");
                 for(var entry:receipt.values().entrySet()){JsonNode decoded;try{decoded=JSON.readTree(entry.getValue());if(decoded==null)decoded=TextNode.valueOf(entry.getValue());}catch(Exception ignored){decoded=TextNode.valueOf(entry.getValue());}values.set(entry.getKey(),decoded);}
                 value.set("data",values.has("state")?values.get("state").deepCopy():values.deepCopy());
-                var applied=view.content.patch(view.content.scope(),view.content.revision(),view.content.dataRevision(),Map.of(request.result(),value),values->update(view,values));
+                var applied=view.content.patch(view.content.scope(),view.content.revision(),view.content.dataRevision(),Map.of(request.result(),value),updatedValues->update(view,updatedValues));
                 if(!applied.applied())throw new IllegalStateException(applied.error());view.error="";
                 if(request.action().equals("delivery.read")&&receipt.code()==Code.OBSERVED&&receipt.values().containsKey("nativeDeliveryReadToken")){
                     String token=receipt.values().get("nativeDeliveryReadToken");dev.mineagent.runtime.neoforge.client.webui.ContentDeliveryClient.acknowledgeData(view.id,source,Map.of("token",token),UUID.fromString(token)).exceptionally(failure->null);
@@ -228,7 +228,7 @@ public final class NativePackageViews {
             String type=spec.path("type").asText();if(!control.path("attribute").asText().equals("id")||!control.path("tag").asText().equals("input")||!Set.of("input","toggle").contains(type)||!control.path("type").asText().equals(type.equals("toggle")?"checkbox":"text")||!control.path("name").asText().equals(spec.path("bind").asText())||!spec.has("bind")||secret(spec)||!view.definition.view().interactiveNode(node,view.content.data()))throw new IllegalArgumentException("DRAFT_TARGET_CHANGED");
             var value=type.equals("toggle")?control.path("checked"):control.path("value");if(type.equals("toggle")?!value.isBoolean():!value.isTextual()||value.asText().length()>8192)throw new IllegalArgumentException("DRAFT_BUDGET");values.put(node,value);
         }
-        var receipt=view.content.restoreInputs(view.content.scope(),view.content.revision(),values,values->update(view,values));if(!receipt.applied())throw new IllegalStateException(receipt.error());
+        var receipt=view.content.restoreInputs(view.content.scope(),view.content.revision(),values,updatedValues->update(view,updatedValues));if(!receipt.applied())throw new IllegalStateException(receipt.error());
         return Map.of("status","DRAFT_RESTORED","count",values.size(),"eventsDispatched",false);
     }
     public static Map<String,Object> act(String id,JsonNode action,String expected){
