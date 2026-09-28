@@ -1,0 +1,63 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
+import dev.mineagent.runtime.neoforge.MineAgentRuntimeServices;
+import dev.mineagent.runtime.neoforge.ui.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.*;
+
+/** Opt-in real-model migration acceptance. The fixture supplies requests and reads results; only the model designs/writes. */
+@EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
+public final class NativeMigrationModelSmokeClient {
+    private static final ObjectMapper JSON=new ObjectMapper();private static final List<Object> evidence=new ArrayList<>();
+    private static UUID agent;private static String conversation="",searchNode="",searchKey="";private static JsonNode shopBefore,buildingBefore;private static List<Integer> origin;
+    private static int stage,ticks,awaiting=-1;private static boolean busy,done,trustPrepared;private static long nextPoll;
+    private static Path output()throws Exception{return Files.createDirectories(Minecraft.getInstance().gameDirectory.toPath().resolve("native-migration-model-smoke"));}
+    private static void require(boolean value,String reason){if(!value)throw new IllegalStateException(reason);}
+    @SubscribeEvent public static void tick(ClientTickEvent.Post event){
+        if(!Boolean.getBoolean("mineagent.nativeMigrationModelSmoke")||done)return;var mc=Minecraft.getInstance();
+        try{
+            if(ticks%100==0)Files.writeString(output().resolve("progress.json"),JSON.writeValueAsString(Map.of("stage",stage,"ticks",ticks,"awaiting",awaiting,"busy",busy)));
+            if(++ticks>36000)throw new IllegalStateException("MODEL_MIGRATION_TIMEOUT_"+stage);if(mc.player==null||mc.getSingleplayerServer()==null||busy)return;
+            if(!trustPrepared){var values=dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox.snapshot().values();String fingerprint=values.getOrDefault("security.identityFingerprint","");if(fingerprint.isBlank()||!dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox.signatureValid())return;new dev.mineagent.runtime.client.trust.ServerTrustStore(mc.gameDirectory.toPath().resolve("config/mineagent-trusted-servers.properties")).confirm("local-integrated",fingerprint,Base64.getDecoder().decode(values.get("security.identityPublicKey")));trustPrepared=true;}
+            if(awaiting>=0){pollConversation();return;}
+            if(stage==0){server(p->{var server=p.level().getServer();server.getPlayerList().op(p.nameAndId());p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);dev.mineagent.runtime.neoforge.WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);agent=MineAgentRuntimeServices.bodies(server).createPersistentAt("原生建筑搭档",p.getUUID(),p.level(),p.position().add(-3,0,0)).agentId();var point=p.blockPosition().offset(8,12,8);origin=List.of(point.getX(),point.getY(),point.getZ());return CompletableFuture.completedFuture(Map.of("agent",agent,"origin",origin,"fixtureAuthority",true));},value->stage=1);return;}
+            if(stage==1){if(!NativeWorkspaceConnection.ready()){NativeWorkspaceScreen.openForAgent(agent.toString(),"原生建筑搭档");return;}busy=true;WorkspacePanels.request("conversation.write",Map.of("kind","create","agentId",agent.toString(),"title","原生界面与构件建筑验收","autoTitle","false")).whenComplete((receipt,error)->{busy=false;if(error!=null){fail(error);return;}conversation=WorkspacePanels.state(receipt).get("conversationId").getAsString();NativeWorkspaceScreen.openConversation(agent.toString(),"原生建筑搭档",conversation);stage=2;});return;}
+            if(stage==2){send("请实际创建一个新的原生商店界面，ID 为 shop：左边分类，右边有橡木和石头两种商品，底部显示余额100。用动态 LDLib2 + KubeJS 控件体系，surface SCREEN。默认用 MC 风格，布局清楚，不要网页/HTML，也不要只描述步骤。目前先不加搜索框。购买只演示界面本地余额扣减，不发放真实物品、不执行世界命令。完成后读取实际界面状态确认。",3);return;}
+            if(stage==3){inspectUi(value->{require(value.path("saved").path("revision").asLong()>0&&value.path("client").path("views").size()==1,"MODEL_DID_NOT_CREATE_SHOP");shopBefore=JSON.valueToTree(value);screenshot("01-model-shop.png");stage=4;});return;}
+            if(stage==4){send("继续修改已经打开的 shop：增加搜索框，并把每个购买按钮放在对应商品下面。保留现有分类、商品和余额；搜索框使用稳定控件 ID 和数据绑定，方便后续继续修改。请实际修改并读取确认。",5);return;}
+            if(stage==5){inspectUi(value->{require(value.path("saved").path("revision").asLong()>shopBefore.path("saved").path("revision").asLong(),"SEARCH_DID_NOT_UPDATE_REVISION");var definition=JSON.readTree(value.path("saved").path("source").asText());var inputs=new ArrayList<JsonNode>();findInputs(definition.path("root"),inputs);require(!inputs.isEmpty(),"MODEL_SEARCH_INPUT_MISSING");var input=inputs.getFirst();searchNode=input.path("id").asText();searchKey=input.path("bind").asText();require(!searchKey.isBlank(),"MODEL_SEARCH_NOT_BOUND");((TextField)NativeInterfacesClient.smokeWidget("shop",searchNode)).setText("橡木");shopBefore=value;stage=6;});return;}
+            if(stage==6){inspectUi(value->{require(value.path("client").path("views").get(0).path("data").path(searchKey).asText().equals("橡木"),"SEARCH_INPUT_NOT_APPLIED");evidence.add(Map.of("humanInput","橡木","node",searchNode,"binding",searchKey));screenshot("02-model-search.png");stage=7;});return;}
+            if(stage==7){send("把当前 shop 页面改成深色，提高文字对比度，保留我刚才输入的搜索内容。继续使用同一个界面、稳定输入控件 ID 与绑定，不清空输入或把整个界面换成新的 ID。请实际修改并读取当前数据确认。",8);return;}
+            if(stage==8){inspectUi(value->{require(value.path("saved").path("revision").asLong()>shopBefore.path("saved").path("revision").asLong(),"RESTYLE_REVISION_UNCHANGED");var actual=value.path("client").path("views").get(0);require(actual.path("data").path(searchKey).asText().equals("橡木"),"RESTYLE_LOST_HUMAN_INPUT");var after=JSON.readTree(value.path("saved").path("source").asText());var before=JSON.readTree(shopBefore.path("saved").path("source").asText());require(!before.path("root").equals(after.path("root")),"RESTYLE_DID_NOT_CHANGE_TREE");screenshot("03-model-dark-retained-input.png");stage=9;});return;}
+            if(stage==9){send("现在在主世界以 "+origin+" 为地板西北角创建并完成一个外尺寸5×5的小房子，建筑ID house，使用可继续修改的构件计划。地板 floor 用石头，外墙 walls 用砖，屋顶 roof 用橡木木板，门洞朝北；地板 y=0、墙 y=1..3、屋顶 y=4（相对上述坐标）。至少保留 floor、walls、roof 这三个稳定构件 ID，可另加门。生成中空结构，不清空内部现有世界，也不填满再挖。当前位置是明确允许的悬空验收房，悬空本身不是错误。请分阶段实际建造，检查门洞两格净空、入口通路和屋顶尺寸，verify_building 绑定本次版本验证通过才报告完成。",10);return;}
+            if(stage==10){inspectBuilding(value->{require(value.path("status").asText().equals("VERIFIED"),"MODEL_BUILDING_NOT_VERIFIED");buildingBefore=value;require(value.path("design").path("components").isArray(),"BUILDING_DESIGN_MISSING");stage=11;});return;}
+            if(stage==11){send("只把 house 的 roof 构件整体升高两格。保留其ID、大小和材料，floor、walls 和其他构件都不改，不清空房屋内部。先读取现有计划，计算并执行局部差异，重新验证实际方块、门洞通路和新的屋顶位置，绑定新版本通过后才报告完成。明确允许屋檐悬挑或悬空，不要为此擅自加墙。",12);return;}
+            if(stage==12){inspectBuilding(value->{require(value.path("status").asText().equals("VERIFIED")&&value.path("revision").asLong()>buildingBefore.path("revision").asLong(),"ROOF_MODIFICATION_NOT_VERIFIED");var before=dev.mineagent.runtime.core.building.BuildingDesign.parse(buildingBefore.path("design").toString());var after=dev.mineagent.runtime.core.building.BuildingDesign.parse(value.path("design").toString());require(after.changedComponents(before).equals(Set.of("roof")),"MODEL_CHANGED_OTHER_COMPONENTS");evidence.add(Map.of("changedComponents",after.changedComponents(before),"exactNewRevisionVerified",value.path("revision").asLong()));stage=13;});return;}
+            if(stage==13){Files.writeString(output().resolve("result.json"),JSON.writeValueAsString(Map.of("status","PASS","modelCalls","SEE_PROVIDER_AUDIT","evidence",evidence)));done=true;mc.stop();}
+        }catch(Exception error){fail(error);}
+    }
+    private static Map<String,String> chatArgs(String kind){return Map.of("kind",kind,"agentId",agent.toString(),"conversationId",conversation);}
+    private static void send(String text,int next){
+        busy=true;WorkspacePanels.request("conversation.read",chatArgs("messages")).thenCompose(receipt->{var args=new LinkedHashMap<>(chatArgs("send"));args.put("text",text);args.put("expectedRevision",WorkspacePanels.state(receipt).getAsJsonObject("conversation").get("revision").getAsString());return WorkspacePanels.request("conversation.write",args);}).whenComplete((receipt,error)->{busy=false;if(error!=null){fail(error);return;}evidence.add(Map.of("playerRequest",text,"nextStage",next));awaiting=next;nextPoll=System.currentTimeMillis()+1000;});
+    }
+    private static void pollConversation(){if(System.currentTimeMillis()<nextPoll)return;nextPoll=System.currentTimeMillis()+1500;busy=true;WorkspacePanels.request("conversation.read",chatArgs("messages")).whenComplete((receipt,error)->{busy=false;if(error!=null){fail(error);return;}try{var state=WorkspacePanels.state(receipt);if(!state.getAsJsonObject("conversation").get("activeOperation").getAsString().isBlank())return;var context=state.getAsJsonObject("context");require(context.has("turn"),"MODEL_REQUEST_NOT_RECORDED");var turn=context.getAsJsonObject("turn");String status=turn.get("requestState").getAsString();if(Set.of("PENDING","GENERATING").contains(status))return;evidence.add(Map.of("conversationTurn",JSON.readTree(context.toString()),"messages",JSON.readTree(state.getAsJsonArray("messages").toString())));require(status.equals("COMPLETE"),"MODEL_REQUEST_"+status+":"+turn);stage=awaiting;awaiting=-1;}catch(Exception invalid){fail(invalid);}});}
+    private interface CheckedConsumer {void accept(JsonNode value)throws Exception;}
+    private static void inspectUi(CheckedConsumer done){server(p->ServerNativeInterfaces.inspect(p,agent,JSON.createObjectNode().put("id","shop"),()->true),value->{evidence.add(Map.of("interface",value));done.accept(value);});}
+    private static void inspectBuilding(CheckedConsumer done){server(p->ServerBuildings.inspect(p,agent,JSON.createObjectNode().put("id","house")),value->{evidence.add(Map.of("building",value));done.accept(value);});}
+    private static void server(Function<ServerPlayer,CompletableFuture<Map<String,Object>>> action,CheckedConsumer accept){busy=true;var mc=Minecraft.getInstance();var server=mc.getSingleplayerServer();var owner=mc.player.getUUID();server.submit(()->action.apply(server.getPlayerList().getPlayer(owner))).thenCompose(Function.identity()).whenComplete((value,error)->mc.execute(()->{busy=false;try{if(error!=null)throw new CompletionException(error);accept.accept(JSON.valueToTree(value));}catch(Exception invalid){fail(invalid);}}));}
+    private static void findInputs(JsonNode node,List<JsonNode> out){if(node.path("type").asText().equals("input"))out.add(node);for(var child:node.path("children"))findInputs(child,out);}
+    private static void screenshot(String name)throws Exception{var mc=Minecraft.getInstance();net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(),image->{try{image.writeToFile(output().resolve(name));}catch(Exception error){fail(error);}finally{image.close();}});}
+    private static void fail(Throwable error){if(done)return;done=true;try{Files.writeString(output().resolve("failure.json"),JSON.writeValueAsString(Map.of("stage",stage,"awaiting",awaiting,"error",error.toString(),"evidence",evidence)));}catch(Exception ignored){}Minecraft.getInstance().stop();}
+    private NativeMigrationModelSmokeClient(){}
+}
