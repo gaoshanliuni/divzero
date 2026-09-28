@@ -21,7 +21,7 @@ public final class FeedbackPackageContract {
         try{
             if(side!=RuntimeResourceSide.CLIENT||!media.equals("application/json")||bytes==null||bytes.length<1||bytes.length>32768)throw new IllegalArgumentException();
             var document=new ObjectMapper().readTree(bytes);var declared=document.path("entries");if(!declared.isObject()||declared.isEmpty())throw new IllegalArgumentException();
-            var html=entries.values().stream().filter(e->e.side()==RuntimeResourceSide.CLIENT&&e.path().startsWith("ui/")&&e.path().endsWith(".html")).map(RuntimeEntrypoint::path).collect(java.util.stream.Collectors.toSet());
+            var html=entries.values().stream().filter(e->e.side()==RuntimeResourceSide.CLIENT&&e.path().startsWith("ui/")&&(e.path().endsWith(".html")||e.path().endsWith(".json"))).map(RuntimeEntrypoint::path).collect(java.util.stream.Collectors.toSet());
             boolean deterministic=false;
             for(var page:declared.properties()){
                 if(!html.contains(page.getKey()))throw new IllegalArgumentException("FEEDBACK_UNBOUND_ENTRY");
@@ -29,6 +29,6 @@ public final class FeedbackPackageContract {
             }
             var server=entries.get("server");
             if(deterministic&&(!permissions.containsAll(Set.of("RUN_CODE","state.shared"))||server==null||server.side()!=RuntimeResourceSide.SERVER||definitions.stream().noneMatch(d->{var e=entries.get(d.entrypointId());return e!=null&&e.side()!=RuntimeResourceSide.CLIENT;})))throw new IllegalArgumentException("FEEDBACK_WORLD_CONTRACT_REQUIRED");
-        }catch(Exception invalid){throw new PackageOutputException("FEEDBACK_PACKAGE_CONTRACT","反馈声明必须匹配真实HTML入口、事件schema和所需的同包世界规则；声明不授予执行权限");}
+        }catch(Exception invalid){throw new PackageOutputException("FEEDBACK_PACKAGE_CONTRACT","反馈声明必须匹配真实原生界面入口、事件schema和所需的同包世界规则；声明不授予执行权限");}
     }
 }

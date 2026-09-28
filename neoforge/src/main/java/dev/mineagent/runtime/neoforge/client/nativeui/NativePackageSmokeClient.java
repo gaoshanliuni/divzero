@@ -60,7 +60,7 @@ public final class NativePackageSmokeClient {
         {"id":"heading","type":"label","text":"LDLib2 原生内容与实时计分"},
         {"id":"search","type":"input","bind":"query","style":"height: 24; width: 240;"},
         {"id":"save","type":"button","text":"更新计分标题","style":"height: 24; width: 160;","events":{"click":[{"op":"emit","action":"save"}]}},
-        {"id":"score","type":"label","bindings":{"text":{"op":"string","args":[{"op":"get","args":[{"op":"get","args":[{"data":"live"},"data"]},"snapshot"]}]}}}
+        {"id":"score","type":"label","bindings":{"text":{"op":"json","args":[{"op":"get","args":[{"op":"get","args":[{"data":"live"},"data"]},"snapshot"]}]}}}
         ]}},"reads":{"score":{"action":"scoreview.read","arguments":{},"result":"live","intervalTicks":20}},"actions":{"save":{"action":"scoreview.patch","arguments":{"expectedViewRevision":{"op":"get","args":[{"op":"get","args":[{"data":"live"},"data"]},"viewRevision"]},"patch":{"literal":{"title":"Native applied"}}},"result":"saved"}}}
         """;
     private static void fail(Throwable error){if(done)return;done=true;try{Files.writeString(root().resolve("failure.json"),JSON.writeValueAsString(Map.of("stage",stage,"error",error.toString(),"evidence",evidence)));}catch(Exception ignored){}Minecraft.getInstance().stop();}

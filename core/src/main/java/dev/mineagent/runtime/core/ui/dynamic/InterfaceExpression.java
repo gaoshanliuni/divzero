@@ -6,7 +6,7 @@ import java.util.*;
 
 /** Bounded data expressions for native UI interactions; no eval, Java access, file access or loops. */
 public final class InterfaceExpression {
-    private static final Set<String> OPS=Set.of("add","sub","mul","div","min","max","eq","ne","lt","lte","gt","gte","and","or","not","if","contains","startsWith","lower","upper","concat","length","at","get","number","string","join","clamp","round");
+    private static final Set<String> OPS=Set.of("add","sub","mul","div","min","max","eq","ne","lt","lte","gt","gte","and","or","not","if","contains","startsWith","lower","upper","concat","length","at","get","number","string","join","clamp","round","object","array","json");
     public static void validate(JsonNode expr){validate(expr,0,new int[]{0});}
     private static void validate(JsonNode n,int depth,int[] count){
         if(n==null||depth>24||++count[0]>256)throw bad("BUDGET");if(n.isValueNode())return;
@@ -14,8 +14,9 @@ public final class InterfaceExpression {
         if(n.has("literal")){if(n.size()!=1||n.get("literal").toString().length()>16384)throw bad("LITERAL");return;}
         if(n.has("data")){if(n.size()!=1||!n.get("data").isTextual()||!n.get("data").asText().matches("[A-Za-z][A-Za-z0-9_-]{0,95}"))throw bad("KEY");return;}
         if(n.size()!=2||!n.has("op")||!n.has("args")||!n.get("args").isArray()||!OPS.contains(n.path("op").asText()))throw bad("OP");
-        int size=n.get("args").size();String op=n.get("op").asText();int arity=Set.of("not","lower","upper","length","round","number","string").contains(op)?1:Set.of("if","clamp").contains(op)?3:2;
-        if(Set.of("add","mul","min","max","and","or","concat").contains(op)){if(size<1||size>16)throw bad("ARITY");}else if(size!=arity)throw bad("ARITY");
+        int size=n.get("args").size();String op=n.get("op").asText();int arity=Set.of("not","lower","upper","length","round","number","string","json").contains(op)?1:Set.of("if","clamp").contains(op)?3:2;
+        if(op.equals("object")||op.equals("array")){if(size>32||op.equals("object")&&size%2!=0)throw bad("ARITY");}
+        else if(Set.of("add","mul","min","max","and","or","concat").contains(op)){if(size<1||size>16)throw bad("ARITY");}else if(size!=arity)throw bad("ARITY");
         for(var argument:n.get("args"))validate(argument,depth+1,count);
     }
     public static JsonNode evaluate(JsonNode expr,Map<String,JsonNode> data){validate(expr);return eval(expr,data);}
@@ -24,8 +25,11 @@ public final class InterfaceExpression {
         String op=n.get("op").asText();var args=n.get("args");
         if(op.equals("if"))return eval(args.get(truth(eval(args.get(0),data))?1:2),data);
         if(op.equals("and")||op.equals("or")){boolean and=op.equals("and");for(var arg:args){boolean value=truth(eval(arg,data));if(value!=and)return BooleanNode.valueOf(!and);}return BooleanNode.valueOf(and);}
-        var values=new ArrayList<JsonNode>();for(var arg:args)values.add(eval(arg,data));JsonNode a=values.getFirst(),b=values.size()>1?values.get(1):NullNode.instance;
+        var values=new ArrayList<JsonNode>();for(var arg:args)values.add(eval(arg,data));JsonNode a=values.isEmpty()?NullNode.instance:values.getFirst(),b=values.size()>1?values.get(1):NullNode.instance;
         return switch(op){
+            case "object"->{var result=JsonNodeFactory.instance.objectNode();for(int i=0;i<values.size();i+=2){var key=values.get(i);if(!key.isTextual()||key.asText().isBlank()||key.asText().length()>128||result.has(key.asText()))throw bad("OBJECT_KEY");result.set(key.asText(),values.get(i+1));}if(result.toString().length()>16384)throw bad("OBJECT_SIZE");yield result;}
+            case "array"->{var result=JsonNodeFactory.instance.arrayNode().addAll(values);if(result.toString().length()>16384)throw bad("ARRAY_SIZE");yield result;}
+            case "json"->text(a.toString());
             case "eq"->BooleanNode.valueOf(equal(a,b));case "ne"->BooleanNode.valueOf(!equal(a,b));
             case "not"->BooleanNode.valueOf(!truth(a));
             case "lt"->BooleanNode.valueOf(number(a)<number(b));case "lte"->BooleanNode.valueOf(number(a)<=number(b));case "gt"->BooleanNode.valueOf(number(a)>number(b));case "gte"->BooleanNode.valueOf(number(a)>=number(b));

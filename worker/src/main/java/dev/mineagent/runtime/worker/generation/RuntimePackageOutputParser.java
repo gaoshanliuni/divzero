@@ -74,6 +74,10 @@ public final class RuntimePackageOutputParser {
                         || !file.sha256().equals(entrypoint.sha256())) {
                     throw invalid("ENTRYPOINT_FILE_MISMATCH", "entrypoint file mismatch: " + id);
                 }
+                if(entrypoint.path().startsWith("ui/")){
+                    if(entrypoint.side()!=RuntimeResourceSide.CLIENT||!entrypoint.path().endsWith(".json")||!file.mediaType().equals("application/json"))throw invalid("NATIVE_UI_REWRITE_REQUIRED","UI entrypoints must be CLIENT divzero-native-ui/1 JSON: "+id);
+                    dev.mineagent.runtime.core.ui.dynamic.NativePackageDefinition.parse(new String(file.content(),StandardCharsets.UTF_8));
+                }
             });
             List<RuntimeDefinition> definitions = definitions(
                     manifest.get("definitions"), entrypoints, filesByPath.keySet());
@@ -86,7 +90,7 @@ public final class RuntimePackageOutputParser {
             var settings=filesByPath.get(dev.mineagent.runtime.core.ui.UiViewSettings.PATH);
             if(settings!=null){
                 if(settings.side()!=RuntimeResourceSide.CLIENT||!settings.mediaType().equals("application/json"))throw invalid("UI_VIEW_SETTINGS_RESOURCE","View settings must be a CLIENT JSON resource");
-                var htmlEntries=entrypoints.values().stream().filter(e->e.side()==RuntimeResourceSide.CLIENT&&e.path().endsWith(".html")).map(e->e.path()).collect(java.util.stream.Collectors.toSet());
+                var htmlEntries=entrypoints.values().stream().filter(e->e.side()==RuntimeResourceSide.CLIENT&&e.path().endsWith(".json")).map(e->e.path()).collect(java.util.stream.Collectors.toSet());
                 dev.mineagent.runtime.core.ui.UiViewSettings.parse(new String(settings.content(),StandardCharsets.UTF_8),htmlEntries);
             }
             var result=new ParsedRuntimePackage(name, version, type, activationMode, dependencies,

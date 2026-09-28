@@ -14,7 +14,7 @@ public final class UiPackagePatchBuilder {
     private UiPackagePatchBuilder(){}
     public static RuntimePackage prepare(RuntimePackage base,String output,ContentAddressedStore store,IdentitySigner signer)throws Exception{
         if(output==null||output.length()>4*1024*1024)throw new IllegalArgumentException("UI_PATCH_OUTPUT_LIMIT");
-        JsonNode root=JSON.readTree(output);only(root,Set.of("files","delete"));
+        JsonNode root=JSON.readTree(output);only(root,Set.of("files","delete","entries"));
         if(!root.path("files").isArray()||root.path("files").size()>32)throw new IllegalArgumentException("UI_PATCH_FILES");
         var resources=new LinkedHashMap<>(base.resources());var changed=new HashSet<String>();var parser=new BrowserScriptPreflight();
         for(var file:root.path("files")){
@@ -47,9 +47,13 @@ public final class UiPackagePatchBuilder {
             }
         }
         var entries=new LinkedHashMap<String,RuntimeEntrypoint>();
+        JsonNode remap=root.path("entries");if(!remap.isMissingNode()&&(!remap.isObject()||remap.size()>64))throw new IllegalArgumentException("UI_PATCH_ENTRYPOINT");
+        for(var entry:remap.properties()){var previous=base.entrypoints().get(entry.getKey());if(previous==null||previous.side()!=RuntimeResourceSide.CLIENT||!previous.path().startsWith("ui/")||!entry.getValue().isTextual())throw new IllegalArgumentException("UI_PATCH_ENTRYPOINT");path(entry.getValue().asText());if(!entry.getValue().asText().endsWith(".json"))throw new IllegalArgumentException("UI_PATCH_NATIVE_ENTRYPOINT");}
+
         for(var entry:base.entrypoints().entrySet()){
-            var e=entry.getValue();var resource=resources.get(e.path());if(resource==null)throw new IllegalArgumentException("UI_PATCH_ENTRYPOINT_DELETE");
-            entries.put(entry.getKey(),new RuntimeEntrypoint(e.path(),e.side(),resource.sha256()));
+            var e=entry.getValue();String path=remap.path(entry.getKey()).asText(e.path());var resource=resources.get(path);if(resource==null||resource.side()!=e.side())throw new IllegalArgumentException("UI_PATCH_ENTRYPOINT_DELETE");
+            if(path.startsWith("ui/")){if(!path.endsWith(".json")||!resource.mediaType().equals("application/json"))throw new IllegalArgumentException("NATIVE_UI_REWRITE_REQUIRED: "+entry.getKey());dev.mineagent.runtime.core.ui.dynamic.NativePackageDefinition.parse(new String(store.read(resource.sha256()),StandardCharsets.UTF_8));}
+            entries.put(entry.getKey(),new RuntimeEntrypoint(path,e.side(),resource.sha256()));
         }
         var draft=new RuntimePackage(base.packageId(),base.type(),base.name(),base.version(),base.activationMode(),base.dependencies(),base.permissions(),entries,base.definitions(),resources,base.origin(),base.enabled(),base.revision()+1,"0".repeat(64),"",System.currentTimeMillis(),base.nativeCompatibility());
         FeedbackPackageContract.validate(draft,store::read);

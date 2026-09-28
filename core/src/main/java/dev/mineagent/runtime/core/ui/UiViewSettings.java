@@ -19,7 +19,7 @@ public final class UiViewSettings {
             if(encoded==null||encoded.getBytes(StandardCharsets.UTF_8).length>32768)throw new IllegalArgumentException("UI_VIEW_SETTINGS_BUDGET");
             var root=JSON.readTree(encoded);fields(root,Set.of("schema","entries"));if(!root.path("schema").isIntegralNumber()||!root.path("schema").canConvertToInt()||root.path("schema").asInt()!=1||!root.path("entries").isObject()||root.path("entries").size()>16)throw new IllegalArgumentException("UI_VIEW_SETTINGS_SCHEMA");
             var result=new LinkedHashMap<String,Settings>();for(var entry:root.path("entries").properties()){
-                String path=entry.getKey();if(!path.matches("ui/[A-Za-z0-9_@./-]+\\.html")||path.contains("..")||!htmlEntries.contains(path))throw new IllegalArgumentException("UI_VIEW_SETTINGS_ENTRY");
+                String path=entry.getKey();if(!path.matches("ui/[A-Za-z0-9_@./-]+\\.(?:html|json)")||path.contains("..")||!htmlEntries.contains(path))throw new IllegalArgumentException("UI_VIEW_SETTINGS_ENTRY");
                 var value=entry.getValue();fields(value,Set.of("anchor","width","height","offsetX","offsetY","appearance","opacity"));
                 if(!value.path("anchor").isTextual()||value.has("appearance")&&!value.path("appearance").isTextual())throw new IllegalArgumentException("UI_VIEW_SETTINGS_VALUE");
                 result.put(path,new Settings(value.path("anchor").asText(),number(value,"width",null),number(value,"height",null),number(value,"offsetX",0d),number(value,"offsetY",0d),value.path("appearance").asText("GLASS_SAGE"),value.has("opacity")?number(value,"opacity",null):null));

@@ -2104,8 +2104,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/feedback/UiFeedbackPolicy.java",
-      "sha256": "0916adee1657787d2caf28e57a2b81fd069921ae0db4447db9bd62aa4ab1cd2e",
-      "bytes": 9638
+      "sha256": "12181beb5da111de2e526cd07652b03e7a8f6f02fea6d40706149ed509f11ec3",
+      "bytes": 9656
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/feedback/UiFeedbackStore.java",
@@ -2479,8 +2479,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/UiPatchPolicy.java",
-      "sha256": "3d5da8f1ce69447f3fd505b1afe1f6b1d9f85c5856aceefd2261192b8d5d664c",
-      "bytes": 2284
+      "sha256": "51810f8981eda358410d7f92d4ae6b88b11f8a0e0edddd0d3211dc595810097e",
+      "bytes": 2391
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/WorldActivationLedger.java",
@@ -3029,8 +3029,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/UiViewSettings.java",
-      "sha256": "8f610aff3f1521034fff80c412657f36672fac75f55bdb057e19404c5ca6ff21",
-      "bytes": 4306
+      "sha256": "fb11a0ec4a2b0eb74ffb774fd14a8729bffa3ba9d6af92acaca18c3d51f90fcd",
+      "bytes": 4315
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/WindowPinPlan.java",
@@ -3054,13 +3054,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceDefinition.java",
-      "sha256": "cebab2e96a3bc2cd9a2f1f1dfb4cb888320c5bc3f7657d1435d26adc94cd1a77",
-      "bytes": 13825
+      "sha256": "cf19e77d447f493e19f9ee1adb8a13dd591090860e50a7f76560d6fc7ca9957f",
+      "bytes": 13843
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceExpression.java",
-      "sha256": "cb1124cb923b54ba4f8a0be6f3c238b9118a1665a7284a52f92c88e782d6c916",
-      "bytes": 6633
+      "sha256": "ca90a7b91b65b147e38a8b26ef69d0b0a1658d576c98dbf3557870a2802160a0",
+      "bytes": 7402
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceHandlers.java",
@@ -3384,8 +3384,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceExpressionTest.java",
-      "sha256": "6091c127409bd64aade09b97fde79b8f71a7944c915b2b932fabbcb6229fcdaf",
-      "bytes": 3528
+      "sha256": "852eae2fe346dc113b9bb8ef72c0bd8573531a69eea6189aab26ea0c30b4c15f",
+      "bytes": 4366
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceSessionTest.java",
@@ -4069,13 +4069,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageSmokeClient.java",
-      "sha256": "c14f0bbd042dbff2b629428399c2d82c685b9a3887c19206f350cd95059b5ab8",
-      "bytes": 10854
+      "sha256": "e572b4bea2b3047efa959dbedb0db3cc3eef10251ea627142b0562cd5868c9b0",
+      "bytes": 10852
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageViews.java",
-      "sha256": "86d8bef72ceaf44f05a55f647d2b9aa38791f1ed7b5609e77dbf83d11e2536cb",
-      "bytes": 25695
+      "sha256": "72059684c7335bf92c54ac175e545bd0337619ef6e8970122e719465c621602f",
+      "bytes": 25670
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePreview.java",
@@ -6754,13 +6754,13 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/FeedbackContract.java",
-      "sha256": "fd1d2c2890cc685c6c7bc66bb783ed3925e53d2eda75d77c61d731ec22dfe7f5",
-      "bytes": 7714
+      "sha256": "250d4948908780334a73e6fba1106df17ec95b9e67ca15b28340d4c7435a78ec",
+      "bytes": 4446
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/FeedbackPackageContract.java",
-      "sha256": "f78fa1ba085a93e54bf8e9ee7419beba05d019507eee3148acaf3b4da9868747",
-      "bytes": 3004
+      "sha256": "16d445b45c3e53448ad0c288a55716cd8a727e51127ec9da9a0b35122336dc37",
+      "bytes": 3042
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/GeneratedFile.java",
@@ -6776,6 +6776,11 @@
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/GenerationRepairPrompt.java",
       "sha256": "3379037143bfe72c81ea25a78008799674ac3cc66642959f2fe06e5fbad1eb61",
       "bytes": 2666
+    },
+    {
+      "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/NativePackageContract.java",
+      "sha256": "022cf9c2cf8925c3bb15d12855c7eab27dffe7320605ed3c5ecd7d148364e288",
+      "bytes": 4844
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/OfflineGenerationReview.java",
@@ -6809,13 +6814,13 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/RuntimePackageGenerator.java",
-      "sha256": "8d63cd0d1675f621d249c06bb68d58dac476b2f6ded3cb327ea519893fc69bfa",
-      "bytes": 16817
+      "sha256": "8c1e2c04640fc9949f6a75be12972a7b933179d32166b8c49613a09714af49f7",
+      "bytes": 9619
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/RuntimePackageOutputParser.java",
-      "sha256": "4aff409cc5f00474e6e625efee89cd76789b08cbb452c07d043f8f9144fc49a0",
-      "bytes": 18942
+      "sha256": "1ab453263175aa1b01a9416ad0a0f8d1be6f89698e9e677b07a2573a0d5fd634",
+      "bytes": 19417
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/RuntimePackagePublisher.java",
@@ -6859,13 +6864,13 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/UiPackagePatchBuilder.java",
-      "sha256": "8a8165aa0af6357d58b62392719e1efa74056f1d257966cd4796d357b97b158e",
-      "bytes": 6985
+      "sha256": "6c2e2c0e9f47c9760e9dd5baa813a3d0a4811aa2a6ef207f37d91d5569513a3c",
+      "bytes": 8001
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/UiPatchPrompt.java",
-      "sha256": "51a5958fa7dc2306d6fca122787e078d4e953058adea1f41b08ae76bfb37fc0a",
-      "bytes": 3894
+      "sha256": "d597ffbb37f9155ab2bd2e1fc719c4bf0e9688412a256f93d7722daeb904d3a5",
+      "bytes": 3574
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/UiPatchTransport.java",
@@ -6874,8 +6879,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/UiStateContract.java",
-      "sha256": "3019b650b307a6de05f684b5efd8619df39ef438ab576f81212455b4728c8cfb",
-      "bytes": 1934
+      "sha256": "3b8838e4f06d3557a0c33d5ca007c00288551b97a34b78e931e2a0c16de34641",
+      "bytes": 1163
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorkerPackageResult.java",
@@ -6909,8 +6914,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldUiContract.java",
-      "sha256": "52f4428daae4aa873c35fc38a73bdef8f65e9f48046a774133d222d5116cad41",
-      "bytes": 7286
+      "sha256": "17ea855b6b89613ae32889891e34ce10e22193c92d3e97783108c44e600d5603",
+      "bytes": 3942
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/ipc/WorkerFrameCodec.java",
@@ -7301,6 +7306,11 @@
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/WorkerThinkingTest.java",
       "sha256": "af587b6e45ca699c20100cfac68d798a5ccfe9340d90234daa505c00bdbab6ea",
       "bytes": 2192
+    },
+    {
+      "path": "worker/src/test/java/dev/mineagent/runtime/worker/generation/NativePackageMigrationTest.java",
+      "sha256": "6a7422752e31ca5d6a6d120fb5e6610e80c2070c5c57d1f76437a970fd1dc51d",
+      "bytes": 4086
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/generation/RuntimePackageOutputParserTest.java",

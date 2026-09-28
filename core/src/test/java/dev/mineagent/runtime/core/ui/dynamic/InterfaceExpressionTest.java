@@ -7,6 +7,15 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InterfaceExpressionTest {
+    @Test void formPayloadsAreStructuredDataWithDuplicateAndOutputBounds()throws Exception{
+        var payload=expr("""
+            {"op":"object","args":["query",{"data":"query"},"selected",{"op":"array","args":[1,2]}]}
+            """);
+        assertEquals(expr("{\"query\":\"oak\",\"selected\":[1,2]}"),InterfaceExpression.evaluate(payload,Map.of("query",TextNode.valueOf("oak"))));
+        assertThrows(IllegalArgumentException.class,()->InterfaceExpression.evaluate(expr("{\"op\":\"object\",\"args\":[\"x\",1,\"x\",2]}"),Map.of()));
+        assertThrows(IllegalArgumentException.class,()->InterfaceExpression.evaluate(payload,Map.of("query",TextNode.valueOf("a".repeat(16384)))));
+        assertEquals("[]",InterfaceExpression.evaluate(expr("{\"op\":\"json\",\"args\":[{\"op\":\"array\",\"args\":[]}]}"),Map.of()).asText());
+    }
     private static final ObjectMapper JSON=new ObjectMapper();
     private static JsonNode expr(String source)throws Exception{return JSON.readTree(source);}
     @Test void callbackBindingsReadReceiptsAndExplicitlyConvertNumericInput()throws Exception{

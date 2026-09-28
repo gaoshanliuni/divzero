@@ -12,7 +12,7 @@ public final class UiPatchPolicy {
                 ||base.enabled()!=candidate.enabled()||candidate.revision()!=base.revision()+1||!base.entrypoints().keySet().equals(candidate.entrypoints().keySet()))throw new IllegalArgumentException("UI_PATCH_SCOPE");
         for(var e:base.entrypoints().entrySet()){
             var next=candidate.entrypoints().get(e.getKey());var old=e.getValue();
-            if(!old.path().equals(next.path())||old.side()!=next.side()||(!ui(old.path())&&!old.equals(next)))throw new IllegalArgumentException("UI_PATCH_ENTRYPOINT");
+            if(!old.path().equals(next.path())&&!(old.side()==RuntimeResourceSide.CLIENT&&ui(old.path())&&ui(next.path())&&next.path().endsWith(".json"))||old.side()!=next.side()||(!ui(old.path())&&!old.equals(next)))throw new IllegalArgumentException("UI_PATCH_ENTRYPOINT");
         }
         for(var e:base.resources().entrySet())if(!ui(e.getKey())&&!e.getValue().equals(candidate.resources().get(e.getKey())))throw new IllegalArgumentException("UI_PATCH_GAMEPLAY_RESOURCE");
         for(var e:candidate.resources().entrySet()){

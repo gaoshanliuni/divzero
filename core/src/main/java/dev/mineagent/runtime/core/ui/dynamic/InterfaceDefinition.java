@@ -30,7 +30,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         bind refers to one data key; text/value are defaults. Keep node ids and bind keys when restyling to preserve live input.
         Optional bindings map text/value/visible/enabled to bounded expressions, evaluated on each data update.
         Expressions: primitive literal; {"data":"key"}; {"literal":anyJSON}; {"op":"contains","args":["Stone bricks",{"data":"query"}]}.
-        Operators: add/sub/mul/div/min/max/eq/ne/lt/lte/gt/gte/and/or/not/if/contains/startsWith/lower/upper/concat/length/at/get/number/string/join/clamp/round. number explicitly converts numeric input text; arithmetic never silently coerces strings.
+        Operators: add/sub/mul/div/min/max/eq/ne/lt/lte/gt/gte/and/or/not/if/contains/startsWith/lower/upper/concat/length/at/get/number/string/join/clamp/round/object/array/json. number explicitly converts numeric input text; arithmetic never silently coerces strings.
         contains is case-insensitive; if is lazy. Numeric operations are finite, booleans are typed. Expressions have bounded depth/work/output; they never execute Java or access files.
         Example working search: an input binds query, and each product card binds visible to contains(productName, query).
         events: {"click" or "change":[{"op":"set","key":"query","value":"..."},

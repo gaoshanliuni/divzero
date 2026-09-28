@@ -32,7 +32,7 @@ public record UiFeedbackPolicy(String entry,String sha256,Map<String,Event> even
         }
     }
     public UiFeedbackPolicy {
-        if(entry==null||!entry.matches("ui/[A-Za-z0-9_./-]+\\.html")||entry.contains("..")||sha256==null||!sha256.matches("[a-f0-9]{64}")||events==null||events.isEmpty()||events.size()>8)throw invalid("POLICY");
+        if(entry==null||!entry.matches("ui/[A-Za-z0-9_./-]+\\.(?:html|json)")||entry.contains("..")||sha256==null||!sha256.matches("[a-f0-9]{64}")||events==null||events.isEmpty()||events.size()>8)throw invalid("POLICY");
         events.keySet().forEach(UiFeedbackPolicy::name);events=Collections.unmodifiableMap(new TreeMap<>(events));
     }
     @FunctionalInterface public interface Reader {byte[] read(String hash)throws IOException;}
@@ -53,7 +53,7 @@ public record UiFeedbackPolicy(String entry,String sha256,Map<String,Event> even
             if(!entries.isObject()||entries.isEmpty()||entries.size()>8||!entries.has(entry))throw invalid("ENTRY");
             Map<String,Event> selected=null;
             var paths=entries.properties().iterator();while(paths.hasNext()){
-                var page=paths.next();String path=page.getKey();if(!path.matches("ui/[A-Za-z0-9_./-]+\\.html")||path.contains(".."))throw invalid("ENTRY");
+                var page=paths.next();String path=page.getKey();if(!path.matches("ui/[A-Za-z0-9_./-]+\\.(?:html|json)")||path.contains(".."))throw invalid("ENTRY");
                 keys(page.getValue(),Set.of("events"),Set.of("events"));var eventNodes=page.getValue().get("events");if(!eventNodes.isObject()||eventNodes.isEmpty()||eventNodes.size()>8)throw invalid("EVENTS");
                 var parsed=new TreeMap<String,Event>();var iterator=eventNodes.properties().iterator();while(iterator.hasNext()){
                     var item=iterator.next();name(item.getKey());var value=item.getValue();
