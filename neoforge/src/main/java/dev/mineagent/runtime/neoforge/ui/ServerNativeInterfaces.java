@@ -33,13 +33,23 @@ public final class ServerNativeInterfaces {
         var out=new CompletableFuture<Map<String,Object>>();
         io(()->{try(var store=new NativeUiStore(db)){
             var value=new LinkedHashMap<String,Object>();value.put("contract",InterfaceDefinition.CONTRACT);value.put("views",store.list(scope));
-            if(args.has("id")){String id=args.path("id").asText();var saved=store.get(scope,id);value.put("saved",saved.orElse(null));}
+            if(args.has("id")){String id=args.path("id").asText();var saved=store.get(scope,id);value.put("saved",saved.orElse(null));value.put("pending",store.pending(scope,id).orElse(null));}
             return value;
         }}).whenComplete((value,error)->server.execute(()->{
             if(error!=null){out.completeExceptionally(error);return;}if(!current(p,agent,level,guard)){out.complete(Map.of("status","REJECTED","error","NATIVE_UI_CONTEXT_CHANGED"));return;}
             var message=JSON.createObjectNode().put("kind","inspect").put("world",scope.world().toString()).put("owner",scope.owner().toString()).put("agent",agent.toString()).put("dimension",level.dimension().identifier().toString());
             if(args.has("id"))message.put("id",args.path("id").asText());
-            request(p,agent,message,guard).whenComplete((client,failure)->server.execute(()->{value.put("client",failure==null?client:Map.of("status","UNAVAILABLE"));out.complete(value);}));
+            request(p,agent,message,guard).whenComplete((client,failure)->server.execute(()->{
+                value.put("client",failure==null?client:Map.of("status","UNAVAILABLE"));
+                if(failure!=null||!args.has("id")||!(value.get("pending") instanceof NativeUiStore.Candidate candidate)){out.complete(value);return;}
+                String id=args.path("id").asText();JsonNode observed=null;
+                for(var view:client.path("views"))if(id.equals(view.path("id").asText())&&candidate.token().toString().equals(view.path("activationToken").asText())&&view.path("revision").asLong()==candidate.expectedRevision()+1)observed=view;
+                if(observed==null||!current(p,agent,level,guard)||!candidate.dimension().equals(level.dimension().identifier().toString())){value.put("reconciliation","PENDING_CLIENT_EVIDENCE");out.complete(value);return;}
+                var data=new LinkedHashMap<String,JsonNode>();observed.path("data").properties().forEach(e->data.put(e.getKey(),e.getValue()));boolean visible=observed.path("visible").asBoolean();
+                io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),candidate.expectedRevision()+1,data,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
+                    if(saveError==null){value.put("saved",saved);value.put("pending",null);value.put("reconciliation","COMMITTED_FROM_CLIENT_EVIDENCE");}else value.put("reconciliation","PERSISTENCE_UNAVAILABLE");out.complete(value);
+                }));
+            }));
         }));return out;
     }
     public static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,String tool,JsonNode args,BooleanSupplier permit){
@@ -48,7 +58,7 @@ public final class ServerNativeInterfaces {
         require(args.path("expected_revision").isIntegralNumber()&&args.path("expected_revision").canConvertToLong()&&args.path("expected_revision").longValue()>=0,"NATIVE_UI_REVISION");
         long expected=args.path("expected_revision").longValue();String lock=scope+":"+id;require(BUSY.add(lock),"NATIVE_UI_BUSY");var result=new CompletableFuture<Map<String,Object>>();
         result.whenComplete((v,e)->BUSY.remove(lock));
-        io(()->{try(var store=new NativeUiStore(db)){return store.get(scope,id).orElse(null);}}).whenComplete((old,readError)->server.execute(()->{
+        io(()->{try(var store=new NativeUiStore(db)){if(store.pending(scope,id).isPresent())throw new IllegalStateException("NATIVE_UI_RECONCILE_REQUIRED: inspect_native_ui with this id");return store.get(scope,id).orElse(null);}}).whenComplete((old,readError)->server.execute(()->{
             if(readError!=null){result.completeExceptionally(readError);return;}
             try{
                 require(current(p,agent,level,guard),"NATIVE_UI_CONTEXT_CHANGED");require((old==null?0:old.revision())==expected,"NATIVE_UI_STALE_REVISION");
@@ -61,18 +71,26 @@ public final class ServerNativeInterfaces {
                 if(old!=null&&!tool.equals("set_native_ui"))require(old.dimension().equals(level.dimension().identifier().toString()),"NATIVE_UI_DIMENSION_CHANGED");
                 var message=JSON.createObjectNode().put("kind",kind).put("id",id).put("world",scope.world().toString()).put("owner",scope.owner().toString()).put("agent",agent.toString()).put("dimension",level.dimension().identifier().toString()).put("expectedRevision",expected).put("revision",expected+1).put("source",source);
                 message.set("data",JSON.valueToTree(values));if(kind.equals("data"))message.set("patch",args.get("data").deepCopy());
+                io(()->{try(var store=new NativeUiStore(db)){return store.stage(scope,id,expected,level.dimension().identifier().toString(),source);}}).whenComplete((candidate,stageError)->server.execute(()->{
+                if(stageError!=null){result.complete(Map.of("status","REJECTED","error","NATIVE_UI_CANDIDATE_PERSISTENCE_FAILED"));return;}
+                if(!current(p,agent,level,guard)){io(()->{try(var store=new NativeUiStore(db)){store.discard(scope,id,candidate.token());return true;}}).whenComplete((discarded,e)->result.complete(Map.of("status","REJECTED","error","NATIVE_UI_CONTEXT_CHANGED")));return;}
+                message.put("activationToken",candidate.token().toString());
                 request(p,agent,message,guard).whenComplete((ack,error)->server.execute(()->{
                     if(error!=null){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CLIENT_ACK_TIMEOUT","replayed",false));return;}
-                    if(!ack.path("status").asText().equals("APPLIED")){result.complete(Map.of("status",ack.path("status").asText().equals("UNKNOWN")?"UNKNOWN":"REJECTED","error",ack.path("error").asText("NATIVE_UI_BUILD_FAILED"),"revision",expected));return;}
+                    if(!ack.path("status").asText().equals("APPLIED")){
+                        if(ack.path("status").asText().equals("UNKNOWN")){result.complete(Map.of("status","UNKNOWN","error",ack.path("error").asText("NATIVE_UI_UNKNOWN"),"revision",expected));return;}
+                        io(()->{try(var store=new NativeUiStore(db)){store.discard(scope,id,candidate.token());return true;}}).whenComplete((discarded,e)->result.complete(Map.of("status",e==null?"REJECTED":"UNKNOWN","error",ack.path("error").asText("NATIVE_UI_BUILD_FAILED"),"revision",expected)));return;
+                    }
                     if(!current(p,agent,level,guard)){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CONTEXT_CHANGED"));return;}
                     try{
-                        require(ack.path("revision").asLong(-1)==expected+1&&ack.path("data").isObject(),"NATIVE_UI_INVALID_ACK");
+                        require(ack.path("revision").asLong(-1)==expected+1&&ack.path("data").isObject()&&candidate.token().toString().equals(ack.path("activationToken").asText()),"NATIVE_UI_INVALID_ACK");
                         var activeData=new LinkedHashMap<String,JsonNode>();ack.get("data").properties().forEach(e->activeData.put(e.getKey(),e.getValue()));boolean visible=ack.path("visible").asBoolean(true);
-                        io(()->{try(var store=new NativeUiStore(db)){return store.save(scope,id,expected,level.dimension().identifier().toString(),source,activeData,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
+                        io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),expected+1,activeData,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
                             if(saveError!=null){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_PERSISTENCE_FAILED","replayed",false));return;}
                             result.complete(Map.of("status","APPLIED","id",id,"revision",saved.revision(),"surface",definition.surface().name(),"clientActivated",true,"visible",visible,"restartRequired",false,"reloadRequired",false));
                         }));
                     }catch(Exception invalid){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_INVALID_ACK"));}
+                }));
                 }));
             }catch(Exception invalid){result.complete(Map.of("status","REJECTED","error",Objects.toString(invalid.getMessage(),"NATIVE_UI_FAILED")));}
         }));return result;

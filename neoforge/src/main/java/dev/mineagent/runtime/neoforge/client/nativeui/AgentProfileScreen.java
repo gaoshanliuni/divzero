@@ -18,7 +18,7 @@ import java.util.*;
 public final class AgentProfileScreen extends ModularUIScreen {
     private final UUID agent;private final Object connection;private UIElement root;private final UIElement content=new UIElement();
     private final TextElement title,summary,status;private final ProgressBar health=new ProgressBar();
-    private JsonObject snapshot;private String tab="overview";private int inventoryOffset,contentOffset;private long nextRead;private boolean busy;private long personaRevision=-1,uiEpoch;
+    private String personaDraft;private long personaDraftRevision=-1;private boolean personaSaving;private JsonObject snapshot;private String tab="overview";private int inventoryOffset,contentOffset;private long nextRead;private boolean busy;private long personaRevision=-1,uiEpoch;
     private AgentProfileScreen(UUID agent,String name){this(agent,name,new UIElement());}
     private AgentProfileScreen(UUID agent,String name,UIElement root){
         super(new ModularUI(UI.of(root,size->size),Minecraft.getInstance().player),Component.literal(name));this.agent=agent;this.root=root;connection=Minecraft.getInstance().getConnection();
@@ -53,9 +53,9 @@ public final class AgentProfileScreen extends ModularUIScreen {
     }
     private void persona(){
         if(snapshot!=null&&!snapshot.get("canEditPersona").getAsBoolean()){content.addChild(WorkspacePanels.text(t("没有权限")));return;}
-        long epoch=uiEpoch;var editor=new TextArea();editor.getLayout().flex(1).widthPercent(100);content.addChild(editor);personaRevision=-1;
-        WorkspacePanels.request("persona.read",Map.of("agentId",agent.toString())).whenComplete((receipt,error)->{if(!current()||uiEpoch!=epoch||!tab.equals("persona"))return;if(error!=null){WorkspacePanels.failure(status,error);return;}var value=WorkspacePanels.state(receipt);personaRevision=value.get("revision").getAsLong();editor.setValue(value.get("text").getAsString().split("\n",-1),false);});
-        content.addChild(NativeUiTheme.button(t("保存人设"),()->{if(personaRevision<0)return;WorkspacePanels.request("persona.save",Map.of("agentId",agent.toString(),"expectedRevision",Long.toString(personaRevision),"text",String.join("\n",editor.getValue()))).whenComplete((receipt,error)->{if(!current()||uiEpoch!=epoch)return;if(error!=null)WorkspacePanels.failure(status,error);else{status.setText(Component.literal(t("已保存")));personaRevision=WorkspacePanels.state(receipt).get("appliedRevision").getAsLong();}});}));
+        long epoch=uiEpoch;var editor=new TextArea();editor.getLayout().flex(1).widthPercent(100);content.addChild(editor);personaRevision=personaDraftRevision;if(personaDraft!=null)editor.setValue(personaDraft.split("\n",-1),false);editor.registerValueListener(value->personaDraft=String.join("\n",value));
+        WorkspacePanels.request("persona.read",Map.of("agentId",agent.toString())).whenComplete((receipt,error)->{if(!current()||uiEpoch!=epoch||!tab.equals("persona"))return;if(error!=null){WorkspacePanels.failure(status,error);return;}var value=WorkspacePanels.state(receipt);if(personaDraft==null){personaDraftRevision=personaRevision=value.get("revision").getAsLong();personaDraft=value.get("text").getAsString();editor.setValue(personaDraft.split("\n",-1),false);}});
+        content.addChild(NativeUiTheme.button(t("保存人设"),()->{if(personaRevision<0||personaSaving)return;personaSaving=true;WorkspacePanels.request("persona.save",Map.of("agentId",agent.toString(),"expectedRevision",Long.toString(personaRevision),"text",String.join("\n",editor.getValue()))).whenComplete((receipt,error)->{personaSaving=false;if(error==null)personaDraftRevision=WorkspacePanels.state(receipt).get("appliedRevision").getAsLong();if(!current()||uiEpoch!=epoch)return;if(error!=null)WorkspacePanels.failure(status,error);else{status.setText(Component.literal(t("已保存")));personaRevision=personaDraftRevision;}});}));
     }
     private void conversations(){
         long epoch=uiEpoch;content.addChild(WorkspacePanels.text(t("选择已有对话，或让 AI 为新对话生成简称。")));var list=WorkspacePanels.scroller(content);

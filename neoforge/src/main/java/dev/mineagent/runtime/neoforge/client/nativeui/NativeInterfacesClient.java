@@ -17,7 +17,7 @@ public final class NativeInterfacesClient {
     private record Key(UUID world,UUID owner,UUID agent,String id){}
     private static final class Slot {
         final Key key;final InterfaceSession<LdInterfaceRenderer.Rendered> session;
-        final ArrayDeque<Map<String,Object>> events=new ArrayDeque<>();long wireRevision;String error="";NativeScreen screen;
+        final ArrayDeque<Map<String,Object>> events=new ArrayDeque<>();long wireRevision;String activationToken="",error="";NativeScreen screen;
         Slot(Key key,long revision){this.key=key;wireRevision=revision;session=new InterfaceSession<>(new InterfaceSession.Scope(key.world,key.owner,key.agent,connectionId,key.id));}
     }
     private static final Map<Key,Slot> VIEWS=new LinkedHashMap<>();
@@ -40,6 +40,7 @@ public final class NativeInterfacesClient {
                 if(!Set.of("replace","data","show","hide","interact","release").contains(kind))throw new IllegalArgumentException("NATIVE_UI_ACTION");
                 String id=args.path("id").asText();long expected=args.path("expectedRevision").asLong(-1),revision=args.path("revision").asLong(-1);
                 if(expected<0||revision!=expected+1)throw new IllegalArgumentException("NATIVE_UI_REVISION");
+                String activationToken=UUID.fromString(args.path("activationToken").asText()).toString();
                 var key=new Key(world,owner,agent,id);var slot=VIEWS.get(key);boolean fresh=slot==null;
                 if(fresh)slot=new Slot(key,expected);
                 boolean wasVisible=fresh||slot.session.visible(),wasInteractive=!fresh&&slot.session.interactive();
@@ -74,13 +75,13 @@ public final class NativeInterfacesClient {
                     default->throw new IllegalArgumentException("NATIVE_UI_ACTION");
                 }
                 if(hud&&slot.session.visible()&&!slot.session.interactive())LdHudRegistry.attach(slot.session,slot.session.definition().order());
-                slot.wireRevision=revision;slot.error="";reply=new LinkedHashMap<>(snapshot(slot));reply.put("status","APPLIED");
+                slot.wireRevision=revision;slot.activationToken=activationToken;slot.error="";reply=new LinkedHashMap<>(snapshot(slot));reply.put("status","APPLIED");
             }
         }catch(Exception|LinkageError error){reply=Map.of("status",changed?"UNKNOWN":"REJECTED","error",Objects.toString(error.getMessage(),error.getClass().getSimpleName()));}
         String encoded;try{encoded=JSON.writeValueAsString(reply);if(encoded.length()>120000)encoded="{\"status\":\"UNKNOWN\",\"error\":\"NATIVE_UI_RECEIPT_SIZE\"}";}catch(Exception e){encoded="{\"status\":\"UNKNOWN\",\"error\":\"NATIVE_UI_RECEIPT\"}";}
         if(mc.getConnection()!=null)ClientPacketDistributor.sendToServer(new UiPayloads.Command(packet.requestId(),"nativeInterfaceReply",encoded));
     }
-    private static Map<String,Object> snapshot(Slot slot){var out=new LinkedHashMap<String,Object>();out.put("id",slot.key.id);out.put("revision",slot.wireRevision);out.put("dataRevision",slot.session.dataRevision());out.put("visible",slot.session.visible());out.put("interactive",slot.session.interactive());out.put("data",slot.session.data());out.put("events",List.copyOf(slot.events));out.put("error",slot.error);return out;}
+    private static Map<String,Object> snapshot(Slot slot){var out=new LinkedHashMap<String,Object>();out.put("id",slot.key.id);out.put("revision",slot.wireRevision);out.put("activationToken",slot.activationToken);out.put("dataRevision",slot.session.dataRevision());out.put("visible",slot.session.visible());out.put("interactive",slot.session.interactive());out.put("data",slot.session.data());out.put("events",List.copyOf(slot.events));out.put("error",slot.error);return out;}
     static com.lowdragmc.lowdraglib2.gui.ui.UIElement smokeWidget(String id,String node){
         if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
         var slot=VIEWS.values().stream().filter(s->s.key.id.equals(id)).findFirst().orElseThrow();

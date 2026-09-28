@@ -41,7 +41,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
         var toolbar=NativeUiTheme.card(row());toolbar.getLayout().height(36).paddingAll(6).marginBottom(5);toolbar.getStyle().zIndex(2000);root.addChild(toolbar);
         var brand=NativeUiTheme.text("DivZero",NativeUiTheme.ACCENT,13);brand.getLayout().width(72);toolbar.addChild(brand);
         toolbar.addChild(button(t("对话"),this::showChat));toolbar.addChild(button(t("AI 玩家"),()->WorkspacePanels.agents(this)));toolbar.addChild(button(t("内容包"),()->WorkspacePanels.packages(this)));toolbar.addChild(button(t("文件"),this::showFiles));
-        var spacer=new UIElement();spacer.getLayout().flex(1);toolbar.addChild(spacer);toolbar.addChild(button(t("设置"),()->WorkspacePanels.settings(this)));toolbar.addChild(button(t("语言"),()->Minecraft.getInstance().setScreen(new LanguageScreen(this))));toolbar.addChild(button(t("关于"),()->Minecraft.getInstance().setScreen(new AboutScreen(this))));toolbar.addChild(button("×",this::onClose));
+        var spacer=new UIElement();spacer.getLayout().flex(1);toolbar.addChild(spacer);toolbar.addChild(button(t("设置"),()->WorkspacePanels.settings(this)));toolbar.addChild(button("×",this::onClose));
         desktop.getLayout().flex(1).widthPercent(100);root.addChild(desktop);
         dock.getLayout().height(28).widthPercent(100).flexDirection(FlexDirection.ROW).paddingVertical(3);dock.getStyle().zIndex(2000);root.addChild(dock);
         status.getLayout().height(13).widthPercent(100);status.textStyle(style->style.fontSize(8).textColor(NativeUiTheme.MUTED));root.addChild(status);
@@ -101,7 +101,7 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
         directory.addChild(button(t("新建对话"),()->write("create",Map.of("title",t("新的对话"),"autoTitle","true"),state->{select(state.get("conversationId").getAsString());list();})));
         search.getLayout().height(24).widthPercent(100).marginTop(5);directory.addChild(search);
         var filter=new Selector<Choice>();filter.setCandidates(List.of(new Choice("ACTIVE",t("进行中")),new Choice("ARCHIVED",t("已归档")),new Choice("DELETED",t("已删除"))));filter.setValue(new Choice(model.filter,t(model.filter.equals("ACTIVE")?"进行中":model.filter.equals("ARCHIVED")?"已归档":"已删除")),false);filter.setOnValueChanged(choice->{model.filter=choice.key();listBefore=0;list();});filter.getLayout().height(23).widthPercent(100);directory.addChild(filter);
-        conversationList=new ScrollerView();conversationList.getLayout().flex(1).widthPercent(100);directory.addChild(conversationList);directory.addChild(button(t("全部 AI"),()->WorkspacePanels.agents(this)));
+        conversationList=new ScrollerView();conversationList.getLayout().flex(1).widthPercent(100);directory.addChild(conversationList);
         content.clearAllChildren();content.getLayout().flex(1).heightPercent(100).paddingLeft(8);body.addChild(content);heading.setText(Component.literal(model.selected==null?t("选择或新建对话"):model.selected.get("title").getAsString()));heading.textStyle(style->style.fontSize(12));content.addChild(heading);
         var controls=row();controls.getLayout().height(26);controls.addChild(button(t("更早"),()->messages(nextBefore)));controls.addChild(button(t("最新"),()->{rows.clear();history.clearAllScrollViewChildren();messages(0);}));controls.addChild(button(t("重命名"),this::renameConversation));controls.addChild(button(t("归档"),()->changeConversation("archive")));controls.addChild(button(t("恢复"),()->changeConversation("restore")));content.addChild(controls);
         history.getLayout().flex(1).widthPercent(100).marginVertical(6);content.addChild(history);
@@ -183,8 +183,8 @@ public final class NativeWorkspaceScreen extends ModularUIScreen {
     }
     private void textChunk(String id,long revision,String kind,TextElement target,long generation,int offset,StringBuilder text){
         request(false,kind,Map.of("messageId",id,"messageRevision",Long.toString(revision),"offset",Integer.toString(offset))).whenComplete((chunk,error)->{
-            if(!current()||generation!=model.generation)return;if(error!=null){loading.remove(kind.equals("thinking")?"thinking:"+id:id);return;}
-            if(chunk.get("revision").getAsLong()!=revision){loading.remove(kind.equals("thinking")?"thinking:"+id:id);return;}String part=chunk.get("text").getAsString();text.append(part);captureScroll();target.setText(Component.literal(text.toString()));restoreScrollFrames=3;int next=offset+part.length();if(next<chunk.get("total").getAsInt()&&!part.isEmpty())textChunk(id,revision,kind,target,generation,next,text);
+            String loadKey=kind.equals("thinking")?"thinking:"+id:id;if(!current()||generation!=model.generation||!Objects.equals(loading.get(loadKey),revision))return;if(error!=null){loading.remove(loadKey);return;}
+            if(chunk.get("revision").getAsLong()!=revision){loading.remove(kind.equals("thinking")?"thinking:"+id:id);return;}String part=chunk.get("text").getAsString();text.append(part);int next=offset+part.length();if(next<chunk.get("total").getAsInt()&&!part.isEmpty())textChunk(id,revision,kind,target,generation,next,text);else if(next==chunk.get("total").getAsInt()){captureScroll();target.setText(Component.literal(text.toString()));restoreScrollFrames=3;}else loading.remove(loadKey);
         });
     }
     private void showFiles(){

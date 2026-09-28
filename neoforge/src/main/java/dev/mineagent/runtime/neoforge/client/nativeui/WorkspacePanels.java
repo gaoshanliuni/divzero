@@ -53,7 +53,7 @@ final class WorkspacePanels {
             Runnable save=()->{busy[0]=true;request("settings.write",Map.of("kind","save","revision",snapshot[0].get("revision").getAsString(),"values",JSON.toJson(changed),"providerChangeConfirmed","true")).whenComplete((receipt,error)->{busy[0]=false;if(window.closed())return;if(error!=null){failure(notice,error);return;}snapshot[0]=state(receipt);notice.setText(Component.literal(t("已保存")));});};
             if(changed.keySet().stream().anyMatch(k->k.endsWith("baseUrl"))&&snapshot[0].get("keyConfigured").getAsBoolean())Dialog.showCheckBox(t("修改 API 地址"),t("已有密钥会用于新地址，请确认该地址可信。"),yes->{if(yes)save.run();}).show(body);else save.run();
         }));
-        footer.addChild(NativeUiTheme.button(t("API Key"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host))));footer.addChild(NativeUiTheme.button(t("选择模型"),()->Minecraft.getInstance().setScreen(new ProviderModelScreen(host))));footer.addChild(NativeUiTheme.button(t("权限"),()->permissions(host)));load[0].run();
+        footer.addChild(NativeUiTheme.button(t("API Key"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host))));footer.addChild(NativeUiTheme.button(t("选择模型"),()->Minecraft.getInstance().setScreen(new ProviderModelScreen(host))));footer.addChild(NativeUiTheme.button(t("权限"),()->permissions(host)));footer.addChild(NativeUiTheme.button(t("语言"),()->Minecraft.getInstance().setScreen(new dev.mineagent.runtime.neoforge.client.screen.LanguageScreen(host))));footer.addChild(NativeUiTheme.button(t("关于"),()->Minecraft.getInstance().setScreen(new dev.mineagent.runtime.neoforge.client.screen.AboutScreen(host))));load[0].run();
     }
     static void permissions(NativeWorkspaceScreen host){
         if(host.revealWindow("permissions"))return;

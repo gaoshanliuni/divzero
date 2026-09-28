@@ -9,7 +9,9 @@ import java.util.*;
 public final class NativeUiStore implements AutoCloseable {
     private static final ObjectMapper JSON=new ObjectMapper();
     private static final String NS="native_ui";
+    private static final String CANDIDATES="native_ui_candidates";
     public record Scope(UUID world,UUID owner,UUID agent){}
+    public record Candidate(UUID token,long expectedRevision,String dimension,String source){}
     public record Saved(long revision,String dimension,String source,Map<String,JsonNode> data,boolean visible){
         public Saved{data=Map.copyOf(data);}
     }
@@ -31,6 +33,31 @@ public final class NativeUiStore implements AutoCloseable {
         var next=new Saved(expected+1,dimension,source,data,visible);
         var result=repository.compareAndSet(scope.world,NS,key(scope,id),expected,JSON.writeValueAsString(next),System.currentTimeMillis());
         if(!result.accepted())throw new IllegalStateException("NATIVE_UI_STALE_REVISION");return next;
+    }
+    public Optional<Candidate> pending(Scope scope,String id)throws Exception{
+        var row=repository.get(scope.world,CANDIDATES,key(scope,id));return row.isEmpty()?Optional.empty():Optional.of(JSON.readValue(row.get().payload(),Candidate.class));
+    }
+    /** Durable intent precedes any client side effect. Unknown outcomes keep this record. */
+    public Candidate stage(Scope scope,String id,long expected,String dimension,String source)throws Exception{
+        if(get(scope,id).map(Saved::revision).orElse(0L)!=expected)throw new IllegalStateException("NATIVE_UI_STALE_REVISION");
+        if(!InterfaceDefinition.parse(source).id().equals(id)||expected==Long.MAX_VALUE||expected<0||dimension==null||!dimension.matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))throw new IllegalArgumentException("NATIVE_UI_CANDIDATE");
+        var row=repository.getIncludingDeleted(scope.world,CANDIDATES,key(scope,id));if(row.isPresent()&&!row.get().deleted())throw new IllegalStateException("NATIVE_UI_RECONCILE_REQUIRED");
+        var candidate=new Candidate(UUID.randomUUID(),expected,dimension,source);var result=repository.compareAndSet(scope.world,CANDIDATES,key(scope,id),row.map(v->v.revision()).orElse(0L),JSON.writeValueAsString(candidate),System.currentTimeMillis());
+        if(!result.accepted())throw new IllegalStateException("NATIVE_UI_RECONCILE_REQUIRED");return candidate;
+    }
+    /** Only a matching observed activation may advance the durable head; never replays a client operation. */
+    public Saved acknowledge(Scope scope,String id,UUID token,long revision,Map<String,JsonNode> data,boolean visible)throws Exception{
+        var candidate=pending(scope,id).orElseThrow(()->new IllegalStateException("NATIVE_UI_NO_CANDIDATE"));
+        if(!candidate.token.equals(token)||revision!=candidate.expectedRevision+1)throw new IllegalStateException("NATIVE_UI_CANDIDATE_MISMATCH");
+        var current=get(scope,id).orElse(null);Saved saved;
+        if(current!=null&&current.revision==revision){if(!current.source.equals(candidate.source)||!current.dimension.equals(candidate.dimension))throw new IllegalStateException("NATIVE_UI_CANDIDATE_MISMATCH");saved=current;}
+        else saved=save(scope,id,candidate.expectedRevision,candidate.dimension,candidate.source,data,visible);
+        discard(scope,id,token);return saved;
+    }
+    public void discard(Scope scope,String id,UUID token)throws Exception{
+        var row=repository.get(scope.world,CANDIDATES,key(scope,id));if(row.isEmpty())return;
+        if(!JSON.readValue(row.get().payload(),Candidate.class).token.equals(token))throw new IllegalStateException("NATIVE_UI_CANDIDATE_MISMATCH");
+        if(!repository.delete(scope.world,CANDIDATES,key(scope,id),row.get().revision(),System.currentTimeMillis()).accepted())throw new IllegalStateException("NATIVE_UI_CANDIDATE_MISMATCH");
     }
     @Override public void close()throws Exception{repository.close();}
 }
