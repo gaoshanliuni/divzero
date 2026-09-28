@@ -52,7 +52,7 @@ public final class NativeAttachedLayers {
     }
     static boolean matches(InterfaceDefinition definition,Screen screen){
         if(screen==null||screen instanceof NativeInputScreen||screen instanceof net.minecraft.client.gui.screens.ChatScreen)return false;
-        var target=definition.attachment();if(!target.screenClass().isEmpty()&&!target.screenClass().equals(screen.getClass().getName()))return false;
+        var target=definition.attachment();if(!target.screenTitle().isEmpty()&&!target.screenTitle().equals(screen.getTitle().getString()))return false;if(!target.screenClass().isEmpty()&&!target.screenClass().equals(screen.getClass().getName()))return false;
         if(!target.menu().isEmpty()){
             if(!(screen instanceof AbstractContainerScreen<?> container))return false;var menu=container.getMenu();
             if(target.menu().equals("furnace"))return menu instanceof net.minecraft.world.inventory.AbstractFurnaceMenu;
@@ -111,7 +111,7 @@ public final class NativeAttachedLayers {
                 if(!(entity instanceof LivingEntity living)||!living.isAlive()||entity.isInvisibleTo(mc().player)||entity==mc().getCameraEntity()&&mc().options.getCameraType().isFirstPerson())continue;
                 var head=entity.position().add(0,entity.getBbHeight()+.3,0);double distance=head.distanceTo(cameraPos);if(distance>e.session.definition().attachment().range())continue;
                 if(!e.session.definition().attachment().throughWalls()&&mc().level.clip(new net.minecraft.world.level.ClipContext(cameraPos,head,net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,mc().player)).getType()!=net.minecraft.world.phys.HitResult.Type.MISS)continue;
-                var projected=matrix.transform(new Vector4f((float)(head.x-cameraPos.x),(float)(head.y-cameraPos.y),(float)(head.z-cameraPos.z),1));if(projected.w<=0)continue;projected.div(projected.w);if(Math.abs(projected.x)>1||Math.abs(projected.y)>1||projected.z< -1||projected.z>1)continue;
+                var projected=matrix.transform(new Vector4f((float)(head.x-cameraPos.x),(float)(head.y-cameraPos.y),(float)(head.z-cameraPos.z),1));if(!Float.isFinite(projected.w)||projected.w<=0)continue;projected.div(projected.w);if(!Float.isFinite(projected.x)||!Float.isFinite(projected.y)||!Float.isFinite(projected.z))continue;if(Math.abs(projected.x)>1||Math.abs(projected.y)>1||projected.z< -1||projected.z>1)continue;
                 var data=new LinkedHashMap<String,JsonNode>(e.session.data());data.put("entity",JsonNodeFactory.instance.objectNode().put("id",entity.getUUID().toString()).put("name",entity.getName().getString()).put("health",living.getHealth()).put("maxHealth",living.getMaxHealth()).put("distance",distance));
                 var view=e.entities.get(entity.getUUID());if(view==null){view=KubeInterfaceRenderer.build(e.session.definition(),data,(node,event,value)->{});e.entities.put(entity.getUUID(),view);}else view.update(data);kept.add(entity.getUUID());
                 resize(view.ui,width,height);view.root.getLayout().left((projected.x*.5f+.5f)*width-view.root.getSizeWidth()/2).top((.5f-projected.y*.5f)*height-view.root.getSizeHeight());
@@ -119,6 +119,10 @@ public final class NativeAttachedLayers {
             }}catch(Exception error){e.error=Objects.toString(error.getMessage(),"NATIVE_ENTITY_HUD_FAILED");}
             var it=e.entities.entrySet().iterator();while(it.hasNext()){var entry=it.next();if(!kept.contains(entry.getKey())){entry.getValue().close();it.remove();}}
         }
+    }
+    static Map<String,Object> smoke(String id){
+        if(!Boolean.getBoolean("mineagent.nativeTenSmoke"))throw new IllegalStateException("SMOKE_DISABLED");var entry=ENTRIES.values().stream().filter(e->e.session.scope().view().equals(id)).findFirst().orElseThrow();var out=new LinkedHashMap<String,Object>(observation(entry.session));
+        out.put("entities",entry.entities.entrySet().stream().map(e->Map.of("id",e.getKey().toString(),"x",e.getValue().root.getPositionX(),"y",e.getValue().root.getPositionY(),"texts",e.getValue().root.selfAndAllChildren().filter(TextElement.class::isInstance).map(TextElement.class::cast).map(text->text.getText().getString()).toList())).toList());return out;
     }
     private NativeAttachedLayers(){}
 }

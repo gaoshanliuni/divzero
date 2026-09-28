@@ -147,8 +147,8 @@ public final class ConversationAgentTools {
         switch(tool){
             case "set_block_texture"->{keys(a,"block_id","texture_id","image_url","size","fit","expected_revision");return ServerBlockTextures.request(p,agent,"set",a,permit);}
             case "clear_block_texture"->{keys(a,"block_id","texture_id","expected_revision");return ServerBlockTextures.request(p,agent,"clear",a,permit);}
-            case "set_bulldozer"->{keys(a,"id","expected_revision","target","dimension","min","max","width","height","depth","drop_items","clear_block_entities","clear_unbreakable");return ServerBulldozers.change(p,agent,a,true);}
-            case "control_bulldozer"->{keys(a,"id","expected_revision","action");return ServerBulldozers.change(p,agent,a,false);}
+            case "set_bulldozer"->{keys(a,"id","expected_revision","target","dimension","min","max","width","height","depth","drop_items","clear_block_entities","clear_unbreakable");return ServerBulldozers.change(p,agent,a,true,permit);}
+            case "control_bulldozer"->{keys(a,"id","expected_revision","action");return ServerBulldozers.change(p,agent,a,false,permit);}
             case "export_current_skin"->{keys(a);return ServerAgentSkins.exportCurrent(p,agent,operation,permit);}
             case "open_skin_ui"->{keys(a);return CompletableFuture.completedFuture(ServerAgentSkins.openUi(p,agent));}
             case "create_skin_png"->{keys(a,"name","model","base_file_id","base_color","rects");return ServerAgentSkins.create(p,agent,operation,a,permit);}

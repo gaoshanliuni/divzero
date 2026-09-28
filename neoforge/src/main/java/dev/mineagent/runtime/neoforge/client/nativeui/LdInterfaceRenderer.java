@@ -193,6 +193,7 @@ public final class LdInterfaceRenderer {
     }
     private static void set(UIElement element,JsonNode value){
         validateValue(element,value);String text=value.isMissingNode()||value.isNull()?"":value.asText();
+        if(element instanceof NativeDesktopWindow window&&!value.isMissingNode())window.title(text);
         if(element instanceof TextElement label)label.setText(Component.literal(text));
         else if(element instanceof Button button)button.setText(Component.literal(text));
         else if(element instanceof TextField input){if(!input.getValue().equals(text))input.setText(text,false);}

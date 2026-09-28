@@ -10,7 +10,7 @@ import org.joml.Vector2f;
 /** Reusable window primitive inside an AI-authored desktop, with ordinary child controls. */
 final class NativeDesktopWindow extends UIElement {
     final UIElement content=new UIElement();
-    private final Button task;
+    private final Button task;private final com.lowdragmc.lowdraglib2.gui.ui.elements.TextElement heading;
     private boolean minimized,maximized;
     private float left,top,width,height;
     NativeDesktopWindow(String title){
@@ -19,7 +19,7 @@ final class NativeDesktopWindow extends UIElement {
         Style.defaultPipeline(getStyle(),style->style.backgroundTexture(NativeUiTheme.panel()));
         var bar=new UIElement();bar.addClass("divzero-window-title");bar.getLayout().flexDirection(FlexDirection.ROW).height(29).paddingAll(3).gapAll(3);
         Style.defaultPipeline(bar.getStyle(),style->style.backgroundTexture(NativeUiTheme.title()));
-        var heading=NativeUiTheme.text(title,0xffffffff,10);heading.getLayout().width(0).flex(1);bar.addChild(heading);
+        heading=NativeUiTheme.text(title,0xffffffff,10);heading.getLayout().width(0).flex(1);bar.addChild(heading);
         bar.addChild(NativeUiTheme.iconButton("—",()->{minimized=true;setDisplay(false);}));
         bar.addChild(NativeUiTheme.iconButton("□",this::maximize));
         bar.addChild(NativeUiTheme.iconButton("×",()->{setDisplay(false);taskVisible(false);}));
@@ -28,6 +28,7 @@ final class NativeDesktopWindow extends UIElement {
         WindowDragHelper.setBorderResize(this,this,2,new Vector2f(140,90),new Vector2f(Float.MAX_VALUE),event->!maximized,(event,handle)->true,event->{});
         task=NativeUiTheme.button(title,()->{minimized=false;setDisplay(true);getStyle().zIndex(++front);});task.addClass("divzero-window-task");task.getLayout().marginAll(0);
     }
+    void title(String value){heading.setText(net.minecraft.network.chat.Component.literal(value));task.setText(net.minecraft.network.chat.Component.literal(value));}
     private static int front=100;
     private void taskVisible(boolean value){if(task!=null)task.setDisplay(value);}
     void dock(UIElement dock){dock.addChild(task);}
