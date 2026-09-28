@@ -6,7 +6,7 @@ import java.util.*;
 
 /** Data contract for arbitrary native widget trees. No HTML, executable Java or remote script URLs. */
 public record InterfaceDefinition(String id, String title, Surface surface, JsonNode root,
-                                  Map<String, JsonNode> data, String stylesheet,int order,Map<String,InterfaceSources.Source> sources) {
+                                  Map<String, JsonNode> data, String stylesheet,int order,Map<String,InterfaceSources.Source> sources,Map<String,InterfaceHandlers.Handler> handlers) {
     public enum Surface { SCREEN, HUD }
     public static final int MAX_SOURCE_BYTES=256*1024, MAX_NODES=2048, MAX_DEPTH=48;
     private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
@@ -29,7 +29,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         bind refers to one data key; text/value are defaults. Keep node ids and bind keys when restyling to preserve live input.
         Optional bindings map text/value/visible/enabled to bounded expressions, evaluated on each data update.
         Expressions: primitive literal; {"data":"key"}; {"literal":anyJSON}; {"op":"contains","args":["Stone bricks",{"data":"query"}]}.
-        Operators: add/sub/mul/div/min/max/eq/ne/lt/lte/gt/gte/and/or/not/if/contains/startsWith/lower/upper/concat/length/at/join/clamp/round.
+        Operators: add/sub/mul/div/min/max/eq/ne/lt/lte/gt/gte/and/or/not/if/contains/startsWith/lower/upper/concat/length/at/get/number/string/join/clamp/round. number explicitly converts numeric input text; arithmetic never silently coerces strings.
         contains is case-insensitive; if is lazy. Numeric operations are finite, booleans are typed. Expressions have bounded depth/work/output; they never execute Java or access files.
         Example working search: an input binds query, and each product card binds visible to contains(productName, query).
         events: {"click" or "change":[{"op":"set","key":"query","value":"..."},
@@ -38,7 +38,11 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         set may use expr instead of value/from, e.g. {"op":"set","key":"counter","expr":{"op":"add","args":[{"data":"counter"},1]}}.
         Arithmetic here changes UI data only. Never represent local balance or an emit intent as an executed world transaction.
         emit is an intent; the server must validate owner, world, agent, view and current revision, then enforce action permissions.
-        UI definitions do not grant game or host permissions. Actions must be registered by the owning application.
+        Register application callbacks in root handlers: {"giveStone":{"tool":"give_item","arguments":{"item":"minecraft:stone","count":1},"resultKey":"purchaseResult"}}.
+        An emit action must name a declared handler to execute. Optional handler bindings map tool argument names to the same bounded expressions; data key event contains the declared emit args, and eventValue is the input event value.
+        Each callback has a durable event/operation id and a real tool receipt. Duplicate or uncertain callbacks are never re-executed. Result data is stored under resultKey; get(object,key) reads receipt fields for status labels.
+        Game callbacks use the current player's real permissions and this UI's AI. Host/Python tools, player-body takeover and recursive native-UI management are not UI callbacks. Use their normal dedicated entrypoints.
+        UI definitions and client data never grant game or host permissions. A local balance or enabled button is not a business transaction guard; game-tool/server application checks still decide the effect.
         Data changes update bound controls without rebuilding. Structure changes build and validate a candidate before replacing the old tree.
         Bad candidates preserve the working UI and return a path-specific error. No restart, world exit, copied scripts or global reload.
         """;
@@ -46,6 +50,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
     public InterfaceDefinition {
         root=root.deepCopy();
         sources=Map.copyOf(sources);
+        handlers=Map.copyOf(handlers);
         var copy=new LinkedHashMap<String,JsonNode>();data.forEach((k,v)->copy.put(k,v.deepCopy()));data=Collections.unmodifiableMap(copy);
     }
     @Override public JsonNode root(){return root.deepCopy();}
@@ -55,7 +60,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         if(source==null||source.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>MAX_SOURCE_BYTES)throw error("$","SOURCE_SIZE");
         final JsonNode doc;
         try {doc=JSON.readTree(source);}catch(Exception e){throw error("$","INVALID_JSON");}
-        fields(doc,Set.of("id","title","surface","root","data","stylesheet","order","sources"),"$");
+        fields(doc,Set.of("id","title","surface","root","data","stylesheet","order","sources","handlers"),"$");
         String id=id(doc.path("id"),"$.id"),title=string(doc.path("title"),"$.title",256);
         Surface surface;
         try {surface=Surface.valueOf(doc.path("surface").textValue());}catch(Exception e){throw error("$.surface","SCREEN_OR_HUD");}
@@ -67,7 +72,9 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         }
         String stylesheet=doc.has("stylesheet")?style(doc.get("stylesheet"),"$.stylesheet",65536):"";
         int order=0;if(doc.has("order")){var value=doc.get("order");if(!value.isIntegralNumber()||!value.canConvertToInt()||Math.abs((long)value.intValue())>10000)throw error("$.order","ORDER");order=value.intValue();}
-        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet,order,InterfaceSources.parse(doc.path("sources")));
+        var sources=InterfaceSources.parse(doc.path("sources"));var handlers=InterfaceHandlers.parse(doc.path("handlers"));
+        for(var handler:handlers.values())if(sources.containsKey(handler.resultKey()))throw error("$.handlers","READ_ONLY_RESULT_KEY");
+        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet,order,sources,handlers);
     }
     public Map<String,String> inputBindings(){
         var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);

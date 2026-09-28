@@ -33,6 +33,7 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
             var next=InterfaceDefinition.parse(source);if(!scope.view.equals(next.id()))throw InterfaceDefinition.error("$.id","VIEW_MISMATCH");
             var values=new LinkedHashMap<>(next.data());
             if(definition!=null){var priorDefaults=definition.data();for(var entry:data.entrySet())if(!dirtyInputs.contains(entry.getKey())&&values.containsKey(entry.getKey())&&Objects.equals(priorDefaults.get(entry.getKey()),values.get(entry.getKey())))values.put(entry.getKey(),entry.getValue().deepCopy());}
+            if(definition!=null)for(var entry:next.handlers().entrySet()){var handler=entry.getValue();if(handler.equals(definition.handlers().get(entry.getKey()))&&!values.containsKey(handler.resultKey())&&data.containsKey(handler.resultKey()))values.put(handler.resultKey(),data.get(handler.resultKey()).deepCopy());}
             // Only matching stable input identities inherit drafts. A renamed/type-changed binding is a new control.
             var kept=new HashSet<String>();
             if(definition!=null){var old=definition.inputBindings();for(var entry:next.inputBindings().entrySet())

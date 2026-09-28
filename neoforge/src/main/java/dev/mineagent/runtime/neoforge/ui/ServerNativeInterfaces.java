@@ -33,7 +33,7 @@ public final class ServerNativeInterfaces {
         var out=new CompletableFuture<Map<String,Object>>();
         io(()->{try(var store=new NativeUiStore(db)){
             var value=new LinkedHashMap<String,Object>();value.put("contract",InterfaceDefinition.CONTRACT);value.put("views",store.list(scope));
-            if(args.has("id")){String id=args.path("id").asText();var saved=store.get(scope,id);value.put("saved",saved.orElse(null));value.put("pending",store.pending(scope,id).orElse(null));}
+            if(args.has("id")){String id=args.path("id").asText();var saved=store.get(scope,id);value.put("saved",saved.orElse(null));value.put("pending",store.pending(scope,id).orElse(null));try(var events=new NativeUiEventStore(db)){value.put("events",events.list(scope,id));}}
             return value;
         }}).whenComplete((value,error)->server.execute(()->{
             if(error!=null){out.completeExceptionally(error);return;}if(!current(p,agent,level,guard)){out.complete(Map.of("status","REJECTED","error","NATIVE_UI_CONTEXT_CHANGED"));return;}
@@ -47,7 +47,7 @@ public final class ServerNativeInterfaces {
                 if(observed==null||!current(p,agent,level,guard)||!candidate.dimension().equals(level.dimension().identifier().toString())){value.put("reconciliation","PENDING_CLIENT_EVIDENCE");out.complete(value);return;}
                 var data=new LinkedHashMap<String,JsonNode>();observed.path("data").properties().forEach(e->data.put(e.getKey(),e.getValue()));boolean visible=observed.path("visible").asBoolean();
                 io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),candidate.expectedRevision()+1,data,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
-                    if(saveError==null){ServerNativeInterfaceSources.register(p,agent,InterfaceDefinition.parse(saved.source()),saved.revision());value.put("saved",saved);value.put("pending",null);value.put("reconciliation","COMMITTED_FROM_CLIENT_EVIDENCE");}else value.put("reconciliation","PERSISTENCE_UNAVAILABLE");out.complete(value);
+                    if(saveError==null){ServerNativeUiEvents.invalidate(p,agent,id,saved.revision());ServerNativeInterfaceSources.register(p,agent,InterfaceDefinition.parse(saved.source()),saved.revision());value.put("saved",saved);value.put("pending",null);value.put("reconciliation","COMMITTED_FROM_CLIENT_EVIDENCE");}else value.put("reconciliation","PERSISTENCE_UNAVAILABLE");out.complete(value);
                 }));
             }));
         }));return out;
@@ -84,6 +84,7 @@ public final class ServerNativeInterfaces {
                     if(!current(p,agent,level,guard)){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CONTEXT_CHANGED"));return;}
                     try{
                         require(ack.path("revision").asLong(-1)==expected+1&&ack.path("data").isObject()&&candidate.token().toString().equals(ack.path("activationToken").asText()),"NATIVE_UI_INVALID_ACK");
+                        ServerNativeUiEvents.invalidate(p,agent,id,expected+1);
                         if(Boolean.getBoolean("mineagent.nativeUiSmoke")&&Boolean.getBoolean("mineagent.nativeUiSmokeLoseCommit")){System.clearProperty("mineagent.nativeUiSmokeLoseCommit");result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_SMOKE_LOST_COMMIT","replayed",false));return;}
                         var activeData=new LinkedHashMap<String,JsonNode>();ack.get("data").properties().forEach(e->activeData.put(e.getKey(),e.getValue()));boolean visible=ack.path("visible").asBoolean(true);
                         io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),expected+1,activeData,visible);}}).whenComplete((saved,saveError)->server.execute(()->{

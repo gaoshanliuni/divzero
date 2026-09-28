@@ -6,7 +6,7 @@ import java.util.*;
 
 /** Bounded data expressions for native UI interactions; no eval, Java access, file access or loops. */
 public final class InterfaceExpression {
-    private static final Set<String> OPS=Set.of("add","sub","mul","div","min","max","eq","ne","lt","lte","gt","gte","and","or","not","if","contains","startsWith","lower","upper","concat","length","at","join","clamp","round");
+    private static final Set<String> OPS=Set.of("add","sub","mul","div","min","max","eq","ne","lt","lte","gt","gte","and","or","not","if","contains","startsWith","lower","upper","concat","length","at","get","number","string","join","clamp","round");
     public static void validate(JsonNode expr){validate(expr,0,new int[]{0});}
     private static void validate(JsonNode n,int depth,int[] count){
         if(n==null||depth>24||++count[0]>256)throw bad("BUDGET");if(n.isValueNode())return;
@@ -14,7 +14,7 @@ public final class InterfaceExpression {
         if(n.has("literal")){if(n.size()!=1||n.get("literal").toString().length()>16384)throw bad("LITERAL");return;}
         if(n.has("data")){if(n.size()!=1||!n.get("data").isTextual()||!n.get("data").asText().matches("[A-Za-z][A-Za-z0-9_-]{0,95}"))throw bad("KEY");return;}
         if(n.size()!=2||!n.has("op")||!n.has("args")||!n.get("args").isArray()||!OPS.contains(n.path("op").asText()))throw bad("OP");
-        int size=n.get("args").size();String op=n.get("op").asText();int arity=Set.of("not","lower","upper","length","round").contains(op)?1:Set.of("if","clamp").contains(op)?3:2;
+        int size=n.get("args").size();String op=n.get("op").asText();int arity=Set.of("not","lower","upper","length","round","number","string").contains(op)?1:Set.of("if","clamp").contains(op)?3:2;
         if(Set.of("add","mul","min","max","and","or","concat").contains(op)){if(size<1||size>16)throw bad("ARITY");}else if(size!=arity)throw bad("ARITY");
         for(var argument:n.get("args"))validate(argument,depth+1,count);
     }
@@ -35,6 +35,9 @@ public final class InterfaceExpression {
             case "concat"->{var value=new StringBuilder();for(var v:values){value.append(string(v));if(value.length()>16384)throw bad("TEXT_SIZE");}yield text(value.toString());}
             case "length"->IntNode.valueOf(a.isArray()||a.isObject()?a.size():string(a).length());
             case "at"->{if(!a.isArray()||!b.isIntegralNumber()||!b.canConvertToInt()||b.intValue()<0||b.intValue()>=a.size())throw bad("INDEX");yield a.get(b.intValue()).deepCopy();}
+            case "get"->{if(!b.isTextual()||b.asText().length()>256||!a.isObject()&&!a.isNull())throw bad("PROPERTY");yield a.path(b.asText()).isMissingNode()?NullNode.instance:a.path(b.asText()).deepCopy();}
+            case "number"->{if(a.isNumber())yield numeric(number(a));if(!a.isTextual()||a.asText().length()>64||!a.asText().strip().matches("[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?"))throw bad("NUMBER");yield numeric(Double.parseDouble(a.asText().strip()));}
+            case "string"->text(string(a));
             case "join"->{if(!a.isArray()||a.size()>2048)throw bad("ARRAY");var out=new StringBuilder();String separator=string(b);boolean first=true;for(var v:a){String part=string(v);if(out.length()+part.length()+(first?0:separator.length())>16384)throw bad("TEXT_SIZE");if(!first)out.append(separator);out.append(part);first=false;}yield text(out.toString());}
             case "add"->numeric(values.stream().mapToDouble(InterfaceExpression::number).sum());
             case "mul"->{double value=1;for(var v:values)value*=number(v);yield numeric(value);}
