@@ -3514,8 +3514,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
-      "sha256": "cb3ad5ce1a67027b1450abe872c6ff3bd6672294ff6ab5fe516d3c28be7e5235",
-      "bytes": 55201
+      "sha256": "2fc1ca7e4a77cbecb3fe11e03a17a96bc6c4a110c70c0bc694e4a8b4caf8f920",
+      "bytes": 55533
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
@@ -3684,8 +3684,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/WorldActivationSmokeClient.java",
-      "sha256": "ddb9453bb19fa35fade0f0a31ba5183195a5ca6068aaf2d7c4056b5b195ca1a4",
-      "bytes": 7554
+      "sha256": "67776613892c911abc81f6177b935272d97fe246970d2b45e63701eaae829900",
+      "bytes": 8240
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/WorldReopenRecoveryMenu.java",

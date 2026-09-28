@@ -552,6 +552,7 @@ public final class MineAgentRuntimeMod {
             return;
         }
         var agent=(dev.mineagent.runtime.neoforge.body.MineAgentPlayer)event.getTarget();
+        if(!MineAgentRuntimeServices.permissions(player.level().getServer()).allowed(player.getUUID(),false,dev.mineagent.runtime.api.permission.PermissionAction.CHAT))return;
         var payload=new com.google.gson.JsonObject();payload.addProperty("agentId",agent.agentId().toString());payload.addProperty("name",agent.getName().getString());
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                 new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(java.util.UUID.randomUUID(),"agentPanelOpen",payload.toString()));
@@ -575,6 +576,7 @@ public final class MineAgentRuntimeMod {
         var player = event.getPlayer();
         var server = player.level().getServer();
         if(!WorldIdentityRuntime.ready(server))return;
+        if(!MineAgentRuntimeServices.permissions(server).allowed(player.getUUID(),false,dev.mineagent.runtime.api.permission.PermissionAction.CHAT))return;
         var agents = MineAgentRuntimeServices.bodies(server).definitions();
         var mentions=dev.mineagent.runtime.core.interaction.AgentMention.resolve(event.getRawText(),agents.stream().map(dev.mineagent.runtime.api.agent.AgentDefinition::displayName).toList());
         if(event.getRawText().stripLeading().startsWith("@")||!mentions.isEmpty()){

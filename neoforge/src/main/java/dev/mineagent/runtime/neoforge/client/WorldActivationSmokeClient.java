@@ -37,7 +37,10 @@ public final class WorldActivationSmokeClient {
                 if(mode().equals("disabled")){require(state().equals("DISABLED")&&!MineAgentClientTrustPrompt.enabled(),"DISABLED_NOT_RESTORED");require(((ChatHistoryAccess)mc.gui.getChat()).mineagent$messages().stream().noneMatch(m->button(m.content(),"enable")!=null),"DISABLED_REPROMPTED");finish();return;}
                 if(mode().equals("enabled")){require(state().equals("ENABLED")&&MineAgentClientTrustPrompt.enabled(),"ENABLED_NOT_RESTORED");require(((ChatHistoryAccess)mc.gui.getChat()).mineagent$messages().stream().noneMatch(m->button(m.content(),"enable")!=null),"ENABLED_REPROMPTED");MineAgentClientTrustPrompt.showChoice(true);click(button("disable"));stage=90;return;}
                 require(state().equals("UNDECIDED")&&!MineAgentClientTrustPrompt.enabled(),"FRESH_WORLD_ALREADY_ENABLED");oldButton=button("enable");oldChallenge=PanelSnapshotInbox.snapshot().values().get("runtime.activation.challenge");button("disable");
-                mc.setScreen(new ChatScreen("",false));after=ticks+15;stage=1;return;
+                // Give this isolated fixture an operator before either choice; activation itself must grant nothing.
+                busy=true;UUID player=mc.player.getUUID();var server=mc.getSingleplayerServer();
+                server.submit(()->{var owner=server.getPlayerList().getPlayer(player);server.getPlayerList().op(owner.nameAndId());require(!MineAgentRuntimeServices.permissions(server).allowed(player,true,dev.mineagent.runtime.api.permission.PermissionAction.CREATE_AGENT),"OP_BYPASSED_UNDECIDED");return true;})
+                    .whenComplete((value,error)->mc.execute(()->{busy=false;if(error!=null){fail(error);return;}evidence.add(Map.of("fixtureOperatorBeforeConsent",true));mc.setScreen(new ChatScreen("",false));after=ticks+15;stage=1;}));return;
             }
             if(stage==1&&ticks>=after){capture("01-first-entry-buttons");click(button("disable"));stage=2;return;}
             if(stage==2){if(!state().equals("DISABLED"))return;require(!MineAgentClientTrustPrompt.enabled(),"CLIENT_NOT_DISABLED");click(oldButton);mc.player.connection.sendCommand("ai activation enable "+oldChallenge);after=ticks+20;stage=3;return;}
