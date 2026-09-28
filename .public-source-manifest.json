@@ -3484,8 +3484,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeAttachedLayers.java",
-      "sha256": "0252d2597cb1195c5097adcc84c33903f114985dbb271a6ef5c368335e089ded",
-      "bytes": 14741
+      "sha256": "de7476ddc520a58aec193c7c6085ab3020ffcb1a112546ba2b61a79a429ff8f6",
+      "bytes": 14799
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",

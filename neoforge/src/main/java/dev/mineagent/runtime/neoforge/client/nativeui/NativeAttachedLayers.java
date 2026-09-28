@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.*;
 import com.lowdragmc.lowdraglib2.gui.holder.IModularUIHolder;
 import com.lowdragmc.lowdraglib2.gui.ui.*;
+import com.lowdragmc.lowdraglib2.gui.ui.style.Stylesheet;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
 import dev.mineagent.runtime.core.ui.dynamic.*;
 import dev.mineagent.runtime.neoforge.mixin.client.ContainerScreenGeometry;
