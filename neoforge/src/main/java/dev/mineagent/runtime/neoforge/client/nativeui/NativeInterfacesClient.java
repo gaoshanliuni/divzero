@@ -17,7 +17,7 @@ public final class NativeInterfacesClient {
     private record Key(UUID world,UUID owner,UUID agent,String id){}
     private static final class Slot {
         final Key key;final InterfaceSession<LdInterfaceRenderer.Rendered> session;
-        final ArrayDeque<Map<String,Object>> events=new ArrayDeque<>();long wireRevision;String activationToken="",error="";NativeScreen screen;
+        Map<String,String> sourceErrors=Map.of();final ArrayDeque<Map<String,Object>> events=new ArrayDeque<>();long wireRevision;String activationToken="",error="";NativeScreen screen;
         Slot(Key key,long revision){this.key=key;wireRevision=revision;session=new InterfaceSession<>(new InterfaceSession.Scope(key.world,key.owner,key.agent,connectionId,key.id));}
     }
     private static final Map<Key,Slot> VIEWS=new LinkedHashMap<>();
@@ -36,6 +36,10 @@ public final class NativeInterfacesClient {
             if(kind.equals("inspect")){
                 var views=new ArrayList<Map<String,Object>>();for(var slot:VIEWS.values())if(slot.key.world.equals(world)&&slot.key.owner.equals(owner)&&slot.key.agent.equals(agent)&&(!args.has("id")||slot.key.id.equals(args.get("id").asText())))views.add(snapshot(slot));
                 reply=Map.of("status","OBSERVED","views",views,"ldlib2",true,"kubejs",net.neoforged.fml.ModList.get().isLoaded("kubejs"));
+            }else if(kind.equals("feed")||kind.equals("revoke")){
+                var key=new Key(world,owner,agent,args.path("id").asText());var slot=VIEWS.get(key);if(slot==null||slot.wireRevision!=args.path("expectedRevision").asLong(-1))throw new IllegalStateException("NATIVE_UI_STALE_CLIENT_REVISION");
+                if(kind.equals("revoke")){if(slot.screen!=null&&mc.screen==slot.screen){slot.screen.detach();mc.setScreen(null);}slot.session.close();VIEWS.remove(key);reply=Map.of("status","APPLIED");}
+                else{var values=new LinkedHashMap<String,JsonNode>();args.path("data").properties().forEach(e->values.put(e.getKey(),e.getValue()));if(!slot.session.definition().sources().keySet().containsAll(values.keySet()))throw new IllegalArgumentException("NATIVE_UI_SOURCE_KEY");var applied=slot.session.patch(slot.session.scope(),slot.session.revision(),slot.session.dataRevision(),values,data->update(slot,data));if(!applied.applied())throw new IllegalArgumentException(applied.error());var errors=new LinkedHashMap<String,String>();args.path("sourceErrors").properties().forEach(e->errors.put(e.getKey(),e.getValue().asText()));slot.sourceErrors=Map.copyOf(errors);reply=Map.of("status","APPLIED","revision",slot.wireRevision,"dataRevision",slot.session.dataRevision());}
             }else{
                 if(!Set.of("replace","data","show","hide","interact","release").contains(kind))throw new IllegalArgumentException("NATIVE_UI_ACTION");
                 String id=args.path("id").asText();long expected=args.path("expectedRevision").asLong(-1),revision=args.path("revision").asLong(-1);
@@ -81,7 +85,7 @@ public final class NativeInterfacesClient {
         String encoded;try{encoded=JSON.writeValueAsString(reply);if(encoded.length()>120000)encoded="{\"status\":\"UNKNOWN\",\"error\":\"NATIVE_UI_RECEIPT_SIZE\"}";}catch(Exception e){encoded="{\"status\":\"UNKNOWN\",\"error\":\"NATIVE_UI_RECEIPT\"}";}
         if(mc.getConnection()!=null)ClientPacketDistributor.sendToServer(new UiPayloads.Command(packet.requestId(),"nativeInterfaceReply",encoded));
     }
-    private static Map<String,Object> snapshot(Slot slot){var out=new LinkedHashMap<String,Object>();out.put("id",slot.key.id);out.put("revision",slot.wireRevision);out.put("activationToken",slot.activationToken);out.put("dataRevision",slot.session.dataRevision());out.put("visible",slot.session.visible());out.put("interactive",slot.session.interactive());out.put("data",slot.session.data());out.put("events",List.copyOf(slot.events));out.put("error",slot.error);return out;}
+    private static Map<String,Object> snapshot(Slot slot){var out=new LinkedHashMap<String,Object>();out.put("id",slot.key.id);out.put("revision",slot.wireRevision);out.put("activationToken",slot.activationToken);out.put("dataRevision",slot.session.dataRevision());out.put("visible",slot.session.visible());out.put("interactive",slot.session.interactive());out.put("data",slot.session.data());out.put("events",List.copyOf(slot.events));out.put("error",slot.error);out.put("sourceErrors",slot.sourceErrors);return out;}
     static com.lowdragmc.lowdraglib2.gui.ui.UIElement smokeWidget(String id,String node){
         if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
         var slot=VIEWS.values().stream().filter(s->s.key.id.equals(id)).findFirst().orElseThrow();
@@ -112,7 +116,7 @@ public final class NativeInterfacesClient {
             }
             if(!patch.isEmpty()){var receipt=slot.session.localData(slot.session.scope(),revision,patch,v->update(slot,v));if(!receipt.applied())throw new IllegalArgumentException(receipt.error());}
             else update(slot,slot.session.data());
-        }catch(Exception error){slot.error=Objects.toString(error.getMessage(),"NATIVE_UI_EVENT_FAILED");}
+        }catch(Exception error){slot.error=Objects.toString(error.getMessage(),"NATIVE_UI_EVENT_FAILED");try{update(slot,slot.session.data());}catch(Exception ignored){}}
     }
     private static final class NativeScreen extends ModularUIScreen {
         final Slot slot;final LdInterfaceRenderer.Rendered rendered;final boolean projection;

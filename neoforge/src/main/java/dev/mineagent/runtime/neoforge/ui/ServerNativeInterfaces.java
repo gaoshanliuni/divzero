@@ -47,7 +47,7 @@ public final class ServerNativeInterfaces {
                 if(observed==null||!current(p,agent,level,guard)||!candidate.dimension().equals(level.dimension().identifier().toString())){value.put("reconciliation","PENDING_CLIENT_EVIDENCE");out.complete(value);return;}
                 var data=new LinkedHashMap<String,JsonNode>();observed.path("data").properties().forEach(e->data.put(e.getKey(),e.getValue()));boolean visible=observed.path("visible").asBoolean();
                 io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),candidate.expectedRevision()+1,data,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
-                    if(saveError==null){value.put("saved",saved);value.put("pending",null);value.put("reconciliation","COMMITTED_FROM_CLIENT_EVIDENCE");}else value.put("reconciliation","PERSISTENCE_UNAVAILABLE");out.complete(value);
+                    if(saveError==null){ServerNativeInterfaceSources.register(p,agent,InterfaceDefinition.parse(saved.source()),saved.revision());value.put("saved",saved);value.put("pending",null);value.put("reconciliation","COMMITTED_FROM_CLIENT_EVIDENCE");}else value.put("reconciliation","PERSISTENCE_UNAVAILABLE");out.complete(value);
                 }));
             }));
         }));return out;
@@ -70,7 +70,7 @@ public final class ServerNativeInterfaces {
                 require(Set.of("replace","data","show","hide","interact","release").contains(kind),"NATIVE_UI_ACTION");
                 if(old!=null&&!tool.equals("set_native_ui"))require(old.dimension().equals(level.dimension().identifier().toString()),"NATIVE_UI_DIMENSION_CHANGED");
                 var message=JSON.createObjectNode().put("kind",kind).put("id",id).put("world",scope.world().toString()).put("owner",scope.owner().toString()).put("agent",agent.toString()).put("dimension",level.dimension().identifier().toString()).put("expectedRevision",expected).put("revision",expected+1).put("source",source);
-                message.set("data",JSON.valueToTree(values));if(kind.equals("data"))message.set("patch",args.get("data").deepCopy());
+                var sourceValues=ServerNativeInterfaceSources.read(p,agent,definition);values.putAll(sourceValues.data());message.set("data",JSON.valueToTree(values));if(kind.equals("data")){var patch=(com.fasterxml.jackson.databind.node.ObjectNode)args.get("data").deepCopy();sourceValues.data().forEach(patch::set);message.set("patch",patch);}
                 io(()->{try(var store=new NativeUiStore(db)){return store.stage(scope,id,expected,level.dimension().identifier().toString(),source);}}).whenComplete((candidate,stageError)->server.execute(()->{
                 if(stageError!=null){result.complete(Map.of("status","REJECTED","error","NATIVE_UI_CANDIDATE_PERSISTENCE_FAILED"));return;}
                 if(!current(p,agent,level,guard)){io(()->{try(var store=new NativeUiStore(db)){store.discard(scope,id,candidate.token());return true;}}).whenComplete((discarded,e)->result.complete(Map.of("status","REJECTED","error","NATIVE_UI_CONTEXT_CHANGED")));return;}
@@ -88,6 +88,7 @@ public final class ServerNativeInterfaces {
                         var activeData=new LinkedHashMap<String,JsonNode>();ack.get("data").properties().forEach(e->activeData.put(e.getKey(),e.getValue()));boolean visible=ack.path("visible").asBoolean(true);
                         io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),expected+1,activeData,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
                             if(saveError!=null){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_PERSISTENCE_FAILED","replayed",false));return;}
+                            ServerNativeInterfaceSources.register(p,agent,definition,saved.revision());
                             result.complete(Map.of("status","APPLIED","id",id,"revision",saved.revision(),"surface",definition.surface().name(),"clientActivated",true,"visible",visible,"restartRequired",false,"reloadRequired",false));
                         }));
                     }catch(Exception invalid){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_INVALID_ACK"));}
@@ -96,7 +97,7 @@ public final class ServerNativeInterfaces {
             }catch(Exception invalid){result.complete(Map.of("status","REJECTED","error",Objects.toString(invalid.getMessage(),"NATIVE_UI_FAILED")));}
         }));return result;
     }
-    private static CompletableFuture<JsonNode> request(ServerPlayer p,UUID agent,JsonNode message,BooleanSupplier permit){
+    static CompletableFuture<JsonNode> request(ServerPlayer p,UUID agent,JsonNode message,BooleanSupplier permit){
         UUID request=UUID.randomUUID();var future=new CompletableFuture<JsonNode>();var pending=new Pending(p,agent,p.level(),permit,future);PENDING.put(request,pending);
         future.orTimeout(15,TimeUnit.SECONDS).whenComplete((v,e)->PENDING.remove(request,pending));
         PacketDistributor.sendToPlayer(p,new UiPayloads.Event(request,"nativeInterface",message.toString()));return future;

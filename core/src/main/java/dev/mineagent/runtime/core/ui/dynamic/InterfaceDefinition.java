@@ -6,7 +6,7 @@ import java.util.*;
 
 /** Data contract for arbitrary native widget trees. No HTML, executable Java or remote script URLs. */
 public record InterfaceDefinition(String id, String title, Surface surface, JsonNode root,
-                                  Map<String, JsonNode> data, String stylesheet,int order) {
+                                  Map<String, JsonNode> data, String stylesheet,int order,Map<String,InterfaceSources.Source> sources) {
     public enum Surface { SCREEN, HUD }
     public static final int MAX_SOURCE_BYTES=256*1024, MAX_NODES=2048, MAX_DEPTH=48;
     private static final ObjectMapper JSON=new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
@@ -18,6 +18,11 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         {"id":"shop","title":"Shop","surface":"SCREEN","root":{"id":"root","type":"row","children":[...]},"data":{},"stylesheet":""}
         surface=SCREEN or HUD. HUD is passive by default; it never grabs the mouse or blocks movement.
         Optional order is an integer -10000..10000 for ordering independent HUD panels. HUD coordinates use GUI-scaled screen units; root LSS left/top/right/bottom can position the panel.
+        Optional sources binds data keys to live server data, without AI polling or reload:
+        "sources":{"balance":{"kind":"score","objective":"coins","holder":"$viewer"},"health":{"kind":"agent","field":"health"}}.
+        score holder may be $viewer (the viewing player's score name), $agent, or an exact scoreboard holder. A missing score is 0; an unavailable source is reported separately.
+        agent fields: health/max_health/food/name, scoped to this UI's AI. task sources use task_id plus status/title/revision/completed_steps/total_steps and must belong to this owner and AI.
+        Sources only read world data. Setting a local bound number never changes the real score, health or task.
         Arbitrary nested panel/row/column/scroll/label/button/input/toggle/progress/image nodes, each with a stable unique id.
         Node fields: id,type,text,value,bind,style,classes,resource,events,children,visible,enabled.
         style and stylesheet use LDLib2 LSS, not browser CSS. resource is a Minecraft namespaced resource, never a URL or local path.
@@ -40,6 +45,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
 
     public InterfaceDefinition {
         root=root.deepCopy();
+        sources=Map.copyOf(sources);
         var copy=new LinkedHashMap<String,JsonNode>();data.forEach((k,v)->copy.put(k,v.deepCopy()));data=Collections.unmodifiableMap(copy);
     }
     @Override public JsonNode root(){return root.deepCopy();}
@@ -49,7 +55,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         if(source==null||source.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>MAX_SOURCE_BYTES)throw error("$","SOURCE_SIZE");
         final JsonNode doc;
         try {doc=JSON.readTree(source);}catch(Exception e){throw error("$","INVALID_JSON");}
-        fields(doc,Set.of("id","title","surface","root","data","stylesheet","order"),"$");
+        fields(doc,Set.of("id","title","surface","root","data","stylesheet","order","sources"),"$");
         String id=id(doc.path("id"),"$.id"),title=string(doc.path("title"),"$.title",256);
         Surface surface;
         try {surface=Surface.valueOf(doc.path("surface").textValue());}catch(Exception e){throw error("$.surface","SCREEN_OR_HUD");}
@@ -61,7 +67,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         }
         String stylesheet=doc.has("stylesheet")?style(doc.get("stylesheet"),"$.stylesheet",65536):"";
         int order=0;if(doc.has("order")){var value=doc.get("order");if(!value.isIntegralNumber()||!value.canConvertToInt()||Math.abs((long)value.intValue())>10000)throw error("$.order","ORDER");order=value.intValue();}
-        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet,order);
+        return new InterfaceDefinition(id,title,surface,doc.get("root"),data,stylesheet,order,InterfaceSources.parse(doc.path("sources")));
     }
     public Map<String,String> inputBindings(){
         var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);

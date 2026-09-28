@@ -72,13 +72,14 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
         String binding=definition.inputBindings().get(nodeId);if(binding==null)throw new IllegalArgumentException("INTERFACE_INPUT_NODE");
         if(!definition.interactiveNode(nodeId,data))throw new IllegalStateException("INTERFACE_DISABLED");
         if(value==null||binding.startsWith("toggle:")&&!value.isBoolean()||binding.startsWith("input:")&&(!value.isTextual()||value.textValue().length()>16384))throw new IllegalArgumentException("INTERFACE_INPUT_VALUE");
-        String key=binding.substring(binding.indexOf(':')+1);var next=copy(data);next.put(key,value.deepCopy());long expectedData=dataRevision;
+        String key=binding.substring(binding.indexOf(':')+1);if(definition.sources().containsKey(key))throw new IllegalStateException("INTERFACE_SOURCE_READ_ONLY");var next=copy(data);next.put(key,value.deepCopy());long expectedData=dataRevision;
         try{apply.accept(Collections.unmodifiableMap(copy(next)));require(expected,expectedRevision);if(dataRevision!=expectedData)throw new IllegalStateException("INTERFACE_STALE_DATA");data=next;dirtyInputs.add(key);dataRevision++;}
         catch(RuntimeException error){apply.accept(Collections.unmodifiableMap(copy(data)));throw error;}
     }
     /** Explicit local script actions may update a draft; unsolicited server patches may not. */
     public Receipt localData(Scope expected,long expectedRevision,Map<String,JsonNode> values,java.util.function.Consumer<Map<String,JsonNode>> apply){
         require(expected,expectedRevision);if(!interactive||!visible)throw new IllegalStateException("INTERFACE_PASSIVE");
+        if(values.keySet().stream().anyMatch(definition.sources()::containsKey))throw new IllegalStateException("INTERFACE_SOURCE_READ_ONLY");
         var dirty=new HashSet<>(dirtyInputs);dirtyInputs.removeAll(values.keySet());
         try{return patch(expected,expectedRevision,dataRevision,values,apply);}finally{dirtyInputs.addAll(dirty);}
     }
