@@ -43,6 +43,11 @@ class ChangeJournalServiceTest {
         }
         try (var reopened = ChangeJournalService.open(database, world, clock)) {
             assertTrue(reopened.get(changeId).orElseThrow().reverted());
+            assertFalse(reopened.markReapplied(changeId,2,false).accepted());
+            assertFalse(reopened.markReapplied(changeId,1,true).accepted());
+            var redone=reopened.markReapplied(changeId,2,true);
+            assertTrue(redone.accepted());assertFalse(redone.entry().reverted());assertEquals(3,redone.entry().revision());
+            assertEquals("NOT_REVERTED",reopened.markReapplied(changeId,3,true).errorCode());
         }
     }
 }

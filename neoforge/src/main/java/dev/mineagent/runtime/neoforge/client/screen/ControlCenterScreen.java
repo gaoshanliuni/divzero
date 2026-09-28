@@ -1169,13 +1169,12 @@ public final class ControlCenterScreen extends Screen {
             boolean reverted = Boolean.parseBoolean(state.getOrDefault(prefix + "reverted", "false"));
             addRenderableWidget(new StringWidget(contentX, 176, contentWidth, 16,
                     Component.literal(reverted ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("状态: 已撤销") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("状态: 可撤销")), this.font));
-            Button undo = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("撤销此变更")), ignored ->
+            Button undo = Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(reverted?"重做此变更":"撤销此变更")), ignored ->
                             ClientPacketDistributor.sendToServer(new MineAgentPayloads.BackupCommand(
-                                    "undo_change", Map.of(
+                                    reverted?"redo_change":"undo_change", Map.of(
                                     "changeId", state.getOrDefault(prefix + "id", ""),
                                     "expectedRevision", state.getOrDefault(prefix + "revision", "0")))))
                     .bounds(contentX, 196, Math.min(120, contentWidth), 18).build();
-            undo.active = !reverted;
             addRenderableWidget(undo);
         }
     }

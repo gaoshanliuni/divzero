@@ -98,6 +98,16 @@ public final class ChangeJournalService implements AutoCloseable {
 
     public synchronized ChangeJournalResult markReverted(UUID changeId, long expectedRevision, boolean authorized)
             throws Exception {
+        return markDirection(changeId,expectedRevision,authorized,true);
+    }
+
+    public synchronized ChangeJournalResult markReapplied(UUID changeId,long expectedRevision,boolean authorized)
+            throws Exception {
+        return markDirection(changeId,expectedRevision,authorized,false);
+    }
+
+    private ChangeJournalResult markDirection(UUID changeId,long expectedRevision,boolean authorized,boolean undo)
+            throws Exception {
         ChangeJournalEntry current = require(changeId);
         if (!authorized) {
             return ChangeJournalResult.rejected(current, "FORBIDDEN");
@@ -105,11 +115,11 @@ public final class ChangeJournalService implements AutoCloseable {
         if (current.revision() != expectedRevision) {
             return ChangeJournalResult.rejected(current, "STALE_REVISION");
         }
-        if (current.reverted()) {
-            return ChangeJournalResult.rejected(current, "ALREADY_REVERTED");
+        if (current.reverted()==undo) {
+            return ChangeJournalResult.rejected(current, undo?"ALREADY_REVERTED":"NOT_REVERTED");
         }
         var next = new ChangeJournalEntry(current.changeId(), current.worldId(), current.actorId(), current.action(),
-                current.changes(), current.revision() + 1, true, current.createdAtEpochMillis());
+                current.changes(), current.revision() + 1, undo, current.createdAtEpochMillis());
         var saved = repository.compareAndSet(worldId, NAMESPACE, changeId.toString(), current.revision(),
                 mapper.writeValueAsString(next), clock.millis());
         if (!saved.accepted()) {

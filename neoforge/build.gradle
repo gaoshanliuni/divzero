@@ -561,6 +561,9 @@ dependencies {
     // Locked upstream native UI APIs. Runtime cutover is gated on workspace feature parity.
     implementation('maven.modrinth:B1CBVXHX:15aCZh6V') { transitive = false }
     implementation('maven.modrinth:umyGl7zF:FzLyIIBB') { transitive = false }
+    // Both are already supplied at runtime (Rhino below; Taffy inside LDLib2).
+    compileOnly "dev.latvian.mods:rhino:${rhino_version}"
+    compileOnly 'dev.vfyjxf:taffy:1.1.4'
     implementation('maven.modrinth:tDw1xQja:SVU4eUap') { transitive = false }
     implementation('maven.modrinth:bQhBuv7x:h38n5aI0') { transitive = false }
     webguiLocked('maven.modrinth:tDw1xQja:SVU4eUap') { transitive = false }

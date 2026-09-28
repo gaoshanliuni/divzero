@@ -1,0 +1,22 @@
+package dev.mineagent.runtime.core.building;
+import dev.mineagent.runtime.core.geometry.WorldGeometry;
+import org.junit.jupiter.api.Test;
+import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+class BuildingDesignTest {
+    private static final String DESIGN="""
+        {"id":"house","name":"Home","origin":[10,80,20],
+        "templates":{"window":[{"kind":"box","min":[0,0,0],"max":[1,1,0],"material":"minecraft:glass"}]},
+        "components":[
+          {"id":"floor","parts":[{"kind":"box","min":[0,0,0],"max":[8,0,8],"material":"minecraft:stone"}]},
+          {"id":"roof","depends_on":["floor"],"parts":[{"kind":"box","min":[0,6,0],"max":[8,6,8],"material":"minecraft:oak_planks"}]},
+          {"id":"windows","template":"window","transforms":[{"op":"rotate","turns":1},{"op":"array","count":[3,1,1],"step":[3,0,0]}]}
+        ],"checks":[{"id":"entry","component":"floor","kind":"clearance","min":[3,1,0],"max":[4,2,0]}]}
+        """;
+    @Test void roofEditPreservesOtherComponentGeometry(){var original=BuildingDesign.parse(DESIGN);var changed=BuildingDesign.parse(DESIGN.replace("[0,6,0]","[0,8,0]").replace("[8,6,8]","[8,8,8]"));assertEquals(Set.of("roof"),changed.changedComponents(original));assertEquals(original.geometry("floor"),changed.geometry("floor"));assertTrue(original.order().indexOf("floor")<original.order().indexOf("roof"));}
+    @Test void reusableTemplateUsesBlockOrientationPipeline(){var design=BuildingDesign.parse(DESIGN);var plan=WorldGeometry.parse(design.geometry("windows"));assertEquals(12,plan.cells().size());assertTrue(plan.cells().stream().allMatch(c->c.orientation().equals(List.of("r1"))));}
+    @Test void cyclesUnknownReferencesAndDuplicateIdsFail(){for(String source:List.of(DESIGN.replace("\"id\":\"floor\",\"parts\"","\"id\":\"floor\",\"depends_on\":[\"roof\"],\"parts\""),DESIGN.replace("\"template\":\"window\"","\"template\":\"missing\""),DESIGN.replace("\"id\":\"roof\"","\"id\":\"floor\"")))assertThrows(IllegalArgumentException.class,()->BuildingDesign.parse(source));}
+    @Test void unrelatedOrStaleEvidenceCannotClearVerification(){var scope=new ConstructionVerification.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),"house",3,"a".repeat(64));var gate=new ConstructionVerification(scope,12,500,Set.of("entry","stairs"));var passed=List.of(new ConstructionVerification.Check("entry",true,"two blocks clear"),new ConstructionVerification.Check("stairs",true,"connected"));assertEquals("UNVERIFIED",gate.status());assertThrows(IllegalArgumentException.class,()->gate.accept(new ConstructionVerification.Report(scope,499,510,12,true,passed)));assertThrows(IllegalArgumentException.class,()->gate.accept(new ConstructionVerification.Report(scope,501,510,11,true,passed)));assertThrows(IllegalArgumentException.class,()->gate.accept(new ConstructionVerification.Report(scope,501,510,12,true,passed.subList(0,1))));var wrong=new ConstructionVerification.Scope(scope.world(),scope.owner(),scope.agent(),"other",3,scope.footprintHash());assertThrows(IllegalArgumentException.class,()->gate.accept(new ConstructionVerification.Report(wrong,501,510,12,true,passed)));assertTrue(gate.accept(new ConstructionVerification.Report(scope,501,510,12,true,passed)));assertEquals("VERIFIED",gate.status());gate.invalidate();assertEquals("UNVERIFIED",gate.status());}
+    @Test void explicitSemanticFailureIsNotReplacedByMatchingBlockCount(){var scope=new ConstructionVerification.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),"house",1,"b".repeat(64));var gate=new ConstructionVerification(scope,12,2,Set.of("stairs"));assertFalse(gate.accept(new ConstructionVerification.Report(scope,3,4,12,true,List.of(new ConstructionVerification.Check("stairs",false,"headroom blocked")))));assertEquals("UNVERIFIED",gate.status());}
+}

@@ -1,18 +1,11 @@
 package dev.mineagent.runtime.neoforge.client.nativeui;
 
 import com.fasterxml.jackson.databind.*;
-import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
-import com.lowdragmc.lowdraglib2.gui.ui.*;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
-import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
-import com.lowdragmc.lowdraglib2.gui.ui.style.Stylesheet;
 import dev.latvian.mods.kubejs.script.*;
 import dev.mineagent.runtime.core.ui.dynamic.InterfaceDefinition;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Consumer;
 
 /** KubeJS owns widget construction/event binding; DivZero owns data, revisions and authority. */
 public final class KubeInterfaceRenderer {

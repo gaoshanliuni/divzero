@@ -1394,6 +1394,7 @@ export const messages=Object.freeze({
   "撤销": "Undo",
   "撤销尚未生效计划": "Undo plan not yet in effect",
   "撤销此变更": "Undo this change",
+  "重做此变更": "Redo this change",
   "撤销计划…": "Undo plan…",
   "撤销这个尚未生效的计划？": "Undo this plan that has not taken effect?",
   "撤销重启恢复（不停止当前运行）": "Undo restart recovery (does not stop current running)",

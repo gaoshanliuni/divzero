@@ -1527,7 +1527,8 @@ public final class MineAgentNetwork {
                 sendBackupState(player, "");
                 return;
             }
-            if ("undo_change".equals(payload.action())) {
+            if ("undo_change".equals(payload.action())||"redo_change".equals(payload.action())) {
+                boolean undo="undo_change".equals(payload.action());
                 java.util.UUID changeId = requiredUuid(payload.values(), "changeId");
                 long expectedRevision = Long.parseLong(required(payload.values(), "expectedRevision"));
                 var journal = MineAgentRuntimeServices.changeJournal(server);
@@ -1537,12 +1538,22 @@ public final class MineAgentNetwork {
                     sendBackupState(player, "FORBIDDEN");
                     return;
                 }
-                if (entry.revision() != expectedRevision || entry.reverted()) {
-                    sendBackupState(player, entry.reverted() ? "ALREADY_REVERTED" : "STALE_REVISION");
+                if (entry.revision() != expectedRevision || entry.reverted()==undo) {
+                    sendBackupState(player, entry.revision()!=expectedRevision ? "STALE_REVISION" : undo?"ALREADY_REVERTED":"NOT_REVERTED");
                     return;
                 }
-                restoreBlocks(server, journal.revertPlan(changeId));
-                var reverted = journal.markReverted(changeId, expectedRevision, true);
+                var result=dev.mineagent.runtime.core.recovery.ConditionalBlockEdits.execute(entry.changes(),undo,
+                        new dev.mineagent.runtime.core.recovery.ConditionalBlockEdits.World(){
+                            public dev.mineagent.runtime.api.recovery.BlockSnapshot read(dev.mineagent.runtime.api.recovery.BlockSnapshot target){
+                                var level=levelFor(server,target.dimension());var pos=new net.minecraft.core.BlockPos(target.x(),target.y(),target.z());
+                                if(level.isOutsideBuildHeight(pos)||!level.getWorldBorder().isWithinBounds(pos)||!level.hasChunkAt(pos))throw new IllegalStateException("HISTORY_TARGET_UNAVAILABLE");
+                                var entity=level.getBlockEntity(pos);
+                                return new dev.mineagent.runtime.api.recovery.BlockSnapshot(target.dimension(),target.x(),target.y(),target.z(),net.minecraft.commands.arguments.blocks.BlockStateParser.serialize(level.getBlockState(pos)),entity==null?"":entity.saveWithFullMetadata(level.registryAccess()).toString());
+                            }
+                            public void write(dev.mineagent.runtime.api.recovery.BlockSnapshot target)throws Exception{restoreBlocks(server,java.util.List.of(target));}
+                        });
+                if(!result.status().equals("APPLIED")){sendBackupState(player,"HISTORY_"+result.status());return;}
+                var reverted = undo?journal.markReverted(changeId, expectedRevision, true):journal.markReapplied(changeId,expectedRevision,true);
                 sendBackupState(player, reverted.errorCode());
                 return;
             }

@@ -34,9 +34,14 @@ References: [KubeJS UI support](https://low-drag-mc.github.io/LowDragMC-Doc/en/l
 - Strict native interface data contract: stable widget IDs, arbitrary nesting, LSS styles, scoped resource IDs, data bindings and declarative event intents.
 - Scoped interface session: optimistic revision checks, candidate replacement, stable input draft preservation, stale callback rejection and passive HUD interaction state.
 - Shared LDLib2 widget builder plus isolated KubeJS construction program, without global reload. Invalid LSS declarations fail the candidate instead of silently being dropped by LDLib2's permissive parser.
+- Building design model and SQLite store: stable component IDs, templates, transformations, dependency ordering and optimistic revisions isolated by world/owner/agent. Saving a definition does not write the world.
+- Verification gate data model: exact world/building/revision/footprint, observation after mutation, complete changed-cell coverage and all named semantic requirements are necessary. This gate still requires integration with actual world observation and conversation completion.
+- Existing change-history undo now checks actual states and block-entity contents before any write and again for each write. Redo applies the same checks in the opposite direction. Neighbor changes produce `PARTIAL`; unreadable write outcomes produce `UNKNOWN`. Neither outcome marks the journal complete or automatically replays. The existing history control offers undo/redo; this is not yet the new component-step executor.
 
 ## Pending integration and acceptance
 
 The foundations above do not yet replace production F2/Ctrl+M or remove MCEF. Required remaining work includes complete workspace port, server lifecycle/persistence/synchronization and application action routing, native HUD registration/restoration, migration of generated HTML content and tools, preview/IME/accessibility parity, MCEF removal and packaging cleanup, persistent construction components/diffs/history, semantic verification gating, and actual in-game acceptance.
 
 Core tests cover geometry equivalence, holes/caps/rejections, failed replacement, retained input, incremental data updates, scope/revision rejection and passive interaction. Tests must run on public GitHub Actions under the repository's no-local-compilation rule; native rendering and KubeJS execution require separate in-game evidence. Until such evidence exists, this is not a usable replacement build.
+
+First CI run `36380060336` found missing compile-time Rhino and Taffy API dependencies (embedded runtime libraries are not automatically on the NeoForge Java compile classpath). Explicit compile-only declarations were added; the failed run is retained as evidence. Automatic Release publication on pushes has been disabled; explicit manual release dispatch remains available.
