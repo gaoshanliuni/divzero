@@ -27,7 +27,8 @@
     "client.LivingEntityPartsMixin",
     "client.EntityRenderContextMixin",
     "client.NativeButtonMixin",
-    "client.ContainerScreenGeometry"
+    "client.ContainerScreenGeometry",
+    "client.SpritePixelsAccess"
   ],
   "injectors": {
     "defaultRequire": 1

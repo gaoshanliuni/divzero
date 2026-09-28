@@ -35,6 +35,7 @@ public final class ConversationAgentTools {
     private interface Work{boolean tick()throws Exception;void cancel();}
     private ConversationAgentTools(){}
     private static boolean current(ServerPlayer p,BooleanSupplier permit){return permit.getAsBoolean()&&p.level().getServer().getPlayerList().getPlayer(p.getUUID())==p;}
+    private static boolean personalTool(String tool){return Set.of("set_chat_settings","set_chat_messages","remember","forget_memory").contains(tool);}
     private static boolean itemPermission(ServerPlayer p){return MineAgentRuntimeServices.permissions(p.level().getServer()).allowed(p.getUUID(),p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE);}
     private static void keys(JsonNode n,String... allowed){if(!n.isObject()||!Set.of(allowed).containsAll(n.properties().stream().map(Map.Entry::getKey).toList()))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");}
     private static String text(JsonNode n,String key,int max){if(!n.path(key).isTextual()||n.path(key).asText().length()>max||n.path(key).asText().isBlank())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");return n.path(key).asText();}
@@ -49,6 +50,9 @@ public final class ConversationAgentTools {
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
             if(tool.equals("inspect_buildings")){keys(args,"id","offset");return ServerBuildings.inspect(p,agent,args);}
             if(tool.equals("verify_building")){keys(args,"id","revision");return ServerBuildings.verify(p,agent,args,permit);}
+            if(tool.equals("search_images")){keys(args,"query");return ServerBlockTextures.search(args);}
+            if(tool.equals("inspect_block_textures")){keys(args,"block_id");return ServerBlockTextures.request(p,agent,"inspect",args,permit);}
+            if(tool.equals("inspect_bulldozers")){keys(args,"id");return ServerBulldozers.inspect(p,agent,args);}
             if(tool.equals("inspect_brewing_recipes")){keys(args,"query","offset");return CompletableFuture.completedFuture(NativeMenuData.inspect(p,args));}
             if(tool.equals("inspect_native_ui")||tool.equals("inspect_native_screen")){keys(args,"id");return ServerNativeInterfaces.inspect(p,agent,args,permit);}
             if(tool.equals("inspect_native_entities")){keys(args,"query","offset","template_id");return CompletableFuture.completedFuture(NativeEntityTemplates.inspect(p,args));}
@@ -74,14 +78,14 @@ public final class ConversationAgentTools {
             if(tool.equals("inspect_persona")){keys(args);return CompletableFuture.completedFuture(ConversationIdentityTools.persona(p,agent));}
             if(tool.equals("inspect_appearance")){keys(args);return CompletableFuture.completedFuture(ConversationIdentityTools.appearance(p,agent));}
             if(!ConversationTools.mutation(tool)){if(tool.equals("inspect_container"))return CompletableFuture.completedFuture(ConversationNativeInteractions.inspect(p,agent,args));return read(p,tool,args,permit);}
-            if(!Set.of("set_chat_settings","set_chat_messages").contains(tool)&&!ServerTaskStart.allowed(p,agent))throw new SecurityException("AGENT_TOOL_PERMISSION");
+            if(!personalTool(tool)&&!ServerTaskStart.allowed(p,agent))throw new SecurityException("AGENT_TOOL_PERMISSION");
             if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");
-            var world=MineAgentRuntimeServices.worldId(s);var level=p.level();long permission=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE);
+            var world=MineAgentRuntimeServices.worldId(s);var level=p.level();var permissionAction=personalTool(tool)?dev.mineagent.runtime.api.permission.PermissionAction.CHAT:dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE;long permission=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),permissionAction);
             var db=s.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");var result=new CompletableFuture<Map<String,Object>>();String intent=JSON.writeValueAsString(Map.of("state","DISPATCHING","owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args));
             CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,0,intent);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((v,error)->s.execute(()->{
                 if(error!=null){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));return;}
                 CompletableFuture<Map<String,Object>> action;
-                try{if(!current(p,permit)||p.level()!=level||(!Set.of("set_chat_settings","set_chat_messages").contains(tool)&&!ServerTaskStart.allowed(p,agent))||permission!=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE))throw new IllegalStateException("AGENT_TOOL_CONTEXT_CHANGED");if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");action=mutate(p,agent,operation,tool,args,permit,conversation);}
+                try{if(!current(p,permit)||p.level()!=level||(!personalTool(tool)&&!ServerTaskStart.allowed(p,agent))||permission!=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),permissionAction))throw new IllegalStateException("AGENT_TOOL_CONTEXT_CHANGED");if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");action=mutate(p,agent,operation,tool,args,permit,conversation);}
                 catch(Exception rejected){action=CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(rejected)));}
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     if(failure!=null)dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Conversation tool failed: {}",tool,failure);
@@ -141,6 +145,10 @@ public final class ConversationAgentTools {
         if(tool.equals("set_chat_messages")){keys(a,"limit","mark","thinking","expected_revision");Integer limit=a.has("limit")?number(a,"limit",1,16384):null;String mark=a.has("mark")?text(a,"mark",256):null;String thinking=a.has("thinking")?text(a,"thinking",16):null;Long expected=null;if(a.has("expected_revision")){if(!a.get("expected_revision").isIntegralNumber()||!a.get("expected_revision").canConvertToLong()||a.get("expected_revision").longValue()<0)throw new IllegalArgumentException("CHAT_MESSAGES_REVISION");expected=a.get("expected_revision").longValue();}if(limit==null&&mark==null&&thinking==null)throw new IllegalArgumentException("CHAT_MESSAGES_ARGUMENTS");return ServerChatMessageSettings.request(p,limit,mark,thinking,expected,permit);}
         Map<String,Object> result;
         switch(tool){
+            case "set_block_texture"->{keys(a,"block_id","texture_id","image_url","size","fit","expected_revision");return ServerBlockTextures.request(p,agent,"set",a,permit);}
+            case "clear_block_texture"->{keys(a,"block_id","texture_id","expected_revision");return ServerBlockTextures.request(p,agent,"clear",a,permit);}
+            case "set_bulldozer"->{keys(a,"id","expected_revision","target","dimension","min","max","width","height","depth","drop_items","clear_block_entities","clear_unbreakable");return ServerBulldozers.change(p,agent,a,true);}
+            case "control_bulldozer"->{keys(a,"id","expected_revision","action");return ServerBulldozers.change(p,agent,a,false);}
             case "export_current_skin"->{keys(a);return ServerAgentSkins.exportCurrent(p,agent,operation,permit);}
             case "open_skin_ui"->{keys(a);return CompletableFuture.completedFuture(ServerAgentSkins.openUi(p,agent));}
             case "create_skin_png"->{keys(a,"name","model","base_file_id","base_color","rects");return ServerAgentSkins.create(p,agent,operation,a,permit);}
@@ -196,7 +204,7 @@ public final class ConversationAgentTools {
         return CompletableFuture.supplyAsync(()->{try{if(!permit.getAsBoolean())return Map.<String,Object>of("status","REJECTED","error","CONTEXT_CHANGED");return operation==null?ConversationToolJournal.inspect(path,world,owner,agent,offset):ConversationToolJournal.receipt(path,world,owner,agent,operation,receiptOffset);}catch(Exception error){return Map.<String,Object>of("status","REJECTED","error","AGENT_JOURNAL_UNAVAILABLE");}},IO);
     }
     private static CompletableFuture<Map<String,Object>> memory(ServerPlayer p,UUID agent,String tool,JsonNode a,BooleanSupplier permit)throws Exception{
-        if(!ServerTaskStart.allowed(p,agent))throw new SecurityException("AGENT_MEMORY_PERMISSION");
+        if(!ServerChatAccess.canContinue(p,agent)||!MineAgentRuntimeServices.permissions(p.level().getServer()).allowed(p.getUUID(),p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),dev.mineagent.runtime.api.permission.PermissionAction.CHAT))throw new SecurityException("AGENT_MEMORY_PERMISSION");
         var server=p.level().getServer();var level=p.level();var owner=p.getUUID();var world=MineAgentRuntimeServices.worldId(server);var path=server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");
         String query="",kind="",topic="",value="";int offset=0;long ttl=0,revision=0;UUID id=null;
         if(tool.equals("inspect_memories")){keys(a,"query","offset");query=a.path("query").asText("");offset=a.has("offset")?number(a,"offset",0,Integer.MAX_VALUE):0;}
