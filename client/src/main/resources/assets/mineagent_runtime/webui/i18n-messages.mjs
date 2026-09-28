@@ -2572,5 +2572,13 @@ export const messages=Object.freeze({
   "权限": "Permissions",
   "删除 AI": "Delete AI",
   "查看详情": "View details",
-  "不可用": "Unavailable"
+  "不可用": "Unavailable",
+  "选择已保存人设": "Choose a saved persona",
+  "另存人设": "Save persona as",
+  "人设名称": "Persona name",
+  "搜索人设": "Search personas",
+  "删除人设": "Delete persona",
+  "人设已载入草稿，点击应用后生效。": "Persona loaded into your draft. Apply it to activate.",
+  "人设已保存到列表。": "Persona saved to the list.",
+  "应用人设": "Apply persona"
 });

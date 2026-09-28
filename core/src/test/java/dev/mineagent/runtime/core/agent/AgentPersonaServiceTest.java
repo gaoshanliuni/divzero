@@ -12,6 +12,18 @@ class AgentPersonaServiceTest {
     final AgentDefinition a=new AgentDefinition(UUID.randomUUID(),"建筑师","personaA",owner,AgentMode.CREATOR,Set.of(collaborator));
     final AgentDefinition b=new AgentDefinition(UUID.randomUUID(),"吟游诗人","personaB",owner,AgentMode.CREATOR,Set.of());
     final Clock clock=Clock.fixed(Instant.ofEpochMilli(12345),ZoneOffset.UTC);
+    @Test void namedProfilesAreScopedDurableAndDoNotApplyUntilSelected()throws Exception{
+        UUID id=UUID.randomUUID();try(var service=AgentPersonaService.open(dir.resolve("profiles.db"),world,clock)){
+            service.saveProfile(a,owner,false,id,"建筑师","先检查门洞和楼梯，再报告完成。");assertEquals("",service.read(a,owner,false).text());
+            assertEquals(1,service.profiles(a,collaborator,false,"建筑",0).size());assertTrue(service.profiles(b,owner,false,"",0).isEmpty());
+            assertThrows(SecurityException.class,()->service.profile(a,other,true,id));assertThrows(IllegalArgumentException.class,()->service.profile(b,owner,false,id));
+            assertThrows(IllegalStateException.class,()->service.saveProfile(a,owner,false,id,"同名ID","another"));
+        }
+        try(var service=AgentPersonaService.open(dir.resolve("profiles.db"),world,clock)){
+            var profile=service.profile(a,owner,false,id);assertTrue(service.save(a,owner,false,UUID.randomUUID(),0,profile.text()).accepted());
+            service.removeProfile(a,owner,false,id);assertTrue(service.profiles(a,owner,false,"",0).isEmpty());assertEquals(profile.text(),service.read(a,owner,false).text());
+        }
+    }
     @Test void independentFreeTextPersistsAcrossRestartWithoutChangingDefinitions()throws Exception{
         String text="  身份：严谨建筑师\n性格：温和\n与玩家：搭档\n请用中文角色扮演。  ";
         try(var service=AgentPersonaService.open(dir.resolve("runtime.db"),world,clock)){

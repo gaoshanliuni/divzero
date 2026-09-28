@@ -81,9 +81,9 @@ final class WorkspacePanels {
     }
     static void persona(NativeWorkspaceScreen host,String agent,String name){
         if(host.revealWindow("persona-"+agent))return;
-        var window=host.window("persona-"+agent,name+" · "+t("人设"),420,300);window.body.clearAllChildren();var notice=text(t("读取人设…"));window.body.addChild(notice);var editor=new TextArea();editor.getLayout().flex(1).widthPercent(100);window.body.addChild(editor);final long[] revision={-1};
+        var window=host.window("persona-"+agent,name+" · "+t("人设"),420,300);window.body.clearAllChildren();var notice=text(t("读取人设…"));window.body.addChild(notice);var editor=new TextArea();editor.getLayout().flex(1).widthPercent(100);PersonaLibraryBar.add(window.body,agent,editor,notice,()->!window.closed(),value->{});window.body.addChild(editor);final long[] revision={-1};
         request("persona.read",Map.of("agentId",agent)).whenComplete((receipt,error)->{if(window.closed())return;if(error!=null){failure(notice,error);return;}var value=state(receipt);revision[0]=value.get("revision").getAsLong();editor.setValue(value.get("text").getAsString().split("\n",-1),false);notice.setText(Component.literal(name));});
-        window.body.addChild(NativeUiTheme.button(t("保存人设"),()->{if(revision[0]<0)return;request("persona.save",Map.of("agentId",agent,"text",String.join("\n",editor.getValue()),"expectedRevision",Long.toString(revision[0]))).whenComplete((receipt,error)->{if(error!=null)failure(notice,error);else{notice.setText(Component.literal(t("已保存")));revision[0]=state(receipt).get("appliedRevision").getAsLong();}});}));
+        window.body.addChild(NativeUiTheme.button(t("应用人设"),()->{if(revision[0]<0)return;request("persona.save",Map.of("agentId",agent,"text",String.join("\n",editor.getValue()),"expectedRevision",Long.toString(revision[0]))).whenComplete((receipt,error)->{if(error!=null)failure(notice,error);else{notice.setText(Component.literal(t("已保存")));revision[0]=state(receipt).get("appliedRevision").getAsLong();}});}));
     }
     static void packages(NativeWorkspaceScreen host){
         if(host.revealWindow("packages"))return;
