@@ -25,12 +25,15 @@ public final class NativeUiSmokeClient {
         {"id":"buy","type":"button","text":"Update balance / toggle task","style":"height: 22;","events":{"click":[{"op":"set","key":"balance","value":17},{"op":"toggle","key":"done"}]}},
         {"id":"task","type":"toggle","text":"Task complete","bind":"done"}]}}
         """;
-    private static int ticks,stage,wait;private static boolean busy,finished;private static UUID agent;private static UIElement oldWidget;private static final List<Object> receipts=new ArrayList<>();
+    private static int ticks,stage,wait,setupTicks;private static boolean busy,finished,setupRequested,setupAccepted;private static UUID agent;private static UIElement oldWidget;private static final List<Object> receipts=new ArrayList<>();
     public static void tick(){
         if(!Boolean.getBoolean("mineagent.nativeUiSmoke")||finished)return;var mc=Minecraft.getInstance();
         if(++ticks>6000){fail(new IllegalStateException("NATIVE_UI_SMOKE_TIMEOUT stage="+stage));return;}
         if(mc.player==null||mc.level==null||mc.getSingleplayerServer()==null||busy)return;
         try{
+            if(!setupRequested){setupRequested=true;net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new dev.mineagent.runtime.neoforge.network.MineAgentPayloads.PanelRequest());return;}
+            if(!setupAccepted){var values=dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox.snapshot().values();String fingerprint=values.getOrDefault("security.identityFingerprint","");if(fingerprint.isEmpty()||!dev.mineagent.runtime.neoforge.network.PanelSnapshotInbox.signatureValid())return;new dev.mineagent.runtime.client.trust.ServerTrustStore(mc.gameDirectory.toPath().resolve("config/mineagent-trusted-servers.properties")).confirm("local-integrated",fingerprint,Base64.getDecoder().decode(values.get("security.identityPublicKey")));mc.player.connection.sendCommand("ai accept");setupAccepted=true;return;}
+            if(++setupTicks<35)return;
             if(agent==null){busy=true;var owner=mc.player.getUUID();var server=mc.getSingleplayerServer();server.submit(()->{var p=server.getPlayerList().getPlayer(owner);server.getPlayerList().op(p.nameAndId());p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);return MineAgentRuntimeServices.bodies(server).createPersistentAt("NativeUiBuilder",owner,p.level(),p.position().add(2,0,0)).agentId();}).whenComplete((id,error)->mc.execute(()->{busy=false;if(error!=null){fail(error);return;}agent=id;mc.setScreen(null);}));return;}
             if(stage==0){call("set_native_ui",base(0).put("source",SOURCE),r->{applied(r,1);require(mc.screen==null,"PASSIVE_HUD_OPENED_SCREEN");stage=1;});return;}
             if(stage==1){if(++wait<30)return;screenshot("01-passive.png");wait=0;call("control_native_ui",base(1).put("action","interact"),r->{applied(r,2);stage=2;});return;}

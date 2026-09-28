@@ -114,12 +114,13 @@ public final class MineAgentClientMod {
         if(net.neoforged.fml.ModList.get().isLoaded("ldlib2")){
             dev.mineagent.runtime.neoforge.client.nativeui.LdHudRegistry.maintainContext();
             dev.mineagent.runtime.neoforge.client.nativeui.NativeInterfacesClient.tick();
+            dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.tick();
             if(Boolean.getBoolean("mineagent.nativeUiSmoke"))dev.mineagent.runtime.neoforge.client.nativeui.NativeUiSmokeClient.tick();
         }
         dev.mineagent.runtime.neoforge.client.MineAgentClientPackages.tick(++packageTick);
         dev.mineagent.runtime.neoforge.client.webui.WebGuiWorkspaceInput.tick();
         while (OPEN_CONTROL_CENTER.consumeClick()) {
-            dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE.open();
+            dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.open();
         }
         if (Boolean.getBoolean("mineagent.clientSmokeTest")) {
             runSmokeTest();

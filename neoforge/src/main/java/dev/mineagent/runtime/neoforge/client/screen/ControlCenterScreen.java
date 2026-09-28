@@ -26,7 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.UUID;
 
-public final class ControlCenterScreen extends Screen {
+public final class ControlCenterScreen extends dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen {
     private static final int NAV_WIDTH = 126;
     private final Screen parent;
     private final ControlCenterModel model;
@@ -807,7 +807,7 @@ public final class ControlCenterScreen extends Screen {
         EditBox modelName=new EditBox(font,contentX+42,160,w-42,20,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("模型名称")));modelName.setMaxLength(256);modelName.setValue(openAiModelDraft);modelName.setResponder(v->openAiModelDraft=v);addRenderableWidget(modelName);
         addRenderableWidget(new StringWidget(contentX,186,38,18,Component.literal("Key"),font));
         inlineProviderKey=new EditBox(font,contentX+42,186,w-42,20,Component.literal("API Key")){@Override protected net.minecraft.network.chat.MutableComponent createNarrationMessage(){return Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("API Key，内容已隐藏"));}};
-        inlineProviderKey.setMaxLength(4096);inlineProviderKey.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("留空保留已保存 Key")));inlineProviderKey.addFormatter((value,cursor)->net.minecraft.util.FormattedCharSequence.forward("•".repeat(value.length()),net.minecraft.network.chat.Style.EMPTY));inlineProviderKey.setValue(openAiApiKeyDraft);inlineProviderKey.setResponder(value->{openAiApiKeyDraft=value;if(!value.isEmpty())clearInlineKey=false;});addRenderableWidget(inlineProviderKey);
+        secret(inlineProviderKey);inlineProviderKey.setMaxLength(4096);inlineProviderKey.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("留空保留已保存 Key")));inlineProviderKey.addFormatter((value,cursor)->net.minecraft.util.FormattedCharSequence.forward("•".repeat(value.length()),net.minecraft.network.chat.Style.EMPTY));inlineProviderKey.setValue(openAiApiKeyDraft);inlineProviderKey.setResponder(value->{openAiApiKeyDraft=value;if(!value.isEmpty())clearInlineKey=false;});addRenderableWidget(inlineProviderKey);
         addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("选择模型…")),b->Minecraft.getInstance().setScreen(new ProviderModelScreen(this))).bounds(contentX,212,Math.max(60,w-158),18).build());
         addRenderableWidget(Button.builder(Component.literal(clearInlineKey?dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("将清除Key"):dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("清除Key")),b->{clearInlineKey=!clearInlineKey;openAiApiKeyDraft="";rebuildWidgets();}).bounds(contentX+w-152,212,76,18).build());
         addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("保存")),b->saveProviderSettings()).bounds(contentX+w-70,212,70,18).build());
@@ -1356,7 +1356,7 @@ public final class ControlCenterScreen extends Screen {
     }
 
     private void addChatControls(int contentX, int contentWidth) {
-        addRenderableWidget(new StringWidget(contentX,112,contentWidth,36,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("普通对话已迁移到持久 WebGUI 会话。请明确新建或选择会话；不再自动续聊最近的 AI。")),this.font).setMaxWidth(contentWidth));
+        addRenderableWidget(new StringWidget(contentX,112,contentWidth,36,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("选择或新建对话以查看完整历史。")),this.font).setMaxWidth(contentWidth));
         addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("打开完整会话与历史")),ignored->dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE.open()).bounds(contentX,154,contentWidth,22).build());
         if(!conversationDraft.isEmpty()){
             EditBox retained=new EditBox(this.font,contentX,186,contentWidth,36,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("旧版未发送草稿（不会自动发送）")));retained.setMaxLength(16384);retained.setValue(conversationDraft);retained.setResponder(value->conversationDraft=value);addRenderableWidget(retained);

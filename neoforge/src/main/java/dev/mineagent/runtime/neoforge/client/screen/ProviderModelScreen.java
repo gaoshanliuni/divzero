@@ -11,13 +11,13 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import java.util.*;
 
 /** Native model directory plus explicit custom model ID; both save with the same revision check. */
-public final class ProviderModelScreen extends Screen {
+public final class ProviderModelScreen extends dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen {
     private final Screen parent;private final Object connection;private int ticks,nextPoll,offset,epoch;private boolean loading,saving,contextReady;private EditBox customInput;private Button customSave;private String custom="",query="",selected="",status=dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("读取模型列表…");private long revision,generation;private JsonObject data=new JsonObject();
     public ProviderModelScreen(Screen parent){super(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("选择模型")));this.parent=parent;connection=Minecraft.getInstance().getConnection();}
     private int pageSize(){return Math.max(1,Math.min(10,(height-170)/24));}
     @Override protected void init(){drawWidgets();load(false);}
     private void drawWidgets(){
-        boolean focusCustom=customInput!=null&&getFocused()==customInput;boolean focusSearch=!focusCustom&&getFocused() instanceof EditBox;int cursor=getFocused() instanceof EditBox box?box.getCursorPosition():0;
+        boolean focusCustom=customInput!=null&&controllerFocus()==customInput;boolean focusSearch=!focusCustom&&controllerFocus() instanceof EditBox;int cursor=controllerFocus() instanceof EditBox box?box.getCursorPosition():0;
         clearWidgets();int w=Math.min(440,width-24),x=(width-w)/2;
         addRenderableWidget(new StringWidget(x,16,w,20,getTitle(),font));
         EditBox search=new EditBox(font,x,42,w-86,20,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("搜索模型")));search.setHint(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("搜索模型")));search.setMaxLength(128);search.setValue(query);search.setResponder(v->{query=v;offset=0;epoch++;loading=false;nextPoll=ticks+8;});search.setEditable(!saving);addRenderableWidget(search);if(focusSearch){setFocused(search);search.setCursorPosition(Math.min(cursor,query.length()));}

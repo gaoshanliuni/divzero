@@ -78,8 +78,8 @@ public final class WebGuiHostAdapter implements AutoCloseable {
                 .noneMatch(flag -> flag.equals("--disable-web-security") || flag.startsWith("--disable-web-security="));
     }
 
-    public void open() { if(browser==null)standaloneOpen=false;workspaceVisible=true;open(true); }
-    public void toggleWorkspace(){requireClientThread();if(workspaceShown())hideWorkspace();else{workspaceVisible=true;if(browser==null)standaloneOpen=false;open(true,false);}}
+    public void open() { dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.open(); }
+    public void toggleWorkspace(){dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.toggle();}
     public void hideWorkspace(){requireClientThread();workspaceVisible=false;backgroundOpen=true;emit("workspaceMode",Map.of("visible",false));var mc=Minecraft.getInstance();if(mc.screen instanceof WebGuiInteractionScreen||mc.screen instanceof WebGuiDiagnosticScreen)mc.setScreen(null);}
     void cancelPendingStandalone(){requireClientThread();if(browser==null)standaloneOpen=false;}
     public void openPassive() { open(false); }
@@ -764,6 +764,7 @@ public final class WebGuiHostAdapter implements AutoCloseable {
     }
     public void emit(String channel, Object data) {
         requireClientThread();
+        dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.push(channel,JSON.toJsonTree(data));
         if (!ready() || !shell.entry("index.html").toString().equals(browser.getURL())) return;
         String detail = JSON.toJson(Map.of("channel", channel, "data", data));
         // Serialize as a string then JSON.parse: data is never inserted as executable script.

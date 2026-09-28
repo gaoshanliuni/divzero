@@ -45,10 +45,11 @@ public final class UiClientSessions {
     @SubscribeEvent public static void register(RegisterClientPayloadHandlersEvent event) {
         event.register(UiPayloads.Event.TYPE, (p, ctx) -> {var source=ctx.connection();ctx.enqueueWork(() -> {
             var mc=Minecraft.getInstance();if(mc.getConnection()==null||mc.getConnection().getConnection()!=source)return;
+            if(dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.accept(p))return;
             if(!StatePushClient.accept(p)&&!ClientCodeDeliverySmokeClient.accept(p)&&!DeliverySmokeClient.accept(p)&&!ContentDeliveryClient.accept(p)&&!SharedMultiplayerSmokeClient.accept(p)&&!WorldUiClient.accept(p,source)&&!TaskAuthoritySmokeClient.accept(p)&&!UiWorldSwitchSmokeClient.accept(p)&&!UiMultiplayerSmokeClient.accept(p)&&!HudPersistenceClient.accept(p,source))accept(p);
         });});
     }
-    public static Session current() { return rendered ? session : null; }
+    public static Session current() { var nativeSession=dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.current();return nativeSession!=null?nativeSession:rendered?session:null; }
     public static void open() {
         if (Minecraft.getInstance().getConnection() == null || opening != null || rendered) return;
         connection = Minecraft.getInstance().getConnection(); opening = UUID.randomUUID(); openingDeadline = System.currentTimeMillis() + 10_000;
@@ -122,12 +123,14 @@ public final class UiClientSessions {
         }
     }
     public static CompletableFuture<Receipt> command(String action, Map<String, String> values, UUID operationId) {
+        if(dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready())return dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.command(action,values,operationId);
         if (!rendered || session == null || connection != Minecraft.getInstance().getConnection())
             return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));
         return request("command", new Request(operationId, session.sessionId(), session.pageGeneration(), session.controlEpoch(),
                 session.binding().taskRevision(), action, values));
     }
     public static CompletableFuture<Receipt> contentRequest(String channel, Session content, String action, Map<String,String> values, UUID operationId) {
+        if(dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready())return dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.contentRequest(channel,content,action,values,operationId);
         if (connection == null || connection != Minecraft.getInstance().getConnection() || !WebGuiHostAdapter.INSTANCE.ready())
             return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));
         return request(channel,new Request(operationId,content.sessionId(),content.pageGeneration(),content.controlEpoch(),content.binding().taskRevision(),action,values));

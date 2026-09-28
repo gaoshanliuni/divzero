@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 /** Native bootstrap UI: available before a server session exists, never exposes a local-operator action to a web page or Agent. */
-public final class WorldReopenRecoveryScreen extends Screen {
+public final class WorldReopenRecoveryScreen extends dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen {
     private final Screen parent;private int offset;private String message=dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("仅管理本地 saves 内尚未生效的计划，不初始化 Worker。");
     public WorldReopenRecoveryScreen(Screen parent){super(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("MineAgent · 待重开恢复")));this.parent=parent;}
     private boolean offline(){var mc=Minecraft.getInstance();return mc.getConnection()==null&&mc.getSingleplayerServer()==null;}

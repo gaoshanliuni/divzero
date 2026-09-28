@@ -1,0 +1,29 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+
+import com.lowdragmc.lowdraglib2.gui.ui.*;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
+import dev.vfyjxf.taffy.style.*;
+import java.util.function.Consumer;
+
+/** In-game draggable/resizable window with a dock entry; it never creates a separate OS window. */
+public final class WorkspaceWindow {
+    public final Dialog dialog;public final UIElement body;private final Button dockButton;private boolean closed;
+    public WorkspaceWindow(UIElement desktop,UIElement dock,String title,float x,float y,float width,float height,Consumer<WorkspaceWindow> onClose){
+        dialog=new Dialog().setAutoClose(false).allowInteraction().windowMode(x,y,width,height);
+        dialog.overlay.getStyle().backgroundTexture(NativeUiTheme.surface(NativeUiTheme.SURFACE,8));
+        dialog.titleBar.clearAllChildren();dialog.titleBar.getLayout().height(29).paddingHorizontal(9).paddingVertical(4);
+        dialog.titleBar.getStyle().backgroundTexture(NativeUiTheme.surface(0xf0203045,8));
+        var heading=NativeUiTheme.text(title,NativeUiTheme.TEXT,10);heading.getLayout().flex(1);dialog.titleBar.addChild(heading);
+        dialog.titleBar.addChild(NativeUiTheme.button("—",()->dialog.setDisplay(false)));
+        dialog.titleBar.addChild(NativeUiTheme.button("×",this::close));
+        body=dialog.contentContainer;body.getStyle().backgroundTexture(NativeUiTheme.surface(NativeUiTheme.SURFACE,5));body.getLayout().flex(1).paddingAll(9).alignItems(AlignItems.STRETCH).justifyContent(AlignContent.FLEX_START);
+        dialog.buttonContainer.setDisplay(false);dialog.show(desktop);
+        dockButton=NativeUiTheme.button(title,()->{dialog.setDisplay(true);dialog.getStyle().zIndex(++zOrder);});dock.addChild(dockButton);
+        dialog.setOnClose(()->{closed=true;dockButton.removeSelf();onClose.accept(this);});dialog.getStyle().zIndex(++zOrder);
+    }
+    private static int zOrder=10;
+    public boolean visible(){return !closed&&dialog.isDisplayed();}
+    public boolean closed(){return closed;}
+    public void reveal(){if(!closed){dialog.setDisplay(true);dialog.getStyle().zIndex(++zOrder);}}
+    public void close(){if(!closed)dialog.close();}
+}

@@ -14,7 +14,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 
 /** A key never belongs to the browser DOM, JavaScript draft store, logs, or model context. */
-public final class NativeSecretScreen extends Screen {
+public final class NativeSecretScreen extends dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen {
     private final Screen parent;private final Object connection;private final String secretKey;private EditBox input;private Button save,clear;private StringWidget status,endpoint;
     private long snapshotGeneration;private long expectedRevision;private UUID world,instance,pending;private String publicKey="";private int ticks,waitingAt;private boolean waitingSnapshot=true,clearArmed;
     public NativeSecretScreen(Screen parent){this(parent,"provider.openai.apiKey");}
@@ -26,7 +26,7 @@ public final class NativeSecretScreen extends Screen {
         endpoint=addRenderableWidget(new StringWidget(left,75,w,18,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("读取服务器配置…")),font));
         input=new EditBox(font,left,99,w,24,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("API Key 保密输入"))){
             @Override protected MutableComponent createNarrationMessage(){return Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("API Key 保密输入，内容已隐藏"));}
-        };input.setMaxLength(4096);input.addFormatter((value,cursor)->FormattedCharSequence.forward("•".repeat(value.length()),Style.EMPTY));input.setResponder(value->{clearArmed=false;if(clear!=null)clear.setMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("清除已保存 Key…")));refreshButtons();});addRenderableWidget(input);
+        };secret(input);input.setMaxLength(4096);input.addFormatter((value,cursor)->FormattedCharSequence.forward("•".repeat(value.length()),Style.EMPTY));input.setResponder(value->{clearArmed=false;if(clear!=null)clear.setMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("清除已保存 Key…")));refreshButtons();});addRenderableWidget(input);
         status=addRenderableWidget(new StringWidget(left,130,w,36,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("正在读取当前配置版本…")),font));
         save=addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("保存")),b->submit(input.getValue())).bounds(left,175,w/2-4,23).build());
         clear=addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("清除已保存 Key…")),b->{if(!clearArmed){clearArmed=true;clear.setMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("再次点击确认清除")));status.setMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("确认后清除服务器保存的 Key，不发起模型请求。")));}else submit("");}).bounds(left+w/2+4,175,w/2-4,23).build());

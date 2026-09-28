@@ -59,3 +59,18 @@ type="required"
 versionRange="[2.2.0]"
 ordering="AFTER"
 side="CLIENT"
+
+# Built-in workspace and native HUD renderer. KubeJS is checked for AI-authored interfaces.
+[[dependencies.${mod_id}]]
+modId="ldlib2"
+type="required"
+versionRange="[26.1.2.41,26.2)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="kubejs"
+type="optional"
+versionRange="[26.1.2-8.0.6,26.2)"
+ordering="AFTER"
+side="CLIENT"

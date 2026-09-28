@@ -14,7 +14,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import java.util.*;
 
 /** Explicit record -> stop -> confirm upload -> return a review draft. Never sends conversation text. */
-public final class NativeSpeechScreen extends Screen {
+public final class NativeSpeechScreen extends dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen {
     private final Screen parent;private final Object connection;private final UUID world,agent,conversation,context;
     private NativeSpeechRecorder.Recording recording;private byte[] wav;private UUID operation;private String transcript="",state="IDLE",hash="";private long revision,submittedRevision,generation,snapshotGeneration,requestedAt;private boolean configured,confirmUpload,adopted,uploadSent;
     private Button record,stop,upload,adopt,cancel;private StringWidget endpoint,status,preview;

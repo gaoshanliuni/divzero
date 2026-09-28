@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import java.util.*;
 
 /** Local operator controls remain available without a server or web Session. No download or server command is issued here. */
-public final class LocalResourcePackScreen extends Screen {
+public final class LocalResourcePackScreen extends dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen {
     private final Screen parent;private int offset;private String notice=dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("资源选择是本机全局的，会影响其它世界、菜单与共用此目录的账号。");
     public LocalResourcePackScreen(Screen parent){super(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("MineAgent · 本机资源包")));this.parent=parent;}
     @Override protected void init(){

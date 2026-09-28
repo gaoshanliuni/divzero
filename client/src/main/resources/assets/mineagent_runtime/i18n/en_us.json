@@ -2514,5 +2514,18 @@
   "；采用保留声明，运行仍需单独确认。": "; adoption retains the declaration; running still requires separate confirmation.",
   "取消排队消息": "Cancel queued message",
   "[本机 Python] 已确认，按当前环境队列执行。": "[Local Python] Approved; queued for this environment.",
-  "最新消息": "Latest messages"
+  "最新消息": "Latest messages",
+  "应用语言后将重新打开工作区，保留对话草稿。": "Changing language reopens the workspace and keeps conversation drafts.",
+  "思考": "Thinking",
+  "新建对话": "New conversation",
+  "新的对话": "New conversation",
+  "更早的消息": "Earlier messages",
+  "正在处理…": "Working…",
+  "语音输入": "Voice input",
+  "选择 AI": "Select AI",
+  "选择或新建对话以查看完整历史。": "Select or create a conversation to view its full history.",
+  "连接服务端失败：": "Server connection failed: ",
+  "工作区会话未就绪": "Workspace session is not ready",
+  "连接超时，请重新打开工作区": "Connection timed out. Reopen the workspace.",
+  "朗读": "Read aloud"
 }

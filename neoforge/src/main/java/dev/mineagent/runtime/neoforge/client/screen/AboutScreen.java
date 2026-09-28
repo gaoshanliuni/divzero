@@ -5,7 +5,7 @@ import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.*;
 import net.minecraft.network.chat.*;
 /** Local, read-only information; available even without server/operator permissions. */
-public final class AboutScreen extends Screen {
+public final class AboutScreen extends dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen {
  private final Screen parent;private int left,top;public int iconDraws;
  public AboutScreen(Screen parent){super(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("关于")));this.parent=parent;}
  @Override protected void init(){int w=Math.min(430,width-32);left=(width-w)/2;top=Math.max(12,(height-210)/2);var info=ProjectAboutClient.info();
