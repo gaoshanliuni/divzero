@@ -37,6 +37,8 @@ final class WorkspacePanels {
         local.addChild(NativeUiTheme.button(t("本机资源包"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.RESOURCE)));
         local.addChild(NativeUiTheme.button(t("本机客户端代码"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.CLIENT)));
         local.addChild(NativeUiTheme.button(t("启动扩展"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.BOOT)));
+        local.addChild(NativeUiTheme.button(t("代码工作区"),()->NativeStudioPanel.open(host)));
+        local.addChild(NativeUiTheme.button(t("原生 API"),()->NativeApiPanel.open(host)));
         var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);var footer=row();footer.getLayout().height(25);body.addChild(footer);
         var values=new LinkedHashMap<String,String>();final JsonObject[] snapshot={null};final String[] group={"Provider"};final boolean[] busy={false};
         Runnable[] draw={null},load={null};
@@ -95,6 +97,7 @@ final class WorkspacePanels {
         if(host.revealWindow("packages"))return;
         var window=host.window("packages",t("包管理"),500,370);window.body.clearAllChildren();var tools=row();tools.getLayout().height(26);window.body.addChild(tools);var search=new TextField();search.getLayout().flex(1);tools.addChild(search);var notice=text("");window.body.addChild(notice);var list=scroller(window.body);final int[] offset={0};Runnable[] load={null};
         load[0]=()->request("task.historyRead",Map.of("kind","packages","search",search.getValue(),"offset",Integer.toString(offset[0]))).whenComplete((receipt,error)->{if(window.closed())return;if(error!=null){failure(notice,error);return;}var data=state(receipt);list.clearAllScrollViewChildren();for(var raw:data.getAsJsonArray("items")){var item=raw.getAsJsonObject();var card=card(list,item.has("name")?item.get("name").getAsString():t("不可用的内容包"));if(item.has("version"))card.addChild(text(item.get("version").getAsString()));if(item.has("revision"))card.addChild(NativeUiTheme.button(t("查看详情"),()->packageDetail(host,item)));else card.addChild(text(item.has("reason")?item.get("reason").getAsString():t("不可用")));}int count=data.has("total")?data.get("total").getAsInt():0;notice.setText(Component.literal(t("包管理")+" · "+count));});
+        tools.addChild(NativeUiTheme.button(t("跨世界资产"),()->NativeAssetsPanel.open(host,null)));
         tools.addChild(NativeUiTheme.button(t("搜索"),()->{offset[0]=0;load[0].run();}));var pager=row();pager.getLayout().height(25);pager.addChild(NativeUiTheme.button(t("上一页"),()->{offset[0]=Math.max(0,offset[0]-8);load[0].run();}));pager.addChild(NativeUiTheme.button(t("下一页"),()->{offset[0]+=8;load[0].run();}));window.body.addChild(pager);load[0].run();
     }
     static void packageDetail(NativeWorkspaceScreen host,JsonObject item){NativePackagePanel.open(host,item);}

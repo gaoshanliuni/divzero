@@ -46,6 +46,6 @@ final class NativeInstancePanel {
         });
     }
     private void write(String action,Map<String,String> args,Runnable after){write(action,args,UUID.randomUUID(),after);}
-    private void write(String action,Map<String,String> args,UUID operation,Runnable after){if(busy||!live())return;busy=true;WorkspacePanels.request(action,args,operation).whenComplete((receipt,error)->{busy=false;if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}after.run();});}
+    private void write(String action,Map<String,String> args,UUID operation,Runnable after){if(busy||!live())return;busy=true;WorkspacePanels.request(action,args,operation).whenComplete((receipt,error)->{busy=false;if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}if(action.equals("world.activate")&&receipt.values().containsKey("activation")){var state=JsonParser.parseString(receipt.values().get("activation")).getAsJsonObject();if(text(state,"operationId").equals(operation.toString())&&text(state,"state").equals("ACTIVE"))pending=null;}after.run();});}
     private static String t(String value){return ClientLanguage.t(value);}
 }

@@ -39,7 +39,13 @@ final class NativePackagePanel {
             if(value.get("dataPackAvailable").getAsBoolean())lifecycle.addChild(NativeUiTheme.button(t("数据包与世界计划"),()->NativeLifecyclePanel.open(host,head,NativeLifecyclePanel.Kind.DATA)));
             if(value.get("bootAvailable").getAsBoolean())lifecycle.addChild(NativeUiTheme.button(t("启动扩展"),()->NativeLifecyclePanel.open(host,head,NativeLifecyclePanel.Kind.BOOT)));
             if(value.get("clientScriptAvailable").getAsBoolean()||value.get("clientJavaAvailable").getAsBoolean())lifecycle.addChild(NativeUiTheme.button(t("本机客户端代码"),()->NativeLifecyclePanel.open(host,head,NativeLifecyclePanel.Kind.CLIENT)));
+            var editors=WorkspacePanels.row();editors.getLayout().height(25);details.addChild(editors);
+            if(value.get("javaAvailable").getAsBoolean())editors.addChild(NativeUiTheme.button("SERVER Java",()->NativeStudioPanel.fromPackage(host,head,"SERVER","JAVA")));
+            if(value.get("scriptAvailable").getAsBoolean())editors.addChild(NativeUiTheme.button("SERVER Rhino",()->NativeStudioPanel.fromPackage(host,head,"SERVER","RHINO")));
+            if(value.get("clientJavaAvailable").getAsBoolean())editors.addChild(NativeUiTheme.button("CLIENT Java",()->NativeStudioPanel.fromPackage(host,head,"CLIENT","JAVA")));
+            if(value.get("clientScriptAvailable").getAsBoolean())editors.addChild(NativeUiTheme.button("CLIENT Rhino",()->NativeStudioPanel.fromPackage(host,head,"CLIENT","RHINO")));
             var library=card(t("资产管理"));var buttons=WorkspacePanels.row();buttons.getLayout().height(25);library.addChild(buttons);buttons.addChild(NativeUiTheme.button(t("库名称"),this::rename));buttons.addChild(NativeUiTheme.button(t("保存为副本"),()->nameDialog("COPY",head)));
+            buttons.addChild(NativeUiTheme.button(t("跨世界资产"),()->NativeAssetsPanel.open(host,head)));
             var technical=card(t("版本校验"));technical.addChild(WorkspacePanels.text(value.get("canonicalSha256").getAsString()));status.setText(Component.literal(""));
         });
     }

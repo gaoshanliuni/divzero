@@ -60,6 +60,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     static NativeWorkspaceScreen previewHost(){open();return active;}
     public static void openPackage(JsonObject item){open();WorkspacePanels.packageDetail(active,item);}
     boolean activeContext(){return current();}
+    String selectedAgentId(){return model.agent;}
     boolean revealWindow(String id){var window=windows.get(id);if(window==null||window.closed())return false;window.reveal();return true;}
     void rememberAgent(String id,String name){knownAgents.put(id,name);}
     void conversationWith(String id){if(!knownAgents.containsKey(id))knownAgents.put(id,"AI");selectAgent(id);if(chatWindow!=null)chatWindow.reveal();}

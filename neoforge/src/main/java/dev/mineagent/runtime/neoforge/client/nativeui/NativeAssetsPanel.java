@@ -1,0 +1,36 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+
+import com.google.gson.*;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
+import dev.mineagent.runtime.neoforge.client.language.ClientLanguage;
+import net.minecraft.network.chat.Component;
+import java.util.*;
+
+/** Owner asset shelves preserve exact signed versions and do not copy world state or execution consent. */
+final class NativeAssetsPanel {
+    private final NativeWorkspaceScreen host;private final WorkspaceWindow window;private final ScrollerView content;private final TextElement notice=WorkspacePanels.text("");
+    private JsonObject head;private int offset;private boolean active=true,busy;private long epoch;private UUID operation;
+    static void open(NativeWorkspaceScreen host,JsonObject head){String key="assets-"+(head==null?"shelf":head.get("packageId").getAsString());if(!host.revealWindow(key))new NativeAssetsPanel(host,head,key);}
+    private NativeAssetsPanel(NativeWorkspaceScreen host,JsonObject head,String key){this.host=host;this.head=head==null?null:head.deepCopy();window=host.window(key,t("内容库与跨世界资产"),510,360);var row=WorkspacePanels.row();row.getLayout().height(25);window.body.addChild(row);row.addChild(NativeUiTheme.button(t("我的跨世界资产"),()->{this.head=null;offset=0;read();}));row.addChild(NativeUiTheme.button(t("显示已撤回资产"),()->{this.head=null;active=!active;offset=0;read();}));row.addChild(NativeUiTheme.button(t("只读刷新"),this::read));row.addChild(NativeUiTheme.button(t("核对上次操作"),this::receipt));window.body.addChild(notice);content=WorkspacePanels.scroller(window.body);read();}
+    private boolean live(){return host.activeContext()&&!window.closed();}
+    private static String value(JsonObject row,String key){return row.has(key)&&!row.get(key).isJsonNull()?row.get(key).getAsString():"";}
+    private void read(){if(!live()||busy)return;busy=true;long ticket=++epoch;var args=head==null?Map.of("kind","shelf","active",Boolean.toString(active),"offset",Integer.toString(offset)):Map.of("kind","inspect","packageId",value(head,"packageId"),"packageRevision",value(head,"revision"),"canonical",value(head,"canonicalSha256"));WorkspacePanels.request("package.assetsRead",args).whenComplete((r,error)->{busy=false;if(!live()||ticket!=epoch)return;if(error!=null){WorkspacePanels.failure(notice,error);return;}draw(WorkspacePanels.state(r));});}
+    private void draw(JsonObject state){
+        content.clearAllScrollViewChildren();notice.setText(Component.literal(t("只保存代码、定义与资源，不复制世界位置、会话、分数或执行许可。")));
+        if(head!=null){
+            head=state.getAsJsonObject("head");var alias=state.getAsJsonObject("alias");var rename=WorkspacePanels.card(content,t("库名称"));var name=new TextField().setText(value(alias,"name"),false);name.getLayout().widthPercent(100).height(24);rename.addChild(name);rename.addChild(NativeUiTheme.button(t("保存库名称"),()->change("RENAME",name.getValue(),null,value(alias,"revision"))));
+            var copy=WorkspacePanels.card(content,t("复制为独立包"));var copyName=new TextField().setText(value(head,"name"),false);copyName.getLayout().widthPercent(100).height(24);copy.addChild(copyName);var consent=new Toggle().setText(t("仅复制资产，不继承世界状态或执行授权"));copy.addChild(consent);copy.addChild(NativeUiTheme.button(t("保存为副本"),()->{if(consent.isOn())change("COPY",copyName.getValue(),null,"0");}));
+            var shelf=WorkspacePanels.card(content,t("保存准确版本供跨世界复用"));var saveConsent=new Toggle().setText(t("允许本人在其它世界复用这个准确资产版本"));shelf.addChild(saveConsent);shelf.addChild(NativeUiTheme.button(t("加入我的跨世界资产"),()->{if(saveConsent.isOn())change("SAVE_ASSET","",null,"0");}));return;
+        }
+        var page=state.getAsJsonObject("page");for(var raw:page.getAsJsonArray("items")){var asset=raw.getAsJsonObject();var card=WorkspacePanels.card(content,value(asset,"displayName"));card.addChild(WorkspacePanels.text(value(asset,"version")+" · r"+value(asset,"packageRevision")));if(asset.get("active").getAsBoolean()){
+            var name=new TextField().setText(value(asset,"displayName"),false);name.getLayout().widthPercent(100).height(24);card.addChild(name);var consent=new Toggle().setText(t("在当前世界建立新的停用副本，不搬运或执行旧状态"));card.addChild(consent);card.addChild(NativeUiTheme.button(t("在当前世界复用此版本"),()->{if(consent.isOn())change("REUSE_ASSET",name.getValue(),asset,value(asset,"revision"));}));
+        }
+            var consent=new Toggle().setText(t(asset.get("active").getAsBoolean()?"撤回后续复用许可":"重新允许复用此版本"));card.addChild(consent);card.addChild(NativeUiTheme.button(t(asset.get("active").getAsBoolean()?"撤回保存版本":"恢复保存版本"),()->{if(consent.isOn())change(asset.get("active").getAsBoolean()?"WITHDRAW_ASSET":"RESTORE_ASSET","",asset,value(asset,"revision"));}));
+        }
+        var pager=WorkspacePanels.row();pager.getLayout().height(25);content.addScrollViewChild(pager);var previous=NativeUiTheme.button(t("上一页"),()->{offset=Math.max(0,offset-8);read();});previous.setActive(offset>0);pager.addChild(previous);var next=NativeUiTheme.button(t("下一页"),()->{offset=page.get("nextOffset").getAsInt();read();});next.setActive(page.get("more").getAsBoolean());pager.addChild(next);
+    }
+    private void change(String action,String name,JsonObject shelf,String expected){if(!live()||busy)return;if(operation!=null){receipt();return;}if(name.length()>128||name.codePoints().anyMatch(Character::isISOControl)){notice.setText(Component.literal(t("名称无效")));return;}operation=UUID.randomUUID();busy=true;var source=shelf==null?head:shelf;var args=new LinkedHashMap<String,String>();args.put("kind","change");args.put("action",action);args.put("packageId",value(source,"packageId"));args.put("packageRevision",value(source,shelf==null?"revision":"packageRevision"));args.put("canonical",value(source,shelf==null?"canonicalSha256":"canonical"));args.put("name",name);args.put("shelfId",shelf==null?"":value(shelf,"id"));args.put("expectedRevision",expected);args.put("confirmed","true");WorkspacePanels.request("package.assetsWrite",args,operation).whenComplete((r,error)->{busy=false;if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}operation=null;result(WorkspacePanels.state(r));});}
+    private void result(JsonObject value){notice.setText(Component.literal(value(value,"outcome")));if(value.has("target")&&!value.get("target").isJsonNull()){WorkspacePanels.request("task.historyRead",Map.of("kind","package","packageId",value(value,"target"),"headRevision","0","headHash","")).whenComplete((r,e)->{if(!live())return;if(e!=null)WorkspacePanels.failure(notice,e);else NativePackagePanel.open(host,WorkspacePanels.state(r));});}else{if(head!=null)WorkspacePanels.request("task.historyRead",Map.of("kind","package","packageId",value(head,"packageId"),"headRevision","0","headHash","")).thenAccept(r->{head=WorkspacePanels.state(r);read();});else read();}}
+    private void receipt(){if(!live()||busy||operation==null)return;busy=true;WorkspacePanels.request("package.assetsRead",Map.of("kind","receipt","operationId",operation.toString())).whenComplete((r,error)->{busy=false;if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}operation=null;result(WorkspacePanels.state(r).getAsJsonObject("receipt"));});}
+    private static String t(String value){return ClientLanguage.t(value);}
+}

@@ -13,12 +13,15 @@ import java.util.concurrent.*;
 
 /** Resource, data, boot and client-code lifecycles share native windows but retain their distinct authority. */
 final class NativeLifecyclePanel {
+    private static NativeLifecyclePanel smokePanel;
+    static Map<String,Object> smokeState(){if(!Boolean.getBoolean("mineagent.nativeStudioSmoke"))throw new IllegalStateException("SMOKE_DISABLED");var p=smokePanel;return p==null?Map.of():Map.of("ready",p.view!=null&&!p.busy,"kind",p.kind.name(),"notice",p.notice.getText().getString());}
+
     enum Kind { RESOURCE, CLIENT, DATA, BOOT }
     private static final Gson JSON=new GsonBuilder().setPrettyPrinting().create();private static final Set<NativeLifecyclePanel> OPEN=new HashSet<>();
     private final NativeWorkspaceScreen host;private final WorkspaceWindow window;private final Kind kind;private final ScrollerView content;
     private final TextElement notice=WorkspacePanels.text("");private JsonObject head,view,plans;private int offset,planOffset;private boolean busy;private long epoch,nextPoll;private UUID operation;
     static void open(NativeWorkspaceScreen host,JsonObject head,Kind kind){String id="lifecycle-"+kind+"-"+(head==null?"local":text(head,"packageId"));if(host.revealWindow(id))return;new NativeLifecyclePanel(host,head,kind,id);}
-    private NativeLifecyclePanel(NativeWorkspaceScreen host,JsonObject head,Kind kind,String id){this.host=host;this.head=head==null?null:head.deepCopy();this.kind=kind;window=host.window(id,t(title(kind)),560,400);OPEN.add(this);var tools=WorkspacePanels.row();tools.getLayout().height(25);window.body.addChild(tools);tools.addChild(NativeUiTheme.button(t("只读刷新"),this::read));tools.addChild(NativeUiTheme.button(t("本机资源包"),()->open(host,null,Kind.RESOURCE)));tools.addChild(NativeUiTheme.button(t("本机客户端代码"),()->open(host,null,Kind.CLIENT)));tools.addChild(NativeUiTheme.button(t("启动扩展"),()->open(host,null,Kind.BOOT)));window.body.addChild(notice);content=WorkspacePanels.scroller(window.body);read();}
+    private NativeLifecyclePanel(NativeWorkspaceScreen host,JsonObject head,Kind kind,String id){this.host=host;this.head=head==null?null:head.deepCopy();this.kind=kind;if(Boolean.getBoolean("mineagent.nativeStudioSmoke"))smokePanel=this;window=host.window(id,t(title(kind)),560,400);OPEN.add(this);var tools=WorkspacePanels.row();tools.getLayout().height(25);window.body.addChild(tools);tools.addChild(NativeUiTheme.button(t("只读刷新"),this::read));tools.addChild(NativeUiTheme.button(t("本机资源包"),()->open(host,null,Kind.RESOURCE)));tools.addChild(NativeUiTheme.button(t("本机客户端代码"),()->open(host,null,Kind.CLIENT)));tools.addChild(NativeUiTheme.button(t("启动扩展"),()->open(host,null,Kind.BOOT)));window.body.addChild(notice);content=WorkspacePanels.scroller(window.body);read();}
     private static String title(Kind kind){return switch(kind){case RESOURCE->"本机资源包";case CLIENT->"本机客户端代码";case DATA->"数据包与世界计划";case BOOT->"启动扩展";};}
     private boolean live(){return host.activeContext()&&!window.closed();}
     private static String text(JsonObject value,String key){return value!=null&&value.has(key)&&!value.get(key).isJsonNull()?value.get(key).getAsString():"";}
