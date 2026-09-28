@@ -134,6 +134,6 @@ public final class NativeTenScenarioSmokeClient {
             var step=steps.getFirst();if(++wait<step.delay())return;wait=0;steps.removeFirst();current=step.name();busy=true;step.action().run().whenComplete((value,error)->mc().execute(()->{busy=false;if(error!=null)fail(error);else passed.add(current);}));
         }catch(Exception error){fail(error);}
     }
-    private static void fail(Throwable error){if(done)return;done=true;try{Files.writeString(output().resolve("failure.json"),JSON.writeValueAsString(Map.of("stage",current,"error",error.toString(),"checks",passed,"receipts",receipts)));}catch(Exception ignored){}mc().stop();}
+    private static void fail(Throwable error){if(done)return;done=true;try{Files.writeString(output().resolve("failure.json"),JSON.writeValueAsString(Map.of("stage",current,"error",error.toString(),"checks",passed,"receipts",receipts,"preview",NativePreview.smokeState(),"screen",mc().screen==null?"":mc().screen.getClass().getName())));}catch(Exception ignored){}mc().stop();}
     private NativeTenScenarioSmokeClient(){}
 }

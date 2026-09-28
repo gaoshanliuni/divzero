@@ -247,7 +247,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
                 control.setActive(!pending&&(!action.equals("confirm")||state.equals("OPEN")));root.addChild(control);
             }
             if(pending)root.addChild(label(t("正在提交选择…")));
-            else if(!state.equals("OPEN"))root.addChild(label(t(switch(state){case "ACCEPTED"->"选择已提交";case "EXPIRED"->"选项已过期";case "READ_ONLY"->"归档会话不能提交选择";default->"选择结果待核对，不会自动重发";})+(selected<0?"":" · "+data.getAsJsonArray("buttons").get(selected).getAsJsonObject().get("label").getAsString())));
+            else if(!state.equals("OPEN")&&data.getAsJsonArray("buttons").asList().stream().anyMatch(option->option.getAsJsonObject().get("action").getAsString().equals("confirm")))root.addChild(label(t(switch(state){case "ACCEPTED"->"选择已提交";case "EXPIRED"->"选项已过期";case "READ_ONLY"->"归档会话不能提交选择";default->"选择结果待核对，不会自动重发";})+(selected<0?"":" · "+data.getAsJsonArray("buttons").get(selected).getAsJsonObject().get("label").getAsString())));
             restoreScrollFrames=3;
         }
         void activate(int index,String action){

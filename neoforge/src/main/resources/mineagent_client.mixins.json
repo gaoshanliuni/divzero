@@ -28,7 +28,8 @@
     "client.EntityRenderContextMixin",
     "client.NativeButtonMixin",
     "client.ContainerScreenGeometry",
-    "client.SpritePixelsAccess"
+    "client.SpritePixelsAccess",
+    "client.AttachedWidgetReleaseAccess"
   ],
   "injectors": {
     "defaultRequire": 1
