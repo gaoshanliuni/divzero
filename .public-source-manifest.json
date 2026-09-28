@@ -3969,8 +3969,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiSmokeClient.java",
-      "sha256": "193337c6c7565fcac161e88594c5c8fac630f72eb7ed2f5d0d6209e8432a163b",
-      "bytes": 26246
+      "sha256": "7cd2e257798924bdb1944cdfa76662eb7a78e38a6b50e51fd6d795feef3fb423",
+      "bytes": 26326
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
