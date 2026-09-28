@@ -69,7 +69,7 @@ public final class ServerBulldozers {
                     if(!p.level().isInWorldBounds(pos)||!p.level().getChunkSource().hasChunk(point[0]>>4,point[2]>>4)){blocked(h,"UNLOADED_OR_HEIGHT",pos);continue;}
                     var before=p.level().getBlockState(pos);if(before.isAir())continue;if(!spec.blockEntities()&&before.hasBlockEntity()){blocked(h,"BLOCK_ENTITY",pos);continue;}if(!spec.unbreakable()&&before.getDestroySpeed(p.level(),pos)<0){blocked(h,"UNBREAKABLE",pos);continue;}
                     if(!p.level().mayInteract(p,pos)||s.isUnderSpawnProtection(p.level(),pos,p)){blocked(h,"PROTECTED",pos);continue;}
-                    var breaking=new net.neoforged.neoforge.event.level.BlockEvent.BreakEvent(p.level(),pos,before,p);net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(breaking);if(breaking.isCanceled()){blocked(h,"BREAK_EVENT_CANCELLED",pos);continue;}
+                    var breaking=new net.neoforged.neoforge.event.level.block.BreakBlockEvent(p.level(),pos,before,p);net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(breaking);if(breaking.isCanceled()){blocked(h,"BREAK_EVENT_CANCELLED",pos);continue;}
                     if(p.level().getBlockState(pos)!=before){blocked(h,"STATE_CHANGED",pos);continue;}
                     boolean changed=p.level().destroyBlock(pos,spec.drops(),entity,512);var after=p.level().getBlockState(pos);if(changed&&after.isAir()){h.cleared++;edits.add(Map.of("position",List.of(point[0],point[1],point[2]),"before",net.minecraft.commands.arguments.blocks.BlockStateParser.serialize(before),"after","minecraft:air"));}else blocked(h,"WRITE_NOT_CLEARED",pos);
                 }
