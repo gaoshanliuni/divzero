@@ -27,10 +27,10 @@ public final class NativeInterfacesClient {
     private static final Map<Key,Slot> VIEWS=new LinkedHashMap<>();
     private static UUID restoreRequest;private static boolean restoreReady;private static long nextRestore;
     public static void restoreAcknowledged(UUID id){if(id.equals(restoreRequest))restoreReady=true;}
-    private static Object connection,level;private static UUID connectionId=UUID.randomUUID();
+    private static Object connection,level,player;private static UUID connectionId=UUID.randomUUID();
     public static void tick(){
-        var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level){restoreReady=false;restoreRequest=null;nextRestore=0;
-        for(var slot:VIEWS.values())slot.session.close();VIEWS.clear();CALLBACKS.clear();connection=mc.getConnection();level=mc.level;connectionId=UUID.randomUUID();
+        var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level||player!=mc.player){restoreReady=false;restoreRequest=null;nextRestore=0;
+        for(var slot:VIEWS.values())slot.session.close();VIEWS.clear();CALLBACKS.clear();connection=mc.getConnection();level=mc.level;player=mc.player;connectionId=UUID.randomUUID();
         if(mc.screen instanceof NativeScreen screen){screen.detach();mc.setScreen(null);}
         }
         for(var callback:CALLBACKS.values())if(System.currentTimeMillis()>=callback.deadline){callback.deadline=Long.MAX_VALUE;callback.record.put("state","UNKNOWN");callback.slot.error="NATIVE_EVENT_ACK_TIMEOUT_INSPECT_DO_NOT_REPLAY";publish(callback,JSON.createObjectNode().put("status","UNKNOWN").put("error",callback.slot.error));}

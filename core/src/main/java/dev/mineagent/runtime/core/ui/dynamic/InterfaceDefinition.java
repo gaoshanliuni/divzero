@@ -21,6 +21,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         Optional sources binds data keys to live server data, without AI polling or reload:
         "sources":{"balance":{"kind":"score","objective":"coins","holder":"$viewer"},"health":{"kind":"agent","field":"health"}}.
         score holder may be $viewer (the viewing player's score name), $agent, or an exact scoreboard holder. A missing score is 0; an unavailable source is reported separately.
+        Score sources require the existing MANAGE_SCOREBOARD permission; declaring a source never grants it.
         agent fields: health/max_health/food/name, scoped to this UI's AI. task sources use task_id plus status/title/revision/completed_steps/total_steps and must belong to this owner and AI.
         Sources only read world data. Setting a local bound number never changes the real score, health or task.
         Arbitrary nested panel/row/column/scroll/label/button/input/toggle/progress/image nodes, each with a stable unique id.

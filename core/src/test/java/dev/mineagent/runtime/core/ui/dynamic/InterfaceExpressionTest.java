@@ -9,6 +9,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class InterfaceExpressionTest {
     private static final ObjectMapper JSON=new ObjectMapper();
     private static JsonNode expr(String source)throws Exception{return JSON.readTree(source);}
+    @Test void callbackBindingsReadReceiptsAndExplicitlyConvertNumericInput()throws Exception{
+        assertEquals(3,InterfaceExpression.evaluate(expr("{\"op\":\"number\",\"args\":[\"3\"]}"),Map.of()).intValue());
+        assertThrows(IllegalArgumentException.class,()->InterfaceExpression.evaluate(expr("{\"op\":\"number\",\"args\":[\"NaN\"]}"),Map.of()));
+        assertEquals("APPLIED",InterfaceExpression.evaluate(expr("{\"op\":\"get\",\"args\":[{\"data\":\"receipt\"},\"status\"]}"),Map.of("receipt",expr("{\"status\":\"APPLIED\"}"))).asText());
+    }
     @Test void shopSearchAndPriceReactToDataWithoutScriptEvaluation()throws Exception{
         var search=expr("""
         {"op":"contains","args":["Oak planks",{"data":"query"}]}
