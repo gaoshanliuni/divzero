@@ -23,6 +23,10 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         score holder may be $viewer (the viewing player's score name), $agent, or an exact scoreboard holder. A missing score is 0; an unavailable source is reported separately.
         Score sources require the existing MANAGE_SCOREBOARD permission; declaring a source never grants it.
         agent fields: health/max_health/food/name, scoped to this UI's AI. task sources use task_id plus status/title/revision/completed_steps/total_steps and must belong to this owner and AI.
+        player fields read only the current viewer: health/max_health/food/name/x/y/z/yaw/pitch/experience. No player UUID selector is accepted.
+        world fields: game_time/dimension/raining/thundering in that viewer's current dimension.
+        block fields id/state/solid/fluid/position/loaded read an optional relative offset:[dx,dy,dz] from the viewer's feet, each axis -2047..2047. Unloaded chunks are never forced to load; inventories and block-entity NBT are not exposed.
+        blocks sources use radius:1..2047, offset:nonnegative page cursor (default0). Values contain center/dimension/radius/offset/nextOffset/totalCells/counts/unknown/gameTick, at most4096 cells per read. -1 nextOffset means that page finishes the region; other pages are not included. Do not combine pages from different centers or ticks into one claimed instantaneous observation. Per-view declarations share a4096-cell read budget and server ticks schedule them fairly.
         Sources only read world data. Setting a local bound number never changes the real score, health or task.
         Arbitrary nested panel/row/column/scroll/label/button/input/toggle/select/progress/image nodes, each with a stable unique id.
         Node fields: id,type,text,value,bind,style,classes,resource,events,children,visible,enabled.
@@ -81,6 +85,9 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
     public Map<String,String> inputBindings(){
         var bindings=new LinkedHashMap<String,String>();walk(root,n->{String type=n.path("type").asText();if(Set.of("input","toggle","select").contains(type)&&n.has("bind"))bindings.put(n.path("id").asText(),type+":"+n.path("bind").asText());});return Map.copyOf(bindings);
     }
+    public Set<String> secretKeys(){var keys=new HashSet<String>();walk(root,node->{if(node.path("type").asText().equals("input")&&node.has("bind")&&node.path("secret").asBoolean())keys.add(node.path("bind").asText());});return Set.copyOf(keys);}
+    /** Secret editor values stay on this client; ordinary inspection/acks do not persist or disclose them. */
+    public Map<String,JsonNode> observableData(Map<String,JsonNode> values){var result=new LinkedHashMap<String,JsonNode>();var privateKeys=secretKeys();values.forEach((key,value)->{if(!privateKeys.contains(key))result.put(key,value.deepCopy());});return result;}
     public Optional<JsonNode> node(String id){var found=new ArrayList<JsonNode>();walk(root,n->{if(n.path("id").asText().equals(id))found.add(n.deepCopy());});return found.stream().findFirst();}
     public boolean interactiveNode(String id){return interactiveNode(id,data);}
     public boolean interactiveNode(String id,Map<String,JsonNode> values){var path=new ArrayList<JsonNode>();if(!path(root,id,path))return false;for(var node:path)if(!boundBoolean(node,"visible",values)||!boundBoolean(node,"enabled",values))return false;return true;}

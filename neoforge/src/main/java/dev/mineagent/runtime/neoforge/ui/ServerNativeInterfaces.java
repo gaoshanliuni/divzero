@@ -47,7 +47,7 @@ public final class ServerNativeInterfaces {
                 if(observed==null||!current(p,agent,level,guard)||!candidate.dimension().equals(level.dimension().identifier().toString())){value.put("reconciliation","PENDING_CLIENT_EVIDENCE");out.complete(value);return;}
                 var data=new LinkedHashMap<String,JsonNode>();observed.path("data").properties().forEach(e->data.put(e.getKey(),e.getValue()));boolean visible=observed.path("visible").asBoolean();
                 io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),candidate.expectedRevision()+1,data,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
-                    if(saveError==null){ServerNativeUiEvents.invalidate(p,agent,id,saved.revision());ServerNativeInterfaceSources.register(p,agent,InterfaceDefinition.parse(saved.source()),saved.revision());value.put("saved",saved);value.put("pending",null);value.put("reconciliation","COMMITTED_FROM_CLIENT_EVIDENCE");}else value.put("reconciliation","PERSISTENCE_UNAVAILABLE");out.complete(value);
+                    if(saveError==null){ServerNativeUiEvents.invalidate(p,agent,id,saved.revision());if(saved.visible())ServerNativeInterfaceSources.register(p,agent,InterfaceDefinition.parse(saved.source()),saved.revision());else ServerNativeInterfaceSources.unregister(p,agent,id);value.put("saved",saved);value.put("pending",null);value.put("reconciliation","COMMITTED_FROM_CLIENT_EVIDENCE");}else value.put("reconciliation","PERSISTENCE_UNAVAILABLE");out.complete(value);
                 }));
             }));
         }));return out;
@@ -70,7 +70,8 @@ public final class ServerNativeInterfaces {
                 require(Set.of("replace","data","show","hide","interact","release").contains(kind),"NATIVE_UI_ACTION");
                 if(old!=null&&!tool.equals("set_native_ui"))require(old.dimension().equals(level.dimension().identifier().toString()),"NATIVE_UI_DIMENSION_CHANGED");
                 var message=JSON.createObjectNode().put("kind",kind).put("id",id).put("world",scope.world().toString()).put("owner",scope.owner().toString()).put("agent",agent.toString()).put("dimension",level.dimension().identifier().toString()).put("expectedRevision",expected).put("revision",expected+1).put("source",source);
-                var sourceValues=ServerNativeInterfaceSources.read(p,agent,definition);values.putAll(sourceValues.data());message.set("data",JSON.valueToTree(values));if(kind.equals("data")){var patch=(com.fasterxml.jackson.databind.node.ObjectNode)args.get("data").deepCopy();sourceValues.data().forEach(patch::set);message.set("patch",patch);}
+                var sourceValues=ServerNativeInterfaceSources.read(p,agent,definition);values.putAll(sourceValues.data());message.set("sourceErrors",JSON.valueToTree(sourceValues.errors()));message.set("data",JSON.valueToTree(values));if(kind.equals("data")){var patch=(com.fasterxml.jackson.databind.node.ObjectNode)args.get("data").deepCopy();sourceValues.data().forEach(patch::set);message.set("patch",patch);}
+                require(message.toString().length()<=120000,"NATIVE_UI_WIRE_BUDGET");
                 io(()->{try(var store=new NativeUiStore(db)){return store.stage(scope,id,expected,level.dimension().identifier().toString(),source);}}).whenComplete((candidate,stageError)->server.execute(()->{
                 if(stageError!=null){result.complete(Map.of("status","REJECTED","error","NATIVE_UI_CANDIDATE_PERSISTENCE_FAILED"));return;}
                 if(!current(p,agent,level,guard)){io(()->{try(var store=new NativeUiStore(db)){store.discard(scope,id,candidate.token());return true;}}).whenComplete((discarded,e)->result.complete(Map.of("status","REJECTED","error","NATIVE_UI_CONTEXT_CHANGED")));return;}
@@ -89,7 +90,7 @@ public final class ServerNativeInterfaces {
                         var activeData=new LinkedHashMap<String,JsonNode>();ack.get("data").properties().forEach(e->activeData.put(e.getKey(),e.getValue()));boolean visible=ack.path("visible").asBoolean(true);
                         io(()->{try(var store=new NativeUiStore(db)){return store.acknowledge(scope,id,candidate.token(),expected+1,activeData,visible);}}).whenComplete((saved,saveError)->server.execute(()->{
                             if(saveError!=null){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_PERSISTENCE_FAILED","replayed",false));return;}
-                            ServerNativeInterfaceSources.register(p,agent,definition,saved.revision());
+                            if(saved.visible())ServerNativeInterfaceSources.register(p,agent,definition,saved.revision());else ServerNativeInterfaceSources.unregister(p,agent,id);
                             result.complete(Map.of("status","APPLIED","id",id,"revision",saved.revision(),"surface",definition.surface().name(),"clientActivated",true,"visible",visible,"restartRequired",false,"reloadRequired",false));
                         }));
                     }catch(Exception invalid){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_INVALID_ACK"));}
@@ -114,8 +115,8 @@ public final class ServerNativeInterfaces {
             try{
                 if(error!=null||saved==null||!saved.visible()||!saved.dimension().equals(level.dimension().identifier().toString())||!current(player,agent,level,guard)){BUSY.remove(lock);return;}
                 var definition=InterfaceDefinition.parse(saved.source());if(definition.surface()!=InterfaceDefinition.Surface.HUD){BUSY.remove(lock);return;}
-                var data=new LinkedHashMap<String,JsonNode>(saved.data());data.putAll(ServerNativeInterfaceSources.read(player,agent,definition).data());
-                var message=JSON.createObjectNode().put("kind","restore").put("id",id).put("world",scope.world().toString()).put("owner",scope.owner().toString()).put("agent",agent.toString()).put("dimension",saved.dimension()).put("source",saved.source()).put("revision",saved.revision());message.set("data",JSON.valueToTree(data));
+                var data=new LinkedHashMap<String,JsonNode>(saved.data());var live=ServerNativeInterfaceSources.read(player,agent,definition);data.putAll(live.data());
+                var message=JSON.createObjectNode().put("kind","restore").put("id",id).put("world",scope.world().toString()).put("owner",scope.owner().toString()).put("agent",agent.toString()).put("dimension",saved.dimension()).put("source",saved.source()).put("revision",saved.revision());message.set("data",JSON.valueToTree(data));message.set("sourceErrors",JSON.valueToTree(live.errors()));
                 request(player,agent,message,guard).whenComplete((receipt,failure)->server.execute(()->{BUSY.remove(lock);if(failure==null&&current(player,agent,level,guard)&&receipt.path("status").asText().equals("APPLIED")&&receipt.path("revision").asLong()==saved.revision())ServerNativeInterfaceSources.register(player,agent,definition,saved.revision());}));
             }catch(Exception failure){BUSY.remove(lock);dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Native HUD restore failed: {}",failure.getClass().getSimpleName());}
         }));

@@ -60,7 +60,7 @@ public final class LdInterfaceRenderer {
             if(element instanceof ProgressBar)element.getLayout().minHeight(18);
             if(element instanceof Selector<?> raw){@SuppressWarnings("unchecked")var selector=(Selector<String>)raw;var labels=new LinkedHashMap<String,String>();for(var option:n.path("options"))labels.put(option.path("value").asText(),option.path("label").asText());selector.setCandidateUIProvider(value->new TextElement().setText(Component.literal(value==null?"":labels.getOrDefault(value,value))));selector.setCandidates(List.copyOf(labels.keySet()));selector.getLayout().minHeight(22).flexShrink(0);}
             if(element instanceof TextField field)field.textFieldStyle(style->style.placeholder(Component.empty()));
-            if(element instanceof TextField field&&n.path("secret").asBoolean(false))field.setFormatter(value->Component.literal("•".repeat(value.length())));
+            if(element instanceof TextField field&&(n.path("secret").asBoolean(false)||definition.secretKeys().contains(n.path("bind").asText())))field.setFormatter(value->Component.literal("•".repeat(value.length())));
             if(element instanceof ProgressBar progress){progress.label.setText(Component.literal(n.path("text").asText("")));progress.label.setDisplay(n.has("text"));}
             if(type.equals("row")||type.equals("column"))element.addLocalStylesheet(strictStyles("#"+id+" { flex-direction: "+type+"; }"));
             if(n.has("style"))element.addLocalStylesheet(strictStyles("#"+id+" { "+n.get("style").asText()+" }"));
@@ -111,6 +111,7 @@ public final class LdInterfaceRenderer {
         private final Map<String,JsonNode> specs;
         private final BuilderBridge bridge;
         private boolean closed;
+        private TextElement diagnostic;private String diagnosticText="";
         Rendered(ModularUI ui,UIElement root,Map<String,UIElement> nodes,Map<String,JsonNode> specs,BuilderBridge bridge){this.ui=ui;this.root=root;this.nodes=Map.copyOf(nodes);this.specs=Map.copyOf(specs);this.bridge=bridge;}
         public void update(Map<String,JsonNode> data){
             if(closed)throw new IllegalStateException("INTERFACE_RENDERER_CLOSED");
@@ -124,8 +125,13 @@ public final class LdInterfaceRenderer {
             try{updates.forEach((node,update)->{set(node,update.value);node.setDisplay(update.visible);node.setActive(update.enabled);});}finally{bridge.ready=true;}
         }
         public UIElement node(String id){return nodes.get(id);}
+        public void note(String message){
+            if(closed)return;diagnosticText=Objects.toString(message,"");if(diagnostic==null){diagnostic=NativeUiTheme.text("",0xffa02020,8);diagnostic.getLayout().positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE).left(3).right(3).bottom(3).paddingAll(3);diagnostic.getStyle().backgroundTexture(NativeUiTheme.panel()).zIndex(100000);diagnostic.setActive(false);root.addChild(diagnostic);}
+            diagnostic.setText(Component.literal(diagnosticText.substring(0,Math.min(384,diagnosticText.length()))));diagnostic.setDisplay(!diagnosticText.isBlank());
+        }
         public boolean popupOpen(){return nodes.values().stream().anyMatch(element->element instanceof Selector<?> selector&&selector.isOpen());}
         public void copyScrollTo(Rendered target){
+            target.note(diagnosticText);
             for(var entry:nodes.entrySet())if(entry.getValue() instanceof ScrollerView source&&target.node(entry.getKey()) instanceof ScrollerView next){next.horizontalScroller.setNormalizedValue(source.horizontalScroller.getNormalizedValue());next.verticalScroller.setNormalizedValue(source.verticalScroller.getNormalizedValue());}
         }
         public boolean sameGeometry(Rendered target){

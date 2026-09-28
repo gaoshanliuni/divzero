@@ -73,9 +73,10 @@ public final class NativePackageViews {
     public static Session rawSession(String id){var view=VIEWS.get(id);return view==null?null:view.session;}
     public static void rebind(String id,Session source,Session target){var view=require(id);if(!Objects.equals(view.session,source))throw new SecurityException("NATIVE_PACKAGE_STALE_SESSION");if(!dev.mineagent.runtime.api.ui.ReadOnlyUiLease.sameContext(source,target)){view.lifecycle++;view.reading.clear();view.refreshing.clear();}view.session=target;view.ready=true;view.blocked=false;view.content.rendered().root.setActive(true);view.nextRead.clear();}
     public static void block(String id,String error){var view=VIEWS.get(id);if(view!=null){view.blocked=true;view.error=error;view.content.interactive(false);view.content.rendered().root.setActive(false);}}
-    public static void show(String id){var view=require(id);view.visible=true;view.content.visible(true);if(view.definition.view().surface()==InterfaceDefinition.Surface.HUD){view.content.interactive(false);LdHudRegistry.attach(view.content,view.definition.view().order());}else if(view.window==null||view.window.closed()||view.content.rendered().root.getParent()==null)mount(view);else view.window.reveal();}
-    public static void hide(String id){var view=require(id);view.visible=false;view.content.visible(false);view.content.interactive(false);if(view.window!=null)view.window.dialog.setDisplay(false);}
-    public static void close(String id){var view=VIEWS.remove(id);if(view==null)return;view.closed=true;if(view.projection!=null&&Minecraft.getInstance().screen==view.projection)Minecraft.getInstance().setScreen(null);if(view.presentation!=null)view.presentation.completeExceptionally(new IllegalStateException("VIEW_CLOSED"));PackageContentClient.close(id);if(view.window!=null)view.window.close();view.content.close();view.resources.close();}
+    public static void show(String id){var view=require(id);view.visible=true;view.content.visible(true);dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.visible(id,true);if(view.definition.view().surface()==InterfaceDefinition.Surface.HUD){view.content.interactive(false);LdHudRegistry.attach(view.content,view.definition.view().order());}else if(view.window==null||view.window.closed()||view.content.rendered().root.getParent()==null)mount(view);else view.window.reveal();}
+    public static void hide(String id){var view=require(id);view.visible=false;view.content.visible(false);dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.visible(id,false);view.content.interactive(false);if(view.window!=null)view.window.dialog.setDisplay(false);}
+    public static void close(String id){close(id,true);}
+    private static void close(String id,boolean user){var view=VIEWS.remove(id);if(view==null)return;view.closed=true;if(view.projection!=null&&Minecraft.getInstance().screen==view.projection)Minecraft.getInstance().setScreen(null);if(view.presentation!=null)view.presentation.completeExceptionally(new IllegalStateException("VIEW_CLOSED"));PackageContentClient.close(id);if(user)dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.closed(id);else dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.retired(id);if(view.window!=null)view.window.close();view.content.close();view.resources.close();}
     public static Set<String> ids(){return Set.copyOf(VIEWS.keySet());}
     public static void hostEvent(String channel,com.google.gson.JsonElement payload){
         if(!payload.isJsonObject())return;var data=payload.getAsJsonObject();String id=data.has("viewId")?data.get("viewId").getAsString():"";if(!owns(id))return;
@@ -109,7 +110,7 @@ public final class NativePackageViews {
         var text=new StringBuilder();for(var row:nodes)if(Boolean.TRUE.equals(row.get("visible"))&&!Boolean.TRUE.equals(row.get("secret"))&&!Objects.toString(row.get("text"),"").isBlank())text.append(row.get("text")).append('\n');
         var out=new LinkedHashMap<String,Object>();out.put("status",rendered(id)?"OBSERVED":"VIEW_NOT_RENDERED");out.put("documentId",view.document);out.put("renderer","LDLIB2");out.put("elements",nodes.stream().filter(n->Boolean.TRUE.equals(n.get("visible"))).limit(128).toList());out.put("candidateElements",nodes.size());out.put("elementBudget",128);out.put("visibleText",text.substring(0,Math.min(8192,text.length())));out.put("visibleTextTruncated",text.length()>8192);out.put("sensitiveVisible",nodes.stream().anyMatch(n->Boolean.TRUE.equals(n.get("visible"))&&Boolean.TRUE.equals(n.get("secret"))));out.put("viewport",Map.of("width",root.getSizeWidth(),"height",root.getSizeHeight(),"elementRef",root.getId(),"scrollX",0,"scrollY",0));out.put("supportedActions",List.of("click","clickAt","fill","select","toggle","scroll","capture","waitFor","verify","present","done"));out.put("visible",visible(view));out.put("interactive",view.content.interactive());out.put("paintedTick",view.paintedTick);out.put("error",view.error);return out;
     }
-    private static boolean secret(JsonNode spec){return spec.path("secret").asBoolean(false)||(spec.path("id").asText()+" "+spec.path("bind").asText()).toLowerCase(Locale.ROOT).matches(".*(password|secret|token|api.?key|cc.number|cc.csc|one.time.code).*");}
+    private static boolean secret(JsonNode spec){return spec.path("secret").asBoolean(false);}
     private static void inspect(View view,JsonNode spec,List<Map<String,Object>> rows,boolean ancestorVisible,boolean ancestorDisabled,float clipX,float clipY,float clipR,float clipB){
         var element=view.content.rendered().node(spec.path("id").asText());var root=view.content.rendered().root;if(element==null)return;
         float x=element.getPositionX()-root.getPositionX(),y=element.getPositionY()-root.getPositionY(),right=x+element.getSizeWidth(),bottom=y+element.getSizeHeight();
@@ -164,7 +165,7 @@ public final class NativePackageViews {
     }
     public static void restoreLayout(String id,com.google.gson.JsonObject saved){
         var view=require(id);if(view.layoutRevision>1||!saved.has("bounds"))return;
-        var b=saved.getAsJsonObject("bounds");applyBounds(view,b.get("x").getAsFloat(),b.get("y").getAsFloat(),b.get("width").getAsFloat(),b.get("height").getAsFloat(),saved.has("opacity")?saved.get("opacity").getAsDouble():1);
+        var b=saved.getAsJsonObject("bounds");applyBounds(view,b.get("x").getAsFloat(),b.get("y").getAsFloat(),b.get("width").getAsFloat(),b.get("height").getAsFloat(),saved.has("opacity")?saved.get("opacity").getAsDouble():1);if(saved.has("minimized")&&saved.get("minimized").getAsBoolean())hide(id);
     }
     private static void applyBounds(View view,float x,float y,float w,float h,double opacity){
         if(!Float.isFinite(x)||!Float.isFinite(y)||!Float.isFinite(w)||!Float.isFinite(h)||!Double.isFinite(opacity)||opacity<0||opacity>1)throw new IllegalArgumentException("UI_LAYOUT_INVALID");
@@ -251,8 +252,8 @@ public final class NativePackageViews {
     }
 
     public static void tick(){thread();context();tick++;for(var view:List.copyOf(VIEWS.values())){if(view.window!=null&&view.window.closed()){close(view.id);continue;}boolean shown=visible(view);if(shown!=view.observedVisibility){view.observedVisibility=shown;PackageContentClient.visibility(view.id,shown);}if(!current(view)||!view.ready||!shown||view.blocked)continue;placementTick(view);for(var entry:view.definition.reads().entrySet()){var request=entry.getValue();if(tick<view.nextRead.getOrDefault(entry.getKey(),0L))continue;view.nextRead.put(entry.getKey(),request.intervalTicks()==0?Long.MAX_VALUE:tick+request.intervalTicks());dispatch(view,entry.getKey(),request,view.content.data(),false);}}}
-    private static void context(){var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level||player!=mc.player){for(String id:List.copyOf(VIEWS.keySet()))close(id);connection=mc.getConnection();level=mc.level;player=mc.player;}}
-    public static void clear(){thread();for(String id:List.copyOf(VIEWS.keySet()))close(id);}
+    private static void context(){var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level||player!=mc.player){for(String id:List.copyOf(VIEWS.keySet()))close(id,false);connection=mc.getConnection();level=mc.level;player=mc.player;}}
+    public static void clear(){thread();for(String id:List.copyOf(VIEWS.keySet()))close(id,false);}
     private static void thread(){if(!Minecraft.getInstance().isSameThread())throw new IllegalStateException("NATIVE_PACKAGE_CLIENT_THREAD");}
     private NativePackageViews(){}
 }

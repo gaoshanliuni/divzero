@@ -46,7 +46,7 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
             // Only matching stable input identities inherit drafts. A renamed/type-changed binding is a new control.
             var kept=new HashSet<String>();
             if(definition!=null){var old=definition.inputBindings();for(var entry:next.inputBindings().entrySet())
-                if(entry.getValue().equals(old.get(entry.getKey()))){String key=entry.getValue().substring(entry.getValue().indexOf(':')+1);if(dirtyInputs.contains(key)&&data.containsKey(key)){values.put(key,data.get(key).deepCopy());kept.add(key);}}}
+                if(entry.getValue().equals(old.get(entry.getKey()))){String key=entry.getValue().substring(entry.getValue().indexOf(':')+1);if(next.secretKeys().contains(key)==definition.secretKeys().contains(key)&&dirtyInputs.contains(key)&&data.containsKey(key)){values.put(key,data.get(key).deepCopy());kept.add(key);}}}
             candidate=Objects.requireNonNull(builder.build(next,copy(values)),"INTERFACE_NULL_CANDIDATE");
             // Candidate construction can call user code. Recheck after it returns.
             require(expected,expectedRevision);

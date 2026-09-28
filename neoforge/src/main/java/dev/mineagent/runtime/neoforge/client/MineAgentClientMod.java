@@ -97,7 +97,7 @@ public final class MineAgentClientMod {
     static void desktopChatLayer(net.neoforged.neoforge.client.event.RenderGuiLayerEvent.Pre event) {
         // Keep vanilla messages in history, but do not draw duplicate lettering underneath the translucent desktop.
         if (event.getName().equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CHAT)
-                && Minecraft.getInstance().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen
+                && (Minecraft.getInstance().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeInputScreen||Minecraft.getInstance().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen)
                 && dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE.ready()) event.setCanceled(true);
     }
 

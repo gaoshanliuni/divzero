@@ -417,7 +417,7 @@ public final class ServerUiRuntime {
             String action=request.action().equals("package.worldPatchApply")?"apply":request.action().equals("package.worldPatchRollback")?"rollback":"cancel";
             var j=ServerPackageRuntime.get(server).worldPatchAction(viewer.getUUID(),UUID.fromString(args.get("operationId")),action,"true".equals(args.get("confirmed")),args.getOrDefault("canonicalSha256",""));return Map.of("state",j.state(),"headRevision",Long.toString(j.headRevision()),"errorCode",j.errorCode(),"nativeExecuted","false");
         }
-        if(request.action().equals("appearance.read"))return Map.of("state",json.writeValueAsString(MineAgentNetwork.readAppearanceFromUi(viewer,UUID.fromString(args.get("agentId")))));
+        if(request.action().equals("appearance.read"))return Map.of("state",json.writeValueAsString(MineAgentNetwork.readAppearanceFromUi(viewer,UUID.fromString(args.get("agentId")),Integer.parseInt(args.getOrDefault("catalogOffset","0")),args.getOrDefault("catalogSearch",""))));
         if(request.action().equals("appearance.decide"))return Map.of("decision",json.writeValueAsString(MineAgentNetwork.openAppearanceDecisionFromUi(viewer,UUID.fromString(args.get("agentId")),Long.parseLong(args.get("expectedRevision")),args.get("model"),args.get("texture"),args.get("animation"),request.operationId())));
         if(request.action().equals("appearance.apply")){
             var response=MineAgentNetwork.applyAppearanceFromUi(new MineAgentPayloads.AppearanceCommand(args.get("agentId"),args.get("model"),args.get("texture"),args.get("animation"),Long.parseLong(args.get("expectedRevision")),request.operationId().toString()),viewer);

@@ -1835,6 +1835,11 @@ public final class MineAgentNetwork {
         if(!operatorOrOwner(player,def))throw new SecurityException("FORBIDDEN");
         return appearanceSnapshot(server,agentId);
     }
+    public static java.util.Map<String,Object> readAppearanceFromUi(ServerPlayer player,java.util.UUID agentId,int offset,String search){
+        if(offset<0||offset>1000000||search==null||search.length()>128)throw new IllegalArgumentException("APPEARANCE_CATALOG_QUERY");
+        var state=new java.util.LinkedHashMap<>(readAppearanceFromUi(player,agentId));var bridge=new dev.mineagent.runtime.neoforge.integration.NeoForgeYsmRuntimeBridge(player.level().getServer());String query=search.toLowerCase(java.util.Locale.ROOT);var models=bridge.availableModels().stream().filter(model->model.toLowerCase(java.util.Locale.ROOT).contains(query)).sorted().toList();
+        state.put("models",models.stream().skip(offset).limit(64).toList());state.put("catalogOffset",offset);state.put("catalogNextOffset",offset+64<models.size()?offset+64:-1);state.put("catalogTotal",models.size());return state;
+    }
     private static java.util.Map<String,Object> appearanceSnapshot(net.minecraft.server.MinecraftServer server,java.util.UUID agentId){
         var values=MineAgentRuntimeServices.config(server).snapshot().values();String prefix="agent."+agentId+".";
         var bridge=new dev.mineagent.runtime.neoforge.integration.NeoForgeYsmRuntimeBridge(server);var models=bridge.availableModels();

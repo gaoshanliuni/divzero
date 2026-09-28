@@ -42,7 +42,7 @@ public final class ConversationAgentTools {
     private static String code(Throwable e){String v=Objects.toString(e.getMessage(),"");return v.matches("[A-Z][A-Z0-9_]{1,80}")?v:"AGENT_TOOL_FAILED";}
     public static CompletableFuture<Map<String,Object>> execute(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit){
         var s=p.level().getServer();try{
-            if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(tool.equals("plan_building")?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
+            if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
             if(tool.equals("inspect_buildings")){keys(args,"id","offset");return ServerBuildings.inspect(p,agent,args);}
             if(tool.equals("verify_building")){keys(args,"id","revision");return ServerBuildings.verify(p,agent,args,permit);}

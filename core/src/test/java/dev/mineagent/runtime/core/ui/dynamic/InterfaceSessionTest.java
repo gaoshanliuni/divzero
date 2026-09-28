@@ -6,6 +6,11 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InterfaceSessionTest {
+    @Test void secretInputsStayLocalAndDoNotBecomePublicAfterRetypingTheControl(){
+        var scope=scope();var session=new InterfaceSession<Render>(scope);String secret=SOURCE.replace("\"id\":\"search\",\"type\":\"input\"","\"id\":\"search\",\"type\":\"input\",\"secret\":true");
+        session.replace(scope,0,secret,(definition,data)->new Render());session.input(scope,1,"search",TextNode.valueOf("private input"));assertFalse(session.definition().observableData(session.data()).containsKey("query"));assertEquals("private input",session.data().get("query").asText());
+        session.replace(scope,1,SOURCE,(definition,data)->{assertEquals("",data.get("query").asText());return new Render();});assertEquals("",session.data().get("query").asText());
+    }
     @Test void workspaceRemountPreservesVersionDataAndInputIdentity(){
         var scope=scope();var session=new InterfaceSession<Render>(scope);var old=new Render();session.replace(scope,0,SOURCE,(d,v)->old);session.input(scope,1,"search",TextNode.valueOf("oak"));long dataRevision=session.dataRevision();
         var failed=session.remount((d,v)->{throw new IllegalArgumentException("bad renderer");});assertFalse(failed.applied());assertSame(old,session.rendered());assertFalse(old.closed);

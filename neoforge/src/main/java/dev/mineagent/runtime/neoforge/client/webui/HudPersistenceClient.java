@@ -30,7 +30,7 @@ public final class HudPersistenceClient {
         var mc=Minecraft.getInstance();var current=mc.getConnection();
         if(current!=peer){epoch++;peer=current;contextRequest=null;scope=null;world=null;viewer=null;loaded=false;busy=false;hostAttempted=false;writes=0;saved.clear();durable.clear();mounted.clear();renderDeadlines.clear();states.clear();attempted.clear();
             contextDeadline=System.currentTimeMillis()+15000;}
-        if(current==null||mc.player==null||mc.level==null)return;
+        if(current==null||mc.player==null||mc.level==null||!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return;
         for(var item:List.copyOf(renderDeadlines.entrySet()))if(item.getValue()<System.currentTimeMillis()&&!WebGuiHostAdapter.INSTANCE.packageHidden(item.getKey()))failed(item.getKey());
         if(contextRequest==null&&scope==null&&System.currentTimeMillis()<contextDeadline){
             contextRequest=UUID.randomUUID();ClientPacketDistributor.sendToServer(new UiPayloads.Command(contextRequest,"hudContext","{}"));
@@ -101,6 +101,7 @@ public final class HudPersistenceClient {
     }
     public static CompletableFuture<Map<String,String>> remember(String view,boolean enabled,HudRestoreEntry.Layout layout){
         var entry=mounted.get(view);var session=PackageContentClient.session(view);var descriptor=WebGuiHostAdapter.INSTANCE.viewPackage(view);
+        if(!enabled&&loaded&&scope!=null&&entry!=null)return forget(entry.key());
         if(!loaded||scope==null||entry==null||session==null||descriptor==null||!descriptor.passive())return CompletableFuture.failedFuture(new IllegalStateException("HUD_NOT_READY"));
         entry.require(session,world,viewer,entry.canonicalSha256(),descriptor.entry());
         if(enabled){if(saved.size()>=12&&!saved.containsKey(entry.key()))return CompletableFuture.failedFuture(new IllegalStateException("HUD_PREFERENCE_BUDGET"));saved.put(entry.key(),entry.withLayout(layout));}
@@ -132,6 +133,8 @@ public final class HudPersistenceClient {
         if(changed)persist().exceptionally(e->null);
     }
     public static void closed(String view){renderDeadlines.remove(view);var entry=mounted.remove(view);if(entry!=null&&saved.containsKey(entry.key()))forget(entry.key()).exceptionally(e->null);}
+    public static void retired(String view){renderDeadlines.remove(view);var entry=mounted.remove(view);if(entry!=null){attempted.remove(entry.key());states.remove(entry.key());}}
+    public static void visible(String view,boolean visible){var mountedEntry=mounted.get(view);if(mountedEntry==null)return;var entry=saved.get(mountedEntry.key());if(entry==null||entry.layout().minimized()==!visible)return;var old=entry.layout();saved.put(entry.key(),entry.withLayout(new HudRestoreEntry.Layout(old.x(),old.y(),old.width(),old.height(),!visible)));persist().exceptionally(error->null);}
     public static void hostClosed(){mounted.clear();renderDeadlines.clear();}
     /** Wait only for queued disk writes, never for their main-thread UI callbacks. */
     public static void flushWrites(){
