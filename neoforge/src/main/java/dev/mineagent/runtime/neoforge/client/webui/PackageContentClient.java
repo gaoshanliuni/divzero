@@ -54,7 +54,7 @@ public final class PackageContentClient {
     private static void setSession(String id,View view,Session target){var source=NativePackageViews.rawSession(id);if(NativePackageViews.owns(id))NativePackageViews.rebind(id,source,target);view.session=target;}
     public static void loaded(String id){var view=views.get(id);if(view==null||view.blocked||view.admitting)return;if(!view.initialized){view.initialized=true;++view.load;}render(id,view,view.load);}
     private static void render(String id,View view,long load){
-        if(!NativePackageViews.painted(id)||view.admitting||view.blocked||!view.visible)return;
+        if(!NativePackageViews.layoutTraversed(id)||view.admitting||view.blocked||!view.visible)return;
         view.admitting=true;
         UiClientSessions.contentRequest("rendered",view.session,"scoreview.read",Map.of(),UUID.randomUUID()).whenComplete((receipt,error)->Minecraft.getInstance().execute(()->{
             view.admitting=false;if(views.get(id)!=view||load!=view.load||view.blocked||!view.visible)return;

@@ -3544,8 +3544,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageSmokeClient.java",
-      "sha256": "b2faf0c20eb4bf1912ec14aad905be5d0fd40b4bd71bcc80c83f55a7bc6c5ad8",
-      "bytes": 12623
+      "sha256": "0044577a2982bd9b335906d221739c253ea083636dc9fcaa2408a91732c5acb9",
+      "bytes": 13300
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageViews.java",
@@ -3819,8 +3819,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PackageContentClient.java",
-      "sha256": "9a1a1acbb11e837693932872eaca08affd108f309a2882232cefb1ae06df15ab",
-      "bytes": 15345
+      "sha256": "989d4dee21f191ecdda54691c3779afa0bc7d5fe7ea99371e176ecc6bd89aff6",
+      "bytes": 15353
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/PackageFormDrafts.java",
