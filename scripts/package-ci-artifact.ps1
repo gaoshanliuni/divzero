@@ -38,7 +38,9 @@ try {
         $blocks = @($tables | Where-Object { $_ -match ('^\[\['+[regex]::Escape($expected.table)+'\]\]') -and $_ -match ('(?m)^modId\s*=\s*"'+[regex]::Escape($expected.id)+'"\s*$') })
         if ($blocks.Count -ne 1 -or $blocks[0] -notmatch ('(?m)^'+$expected.key+'\s*=\s*"'+[regex]::Escape($expected.value)+'"\s*$')) { throw "CI_PACKAGED_VERSION_MISMATCH: $($expected.id)" }
     }
+    if($metadata -match '(?m)^modId\s*=\s*"(?:mcef|webgui)"\s*$'){throw 'CI_BROWSER_DEPENDENCY_REINTRODUCED'}
     foreach ($entry in $archive.Entries) {
+        if($entry.FullName -match '(org/cef/|com/cinemamod/mcef/|/Mcef[^/]*\.class$|assets/mineagent_runtime/webui/)'){throw 'CI_BROWSER_RUNTIME_REINTRODUCED'}
         if ($entry.FullName -match '(^|/)(saves|logs|mineagent-runtime-data|\.git)/|\.(db|sqlite|log)$') {
             throw 'CI_UNEXPECTED_RUNTIME_DATA_IN_JAR'
         }
@@ -49,7 +51,7 @@ $name = "DivZero-mineagent-$($versions.modVersion).jar"
 $destination = Join-Path $out $name
 Copy-Item -LiteralPath $jar.FullName -Destination $destination
 $sha = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
-& (Join-Path $PSScriptRoot 'stage-browser-dependencies.ps1') -OutputDirectory $out
+& (Join-Path $PSScriptRoot 'stage-native-ui-dependencies.ps1') -OutputDirectory $out
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $out 'LICENSE-DIVZERO.txt')
 Copy-Item -LiteralPath (Join-Path $root 'docs/THIRD_PARTY_NOTICES.md') -Destination (Join-Path $out 'THIRD-PARTY-NOTICES.md')
 $info = [ordered]@{
@@ -77,14 +79,15 @@ Minecraft: $($versions.minecraftVersion) (supported range: $($versions.minecraft
 NeoForge: $($versions.neoForgeVersion); Java: $($versions.requiredJavaVersion)
 Source: https://github.com/gaoshanliuni/divzero/commit/$Commit
 
-Download these THREE runtime JAR assets separately and put them into the client mods folder:
+Install the main JAR and LDLib2 for the built-in F2 workspace.
 - $name
-- webgui-neoforge-1.6.2+mc26.1.2.jar
-- mcef_neoforge_2.2.0_MC_26.1.1.jar
-Do NOT install mcef-2.2.0-neoforge-sources.jar: that file is corresponding source for developers.
-GitHub also adds Source code (zip/tar.gz) links automatically; those are NOT installable mods.
-Requires matching Minecraft / NeoForge / Java versions and WebGUI/MCEF dependencies;
-see https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/SOURCE_SNAPSHOT.md
+- ldlib2-neoforge-26.1-26.1.2.41.jar
+AI-created native interfaces additionally require:
+- kubejs-neoforge-26.1.2-8.0.6.jar
+- better-advanced-tooltips-2601.1.0-build.9.jar
+Rhino is already embedded. Do not install MCEF/WebGUI for this build.
+GitHub Source code archives are development sources, not installable Mods.
+See https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/NATIVE_INSTALLATION.md
 Replace the previous same-Mod JAR in a separate, backed-up test instance.
 This is a CI build, not a formal Release or full V1 acceptance.
 Standard builds do not include optional Windows media binaries.

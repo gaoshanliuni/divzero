@@ -28,11 +28,16 @@ public final class ContentTakeoverClient {
         return capturePersisted(oldView).thenCompose(draft->open(scope,oldView,draft));
     }
     public static CompletableFuture<JsonObject> capturePersisted(String oldView){
+        return capturePersisted(oldView,true);
+    }
+    /** Candidate validation must leave the currently working window usable if it fails. */
+    public static CompletableFuture<JsonObject> captureForRevision(String oldView){return capturePersisted(oldView,false);}
+    private static CompletableFuture<JsonObject> capturePersisted(String oldView,boolean freeze){
         var source=PackageContentClient.rawSession(oldView);if(source==null)return CompletableFuture.failedFuture(new IllegalStateException("VIEW_NOT_RENDERED"));
         var scope=ContentDraftScope.of(serverId(),source.binding());var store=store();
-        PackageContentClient.freezeForTakeover(oldView);
+        if(freeze)PackageContentClient.freezeForTakeover(oldView);
         long load=PackageContentClient.lifecycle(oldView);
-        return PackageFormDrafts.captureAndSeal(oldView).thenCompose(draft->{
+        return (freeze?PackageFormDrafts.captureAndSeal(oldView):PackageFormDrafts.capture(oldView)).thenCompose(draft->{
             requireCaptured(draft);
             return CompletableFuture.runAsync(()->{try{var envelope=new JsonObject();envelope.add("scope",JSON.toJsonTree(scope));envelope.add("draft",draft);store.save(scope.storageKey(),envelope.toString());}catch(Exception e){throw new CompletionException(e);}},IO)
                     .thenCompose(ignored->onClient(()->{if(!source.equals(PackageContentClient.rawSession(oldView))||load!=PackageContentClient.lifecycle(oldView))throw new IllegalStateException("STALE_DRAFT_SOURCE");return CompletableFuture.completedFuture(draft);}));

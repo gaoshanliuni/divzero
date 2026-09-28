@@ -64,7 +64,7 @@ public final class ContentDeliveryClient {
         DeliveryDraftClient.beforeSubmit(view).thenCompose(ignored->PackagePageAgent.inspectManagedView(view)).whenComplete((observed,error)->mc.execute(()->{
             try{if(error!=null)throw new IllegalStateException("FEEDBACK_DOCUMENT_UNAVAILABLE",error);var current=PackageContentClient.session(view);String document=JsonParser.parseString(observed).getAsJsonObject().get("documentId").getAsString();
                 if(entries.get(view)!=e||e.closed||!e.painted||current==null||!ReadOnlyUiLease.sameContext(context,current)||!document.equals(e.documentId))throw new SecurityException("FEEDBACK_DOCUMENT_CHANGED");
-                var body=new LinkedHashMap<>(args);body.put("documentId",document);FeedbackRestartSmokeClient.captureWire(context,operation,body);UiClientSessions.contentRequest("command",context,"feedback.submit",body,operation).whenComplete((receipt,failure)->{if(failure!=null)result.completeExceptionally(failure);else result.complete(receipt);});
+                var body=new LinkedHashMap<>(args);body.put("documentId",document);UiClientSessions.contentRequest("command",context,"feedback.submit",body,operation).whenComplete((receipt,failure)->{if(failure!=null)result.completeExceptionally(failure);else result.complete(receipt);});
             }catch(Exception failure){result.completeExceptionally(failure);}
         }));return result;
     }

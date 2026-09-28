@@ -39,7 +39,7 @@ if ($files.Count -ne $manifest.Count+1 -or @(Get-ChildItem -LiteralPath $assets 
 foreach($file in $files) {
     if ($file.Extension -notin @('.jar','.json','.txt','.md','') -or $file.Name -ne 'SHA256SUMS' -and -not $manifest.ContainsKey($file.Name)) { throw 'RELEASE_FILE_NOT_ALLOWED' }
 }
-$required=@([string]$info.jar,'webgui-neoforge-1.6.2+mc26.1.2.jar','mcef_neoforge_2.2.0_MC_26.1.1.jar','mcef-2.2.0-neoforge-sources.jar','LICENSE-WebGUI.txt','LICENSE-MCEF.txt','LICENSE-DIVZERO.txt','DEPENDENCIES.json','README.txt','THIRD-PARTY-NOTICES.md','BUILD-INFO.json')
+$required=@([string]$info.jar,'ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar','LICENSE-DIVZERO.txt','DEPENDENCIES.json','README.txt','THIRD-PARTY-NOTICES.md','BUILD-INFO.json')
 foreach($name in $required) { if (-not $manifest.ContainsKey($name)) { throw "RELEASE_REQUIRED_FILE_MISSING: $name" } }
 if ($manifest[[string]$info.jar] -ne $info.sha256) { throw 'RELEASE_MAIN_JAR_HASH_MISMATCH' }
 $manifest.Add('SHA256SUMS',(Get-FileHash -LiteralPath (Join-Path $assets 'SHA256SUMS') -Algorithm SHA256).Hash.ToLowerInvariant())
@@ -51,65 +51,32 @@ $notes=@"
 $marker
 ## $title
 
-| 支持环境 | 版本 |
-| --- | --- |
-| Mod | $($versions.modVersion) |
-| Minecraft | $($versions.minecraftVersion)（声明范围：$($versions.minecraftVersionRange)） |
-| NeoForge 构建版本 | $($versions.neoForgeVersion) |
-| Java | $($versions.requiredJavaVersion) |
-
-开发测试版，网络协议 6；客户端与服务端同步更新。
+Minecraft $($versions.minecraftVersion), NeoForge $($versions.neoForgeVersion), Java $($versions.requiredJavaVersion).
 源码：[$short](https://github.com/$repo/commit/$Commit) · [构建记录](https://github.com/$repo/actions/runs/$run)
 
-### 功能与入口
+### 原生界面
 
-- **/ai create "星河"** 创建 AI，**/ai accept** 初始化本人权限；原生面板默认 Ctrl+M，Web 工作区默认 F2。
-- API URL／模型／Key：Ctrl+M → 模型；F2 → 更多 → API 设置。两个入口均可配置模型，F2 的 Key 按钮打开本机保密输入。
-- 默认跟随游戏语言，F2 → 更多 → 语言 / 原生面板 → 语言可手动覆盖。
-- 流式对话、排队／打断／取消、对话删除、本人默认响应 AI、创建者响应许可。
-- AI 真实持物交互、低净空潜行、永久桥梁／台阶、跳跃搭高与可复用梯子；放置／破坏／使用分别设置。
-- 生物整体网格动画、物品／生物预览、建模、建筑导入、PNG 换肤与 Java 管理的 Python。
-
-[全部功能与命令](https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/FEATURES.md) · [功能截图](https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/images/README.md)
+F2 使用 LDLib2 MC 主题工作区，右键 AI 打开专属面板。首次进入世界可点击聊天中的启用按钮立即使用。
+AI 创建的原生界面与 HUD 通过 KubeJS 构建，普通 HUD 默认不占用鼠标。无 MCEF/WebGUI 依赖或备用浏览器。
 
 ### 下载附件（Assets）
 
-**安装包已作为本 Release 的附件上传。请向下滚动到 Assets（资源），展开后分别下载以下三个 JAR。**
-正文不提供另行拼接的下载超链接；直接使用 GitHub 附件区的下载按钮。
-
-| 必装附件文件名 | 用途 |
+| 附件 | 用途 |
 | --- | --- |
 | $($info.jar) | DivZero 主模组 |
-| webgui-neoforge-1.6.2+mc26.1.2.jar | WebGUI |
-| mcef_neoforge_2.2.0_MC_26.1.1.jar | MCEF |
+| ldlib2-neoforge-26.1-26.1.2.41.jar | F2 与原生 UI 必需 |
+| kubejs-neoforge-26.1.2-8.0.6.jar | AI 动态界面所需 |
+| better-advanced-tooltips-2601.1.0-build.9.jar | KubeJS 的依赖 |
 
-下载后将以上三个文件放入客户端 mods。名称带 sources 的工件用于源码阅读和开发。
-
-请使用上述 Minecraft / NeoForge / Java 版本。关闭游戏并备份存档，每个实例保留一份主模组、WebGUI 和所选 MCEF。
-MCEF 使用固定版本的兼容工件，校验值随构建验证。
-Chromium/JCEF 运行库由 MCEF 配置准备；YSM 模型由用户单独安装。
-
-校验值直接列在正文；完整构建信息保留在本次 Actions 工件，不作为 Release 附件。主 JAR 内含 DivZero 许可及第三方说明，依赖保留自身许可。
-[MCEF 对应开发源码](https://cdn.modrinth.com/data/bQhBuv7x/versions/h38n5aI0/sources_mcef_neoforge_2.2.0_MC_26.1.1.jar)供开发者阅读和构建；许可及来源见[第三方声明](https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/THIRD_PARTY_NOTICES.md)。
-WebGUI [上游源码](https://github.com/mc-webgui/webgui/tree/v1.6.2)，MCEF [上游源码](https://github.com/Keksuccino/mcef/)。
-
-GitHub 的 Source code (zip/tar.gz) 用于查看和构建源码。游戏安装请使用 Assets 中的运行 JAR。
-standard 为标准版；with-media 附带可选 yt-dlp/FFmpeg。
-构建记录覆盖编译、打包和选定测试；模型联验与游戏场景见功能说明。
+Rhino 已内置于主模组。请在独立测试实例中安装，不加入 MCEF 或 WebGUI。
+[安装说明](https://github.com/$repo/blob/$Commit/docs/NATIVE_INSTALLATION.md) · [验收状态](https://github.com/$repo/blob/$Commit/docs/NATIVE_UI_BUILDING_MIGRATION.md)
+依赖许可和准确来源在本次 Actions 的 DEPENDENCIES.json；对应源代码链接也在该文件。
+构建通过不代表全部游戏场景验收。GitHub Source code 压缩包不是 Mod 安装包。
 "@
-# Keep legacy fixture tests unchanged; real builds with the checked-in offline
-# lock must stage and verify the offline attachments before publication.
-if (Test-Path -LiteralPath (Join-Path $root 'gradle/mcef-offline.lock.json')) {
-    if (-not $info.PSObject.Properties['offlineMcef']) { throw 'RELEASE_OFFLINE_MCEF_NOT_STAGED' }
-    $notes = & (Join-Path $PSScriptRoot 'format-offline-release-notes.ps1') -OriginalNotes $notes -BuildInfo $info -Checksums $manifest
-}
 # All staged files remain verified, but only runtime JARs become public Release assets.
 $verifiedCount=$files.Count
 function Select-RuntimeFiles($Info,$AllFiles,$Manifest) {
-$publishNames=@([string]$Info.jar,'webgui-neoforge-1.6.2+mc26.1.2.jar')
-if ($Info.PSObject.Properties['offlineMcef']) {
-    $publishNames+=@($Info.offlineMcef.platforms.PSObject.Properties | ForEach-Object { [string]$_.Value.file })
-} else { $publishNames+='mcef_neoforge_2.2.0_MC_26.1.1.jar' }
+$publishNames=@([string]$Info.jar,'ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar')
 if (@($publishNames | Sort-Object -Unique).Count -ne $publishNames.Count) { throw 'RELEASE_RUNTIME_LIST_DUPLICATE' }
 foreach ($name in $publishNames) {
     if ($name -notmatch '^[A-Za-z0-9][A-Za-z0-9_.+-]*\.jar$' -or $name -match '(sources|javadoc|corresponding|neoforge-api)' -or -not $Manifest.ContainsKey($name)) { throw 'RELEASE_RUNTIME_JAR_REQUIRED' }

@@ -17,6 +17,11 @@ final class NativePackageResources implements AutoCloseable {
             for(String resource:requested){
                 if(!resource.startsWith("package:"))continue;String path=resource.substring("package:".length());var asset=assets.get(path);
                 if(asset==null||!Set.of("image/png","image/jpeg").contains(asset.mediaType())||asset.size()>8*1024*1024)throw new IllegalArgumentException("NATIVE_PACKAGE_IMAGE_RESOURCE: "+path);
+                // Check header dimensions before allocating a decoded native image.
+                try(var input=javax.imageio.ImageIO.createImageInputStream(new java.io.ByteArrayInputStream(asset.bytes()))){
+                    var readers=javax.imageio.ImageIO.getImageReaders(input);if(!readers.hasNext())throw new IllegalArgumentException("NATIVE_PACKAGE_IMAGE_FORMAT");var reader=readers.next();
+                    try{reader.setInput(input);int width=reader.getWidth(0),height=reader.getHeight(0);if(width<1||height<1||(long)width*height>4_194_304)throw new IllegalArgumentException("NATIVE_PACKAGE_IMAGE_DIMENSIONS");}finally{reader.dispose();}
+                }
                 var image=com.mojang.blaze3d.platform.NativeImage.read(asset.bytes());
                 if(image.getWidth()<1||image.getHeight()<1||(long)image.getWidth()*image.getHeight()>4_194_304){image.close();throw new IllegalArgumentException("NATIVE_PACKAGE_IMAGE_DIMENSIONS");}
                 var id=Identifier.fromNamespaceAndPath("mineagent_runtime","native_package/"+scope+"/"+registered.size());Minecraft.getInstance().getTextureManager().register(id,new DynamicTexture(()->"DivZero signed UI image",image));registered.add(id);textures.put(resource,SpriteTexture.of(id));

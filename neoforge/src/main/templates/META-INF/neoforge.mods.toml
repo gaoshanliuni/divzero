@@ -20,10 +20,10 @@ config="mineagent_runtime.mixins.json"
 config="mineagent_actions.mixins.json"
 
 [[mixins]]
-config="mineagent_webgui.mixins.json"
+config="mineagent_client.mixins.json"
 
 [[mixins]]
-config="mineagent_webgui_common.mixins.json"
+config="mineagent_container.mixins.json"
 
 [[dependencies.${mod_id}]]
 modId="neoforge"
@@ -46,19 +46,7 @@ versionRange="[2.6.5-neoforge+mc26.1,2.7)"
 ordering="AFTER"
 side="BOTH"
 
-[[dependencies.${mod_id}]]
-modId="webgui"
-type="required"
-versionRange="[1.6.2+mc26.1.2]"
-ordering="AFTER"
-side="BOTH"
 
-[[dependencies.${mod_id}]]
-modId="mcef"
-type="required"
-versionRange="[2.2.0]"
-ordering="AFTER"
-side="CLIENT"
 
 # Built-in workspace and native HUD renderer. KubeJS is checked for AI-authored interfaces.
 [[dependencies.${mod_id}]]

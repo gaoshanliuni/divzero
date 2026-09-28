@@ -14,7 +14,7 @@ import org.lwjgl.glfw.GLFW;
 public final class WebGuiWorkspaceInput {
     private static final WorkspaceShortcut SHORTCUT=new WorkspaceShortcut();private static Object connection;
     private WebGuiWorkspaceInput(){}
-    public static boolean eligible(){var mc=Minecraft.getInstance();return mc.level!=null&&mc.player!=null&&!mc.player.isDeadOrDying()&&mc.getOverlay()==null&&mc.isWindowActive()&&(mc.screen==null||mc.screen instanceof WebGuiInteractionScreen||mc.screen instanceof WebGuiDiagnosticScreen||mc.screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeInputScreen||mc.screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen);}
+    public static boolean eligible(){var mc=Minecraft.getInstance();return mc.level!=null&&mc.player!=null&&!mc.player.isDeadOrDying()&&mc.getOverlay()==null&&mc.isWindowActive()&&(mc.screen==null||mc.screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeInputScreen||mc.screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.LdPanelScreen);}
     private static boolean modifiers(int bits){return switch(MineAgentClientMod.TOGGLE_WORKSPACE.getKeyModifier()){
         case NONE->(bits&(GLFW.GLFW_MOD_SHIFT|GLFW.GLFW_MOD_CONTROL|GLFW.GLFW_MOD_ALT|GLFW.GLFW_MOD_SUPER))==0;
         case SHIFT->(bits&GLFW.GLFW_MOD_SHIFT)!=0;case CONTROL->(bits&GLFW.GLFW_MOD_CONTROL)!=0;case ALT->(bits&GLFW.GLFW_MOD_ALT)!=0;

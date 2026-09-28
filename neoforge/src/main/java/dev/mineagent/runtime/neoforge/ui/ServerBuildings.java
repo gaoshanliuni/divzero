@@ -66,7 +66,18 @@ public final class ServerBuildings {
         authorize(p,agent,true);require(permit.getAsBoolean(),"CANCELLED");var design=BuildingDesign.parse(args.path("source").asText());require(!design.checks().isMissingNode()&&!design.checks().isEmpty(),"CHECKS_REQUIRED");
         require(design.dimension().equals(p.level().dimension().identifier().toString()),"DIMENSION");var h=handle(p,agent,design.id());require(h.job==null&&!h.busy,"BUSY");h.busy=true;
         var server=p.level().getServer();var level=p.level();var valid=new java.util.concurrent.atomic.AtomicBoolean(true);long generation=MineAgentRuntimeServices.permissions(server).actionRevision(p.getUUID(),PermissionAction.RUN_CODE);
-        var future=h.opened.thenCompose(ledger->io(()->{ledger.plan(revision(args),design.source(),valid::get);return view(h,ledger,0);}));
+        var future=h.opened.thenCompose(ledger->io(()->{
+            var before=ledger.head();
+            try{ledger.plan(revision(args),design.source(),valid::get);return view(h,ledger,0);}
+            catch(IllegalArgumentException|IllegalStateException failure){
+                // Only a confirmed unchanged ledger after the planning transaction is a known rejection.
+                // IO/commit uncertainty still propagates to the tool journal as UNKNOWN, without replay.
+                if(!before.equals(ledger.head()))throw failure;Throwable cause=failure;while(cause.getCause()!=null)cause=cause.getCause();
+                if(!(cause instanceof IllegalArgumentException||cause instanceof IllegalStateException))throw failure;
+                String error=Objects.toString(cause.getMessage(),"BUILDING_PLAN_REJECTED");
+                return Map.<String,Object>of("id",design.id(),"status","REJECTED","error",error,"revision",before.revision(),"persistentStatus",before.status(),"planCommitted",false,"worldModified",false,"retryGuidance","Correct the definition and explicitly submit a new plan with the unchanged revision.");
+            }
+        }));
         h.job=new Work(){public boolean tick(){if(!permit.getAsBoolean()||p.level()!=level||server.getPlayerList().getPlayer(p.getUUID())!=p||!ServerTaskStart.allowed(p,agent)||MineAgentRuntimeServices.permissions(server).actionRevision(p.getUUID(),PermissionAction.RUN_CODE)!=generation)valid.set(false);return future.isDone();}public void pause(){valid.set(false);}public CompletableFuture<?> pending(){return future;}};
         return future.whenComplete((v,e)->server.execute(()->h.busy=false));
     }

@@ -18,26 +18,15 @@ public final class WorldUiClient {
             if(!(mc.level.getEntity(launch.entityId()) instanceof RuntimeObjectEntity entity)||entity.header()==null||!entity.header().instance().equals(launch.instanceId())||!entity.header().part().equals(launch.part()))throw new SecurityException("WORLD_UI_ENTITY_MISSING");
             if(PackageContentClient.session(launch.viewId())!=null){WebGuiHostAdapter.INSTANCE.revealWorldView(launch.viewId());return true;}
             if(pending!=null){if(pending.launch.id().equals(launch.id()))return true;throw new IllegalStateException("WORLD_UI_OPEN_BUSY");}
-            if(mc.screen!=null&&!(mc.screen instanceof WebGuiInteractionScreen))throw new IllegalStateException("WORLD_UI_PLAYER_BUSY");
+            if(mc.screen!=null&&!(mc.screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen))throw new IllegalStateException("WORLD_UI_PLAYER_BUSY");
             if(launch.expiresAt()<=System.currentTimeMillis())throw new IllegalStateException("WORLD_UI_LAUNCH_EXPIRED");
             pending=new Pending(launch,source,mc.level);WebGuiHostAdapter.INSTANCE.openStandalone();pending.screen=mc.screen;
         }catch(Exception failure){report(failure);}return true;
     }
     public static void tick(){
         var p=pending;if(p==null)return;var mc=Minecraft.getInstance();var host=WebGuiHostAdapter.INSTANCE;
-        var next=dev.mineagent.runtime.client.webui.WorldUiOpenPolicy.next(sameContext(p),System.currentTimeMillis(),p.deadline,p.started,host.browser()!=null,host.ready(),UiClientSessions.current()!=null,PackagePreviewClient.idle(),p.nextHostAttempt);
-        switch(next){
-            case CANCEL->{pending=null;host.cancelPendingStandalone();return;}
-            case TIMEOUT->{pending=null;host.cancelPendingStandalone();report(new IllegalStateException("WORLD_UI_OPEN_TIMEOUT"));return;}
-            case WAIT->{return;}
-            case OPEN_HOST->{
-                p.nextHostAttempt=System.currentTimeMillis()+250;host.openStandalone();p.screen=mc.screen;
-                if(host.browser()==null&&!host.diagnostic().startsWith("BROWSER_NOT_READY")){pending=null;host.cancelPendingStandalone();report(new IllegalStateException(host.diagnostic()));}
-                return;
-            }
-            case OPEN_CONTENT->{ /* Single transfer; authorization remains checked at every asynchronous boundary. */ }
-        }
-        if(!(mc.screen instanceof WebGuiInteractionScreen)){pending=null;return;}
+        if(!sameContext(p)||System.currentTimeMillis()>=p.deadline){pending=null;host.cancelPendingStandalone();return;}
+        if(p.started||!host.ready()||UiClientSessions.current()==null||!PackagePreviewClient.idle())return;
         p.started=true;PackagePreviewClient.openWorld(p.launch,()->current(p)).whenComplete((reply,error)->mc.execute(()->{
             if(pending!=p)return;pending=null;if(error!=null)report(error);
         }));

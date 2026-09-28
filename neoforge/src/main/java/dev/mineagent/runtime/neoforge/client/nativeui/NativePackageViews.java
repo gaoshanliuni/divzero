@@ -17,7 +17,7 @@ public final class NativePackageViews {
     public interface Transport {CompletableFuture<Receipt> request(String view,Session session,String action,Map<String,String> args,UUID operation);}
     private static final ObjectMapper JSON=new ObjectMapper();
     private static final Map<String,View> VIEWS=new LinkedHashMap<>();
-    private static Object connection,level;private static long tick;
+    private static Object connection,level,player;private static long tick;
     private static final class View {
         final String id,document=UUID.randomUUID().toString();final PackagePreviewTransfer.Resolved asset;final InterfaceSession<LdInterfaceRenderer.Rendered> content;
         NativePackageDefinition definition;NativePackageResources resources;Session session;Transport transport;WorkspaceWindow window;NativeWorkspaceScreen host;HudScreen projection;boolean ready,blocked,closed,visible=true,observedVisibility;long paintedTick=-1,lifecycle=1;
@@ -102,7 +102,7 @@ public final class NativePackageViews {
     }
     public static void invalidate(String id){block(id,"NATIVE_PACKAGE_OUTDATED");}
     private static View require(String id){var value=VIEWS.get(id);if(value==null||!current(value))throw new IllegalStateException("VIEW_NOT_RENDERED");return value;}
-    private static boolean current(View view){var mc=Minecraft.getInstance();return !view.closed&&connection==mc.getConnection()&&level==mc.level&&VIEWS.get(view.id)==view;}
+    private static boolean current(View view){var mc=Minecraft.getInstance();return !view.closed&&connection==mc.getConnection()&&level==mc.level&&player==mc.player&&VIEWS.get(view.id)==view;}
     public static Map<String,Object> inspect(String id){
         var view=require(id);var nodes=new ArrayList<Map<String,Object>>();inspect(view,view.definition.view().root(),nodes);
         var root=view.content.rendered().root;
@@ -241,7 +241,7 @@ public final class NativePackageViews {
     }
 
     public static void tick(){thread();context();tick++;for(var view:List.copyOf(VIEWS.values())){if(view.window!=null&&view.window.closed()){close(view.id);continue;}boolean shown=visible(view);if(shown!=view.observedVisibility){view.observedVisibility=shown;PackageContentClient.visibility(view.id,shown);}if(!current(view)||!view.ready||!shown||view.blocked)continue;placementTick(view);for(var entry:view.definition.reads().entrySet()){var request=entry.getValue();if(tick<view.nextRead.getOrDefault(entry.getKey(),0L))continue;view.nextRead.put(entry.getKey(),request.intervalTicks()==0?Long.MAX_VALUE:tick+request.intervalTicks());dispatch(view,entry.getKey(),request,view.content.data(),false);}}}
-    private static void context(){var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level){for(String id:List.copyOf(VIEWS.keySet()))close(id);connection=mc.getConnection();level=mc.level;}}
+    private static void context(){var mc=Minecraft.getInstance();if(connection!=mc.getConnection()||level!=mc.level||player!=mc.player){for(String id:List.copyOf(VIEWS.keySet()))close(id);connection=mc.getConnection();level=mc.level;player=mc.player;}}
     public static void clear(){thread();for(String id:List.copyOf(VIEWS.keySet()))close(id);}
     private static void thread(){if(!Minecraft.getInstance().isSameThread())throw new IllegalStateException("NATIVE_PACKAGE_CLIENT_THREAD");}
     private NativePackageViews(){}

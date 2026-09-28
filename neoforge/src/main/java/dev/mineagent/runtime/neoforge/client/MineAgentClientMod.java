@@ -62,14 +62,6 @@ public final class MineAgentClientMod {
 
     public static final KeyMapping TOGGLE_WORKSPACE = new KeyMapping("key.mineagent_runtime.toggle_workspace",KeyConflictContext.UNIVERSAL,KeyModifier.NONE,InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_F2,CATEGORY);
     public MineAgentClientMod(ModContainer container) {
-        // Minecraft Main defaults AWT to headless. Only the explicit OS-input fixture needs Robot.
-        if(Boolean.getBoolean("mineagent.workspaceSmoke")||Boolean.getBoolean("mineagent.viewSettingsSmoke"))System.setProperty("java.awt.headless","false");
-        try {
-            dev.mineagent.runtime.client.webui.WebGuiProfile.ensureDefaults(net.neoforged.fml.loading.FMLPaths.GAMEDIR.get()
-                    .resolve("config/mcef/mcef.properties"));
-        } catch (java.io.IOException failure) {
-            MineAgentRuntimeMod.LOGGER.error("Could not create WebGUI first-install profile", failure);
-        }
         dev.mineagent.runtime.neoforge.client.ysm.YsmRenderFallback.initialize();
         container.registerExtensionPoint(IConfigScreenFactory.class,
                 (ignored, parent) -> new dev.mineagent.runtime.neoforge.client.nativeui.WorkspaceSetupScreen(parent));
@@ -105,7 +97,7 @@ public final class MineAgentClientMod {
     static void desktopChatLayer(net.neoforged.neoforge.client.event.RenderGuiLayerEvent.Pre event) {
         // Keep vanilla messages in history, but do not draw duplicate lettering underneath the translucent desktop.
         if (event.getName().equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CHAT)
-                && Minecraft.getInstance().screen instanceof dev.mineagent.runtime.neoforge.client.webui.WebGuiInteractionScreen
+                && Minecraft.getInstance().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen
                 && dev.mineagent.runtime.neoforge.client.webui.WebGuiHostAdapter.INSTANCE.ready()) event.setCanceled(true);
     }
 

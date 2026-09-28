@@ -13,7 +13,7 @@ public final class MineAgentMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (!targetClassName.startsWith("com.elfmcys.yesstevemodel.") && !targetClassName.startsWith("land.webgui.")) {
+        if (!targetClassName.startsWith("com.elfmcys.yesstevemodel.")) {
             return true;
         }
         ClassLoader loader = Thread.currentThread().getContextClassLoader();

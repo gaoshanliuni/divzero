@@ -10,4 +10,4 @@ dependencies {
 
 tasks.named('test') { systemProperty 'mineagent.testPythonArchive', providers.gradleProperty('pythonTestArchive').getOrElse('') }
 
-// Public snapshot: only included JVM tests are attached to check.
+// Native UI is covered by JVM contracts and isolated in-game acceptance.

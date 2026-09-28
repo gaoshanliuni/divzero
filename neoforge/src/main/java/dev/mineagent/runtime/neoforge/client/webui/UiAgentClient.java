@@ -64,7 +64,7 @@ public final class UiAgentClient {
         if(!control.session.sessionId().equals(session.sessionId())){reply(command,"{\"status\":\"STALE_VIEW\"}");return;}
         final var active=control;
         try{
-            CoordinateSmokePerturbation.before(command);
+
             var action=active.history.execute(command,()->switch(command.kind()){
                 case "inspect" -> active.port.inspect();
                 case "presentationInspect" -> active.port.inspectPresentation();

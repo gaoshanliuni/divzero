@@ -30,7 +30,7 @@ public final class ContentHotSwapClient {
                     &&Objects.equals(a.loads.get(snapshot.source().binding().viewId()),PackageContentClient.lifecycle(snapshot.source().binding().viewId()));}
             public CompletableFuture<UiPackageTransition.Snapshot> capture(Session source){
                 progress(a,"CAPTURING");String view=source.binding().viewId();
-                return ContentTakeoverClient.capturePersisted(view).thenApply(draft->{a.loads.put(view,PackageContentClient.lifecycle(view));return new UiPackageTransition.Snapshot(source,draft.toString());});
+                return ContentTakeoverClient.captureForRevision(view).thenApply(draft->{a.loads.put(view,PackageContentClient.lifecycle(view));return new UiPackageTransition.Snapshot(source,draft.toString());});
             }
             public CompletableFuture<Session> preview(UiPackageTransition.Snapshot snapshot){
                 progress(a,"PREVIEW");return opened(a,PackagePreviewClient.openCandidate(pkg,currentRevision+1,UUID.fromString(snapshot.source().binding().targetObjectId()),operation));
