@@ -6,5 +6,5 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Window.class)
 public abstract class PlayerBodyFocusMixin {
     @Inject(method="onFocus",at=@At("HEAD"))
-    private void mineagent$bodyFocus(long window,boolean focused,CallbackInfo ci){if(!focused)dev.mineagent.runtime.neoforge.client.body.PlayerBodyControlClient.contextBoundary("FOCUS_LOST");}
+    private void mineagent$bodyFocus(long window,boolean focused,CallbackInfo ci){if(!focused){dev.mineagent.runtime.neoforge.client.body.PlayerBodyControlClient.contextBoundary("FOCUS_LOST");dev.mineagent.runtime.neoforge.client.nativeui.NativeButtonFeedback.windowFocusLost();}}
 }

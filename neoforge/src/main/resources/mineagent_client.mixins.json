@@ -25,7 +25,8 @@
     "client.EntityModelPartsAccess",
     "client.EntityModelRenderRulesMixin",
     "client.LivingEntityPartsMixin",
-    "client.EntityRenderContextMixin"
+    "client.EntityRenderContextMixin",
+    "client.NativeButtonMixin"
   ],
   "injectors": {
     "defaultRequire": 1

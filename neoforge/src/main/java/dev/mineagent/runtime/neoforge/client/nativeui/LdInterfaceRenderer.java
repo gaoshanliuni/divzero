@@ -90,8 +90,9 @@ public final class LdInterfaceRenderer {
             else element.addEventListener(UIEvents.MOUSE_DOWN,e->{if(ready)listener.accept("");});
         }
         public void dispatch(String node,String event,String value){if(ready)events.dispatch(node,event,value);}
+        private void installButtons(UIElement element){if(element instanceof Button button)NativeButtonFeedback.install(button);for(var child:element.getChildren())installButtons(child);}
         public void finish(UIElement root){
-            root.addClass("panel_bg");
+            root.addClass("panel_bg").addClass(NativeButtonFeedback.ROOT_CLASS);installButtons(root);
             if(embedded){root.addLocalStylesheet(strictStyles(definition.stylesheet()));result=new Rendered(null,root,nodes,specs,this);ready=true;return;}
             ModularUI ui;
             if(definition.surface()==InterfaceDefinition.Surface.HUD){
