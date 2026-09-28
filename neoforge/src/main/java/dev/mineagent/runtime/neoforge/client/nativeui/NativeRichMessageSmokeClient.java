@@ -51,7 +51,7 @@ public final class NativeRichMessageSmokeClient {
         var hit=screen.getModularUI().getLastHoveredElement();boolean found=false;for(var n=hit;n!=null;n=n.getParent())if(n==button)found=true;require(found,"ACTION_NOT_HITTABLE");
         var event=new MouseButtonEvent(x,y,new MouseButtonInfo(0,0));screen.mouseClicked(event,false);screen.mouseReleased(event);
     }
-    private static <T> void server(Callable<T> call,java.util.function.Consumer<T> result){busy=true;mc().getSingleplayerServer().submit(call).whenComplete((value,error)->mc().execute(()->{busy=false;try{if(error!=null)throw new CompletionException(error);result.accept(value);}catch(Exception failure){fail(failure);}}));}
+    private static <T> void server(Callable<T> call,java.util.function.Consumer<T> result){busy=true;mc().getSingleplayerServer().submit(()->{try{return call.call();}catch(Exception error){throw new CompletionException(error);}}).whenComplete((value,error)->mc().execute(()->{busy=false;try{if(error!=null)throw new CompletionException(error);result.accept(value);}catch(Exception failure){fail(failure);}}));}
     private static void screenshot(String name) throws Exception{var path=output().resolve(name+".png");net.minecraft.client.Screenshot.takeScreenshot(mc().getMainRenderTarget(),image->{try(image){image.writeToFile(path);}catch(Exception error){fail(error);}});}
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
         if(!Boolean.getBoolean("mineagent.nativeRichMessageSmoke")||done)return;

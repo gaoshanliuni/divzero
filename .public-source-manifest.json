@@ -3594,8 +3594,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeRichMessageSmokeClient.java",
-      "sha256": "8a8fef72ca803ac961cbffb6c44f28a858d2bd6ad0c40be03b6ffa4719e093a3",
-      "bytes": 11291
+      "sha256": "20f14f35c772583158615551ee4d51a95cbd561d937710787f1e26daaa087cb3",
+      "bytes": 11378
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeSavedInterfacesPanel.java",
