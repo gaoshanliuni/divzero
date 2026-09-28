@@ -79,7 +79,7 @@ public final class NativeAttachedLayers {
         var rendered=e.session.rendered();var target=e.session.definition().attachment();var screen=e.host;
         float x=0,y=0,w=screen.width,h=screen.height;
         if(screen instanceof ContainerScreenGeometry geometry){x=geometry.divzero$left();y=geometry.divzero$top();w=geometry.divzero$width();h=geometry.divzero$height();}
-        resize(rendered.ui,screen.width,screen.height);rendered.ui.calculateStyleAndLayout();float rw=rendered.root.getSizeWidth(),rh=rendered.root.getSizeHeight();
+        resize(rendered.ui,screen.width,screen.height);float rw=rendered.root.getSizeWidth(),rh=rendered.root.getSizeHeight();
         switch(target.anchor()){case "top"->{x+=(w-rw)/2;y-=rh;}case "bottom"->{x+=(w-rw)/2;y+=h;}case "left"->{x-=rw;y+=(h-rh)/2;}case "right"->{x+=w;y+=(h-rh)/2;}case "center"->{x+=(w-rw)/2;y+=(h-rh)/2;}default->{x=0;y=0;}}
         rendered.root.getLayout().left(x+target.x()).top(y+target.y());
     }
@@ -114,7 +114,7 @@ public final class NativeAttachedLayers {
                 var projected=matrix.transform(new Vector4f((float)(head.x-cameraPos.x),(float)(head.y-cameraPos.y),(float)(head.z-cameraPos.z),1));if(projected.w<=0)continue;projected.div(projected.w);if(Math.abs(projected.x)>1||Math.abs(projected.y)>1||projected.z< -1||projected.z>1)continue;
                 var data=new LinkedHashMap<String,JsonNode>(e.session.data());data.put("entity",JsonNodeFactory.instance.objectNode().put("id",entity.getUUID().toString()).put("name",entity.getName().getString()).put("health",living.getHealth()).put("maxHealth",living.getMaxHealth()).put("distance",distance));
                 var view=e.entities.get(entity.getUUID());if(view==null){view=KubeInterfaceRenderer.build(e.session.definition(),data,(node,event,value)->{});e.entities.put(entity.getUUID(),view);}else view.update(data);kept.add(entity.getUUID());
-                resize(view.ui,width,height);view.ui.calculateStyleAndLayout();view.root.getLayout().left((projected.x*.5f+.5f)*width-view.root.getSizeWidth()/2).top((.5f-projected.y*.5f)*height-view.root.getSizeHeight());
+                resize(view.ui,width,height);view.root.getLayout().left((projected.x*.5f+.5f)*width-view.root.getSizeWidth()/2).top((.5f-projected.y*.5f)*height-view.root.getSizeHeight());
                 ModularUIClientAccess.getWidget(view.ui).extractRenderState(graphics,Integer.MIN_VALUE,Integer.MIN_VALUE,delta.getGameTimeDeltaPartialTick(false));e.painted++;
             }}catch(Exception error){e.error=Objects.toString(error.getMessage(),"NATIVE_ENTITY_HUD_FAILED");}
             var it=e.entities.entrySet().iterator();while(it.hasNext()){var entry=it.next();if(!kept.contains(entry.getKey())){entry.getValue().close();it.remove();}}
