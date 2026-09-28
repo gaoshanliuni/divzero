@@ -9,6 +9,7 @@ import java.util.function.IntFunction;
 
 /** Paginated technical evidence, with a mount token so old replies cannot replace a newer page. */
 final class NativeReadout {
+    static void show(NativeWorkspaceScreen host,String id,String title,JsonElement value){var window=host.window(id,ClientLanguage.t(title),535,355);window.body.clearAllChildren();var editor=new NativeCodeEditor("JAVA");editor.load(new GsonBuilder().setPrettyPrinting().create().toJson(value));editor.readOnly(true);window.body.addChild(editor);}
     static void open(NativeWorkspaceScreen host,String id,String title,String action,IntFunction<Map<String,String>> arguments,int step){page(host,id,title,action,arguments,step,0);}
     private static void page(NativeWorkspaceScreen host,String id,String title,String action,IntFunction<Map<String,String>> arguments,int step,int offset){
         var window=host.window(id,ClientLanguage.t(title),535,355);window.body.clearAllChildren();var root=new UIElement();root.getLayout().widthPercent(100).flex(1);window.body.addChild(root);var notice=WorkspacePanels.text(ClientLanguage.t("正在读取…"));root.addChild(notice);

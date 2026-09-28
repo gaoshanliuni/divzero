@@ -2729,5 +2729,16 @@ export const messages=Object.freeze({
   "未保存编辑": "Unsaved edits",
   "另存为新草稿": "Save as a new draft",
   "丢弃本机编辑": "Discard local edits",
-  "这只删除未保存的本机副本，不修改服务端草稿。": "This only deletes the unsaved local copy, without changing the server draft."
+  "这只删除未保存的本机副本，不修改服务端草稿。": "This only deletes the unsaved local copy, without changing the server draft.",
+  "世界动作与回执": "World actions and receipts",
+  "任务、调度与事件": "Tasks, schedules and events",
+  "完整状态说明": "Full status details",
+  "已核对实际状态；新规划不重放已执行或未知的动作": "I checked actual state; fresh planning will not replay completed or uncertain actions",
+  "提交任务": "Submit task",
+  "新任务": "New task",
+  "步骤依赖": "Step dependencies",
+  "读取历史不会新建、恢复或重放操作。": "Reading history does not create, resume or replay operations.",
+  "返回列表": "Back to list",
+  "重新规划": "Replan",
+  "预算与调用记录": "Budget and call records"
 });

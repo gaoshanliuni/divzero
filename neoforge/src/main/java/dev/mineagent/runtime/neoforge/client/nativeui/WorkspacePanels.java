@@ -39,6 +39,7 @@ final class WorkspacePanels {
         local.addChild(NativeUiTheme.button(t("启动扩展"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.BOOT)));
         local.addChild(NativeUiTheme.button(t("代码工作区"),()->NativeStudioPanel.open(host)));
         local.addChild(NativeUiTheme.button(t("原生 API"),()->NativeApiPanel.open(host)));
+        var history=row();history.getLayout().height(25);body.addChild(history);history.addChild(NativeUiTheme.button(t("任务、调度与事件"),()->NativeTasksPanel.open(host)));
         var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);var footer=row();footer.getLayout().height(25);body.addChild(footer);
         var values=new LinkedHashMap<String,String>();final JsonObject[] snapshot={null};final String[] group={"Provider"};final boolean[] busy={false};
         Runnable[] draw={null},load={null};
