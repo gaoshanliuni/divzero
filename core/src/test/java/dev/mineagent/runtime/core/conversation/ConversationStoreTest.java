@@ -6,6 +6,13 @@ import java.time.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class ConversationStoreTest {
+    @Test void unverifiedConstructionDoesNotAcquireACompleteReplyStatus()throws Exception {
+        try(var store=ConversationStore.open(dir.resolve("unverified.db"),world,clock)){
+            var conversation=store.create(viewer,agent,UUID.randomUUID(),"house");var turn=store.begin(viewer,agent,conversation.conversationId(),UUID.randomUUID(),1,"build",0);
+            assertTrue(store.finish(turn.operationId(),"UNVERIFIED","Needs actual doorway verification","CONSTRUCTION_UNVERIFIED"));
+            assertEquals("UNVERIFIED",store.messages(viewer,agent,conversation.conversationId(),0,10).messages().getLast().status());assertFalse(store.pending(turn.operationId()));
+        }
+    }
     @Test void nativeBindingSurvivesRenameAndExplicitWebBindingButNotDelete()throws Exception{try(var s=ConversationStore.open(dir.resolve("native-bind.db"),world,clock)){var c=s.nativeConversation(viewer,agent);s.change(viewer,agent,c.conversationId(),UUID.randomUUID(),c.revision(),"rename","工作对话");assertEquals(c.conversationId(),s.nativeConversation(viewer,agent).conversationId());var web=s.create(viewer,agent,UUID.randomUUID(),"网页会话");s.bindNative(viewer,agent,web.conversationId());assertEquals(web.conversationId(),s.nativeConversation(viewer,agent).conversationId());assertThrows(SecurityException.class,()->s.bindNative(UUID.randomUUID(),agent,web.conversationId()));s.change(viewer,agent,web.conversationId(),UUID.randomUUID(),web.revision(),"delete","");assertNotEquals(web.conversationId(),s.nativeConversation(viewer,agent).conversationId());}}
 
     @Test void deletedNativeConversationIsNeverReusedForTheNextTurn()throws Exception{try(var store=ConversationStore.open(dir.resolve("native-delete.db"),world,clock)){var first=store.nativeConversation(viewer,agent);var turn=store.begin(viewer,agent,first.conversationId(),UUID.randomUUID(),first.revision(),"old-context-marker",0);store.finish(turn.operationId(),"COMPLETE","old reply","");store.change(viewer,agent,first.conversationId(),UUID.randomUUID(),first.revision(),"delete","");var fresh=store.nativeConversation(viewer,agent);assertNotEquals(first.conversationId(),fresh.conversationId());assertEquals(0,fresh.messageCount());assertTrue(store.forward(viewer,agent,fresh.conversationId(),1,20).isEmpty());assertNotEquals(fresh.conversationId(),store.nativeConversation(UUID.randomUUID(),agent).conversationId());}}

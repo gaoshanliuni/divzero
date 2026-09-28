@@ -90,3 +90,10 @@ Core tests cover geometry equivalence, holes/caps/rejections, failed replacement
 First CI run `36380060336` found missing compile-time Rhino and Taffy API dependencies (embedded runtime libraries are not automatically on the NeoForge Java compile classpath). Explicit compile-only declarations were added; the failed run is retained as evidence. Automatic Release publication on pushes has been disabled; explicit manual release dispatch remains available.
 
 Follow-up CI `36380774997` successfully compiled the native builders and passed the exported API/core/worker/client/NeoForge tests, including the new geometry, UI session, design persistence and conflict-aware history cases. This is offline/compile evidence, not native rendering or complete feature migration acceptance.
+
+
+## Component executor integration (2026-09-28, acceptance in progress)
+
+The implementation now connects `ConstructionLedger`, `ServerBuildings` and `BuildingVerifier` to ordinary conversation tools and an F2 construction window. The ledger streams targets to scoped SQLite files, keeps original sampled states, applies conditional local differences, records component steps and supports pause/resume and conditional undo/redo. A durable batch reservation makes interrupted writes uncertain instead of replaying them. Explicit recovery observes before/after states before an optional rollback. Air geometry requires `clear_existing: true`; hollow volumes do not implicitly clear contents.
+
+Verification reads actual target states and named dimension, clearance, doorway/path and support checks. A closed wooden door must have its matching native half and state to count as traversable; explicitly floating structures can opt out of support checks. A conversation completion gate binds verification to the building ID, revision and operation and withholds unverified completion text. A new `UNVERIFIED` conversation status records missing evidence. These changes are currently awaiting Actions and the new isolated `componentBuildingSmoke` fixture; they are not yet native acceptance or full migration completion. Browser removal and remaining advanced UI work are still in progress.

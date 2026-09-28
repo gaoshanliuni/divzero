@@ -28,7 +28,7 @@ import java.util.*;
 @EventBusSubscriber(modid = "mineagent_runtime")
 public final class ServerUiRuntime {
     public static final UUID TRUSTED_SHELL_PACKAGE = UUID.fromString("00000000-0000-0000-0000-000000000002");
-    public static final Set<String> SHELL_CAPABILITIES=Set.of("feedback.read","delivery.list","delivery.transfer","delivery.lifecycle","shell.read", "conversation.read", "conversation.write", "persona.manage", "settings.manage", "appearance.read", "appearance.apply", "appearance.decide", "chat.send", "chat.refresh", "decision.submit", "decision.defer", "decision.resume", "decision.cancelTask", "worldui.open", "worldui.agent", "worldui.chunk", "worldui.release", "world.inspect", "world.activate", "world.disable", "world.restoreOff", "world.list", "world.moveInspect", "world.move",
+    public static final Set<String> SHELL_CAPABILITIES=Set.of("building.read","building.write","feedback.read","delivery.list","delivery.transfer","delivery.lifecycle","shell.read", "conversation.read", "conversation.write", "persona.manage", "settings.manage", "appearance.read", "appearance.apply", "appearance.decide", "chat.send", "chat.refresh", "decision.submit", "decision.defer", "decision.resume", "decision.cancelTask", "worldui.open", "worldui.agent", "worldui.chunk", "worldui.release", "world.inspect", "world.activate", "world.disable", "world.restoreOff", "world.list", "world.moveInspect", "world.move",
                                 "agent.manage", "task.manage", "package.generate", "package.cancel", "package.preview", "package.chunk", "package.release", "scoreview.bind", "container.open", "container.agent", "scoreview.worldFront", "scoreview.worldMove", "scoreview.worldDetach", "scoreview.worldDelete", "package.open", "package.hud", "package.hudLease", "package.restore", "package.patchSubmit","package.patchApply","package.patchRollback","package.patchCancel","package.patchPreview","package.patchRebuild", "package.worldPatchSubmit", "package.worldPatchInspect", "package.worldPatchApply", "package.worldPatchRollback", "package.worldPatchCancel", "ui.statePermit", "ui.presentationPermit", "ui.bindPage", "ui.takeoverActivate", "ui.delegate", "ui.stop");
     private static final Map<MinecraftServer, ServerUiRuntime> RUNTIMES = new IdentityHashMap<>();
     private final MinecraftServer server;
@@ -179,6 +179,7 @@ public final class ServerUiRuntime {
                 send(viewer, packet.requestId(), "session", sessions.interrupt(viewer.getUUID(), request.sessionId())); return;
             }
             if (!packet.channel().equals("command")) throw new IllegalArgumentException("UI_CHANNEL");
+            if(Set.of("building.read","building.write").contains(request.action())){buildings(viewer,packet.requestId(),request);return;}
             if(Set.of("studio.read","studio.write").contains(request.action())){javaStudio(viewer,packet.requestId(),request);return;}
             if(Set.of("preferences.read","preferences.write").contains(request.action())){preferences(viewer,packet.requestId(),request);return;}
             if(Set.of("package.assetsRead","package.assetsWrite").contains(request.action())){assets(viewer,packet.requestId(),request);return;}
@@ -291,6 +292,31 @@ public final class ServerUiRuntime {
             }
             send(viewer, packet.requestId(), "receipt", receipt);
         } catch (Exception failure) { send(viewer, packet.requestId(), "error", Map.of("code", "INVALID_UI_REQUEST")); }
+    }
+    private void buildings(ServerPlayer viewer,UUID packet,Request request){
+        boolean write=request.action().equals("building.write");boolean begun=false;String capability=request.action();
+        try{
+            restoreScope(viewer,request);Code access=sessions.checkRead(viewer.getUUID(),request,capability);if(access!=Code.OK){send(viewer,packet,"receipt",Receipt.of(request.operationId(),access));return;}
+            if(write){var reserved=sessions.begin(viewer.getUUID(),request,capability,true);if(reserved.code()!=Code.OK){send(viewer,packet,"receipt",reserved);return;}begun=true;}
+            var args=new LinkedHashMap<>(request.arguments());UUID agent=UUID.fromString(args.remove("agentId"));String kind=args.remove("kind");
+            var node=json.createObjectNode();for(var entry:args.entrySet())if(Set.of("revision","offset").contains(entry.getKey()))node.put(entry.getKey(),Long.parseLong(entry.getValue()));else node.put(entry.getKey(),entry.getValue());
+            java.util.function.BooleanSupplier permit=()->sessions.checkRead(viewer.getUUID(),request,capability)==Code.OK;
+            java.util.concurrent.CompletableFuture<Map<String,Object>> future;
+            if(!write&&kind.equals("inspect"))future=ServerBuildings.inspect(viewer,agent,node);
+            else if(!write&&kind.equals("verify"))future=ServerBuildings.verify(viewer,agent,node,permit);
+            else if(write&&kind.equals("plan"))future=ServerBuildings.plan(viewer,agent,node,permit);
+            else if(write&&kind.equals("apply"))future=ServerBuildings.apply(viewer,agent,node,permit);
+            else if(write&&Set.of("pause","resume","undo","redo","recover").contains(kind))future=ServerBuildings.control(viewer,agent,node,kind,permit);
+            else throw new IllegalArgumentException("BUILDING_ACTION");
+            if(write){send(viewer,packet,"receipt",sessions.complete(request,Code.ACCEPTED,Map.of("status","ACCEPTED")));}
+            future.whenComplete((value,error)->server.execute(()->{
+                try{
+                    Map<String,String> result=error==null?Map.of("state",json.writeValueAsString(value)):Map.of("errorCode",Objects.toString(error.getMessage(),"BUILDING_FAILED"));
+                    if(write)send(viewer,UUID.randomUUID(),"buildingChanged",result);
+                    else send(viewer,packet,"receipt",new Receipt(request.operationId(),error==null?Code.OBSERVED:Code.FAILED,result));
+                }catch(Exception failure){send(viewer,packet,"receipt",new Receipt(request.operationId(),Code.FAILED,Map.of("errorCode","BUILDING_RESULT_UNAVAILABLE")));}
+            }));
+        }catch(Exception failure){send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,Map.of("errorCode",Objects.toString(failure.getMessage(),"BUILDING_FAILED"))):new Receipt(request.operationId(),Code.FAILED,Map.of("errorCode",Objects.toString(failure.getMessage(),"BUILDING_FAILED"))));}
     }
     private Map<String, String> execute(ServerPlayer viewer, Request request) throws Exception {
         if(Set.of("desktop.start","desktop.read","desktop.cancel").contains(request.action())){

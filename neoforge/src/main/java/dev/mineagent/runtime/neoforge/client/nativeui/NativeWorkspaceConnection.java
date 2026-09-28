@@ -35,6 +35,7 @@ public final class NativeWorkspaceConnection {
             });return true;
         }
         var pending=PENDING.remove(packet.requestId());
+        if(ready()&&packet.channel().equals("buildingChanged")){NativeBuildingPanel.changed(JsonParser.parseString(packet.json()).getAsJsonObject());return true;}
         if(pending!=null){if(packet.channel().equals("receipt"))pending.future.complete(JSON.fromJson(packet.json(),Receipt.class));else pending.future.completeExceptionally(new IllegalStateException("NATIVE_WORKSPACE_REQUEST_REJECTED"));return true;}
         if(ready()&&Set.of("conversationChanged","conversationVoiceStatus").contains(packet.channel())){NativeWorkspaceScreen.push(packet.channel(),JsonParser.parseString(packet.json()));return true;}
         return false;
@@ -52,6 +53,7 @@ public final class NativeWorkspaceConnection {
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(operation,channel,JSON.toJson(request)));return future;
     }
     public static void tick(){
+        NativeBuildingPanel.tick();
         var mc=Minecraft.getInstance();long now=System.currentTimeMillis();
         if(connection!=null&&(connection!=mc.getConnection()||level!=mc.level)){reset();return;}
         for(var entry:List.copyOf(PENDING.entrySet()))if(now>=entry.getValue().deadline){PENDING.remove(entry.getKey());entry.getValue().future.completeExceptionally(new IllegalStateException("UI_OPERATION_TIMEOUT_OUTCOME_UNKNOWN"));}

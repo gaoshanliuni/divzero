@@ -15,10 +15,12 @@ public final class BuildingDesign {
     public String id(){return document.path("id").asText();}
     public String name(){return document.path("name").asText();}
     public String dimension(){return document.path("dimension").asText();}
+    public boolean clearExisting(){return document.path("clear_existing").asBoolean(false);}
     public String source(){return document.toString();}
     public Set<String> componentIds(){return components.keySet();}
     public JsonNode component(String id){var component=components.get(id);if(component==null)throw bad("COMPONENT_NOT_FOUND");return component.deepCopy();}
     public JsonNode checks(){return document.path("checks").deepCopy();}
+    public List<Integer> origin(){return List.of(document.path("origin").get(0).intValue(),document.path("origin").get(1).intValue(),document.path("origin").get(2).intValue());}
     public List<String> order(){var order=new ArrayList<String>();var seen=new HashSet<String>();for(String id:components.keySet().stream().sorted().toList())visit(id,new HashSet<>(),seen,order);return List.copyOf(order);}
     public String geometry(String id){
         JsonNode c=component(id);var out=JSON.createObjectNode();out.set("origin",document.get("origin").deepCopy());var parts=out.putArray("parts");
@@ -38,7 +40,8 @@ public final class BuildingDesign {
     public static BuildingDesign parse(String source){
         if(source==null||source.length()>131072)throw bad("SOURCE_SIZE");
         try{
-            JsonNode n=JSON.readTree(source);fields(n,"id","name","dimension","origin","templates","components","checks");id(n.path("id"));
+            JsonNode n=JSON.readTree(source);fields(n,"id","name","dimension","origin","templates","components","checks","clear_existing");id(n.path("id"));
+            if(n.has("clear_existing")&&!n.get("clear_existing").isBoolean())throw bad("CLEAR_EXISTING");
             if(!n.path("dimension").isTextual()||!n.get("dimension").asText().matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))throw bad("DIMENSION");
             if(!n.path("name").isTextual()||n.get("name").asText().isBlank()||n.get("name").asText().length()>256)throw bad("NAME");vector(n.path("origin"),30_000_000);
             if(n.has("templates")){if(!n.get("templates").isObject()||n.get("templates").size()>128)throw bad("TEMPLATES");for(var e:n.get("templates").properties()){id(TextNode.valueOf(e.getKey()));parts(e.getValue());}}

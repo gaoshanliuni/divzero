@@ -255,9 +255,9 @@ public final class ConversationStore implements AutoCloseable {
     }
     public synchronized boolean finish(UUID op,String status,String text,String error,ConversationModelReceipt receipt)throws Exception{
         if(status.equals("COMPLETE")&&text==null)throw new IllegalArgumentException("CONVERSATION_EMPTY_COMPLETION");
-        if(!Set.of("COMPLETE","FAILED","CANCELLED","INTERRUPTED").contains(status)||error==null||!error.matches("[A-Z0-9_]{0,80}"))throw new IllegalArgumentException("CONVERSATION_FINISH_INPUT");if(text!=null)text(text,131072,!status.equals("COMPLETE"));
+        if(!Set.of("COMPLETE","UNVERIFIED","FAILED","CANCELLED","INTERRUPTED").contains(status)||error==null||!error.matches("[A-Z0-9_]{0,80}"))throw new IllegalArgumentException("CONVERSATION_FINISH_INPUT");if(text!=null)text(text,131072,!status.equals("COMPLETE"));
         return transaction(()->{var t=turn(op);if(!pending(op))return false;
-            if(receipt!=null){if(!status.equals("COMPLETE"))throw new IllegalArgumentException("MODEL_RECEIPT_REQUIRES_COMPLETE");if(execute("UPDATE mineagent_conversation_context_v1 SET model_receipt=? WHERE world_id=? AND operation_id=? AND model_receipt=''",new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(receipt),world,op)!=1)throw new IllegalStateException("MODEL_RECEIPT_CONFLICT");}
+            if(receipt!=null){if(!Set.of("COMPLETE","UNVERIFIED").contains(status))throw new IllegalArgumentException("MODEL_RECEIPT_REQUIRES_COMPLETE");if(execute("UPDATE mineagent_conversation_context_v1 SET model_receipt=? WHERE world_id=? AND operation_id=? AND model_receipt=''",new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(receipt),world,op)!=1)throw new IllegalStateException("MODEL_RECEIPT_CONFLICT");}
             if(text==null)return execute("UPDATE mineagent_conversation_messages_v1 SET status=?,error_code=?,revision=revision+1,updated_at=? WHERE world_id=? AND id=? AND status IN ('PENDING','GENERATING')",status,error,clock.millis(),world,t.assistant())==1;
             return execute("UPDATE mineagent_conversation_messages_v1 SET text=?,text_length=?,status=?,error_code=?,revision=revision+1,updated_at=? WHERE world_id=? AND id=? AND status IN ('PENDING','GENERATING')",text,text.length(),status,error,clock.millis(),world,t.assistant())==1;});
     }
