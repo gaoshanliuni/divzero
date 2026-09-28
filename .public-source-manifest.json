@@ -3404,8 +3404,8 @@
     },
     {
       "path": "docs/WORLD_ACTIVATION_CHAT.md",
-      "sha256": "86a68a6c576aa9e8481a2858e35694b6e9ffa66907c3f4f053525cf90196ddad",
-      "bytes": 2448
+      "sha256": "8180569c72a1fd356a22d3a58c81a3104b029e2c9975ae39ac53e384502b5415",
+      "bytes": 4206
     },
     {
       "path": "gradle.properties",
