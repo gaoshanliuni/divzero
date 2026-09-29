@@ -11,6 +11,20 @@ import java.util.*;
 final class CombatAwareness {
     record Threat(LivingEntity entity,NativeCombatStates.Snapshot state,boolean eligible,boolean protecting,boolean urgent,double score){}
     List<Threat> threats=List.of();List<Projectile> projectiles=List.of();Vec3 anchor;LivingEntity protectedEntity;int lastThreatTick=-10000,nextScan;long scans;
+    private record Seen(LivingEntity entity,Vec3 position,int tick){}
+    private final Map<UUID,Seen> lastSeen=new LinkedHashMap<>();private UUID searching;private int searchStarted;
+    void clearSearch(){lastSeen.clear();searching=null;}
+    Vec3 lastSeenSearch(SkillWork w){
+        var policy=w.session.spec().combat();if(policy.engagement()!=CombatPolicy.Engagement.CLEAR_AREA||policy.area()==null)return null;
+        lastSeen.entrySet().removeIf(entry->{var seen=entry.getValue();return !seen.entity.isAlive()||seen.entity.level()!=w.player().level()||w.tick()-seen.tick>2400||policy.excluded().contains(entry.getKey())||!policy.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(seen.position.x,seen.position.y,seen.position.z));});
+        if(searching!=null&&w.tick()-searchStarted>500){lastSeen.remove(searching);searching=null;}
+        lastSeen.entrySet().removeIf(entry->entry.getValue().position.distanceToSqr(w.player().position())<9&&w.tick()-entry.getValue().tick>10);
+        Seen selected=lastSeen.values().stream().min(Comparator.comparingDouble(seen->seen.position.distanceToSqr(w.player().position()))).orElse(null);
+        if(selected==null){searching=null;return null;}
+        if(!selected.entity.getUUID().equals(searching)){searching=selected.entity.getUUID();searchStarted=w.tick();w.session.add("lastSeenThreatSearches",1);}
+        return selected.position;
+    }
+    void searchFailed(){if(searching!=null)lastSeen.remove(searching);searching=null;}
     LivingEntity selected;int selectedAt;double lastDamageVelocity;
     void scan(SkillWork w){
         var p=w.player();var rule=w.session.spec().combat();if(anchor==null||!w.combatInterrupted)anchor=p.position();if(rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(p.getX(),p.getY(),p.getZ())))anchor=new Vec3((rule.area().min().x()+rule.area().max().x()+1)/2,p.getY(),(rule.area().min().z()+rule.area().max().z()+1)/2);
@@ -42,6 +56,7 @@ final class CombatAwareness {
             long neighbors=entities.stream().filter(other->other!=e&&other instanceof Enemy&&other.distanceToSqr(e)<16).count();
             double score=(self?8:0)+(protect?18+(NativeCombatStates.meleeAt(e,protectedEntity,protectedEntity.position())?30:0):0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);
             rows.add(new Threat(e,actual,eligible,protect,self||protect||attacked||imminent,score));
+            if(eligible&&rule.engagement()==CombatPolicy.Engagement.CLEAR_AREA){var previous=lastSeen.put(e.getUUID(),new Seen(e,e.position(),w.tick()));if(previous!=null&&w.tick()-previous.tick>20)w.session.add("threatReacquisitions",1);}
         }
         threats=List.copyOf(rows);
         projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001&&!(e instanceof dev.mineagent.runtime.neoforge.mixin.CombatArrowStateAccess arrow&&arrow.divzero$inGround())));

@@ -35,6 +35,12 @@ final class CombatSkill {
         boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.urgent()&&t.entity().distanceTo(w.player())<8);
         if(target==null&&!projectileDanger&&!cooling&&!closeThreat&&!w.contactEscape){
             if(w.combatInterrupted&&w.player().getHealth()<w.player().getMaxHealth()*.7&&w.player().getFoodData().getFoodLevel()<20&&safeToEat(w)&&w.acquire()&&eat(w))return true;
+            var lastSeen=w.combat.lastSeenSearch(w);
+            if(lastSeen!=null&&w.acquire()){
+                // A guard checks remembered coordinates; it does not read a hidden target's new position.
+                phase(w,"REACQUIRE_THREAT");w.session.transition(State.SUSPENDED,"CHECKING_LAST_THREAT_POSITION");w.actor.sprint(w.token(),false);w.actor.aim(w.token(),lastSeen.add(0,w.player().getEyeHeight(),0));
+                String navigation=w.actor.move(w.token(),lastSeen);if(Set.of("NO_PATH","FAILED","ARRIVED","CANCELLED").contains(navigation))w.combat.searchFailed();return true;
+            }
             finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"NO_ELIGIBLE_THREATS");
         }
         if(!w.combatInterrupted){
@@ -60,7 +66,7 @@ final class CombatSkill {
         w.session.transition(State.RUNNING,"DEFENSE_FINISHED_RECHECK_WORK");w.session.add("workResumptions",1);w.nextTick=w.tick();w.runtime.persist(w);if(w.session.spec().kind()!=SkillSpec.Kind.COMBAT)w.notice("resumed","威胁已解除，重新检查并继续原工作。");
     }
     static void combat(SkillWork w){interruptOrContinue(w);}
-    static void policyChanged(SkillWork w){var state=w.session.state();var reason=w.session.reason();finishDefense(w);if(state==State.PAUSED)w.session.transition(state,reason);w.combat.selected=null;w.combat.nextScan=0;w.lastCombatTick=-1;w.positioning.reset();}
+    static void policyChanged(SkillWork w){var state=w.session.state();var reason=w.session.reason();finishDefense(w);if(state==State.PAUSED)w.session.transition(state,reason);w.combat.selected=null;w.combat.clearSearch();w.combat.nextScan=0;w.lastCombatTick=-1;w.positioning.reset();}
     private static void phase(SkillWork w,String name){if(!w.tactic.equals(name)){w.tactic=name;w.tacticAt=w.tick();w.session.add("tactic_"+name,1);}w.session.phase(name);if(w.actor instanceof PlayerSkillActor p&&w.tick()%10==0)p.report(name,false);}
     private static void log(SkillWork w,String state){
         var receipt=new LinkedHashMap<>(w.session.receipt());receipt.put("combatState",state);receipt.put("combatOperation",w.combatOperation==null?"":w.combatOperation.toString());receipt.put("combatActorEntityId",Integer.toString(w.player().getId()));receipt.put("combatIntentRevision",Long.toString(w.session.revision()));receipt.put("combatTarget",w.fighting==null?"":w.fighting.toString());receipt.put("arrowsAfter",Integer.toString(w.count(Items.ARROW)));w.session.receipt(receipt);

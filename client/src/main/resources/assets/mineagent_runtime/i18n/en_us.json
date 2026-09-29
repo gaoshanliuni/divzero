@@ -3205,5 +3205,6 @@
   "短跳调整走位": "Hop to reposition",
   "短跳调整攻击节奏，检查落点": "Jump-tap and check the landing",
   "向左变向，避开攻击区域": "Strafe left out of the attack area",
-  "向右变向，避开攻击区域": "Strafe right out of the attack area"
+  "向右变向，避开攻击区域": "Strafe right out of the attack area",
+  "检查上次发现敌人的位置": "Check the last observed threat position"
 }
