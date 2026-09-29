@@ -3190,5 +3190,16 @@
   "ComfyUI 服务地址": "ComfyUI service URL",
   "对话输入词元预算（1024–131072，保守估算）": "Conversation input token budget (1024–131072, conservative estimate)",
   "每条任务链累计派发次数（0–1000000；不按日重置）": "Dispatch budget per task chain (0–1000000; does not reset daily)",
-  "单次工作进程请求派发次数（0–10000；非任务总数）": "Dispatch budget per worker request (0–10000; not per task)"
+  "单次工作进程请求派发次数（0–10000；非任务总数）": "Dispatch budget per worker request (0–10000; not per task)",
+  "模型服务状态": "Provider status",
+  "ComfyUI 工作流": "ComfyUI Workflow",
+  "工作流已配置": "Workflow configured",
+  "尚未配置 ComfyUI 工作流": "ComfyUI Workflow not configured yet",
+  "编辑工作流": "Edit workflow",
+  "API 密钥": "API Key",
+  "API 密钥已配置": "API Key configured",
+  "API 密钥未配置": "API Key not configured",
+  "语音识别密钥": "ASR Key",
+  "我发起请求的任意 AI": "Any Agent I initiate requests with",
+  "代码助手": "Coder"
 }

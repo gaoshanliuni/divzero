@@ -27,7 +27,7 @@ public final class AgentInventoryMenu extends AbstractContainerMenu {
         addAgentSlot(mirror,40,77,72);
         for(int row=0;row<3;row++)for(int col=0;col<9;col++)addAgentSlot(mirror,9+row*9+col,8+18*col,98+18*row);
         for(int col=0;col<9;col++)addAgentSlot(mirror,col,8+18*col,156);
-        addStandardInventorySlots(inventory,8,191);
+        addStandardInventorySlots(inventory,8,187);
     }
     private void addAgentSlot(SimpleContainer mirror,int logical,int x,int y){
         if(body!=null){

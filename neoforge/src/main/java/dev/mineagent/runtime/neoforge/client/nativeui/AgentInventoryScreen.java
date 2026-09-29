@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 /** Native container mouse/keyboard handling, with the familiar player inventory texture. */
 public final class AgentInventoryScreen extends AbstractContainerScreen<AgentInventoryMenu> {
     private static final Identifier TEXTURE=Identifier.withDefaultNamespace("textures/gui/container/inventory.png");
-    public AgentInventoryScreen(AgentInventoryMenu menu,Inventory inventory,Component title){super(menu,inventory,title,176,273);inventoryLabelY=179;}
+    public AgentInventoryScreen(AgentInventoryMenu menu,Inventory inventory,Component title){super(menu,inventory,title,176,269);inventoryLabelY=175;}
     @Override public boolean isPauseScreen(){return false;}
     @Override public void extractBackground(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partial){
         super.extractBackground(graphics,mouseX,mouseY,partial);

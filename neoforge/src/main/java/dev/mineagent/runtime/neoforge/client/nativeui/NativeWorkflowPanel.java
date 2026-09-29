@@ -7,7 +7,7 @@ import java.util.*;
 /** Trusted provider configuration editor, never a package-owned view or model input. */
 final class NativeWorkflowPanel {
     static void open(NativeWorkspaceScreen host){
-        if(host.revealWindow("provider-workflow"))return;var window=host.window("provider-workflow",t("ComfyUI Workflow"),580,410);
+        if(host.revealWindow("provider-workflow"))return;var window=host.window("provider-workflow",t("ComfyUI 工作流"),580,410);
         var notice=WorkspacePanels.text(t("保存 Workflow 不会发起模型请求。JSON 需包含 ${prompt}。"));window.body.addChild(notice);var editor=new NativeCodeEditor("JAVA");window.body.addChild(editor);editor.readOnly(true);
         long[] revision={-1};boolean[] busy={false},unknown={false};String[] saved={""};
         Runnable[] load={null};load[0]=()->{if(busy[0])return;busy[0]=true;WorkspacePanels.request("settings.read",Map.of("kind","workflow")).whenComplete((receipt,error)->{busy[0]=false;if(!host.activeContext()||window.closed())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}var values=receipt.values();revision[0]=Long.parseLong(values.get("revision"));String source=values.get("source.0")+values.get("source.1");if(!unknown[0])editor.load(source);else notice.setText(Component.literal(source.equals(saved[0])?t("已确认服务器保存了该 Workflow。草稿仍保留。"):t("服务器版本已读取，草稿保留；请核对后再保存。")));unknown[0]=false;editor.readOnly(false);});};
