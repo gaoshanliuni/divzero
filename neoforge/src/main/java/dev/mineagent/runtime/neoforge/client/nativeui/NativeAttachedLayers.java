@@ -40,7 +40,7 @@ public final class NativeAttachedLayers {
     public static void clear(){for(var entry:ENTRIES.values())entry.close();ENTRIES.clear();focused=pressed=null;}
     private static void maintain(){if(connection!=mc().getConnection()||level!=mc().level){clear();connection=mc().getConnection();level=mc().level;}}
     public static boolean interacting(InterfaceSession<LdInterfaceRenderer.Rendered> session){var e=ENTRIES.get(session.scope());return e!=null&&e.host!=null&&e.host==mc().screen&&session.visible()&&matches(session.definition(),e.host);}
-    public static Map<String,Object> observation(InterfaceSession<LdInterfaceRenderer.Rendered> session){var e=ENTRIES.get(session.scope());return e==null?Map.of():Map.of("attached",e.host!=null,"screenClass",e.host==null?"":e.host.getClass().getName(),"entityCopies",e.entities.size(),"painted",e.painted,"error",e.error);}
+    public static Map<String,Object> observation(InterfaceSession<LdInterfaceRenderer.Rendered> session){var e=ENTRIES.get(session.scope());return e==null?Map.of():Map.of("attached",e.host!=null,"screenClass",e.host==null?"":e.host.getClass().getName(),"entityCopies",e.entities.size(),"entityBounds",e.entities.entrySet().stream().limit(32).map(view->Map.of("id",view.getKey().toString(),"width",view.getValue().root.getSizeWidth(),"height",view.getValue().root.getSizeHeight())).toList(),"painted",e.painted,"error",e.error);}
     private static ModularUI hostUi(Screen screen){return screen instanceof com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen modular?modular.getModularUI():screen instanceof IModularUIHolder holder?holder.getModularUI():null;}
     public static Map<String,Object> screenInfo(){
         var screen=mc().screen;if(screen==null)return Map.of("open",false);

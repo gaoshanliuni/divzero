@@ -93,6 +93,10 @@ public final class LdInterfaceRenderer {
         private void installButtons(UIElement element){if(element instanceof Button button)NativeButtonFeedback.install(button);for(var child:element.getChildren())installButtons(child);}
         public void finish(UIElement root){
             if(!definition.attachment().hostStylesheet().isBlank())strictStyles(definition.attachment().hostStylesheet());
+            // An absolute auto-width tree of percentage-width labels otherwise collapses to min-content.
+            // Defaults stay below authored LSS, so the AI can still choose any explicit HUD dimensions.
+            if(definition.surface()==InterfaceDefinition.Surface.ENTITY_HUD)
+                Style.defaultPipeline(root.getLayout(),layout->layout.width(120).flexShrink(0));
             var windows=nodes.values().stream().filter(NativeDesktopWindow.class::isInstance).map(NativeDesktopWindow.class::cast).toList();
             if(!windows.isEmpty()){var dock=new UIElement();dock.addClass("divzero-desktop-dock");dock.getLayout().positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE).left(0).right(0).bottom(0).height(27).flexDirection(dev.vfyjxf.taffy.style.FlexDirection.ROW).gapAll(3);dock.getStyle().zIndex(10000).backgroundTexture(NativeUiTheme.panel());root.addChild(dock);windows.forEach(window->window.dock(dock));}
             root.addClass("panel_bg").addClass(NativeButtonFeedback.ROOT_CLASS);installButtons(root);
