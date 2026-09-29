@@ -3116,5 +3116,7 @@
   "重启后等待恢复": "Waiting for resume after restart",
   "需要核对旧操作后恢复": "Verify the previous action before resuming",
   "等待条件恢复": "Waiting for conditions to recover",
-  "需要先核对旧操作，再继续当前工作": "Verify the previous action before continuing"
+  "需要先核对旧操作，再继续当前工作": "Verify the previous action before continuing",
+  "沿用当前防区": "Current defense area",
+  "当前目标（暂不可见）": "Current target (not visible)"
 }

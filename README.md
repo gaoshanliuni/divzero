@@ -14,7 +14,7 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 
 
 **[下载 JAR](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](docs/FEATURES.md) · [安装说明](docs/BUILD_JAR.md) · [问题反馈](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-当前为开发测试版，支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**。网络协议 **10**，客户端与服务端请同步更新。建议使用已备份的测试存档。
+当前为开发测试版，支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**。公开 main 的 **1.0.21 候选采用协议 11**，客户端与服务端请同步更新；已发布的 1.0.20 仍为协议 10。建议使用已备份的测试存档。
 
 ## LDLib2 原生工作区与持续技能
 
@@ -30,7 +30,7 @@ AI 与真人托管共用跟随、巡逻、警戒、漫步、战斗、农务和�
 
 ![托管面板：暂停、退出、追加命令](docs/images/player-takeover.png)
 
-[原生界面与建筑升级](docs/NATIVE_UI_MIGRATION_STATUS.md) · [持续技能验收](docs/PERSISTENT_PLAYER_SKILLS.md) · [十项动态能力](docs/NATIVE_TEN_SCENARIOS.md)
+[本地战斗与独立工作模式](docs/TACTICAL_PLAYER_BEHAVIOR.md) · [原生界面与建筑升级](docs/NATIVE_UI_MIGRATION_STATUS.md) · [持续技能验收](docs/PERSISTENT_PLAYER_SKILLS.md) · [十项动态能力](docs/NATIVE_TEN_SCENARIOS.md)
 
 ## 模型选择会显著影响效果
 
@@ -157,7 +157,7 @@ Through natural language interaction, world awareness, persistent memory, and dy
 
 **[Download JARs](https://github.com/gaoshanliuni/divzero/releases) · [All features](docs/FEATURES.md#english) · [Installation](docs/BUILD_JAR.md) · [Report an issue](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-This is a development/test release for **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**. Network protocol: **10**. Keep the main mod version in sync on clients and servers. Back up your world before testing.
+This is a development/test release for **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**. Public main is the **1.0.21 candidate with protocol 11**; the published 1.0.20 release uses protocol 10. Keep the main mod version in sync on clients and servers. Back up your world before testing.
 
 ## Native LDLib2 workspace and persistent skills
 
@@ -173,7 +173,7 @@ AI bodies and player takeover share follow, patrol, guard, wander, combat, farmi
 
 ![Takeover controls: Pause, Exit and Add command](docs/images/player-takeover.png)
 
-[Native UI and building migration](docs/NATIVE_UI_MIGRATION_STATUS.md) · [Persistent skills](docs/PERSISTENT_PLAYER_SKILLS.md) · [Ten dynamic scenarios](docs/NATIVE_TEN_SCENARIOS.md)
+[Local tactics and independent work modes](docs/TACTICAL_PLAYER_BEHAVIOR.md) · [Native UI and building migration](docs/NATIVE_UI_MIGRATION_STATUS.md) · [Persistent skills](docs/PERSISTENT_PLAYER_SKILLS.md) · [Ten dynamic scenarios](docs/NATIVE_TEN_SCENARIOS.md)
 
 ## Your model makes a major difference
 
