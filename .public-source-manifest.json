@@ -3469,8 +3469,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "5a34d49bba6a42443f922d2cdccb9e9509db8db25ff664608416d8661c64e669",
-      "bytes": 53620
+      "sha256": "063c99e866744e6328fd1d82cdb8448ba06fe729a234abefe337222a6571a872",
+      "bytes": 57017
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -4899,8 +4899,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "f9c6fb15d0a996f3aead6feb6ee3b968873c89ccac64494dc3fba88a33764c6f",
-      "bytes": 15744
+      "sha256": "6f1ab44ea306eea45ce461051644dede0502d3ac0a80f561fb127744bf246290",
+      "bytes": 16220
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -4954,8 +4954,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "sha256": "e90b47884ba0b14da399139be47afb23c4854343bdbbacef0902842b26d2de8f",
-      "bytes": 30254
+      "sha256": "ab9141720a0b96b1bc0c743caadc1df4b23a9d289a143350e811b6ac1c658c02",
+      "bytes": 30837
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",

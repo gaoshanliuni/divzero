@@ -18,7 +18,7 @@ final class CombatSkill {
     }
     private static boolean advance(SkillWork w){
         if(w.combatStage==0&&w.combatOperation!=null&&(w.player().getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt)){w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;}
-        observeRelease(w);w.combat.scan(w);
+        observeRelease(w);observeFood(w);w.combat.scan(w);
         var spec=w.session.spec();var rule=spec.combat();
         if(rule.engagement()==CombatPolicy.Engagement.NONE&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"ENGAGEMENT_DISABLED");}
         LivingEntity target=w.combat.selected;
@@ -32,6 +32,7 @@ final class CombatSkill {
         boolean cooling=w.combatInterrupted&&w.tick()-w.combat.lastThreatTick<40;
         boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.urgent()&&t.entity().distanceTo(w.player())<8);
         if(target==null&&!projectileDanger&&!cooling&&!closeThreat){
+            if(w.combatInterrupted&&w.player().getHealth()<w.player().getMaxHealth()*.7&&w.player().getFoodData().getFoodLevel()<20&&safeToEat(w)&&w.acquire()&&eat(w))return true;
             finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"NO_ELIGIBLE_THREATS");
         }
         if(!w.combatInterrupted){
@@ -80,13 +81,16 @@ final class CombatSkill {
         if(target!=null&&(target instanceof net.minecraft.world.entity.player.Player||target.isAlliedTo(p)||target instanceof OwnableEntity owned&&owned.getOwnerReference()!=null)){w.combat.selected=null;return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
         double health=p.getHealth()/Math.max(1,p.getMaxHealth());
+        if(health<.7&&p.getFoodData().getFoodLevel()<20&&safeToEat(w)){
+            if(w.healingOperation==null)w.actor.stop(w.token());
+            if(eat(w))return;
+        }
         double withdrawal=Math.max(4,p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p)+1+contacts*.65);
         boolean retreat=rule.strategy()==CombatPolicy.Strategy.DISENGAGE||health<.3||flanked||contacts>1;
         if(retreat||target==null){
             phase(w,health<.3?"RECOVER":flanked||contacts>1?"LURE":"RETREAT");
             var facing=target==null?w.combat.threats.stream().map(CombatAwareness.Threat::entity).min(Comparator.comparingDouble(p::distanceToSqr)).orElse(null):target;
             move(w,w.positioning.choose(w,w.tactic,health<.3?14:withdrawal+2),facing,true);
-            if(health<.7&&w.combat.risk(w,p.position())<2&&w.combat.threats.stream().allMatch(t->t.entity().distanceTo(p)>3+40*Math.max(t.state().velocity().horizontalDistance(),t.state().movementSpeed()))&&eat(w))return;
             if(!w.positioning.longRetreat())shield(w,facing);return;
         }
         if(CombatEquipmentAdapter.execute(w,target)){phase(w,"ADAPTED_WEAPON");return;}
@@ -165,12 +169,14 @@ final class CombatSkill {
         w.actor.useHand(w.token(),w.shieldOperation,InteractionHand.OFF_HAND);w.wasBlocking|=p.isUsingItem()&&p.getUsedItemHand()==InteractionHand.OFF_HAND;return true;
     }
     private static boolean eat(SkillWork w){
-        var p=w.player();if(w.healingWasUsing&&!p.isUsingItem()){if(p.getFoodData().getFoodLevel()>w.foodBefore)w.session.add("nativeFoodConsumptions",1);w.healingWasUsing=false;w.healingOperation=null;}if(p.getFoodData().getFoodLevel()>=20)return false;
+        var p=w.player();if(p.getFoodData().getFoodLevel()>=20)return false;
         for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(w.session.spec().kind()==SkillSpec.Kind.FARM&&CropAdapter.adapters().stream().anyMatch(a->stack.is(a.seed()))&&w.count(stack.getItem())<=1)continue;if(stack.has(DataComponents.FOOD)&&!stack.is(Items.ROTTEN_FLESH)&&!stack.is(Items.SPIDER_EYE)&&!stack.is(Items.PUFFERFISH)&&!stack.is(Items.POISONOUS_POTATO)){
             if(!w.equip(stack.getItem()))return true;
             if(w.healSlot!=i||w.healingOperation==null){w.healSlot=i;w.healingOperation=UUID.randomUUID();}
             if(!w.healingWasUsing)w.foodBefore=p.getFoodData().getFoodLevel();w.actor.useHand(w.token(),w.healingOperation,InteractionHand.MAIN_HAND);w.healingWasUsing|=p.isUsingItem();phase(w,"EATING_IN_SAFE_SPACE");return true;
         }}return false;
     }
+    private static boolean safeToEat(SkillWork w){return w.combat.risk(w,w.player().position())<2&&w.combat.threats.stream().allMatch(t->t.entity().distanceTo(w.player())>3+40*Math.max(t.state().velocity().horizontalDistance(),t.state().movementSpeed()));}
+    private static void observeFood(SkillWork w){if(w.healingWasUsing&&!w.player().isUsingItem()){if(w.player().getFoodData().getFoodLevel()>w.foodBefore)w.session.add("nativeFoodConsumptions",1);w.healingWasUsing=false;w.healingOperation=null;}}
     private CombatSkill(){}
 }

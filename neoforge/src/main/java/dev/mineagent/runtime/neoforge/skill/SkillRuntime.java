@@ -143,5 +143,10 @@ public final class SkillRuntime {
             if(!owned)continue;w.session.add("lootPickedUp",count);w.pickedDrops.add(id);if(event.getCurrentStack().isEmpty())w.loot.remove(id);w.lootRetries=0;r.persist(w);
         }
     }
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST) public static void shieldBlocked(net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent event){
+        if(!(event.getEntity() instanceof ServerPlayer p)||!event.getOriginalBlock()||!event.getBlocked()||event.getBlockedDamage()<=0)return;
+        var r=ALL.get(p.level().getServer());if(r==null)return;
+        for(var w:r.work.values())if(w.actor!=null&&w.actor.player()==p&&w.session.runnable()&&w.actor.controls().owns(w.token(),BodyDomain.MAIN_HAND))w.session.add("nativeShieldBlocks",1);
+    }
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST) public static void fished(net.neoforged.neoforge.event.entity.player.ItemFishedEvent event){if(event.isCanceled()||!(event.getEntity() instanceof ServerPlayer p))return;var r=ALL.get(p.level().getServer());if(r==null)return;for(var w:r.work.values())if(w.actor!=null&&w.actor.player()==p&&w.hook!=null&&w.hook.equals(event.getHookEntity().getUUID())&&w.operation!=null&&w.action.equals("FISH_REEL")){w.fishedEvent=true;w.fishedItems=event.getDrops().stream().mapToInt(net.minecraft.world.item.ItemStack::getCount).sum();}}
 }
