@@ -43,7 +43,8 @@ public final class NativeCombatStates {
                 if(goal instanceof CombatBowGoalAccess access)attacks.add(new Attack(goal.getClass().getName(),"RANGED",running&&known?access.divzero$attackCooldown():-1,0,Math.sqrt(access.divzero$attackRadiusSquared()),running));
                 if(goal instanceof CombatCrossbowGoalAccess access){
                     var stack=enemy.isUsingItem()?enemy.getUseItem():enemy.getMainHandItem();int cooldown=access.divzero$attackDelay();
-                    if(cooldown<=0&&stack.getItem() instanceof net.minecraft.world.item.CrossbowItem&&stack.getOrDefault(DataComponents.CHARGED_PROJECTILES,net.minecraft.world.item.component.ChargedProjectiles.EMPTY).isEmpty())cooldown=Math.max(0,net.minecraft.world.item.CrossbowItem.getChargeDuration(stack,enemy)-(enemy.isUsingItem()?enemy.getTicksUsingItem():0));
+                    // The native goal always waits at least 20 more goal ticks after loading.
+                    if(cooldown<=0&&stack.getItem() instanceof net.minecraft.world.item.CrossbowItem&&stack.getOrDefault(DataComponents.CHARGED_PROJECTILES,net.minecraft.world.item.component.ChargedProjectiles.EMPTY).isEmpty())cooldown=Math.max(0,net.minecraft.world.item.CrossbowItem.getChargeDuration(stack,enemy)-(enemy.isUsingItem()?enemy.getTicksUsingItem():0))+20;
                     attacks.add(new Attack(goal.getClass().getName()+".chargeOrDelay","RANGED",running&&known?cooldown:-1,0,Math.sqrt(access.divzero$attackRadiusSquared()),running));
                 }
                 if(goal instanceof net.minecraft.world.entity.ai.goal.SpearUseGoal<?>){var range=enemy.getAttackRangeWith(enemy.getMainHandItem());attacks.add(new Attack(goal.getClass().getName()+".startupOrContactCooldown","MELEE",running&&known?kineticDelay(enemy,observer):-1,range.effectiveMinRange(enemy),range.effectiveMaxRange(enemy),running));}
