@@ -2474,8 +2474,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillTools.java",
-      "sha256": "6d3c93dc110e3db6b488b3343491274a95921852c2f47dc93126526ff4a9c0b0",
-      "bytes": 8119
+      "sha256": "5f756cda44c343e8c191243047d0ec962f409a4aa97965cc118ddc64bbc49231",
+      "bytes": 8305
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SneakClearance.java",
@@ -3369,8 +3369,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentMovementController.java",
-      "sha256": "8fbe5907a8e2acc62390b9e7cfa0e343e59148bbf377aa8b3b21b8397aeafd4d",
-      "bytes": 6227
+      "sha256": "4cfc95d6b79e3cfa4d85bde37f2882f98182484a39bf417a6a2c343b12dd85b0",
+      "bytes": 6346
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentPlayer.java",

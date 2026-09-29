@@ -10,7 +10,7 @@ import java.util.*;
 public final class MineAgentMovementController {
     private final NativeNavigationIntent intent=new NativeNavigationIntent();
     private long commandRevision;private int lastTick=Integer.MIN_VALUE;
-    private long pendingJumpRevision=-1;private UUID pendingJumpOwner;
+    private long pendingJumpRevision=-1;private UUID pendingJumpOwner;private int pendingJumpExpires;
     private int executedSteps,openedDoors,openedGates,crouchingSteps,climbingSteps,swimmingSteps;
     private boolean manualSneak;private final Set<Double> traversedFloors=new LinkedHashSet<>();
     public void recordOpened(boolean gate){if(gate)openedGates++;else openedDoors++;}
@@ -24,7 +24,7 @@ public final class MineAgentMovementController {
     public boolean stopIfCurrent(long command){if(command!=commandRevision)return false;pendingJumpRevision=-1;intent.stop("CANCELLED");return true;}
     public void movePreciselyTo(Vec3 target){start(target,.2);}
     public boolean followCheckedRoute(MineAgentPlayer player,List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> route){if(!intent.followCheckedRoute(player,route))return false;commandRevision++;return true;}
-    public void tacticalJump(MineAgentPlayer player,UUID owner){pendingJumpRevision=commandRevision;pendingJumpOwner=owner;}
+    public void tacticalJump(MineAgentPlayer player,UUID owner){pendingJumpRevision=commandRevision;pendingJumpOwner=owner;pendingJumpExpires=player.level().getServer().getTickCount()+4;}
     public void moveTo(Vec3 target){start(target,.8);}
     private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=0;traversedFloors.clear();}
     /** Tracking a moving entity does not replace the command or discard a still-useful route. */
@@ -38,7 +38,7 @@ public final class MineAgentMovementController {
         if(!p.canAct()||intent.target().isEmpty())return;
         if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
         var step=intent.tick(p);if(step==null)return;var waypoint=intent.waypoint(step);var offset=waypoint.subtract(p.position());
-        if(pendingJumpRevision!=commandRevision||pendingJumpOwner==null||!p.controls().owns(pendingJumpOwner,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT)){pendingJumpRevision=-1;pendingJumpOwner=null;}
+        if(tick>pendingJumpExpires||pendingJumpRevision!=commandRevision||pendingJumpOwner==null||!p.controls().owns(pendingJumpOwner,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT)){pendingJumpRevision=-1;pendingJumpOwner=null;}
         else if(p.onGround()){intent.tacticalJump(p);p.jumpFromGround();pendingJumpRevision=-1;pendingJumpOwner=null;}
         if(!NativeSurfaceNavigation.openOnPath(p,waypoint)){intent.stop("INTERACTION_BLOCKED");return;}
         boolean swim=step.action()==Action.SWIM||step.action()==Action.ENTER_WATER;
