@@ -3354,8 +3354,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "sha256": "7d3872ded39a510390ea5739b68384fe321c0cf3fdc53f74a2b9f39868fd2fc7",
-      "bytes": 5768
+      "sha256": "194285502906a5b64015e387ba637dccfb96e27f98ccf197a5355516670aa9d0",
+      "bytes": 5773
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
+      "sha256": "6b04d39840c543e521e7b564eaa327b5ee85ba33e566c1d60d233f7b61aed79a",
+      "bytes": 16562
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",

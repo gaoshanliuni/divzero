@@ -5,7 +5,7 @@ import dev.mineagent.runtime.neoforge.mixin.client.PlayerControlKeyAccess;
 import net.minecraft.client.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.phys.*;
 import java.util.*;
@@ -22,7 +22,7 @@ public final class NativeSkillInput {
         validate(n);var mc=mc();var p=mc.player;if(p==null||mc.gameMode==null)return;String action=n.path("action").asText(),next=n.path("operation").asText()+"/"+action;
         if(!next.equals(command)){command=next;clicked=false;}var target=vector(n.path("target"));
         if(action.equals("HALT")){mc.gameMode.stopDestroyBlock();p.stopUsingItem();return;}
-        if(action.equals("HOTBAR")){if(!clicked){int slot=n.path("slot").asInt();if(slot<9)p.getInventory().setSelectedSlot(slot);else if(p.containerMenu==p.inventoryMenu&&p.containerMenu.getCarried().isEmpty())mc.gameMode.handleInventoryMouseClick(p.inventoryMenu.containerId,slot,p.getInventory().getSelectedSlot(),ClickType.SWAP,p);clicked=true;}return;}
+        if(action.equals("HOTBAR")){if(!clicked){int slot=n.path("slot").asInt();if(slot<9)p.getInventory().setSelectedSlot(slot);else if(p.containerMenu==p.inventoryMenu&&p.containerMenu.getCarried().isEmpty())mc.gameMode.handleContainerInput(p.inventoryMenu.containerId,slot,p.getInventory().getSelectedSlot(),ContainerInput.SWAP,p);clicked=true;}return;}
         if(action.equals("RELEASE")){if(!clicked){if(p.isUsingItem())mc.gameMode.releaseUsingItem(p);clicked=true;}return;}
         if(action.equals("MOVE")){
             if(doorCooldown>0)doorCooldown--;
