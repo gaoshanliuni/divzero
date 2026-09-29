@@ -288,7 +288,7 @@ public final class WorldActionService implements AutoCloseable {
             skillFuture=null;
             if(dev.mineagent.runtime.core.task.SkillTools.TOOLS.contains(action.tool())){
                 var owner=server.getPlayerList().getPlayer(batch.owner());if(owner==null)throw new IllegalStateException("SKILL_OWNER_OFFLINE");var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(server);var args=json.readTree(action.options().get("request"));
-                skillFuture=action.tool().equals("inspect_skills")?runtime.inspect(owner,batch.agentId()):action.tool().equals("control_skill")?runtime.control(owner,batch.agentId(),args):runtime.start(owner,batch.agentId(),operation,batch.taskId(),args,dev.mineagent.runtime.core.task.SkillTools.kind(action.tool()),this::valid);return;
+                skillFuture=runtime.execute(owner,batch.agentId(),operation,batch.taskId(),action.tool(),args,this::valid);return;
             }
             switch(action.tool()){
                 case "inspect_content_contract","offer_content","query_deliveries","update_view","close_view","revoke_content"->{finish(true,"",dev.mineagent.runtime.neoforge.ui.ServerUiRuntime.get(server).deliveries().execute(tasks().get(batch.taskId()).orElseThrow(),operation,action.tool(),action.options().get("request")));}

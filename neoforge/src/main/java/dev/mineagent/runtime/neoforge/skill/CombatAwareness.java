@@ -1,0 +1,63 @@
+package dev.mineagent.runtime.neoforge.skill;
+
+import dev.mineagent.runtime.core.task.CombatPolicy;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.phys.Vec3;
+import java.util.*;
+
+/** Every nearby relevant entity contributes to risk. Selection is sticky, not nearest-only. */
+final class CombatAwareness {
+    record Threat(LivingEntity entity,NativeCombatStates.Snapshot state,boolean eligible,boolean protecting,double score){}
+    List<Threat> threats=List.of();List<Projectile> projectiles=List.of();Vec3 anchor;LivingEntity protectedEntity;int lastThreatTick=-10000,nextScan;long scans;
+    LivingEntity selected;int selectedAt;double lastDamageVelocity;
+    void scan(SkillWork w){
+        var p=w.player();var rule=w.session.spec().combat();if(anchor==null)anchor=p.position();
+        protectedEntity=rule.protect().isBlank()?null:rule.protect().equals("$owner")?w.runtime.server.getPlayerList().getPlayer(w.session.owner()):p.level().getEntity(UUID.fromString(rule.protect())) instanceof LivingEntity e?e:null;
+        if(protectedEntity!=null&&protectedEntity.level()!=p.level())protectedEntity=null;
+        if(w.tick()<nextScan)return;nextScan=w.tick()+4;scans++;
+        var rows=new ArrayList<Threat>();var entities=p.level().getEntitiesOfClass(LivingEntity.class,p.getBoundingBox().inflate(rule.awareness()),e->e!=p&&e.isAlive());
+        for(var e:entities){
+            if(e instanceof net.minecraft.world.entity.player.Player||e.isAlliedTo(p)||e instanceof OwnableEntity own&&own.getOwnerReference()!=null||rule.excluded().contains(e.getUUID()))continue;
+            boolean self=e instanceof Mob mob&&mob.getTarget()==p;
+            boolean protect=protectedEntity!=null&&e instanceof Mob mob&&mob.getTarget()==protectedEntity;
+            boolean attacked=p.getLastHurtByMob()==e&&p.tickCount-p.getLastHurtByMobTimestamp()<100;
+            boolean specified=e.getUUID().toString().equals(rule.target());
+            if(!(e instanceof Enemy)&&!self&&!protect&&!attacked&&!specified)continue;
+            double d=e.distanceTo(p);boolean sight=p.hasLineOfSight(e);
+            boolean approaching=e.getDeltaMovement().dot(p.position().subtract(e.position()))>0;
+            boolean imminent=sight&&e instanceof Enemy&&(d<4.5||approaching&&d<7);
+            boolean eligible=switch(rule.engagement()){
+                case NONE->false;case SELF_DEFENSE->self||attacked||imminent;
+                case PROTECT->self||attacked||imminent||protect||protectedEntity!=null&&e instanceof Enemy&&e.distanceTo(protectedEntity)<6&&e.hasLineOfSight(protectedEntity);
+                case CLEAR_AREA->rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(e.getX(),e.getY(),e.getZ()));
+                case SPECIFIED->specified;
+            };
+            Vec3 center=protectedEntity!=null?protectedEntity.position():anchor;
+            if(e.position().distanceTo(center)>rule.leash())eligible=false;
+            var actual=NativeCombatStates.read(e,p);
+            long neighbors=entities.stream().filter(other->other!=e&&other instanceof Enemy&&other.distanceToSqr(e)<16).count();
+            double score=(self?8:0)+(protect?18:0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);
+            rows.add(new Threat(e,actual,eligible,protect,score));
+        }
+        threats=List.copyOf(rows);
+        projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner() instanceof net.minecraft.world.entity.player.Player)&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001));
+        if(rows.stream().anyMatch(Threat::eligible)||projectiles.stream().anyMatch(s->projectileRisk(s,p.position())>1))lastThreatTick=w.tick();
+        var best=rows.stream().filter(Threat::eligible).max(Comparator.comparingDouble(Threat::score)).orElse(null);
+        if(best!=null){if(selected!=best.entity){selected=best.entity;selectedAt=w.tick();w.session.add("targetChanges",1);}}else if(selected==null||!selected.isAlive()||selected.position().distanceTo(center(w))>rule.leash()||w.tick()-lastThreatTick>40)selected=null;
+    }
+    Vec3 center(SkillWork w){return protectedEntity!=null?protectedEntity.position():anchor==null?w.player().position():anchor;}
+    int contacts(SkillWork w){return (int)threats.stream().filter(t->t.entity.isAlive()&&NativeCombatStates.meleeAt(t.entity,w.player(),w.player().position())).count();}
+    boolean flanked(SkillWork w){var p=w.player().position();for(var a:threats)if(a.entity.distanceTo(w.player())<6)for(var b:threats)if(a!=b&&b.entity.distanceTo(w.player())<6&&a.entity.position().subtract(p).normalize().dot(b.entity.position().subtract(p).normalize())<-.2)return true;return false;}
+    double risk(SkillWork w,Vec3 point){
+        double risk=0;for(var threat:threats){var e=threat.entity;if(!e.isAlive())continue;double d=e.position().distanceTo(point),future=e.position().add(e.getDeltaMovement().scale(5)).distanceTo(point);risk+=Math.max(0,5-Math.min(d,future))*2;
+            if(NativeCombatStates.meleeAt(e,w.player(),point))risk+=threat.state.meleeRestricted()?3:18;
+            if(threat.state.areaAttack()&&d<6)risk+=30;if(threat.state.ranged()&&e.hasLineOfSight(w.player()))risk+=Math.max(0,8-d);
+        }
+        for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;
+        return risk;
+    }
+    private double projectileRisk(Projectile shot,Vec3 point){var v=shot.getDeltaMovement();var delta=point.add(0,1,0).subtract(shot.position());double t=Math.max(0,Math.min(12,delta.dot(v)/Math.max(.0001,v.lengthSqr())));double miss=shot.position().add(v.scale(t)).distanceTo(point.add(0,1,0));return Math.max(0,2-miss);}
+    Map<String,Object> view(){return Map.of("observations",scans,"target",selected==null?"":selected.getUUID().toString(),"threats",threats.stream().map(t->Map.of("actual",t.state,"eligible",t.eligible,"selectionScore",t.score)).toList(),"projectileThreats",projectiles.size(),"lastThreatTick",lastThreatTick);}
+}

@@ -22,9 +22,12 @@ final class SkillWork {
     boolean fishedEvent,tillPlot,shotLogged,nativeUse;int fishedItems,fishStatBefore,nativeConsumed,nativeDurability;Map<String,Integer> fishInventoryBefore=Map.of();Set<UUID> nearbyItemsBefore=Set.of();
     NativeTraversalEvaluator wanderEvaluator;SurfaceReachability wanderSearch;
     LivingEntity lastCombatTarget;
+    final CombatAwareness combat=new CombatAwareness();final CombatPositioning positioning=new CombatPositioning();
+    String tactic="OBSERVE";int tacticAt,lastAttackAt=-10000,lastHitAt=-10000,lastDefenseTick,healSlot=-1;UUID healingOperation;boolean combatInterrupted;
+    int lastCombatTick=-1;boolean lastCombatResult;
     SkillWork(SkillRuntime runtime,SkillSession session,long dbRevision){this.runtime=runtime;this.session=session;this.dbRevision=dbRevision;}
     ServerPlayer player(){return actor.player();}int tick(){return runtime.server.getTickCount();}UUID token(){return session.id();}
-    Map<String,Object> view(){var out=new LinkedHashMap<String,Object>();out.put("session",session.snapshot());out.put("actor",actor==null?Map.of():actor.observation());out.put("currentTarget",block==null?List.of():List.of(block.getX(),block.getY(),block.getZ()));out.put("nextCheckTick",nextTick);out.put("pendingReceipt",!saved.isDone());return out;}
+    Map<String,Object> view(){var out=new LinkedHashMap<String,Object>();out.put("session",session.snapshot());out.put("actor",actor==null?Map.of():actor.observation());out.put("currentTarget",block==null?List.of():List.of(block.getX(),block.getY(),block.getZ()));out.put("nextCheckTick",nextTick);out.put("pendingReceipt",!saved.isDone());out.put("combat",combat.view());out.put("tactic",tactic);return out;}
     void bind(ServerPlayer owner)throws Exception{release();if(session.spec().actor().equals("player"))actor=new PlayerSkillActor(owner,session.agent(),token(),session.spec().title());else{var body=MineAgentRuntimeServices.bodies(runtime.server).body(session.agent()).orElse(null);if(body==null){session.transition(State.WAITING,"BODY_UNAVAILABLE");nextTick=tick()+20;return;}actor=new AiSkillActor(body);}block=null;search=null;stand=null;operation=null;executed=false;fighting=null;session.phase("SCAN");}
     boolean acquire(){int priority=fighting!=null||session.spec().kind()==SkillSpec.Kind.COMBAT?80:session.spec().kind()==SkillSpec.Kind.WANDER?5:30;
         if(actor.controls().acquire(token(),EnumSet.allOf(BodyDomain.class),priority,()->session.runnable()&&actor.current(),()->{actor.stop(token());runtime.reservations.release(token());if(session.runnable())session.transition(State.SUSPENDED,"PREEMPTED");}))return true;
@@ -32,12 +35,12 @@ final class SkillWork {
     void release(){if(actor!=null){actor.stop(token());actor.controls().release(token());}runtime.reservations.release(token());}
     void pause(String reason){release();if(!session.terminal())session.transition(State.PAUSED,reason);if(!ioFailed)runtime.persist(this);}
     void waitFor(String reason,int ticks){release();session.transition(State.WAITING,reason);nextTick=tick()+ticks;if(actor instanceof PlayerSkillActor p)p.report(reason,false);if(tick()-lastSave>100){runtime.persist(this);lastSave=tick();}}
-    void completed(String reason){release();session.transition(State.COMPLETED,reason);if(actor instanceof PlayerSkillActor p)p.report(reason,true);runtime.persist(this);}
+    void completed(String reason){release();session.transition(State.COMPLETED,reason);if(actor instanceof PlayerSkillActor p)p.report(reason,true);runtime.persist(this);runtime.resumePrevious(this);}
     void step()throws Exception{
         session.transition(State.RUNNING,"");
         if(CombatSkill.interruptOrContinue(this))return;
         switch(session.spec().kind()){
-            case FOLLOW->MovementSkills.follow(this);case PATROL->MovementSkills.patrol(this);case WANDER->MovementSkills.wander(this);case GUARD->MovementSkills.guard(this);
+            case IDLE->waitFor("IDLE_BY_PLAYER",10);case FOLLOW->MovementSkills.follow(this);case PATROL->MovementSkills.patrol(this);case WANDER->MovementSkills.wander(this);case GUARD->MovementSkills.guard(this);
             case COMBAT->CombatSkill.combat(this);case FARM->FarmSkill.tick(this);case FISH->FishSkill.tick(this);
         }
     }

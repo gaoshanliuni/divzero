@@ -28,6 +28,10 @@
     "PotionBrewingAccess",
     "PotionMixAccess",
     "SkillFishingHookAccess",
+    "CombatMeleeGoalAccess",
+    "CombatRangedGoalAccess",
+    "CombatBowGoalAccess",
+    "CombatMobRangeAccess",
     "SkillItemUseOutcomeMixin"
   ],
   "injectors": {

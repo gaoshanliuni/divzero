@@ -14,9 +14,11 @@ public interface SkillActor {
     String move(UUID session,Vec3 destination);void aim(UUID session,Vec3 target);
     void sprint(UUID session,boolean enabled);
     boolean select(UUID session,int slot);
+    boolean equipOffhand(UUID session,int slot);
     void breakBlock(UUID session,UUID operation,BlockPos target);
     void useBlock(UUID session,UUID operation,BlockPos target);
     void useItem(UUID session,UUID operation,boolean hold);
+    void useHand(UUID session,UUID operation,net.minecraft.world.InteractionHand hand);
     void releaseItem(UUID session,UUID operation);
     void attack(UUID session,UUID operation,Entity entity);
     void stop(UUID session);Map<String,Object> observation();
