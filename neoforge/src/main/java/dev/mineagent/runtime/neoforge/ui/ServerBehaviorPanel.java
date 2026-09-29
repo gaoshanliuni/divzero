@@ -21,12 +21,12 @@ public final class ServerBehaviorPanel {
     }
     public static CompletableFuture<Map<String,Object>> write(ServerPlayer player,UUID agent,UUID operation,String tool,String source,BooleanSupplier current)throws Exception{
         if(!ServerTaskStart.allowed(player,agent)||!current.getAsBoolean())throw new SecurityException("BEHAVIOR_PERMISSION");
-        BehaviorAuthority.get(player.level().getServer()).invalidate(player,agent);
+        var authority=BehaviorAuthority.get(player.level().getServer());authority.invalidate(player,agent);long revision=authority.revision(player,agent);BooleanSupplier live=()->current.getAsBoolean()&&authority.revision(player,agent)==revision;
         var runtime=SkillRuntime.get(player.level().getServer());
         if(tool.equals("stop_all")){runtime.stopAll(player,agent);return CompletableFuture.completedFuture(Map.of("status","STOPPED"));}
         if(!Set.of("set_behavior_mode","set_combat_policy","control_behavior").contains(tool))throw new IllegalArgumentException("BEHAVIOR_PANEL_TOOL");
         String canonical=dev.mineagent.runtime.core.task.SkillTools.canonical(tool,source);
-        return runtime.execute(player,agent,operation,null,tool,new ObjectMapper().readTree(canonical),current);
+        return runtime.execute(player,agent,operation,null,tool,new ObjectMapper().readTree(canonical),live);
     }
     private ServerBehaviorPanel(){}
 }

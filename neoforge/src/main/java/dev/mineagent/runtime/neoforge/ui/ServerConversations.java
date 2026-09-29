@@ -33,6 +33,15 @@ public final class ServerConversations implements AutoCloseable {
     public static synchronized ServerConversations get(MinecraftServer server){return LIVE.computeIfAbsent(server,s->{try{return new ServerConversations(s);}catch(Exception e){throw new IllegalStateException("CONVERSATION_STORE_UNAVAILABLE",e);}});}
     public static synchronized void stop(MinecraftServer server){var r=LIVE.remove(server);if(r!=null)r.close();}
     public ConversationStore store(){return store;}
+    /** Stop revokes every older tool permit for this player/AI, including queued requests. */
+    public static void stopBehaviorRequests(ServerPlayer viewer,UUID agent){
+        var runtime=LIVE.get(viewer.level().getServer());if(runtime==null)return;runtime.thread();
+        var matches=runtime.flights.values().stream().filter(f->f.viewer==viewer&&f.agent.equals(agent)).toList();
+        for(var f:matches)f.permit.set(false);
+        runtime.pendingNative.values().removeIf(q->q.viewer()==viewer&&q.agent().equals(agent));
+        runtime.pendingWeb.values().removeIf(q->q.viewer()==viewer&&q.agent().equals(agent));
+        for(var f:matches){try{runtime.flush(f);runtime.store.cancel(viewer.getUUID(),agent,f.conversation,UUID.randomUUID(),f.op);runtime.changed(f);}catch(Exception failure){runtime.failGeneration(f,"CONVERSATION_STOPPED");}runtime.retire(f);}
+    }
     public void disableNativeRoute(ServerPlayer viewer){thread();var selected=focused(viewer);if(selected.isPresent())focus.nativeInput(viewer.getUUID(),viewer,selected.get().contextId(),false);}
     public Optional<ConversationFocusRegistry.Focus> focused(ServerPlayer viewer){thread();return focus.current(viewer.getUUID(),viewer);}
     public void disconnect(ServerPlayer viewer){ServerChatAccess.disconnect(viewer);pendingNative.values().removeIf(v->v.viewer()==viewer);pendingWeb.values().removeIf(v->v.viewer()==viewer);focus.disconnect(viewer.getUUID(),viewer);nativeReplies.values().removeIf(v->v.viewer==viewer);for(var f:List.copyOf(flights.values()))if(f.viewer==viewer)failGeneration(f,"CONVERSATION_DISCONNECTED");}
@@ -265,9 +274,15 @@ public final class ServerConversations implements AutoCloseable {
         dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).accepted(viewer,agent,operation,original);
         UUID speech=args.containsKey("speechOperation")?UUID.fromString(args.get("speechOperation")):null;if(speech!=null)ServerSpeechInput.verifySource(server,viewer.getUUID(),agent,id,speech);var input=new dev.mineagent.runtime.api.interaction.InteractionInput(viewer.getUUID(),speech==null?(nativeChat?dev.mineagent.runtime.api.interaction.InteractionSource.CHAT:dev.mineagent.runtime.api.interaction.InteractionSource.CONTROL_CENTER):dev.mineagent.runtime.api.interaction.InteractionSource.VOICE,original,agent);
         var config=MineAgentRuntimeServices.config(server);var snapshot=config.snapshot();var settings=snapshot.values();var policy=ConversationBudget.from(snapshot);
-        var turn=store.begin(viewer.getUUID(),agent,id,operation,Long.parseLong(args.get("expectedRevision")),original,persona.revision(),policy,input.source(),speech);
+        var turn=store.begin(viewer.getUUID(),agent,id,operation,dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).localReply(operation)==null?Long.parseLong(args.get("expectedRevision")):store.get(viewer.getUUID(),agent,id).revision(),original,persona.revision(),policy,input.source(),speech);
         if(!turn.dispatch())return Map.of("state",json.writeValueAsString(store.get(viewer.getUUID(),agent,id)),"operationId",operation.toString(),"duplicate","true");
         if("true".equals(args.get("nativeChoiceReply")))nativeReplies.put(operation,new NativeReply(viewer,agent,id,turn.assistantMessageId(),definition.displayName()));
+        var local=dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).localReply(operation);
+        if(local!=null){
+            var flight=new Flight(operation,viewer,agent);flight.conversation=id;flights.put(operation,flight);
+            local.whenComplete((reply,error)->server.execute(()->{try{if(!live(flight)||!store.pending(operation)){retire(flight);return;}store.finish(operation,error==null?"COMPLETE":"FAILED",error==null?reply:null,error==null?"":"SKILL_LOCAL_COMMAND_FAILED");changed(flight);retire(flight);}catch(Exception failed){failGeneration(flight,"CONVERSATION_STORE_WRITE_FAILED");}}));
+            return Map.of("state",json.writeValueAsString(store.get(viewer.getUUID(),agent,id)),"operationId",operation.toString(),"duplicate","false");
+        }
         try{
 
             if(String.valueOf(dev.mineagent.runtime.core.config.WebSettingsCatalog.routing(snapshot).get("textProvider")).isBlank())throw new IllegalStateException("PROVIDER_NOT_CONFIGURED");
@@ -407,7 +422,9 @@ public final class ServerConversations implements AutoCloseable {
         if(!live(f)||!store.pending(f.op)){failGeneration(f,"CONVERSATION_CONTEXT_CHANGED");return;}
         if(index==calls.size()){synchronized(f.buffer){if(!f.reply.isEmpty()&&f.reply.charAt(f.reply.length()-1)!='\n'){f.reply.append('\n');if(!f.buildings.waiting())f.buffer.append('\n');}}agentRound(f,g,plan);return;}
         var call=calls.get(index);UUID operation=UUID.nameUUIDFromBytes((f.op+"|tool|"+f.rounds+"|"+call.path("id").asText()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        ConversationAgentTools.execute(f.viewer,g.agent().agentId(),operation,call.path("name").asText(),call.path("arguments").asText(),()->live(f)&&(!dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.bodyTool(call.path("name").asText())||dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).current(f.viewer,f.agent,f.op)),g.conversation()).whenComplete((result,error)->server.execute(()->{
+        if(dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.bodyTool(call.path("name").asText()))dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).claim(f.viewer,f.agent,f.op);
+        boolean needsPlayer=call.path("name").asText().equals("request_player_control");try{needsPlayer|=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(server).requiresPlayerAuthorization(f.viewer,f.agent,call.path("name").asText(),json.readTree(call.path("arguments").asText()));}catch(Exception invalid){}final boolean playerControl=needsPlayer;
+        (playerControl&&!dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).playerRequested(f.viewer,f.agent,f.op)?java.util.concurrent.CompletableFuture.completedFuture(Map.<String,Object>of("status","REJECTED","error","EXPLICIT_PLAYER_CONTROL_REQUEST_REQUIRED")):ConversationAgentTools.execute(f.viewer,g.agent().agentId(),operation,call.path("name").asText(),call.path("arguments").asText(),()->live(f)&&(!playerControl||dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).playerRequested(f.viewer,f.agent,f.op))&&(!dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.bodyTool(call.path("name").asText())||dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).current(f.viewer,f.agent,f.op)),g.conversation())).whenComplete((result,error)->server.execute(()->{
             if(closed)return;try{if(!live(f)||!store.pending(f.op))throw new IllegalStateException("CONVERSATION_CONTEXT_CHANGED");if(error!=null)throw new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN");if(Boolean.getBoolean("mineagent.conversationAgentSmoke"))MineAgentRuntimeServices.audit(server).record(f.viewer.getUUID().toString(),"CONVERSATION_SMOKE_TOOL",operation.toString(),json.writeValueAsString(Map.of("tool",call.path("name").asText(),"arguments",call.path("arguments").asText(),"result",result)));ConversationRecoverySmokeServer.observe(call.path("name").asText());NativeAcceptanceSmoke.observe(f.agent,f.op,call.path("name").asText(),result);NativeDeliverySmokeServer.observe(call.path("name").asText(),result);EntityInteropSmokeServer.observe(call.path("name").asText());f.buildings.observe(call.path("name").asText(),result);String encoded=json.writeValueAsString(result);ConversationTools.requireTransportSize(encoded.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);f.tools.add(Map.of("role","tool","tool_call_id",call.path("id").asText(),"content",encoded));runTools(f,g,plan,calls,index+1);}catch(Exception failure){failGeneration(f,agentError(failure));}
         }));
     }

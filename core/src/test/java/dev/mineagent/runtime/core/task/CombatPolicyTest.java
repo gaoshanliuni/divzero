@@ -26,4 +26,8 @@ class CombatPolicyTest {
         assertThrows(IllegalArgumentException.class,()->CombatPolicy.parse(json.readTree("{\"engagement\":\"PROTECT\"}"),farm().combat()));
         var policy=CombatPolicy.parse(json.readTree("{\"engagement\":\"CLEAR_AREA\",\"min\":[8,64,8],\"max\":[9,65,9]}"),farm().combat());assertNotEquals(farm().area(),farm().withCombat(policy).combat().area());
     }
+    @Test void temporaryWorkRelationshipSurvivesRestartWithoutRunning()throws Exception{
+        var parent=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,farm());parent.control(1,"pause");parent.transition(SkillSession.State.PAUSED,"TEMPORARY_WORK");var child=new SkillSession(UUID.randomUUID(),parent.owner(),parent.agent(),parent.snapshot().world(),null,farm());child.previous(parent.id());
+        assertEquals("TEMPORARY_WORK",SkillSession.restore(parent.snapshot()).reason());assertEquals(SkillSession.State.PAUSED,SkillSession.restore(parent.snapshot()).state());assertEquals(parent.id(),SkillSession.restore(child.snapshot()).previous());assertEquals(SkillSession.State.PAUSED,SkillSession.restore(child.snapshot()).state());
+    }
 }

@@ -32,9 +32,9 @@ public record SkillSpec(String id,Kind kind,String actor,String dimension,String
         if(combat.engagement()==CombatPolicy.Engagement.CLEAR_AREA&&combat.area()==null)throw new IllegalArgumentException("COMBAT_AREA_REQUIRED");
     }
     public static SkillSpec parse(JsonNode n,Kind alias){
-        if(!n.isObject())throw new IllegalArgumentException("SKILL_ARGUMENTS");var keys=Set.of("id","kind","actor","dimension","target","min","max","route","repeat","defend","allow_teleport","ping_pong","till","start_distance","stop_distance","dwell_ticks","limit","crop","expected_revision","combat","resume_previous");
+        if(!n.isObject())throw new IllegalArgumentException("SKILL_ARGUMENTS");var keys=Set.of("id","kind","actor","dimension","target","min","max","route","repeat","defend","allow_teleport","ping_pong","till","start_distance","stop_distance","dwell_ticks","limit","crop","expected_revision","combat","resume_previous","only_if_idle");
         for(var e:n.properties())if(!keys.contains(e.getKey()))throw new IllegalArgumentException("SKILL_FIELD_"+e.getKey());
-        for(String field:List.of("repeat","defend","allow_teleport","ping_pong","till","resume_previous"))if(n.has(field)&&!n.get(field).isBoolean())throw new IllegalArgumentException("SKILL_BOOLEAN");
+        for(String field:List.of("repeat","defend","allow_teleport","ping_pong","till","resume_previous","only_if_idle"))if(n.has(field)&&!n.get(field).isBoolean())throw new IllegalArgumentException("SKILL_BOOLEAN");
         for(String field:List.of("dwell_ticks","limit"))if(n.has(field)&&(!n.get(field).isIntegralNumber()||!n.get(field).canConvertToInt()))throw new IllegalArgumentException("SKILL_INTEGER");
         var route=new ArrayList<Point>();if(n.has("route")){if(!n.get("route").isArray())throw new IllegalArgumentException("SKILL_ROUTE");for(var point:n.get("route"))route.add(point(point));}
         Kind kind=alias==null?Kind.valueOf(n.path("kind").asText().toUpperCase(Locale.ROOT)):alias;

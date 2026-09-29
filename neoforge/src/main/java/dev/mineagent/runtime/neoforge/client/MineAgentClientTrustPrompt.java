@@ -91,6 +91,7 @@ public final class MineAgentClientTrustPrompt {
             return 1;
         }catch(Exception failure){message("无法保存世界选择：",failure.getMessage());return 0;}
     }
+    public static boolean smokeEnable(){if(!Boolean.getBoolean("mineagent.skillSmoke")&&!Boolean.getBoolean("mineagent.skillModelSmoke"))throw new IllegalStateException("SMOKE_DISABLED");if(enabled)return true;if(prompt==null)showChoice(true);return prompt!=null&&decide("enable",prompt.token.toString())>0;}
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc=Minecraft.getInstance();if(connection!=null&&connection!=mc.getConnection())clear();
         if(mc.player!=null&&mc.getConnection()!=null&&connection==null&&System.currentTimeMillis()>=retryAt){retryAt=System.currentTimeMillis()+2000;ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest());}

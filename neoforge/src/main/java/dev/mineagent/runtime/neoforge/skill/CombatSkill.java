@@ -20,7 +20,7 @@ final class CombatSkill {
         if(w.combatStage==0&&w.combatOperation!=null&&(w.player().getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt)){w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;}
         observeRelease(w);w.combat.scan(w);
         var spec=w.session.spec();var rule=spec.combat();
-        if(rule.engagement()==CombatPolicy.Engagement.NONE){finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"ENGAGEMENT_DISABLED");}
+        if(rule.engagement()==CombatPolicy.Engagement.NONE&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"ENGAGEMENT_DISABLED");}
         LivingEntity target=w.combat.selected;
         if(spec.kind()==SkillSpec.Kind.COMBAT&&!rule.target().isBlank()){
             var requested=w.player().level().getEntity(UUID.fromString(rule.target()));
@@ -30,7 +30,7 @@ final class CombatSkill {
         }
         boolean projectileDanger=w.combat.projectiles.stream().anyMatch(e->e.distanceTo(w.player())<10);
         boolean cooling=w.combatInterrupted&&w.tick()-w.combat.lastThreatTick<40;
-        boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.entity().distanceTo(w.player())<6);
+        boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.urgent()&&t.entity().distanceTo(w.player())<8);
         if(target==null&&!projectileDanger&&!cooling&&!closeThreat){
             finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"NO_ELIGIBLE_THREATS");
         }
@@ -41,6 +41,7 @@ final class CombatSkill {
             if(spec.kind()==SkillSpec.Kind.FISH)FishSkill.interrupt(w);
             w.actor.stop(w.token());w.actor.controls().release(w.token());w.runtime.reservations.release(w.token());
             w.combatStage=0;w.combatOperation=null;w.positioning.reset();w.session.add("defenseInterruptions",1);
+            if(spec.kind()!=SkillSpec.Kind.COMBAT)w.notice("defending","发现威胁，先防御，之后继续原工作。");
         }
         w.fighting=target==null?null:target.getUUID();
         if(!w.acquire())return true;
@@ -53,7 +54,7 @@ final class CombatSkill {
         if(!w.combatInterrupted)return;
         w.actor.stop(w.token());w.actor.controls().release(w.token());w.combatInterrupted=false;w.fighting=null;w.combatOperation=null;w.combatStage=0;w.healingOperation=null;
         w.session.phase(w.suspendedPhase==null?"SCAN":w.suspendedPhase);w.stand=null;w.search=null;w.positioning.reset();
-        w.session.transition(State.RUNNING,"DEFENSE_FINISHED_RECHECK_WORK");w.session.add("workResumptions",1);w.nextTick=w.tick();w.runtime.persist(w);
+        w.session.transition(State.RUNNING,"DEFENSE_FINISHED_RECHECK_WORK");w.session.add("workResumptions",1);w.nextTick=w.tick();w.runtime.persist(w);if(w.session.spec().kind()!=SkillSpec.Kind.COMBAT)w.notice("resumed","威胁已解除，重新检查并继续原工作。");
     }
     static void combat(SkillWork w){interruptOrContinue(w);}
     static void policyChanged(SkillWork w){finishDefense(w);w.combat.selected=null;w.combat.nextScan=0;w.lastCombatTick=-1;w.positioning.reset();}

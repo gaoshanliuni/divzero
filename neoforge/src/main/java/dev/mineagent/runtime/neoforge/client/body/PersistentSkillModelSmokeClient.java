@@ -63,7 +63,7 @@ public final class PersistentSkillModelSmokeClient {
         if(mc().player==null||mc().getSingleplayerServer()==null||busy)return;ticks++;if(ticks>18000)throw new IllegalStateException("SKILL_MODEL_TIMEOUT");if(ticks%100==0)Files.writeString(root().resolve("progress.json"),JSON.writeValueAsString(Map.of("phase",phase,"ticks",ticks,"skill",skill,"observed",latest==null?Map.of():latest)));
         if(System.currentTimeMillis()<nextPoll)return;nextPoll=System.currentTimeMillis()+500;
         if(phase==0){if(!started){started=true;org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());}run(setup(),()->phase=1);return;}
-        if(phase==1){run(send(),()->phase=2);return;}
+        if(phase==1){if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()){dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return;}run(send(),()->phase=2);return;}
         if(phase==2){busy=true;modelDone().whenComplete((complete,error)->mc().execute(()->{busy=false;if(error!=null)fail(error);else if(complete)phase=3;}));return;}
         if(phase==3||phase==5){boolean second=phase==5;busy=true;progress(second).whenComplete((complete,error)->mc().execute(()->{busy=false;if(error!=null)fail(error);else if(complete)phase++;}));return;}
         if(phase==4){run(server(p->{crops(p);return null;}),()->phase=5);return;}

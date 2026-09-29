@@ -28,5 +28,11 @@
   "mineagent.activation.disabled": "DivZero is disabled for you in this world. Use /divzero_setup to enable it again.",
   "mineagent.activation.failed": "World choice was not saved: %s",
   "mineagent.behavior.stopped": "Stopped immediately; combat will not restart automatically.",
-  "mineagent.behavior.follow": "Switched to following."
+  "mineagent.behavior.follow": "Switched to following.",
+  "mineagent.behavior.seeds": "Waiting for replanting seeds.",
+  "mineagent.behavior.inventory": "Waiting for inventory space for the drops.",
+  "mineagent.behavior.rod": "Waiting for a usable fishing rod.",
+  "mineagent.behavior.loot_route": "Drops are currently unreachable; a new pickup route is needed.",
+  "mineagent.behavior.defending": "Threat detected. Defending before resuming work.",
+  "mineagent.behavior.resumed": "Threats have cleared. Rechecking and resuming work."
 }

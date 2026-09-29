@@ -44,5 +44,11 @@
   "mineagent.activation.disabled": "DivZero 已在此世界为你禁用。可用 /divzero_setup 重新启用。",
   "mineagent.activation.failed": "世界选择未保存：%s",
   "mineagent.behavior.stopped": "已立即停止行动；不会自动重新开战。",
-  "mineagent.behavior.follow": "已切换为跟随。"
+  "mineagent.behavior.follow": "已切换为跟随。",
+  "mineagent.behavior.seeds": "缺少补种种子，等待补充。",
+  "mineagent.behavior.inventory": "背包放不下产物，等待整理。",
+  "mineagent.behavior.rod": "缺少可用鱼竿，等待补充。",
+  "mineagent.behavior.loot_route": "产物暂不可达，需要调整拾取路线。",
+  "mineagent.behavior.defending": "发现威胁，先防御，之后继续原工作。",
+  "mineagent.behavior.resumed": "威胁已解除，重新检查并继续原工作。"
 }

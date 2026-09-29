@@ -26,6 +26,8 @@ final class SkillWork {
     String tactic="OBSERVE";int tacticAt,lastAttackAt=-10000,lastHitAt=-10000,lastDefenseTick,healSlot=-1;UUID healingOperation;boolean combatInterrupted;
     int lastCombatTick=-1,foodBefore;boolean lastCombatResult,healingWasUsing;
     UUID extensionOperation,shieldOperation;boolean wasBlocking;FishingTackleAdapter tackle=FishingTackleAdapter.VANILLA;
+    private String lastNotice="";private int lastNoticeTick=-10000;
+    void notice(String key,String fallback){if(key.equals(lastNotice)&&tick()-lastNoticeTick<200)return;lastNotice=key;lastNoticeTick=tick();var owner=runtime.server.getPlayerList().getPlayer(session.owner());if(owner==null)return;String name=MineAgentRuntimeServices.bodies(runtime.server).definitions().stream().filter(d->d.agentId().equals(session.agent())).map(d->d.displayName()).findFirst().orElse("AI");owner.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+name+"] ").append(net.minecraft.network.chat.Component.translatableWithFallback("mineagent.behavior."+key,fallback)));}
     final Map<UUID,SkillLootCollector.Drop> loot=new LinkedHashMap<>();final Map<Item,Integer> lootBefore=new HashMap<>();Set<UUID> dropBefore=Set.of();final Set<UUID> pickedDrops=new HashSet<>();int lootRetries;
     SkillWork(SkillRuntime runtime,SkillSession session,long dbRevision){this.runtime=runtime;this.session=session;this.dbRevision=dbRevision;}
     ServerPlayer player(){return actor.player();}int tick(){return runtime.server.getTickCount();}UUID token(){return session.id();}
@@ -36,7 +38,7 @@ final class SkillWork {
         session.transition(State.SUSPENDED,"HIGHER_PRIORITY_BEHAVIOR");return false;}
     void release(){if(actor!=null){actor.stop(token());actor.controls().release(token());}runtime.reservations.release(token());}
     void pause(String reason){release();if(!session.terminal())session.transition(State.PAUSED,reason);if(!ioFailed)runtime.persist(this);}
-    void waitFor(String reason,int ticks){release();session.transition(State.WAITING,reason);nextTick=tick()+ticks;if(actor instanceof PlayerSkillActor p)p.report(reason,false);if(tick()-lastSave>100){runtime.persist(this);lastSave=tick();}}
+    void waitFor(String reason,int ticks){release();session.transition(State.WAITING,reason);nextTick=tick()+ticks;if(actor instanceof PlayerSkillActor p)p.report(reason,false);switch(reason){case "SEED_REQUIRED_FOR_REPLANT","SEED_NOT_READY"->notice("seeds","缺少补种种子，等待补充。");case "INVENTORY_FULL"->notice("inventory","背包放不下产物，等待整理。");case "FISHING_ROD_MISSING"->notice("rod","缺少可用鱼竿，等待补充。");case "LOOT_ROUTE_REQUIRES_NEW_APPROACH"->notice("loot_route","产物暂不可达，需要调整拾取路线。");}if(tick()-lastSave>100){runtime.persist(this);lastSave=tick();}}
     void completed(String reason){release();session.transition(State.COMPLETED,reason);if(actor instanceof PlayerSkillActor p)p.report(reason,true);runtime.persist(this);runtime.resumePrevious(this);}
     void step()throws Exception{
         session.transition(State.RUNNING,"");

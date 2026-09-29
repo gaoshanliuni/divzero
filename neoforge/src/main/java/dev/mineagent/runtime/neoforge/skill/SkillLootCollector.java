@@ -27,7 +27,7 @@ final class SkillLootCollector {
             if(!w.pickedDrops.contains(saved.id))w.session.add("lootSourceNoLongerAvailable",1);w.loot.remove(saved.id);w.actor.stop(w.token());w.lootRetries=0;return !w.loot.isEmpty();
         }
         if(!canFit(p,drop.getItem())){w.waitFor("INVENTORY_FULL",40);return true;}
-        if(w.lootRetries>=3){w.waitFor("LOOT_ROUTE_REQUIRES_NEW_APPROACH",100);return true;}
+        if(w.lootRetries>=3){w.lootRetries=0;w.waitFor("LOOT_ROUTE_REQUIRES_NEW_APPROACH",100);return true;}
         var node=new NativeTraversalEvaluator(p).closest(drop.position());if(node==null){w.lootRetries++;w.waitFor("LOOT_NO_SAFE_STAND",60);return true;}
         w.session.phase("COLLECTING_DROPS");if(p.distanceToSqr(drop)<1.5){w.actor.stop(w.token());return true;}
         String outcome=w.actor.move(w.token(),NativeTraversalEvaluator.point(node));if(Set.of("UNREACHABLE","INTERACTION_BLOCKED").contains(outcome)){w.lootRetries++;w.waitFor("LOOT_ROUTE_BLOCKED",60);}return true;
