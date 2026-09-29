@@ -71,7 +71,7 @@ final class CombatPositioning {
     }
     private int edgeExposure(SkillWork w,Node node){return exposure.computeIfAbsent(node,n->{int danger=0;for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){if(dx==0&&dz==0)continue;int x=n.x()+dx,z=n.z()+dz;var at=new Vec3(x+.5,n.y(),z+.5);var pos=net.minecraft.core.BlockPos.containing(at);if(!evaluator.loaded(pos)){danger++;continue;}if(w.player().level().getFluidState(pos).is(net.minecraft.tags.FluidTags.LAVA)){danger++;continue;}if(!evaluator.clear(at,net.minecraft.world.entity.Pose.STANDING,true)&&!evaluator.clear(at,net.minecraft.world.entity.Pose.CROUCHING,true))continue;if(evaluator.positions(x,z,n.y()).stream().noneMatch(floor->Math.abs(floor.y()-n.y())<=1.25))danger++;}return danger;});}
     boolean jumpSafe(SkillWork w){
-        var p=w.player();if(!p.onGround()||p.isInWater()||p.isCrouching()||chosenRoute.size()<3)return false;
+        var p=w.player();boolean supported=p.onGround()||p.getDeltaMovement().y<=.01&&p.level().noCollision(p,p.getBoundingBox())&&!p.level().noCollision(p,p.getBoundingBox().move(0,-.04,0));if(!supported||p.isInWater()||p.isCrouching()||chosenRoute.size()<3)return false;
         var direction=NativeTraversalEvaluator.point(chosenRoute.get(2).to()).subtract(p.position());
         if(Math.abs(direction.y)>.1||direction.horizontalDistanceSqr()<3)return false;
         var unit=new Vec3(direction.x,0,direction.z).normalize();

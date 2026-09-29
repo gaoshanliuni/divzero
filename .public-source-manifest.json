@@ -3344,8 +3344,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentMovementController.java",
-      "sha256": "37b71151d6b30265fc214bf5db7e6d59885dcaaf648858bd7e7e9f5d7032a536",
-      "bytes": 5739
+      "sha256": "c77b72f3abb4c31797f6c22824b65046df1ced204b872b1613946b5f8004d668",
+      "bytes": 6244
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentPlayer.java",
@@ -4964,8 +4964,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/AiSkillActor.java",
-      "sha256": "97b542bd902ee806907d0c6660fd0e256b260204114d159188eb1b79eaae0dc0",
-      "bytes": 7156
+      "sha256": "000df72261af65769b0a39e9d253f7b1439fe03da1cf9d1492c5b9f718d29d18",
+      "bytes": 7123
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
@@ -4984,8 +4984,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "223f3bb11c917498d72caa48132065ad4a708279dd998b350170c89b3991be9d",
-      "bytes": 9893
+      "sha256": "66a80c6667780ab3daa8679b384b13c0b2ad83e6a8fd74e36d45dcc800a1bc61",
+      "bytes": 10056
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
