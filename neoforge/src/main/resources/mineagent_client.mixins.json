@@ -18,6 +18,7 @@
     "client.PlayerBodyLevelMixin",
     "client.ChatSuggestionsAccess",
     "client.AgentMentionSuggestionsMixin",
+    "client.AgentCommandSuggestionsMixin",
     "client.ResourceReloadAccess",
     "client.ResourceReloadOutcomeMixin",
     "client.WorkspaceKeyboardMixin",

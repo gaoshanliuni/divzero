@@ -3879,8 +3879,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeFunctionalSmokeClient.java",
-      "sha256": "2b3445783b053a16763efd9dcaa9a353162e66b280f7f848f0eb737fae74455a",
-      "bytes": 16766
+      "sha256": "68c10144337b388c13db876a0e5f7b93517c4f43604111d13e8b9c8955d99256",
+      "bytes": 17182
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeGenerationPanel.java",
@@ -4766,6 +4766,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/TwilightNagaSegmentAttackMixin.java",
       "sha256": "4c8f413374ccd17722e299ba9f24839d5d705228f329eecccb36ff0600a948a6",
       "bytes": 683
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/AgentCommandSuggestionsMixin.java",
+      "sha256": "a337392d55f9fd9a88be66cf1b48c4bd35ca3131ec8a2f3a2b37e7d4c00c2788",
+      "bytes": 1456
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/AgentMentionSuggestionsMixin.java",
@@ -6199,8 +6204,8 @@
     },
     {
       "path": "neoforge/src/main/resources/mineagent_client.mixins.json",
-      "sha256": "30c8fb74f0ec47fe2de266314581e753ca54439c81cc509a0aa51319e6da07d5",
-      "bytes": 1253
+      "sha256": "e67551587905b320329ecb6cbb73dabfc44a8dda34c3702fb8cfca0c94bf17f1",
+      "bytes": 1296
     },
     {
       "path": "neoforge/src/main/resources/mineagent_container.mixins.json",

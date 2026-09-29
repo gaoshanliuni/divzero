@@ -93,7 +93,8 @@ public final class NativeFunctionalSmokeClient {
                 case 42->{var screen=(NativeWorkspaceScreen)mc().screen;var ime=screen.smokeIme();checked.add("preedit-kept-separate-and-committed-once");require(ime.get("status").equals("PASS"),"IME_CALLBACK_FAILED");AgentProfileScreen.open(agent,"界面验收");advance("open-profile-scale-four");}
                 case 43->{if(mc().screen instanceof AgentProfileScreen&&click("对话"))advance("profile-scale-four-chat");}
                 case 44->{if(mc().screen instanceof AgentProfileScreen&&click("背包"))advance("profile-scale-four-inventory");}
-                case 45->{if(mc().screen instanceof AgentInventoryScreen){mc().player.closeContainer();result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}}
+                case 45->{if(mc().screen instanceof AgentInventoryScreen){mc().player.closeContainer();mc().setScreen(new net.minecraft.client.gui.screens.ChatScreen("/give ",false));advance("open-native-command-completion");}}
+                case 46->{var names=mc().getConnection().getSuggestionsProvider().getOnlinePlayerNames();if(names.contains(com.mojang.brigadier.arguments.StringArgumentType.escapeIfRequired("持续技能搭档"))){checked.add("online-ai-alias-in-native-tab-completion");mc().setScreen(null);result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}}
             }
         }catch(Throwable error){result.completeExceptionally(error);}
     }
