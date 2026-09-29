@@ -3119,5 +3119,12 @@
   "需要先核对旧操作，再继续当前工作": "Verify the previous action before continuing",
   "沿用当前防区": "Current defense area",
   "当前目标（暂不可见）": "Current target (not visible)",
-  "摆脱持续近身攻击": "Sprint away from sustained close attacks"
+  "摆脱持续近身攻击": "Sprint away from sustained close attacks",
+  "再按一次 Esc 退出托管": "Press Esc again to exit takeover",
+  "游戏画面双击 ESC 退出 · T / F2 可交流": "Double Esc in game to exit · T / F2 to chat",
+  " · 双击 Esc 退出接管": " · Double Esc to exit takeover",
+  "本地技能运行中，游戏画面双击 Esc 退出": "Local skill active; double-tap Esc in game to exit",
+  "本次决策失败，接管会话保留；可追加指令或在游戏画面双击 Esc 退出": "Decision failed; add an instruction or double-tap Esc in game to exit",
+  "游戏画面双击 Esc 退出；其它游戏键鼠忽略。死亡、断线自动释放。": "Double-tap Esc in game to exit; other game input is ignored. Death or disconnect releases control.",
+  "到达目标保持待命；界面和切窗不中断，游戏画面双击 Esc 退出。": "Remain idle at the destination. UI and focus changes do not interrupt; double-tap Esc in game to exit."
 }

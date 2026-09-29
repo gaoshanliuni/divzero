@@ -123,7 +123,7 @@ F2 → 文件，或对话 → 附件，选择建筑文件交给 AI。支持结�
 
 你创建的 AI 默认响应你本人。其他玩家 @ 它时，你会收到“响应一次、始终允许、拒绝一次、始终拒绝”四个选项；F2 → AI 设置可管理全部允许、全部拒绝或允许名单。
 
-玩家明确要求接管本人后，AI 使用原生客户端输入持续执行。进入托管释放鼠标；**T、F2、切换电脑窗口及最小化均不中断**。MC 面板提供“暂停 / 继续、退出、追加命令”，按钮松开时触发；**ESC 结束托管**。退出恢复原失焦暂停设置，死亡、断线、世界或权限变化仍释放控制。
+玩家明确要求接管本人后，AI 使用原生客户端输入持续执行。进入托管释放鼠标；**T、F2、切换电脑窗口及最小化均不中断**。MC 面板提供“暂停 / 继续、退出、追加命令”，按钮松开时触发；聊天栏 / F2 的 Esc 只处理界面；**回到游戏画面后双击 Esc 结束托管**。退出恢复原失焦暂停设置，死亡、断线、世界或权限变化仍释放控制。
 
 Java 管理的专用 Python 可执行本机任务、安装第三方库，每次在原生聊天中查看并确认。
 
@@ -270,7 +270,7 @@ Messages queue while the AI is busy. You can choose “Interrupt and Send” or 
 
 An AI you create responds directly to you by default. When another player mentions it, you can allow once, always allow, deny once, or always deny. F2 → AI Settings provides allow-all, deny-all, and allow-list controls.
 
-Explicitly requested player takeover uses native client input and releases the mouse cursor. **T, F2, switching windows and minimizing do not interrupt it.** The MC panel provides Pause/Continue, Exit and Add command, triggered on release. **ESC ends takeover.** Exiting restores your original focus-pause setting; death, disconnects, world and permission changes still release control.
+Explicitly requested player takeover uses native client input and releases the mouse cursor. **T, F2, switching windows and minimizing do not interrupt it.** The MC panel provides Pause/Continue, Exit and Add command, triggered on release. **Double-tap Esc in the game surface to exit; Esc in chat/F2 only handles the open UI.** Exiting restores your original focus-pause setting; death, disconnects, world and permission changes still release control.
 
 A dedicated Python runtime managed by Java can perform local tasks and install third-party libraries. Review and approve each request in Minecraft chat.
 

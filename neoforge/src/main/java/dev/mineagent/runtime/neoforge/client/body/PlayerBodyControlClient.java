@@ -19,6 +19,8 @@ import java.util.*;
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class PlayerBodyControlClient {
     private static final UUID NONE=new UUID(0,0);
+    private static final dev.mineagent.runtime.client.control.ScopedEscapeExit ESCAPE=new dev.mineagent.runtime.client.control.ScopedEscapeExit();
+    public static void resetEscapeGesture(){ESCAPE.reset();}
     private static Flight flight;private static String lastReason="NONE";private static int lastSteps,lastTicks;
     private static final class Flight {
         final PlayerBodyPayloads.Offer offer;final PlayerControlPlan plan;final PlayerControlLease lease;final PlayerControlSequence input;
@@ -46,7 +48,7 @@ public final class PlayerBodyControlClient {
     }
     static void approve(PlayerBodyReviewScreen screen,PlayerBodyPayloads.Offer offer,PlayerControlPlan plan,Object wire){
         var mc=Minecraft.getInstance();if(flight!=null||mc.screen!=screen||!screen.localConsent()||mc.getConnection()==null||mc.getConnection().getConnection()!=wire||mc.level==null||mc.player==null||!mc.player.isAlive()||!mc.isWindowActive()||!mc.level.dimension().identifier().toString().equals(offer.dimension())){screen.reject(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("当前客户端状态已变化，请取消并重新发起。"));return;}
-        try{String hash=dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(offer.plan().getBytes(java.nio.charset.StandardCharsets.UTF_8));var f=new Flight(offer,plan,hash);flight=f;lastReason="ARMING";screen.handedOff();mc.setScreen(null);KeyMapping.releaseAll();releaseKeys();
+        try{String hash=dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(offer.plan().getBytes(java.nio.charset.StandardCharsets.UTF_8));var f=new Flight(offer,plan,hash);flight=f;resetEscapeGesture();lastReason="ARMING";screen.handedOff();mc.setScreen(null);KeyMapping.releaseAll();releaseKeys();
         send(f,"START","");}catch(Exception failure){stop("START_SEND_FAILED");screen.reject(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("启动失败，未自动重试。"));}
     }
     public static void signal(PlayerBodyPayloads.Signal message,Object wire){var mc=Minecraft.getInstance();if(mc.getConnection()==null||mc.getConnection().getConnection()!=wire)return;
@@ -54,8 +56,8 @@ public final class PlayerBodyControlClient {
         if(f==null||f.wire!=wire||!context(f))return;
         if(message.action().equals("START")&&message.detail().equals(f.hash)){if(f.lease.grant(message.operation(),message.consent(),message.sequence(),now())){lastReason="RUNNING";}}else if(message.action().equals("LEASE"))f.lease.renew(message.operation(),message.consent(),message.sequence(),now());
     }
-    public static void stop(String reason){var f=flight;if(f==null)return;flight=null;f.lease.stop();f.input.stop();releaseKeys();cancelInteraction(f);resetMouse();lastReason=reason;lastSteps=f.input.completedSteps();lastTicks=f.input.elapsedTicks();try{send(f,reason.equals("INPUT_SEQUENCE_FINISHED")?"FINISH":"STOP",reason);}catch(Exception ignored){}Minecraft.getInstance().gui.setOverlayMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 接管已停止 · ")+reason),false);}
-    public static void contextBoundary(String reason){AutonomousBodyClient.boundary(reason);if(flight!=null)stop(reason);}
+    public static void stop(String reason){resetEscapeGesture();var f=flight;if(f==null)return;flight=null;f.lease.stop();f.input.stop();releaseKeys();cancelInteraction(f);resetMouse();lastReason=reason;lastSteps=f.input.completedSteps();lastTicks=f.input.elapsedTicks();try{send(f,reason.equals("INPUT_SEQUENCE_FINISHED")?"FINISH":"STOP",reason);}catch(Exception ignored){}Minecraft.getInstance().gui.setOverlayMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 接管已停止 · ")+reason),false);}
+    public static void contextBoundary(String reason){resetEscapeGesture();AutonomousBodyClient.boundary(reason);if(flight!=null)stop(reason);}
     private static void check(){var f=flight;if(f!=null&&!f.lease.valid(now(),context(f)))stop(context(f)?"SERVER_LEASE_LOST":"CLIENT_CONTEXT_CHANGED");}
     @SubscribeEvent public static void frame(RenderFrameEvent.Pre e){check();}
     @SubscribeEvent public static void opening(ScreenEvent.Opening e){if(e.getNewScreen()!=null)contextBoundary("SCREEN_OPENED");}
@@ -71,12 +73,15 @@ public final class PlayerBodyControlClient {
                 case "HOTBAR"->{if(frame.first())f.player.getInventory().setSelectedSlot(step.slot());}case "WAIT"->{}default->throw new IllegalStateException("INVALID_INPUT_ACTION");
             }
             f.lastFrame=frame.last();f.frames++;if(++f.heartbeat>=5){f.heartbeat=0;send(f,"HEARTBEAT","");}
-            mc.gui.setOverlayMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 接管本人 · ")+(frame.index()+1)+"/"+f.plan.steps().size()+" "+label(step)+dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(" · Esc 退出接管")),false);
+            mc.gui.setOverlayMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("AI 接管本人 · ")+(frame.index()+1)+"/"+f.plan.steps().size()+" "+label(step)+dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(" · 双击 Esc 退出接管")),false);
         }catch(Exception failure){stop("INPUT_FAILED");}
     }
     @SubscribeEvent public static void afterTick(ClientTickEvent.Post e){if(flight!=null&&flight.lastFrame)stop("INPUT_SEQUENCE_FINISHED");}
     static void resetMouse(){var mc=Minecraft.getInstance();var m=(dev.mineagent.runtime.neoforge.mixin.client.WorkspaceMouseAccess)mc.mouseHandler;m.mineagent$left(false);m.mineagent$middle(false);m.mineagent$right(false);m.mineagent$activeButton(null);m.mineagent$fakeRight(0);mc.mouseHandler.setIgnoreFirstMove();}
-    public static boolean physicalKey(long window,int action,KeyEvent event){var mc=Minecraft.getInstance();if(AutonomousBodyClient.active()){if(event.key()==256&&action==1&&window==mc.getWindow().handle()){AutonomousBodyClient.stop("USER_ESCAPE");return mc.screen==null;}if(AutonomousBodyClient.uiKey(event.key())||!AutonomousBodyClient.blocksPhysical())return false;return window==mc.getWindow().handle();}var result=PlayerControlInputPolicy.key(flight!=null,window==mc.getWindow().handle(),event.key(),action);if(result==PlayerControlInputPolicy.Result.STOP)stop("USER_ESCAPE");return result!=PlayerControlInputPolicy.Result.PASS;}
+    public static boolean physicalKey(long window,int action,KeyEvent event){var mc=Minecraft.getInstance();
+        if(event.key()==GLFW.GLFW_KEY_ESCAPE){var result=ESCAPE.handle(active(),mc.screen==null&&mc.getOverlay()==null&&mc.isWindowActive(),window==mc.getWindow().handle(),action,now());if(result==dev.mineagent.runtime.client.control.ScopedEscapeExit.Result.EXIT){if(AutonomousBodyClient.active())AutonomousBodyClient.stop("USER_ESCAPE");else stop("USER_ESCAPE");}else if(result==dev.mineagent.runtime.client.control.ScopedEscapeExit.Result.ARMED)mc.gui.setOverlayMessage(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("再按一次 Esc 退出托管")),false);return result!=dev.mineagent.runtime.client.control.ScopedEscapeExit.Result.PASS;}
+        if(action==GLFW.GLFW_PRESS)resetEscapeGesture();
+        if(AutonomousBodyClient.active()){if(AutonomousBodyClient.uiKey(event.key())||!AutonomousBodyClient.blocksPhysical())return false;return window==mc.getWindow().handle();}var result=PlayerControlInputPolicy.key(flight!=null,window==mc.getWindow().handle(),event.key(),action);if(result==PlayerControlInputPolicy.Result.STOP)stop("USER_ESCAPE");return result!=PlayerControlInputPolicy.Result.PASS;}
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void mouse(InputEvent.MouseButton.Pre e){if(AutonomousBodyClient.active()&&dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.mouse(e)){e.setCanceled(true);return;}if(flight!=null||AutonomousBodyClient.blocksPhysical())e.setCanceled(true);}
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void scroll(InputEvent.MouseScrollingEvent e){if(flight!=null||AutonomousBodyClient.blocksPhysical())e.setCanceled(true);}
     public static boolean blockMotion(long window){return (flight!=null)&&window==Minecraft.getInstance().getWindow().handle();}
