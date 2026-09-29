@@ -13,6 +13,8 @@ Rhino is already embedded in DivZero. Do not install MCEF or WebGUI for this ver
 
 First entry into a world/server presents Enable and Disable chat actions. Enable takes effect without leaving the world. F2 opens the native workspace; right-clicking an AI opens its profile. Dynamic HUDs are passive until an explicit interaction action.
 
+AI-created interfaces also support native menu attachments, visible-entity health panels and desktop windows. Preview actions can open immediately or appear as chat buttons. See the [ten scenario implementation and acceptance record](NATIVE_TEN_SCENARIOS.md) for memory, bulldozer and image texture tools and their tested boundaries. These features use the same runtime JARs above; no browser package is required.
+
 Dependency sources and licenses are recorded in `DEPENDENCIES.json` in the build artifacts. [LDLib2](https://github.com/Low-Drag-MC/LDLib2) and [KubeJS](https://github.com/KubeJS-Mods/KubeJS) use LGPL-3.0-only; [Better Advanced Tooltips](https://github.com/latvian-dev/better-advanced-tooltips) uses MIT. Exact downloads are hash-verified during packaging.
 
 This installation description does not certify every migration scenario. The [current capability and acceptance status](NATIVE_UI_MIGRATION_STATUS.md) summarizes the migration; exact evidence and historical failures remain in [the migration record](NATIVE_UI_BUILDING_MIGRATION.md). Existing release documents describe their own historical versions.

@@ -2929,13 +2929,13 @@
     },
     {
       "path": "docs/NATIVE_INSTALLATION.md",
-      "sha256": "9daa72f4352be933d4bc9846bf00fb14a6c8ae03cf342acbb262858633f95151",
-      "bytes": 1763
+      "sha256": "707361bd655a5a571b802ac27a2648d08eef470ee50d9b73ddade89da57745d9",
+      "bytes": 2178
     },
     {
       "path": "docs/NATIVE_TEN_SCENARIOS.md",
-      "sha256": "9ee594295bf037704badfb377497b71ec64ffba7fae39cd15da68aba5c45fba3",
-      "bytes": 8250
+      "sha256": "5ab4512b0f5405fdf21aae7fa70cb7d52dd8a9174398d374014a407718b7d0af",
+      "bytes": 11956
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
@@ -2944,8 +2944,8 @@
     },
     {
       "path": "docs/NATIVE_UI_MIGRATION_STATUS.md",
-      "sha256": "10b29367c0ea24a2d9ad01591cda650f233e8a8698db780dce1c76c0c067e135",
-      "bytes": 4805
+      "sha256": "e8c55ab587565d68d1b142c3076353edff729ee345531a7da8a5c3dd6ed93f55",
+      "bytes": 6194
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
