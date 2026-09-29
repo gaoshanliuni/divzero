@@ -5609,8 +5609,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerAgentInventory.java",
-      "sha256": "a79a9334eebb0e83ae3be22abe13eb50b371bf06c589b6a19ed2ba099b825e05",
-      "bytes": 7040
+      "sha256": "ad81d6acfc9137d43049b2d9456dcfdcc29dc7fd123693bb287b1e8d03da81e5",
+      "bytes": 7149
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerAgentManagement.java",

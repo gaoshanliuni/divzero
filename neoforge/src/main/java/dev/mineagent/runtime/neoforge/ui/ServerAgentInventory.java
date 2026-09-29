@@ -27,7 +27,8 @@ public final class ServerAgentInventory {
             var stack=player.getInventory().getItem(i);values.append('|').append(i).append(':');
             if(!stack.isEmpty())values.append(ItemStack.CODEC.encodeStart(player.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),stack).getOrThrow());
         }
-        return dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(values.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        try{return dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(values.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));}
+        catch(Exception error){throw new IllegalStateException("INVENTORY_VERSION_UNAVAILABLE",error);}
     }
 
     private static List<Map<String,Object>> slots(ServerPlayer player,int offset) {
