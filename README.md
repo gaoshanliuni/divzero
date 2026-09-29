@@ -14,7 +14,7 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 
 
 **[下载 JAR](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](docs/FEATURES.md) · [安装说明](docs/BUILD_JAR.md) · [问题反馈](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-当前为 **1.0.21 开发测试版**，支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**，采用网络协议 **11**。客户端与服务端请同步更新；旧版 1.0.20 使用协议 10。建议使用已备份的测试存档。[下载 1.0.21](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.21)。
+最新 Release 为 **1.0.21 开发测试版**；公开 main 已包含 **1.0.22 托管相机修复**，尚未发布新 Release。支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**，网络协议仍为 **11**。客户端与服务端请同步更新；旧版 1.0.20 使用协议 10。建议使用已备份的测试存档。[下载已发布的 1.0.21](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.21)。
 
 ## LDLib2 原生工作区与持续技能
 
@@ -28,7 +28,9 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 
 
 AI 与真人托管共用跟随、巡逻、警戒、漫步、战斗、农务和钓鱼技能。常规工作由本地循环执行，支持防御打断、重新核对后恢复，以及多 AI 工作点预约。
 
-![托管面板：暂停、退出、追加命令](docs/images/player-takeover.png)
+![1.0.22 托管面板：暂停、退出、追加命令、切换视角](docs/images/player-takeover.png)
+
+**1.0.22** 平滑托管观察相机，支持原生 F5（含改绑）和面板切换第一人称、第三人称背后/正面；保持 AI 身体瞄准与行动不变。[实机验证](docs/TAKEOVER_CAMERA.md)。
 
 [本地战斗与独立工作模式](docs/TACTICAL_PLAYER_BEHAVIOR.md) · [原生界面与建筑升级](docs/NATIVE_UI_MIGRATION_STATUS.md) · [持续技能验收](docs/PERSISTENT_PLAYER_SKILLS.md) · [十项动态能力](docs/NATIVE_TEN_SCENARIOS.md)
 
@@ -161,7 +163,7 @@ Through natural language interaction, world awareness, persistent memory, and dy
 
 **[Download JARs](https://github.com/gaoshanliuni/divzero/releases) · [All features](docs/FEATURES.md#english) · [Installation](docs/BUILD_JAR.md) · [Report an issue](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-**1.0.21 is a development/test release** for **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**, using **protocol 11**. The older 1.0.20 release uses protocol 10. Keep the main mod version in sync on clients and servers. Back up your world before testing. [Download 1.0.21](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.21).
+The latest published development/test release is **1.0.21**. Public main also includes the **1.0.22 takeover camera fix**, without a new Release yet. Requirements remain **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**, using **protocol 11**. The older 1.0.20 release uses protocol 10. Keep the main mod version in sync on clients and servers. Back up your world before testing. [Download published 1.0.21](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.21).
 
 ## Native LDLib2 workspace and persistent skills
 
@@ -175,7 +177,9 @@ Ask for a shop, add a search field, then change its style while keeping input. T
 
 AI bodies and player takeover share follow, patrol, guard, wander, combat, farming and fishing skills. Local loops handle routine work, defense interruptions, verified recovery and work reservations between AIs.
 
-![Takeover controls: Pause, Exit and Add command](docs/images/player-takeover.png)
+![1.0.22 takeover controls: Pause, Exit, Add command and Perspective](docs/images/player-takeover.png)
+
+**1.0.22** interpolates the observation camera between body ticks. Use vanilla F5 (including remapped keys) or the panel to cycle first person, third-person back and front, without changing AI aim or input. [In-game verification](docs/TAKEOVER_CAMERA.md).
 
 [Local tactics and independent work modes](docs/TACTICAL_PLAYER_BEHAVIOR.md) · [Native UI and building migration](docs/NATIVE_UI_MIGRATION_STATUS.md) · [Persistent skills](docs/PERSISTENT_PLAYER_SKILLS.md) · [Ten dynamic scenarios](docs/NATIVE_TEN_SCENARIOS.md)
 

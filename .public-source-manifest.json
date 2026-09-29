@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "e36f4fb27d355e3ec96cd0768106a800be5700d9992dd33d6b7f26cf04365ea5",
-      "bytes": 21853
+      "sha256": "710155b3a4bce68fb2e8418fb9766407904f3675106a2a306bd1a156df6791e3",
+      "bytes": 22598
     },
     {
       "path": "agent/build.gradle",
@@ -3034,8 +3034,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "b2fbe4eb667f32bdace7bab60a3c333fd7d6c09adc253027f51afc0ec9105d35",
-      "bytes": 44791
+      "sha256": "d61a2478b38c6f93fcb1290516fb557fe5c67236ac499b21ea322937144005e2",
+      "bytes": 45438
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -3084,8 +3084,8 @@
     },
     {
       "path": "docs/TAKEOVER_CAMERA.md",
-      "sha256": "1c87c24805fe90dcb914d6ccc00daac19590ce9ec42365ac184449ab83377bb2",
-      "bytes": 1684
+      "sha256": "75500f4473d97dd40abdaf274492e6ca1529b70a1ce28f9a62ef28f24a59fd68",
+      "bytes": 2964
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3099,8 +3099,8 @@
     },
     {
       "path": "docs/images/README.md",
-      "sha256": "5388bbd04affb791f1c24c7f075a61bc854f46a01793475872f710dfb2604606",
-      "bytes": 5276
+      "sha256": "fa0c7f6ee3f491a99b942ce04018ed30429ee913dd14e359c31a5ad4df7f89b2",
+      "bytes": 5295
     },
     {
       "path": "docs/images/behavior-agent-profile.png",
@@ -3139,8 +3139,8 @@
     },
     {
       "path": "docs/images/player-takeover.png",
-      "sha256": "de23c13a80dc65310a67a85b04ddf8e6fe5d6662caadb14bb201c3f7f492e5b1",
-      "bytes": 1220777
+      "sha256": "c6e0d0a19529d34fa4ab69f07d280c480a1c4ba41b4b89ff174e94e9d3853fc7",
+      "bytes": 998685
     },
     {
       "path": "docs/releases/1.0.20.md",
@@ -3154,8 +3154,8 @@
     },
     {
       "path": "docs/releases/1.0.22.md",
-      "sha256": "c9f145652be71e692a6eaab1351d99439bd6747db4f414e5cb81d5669a49a6c6",
-      "bytes": 782
+      "sha256": "9b965f33f4456a8037c30d30b7d1a48d5b85d2d71135dc0b04518c2900731564",
+      "bytes": 984
     },
     {
       "path": "gradle.properties",

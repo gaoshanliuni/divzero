@@ -11,7 +11,7 @@
 | [native-preview.png](native-preview.png) | LDLib2 原生几何预览测试；旋转、平移与缩放入口 | `058360c4bcef3896702d88b4c10c464137c04946df123b5e7e22f191d1ddc44b` |
 | [native-shop.png](native-shop.png) | 真实模型创建并修改后的原生商店；保留“橡木”搜索；按钮仅扣本地演示余额 | `54c146df8c3ca540db8a33432079cf0c0f7063c43c90b2d30f242f70e37d2d8a` |
 | [native-furnace.png](native-furnace.png) | 真实模型创建的原版熔炉计时与进度附加层 | `97a2eda6d5fb5f2258c5028517eaa0b57b2f6464bd735fa4d0e7fa1fe73e8c31` |
-| [player-takeover.png](player-takeover.png) | 真人农务托管；MC 面板暂停、退出、追加命令；独立输入与鼠标释放 | `a142ea24ea16781a8adefaa581f16d4b4ad67010cc21ab05759b4b329e4bb89e` |
+| [player-takeover.png](player-takeover.png) | 1.0.22 真人农务托管与原生正面第三人称；MC 面板暂停、退出、追加命令、视角切换 | `c6e0d0a19529d34fa4ab69f07d280c480a1c4ba41b4b89ff174e94e9d3853fc7` |
 
 工作区、专属面板与预览来自原生 UI 联验；商店来自真实模型定义的布局修正复验；熔炉来自真实模型创建；托管来自玩家原生输入与后台执行联验。商店示例不发放物品，预览图展示几何测试体，不代表所有模型或 Renderer。
 
