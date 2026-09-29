@@ -3369,8 +3369,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
-      "sha256": "52c3202c0235a17230c19b281176cb2df93327b65ae55bccdd1578df3e26f956",
-      "bytes": 9338
+      "sha256": "bbdaf982331d182c6b551c45eedeb0087b01c5a24ecd45080e40fb5d7e4aacc3",
+      "bytes": 9339
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
