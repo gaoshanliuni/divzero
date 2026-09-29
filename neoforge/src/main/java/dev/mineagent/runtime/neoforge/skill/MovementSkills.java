@@ -17,9 +17,12 @@ final class MovementSkills {
         w.session.waypoint(next);w.runtime.persist(w);w.waitFor("WAYPOINT_DWELL",spec.dwellTicks());
     }
     static void wander(SkillWork w){var area=w.session.spec().area();if(w.wanderTarget!=null){if(w.move(w.wanderTarget)){w.wanderTarget=null;w.session.add("wanderVisits",1);w.waitFor("IDLE_OBSERVE",w.session.spec().dwellTicks());}return;}
-        if(w.tick()%4==0){w.waitFor("IDLE_REST",20);return;}
-        var random=new Random(w.token().getMostSignificantBits()^w.tick());var eval=new NativeTraversalEvaluator(w.player());
-        for(int attempt=0;attempt<12&&w.runtime.scan();attempt++){int x=(int)Math.floor(w.player().getX())+random.nextInt(17)-8,z=(int)Math.floor(w.player().getZ())+random.nextInt(17)-8;var n=eval.closest(new Vec3(x+.5,w.player().getY(),z+.5));if(n==null)continue;var p=NativeTraversalEvaluator.point(n);if(!area.contains(new SkillSpec.Point(p.x,p.y,p.z)))continue;w.wanderTarget=p;w.session.phase("WANDER");w.actor.move(w.token(),p);return;}w.waitFor(eval.encounteredUnloaded()?"WAITING_CHUNKS":"NO_REACHABLE_IDLE_POINT",40);
+        var random=new Random(w.token().getLeastSignificantBits()+w.tick()*7919L);if(w.wanderSearch==null&&random.nextInt(4)==0){w.waitFor("IDLE_REST",20+random.nextInt(40));return;}
+        if(w.wanderSearch==null){w.wanderEvaluator=new NativeTraversalEvaluator(w.player());var origin=w.wanderEvaluator.closest(w.player().position());if(origin==null){w.waitFor("NO_SAFE_IDLE_ORIGIN",40);return;}w.wanderSearch=new dev.mineagent.runtime.core.task.SurfaceReachability(origin,w.wanderEvaluator);}
+        var budget=NativeNavigationBudget.get(w.runtime.server);int count=budget.claim(w.token(),w.tick());if(count==0)return;w.wanderEvaluator.beginSlice();w.wanderSearch.advance(Math.min(count,32),budget::timeAvailable);
+        var candidates=w.wanderSearch.reached().stream().filter(n->!w.wanderEvaluator.water(n)&&!w.wanderEvaluator.climb(n)).map(NativeTraversalEvaluator::point).filter(p->p.distanceToSqr(w.player().position())>=4&&p.distanceToSqr(w.player().position())<=64&&area.contains(new SkillSpec.Point(p.x,p.y,p.z))).toList();
+        if(!candidates.isEmpty()){w.wanderTarget=candidates.get(new Random(w.token().getMostSignificantBits()^w.tick()).nextInt(candidates.size()));w.wanderSearch=null;w.session.phase("WANDER");w.actor.move(w.token(),w.wanderTarget);return;}
+        if(w.wanderSearch.exhausted()||w.wanderSearch.reached().size()>512){w.wanderSearch=null;w.waitFor(w.wanderEvaluator.encounteredUnloaded()?"WAITING_CHUNKS":"NO_REACHABLE_IDLE_POINT",40);}
     }
     static void guard(SkillWork w){if(w.session.spec().route().isEmpty())wander(w);else patrol(w);}
     private MovementSkills(){}

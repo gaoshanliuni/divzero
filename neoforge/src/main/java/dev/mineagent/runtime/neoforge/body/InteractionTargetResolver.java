@@ -11,6 +11,7 @@ import java.util.*;
 public final class InteractionTargetResolver {
     public enum Kind { BLOCK, FISH, RANGED }
     public record Query(NativeTraversalEvaluator evaluator,SurfacePathfinder.Search search,List<Vec3> candidates){}
+    public static Vec3 topHit(ServerPlayer player,BlockPos block){double top=player.level().getBlockState(block).getShape(player.level(),block).toAabbs().stream().mapToDouble(b->b.maxY).max().orElse(1);return new Vec3(block.getX()+.5,block.getY()+top-.001,block.getZ()+.5);}
     public static boolean lineOfSight(ServerPlayer p,Vec3 eye,Vec3 target,BlockPos acceptedBlock,boolean fluids){
         var hit=p.level().clip(new ClipContext(eye,target,ClipContext.Block.COLLIDER,fluids?ClipContext.Fluid.ANY:ClipContext.Fluid.NONE,p));return hit.getType()==HitResult.Type.MISS||acceptedBlock!=null&&hit.getBlockPos().equals(acceptedBlock);
     }

@@ -23,7 +23,7 @@ public final class PlayerSkillActor implements SkillActor {
     public void aim(UUID session,Vec3 target){aim=target;}
     public boolean select(UUID session,int slot){if(!inputReady())return false;send(session,"HOTBAR",UUID.nameUUIDFromBytes((session+"/slot/"+slot).getBytes(java.nio.charset.StandardCharsets.UTF_8)),player.position(),slot,-1,"");return slot<9&&player.getInventory().getSelectedSlot()==slot;}
     public void breakBlock(UUID session,UUID op,BlockPos target){send(session,"BREAK",op,Vec3.atCenterOf(target),0,-1,"");}
-    public void useBlock(UUID session,UUID op,BlockPos target){send(session,"USE_BLOCK",op,Vec3.atCenterOf(target).add(0,.49,0),0,-1,"");}
+    public void useBlock(UUID session,UUID op,BlockPos target){send(session,"USE_BLOCK",op,InteractionTargetResolver.topHit(player,target),0,-1,"");}
     public void useItem(UUID session,UUID op,boolean hold){send(session,hold?"HOLD":"USE_ONCE",op,aim==null?player.getEyePosition().add(player.getLookAngle().scale(4)):aim,0,-1,"");}
     public void releaseItem(UUID session,UUID op){send(session,"RELEASE",op,aim==null?player.getEyePosition():aim,0,-1,"");}
     public void attack(UUID session,UUID op,Entity entity){send(session,"ATTACK_ENTITY",op,entity.getEyePosition(),0,entity.getId(),"");}

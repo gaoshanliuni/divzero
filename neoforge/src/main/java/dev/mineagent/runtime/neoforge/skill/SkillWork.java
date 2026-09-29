@@ -20,6 +20,7 @@ final class SkillWork {
     BlockPos block;CropAdapter crop;Vec3 stand,aim;UUID targetEntity,hook;InteractionTargetResolver.Query search;int startedTick,beforeCount,beforeDamage,workStage,combatStage;String expectedState="",action="";UUID operation;boolean executed;
     double healthBefore;long shotsBefore;UUID fighting,combatOperation;String suspendedPhase;boolean chasing,nativeBreak,interruptedOperation;Vec3 wanderTarget;long lastSave;int combatAt,combatAmmo;
     boolean fishedEvent,tillPlot;int fishedItems,fishStatBefore;Map<String,Integer> fishInventoryBefore=Map.of();Set<UUID> nearbyItemsBefore=Set.of();
+    NativeTraversalEvaluator wanderEvaluator;SurfaceReachability wanderSearch;
     SkillWork(SkillRuntime runtime,SkillSession session,long dbRevision){this.runtime=runtime;this.session=session;this.dbRevision=dbRevision;}
     ServerPlayer player(){return actor.player();}int tick(){return runtime.server.getTickCount();}UUID token(){return session.id();}
     Map<String,Object> view(){var out=new LinkedHashMap<String,Object>();out.put("session",session.snapshot());out.put("actor",actor==null?Map.of():actor.observation());out.put("currentTarget",block==null?List.of():List.of(block.getX(),block.getY(),block.getZ()));out.put("nextCheckTick",nextTick);out.put("pendingReceipt",!saved.isDone());return out;}
@@ -40,7 +41,7 @@ final class SkillWork {
         }
     }
     boolean at(Vec3 target){return player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<.35;}
-    boolean move(Vec3 target){if(at(target)){actor.stop(token());return true;}String state=actor.move(token(),target);if(state.equals("UNREACHABLE")||state.equals("INTERACTION_BLOCKED")){session.add("unreachable",1);waitFor(state,60);stand=null;search=null;}return false;}
+    boolean move(Vec3 target){if(at(target)){actor.stop(token());return true;}String state=actor.move(token(),target);if(state.equals("UNREACHABLE")||state.equals("INTERACTION_BLOCKED")){session.add("unreachable",1);waitFor(state,60);abandonTarget();wanderTarget=null;wanderSearch=null;}return false;}
     boolean reach(BlockPos target,InteractionTargetResolver.Kind kind){
         if(stand!=null)return move(stand);
         if(search==null)search=InteractionTargetResolver.block(player(),target,kind);
