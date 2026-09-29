@@ -23,6 +23,8 @@ import java.nio.file.*;import java.util.*;import java.util.concurrent.*;import j
 public final class PersistentSkillModelSmokeClient {
     private static final ObjectMapper JSON=new ObjectMapper();private static final List<Object> evidence=new ArrayList<>();
     private static UUID agent,conversation,operation;private static int ticks,phase;private static long nextPoll,baseline;private static String skill="",reply="";private static long revision;private static boolean busy,done,started;private static JsonNode latest;
+    private static final List<UUID> threats=new ArrayList<>();
+    private static boolean tactical(){return Boolean.getBoolean("mineagent.skillModelTactical");}
     private static Minecraft mc(){return Minecraft.getInstance();}
     private static boolean playerActor(){return System.getProperty("mineagent.skillModelActor","ai").equals("player");}
     private static Path root()throws Exception{return Files.createDirectories(mc().gameDirectory.toPath().resolve("persistent-skill-model"));}
@@ -33,9 +35,9 @@ public final class PersistentSkillModelSmokeClient {
     private static void crops(ServerPlayer p){for(int x=3;x<=5;x++){p.level().setBlock(new BlockPos(x,100,6),Blocks.FARMLAND.defaultBlockState().setValue(BlockStateProperties.MOISTURE,7),2);p.level().setBlock(new BlockPos(x,101,6),Blocks.WHEAT.defaultBlockState().setValue(CropBlock.AGE,7),2);}p.level().setBlock(new BlockPos(3,100,7),Blocks.WATER.defaultBlockState(),2);}
     private static CompletableFuture<Void> setup(){return server(p->{try{
         var s=p.level().getServer();s.getPlayerList().op(p.nameAndId());WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);p.setGameMode(playerActor()?GameType.SURVIVAL:GameType.CREATIVE);p.teleportTo(p.level(),.5,101,6.5,Set.of(),-90,20,true);
-        for(int x=-7;x<=12;x++)for(int z=-2;z<=18;z++)for(int y=100;y<=106;y++)p.level().setBlock(new BlockPos(x,y,z),y==100?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),2);crops(p);
+        for(int x=-12;x<=31;x++)for(int z=-7;z<=26;z++)for(int y=100;y<=106;y++)p.level().setBlock(new BlockPos(x,y,z),y==100?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),2);crops(p);
         agent=MineAgentRuntimeServices.bodies(s).createPersistentAt("技能搭档",p.getUUID(),p.level(),new Vec3(.5,101,playerActor()?15.5:8.5)).agentId();var body=MineAgentRuntimeServices.bodies(s).body(agent).orElseThrow();body.setGameMode(GameType.SURVIVAL);
-        for(var actor:List.of(p,body)){actor.getInventory().clearContent();actor.getInventory().setItem(0,new ItemStack(Items.IRON_HOE));actor.getInventory().setItem(1,new ItemStack(Items.WHEAT_SEEDS,48));actor.inventoryMenu.broadcastChanges();}
+        for(var actor:List.of(p,body)){actor.getInventory().clearContent();actor.getInventory().setItem(0,new ItemStack(Items.IRON_HOE));actor.getInventory().setItem(1,new ItemStack(Items.WHEAT_SEEDS,48));if(tactical()){actor.getInventory().setItem(2,new ItemStack(Items.DIAMOND_SWORD));actor.getInventory().setItem(3,new ItemStack(Items.SHIELD));actor.getInventory().setItem(4,new ItemStack(Items.BREAD,8));actor.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,new ItemStack(Items.DIAMOND_HELMET));actor.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST,new ItemStack(Items.DIAMOND_CHESTPLATE));actor.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS,new ItemStack(Items.DIAMOND_LEGGINGS));actor.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET,new ItemStack(Items.DIAMOND_BOOTS));}actor.inventoryMenu.broadcastChanges();}
         conversation=ServerConversations.get(s).store().create(p.getUUID(),agent,UUID.randomUUID(),"持续技能自然对话",false).conversationId();return null;
     }catch(Exception e){throw new CompletionException(e);}});}
     private static CompletableFuture<Void> send(){
@@ -46,6 +48,7 @@ public final class PersistentSkillModelSmokeClient {
         }catch(Exception e){throw new CompletionException(e);}});
         return server(p->{try{
         operation=UUID.randomUUID();String text=playerActor()?"接管我的身体，照顾眼前这排小麦，成熟就收，收完补种；之后继续等待生长，直到我主动停止。背包里有种子和锄头。不要用指令改方块。":"把我面前这排成熟的小麦照顾好，成熟了就收，收完补种；你自己干，持续等到我叫停。你的背包里有种子和锄头。不要建东西，也不要用指令改方块。";
+        if(tactical())text+="遇到怪物就自己近战跑打，打完接着种田；战斗方式不要取消农务。";
         ServerConversations.get(p.level().getServer()).write(p,operation,Map.of("kind","send","agentId",agent.toString(),"conversationId",conversation.toString(),"expectedRevision","1","text",text));evidence.add(Map.of("prompt",text,"operation",operation,"conversation",conversation));return null;
     }catch(Exception e){throw new CompletionException(e);}});}
     private static CompletableFuture<Boolean> modelDone(){
@@ -65,11 +68,25 @@ public final class PersistentSkillModelSmokeClient {
         if(phase==0){if(!started){started=true;org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());}run(setup(),()->phase=1);return;}
         if(phase==1){if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()){dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return;}run(send(),()->phase=2);return;}
         if(phase==2){busy=true;modelDone().whenComplete((complete,error)->mc().execute(()->{busy=false;if(error!=null)fail(error);else if(complete)phase=3;}));return;}
+        if(tactical()&&phase>=3){tacticalTick();return;}
         if(phase==3||phase==5){boolean second=phase==5;busy=true;progress(second).whenComplete((complete,error)->mc().execute(()->{busy=false;if(error!=null)fail(error);else if(complete)phase++;}));return;}
         if(phase==4){run(server(p->{crops(p);return null;}),()->phase=5);return;}
         if(phase==6){var args=JSON.createObjectNode().put("id",skill).put("expected_revision",revision).put("action","stop");run(server(p->ConversationAgentTools.execute(p,agent,UUID.randomUUID(),"control_skill",args.toString(),()->true)).thenCompose(Function.identity()),()->phase=7);return;}
         Files.writeString(root().resolve("result.json"),JSON.writeValueAsString(Map.of("status","PASS","actor",playerActor()?"player":"ai","modelCalls","SEE_AUDIT","evidence",evidence)));done=true;mc().stop();
     }catch(Exception e){fail(e);}}
+    private static CompletableFuture<Void> localMessage(String text){return server(p->{try{operation=UUID.randomUUID();var conversations=ServerConversations.get(p.level().getServer());var state=conversations.store().get(p.getUUID(),agent,conversation);conversations.write(p,operation,Map.of("kind","send","agentId",agent.toString(),"conversationId",conversation.toString(),"expectedRevision",Long.toString(state.revision()),"text",text));evidence.add(Map.of("prompt",text,"operation",operation));return null;}catch(Exception e){throw new CompletionException(e);}});}
+    private static void tacticalTick()throws Exception{
+        if(phase==3||phase==7){boolean resumed=phase==7;busy=true;progress(resumed).whenComplete((complete,error)->mc().execute(()->{busy=false;if(error!=null)fail(error);else if(complete){for(var row:latest.path("skills")){var s=row.path("session");if(s.path("spec").path("id").asText().equals(skill))require(s.path("spec").path("combat").path("strategy").asText().equals("HIT_AND_RUN"),"MODEL_DID_NOT_SET_INDEPENDENT_HIT_AND_RUN");}phase++;}}));return;}
+        if(phase==4){run(server(p->{var b=playerActor()?p:MineAgentRuntimeServices.bodies(p.level().getServer()).body(agent).orElseThrow();for(var offset:List.of(new Vec3(5,0,0),new Vec3(-4,0,3),new Vec3(0,0,-5))){var zombie=net.minecraft.world.entity.EntityType.ZOMBIE.create(p.level(),net.minecraft.world.entity.EntitySpawnReason.COMMAND);zombie.setPos(b.position().add(offset));zombie.setTarget(b);zombie.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,new ItemStack(Items.IRON_HELMET));p.level().addFreshEntity(zombie);threats.add(zombie.getUUID());}evidence.add(Map.of("nativeFullHealthThreats",List.copyOf(threats),"actorHealth",b.getHealth()));return null;}),()->phase=5);return;}
+        if(phase==5){busy=true;inspect().thenCompose(value->server(p->{latest=value;var b=playerActor()?p:MineAgentRuntimeServices.bodies(p.level().getServer()).body(agent).orElseThrow();require(b.isAlive(),"TACTICAL_MODEL_ACTOR_DIED");boolean alive=threats.stream().anyMatch(id->{var e=p.level().getEntity(id);return e!=null&&e.isAlive();});if(alive)return false;for(var row:value.path("skills")){var s=row.path("session");if(s.path("spec").path("id").asText().equals(skill)){require(s.path("counters").path("verifiedHits").asInt()>=3&&s.path("counters").path("tactic_LURE").asInt()>0&&s.path("counters").path("tactic_MELEE_EXIT").asInt()>0,"MODEL_TACTICAL_NATIVE_PROOF_MISSING");evidence.add(value);return true;}}return false;})).whenComplete((complete,error)->mc().execute(()->{busy=false;if(error!=null)fail(error);else if(complete)phase=6;}));return;}
+        if(phase==6){run(server(p->{crops(p);return null;}),()->phase=7);return;}
+        if(phase==8){run(localMessage(playerActor()?"停下，什么也别做":"跟着我"),()->phase=9);return;}
+        if(phase==9||phase==12){busy=true;modelDone().whenComplete((complete,error)->mc().execute(()->{busy=false;if(error!=null)fail(error);else if(complete)phase++;}));return;}
+        if(phase==10){run(inspect().thenApply(value->{if(!playerActor())require(java.util.stream.StreamSupport.stream(value.path("skills").spliterator(),false).anyMatch(row->row.path("session").path("spec").path("kind").asText().equals("FOLLOW")),"NATURAL_FOLLOW_NOT_APPLIED");evidence.add(value);return value;}),()->phase=playerActor()?13:11);return;}
+        if(phase==11){run(localMessage("停下，什么也别做"),()->phase=12);return;}
+        if(phase==13){run(inspect().thenApply(value->{for(var row:value.path("skills"))require(Set.of("COMPLETED","CANCELLED","FAILED").contains(row.path("session").path("state").asText()),"NATURAL_STOP_LEFT_ACTIVE_WORK");evidence.add(value);return value;}),()->phase=14);return;}
+        Files.writeString(root().resolve("result.json"),JSON.writeValueAsString(Map.of("status","PASS","scenario","natural-farm-local-multi-threat-recovery-follow-stop","actor",playerActor()?"player":"ai","modelCalls","SEE_AUDIT","evidence",evidence)));done=true;mc().stop();
+    }
     private static void fail(Throwable failure){if(done)return;done=true;try{Files.writeString(root().resolve("failure.json"),JSON.writeValueAsString(Map.of("phase",phase,"error",failure.toString(),"evidence",evidence,"observed",latest==null?Map.of():latest)));}catch(Exception ignored){}AutonomousBodyClient.stop("MODEL_SMOKE_END");mc().stop();}
     private PersistentSkillModelSmokeClient(){}
 }

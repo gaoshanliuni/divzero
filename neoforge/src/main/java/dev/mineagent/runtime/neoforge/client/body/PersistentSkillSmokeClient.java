@@ -18,6 +18,29 @@ public final class PersistentSkillSmokeClient {
     private static final List<UUID> manyAgents=new ArrayList<>();
     private static final List<UUID> combatants=new ArrayList<>();private static UUID oldBehaviorRequest;private static boolean sawRunningCooldown,sawHurtWithoutStun;
     private static String uiSkillId="";
+    private static UUID raceOperation,localConversation,localOperation;
+    private static CompletableFuture<Map<String,Object>> raceStart;
+    private static void tacticalRules(){
+        action("load-durable-skill-state",()->tool("inspect_behavior",JSON.createObjectNode()));
+        action("start-and-stop-before-save-callback",()->server(p->{var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());raceOperation=UUID.randomUUID();raceStart=runtime.start(p,agent,raceOperation,null,start("race_stop","ai").put("kind","idle"),null,()->true);runtime.stopAll(p,agent);return null;}));
+        waitFor("cancelled-start-future-finishes",300,()->CompletableFuture.completedFuture(raceStart.isDone()));
+        action("cancelled-start-stays-terminal",()->{require(raceStart.join().get("status").equals("CANCELLED"),"STOP_DURING_START_REVIVED");return CompletableFuture.completedFuture(raceStart.join());});
+        action("prepare-temporary-work-chain",()->server(p->{crops(p,3,3,6);return null;}));
+        action("persistent-farm-before-temporary-work",()->tool("farm_area",area("resume_farm","ai",3,101,6,3,101,6).put("defend",true)));
+        waitFor("original-farm-makes-real-progress",1000,()->state("resume_farm",s->s.path("counters").path("planted").asInt()>0));
+        action("temporary-patrol-keeps-parent",()->{var n=start("temporary_route","ai").put("repeat",false).put("resume_previous",true).put("dwell_ticks",100);n.putArray("route").addArray().add(10.5).add(101).add(6.5);return tool("patrol_route",n);});
+        action("edit-only-combat-during-temporary-work",()->{var n=JSON.createObjectNode().put("id","temporary_route").put("expected_revision",1);n.putObject("combat").put("strategy","hit_and_run");return tool("set_combat_policy",n);});
+        action("parent-stays-paused-with-new-combat-policy",()->tool("inspect_behavior",JSON.createObjectNode()).thenApply(data->{var parent=session(data,"resume_farm");require(parent.path("state").asText().equals("PAUSED")&&parent.path("reason").asText().equals("TEMPORARY_WORK"),"POLICY_UNPAUSED_PARENT");require(parent.path("spec").path("combat").path("strategy").asText().equals("HIT_AND_RUN"),"PARENT_POLICY_NOT_UPDATED");return data;}));
+        waitFor("temporary-work-completes",1600,()->state("temporary_route",s->s.path("state").asText().equals("COMPLETED")));
+        action("mature-after-temporary-work",()->server(p->{crops(p,3,3,6);return null;}));
+        waitFor("same-parent-resumes-with-progress",1200,()->state("resume_farm",s->s.path("counters").path("planted").asInt()>1&&s.path("spec").path("combat").path("strategy").asText().equals("HIT_AND_RUN")));
+        action("finite-work-with-independent-self-defense",()->{var n=start("finite_route","ai").put("defend",true).put("repeat",false).put("dwell_ticks",0);n.putArray("route").addArray().add(8.5).add(101).add(6.5);return tool("patrol_route",n);});
+        waitFor("finite-work-remains-completed",1000,()->state("finite_route",s->s.path("state").asText().equals("COMPLETED")));
+        waitFor("standby-preserves-self-defense",300,()->tool("inspect_behavior",JSON.createObjectNode()).thenApply(data->{for(var row:data.path("skills")){var s=row.path("session");if(s.path("spec").path("kind").asText().equals("IDLE")&&s.path("receipt").has("completedWork")&&s.path("spec").path("combat").path("engagement").asText().equals("SELF_DEFENSE")){EVIDENCE.add(data);return true;}}return false;}));
+        action("local-chat-stop-with-no-model-provider",()->server(p->{try{var conversations=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(p.level().getServer());var c=conversations.store().create(p.getUUID(),agent,UUID.randomUUID(),"本地指令验收",false);localConversation=c.conversationId();localOperation=UUID.randomUUID();return conversations.write(p,localOperation,Map.of("kind","send","agentId",agent.toString(),"conversationId",localConversation.toString(),"expectedRevision",Long.toString(c.revision()),"text","停下，什么也别做"));}catch(Exception e){throw new CompletionException(e);}}));
+        waitFor("local-chat-receipt-is-complete",300,()->server(p->{try{var c=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(p.level().getServer()).store().context(p.getUUID(),agent,localConversation,null).orElseThrow();if(c.requestState().equals("COMPLETE")){EVIDENCE.add(c);return true;}require(!c.requestState().equals("FAILED"),"LOCAL_RECEIPT_FAILED_"+c.errorCode());return false;}catch(Exception e){throw new CompletionException(e);}}));
+        action("stop-removes-standby",()->tool("inspect_behavior",JSON.createObjectNode()).thenApply(data->{for(var row:data.path("skills"))require(Set.of("COMPLETED","CANCELLED","FAILED").contains(row.path("session").path("state").asText()),"STANDBY_RESTARTED_AFTER_STOP");return data;}));
+    }
     private static boolean playerActor(){return System.getProperty("mineagent.skillSmokeActor","ai").equals("player");}
     private static ServerPlayer controlled(ServerPlayer p){return playerActor()?p:body(p);}
     private static Minecraft mc(){return Minecraft.getInstance();}private static Path root()throws Exception{return Files.createDirectories(mc().gameDirectory.toPath().resolve(Boolean.getBoolean("mineagent.skillSmokeResume")?"persistent-skill-resume":"persistent-skill-smoke"));}
@@ -44,7 +67,7 @@ public final class PersistentSkillSmokeClient {
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(playerActor()){waitFor("signed-player-control-activation",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});action("real-player-equipment-and-input",()->{org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return server(p->{var b=body(p);p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();for(int i=0;i<36;i++)p.getInventory().setItem(i,b.getInventory().getItem(i).copy());p.inventoryMenu.broadcastChanges();b.teleportTo(p.level(),27.5,101,25.5,Set.of(),0,0,true);return null;});});}
-        if(mode.equals("tactical_ui")){tacticalUi();return;}if(mode.equals("tactical")){tactical();return;}if(mode.equals("navigation")){navigation();return;}if(mode.equals("fishing")||mode.equals("fishing_defense")){fishing();return;}if(mode.equals("combat")){combat();return;}if(mode.equals("player")){player();return;}if(mode.equals("cooperation")){cooperation();return;}if(mode.equals("patrol")){patrol();return;}if(mode.equals("performance")){performance();return;}if(mode.equals("lifecycle")){lifecycle();return;}if(mode.equals("uncertain")){uncertain();return;}if(mode.equals("crops")){cropAdapters();return;}work();
+        if(mode.equals("tactical_rules")){tacticalRules();return;}if(mode.equals("tactical_ui")){tacticalUi();return;}if(mode.equals("tactical")){tactical();return;}if(mode.equals("navigation")){navigation();return;}if(mode.equals("fishing")||mode.equals("fishing_defense")){fishing();return;}if(mode.equals("combat")){combat();return;}if(mode.equals("player")){player();return;}if(mode.equals("cooperation")){cooperation();return;}if(mode.equals("patrol")){patrol();return;}if(mode.equals("performance")){performance();return;}if(mode.equals("lifecycle")){lifecycle();return;}if(mode.equals("uncertain")){uncertain();return;}if(mode.equals("crops")){cropAdapters();return;}work();
     }
     private static void tacticalUi(){
         action("ui-area-context",()->server(p->{p.teleportTo(p.level(),.5,101,6.5,Set.of(),0,0,true);crops(p,3,3,6);return null;}));
@@ -204,6 +227,7 @@ public final class PersistentSkillSmokeClient {
         waitFor("reconciled-scan-complete",500,()->state("uncertain_farm",s->s.path("state").asText().equals("COMPLETED")));
         action("no-second-consumption",()->server(p->{require(body(p).getInventory().countItem(Items.WHEAT_SEEDS)==baseline,"UNCERTAIN_ACTION_REPLAYED");return null;}));
     }
+    private static void hudClick(String name,String button){waitFor(name,200,()->{if(!mc().isWindowActive()){org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(false);}dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick(button);return CompletableFuture.completedFuture(true);});}
     private static void player(){
         action("player-farm-setup",()->server(p->{body(p).teleportTo(p.level(),5.5,101,16.5,Set.of(),0,0,true);p.setGameMode(GameType.SURVIVAL);p.teleportTo(p.level(),.5,101,6.5,Set.of(),-90,0,true);p.getInventory().clearContent();p.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));p.getInventory().setItem(12,new ItemStack(Items.WHEAT_SEEDS,12));p.inventoryMenu.broadcastChanges();crops(p,3,3,6);return null;}));
         action("focus-only-test-game",()->{mc().options.pauseOnLostFocus=true;org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(null);});
@@ -218,13 +242,15 @@ public final class PersistentSkillSmokeClient {
         waitFor("background-does-not-pause-farming",1400,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=4));
         action("restore-test-game",()->{org.lwjgl.glfw.GLFW.glfwRestoreWindow(mc().getWindow().handle());org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(null);});
         waitFor("panel-ready-after-background",150,()->CompletableFuture.completedFuture(mc().isWindowActive()&&Boolean.TRUE.equals(dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.observation().get("visible"))));
-        action("pause-using-hud-button",()->{dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick("pause");return CompletableFuture.completedFuture(null);});
+        hudClick("pause-using-hud-button","pause");
         waitFor("manual-pause-acknowledged",150,()->CompletableFuture.completedFuture(AutonomousBodyClient.manuallyPaused()));
         action("grow-during-manual-pause",()->server(p->{crops(p,3,3,6);baseline=p.level().getServer().getTickCount();return null;}));
         waitFor("manual-pause-blocks-actions",350,()->server(p->{if(p.level().getServer().getTickCount()-baseline<140)return false;require(p.level().getBlockState(new BlockPos(3,101,6)).getValue(CropBlock.AGE)==7,"MANUAL_PAUSE_STILL_HARVESTED");return true;}));
-        action("continue-using-hud-button",()->{dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick("pause");return CompletableFuture.completedFuture(null);});
+        hudClick("continue-using-hud-button","pause");
+        waitFor("resume-server-acknowledged",200,()->tool("inspect_behavior",JSON.createObjectNode()).thenApply(data->!session(data,"player_farm").path("state").asText().equals("PAUSED")));
         waitFor("manual-resume-continues-work",1000,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=5));
-        action("exit-using-hud-button",()->{screen("real-player-controls");dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick("exit");require(!AutonomousBodyClient.active(),"EXIT_BUTTON_FAILED");require(mc().options.pauseOnLostFocus,"FOCUS_PAUSE_PREFERENCE_NOT_RESTORED");return CompletableFuture.completedFuture(null);});
+        hudClick("exit-using-hud-button","exit");
+        action("exit-restores-user-preference",()->{require(!AutonomousBodyClient.active(),"EXIT_BUTTON_FAILED");require(mc().options.pauseOnLostFocus,"FOCUS_PAUSE_PREFERENCE_NOT_RESTORED");return CompletableFuture.completedFuture(null);});
         waitFor("exit-button-cancels-skill",150,()->state("player_farm",s->s.path("state").asText().equals("CANCELLED")));
         action("restart-to-check-escape",()->tool("farm_area",area("player_esc","player",3,101,6,3,101,6).put("crop","minecraft:wheat")));
         waitFor("escape-session-active",150,()->CompletableFuture.completedFuture(AutonomousBodyClient.active()&&!mc().mouseHandler.isMouseGrabbed()));
