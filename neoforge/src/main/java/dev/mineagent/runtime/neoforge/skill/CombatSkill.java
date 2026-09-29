@@ -19,6 +19,7 @@ final class CombatSkill {
     private static boolean advance(SkillWork w){
         if(w.combatStage==0&&w.combatOperation!=null&&(w.player().getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt)){w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;}
         observeRelease(w);observeFood(w);w.combat.scan(w);
+        if(w.combat.contacts(w)>0){if(w.contactSince<0)w.contactSince=w.tick();}else w.contactSince=-1;
         var spec=w.session.spec();var rule=spec.combat();
         if(rule.engagement()==CombatPolicy.Engagement.NONE&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"ENGAGEMENT_DISABLED");}
         LivingEntity target=w.combat.selected;
