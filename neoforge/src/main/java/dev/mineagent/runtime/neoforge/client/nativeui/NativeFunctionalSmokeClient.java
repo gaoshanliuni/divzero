@@ -14,15 +14,16 @@ import java.util.concurrent.CompletableFuture;
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class NativeFunctionalSmokeClient {
     private static CompletableFuture<Map<String,Object>> result;private static UUID agent,a,b;
-    private static int stage,ticks;private static boolean pending;private static final List<String> checked=new ArrayList<>();
+    private static int stage,ticks,pressedAt;private static boolean pending,chatRevealed;private static final List<String> checked=new ArrayList<>();
     public static CompletableFuture<Map<String,Object>> run(UUID ai,UUID first,UUID second){
         if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
-        agent=ai;a=first;b=second;stage=ticks=0;pending=false;checked.clear();return result=new CompletableFuture<>();
+        agent=ai;a=first;b=second;stage=ticks=pressedAt=0;pending=chatRevealed=false;checked.clear();return result=new CompletableFuture<>();
     }
     private static Minecraft mc(){return Minecraft.getInstance();}
     private static UIElement root(){return mc().screen instanceof NativeWorkspaceScreen s?s.smokeRoot():mc().screen instanceof AgentProfileScreen s?s.smokeRoot():null;}
     private static Button find(UIElement element,String value){if(element==null)return null;if(element instanceof Button button&&(value.equals(button.getId())||value.equals(button.text.getText().getString())))return button;for(var child:element.getChildren()){var found=find(child,value);if(found!=null)return found;}return null;}
-    private static boolean click(String value){var button=find(root(),value);if(button==null||button.getSizeWidth()<=0||button.getSizeHeight()<=0)return false;var screen=(com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen)mc().screen;float x=button.getPositionX()+button.getSizeWidth()/2,y=button.getPositionY()+button.getSizeHeight()/2;require(x>=0&&x<mc().getWindow().getGuiScaledWidth()&&y>=0&&y<mc().getWindow().getGuiScaledHeight(),"UI_BUTTON_OUTSIDE_SCREEN_"+value);screen.modularUI.refreshHoveredElementAtScreen(x,y);var widget=com.lowdragmc.lowdraglib2.gui.ui.ModularUIClientAccess.getWidget(screen.modularUI);var event=new net.minecraft.client.input.MouseButtonEvent(x,y,new net.minecraft.client.input.MouseButtonInfo(0,0));widget.mouseClicked(event,false);widget.mouseReleased(event);return true;}
+    private static boolean click(String value){return gesture(value,true)&&gesture(value,false);}
+    private static boolean gesture(String value,boolean down){var button=find(root(),value);if(button==null||button.getSizeWidth()<=0||button.getSizeHeight()<=0)return false;var screen=(com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen)mc().screen;float x=button.getPositionX()+button.getSizeWidth()/2,y=button.getPositionY()+button.getSizeHeight()/2;require(x>=0&&x<mc().getWindow().getGuiScaledWidth()&&y>=0&&y<mc().getWindow().getGuiScaledHeight(),"UI_BUTTON_OUTSIDE_SCREEN_"+value);screen.modularUI.refreshHoveredElementAtScreen(x,y);var widget=com.lowdragmc.lowdraglib2.gui.ui.ModularUIClientAccess.getWidget(screen.modularUI);var event=new net.minecraft.client.input.MouseButtonEvent(x,y,new net.minecraft.client.input.MouseButtonInfo(0,0));if(down)widget.mouseClicked(event,false);else widget.mouseReleased(event);return true;}
     private static boolean conversation(UUID id,String marker){return mc().screen instanceof NativeWorkspaceScreen screen&&screen.smokeState().get("conversation").equals(id.toString())&&screen.smokeHistory().equals(marker);}
     private static void require(boolean value,String error){if(!value)throw new IllegalStateException(error);}
     private static void advance(String name){checked.add(name);stage++;}
@@ -34,11 +35,11 @@ public final class NativeFunctionalSmokeClient {
             if(pending||ticks%6!=0)return;if(!mc().isWindowActive()){org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return;}
             switch(stage){
                 case 0->{NativeWorkspaceScreen.openConversation(agent.toString(),"界面验收",a.toString());advance("open-first-conversation");}
-                case 1->{if(conversation(a,"HISTORY_A_ONLY")){((NativeWorkspaceScreen)mc().screen).smokeDraft("draft-A");if(click("conversation-"+b))advance("click-second-row");}}
+                case 1->{if(conversation(a,"HISTORY_A_ONLY")){((NativeWorkspaceScreen)mc().screen).smokeDraft("draft-A");if(pressedAt==0){if(gesture("conversation-"+b,true)){pressedAt=ticks;NativeWorkspaceScreen.push("conversationChanged",new com.google.gson.JsonObject());}return;}if(ticks-pressedAt>=30&&gesture("conversation-"+b,false))advance("release-second-row-after-refresh");}}
                 case 2->{if(conversation(b,"HISTORY_B_ONLY")){require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals(""),"DRAFT_LEAKED_TO_B");((NativeWorkspaceScreen)mc().screen).smokeDraft("draft-B");if(click("conversation-"+a))advance("click-first-row");}}
                 case 3->{if(conversation(a,"HISTORY_A_ONLY")){require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals("draft-A"),"DRAFT_A_LOST");if(click("conversation-"+b)&&click("conversation-"+a))advance("rapid-switch-with-pending-reads");}}
                 case 4->{if(conversation(a,"HISTORY_A_ONLY")&&click("文件"))advance("open-files");}
-                case 5->{if(click("对话")&&click("conversation-"+b))advance("return-chat-and-select");}
+                case 5->{if(!chatRevealed){chatRevealed=click("对话");return;}if(click("conversation-"+b))advance("return-chat-and-select");}
                 case 6->{if(conversation(b,"HISTORY_B_ONLY")){require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals("draft-B"),"DRAFT_B_LOST");AgentProfileScreen.open(agent,"界面验收");advance("open-profile");}}
                 case 7->{if(mc().screen instanceof AgentProfileScreen&&click("对话"))advance("profile-conversations");}
                 case 8->{if(click("profile-conversation-"+a))advance("profile-select-existing");}

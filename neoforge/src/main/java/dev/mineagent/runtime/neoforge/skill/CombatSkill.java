@@ -165,7 +165,7 @@ final class CombatSkill {
         if(!weapon(w))return;
         if(p.isUsingItem())p.stopUsingItem();
         w.actor.aim(w.token(),target.getEyePosition());
-        if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);}
+        if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);if(counter){w.session.add("counterOpenings",1);w.session.add("counterStrikeAttempts",1);}}
         w.actor.attack(w.token(),w.combatOperation,target);
         // Client attacks are acknowledged by native cooldown/damage; never assume a hit or knockback.
         if(p.getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt){

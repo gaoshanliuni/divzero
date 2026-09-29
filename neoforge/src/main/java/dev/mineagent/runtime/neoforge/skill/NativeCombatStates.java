@@ -41,6 +41,12 @@ public final class NativeCombatStates {
                 if(goal instanceof CombatMeleeGoalAccess access){var range=mob.getActiveItem().get(DataComponents.ATTACK_RANGE);attacks.add(new Attack(goal.getClass().getName(),"MELEE",running&&known?access.divzero$attackCooldown():-1,range==null?0:range.effectiveMinRange(mob),range==null?CombatMobRangeAccess.divzero$defaultReach():range.effectiveMaxRange(mob),running));}
                 if(goal instanceof CombatRangedGoalAccess access)attacks.add(new Attack(goal.getClass().getName(),"RANGED",running&&known?access.divzero$attackCooldown():-1,0,access.divzero$attackRadius(),running));
                 if(goal instanceof CombatBowGoalAccess access)attacks.add(new Attack(goal.getClass().getName(),"RANGED",running&&known?access.divzero$attackCooldown():-1,0,Math.sqrt(access.divzero$attackRadiusSquared()),running));
+                if(goal instanceof CombatCrossbowGoalAccess access){
+                    var stack=enemy.isUsingItem()?enemy.getUseItem():enemy.getMainHandItem();int cooldown=access.divzero$attackDelay();
+                    if(cooldown<=0&&stack.getItem() instanceof net.minecraft.world.item.CrossbowItem&&stack.getOrDefault(DataComponents.CHARGED_PROJECTILES,net.minecraft.world.item.component.ChargedProjectiles.EMPTY).isEmpty())cooldown=Math.max(0,net.minecraft.world.item.CrossbowItem.getChargeDuration(stack,enemy)-(enemy.isUsingItem()?enemy.getTicksUsingItem():0));
+                    attacks.add(new Attack(goal.getClass().getName()+".chargeOrDelay","RANGED",running&&known?cooldown:-1,0,Math.sqrt(access.divzero$attackRadiusSquared()),running));
+                }
+                if(goal instanceof net.minecraft.world.entity.ai.goal.SpearUseGoal<?>){var range=enemy.getAttackRangeWith(enemy.getMainHandItem());attacks.add(new Attack(goal.getClass().getName()+".startupOrContactCooldown","MELEE",running&&known?kineticDelay(enemy,observer):-1,range.effectiveMinRange(enemy),range.effectiveMaxRange(enemy),running));}
             }
             // These exact native types have no general stun state. Subclasses remain unknown.
             if(Set.of("net.minecraft.world.entity.monster.zombie.Zombie","net.minecraft.world.entity.monster.skeleton.Skeleton","net.minecraft.world.entity.monster.Zombie","net.minecraft.world.entity.monster.Skeleton").contains(enemy.getClass().getName()))knowledge="NATIVE_NO_STUN";
@@ -50,6 +56,16 @@ public final class NativeCombatStates {
         for(var adapter:ADAPTERS)if(adapter.supports(enemy)){restrictions.addAll(adapter.restrictions(enemy));attacks.addAll(adapter.attacks(enemy));knowledge="ADAPTER";}
         long now=enemy.level().getGameTime();var motion=MOTION.get(enemy);if(motion==null||motion.tick!=now){motion=new Motion(now,enemy.getDeltaMovement(),motion==null?Vec3.ZERO:enemy.getDeltaMovement().subtract(motion.velocity),motion==null?0:now-motion.tick);MOTION.put(enemy,motion);}
         return new Snapshot(enemy.getUUID(),now,BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString(),enemy instanceof Mob mob&&mob.getTarget()!=null?mob.getTarget().getUUID():null,List.copyOf(attacks),List.copyOf(restrictions),knowledge,enemy.hurtTime,enemy.invulnerableTime,enemy.getDeltaMovement(),motion.change,motion.elapsed,enemy.getAttribute(Attributes.MOVEMENT_SPEED)==null?0:enemy.getAttributeValue(Attributes.MOVEMENT_SPEED),enemy.isUsingItem(),enemy.getTicksUsingItem(),enemy instanceof Mob mob&&mob.isWithinMeleeAttackRange(observer));
+    }
+    /** Evaluate the actual mob attack hitbox at a possible observer position, without moving either entity. */
+    private static int kineticDelay(LivingEntity enemy,LivingEntity observer){
+        var stack=enemy.isUsingItem()?enemy.getUseItem():enemy.getMainHandItem();var weapon=stack.get(DataComponents.KINETIC_WEAPON);if(weapon==null)return -1;
+        int startup=enemy.isUsingItem()?Math.max(0,weapon.delayTicks()-enemy.getTicksUsingItem()):weapon.delayTicks();
+        int contact=0,limit=weapon.contactCooldownTicks();
+        if(limit>0&&enemy.wasRecentlyStabbed(observer,limit)){
+            int low=1,high=limit;while(low<high){int middle=low+(high-low)/2;if(enemy.wasRecentlyStabbed(observer,middle))high=middle;else low=middle+1;}contact=limit-low;
+        }
+        return Math.max(startup,contact);
     }
     /** Evaluate the actual mob attack hitbox at a possible observer position, without moving either entity. */
     public static boolean meleeAt(LivingEntity enemy,LivingEntity actor,Vec3 position){
