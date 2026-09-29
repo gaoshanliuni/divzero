@@ -13,11 +13,11 @@ import java.util.concurrent.CompletableFuture;
 /** Executes the visible LDLib2 buttons, then checks server state; no model or UI callback shortcuts. */
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class NativeFunctionalSmokeClient {
-    private static CompletableFuture<Map<String,Object>> result;private static UUID agent,a,b;
-    private static int stage,ticks,pressedAt;private static boolean pending,chatRevealed;private static final List<String> checked=new ArrayList<>();
-    public static CompletableFuture<Map<String,Object>> run(UUID ai,UUID first,UUID second){
+    private static CompletableFuture<Map<String,Object>> result;private static UUID agent,a,b,old;
+    private static int stage,ticks,pressedAt,pagerStage;private static boolean pending,chatRevealed;private static final List<String> checked=new ArrayList<>();
+    public static CompletableFuture<Map<String,Object>> run(UUID ai,UUID first,UUID second,UUID oldest){
         if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
-        agent=ai;a=first;b=second;stage=ticks=pressedAt=0;pending=chatRevealed=false;checked.clear();return result=new CompletableFuture<>();
+        agent=ai;a=first;b=second;old=oldest;stage=ticks=pressedAt=pagerStage=0;pending=chatRevealed=false;checked.clear();return result=new CompletableFuture<>();
     }
     private static Minecraft mc(){return Minecraft.getInstance();}
     private static UIElement root(){return mc().screen instanceof NativeWorkspaceScreen s?s.smokeRoot():mc().screen instanceof AgentProfileScreen s?s.smokeRoot():null;}
@@ -38,7 +38,7 @@ public final class NativeFunctionalSmokeClient {
                 case 1->{if(conversation(a,"HISTORY_A_ONLY")){((NativeWorkspaceScreen)mc().screen).smokeDraft("draft-A");if(pressedAt==0){if(gesture("conversation-"+b,true)){pressedAt=ticks;NativeWorkspaceScreen.push("conversationChanged",new com.google.gson.JsonObject());}return;}if(ticks-pressedAt>=30&&gesture("conversation-"+b,false))advance("release-second-row-after-refresh");}}
                 case 2->{if(conversation(b,"HISTORY_B_ONLY")){require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals(""),"DRAFT_LEAKED_TO_B");((NativeWorkspaceScreen)mc().screen).smokeDraft("draft-B");if(click("conversation-"+a))advance("click-first-row");}}
                 case 3->{if(conversation(a,"HISTORY_A_ONLY")){require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals("draft-A"),"DRAFT_A_LOST");if(click("conversation-"+b)&&click("conversation-"+a))advance("rapid-switch-with-pending-reads");}}
-                case 4->{if(conversation(a,"HISTORY_A_ONLY")&&click("文件"))advance("open-files");}
+                case 4->{switch(pagerStage){case 0->{if(conversation(a,"HISTORY_A_ONLY")&&click("下一页"))pagerStage++;}case 1->{if(click("conversation-"+old))pagerStage++;}case 2->{if(conversation(old,"HISTORY_OLD_ONLY")&&click("上一页")){checked.add("older-conversation-page-and-back");pagerStage++;}}case 3->{if(click("conversation-"+a))pagerStage++;}default->{if(conversation(a,"HISTORY_A_ONLY")&&click("文件"))advance("open-files");}}}
                 case 5->{if(!chatRevealed){chatRevealed=click("对话");return;}if(click("conversation-"+b))advance("return-chat-and-select");}
                 case 6->{if(conversation(b,"HISTORY_B_ONLY")){require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals("draft-B"),"DRAFT_B_LOST");AgentProfileScreen.open(agent,"界面验收");advance("open-profile");}}
                 case 7->{if(mc().screen instanceof AgentProfileScreen&&click("对话"))advance("profile-conversations");}

@@ -19,7 +19,7 @@ public final class PersistentSkillSmokeClient {
     private static final List<UUID> combatants=new ArrayList<>();private static UUID oldBehaviorRequest;private static boolean sawRunningCooldown,sawHurtWithoutStun;
     private static String uiSkillId="";
     private static UUID raceOperation,localConversation,localOperation;
-    private static UUID uiConversationA,uiConversationB;
+    private static UUID uiConversationA,uiConversationB,uiConversationOld;
     private static void counterCombat(){
         boolean ranged=System.getProperty("mineagent.skillSmokeMode").equals("counter_ranged");
         action("native-enemy-and-melee-only-loadout",()->server(p->{
@@ -34,11 +34,12 @@ public final class PersistentSkillSmokeClient {
     private static void uiFunctional(){
         action("real-inventory-and-two-stored-conversations",()->server(p->{try{
             var store=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(p.level().getServer()).store();
+            uiConversationOld=store.create(p.getUUID(),agent,UUID.randomUUID(),"最早的会话").conversationId();store.appendFeedbackReply(p.getUUID(),agent,uiConversationOld,UUID.randomUUID(),"HISTORY_OLD_ONLY");for(int i=1;i<=23;i++)store.create(p.getUUID(),agent,UUID.randomUUID(),"历史会话 "+i);
             uiConversationA=store.create(p.getUUID(),agent,UUID.randomUUID(),"会话 A").conversationId();uiConversationB=store.create(p.getUUID(),agent,UUID.randomUUID(),"会话 B").conversationId();
             store.appendFeedbackReply(p.getUUID(),agent,uiConversationA,UUID.randomUUID(),"HISTORY_A_ONLY");store.appendFeedbackReply(p.getUUID(),agent,uiConversationB,UUID.randomUUID(),"HISTORY_B_ONLY");
             p.getInventory().clearContent();body(p).getInventory().clearContent();var helmet=new ItemStack(Items.DIAMOND_HELMET);helmet.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal("真实头盔"));p.getInventory().setItem(0,helmet);p.getInventory().setItem(1,new ItemStack(Items.DIAMOND,16));body(p).getInventory().setItem(0,new ItemStack(Items.BREAD,6));p.inventoryMenu.broadcastChanges();return null;
         }catch(Exception e){throw new IllegalStateException(e);}}));
-        action("visible-conversation-and-inventory-controls",()->dev.mineagent.runtime.neoforge.client.nativeui.NativeFunctionalSmokeClient.run(agent,uiConversationA,uiConversationB));
+        action("visible-conversation-and-inventory-controls",()->dev.mineagent.runtime.neoforge.client.nativeui.NativeFunctionalSmokeClient.run(agent,uiConversationA,uiConversationB,uiConversationOld));
         action("inventory-stale-full-and-components",()->server(p->{
             var b=body(p);require(b.getItemBySlot(EquipmentSlot.HEAD).getHoverName().getString().equals("真实头盔"),"EQUIPPED_COMPONENTS_LOST");
             var snap=dev.mineagent.runtime.neoforge.ui.ServerAgentInventory.read(p,Map.of("agentId",agent.toString()));
