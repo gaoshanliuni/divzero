@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class NativeFunctionalSmokeClient {
     private static CompletableFuture<Map<String,Object>> result;private static UUID agent,a,b,old;
-    private static int stage,ticks,pressedAt,pagerStage;private static boolean pending,chatRevealed;private static final List<String> checked=new ArrayList<>();
+    private static int stage,ticks,pressedAt,pagerStage,editorAt,focusChanges;private static float editorX,editorY;private static boolean pending,chatRevealed;private static final List<String> checked=new ArrayList<>();
     public static CompletableFuture<Map<String,Object>> run(UUID ai,UUID first,UUID second,UUID oldest){
         if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
         agent=ai;a=first;b=second;old=oldest;stage=ticks=pressedAt=pagerStage=0;pending=chatRevealed=false;checked.clear();return result=new CompletableFuture<>();
@@ -37,6 +37,7 @@ public final class NativeFunctionalSmokeClient {
         var mouse=new net.minecraft.client.input.MouseButtonEvent(x,y,new net.minecraft.client.input.MouseButtonInfo(0,0));var widget=com.lowdragmc.lowdraglib2.gui.ui.ModularUIClientAccess.getWidget(screen.modularUI);if(down)widget.mouseClicked(mouse,false);else widget.mouseReleased(mouse);return true;
     }
     private static net.minecraft.client.input.MouseButtonEvent slotEvent(AgentInventoryScreen screen,int index){var slot=screen.getMenu().getSlot(index);return new net.minecraft.client.input.MouseButtonEvent(screen.getGuiLeft()+slot.x+8,screen.getGuiTop()+slot.y+8,new net.minecraft.client.input.MouseButtonInfo(0,0));}
+    private static UIElement findElement(UIElement root,String id){if(root==null)return null;if(id.equals(root.getId()))return root;for(var child:root.getChildren()){var found=findElement(child,id);if(found!=null)return found;}return null;}
     private static boolean conversation(UUID id,String marker){return mc().screen instanceof NativeWorkspaceScreen screen&&screen.smokeState().get("conversation").equals(id.toString())&&screen.smokeHistory().equals(marker);}
     private static void require(boolean value,String error){if(!value)throw new IllegalStateException(error);}
     private static void advance(String name){checked.add(name);stage++;}
@@ -85,7 +86,11 @@ public final class NativeFunctionalSmokeClient {
                 case 35->{if(slotClick(32,1,0))advance("native-right-click-half-stack");}
                 case 36->{if(mc().screen instanceof AgentInventoryScreen screen){require(screen.getMenu().getCarried().getCount()==8,"NATIVE_SPLIT_COUNT");screen.mouseClicked(slotEvent(screen,34),false);screen.mouseDragged(slotEvent(screen,34),0,0);screen.mouseDragged(slotEvent(screen,35),18,0);screen.mouseReleased(slotEvent(screen,35));advance("native-drag-distribute");}}
                 case 37->readInventory(s->slot(s,"agent",0).get("count").getAsInt()==8&&slot(s,"agent",2).get("count").getAsInt()==4&&slot(s,"agent",3).get("count").getAsInt()==4,"drag-distribution-confirmed");
-                case 38->{if(mc().screen instanceof AgentInventoryScreen screen){require(screen.getMenu().getCarried().isEmpty(),"DRAG_LEFT_UNEXPECTED_CURSOR");net.minecraft.client.Screenshot.takeScreenshot(mc().getMainRenderTarget(),image->{try(image){image.writeToFile(mc().gameDirectory.toPath().resolve("persistent-skill-smoke/inventory-scale-four.png"));}catch(Exception e){result.completeExceptionally(e);}});mc().player.closeContainer();result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}}
+                case 38->{if(mc().screen instanceof AgentInventoryScreen screen){require(screen.getMenu().getCarried().isEmpty(),"DRAG_LEFT_UNEXPECTED_CURSOR");net.minecraft.client.Screenshot.takeScreenshot(mc().getMainRenderTarget(),image->{try(image){image.writeToFile(mc().gameDirectory.toPath().resolve("persistent-skill-smoke/inventory-scale-four.png"));}catch(Exception e){result.completeExceptionally(e);}});mc().player.closeContainer();NativeWorkspaceScreen.openConversation(agent.toString(),"界面验收",a.toString());advance("return-to-input-under-refresh");}}
+                case 39->{if(conversation(a,"HISTORY_A_ONLY")&&mc().screen instanceof NativeWorkspaceScreen screen){var editor=findElement(root(),"conversation-composer");if(editor!=null&&pointer(editor,true)&&pointer(editor,false)){editorAt=ticks;advance("focus-native-composer");}}}
+                case 40->{if(ticks-editorAt<12)return;var screen=(NativeWorkspaceScreen)mc().screen;var editor=findElement(root(),"conversation-composer");require(screen.smokeInputState().get("editor").equals("conversation-composer"),"IME_EDITOR_FOCUS_MISSING");focusChanges=(Integer)screen.smokeInputState().get("focusChanges");editorX=editor.getPositionX();editorY=editor.getPositionY();editorAt=ticks;advance("start-stream-layout-stability-check");}
+                case 41->{var screen=(NativeWorkspaceScreen)mc().screen;var editor=findElement(root(),"conversation-composer");require(screen.smokeInputState().get("focusChanges").equals(focusChanges)&&editor.getPositionX()==editorX&&editor.getPositionY()==editorY,"COMPOSER_FOCUS_OR_LAYOUT_FLICKER");NativeWorkspaceScreen.push("conversationChanged",new com.google.gson.JsonObject());if(ticks-editorAt>=45)advance("stable-editor-across-polling");}
+                case 42->{var screen=(NativeWorkspaceScreen)mc().screen;var ime=screen.smokeIme();checked.add("preedit-kept-separate-and-committed-once");result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"ime",ime,"modelCalls",0));}
             }
         }catch(Throwable error){result.completeExceptionally(error);}
     }

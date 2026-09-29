@@ -34,6 +34,9 @@ public final class PersistentSkillSmokeClient {
     private static void crowdCombat(int count){
         var enemies=new ArrayList<LivingEntity>();
         action("native-crowd-normal-survival-loadout",()->server(p->{
+            p.level().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.SPAWN_MOBS,false,p.level().getServer());
+            for(var enemy:p.level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class,new net.minecraft.world.phys.AABB(-60,90,-55,60,120,68)))if(enemy instanceof net.minecraft.world.entity.monster.Enemy)enemy.discard();
+            if(playerActor())body(p).setGameMode(GameType.CREATIVE);
             var actor=controlled(p);actor.teleportTo(p.level(),.5,101,6.5,Set.of(),-90,0,true);actor.getInventory().clearContent();
             actor.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));actor.getInventory().setItem(1,new ItemStack(Items.COOKED_BEEF,16));actor.setItemSlot(EquipmentSlot.OFFHAND,new ItemStack(Items.SHIELD));
             actor.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.DIAMOND_HELMET));actor.setItemSlot(EquipmentSlot.CHEST,new ItemStack(Items.DIAMOND_CHESTPLATE));actor.setItemSlot(EquipmentSlot.LEGS,new ItemStack(Items.DIAMOND_LEGGINGS));actor.setItemSlot(EquipmentSlot.FEET,new ItemStack(Items.DIAMOND_BOOTS));actor.inventoryMenu.broadcastChanges();
