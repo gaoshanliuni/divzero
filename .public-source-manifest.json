@@ -3368,9 +3368,14 @@
       "bytes": 8290
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
+      "sha256": "52c3202c0235a17230c19b281176cb2df93327b65ae55bccdd1578df3e26f956",
+      "bytes": 9338
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "42aae8746bfe7dbb3d76fc9e956bd37e20f1af2d84bc1db0dca3f9f13cc2fd80",
-      "bytes": 33710
+      "sha256": "642eed236f5c2cbfa818664260bdb8303d20713d84f181397090e7e0ed788286",
+      "bytes": 36575
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -4749,23 +4754,23 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "d5d25bf6f0b23e8d895b92198e86c5d45fa3c42b52ceee9dc26edd3a3131b5e9",
-      "bytes": 7013
+      "sha256": "807902a636eae57d8de8fa32a5cc5f0c4df4cf31bb6f570c955c80bbafd8d7a2",
+      "bytes": 7190
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
-      "sha256": "1940bd83bc591a6441f7875f0c80389295d1bee405c9322f9d6beb3f6ccdca37",
-      "bytes": 2937
+      "sha256": "7b6ae5e05487049b7d4f79a7c15e9b11c2231e602b0d40e8a1600e15f5e65660",
+      "bytes": 3116
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/FarmSkill.java",
-      "sha256": "e53711de6e62e2f4f3a87610fe1a2ccf4abeb32906525d73b4823d8e8332afcb",
-      "bytes": 7948
+      "sha256": "d84a81ea407f37da61c3d0f96afde7394773d24e3c2ec0b874ade8ac4b38e8e6",
+      "bytes": 8032
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/FishSkill.java",
-      "sha256": "d0df2d731493e72b6f59c30e0244e35c98c4ad185c16d1641a9311ddf37925b9",
-      "bytes": 5545
+      "sha256": "6a9a4c8b53c2118cec2756d90c281b6d1b48ab576b59f3c19f0ce2a2a74baa76",
+      "bytes": 6045
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/MovementSkills.java",

@@ -10,6 +10,8 @@ import java.util.*;
 /** Public extension point: custom crops keep their real native harvest/plant interaction semantics. */
 public interface CropAdapter {
     String id();boolean supports(BlockState state);boolean mature(BlockState state);Item seed();Block block();
+    default boolean mature(ServerPlayer player,BlockPos position,BlockState state){return mature(state);}
+    default boolean requiresSeedBeforeHarvest(){return !harvestByUse();}
     default boolean harvestByUse(){return false;}
     default boolean canPlant(ServerPlayer player,BlockPos crop){return player.level().getBlockState(crop).isAir()&&block().defaultBlockState().canSurvive(player.level(),crop);}
     List<CropAdapter> REGISTRY=new java.util.concurrent.CopyOnWriteArrayList<>();

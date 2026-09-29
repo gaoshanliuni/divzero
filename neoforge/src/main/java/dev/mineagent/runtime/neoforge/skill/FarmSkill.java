@@ -20,13 +20,13 @@ final class FarmSkill {
             if(!w.reach(w.block,dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.Kind.BLOCK))return;int hoe=-1;for(int i=0;i<36;i++)if(w.player().getInventory().getItem(i).getItem() instanceof HoeItem){hoe=i;break;}if(hoe<0){w.waitFor("HOE_REQUIRED",40);return;}if(!(w.player().getMainHandItem().getItem() instanceof HoeItem)){w.actor.select(w.token(),hoe);return;}
             w.expectedState=BlockStateParser.serialize(w.player().level().getBlockState(w.block.below()));w.beforeDamage=w.player().getMainHandItem().getDamageValue();w.actor.aim(w.token(),Vec3.atCenterOf(w.block.below()));w.prepare("TILL",Map.of("block",w.block.below().toShortString(),"before",w.expectedState,"toolDamage",Integer.toString(w.beforeDamage)));return;
         }
-        boolean harvest=w.crop!=null&&w.crop.supports(state)&&w.crop.mature(state),plant=w.crop!=null&&w.crop.canPlant(w.player(),w.block);
+        boolean harvest=w.crop!=null&&w.crop.supports(state)&&w.crop.mature(w.player(),w.block,state),plant=w.crop!=null&&w.crop.canPlant(w.player(),w.block);
         if(!harvest&&!plant){w.abandonTarget();return;}
-        if(!w.crop.harvestByUse()&&w.count(w.crop.seed())<1){w.session.add("missingSeeds",1);w.abandonTarget();w.waitFor("SEED_REQUIRED_FOR_REPLANT",40);return;}
+        if(w.crop.requiresSeedBeforeHarvest()&&w.count(w.crop.seed())<1){w.session.add("missingSeeds",1);w.abandonTarget();w.waitFor("SEED_REQUIRED_FOR_REPLANT",40);return;}
         if(!w.inventorySpace()){w.waitFor("INVENTORY_FULL",40);return;}
         if(!w.reach(w.block,dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.Kind.BLOCK))return;
         // The crop may have changed while navigating. A new operation must use a fresh expectation.
-        state=w.player().level().getBlockState(w.block);harvest=w.crop.supports(state)&&w.crop.mature(state);plant=w.crop.canPlant(w.player(),w.block);
+        state=w.player().level().getBlockState(w.block);harvest=w.crop.supports(state)&&w.crop.mature(w.player(),w.block,state);plant=w.crop.canPlant(w.player(),w.block);
         if(!harvest&&!plant){w.abandonTarget();return;}if(!(harvest&&w.crop.harvestByUse())&&!w.equip(w.crop.seed())){w.session.transition(dev.mineagent.runtime.core.task.SkillSession.State.WAITING,"SELECTING_SEEDS");w.nextTick=w.tick()+2;return;}
         w.actor.aim(w.token(),Vec3.atCenterOf(harvest?w.block:w.block.below()));w.expectedState=BlockStateParser.serialize(state);w.beforeCount=w.count(w.crop.seed());w.beforeDamage=w.player().getMainHandItem().getDamageValue();w.workStage=harvest?1:2;
         w.prepare(harvest?(w.crop.harvestByUse()?"HARVEST_USE":"HARVEST_BREAK"):"PLANT",Map.of("block",w.block.toShortString(),"before",w.expectedState,"seed",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(w.crop.seed()).toString(),"seedCount",Integer.toString(w.beforeCount)));
@@ -35,7 +35,7 @@ final class FarmSkill {
         while(scanned++<16&&w.runtime.scan()){
             if(w.session.cursor()>=area.volume()){w.session.cursor(0);w.session.add("farmScans",1);if(!spec.repeat()){w.completed("FARM_SCAN_COMPLETE");return;}w.waitFor("WAITING_FOR_CROP_GROWTH",100);return;}
             var point=area.cell(w.session.cursor());w.session.cursor(w.session.cursor()+1);var pos=BlockPos.containing(point.x(),point.y(),point.z());
-            if(!w.player().level().hasChunkAt(pos)){w.session.add("unloaded",1);continue;}var state=w.player().level().getBlockState(pos);CropAdapter crop=CropAdapter.find(state).filter(a->spec.crop().isBlank()||a.id().equals(spec.crop())).filter(a->a.mature(state)).orElse(null);
+            if(!w.player().level().hasChunkAt(pos)){w.session.add("unloaded",1);continue;}var state=w.player().level().getBlockState(pos);CropAdapter crop=CropAdapter.find(state).filter(a->spec.crop().isBlank()||a.id().equals(spec.crop())).filter(a->a.mature(w.player(),pos,state)).orElse(null);
             if(crop==null&&state.isAir())crop=CropAdapter.adapters().stream().filter(a->spec.crop().isBlank()||a.id().equals(spec.crop())).filter(a->a.canPlant(w.player(),pos)&&w.count(a.seed())>0).findFirst().orElse(null);
             boolean till=crop==null&&state.isAir()&&spec.till()&&tillable(w.player().level().getBlockState(pos.below()));if(till)crop=CropAdapter.adapters().stream().filter(a->a.block() instanceof net.minecraft.world.level.block.CropBlock&&(spec.crop().isBlank()||a.id().equals(spec.crop()))&&w.count(a.seed())>0).findFirst().orElse(null);
             if(crop==null)continue;if(!w.runtime.reservations.reserve(w.reservation(pos),w.token(),w.tick(),100)){w.session.add("reservationConflicts",1);continue;}
@@ -53,7 +53,7 @@ final class FarmSkill {
         // Observe completed effects before considering a retransmitted input frame.
         state=w.player().level().getBlockState(w.block);
         if(w.action.equals("HARVEST_BREAK")&&w.nativeBreak){w.session.add("harvested",1);w.nativeBreak=false;w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state)));w.session.phase("FARM_REPLANT");w.workStage=2;return;}
-        if(w.action.equals("HARVEST_USE")&&w.crop.supports(state)&&!w.crop.mature(state)&&w.nativeUse){w.session.add("harvested",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state)));w.abandonTarget();return;}
+        if(w.action.equals("HARVEST_USE")&&w.crop.supports(state)&&!w.crop.mature(w.player(),w.block,state)&&w.nativeUse){w.session.add("harvested",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state)));w.abandonTarget();return;}
         if(w.action.equals("PLANT")&&w.crop.supports(state)&&w.nativeUse&&(w.player().hasInfiniteMaterials()||w.nativeConsumed==1)){SkillAcceptanceFaults.beforePlantReceipt();w.session.add("planted",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state),"seedCountAfter",Integer.toString(w.count(w.crop.seed()))));w.abandonTarget();if(w.session.spec().limit()>0&&w.session.count("planted")>=w.session.spec().limit())w.completed("FARM_LIMIT_REACHED");return;}
         if(w.interruptedOperation||w.tick()-w.startedTick>120){w.pause("FARM_OUTCOME_UNCERTAIN_RECONCILE");return;}
         if(w.action.equals("HARVEST_BREAK"))w.actor.breakBlock(w.token(),w.operation,w.block);else w.actor.useBlock(w.token(),w.operation,w.action.equals("PLANT")?w.block.below():w.block);

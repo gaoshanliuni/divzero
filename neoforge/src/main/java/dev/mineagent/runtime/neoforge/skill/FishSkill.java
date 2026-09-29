@@ -10,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.*;
 
 final class FishSkill {
+    static void interrupt(SkillWork w){if(w.operation!=null&&w.executed)return;if(w.hook!=null&&w.player().fishing!=null&&w.hook.equals(w.player().fishing.getUUID()))w.player().fishing.discard();if(w.hook!=null){var receipt=new LinkedHashMap<>(w.session.receipt());receipt.put("state","CAST_CANCELLED_FOR_INTERRUPTION");receipt.put("hook",w.hook.toString());w.session.receipt(receipt);w.session.add("interruptedCasts",1);w.runtime.persist(w);}w.hook=null;w.workStage=0;w.interruptedOperation=false;}
     static void tick(SkillWork w){
         var p=w.player();if(w.count(Items.FISHING_ROD)<1){w.waitFor("FISHING_ROD_MISSING",40);return;}if(!w.inventorySpace()){w.waitFor("INVENTORY_FULL",40);return;}
         if(w.interruptedOperation||w.hook!=null&&p.fishing!=null&&!w.hook.equals(p.fishing.getUUID())){w.pause("FISHING_HOOK_CHANGED_RECONCILE");return;}
