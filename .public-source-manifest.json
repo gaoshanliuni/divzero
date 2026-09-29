@@ -4468,6 +4468,11 @@
       "bytes": 392
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/SkillItemUseOutcomeMixin.java",
+      "sha256": "a6896596b38fdaebab9bfd22315e5b58d610d619dc8daaa58b3df15b6746640d",
+      "bytes": 1523
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/TwilightNagaAttackMixin.java",
       "sha256": "4ef52d7e2517b9a31ba34657e74f050b164975d5e1e63a7074bc988976a79e1d",
       "bytes": 812
@@ -4734,8 +4739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/FarmSkill.java",
-      "sha256": "249d77f41080024a9feb9fd280be74f320ef57fe6e25e5a565a85f6ca1494475",
-      "bytes": 7780
+      "sha256": "c26e4b5f090060d716369ad5628ee86ae9566eece6f5f7521c9d83cd1a155ef5",
+      "bytes": 7863
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/FishSkill.java",
@@ -4749,8 +4754,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "7e826bff84b719b69bce1bb9ff467f99f5683539c257be55e193461f943819e3",
-      "bytes": 5290
+      "sha256": "59cc1e982999ebcdec472a83078ef6d4ef0493434329f5808f15bd349625829b",
+      "bytes": 5624
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillActor.java",
@@ -4759,13 +4764,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "sha256": "4fe8cc1bf350895eb689b707cc03439f45000d9b467fee5fa08463cbe6c58413",
-      "bytes": 14981
+      "sha256": "1d49d72eef063ce2b09339518bc4580da1cf2eae93e2198c6bc4eca264da92c8",
+      "bytes": 15924
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "sha256": "756329d901bc9c33fe81145a4a5eb74d0d4f581498d097b8e01beb30c5eee5b5",
-      "bytes": 7446
+      "sha256": "2c9df0c0fb5b496c58b56ec92fc7c4a243431c6f9fb0337ee38643b9de75fc89",
+      "bytes": 7538
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/AgentTaskExecutor.java",
@@ -5834,8 +5839,8 @@
     },
     {
       "path": "neoforge/src/main/resources/mineagent_actions.mixins.json",
-      "sha256": "9522f465195ae0b1c37f8fe13c3d1157e4dd7d5e7f151ac47a333c3a25cb6df4",
-      "bytes": 939
+      "sha256": "df99ca076a67d2a4a1353cdccf75f97e0d72b89ddc9bf028d67f64b6b7a00bec",
+      "bytes": 971
     },
     {
       "path": "neoforge/src/main/resources/mineagent_client.mixins.json",

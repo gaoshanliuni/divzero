@@ -1,0 +1,13 @@
+package dev.mineagent.runtime.neoforge.mixin;
+import net.minecraft.server.level.*;import net.minecraft.world.*;import net.minecraft.world.item.ItemStack;import net.minecraft.world.level.Level;import net.minecraft.world.phys.BlockHitResult;
+import org.spongepowered.asm.mixin.*;import org.spongepowered.asm.mixin.injection.*;import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+/** Per-call hand consumption is independent of unrelated item pickups in the same inventory tick. */
+@Mixin(ServerPlayerGameMode.class)
+public abstract class SkillItemUseOutcomeMixin {
+    @Unique private final java.util.Deque<ItemStack> divzero$skillUses=new java.util.ArrayDeque<>();
+    @Inject(method="useItemOn",at=@At("HEAD"))
+    private void divzero$beforeSkillUse(ServerPlayer player,Level level,ItemStack stack,InteractionHand hand,BlockHitResult hit,CallbackInfoReturnable<InteractionResult> result){divzero$skillUses.push(dev.mineagent.runtime.neoforge.skill.SkillRuntime.observingUse(player,hit.getBlockPos())?stack.copy():ItemStack.EMPTY);}
+    @Inject(method="useItemOn",at=@At("RETURN"))
+    private void divzero$afterSkillUse(ServerPlayer player,Level level,ItemStack stack,InteractionHand hand,BlockHitResult hit,CallbackInfoReturnable<InteractionResult> result){if(divzero$skillUses.isEmpty())return;var before=divzero$skillUses.pop();if(!before.isEmpty())dev.mineagent.runtime.neoforge.skill.SkillRuntime.nativeUse(player,hit.getBlockPos(),before,stack,result.getReturnValue().consumesAction());}
+}

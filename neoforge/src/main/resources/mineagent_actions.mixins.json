@@ -27,7 +27,8 @@
     "FurnaceMenuDataAccess",
     "PotionBrewingAccess",
     "PotionMixAccess",
-    "SkillFishingHookAccess"
+    "SkillFishingHookAccess",
+    "SkillItemUseOutcomeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

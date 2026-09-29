@@ -22,12 +22,12 @@ final class FarmSkill {
         }
         boolean harvest=w.crop!=null&&w.crop.supports(state)&&w.crop.mature(state),plant=w.crop!=null&&w.crop.canPlant(w.player(),w.block);
         if(!harvest&&!plant){w.abandonTarget();return;}
-        if(w.count(w.crop.seed())<1&&!w.player().hasInfiniteMaterials()){w.session.add("missingSeeds",1);w.abandonTarget();w.waitFor("SEED_REQUIRED_FOR_REPLANT",40);return;}
+        if(!w.crop.harvestByUse()&&w.count(w.crop.seed())<1){w.session.add("missingSeeds",1);w.abandonTarget();w.waitFor("SEED_REQUIRED_FOR_REPLANT",40);return;}
         if(!w.inventorySpace()){w.waitFor("INVENTORY_FULL",40);return;}
         if(!w.reach(w.block,dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.Kind.BLOCK))return;
         // The crop may have changed while navigating. A new operation must use a fresh expectation.
         state=w.player().level().getBlockState(w.block);harvest=w.crop.supports(state)&&w.crop.mature(state);plant=w.crop.canPlant(w.player(),w.block);
-        if(!harvest&&!plant){w.abandonTarget();return;}if(!w.equip(w.crop.seed())){w.waitFor("SEED_NOT_READY",10);return;}
+        if(!harvest&&!plant){w.abandonTarget();return;}if(!(harvest&&w.crop.harvestByUse())&&!w.equip(w.crop.seed())){w.session.transition(dev.mineagent.runtime.core.task.SkillSession.State.WAITING,"SELECTING_SEEDS");w.nextTick=w.tick()+2;return;}
         w.actor.aim(w.token(),Vec3.atCenterOf(harvest?w.block:w.block.below()));w.expectedState=BlockStateParser.serialize(state);w.beforeCount=w.count(w.crop.seed());w.beforeDamage=w.player().getMainHandItem().getDamageValue();w.workStage=harvest?1:2;
         w.prepare(harvest?(w.crop.harvestByUse()?"HARVEST_USE":"HARVEST_BREAK"):"PLANT",Map.of("block",w.block.toShortString(),"before",w.expectedState,"seed",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(w.crop.seed()).toString(),"seedCount",Integer.toString(w.beforeCount)));
     }
@@ -45,19 +45,18 @@ final class FarmSkill {
     private static void actAndVerify(SkillWork w){if(!w.saved.isDone())return;var state=w.player().level().getBlockState(w.block);
         if(w.action.equals("TILL")){
             var soil=w.player().level().getBlockState(w.block.below());if(!w.executed){if(!BlockStateParser.serialize(soil).equals(w.expectedState)){w.confirm("NOT_EXECUTED_TARGET_CHANGED",Map.of("after",BlockStateParser.serialize(soil)));w.abandonTarget();return;}w.executed=true;w.startedTick=w.tick();}
-            if(!w.interruptedOperation)w.actor.useBlock(w.token(),w.operation,w.block.below());soil=w.player().level().getBlockState(w.block.below());if(soil.is(Blocks.FARMLAND)){w.session.add("tilled",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(soil),"toolDamageAfter",Integer.toString(w.player().getMainHandItem().getDamageValue())));w.tillPlot=false;return;}if(w.interruptedOperation||w.tick()-w.startedTick>100)w.pause("TILL_OUTCOME_UNCERTAIN");return;
+            if(!w.interruptedOperation)w.actor.useBlock(w.token(),w.operation,w.block.below());soil=w.player().level().getBlockState(w.block.below());if(soil.is(Blocks.FARMLAND)&&w.nativeUse){w.session.add("tilled",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(soil),"toolDamageAfter",Integer.toString(w.player().getMainHandItem().getDamageValue())));w.tillPlot=false;return;}if(w.interruptedOperation||w.tick()-w.startedTick>100)w.pause("TILL_OUTCOME_UNCERTAIN");return;
         }
         if(!w.executed){if(!BlockStateParser.serialize(state).equals(w.expectedState)||w.count(w.crop.seed())<w.beforeCount){w.confirm("NOT_EXECUTED_TARGET_CHANGED",Map.of("after",BlockStateParser.serialize(state)));w.abandonTarget();return;}
             w.executed=true;w.startedTick=w.tick();w.session.phase("FARM_VERIFY");
         }
-        // Repeated input frames keep the same operation; the native adapter executes each click once.
-        if(!w.interruptedOperation){if(w.action.equals("HARVEST_BREAK"))w.actor.breakBlock(w.token(),w.operation,w.block);
-        else w.actor.useBlock(w.token(),w.operation,w.action.equals("PLANT")?w.block.below():w.block);}
+        // Observe completed effects before considering a retransmitted input frame.
         state=w.player().level().getBlockState(w.block);
         if(w.action.equals("HARVEST_BREAK")&&w.nativeBreak){w.session.add("harvested",1);w.nativeBreak=false;w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state)));w.session.phase("FARM_REPLANT");w.workStage=2;return;}
-        if(w.action.equals("HARVEST_USE")&&w.crop.supports(state)&&!w.crop.mature(state)){w.session.add("harvested",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state)));w.abandonTarget();return;}
-        if(w.action.equals("PLANT")&&w.crop.supports(state)&&(w.player().hasInfiniteMaterials()||w.count(w.crop.seed())==w.beforeCount-1)){w.session.add("planted",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state),"seedCountAfter",Integer.toString(w.count(w.crop.seed()))));w.abandonTarget();if(w.session.spec().limit()>0&&w.session.count("planted")>=w.session.spec().limit())w.completed("FARM_LIMIT_REACHED");return;}
-        if(w.interruptedOperation||w.tick()-w.startedTick>120){w.pause("FARM_OUTCOME_UNCERTAIN_RECONCILE");}
+        if(w.action.equals("HARVEST_USE")&&w.crop.supports(state)&&!w.crop.mature(state)&&w.nativeUse){w.session.add("harvested",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state)));w.abandonTarget();return;}
+        if(w.action.equals("PLANT")&&w.crop.supports(state)&&w.nativeUse&&(w.player().hasInfiniteMaterials()||w.nativeConsumed==1)){w.session.add("planted",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state),"seedCountAfter",Integer.toString(w.count(w.crop.seed()))));w.abandonTarget();if(w.session.spec().limit()>0&&w.session.count("planted")>=w.session.spec().limit())w.completed("FARM_LIMIT_REACHED");return;}
+        if(w.interruptedOperation||w.tick()-w.startedTick>120){w.pause("FARM_OUTCOME_UNCERTAIN_RECONCILE");return;}
+        if(w.action.equals("HARVEST_BREAK"))w.actor.breakBlock(w.token(),w.operation,w.block);else w.actor.useBlock(w.token(),w.operation,w.action.equals("PLANT")?w.block.below():w.block);
     }
     private FarmSkill(){}
     private static boolean tillable(net.minecraft.world.level.block.state.BlockState state){return state.is(Blocks.DIRT)||state.is(Blocks.GRASS_BLOCK)||state.is(Blocks.DIRT_PATH);}
