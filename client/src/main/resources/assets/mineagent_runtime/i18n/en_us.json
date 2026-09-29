@@ -3118,5 +3118,6 @@
   "等待条件恢复": "Waiting for conditions to recover",
   "需要先核对旧操作，再继续当前工作": "Verify the previous action before continuing",
   "沿用当前防区": "Current defense area",
-  "当前目标（暂不可见）": "Current target (not visible)"
+  "当前目标（暂不可见）": "Current target (not visible)",
+  "摆脱持续近身攻击": "Sprint away from sustained close attacks"
 }

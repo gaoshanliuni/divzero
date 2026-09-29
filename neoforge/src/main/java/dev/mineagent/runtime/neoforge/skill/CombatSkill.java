@@ -31,7 +31,7 @@ final class CombatSkill {
         boolean projectileDanger=w.combat.projectiles.stream().anyMatch(e->e.distanceTo(w.player())<10);
         boolean cooling=w.combatInterrupted&&w.tick()-w.combat.lastThreatTick<40;
         boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.urgent()&&t.entity().distanceTo(w.player())<8);
-        if(target==null&&!projectileDanger&&!cooling&&!closeThreat){
+        if(target==null&&!projectileDanger&&!cooling&&!closeThreat&&!w.contactEscape){
             if(w.combatInterrupted&&w.player().getHealth()<w.player().getMaxHealth()*.7&&w.player().getFoodData().getFoodLevel()<20&&safeToEat(w)&&w.acquire()&&eat(w))return true;
             finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"NO_ELIGIBLE_THREATS");
         }
@@ -53,7 +53,7 @@ final class CombatSkill {
     private static boolean idleCombat(SkillWork w,String reason){w.waitFor(reason,10);return true;}
     private static void finishDefense(SkillWork w){
         if(!w.combatInterrupted)return;
-        w.actor.stop(w.token());w.actor.controls().release(w.token());w.combatInterrupted=false;w.fighting=null;w.combatOperation=null;w.combatStage=0;w.healingOperation=null;
+        w.actor.stop(w.token());w.actor.controls().release(w.token());w.combatInterrupted=false;w.fighting=null;w.combatOperation=null;w.combatStage=0;w.healingOperation=null;w.contactEscape=false;w.contactRunAndHit=false;w.contactSince=w.contactClearSince=-1;
         w.session.phase(w.suspendedPhase==null?"SCAN":w.suspendedPhase);w.stand=null;w.search=null;w.positioning.reset();
         w.session.transition(State.RUNNING,"DEFENSE_FINISHED_RECHECK_WORK");w.session.add("workResumptions",1);w.nextTick=w.tick();w.runtime.persist(w);if(w.session.spec().kind()!=SkillSpec.Kind.COMBAT)w.notice("resumed","威胁已解除，重新检查并继续原工作。");
     }
@@ -70,9 +70,10 @@ final class CombatSkill {
     }
     private static void move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
         if(next==null){phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return;}
-        if(escape&&w.positioning.longRetreat()&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
-        w.actor.sprint(w.token(),escape&&w.positioning.longRetreat());
-        if(target!=null&&(!escape||!w.positioning.longRetreat()))w.actor.aim(w.token(),target.getEyePosition());
+        boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.contactEscape);
+        if(sprintEscape&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
+        w.actor.sprint(w.token(),sprintEscape);
+        if(target!=null&&!sprintEscape)w.actor.aim(w.token(),target.getEyePosition());
         else w.actor.aim(w.token(),next.add(0,w.player().getEyeHeight(),0));
         w.actor.move(w.token(),next);
     }
@@ -80,6 +81,7 @@ final class CombatSkill {
         var p=w.player();var rule=w.session.spec().combat();
         if(target!=null&&(target instanceof net.minecraft.world.entity.player.Player||target.isAlliedTo(p)||target instanceof OwnableEntity owned&&owned.getOwnerReference()!=null)){w.combat.selected=null;return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
+        if(escapeContact(w,target,contacts))return;
         double health=p.getHealth()/Math.max(1,p.getMaxHealth());
         if(health<.7&&p.getFoodData().getFoodLevel()<20&&safeToEat(w)){
             if(w.healingOperation==null)w.actor.stop(w.token());
@@ -99,7 +101,7 @@ final class CombatSkill {
         boolean haveBow=w.count(Items.BOW)>0&&(w.count(Items.ARROW)>0||p.hasInfiniteMaterials());
         boolean meleeAvailable=false;for(int slot=0;slot<36;slot++){var held=p.getInventory().getItem(slot);if(held.is(ItemTags.SWORDS)||held.is(ItemTags.AXES)){meleeAvailable=true;break;}}
         boolean stalled=w.lastAttackAt>=0&&w.tick()-w.lastAttackAt>120;
-        boolean ranged=rule.strategy()==CombatPolicy.Strategy.RANGED_KITE||rule.strategy()==CombatPolicy.Strategy.AUTO&&haveBow&&(distance>5||!meleeAvailable&&distance>3||stalled&&distance>4);
+        boolean ranged=rule.strategy()==CombatPolicy.Strategy.RANGED_KITE||rule.strategy()==CombatPolicy.Strategy.AUTO&&haveBow&&(!w.contactRunAndHit||!meleeAvailable)&&(distance>5||!meleeAvailable&&distance>3||stalled&&distance>4);
         if(ranged&&haveBow){
             double desired=Math.max(7,Math.min(12,withdrawal+4));
             if(distance<desired-1||!visible)move(w,w.positioning.choose(w,distance<desired?"RETREAT":"RANGED",desired),target,distance<desired-2);
@@ -137,6 +139,25 @@ final class CombatSkill {
             w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;
             phase(w,"MELEE_EXIT");if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION)move(w,exit,target,false);
         }
+    }
+    /** Actual health damage plus continuing native melee contact outranks ordinary pursuit and equipment choice. */
+    private static boolean escapeContact(SkillWork w,LivingEntity target,int contacts){
+        if(contacts>0){if(w.contactSince<0)w.contactSince=w.tick();}else w.contactSince=-1;
+        if(!w.contactEscape&&contacts>0&&w.tick()-w.contactSince>=1&&w.tick()-w.lastContactDamage<=20){
+            observeRelease(w);w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;
+            w.contactEscape=true;w.contactRunAndHit=true;w.contactClearSince=-1;w.contactEscapeOrigin=w.player().position();w.positioning.reset();w.session.add("contactEscapes",1);w.notice("contact_escape","先拉开距离，再继续跑打。");
+        }
+        if(!w.contactEscape)return false;
+        boolean clear=contacts==0&&!w.combat.flanked(w)&&w.combat.risk(w,w.player().position())<4;
+        if(clear){if(w.contactClearSince<0)w.contactClearSince=w.tick();}else w.contactClearSince=-1;
+        if(w.contactClearSince>=0&&w.tick()-w.contactClearSince>=6&&w.tick()-w.lastContactDamage>=10){
+            w.contactEscape=false;w.contactSince=w.contactClearSince=-1;w.actor.haltMotion(w.token());w.positioning.reset();w.lastAttackAt=w.tick();w.session.add("contactEscapeResumptions",1);return false;
+        }
+        phase(w,"CONTACT_ESCAPE");
+        if(w.player().isSprinting())w.session.add("nativeContactSprintTicks",1);
+        if(w.contactEscapeOrigin!=null)w.session.add("contactEscapeDistanceMilli",Math.max(0,(long)(w.player().position().distanceTo(w.contactEscapeOrigin)*1000)-w.session.count("contactEscapeDistanceMilli")));
+        move(w,w.positioning.choose(w,"RETREAT",Math.max(7,w.player().getAttackRangeWith(w.player().getMainHandItem()).effectiveMaxRange(w.player())+4)),target,true);
+        return true;
     }
     private static boolean weapon(SkillWork w){
         var p=w.player();if(p.getMainHandItem().is(ItemTags.SWORDS)||p.getMainHandItem().is(ItemTags.AXES))return true;
