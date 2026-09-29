@@ -43,7 +43,7 @@ final class CombatAwareness {
             rows.add(new Threat(e,actual,eligible,protect,self||protect||attacked||imminent,score));
         }
         threats=List.copyOf(rows);
-        projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001));
+        projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001&&!(e instanceof dev.mineagent.runtime.neoforge.mixin.CombatArrowStateAccess arrow&&arrow.divzero$inGround())));
         if(rows.stream().anyMatch(t->t.eligible||t.urgent)||projectiles.stream().anyMatch(s->projectileRisk(s,p.position())>1))lastThreatTick=w.tick();
         var best=rows.stream().filter(Threat::eligible).max(Comparator.comparingDouble(Threat::score)).orElse(null);
         if(best!=null){if(selected!=best.entity){selected=best.entity;selectedAt=w.tick();w.session.add("targetChanges",1);}}else if(selected==null||!selected.isAlive()||selected.position().distanceTo(center(w))>rule.leash()||w.tick()-lastThreatTick>40)selected=null;

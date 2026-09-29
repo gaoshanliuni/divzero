@@ -27,7 +27,7 @@ final class SkillWork {
     int lastCombatTick=-1,foodBefore;boolean lastCombatResult,healingWasUsing;
     int contactSince=-1,lastContactDamage=-10000,contactClearSince=-1;boolean contactEscape,contactRunAndHit,sprintApproach;Vec3 contactEscapeOrigin,contactEscapeLastPosition;UUID lastMeleeHitTarget;int lastMeleeHitTick=-10000,comboStreak;
     UUID extensionOperation,shieldOperation;boolean wasBlocking;FishingTackleAdapter tackle=FishingTackleAdapter.VANILLA;
-    int lastCounterJump=-10000;
+    int lastCounterJump=-10000,observedCounterJump=-10000;double counterJumpY;
     private String lastNotice="";private int lastNoticeTick=-10000;
     void notice(String key,String fallback){if(key.equals(lastNotice)&&tick()-lastNoticeTick<200)return;lastNotice=key;lastNoticeTick=tick();var owner=runtime.server.getPlayerList().getPlayer(session.owner());if(owner==null)return;String name=MineAgentRuntimeServices.bodies(runtime.server).definitions().stream().filter(d->d.agentId().equals(session.agent())).map(d->d.displayName()).findFirst().orElse("AI");owner.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+name+"] ").append(net.minecraft.network.chat.Component.translatableWithFallback("mineagent.behavior."+key,fallback)));}
     final Map<UUID,SkillLootCollector.Drop> loot=new LinkedHashMap<>();final Map<Item,Integer> lootBefore=new HashMap<>();Set<UUID> dropBefore=Set.of();final Set<UUID> pickedDrops=new HashSet<>();int lootRetries;Long blockedLootTerrain;

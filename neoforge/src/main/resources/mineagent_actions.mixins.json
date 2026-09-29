@@ -33,6 +33,7 @@
     "CombatRangedGoalAccess",
     "CombatBowGoalAccess",
     "CombatCrossbowGoalAccess",
+    "CombatArrowStateAccess",
     "CombatMobRangeAccess",
     "SkillItemUseOutcomeMixin"
   ],

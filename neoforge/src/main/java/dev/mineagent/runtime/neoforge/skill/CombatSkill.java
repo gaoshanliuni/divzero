@@ -17,6 +17,7 @@ final class CombatSkill {
         w.lastCombatTick=w.tick();w.lastCombatResult=advance(w);return w.lastCombatResult;
     }
     private static boolean advance(SkillWork w){
+        if(w.lastCounterJump>w.observedCounterJump&&w.tick()-w.lastCounterJump<=8&&w.player().getY()>w.counterJumpY+.2){w.observedCounterJump=w.lastCounterJump;w.session.add("observedCounterJumps",1);}
         if(w.combatStage==0&&w.combatOperation!=null&&(w.player().getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt)){w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;}
         observeRelease(w);observeFood(w);w.combat.scan(w);
         if(w.combat.contacts(w)>0){if(w.contactSince<0)w.contactSince=w.tick();}else w.contactSince=-1;
@@ -133,7 +134,7 @@ final class CombatSkill {
             phase(w,"COUNTER_APPROACH");w.sprintApproach=true;
             move(w,w.positioning.choose(w,"COUNTER",Math.max(1,reach-.2)),target,false);
             if(counter&&distance>reach+1&&opening>closing+8&&w.tick()-w.lastCounterJump>=20&&w.positioning.jumpSafe(w)&&p.isSprinting()){
-                w.actor.jump(w.token());w.lastCounterJump=w.tick();w.session.add("counterJumpAttempts",1);
+                w.counterJumpY=p.getY();w.actor.jump(w.token());w.lastCounterJump=w.tick();w.session.add("counterJumpAttempts",1);
             }
             return;
         }

@@ -57,7 +57,7 @@ public final class NativeCombatStates {
         long now=enemy.level().getGameTime();var motion=MOTION.get(enemy);if(motion==null||motion.tick!=now){motion=new Motion(now,enemy.getDeltaMovement(),motion==null?Vec3.ZERO:enemy.getDeltaMovement().subtract(motion.velocity),motion==null?0:now-motion.tick);MOTION.put(enemy,motion);}
         return new Snapshot(enemy.getUUID(),now,BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString(),enemy instanceof Mob mob&&mob.getTarget()!=null?mob.getTarget().getUUID():null,List.copyOf(attacks),List.copyOf(restrictions),knowledge,enemy.hurtTime,enemy.invulnerableTime,enemy.getDeltaMovement(),motion.change,motion.elapsed,enemy.getAttribute(Attributes.MOVEMENT_SPEED)==null?0:enemy.getAttributeValue(Attributes.MOVEMENT_SPEED),enemy.isUsingItem(),enemy.getTicksUsingItem(),enemy instanceof Mob mob&&mob.isWithinMeleeAttackRange(observer));
     }
-    /** Evaluate the actual mob attack hitbox at a possible observer position, without moving either entity. */
+    /** Native startup and this observer's real spear contact timer, not general damage immunity. */
     private static int kineticDelay(LivingEntity enemy,LivingEntity observer){
         var stack=enemy.isUsingItem()?enemy.getUseItem():enemy.getMainHandItem();var weapon=stack.get(DataComponents.KINETIC_WEAPON);if(weapon==null)return -1;
         int startup=enemy.isUsingItem()?Math.max(0,weapon.delayTicks()-enemy.getTicksUsingItem()):weapon.delayTicks();
