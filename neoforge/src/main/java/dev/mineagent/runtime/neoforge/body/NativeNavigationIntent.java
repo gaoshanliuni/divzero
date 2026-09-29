@@ -28,7 +28,7 @@ public final class NativeNavigationIntent {
         if(lastPosition==null||lastPosition.distanceToSqr(p.position())>=.01){lastPosition=p.position();stuck=0;}else if(!remaining().isEmpty())stuck++;
         boolean moved=plannedTarget!=null&&plannedTarget.distanceToSqr(target)>2.25;
         if(moved||stuck>=30){search=null;steps=List.of();index=0;if(stuck>=30){reason="TEMPORARY_CONGESTION";retry.waitUntil(tick+10);}stuck=0;}
-        while(index<steps.size()){var next=waypoint(steps.get(index));if(next.subtract(p.position()).horizontalDistanceSqr()<Math.min(.1,tolerance*tolerance)&&Math.abs(next.y-p.getY())<.26)index++;else break;}
+        while(index<steps.size()){var edge=steps.get(index);var next=waypoint(edge);double dy=next.y-p.getY();boolean vertical=edge.action()==Action.CLIMB?(edge.to().y()>edge.from().y()?dy<=.02&&dy> -1.25:dy>= -.02&&dy<1.25):Math.abs(dy)<.26;if(next.subtract(p.position()).horizontalDistanceSqr()<Math.min(.1,tolerance*tolerance)&&vertical)index++;else break;}
         if(index>=steps.size()&&search==null&&retry.ready(tick)){
             evaluator=new NativeTraversalEvaluator(p);Node start=evaluator.closest(p.position());Vec3 routeTarget=target;boolean segment=target.distanceToSqr(p.position())>16*16;if(segment)routeTarget=p.position().add(target.subtract(p.position()).normalize().scale(16));Node goal=evaluator.closest(routeTarget);plans++;plannedTarget=target;
             if(segment&&goal==null){for(int radius=1;radius<=3&&goal==null;radius++)for(int dx=-radius;dx<=radius&&goal==null;dx++)for(int dz=-radius;dz<=radius;dz++){var candidate=evaluator.closest(routeTarget.add(dx,0,dz));if(candidate!=null&&NativeTraversalEvaluator.point(candidate).distanceToSqr(p.position())>4){goal=candidate;break;}}}

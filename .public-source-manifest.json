@@ -3189,8 +3189,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentMovementController.java",
-      "sha256": "19d3e552c9acd38e038e52abc6686f0f41e998978e0007a987a8f42a04d82305",
-      "bytes": 4970
+      "sha256": "c906c3569c306ea3485a46d68e2ffdd2d866647bc89b614aac6f8c3e17a87277",
+      "bytes": 5004
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentPlayer.java",
@@ -3209,8 +3209,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeNavigationIntent.java",
-      "sha256": "aa982f4b6ebf64f6cd452985359653bcfc5cf16971ad0838ce8ff6e1e6f30dfe",
-      "bytes": 6129
+      "sha256": "32c5aa5fdf3c778603d93303c8bd2ec9341a085256b626f111824370664ed8f5",
+      "bytes": 6280
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeSurfaceNavigation.java",
@@ -3369,8 +3369,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "0cc906f36d055effd030c1d91167eb08e68853abc5b92aa02c3dbdc2deac6233",
-      "bytes": 32510
+      "sha256": "42aae8746bfe7dbb3d76fc9e956bd37e20f1af2d84bc1db0dca3f9f13cc2fd80",
+      "bytes": 33710
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",

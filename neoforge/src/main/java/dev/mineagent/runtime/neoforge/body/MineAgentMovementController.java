@@ -47,7 +47,7 @@ public final class MineAgentMovementController {
         if(p.isCrouching())speed*=p.getAttributeValue(Attributes.SNEAKING_SPEED);
         var horizontal=new Vec3(offset.x,0,offset.z);if(horizontal.lengthSqr()>.001&&speed>0){p.move(MoverType.SELF,horizontal.normalize().scale(Math.min(speed,horizontal.length())));executedSteps++;if(p.isCrouching())crouchingSteps++;}
         // Native travel integrates vertical velocity once; do not additionally move by the same input.
-        if(climb&&p.onClimbable()){p.setDeltaMovement(p.getDeltaMovement().x,Math.max(-.15,Math.min(.2,offset.y)),p.getDeltaMovement().z);climbingSteps++;}
+        if(climb&&p.onClimbable()){p.setDeltaMovement(p.getDeltaMovement().x,offset.y>0?Math.min(.2,Math.max(.12,offset.y)):Math.max(-.15,offset.y),p.getDeltaMovement().z);climbingSteps++;}
         if(swim&&p.isInWater()){p.setDeltaMovement(p.getDeltaMovement().x,Math.max(-.1,Math.min(.1,offset.y)),p.getDeltaMovement().z);swimmingSteps++;}
         if(step.action()==Action.LEAVE_WATER&&p.isInWater()&&offset.y>0)p.setDeltaMovement(p.getDeltaMovement().x,.25,p.getDeltaMovement().z);
     }
