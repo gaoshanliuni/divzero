@@ -11,7 +11,7 @@ import java.util.*;
 final class SkillLootCollector {
     record Drop(UUID id,Item item,Vec3 position,int countBefore){}
     static void before(SkillWork w){
-        w.lootBefore.clear();for(int i=0;i<36;i++){var stack=w.player().getInventory().getItem(i);if(!stack.isEmpty())w.lootBefore.merge(stack.getItem(),stack.getCount(),Integer::sum);}
+        w.pickedDrops.clear();w.lootBefore.clear();for(int i=0;i<36;i++){var stack=w.player().getInventory().getItem(i);if(!stack.isEmpty())w.lootBefore.merge(stack.getItem(),stack.getCount(),Integer::sum);}
         Vec3 center=w.block==null?w.player().position():Vec3.atCenterOf(w.block);
         w.dropBefore=w.player().level().getEntitiesOfClass(ItemEntity.class,new AABB(center,center).inflate(8)).stream().map(ItemEntity::getUUID).collect(java.util.stream.Collectors.toSet());
     }

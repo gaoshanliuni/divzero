@@ -162,6 +162,7 @@ final class CombatSkill {
         var p=w.player();if(target==null)return false;
         if(!p.getOffhandItem().is(Items.SHIELD))for(int i=0;i<36;i++)if(p.getInventory().getItem(i).is(Items.SHIELD)){w.actor.equipOffhand(w.token(),i);return true;}
         if(!p.getOffhandItem().is(Items.SHIELD)||p.getCooldowns().isOnCooldown(p.getOffhandItem()))return false;
+        if(w.combatStage!=0){observeRelease(w);w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;}
         // A shield protects only its facing direction; do not block while turning to sprint away.
         if(p.getLookAngle().dot(target.position().subtract(p.position()).normalize())<.3)return false;
         w.actor.aim(w.token(),target.getEyePosition());

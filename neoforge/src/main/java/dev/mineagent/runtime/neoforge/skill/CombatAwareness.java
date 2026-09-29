@@ -54,7 +54,8 @@ final class CombatAwareness {
     double risk(SkillWork w,Vec3 point){
         double risk=0;for(var threat:threats){var e=threat.entity;if(!e.isAlive())continue;double d=e.position().distanceTo(point),future=e.position().add(e.getDeltaMovement().scale(5)).distanceTo(point);risk+=Math.max(0,5-Math.min(d,future))*2;
             if(NativeCombatStates.meleeAt(e,w.player(),point))risk+=threat.state.meleeRestricted()?3:18;
-            if(threat.state.areaAttack()&&d<6)risk+=30;if(threat.state.ranged()&&e.hasLineOfSight(w.player()))risk+=Math.max(0,8-d);
+            double areaRange=threat.state.attacks().stream().filter(a->a.kind().equals("AREA")&&a.running()).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
+            if(areaRange>0&&d<areaRange+1)risk+=30+Math.max(0,areaRange-d)*5;if(threat.state.ranged()&&e.hasLineOfSight(w.player()))risk+=Math.max(0,8-d);
         }
         for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;
         return risk;
