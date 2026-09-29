@@ -43,7 +43,10 @@ public final class MineAgentMovementController {
         p.lookAlongPath(waypoint.add(0,p.getEyeHeight(),0));
         if((step.action()==Action.JUMP||step.action()==Action.LEAVE_WATER)&&offset.y>.65&&p.onGround())p.jumpFromGround();
         double friction=Math.max(.1,p.level().getBlockState(p.blockPosition().below()).getBlock().getFriction());
-        double speed=Math.max(0,p.getAttributeValue(Attributes.MOVEMENT_SPEED))*(p.isInWater()?1+p.getAttributeValue(Attributes.WATER_MOVEMENT_EFFICIENCY):.216/(friction*friction*friction)/Math.max(.05,1-friction*.91))*p.navigationSpeedFactor();
+        var useEffects=p.getUseItem().getOrDefault(net.minecraft.core.component.DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT);
+        if(p.isUsingItem()&&!useEffects.canSprint())p.setSprinting(false);
+        double speed=.98*Math.max(0,p.getAttributeValue(Attributes.MOVEMENT_SPEED))*(p.isInWater()?1+p.getAttributeValue(Attributes.WATER_MOVEMENT_EFFICIENCY):.216/(friction*friction*friction)/Math.max(.05,1-friction*.91))*p.navigationSpeedFactor();
+        if(p.isUsingItem()&&!p.isPassenger())speed*=useEffects.speedMultiplier();
         if(p.isCrouching())speed*=p.getAttributeValue(Attributes.SNEAKING_SPEED);
         var horizontal=new Vec3(offset.x,0,offset.z);if(horizontal.lengthSqr()>.001&&speed>0){p.move(MoverType.SELF,horizontal.normalize().scale(Math.min(speed,horizontal.length())));executedSteps++;if(p.isCrouching())crouchingSteps++;}
         // Native travel integrates vertical velocity once; do not additionally move by the same input.

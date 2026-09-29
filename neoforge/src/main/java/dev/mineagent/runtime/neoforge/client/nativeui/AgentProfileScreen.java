@@ -34,6 +34,7 @@ public final class AgentProfileScreen extends NativeInputScreen {
         status=NativeUiTheme.text(t("读取 AI…"),NativeUiTheme.MUTED,8);status.getLayout().height(18);card.addChild(status);draw();
     }
     public static void open(UUID agent,String name){Minecraft.getInstance().setScreen(new AgentProfileScreen(agent,name));NativeWorkspaceConnection.open();}
+    public void smokeBehaviorTab(boolean release){NativeBehaviorPanel.smokeClickElement(root,t("行为模式"),release);}
     private static String t(String text){return ClientLanguage.t(text);}
     private boolean current(){return connection==Minecraft.getInstance().getConnection()&&Minecraft.getInstance().screen==this;}
     @Override public void tick(){super.tick();NativeUiTheme.controls(root);if(!current())return;long now=System.currentTimeMillis();if(busy||now<nextRead||!NativeWorkspaceConnection.ready())return;busy=true;nextRead=now+1000;

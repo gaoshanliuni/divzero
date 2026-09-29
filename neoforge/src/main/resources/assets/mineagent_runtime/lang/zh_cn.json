@@ -42,5 +42,7 @@
   "mineagent.activation.stale": "此启用按钮已失效，请用 /divzero_setup 重新选择。",
   "mineagent.activation.enabled": "DivZero 已在此世界为你启用，现在可按 F2 使用，无需重新进入世界。完整操作仍遵循服务器权限。",
   "mineagent.activation.disabled": "DivZero 已在此世界为你禁用。可用 /divzero_setup 重新启用。",
-  "mineagent.activation.failed": "世界选择未保存：%s"
+  "mineagent.activation.failed": "世界选择未保存：%s",
+  "mineagent.behavior.stopped": "已立即停止行动；不会自动重新开战。",
+  "mineagent.behavior.follow": "已切换为跟随。"
 }

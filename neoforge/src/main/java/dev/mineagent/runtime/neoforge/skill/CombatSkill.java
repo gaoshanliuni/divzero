@@ -17,6 +17,7 @@ final class CombatSkill {
         w.lastCombatTick=w.tick();w.lastCombatResult=advance(w);return w.lastCombatResult;
     }
     private static boolean advance(SkillWork w){
+        if(w.combatStage==0&&w.combatOperation!=null&&(w.player().getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt)){w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;}
         observeRelease(w);w.combat.scan(w);
         var spec=w.session.spec();var rule=spec.combat();
         if(rule.engagement()==CombatPolicy.Engagement.NONE){finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"ENGAGEMENT_DISABLED");}
@@ -29,7 +30,8 @@ final class CombatSkill {
         }
         boolean projectileDanger=w.combat.projectiles.stream().anyMatch(e->e.distanceTo(w.player())<10);
         boolean cooling=w.combatInterrupted&&w.tick()-w.combat.lastThreatTick<40;
-        if(target==null&&!projectileDanger&&!cooling){
+        boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.entity().distanceTo(w.player())<6);
+        if(target==null&&!projectileDanger&&!cooling&&!closeThreat){
             finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"NO_ELIGIBLE_THREATS");
         }
         if(!w.combatInterrupted){
@@ -66,6 +68,7 @@ final class CombatSkill {
     }
     private static void move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
         if(next==null){phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return;}
+        if(escape&&w.positioning.longRetreat()&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
         w.actor.sprint(w.token(),escape&&w.positioning.longRetreat());
         if(target!=null&&(!escape||!w.positioning.longRetreat()))w.actor.aim(w.token(),target.getEyePosition());
         else w.actor.aim(w.token(),next.add(0,w.player().getEyeHeight(),0));
@@ -80,10 +83,12 @@ final class CombatSkill {
         boolean retreat=rule.strategy()==CombatPolicy.Strategy.DISENGAGE||health<.3||flanked||contacts>1;
         if(retreat||target==null){
             phase(w,health<.3?"RECOVER":flanked||contacts>1?"LURE":"RETREAT");
-            move(w,w.positioning.choose(w,w.tactic,health<.3?14:withdrawal+2),target,true);
+            var facing=target==null?w.combat.threats.stream().map(CombatAwareness.Threat::entity).min(Comparator.comparingDouble(p::distanceToSqr)).orElse(null):target;
+            move(w,w.positioning.choose(w,w.tactic,health<.3?14:withdrawal+2),facing,true);
             if(health<.7&&w.combat.risk(w,p.position())<2&&w.combat.threats.stream().allMatch(t->t.entity().distanceTo(p)>3+40*Math.max(t.state().velocity().horizontalDistance(),t.state().movementSpeed()))&&eat(w))return;
-            shield(w,target);return;
+            if(!w.positioning.longRetreat())shield(w,facing);return;
         }
+        if(CombatEquipmentAdapter.execute(w,target)){phase(w,"ADAPTED_WEAPON");return;}
         double distance=p.distanceTo(target);boolean visible=p.hasLineOfSight(target);
         var actual=NativeCombatStates.read(target,p);
         boolean haveBow=w.count(Items.BOW)>0&&(w.count(Items.ARROW)>0||p.hasInfiniteMaterials());
@@ -93,7 +98,7 @@ final class CombatSkill {
             if(distance<desired-1||!visible)move(w,w.positioning.choose(w,distance<desired?"RETREAT":"RANGED",desired),target,distance<desired-2);
             else if(distance>desired+3)move(w,w.positioning.choose(w,"APPROACH",desired),target,false);
             else if(w.combatStage==0)w.actor.stop(w.token());
-            if(visible&&distance<24){bow(w,target);return;}
+            if(visible&&distance<24&&distance>=Math.max(4,desired-2)){bow(w,target);return;}
             phase(w,"RANGED_REPOSITION");return;
         }
         if(w.combatStage!=0){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;}
@@ -135,11 +140,18 @@ final class CombatSkill {
         if(!w.equip(Items.BOW))return;
         var p=w.player();var point=target.getEyePosition();double r=Math.hypot(point.x-p.getX(),point.z-p.getZ()),dy=point.y-p.getEyeY(),v2=9,g=.05,disc=v2*v2-g*(g*r*r+2*dy*v2);
         if(disc<0)return;
+        if(r<1){move(w,w.positioning.choose(w,"RANGED",8),target,false);return;}
         var aim=new Vec3(point.x,p.getEyeY()+(v2-Math.sqrt(disc))/(g*Math.max(.01,r))*r,point.z);w.actor.aim(w.token(),aim);
+        if(friendlyInArc(w,target,aim)){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;phase(w,"FRIENDLY_LINE_OF_FIRE");move(w,w.positioning.choose(w,"LURE",10),target,false);return;}
         if(w.combatStage==0){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.combatStage=1;w.shotLogged=false;w.combatAmmo=w.count(Items.ARROW);w.session.add("bowAttempts",1);}
         if(w.combatStage==1){phase(w,"BOW_DRAW");w.actor.useHand(w.token(),w.combatOperation,InteractionHand.MAIN_HAND);if(p.isUsingItem()&&p.getTicksUsingItem()>=20){w.combatStage=2;w.combatAt=w.tick();}else if(w.tick()-w.combatAt>100){w.actor.stop(w.token());w.combatStage=0;}return;}
         phase(w,"BOW_RELEASE");w.actor.releaseItem(w.token(),w.combatOperation);observeRelease(w);
         if(!p.isUsingItem()&&w.tick()-w.combatAt>8){w.lastAttackAt=w.tick();w.combatStage=0;w.combatOperation=null;}
+    }
+    private static boolean friendlyInArc(SkillWork w,LivingEntity target,Vec3 aim){
+        var p=w.player();var start=p.getEyePosition();double r=Math.hypot(aim.x-start.x,aim.z-start.z),slope=(aim.y-start.y)/Math.max(.01,r),duration=r*Math.sqrt(1+slope*slope)/3;
+        var allies=p.level().getEntitiesOfClass(LivingEntity.class,p.getBoundingBox().minmax(target.getBoundingBox()).inflate(2),e->e!=p&&e!=target&&e.isAlive()&&(e instanceof net.minecraft.world.entity.player.Player||e instanceof OwnableEntity own&&own.getOwnerReference()!=null||e.isAlliedTo(p)||!(e instanceof net.minecraft.world.entity.monster.Enemy)));
+        for(int i=0;i<=20;i++){double t=i/20.0;var sample=new Vec3(start.x+(aim.x-start.x)*t,start.y+slope*r*t-.025*duration*duration*t*t,start.z+(aim.z-start.z)*t);for(var ally:allies)if(ally.getBoundingBox().inflate(.5).contains(sample))return true;}return false;
     }
     private static boolean shield(SkillWork w,LivingEntity target){
         var p=w.player();if(target==null)return false;
@@ -148,12 +160,12 @@ final class CombatSkill {
         // A shield protects only its facing direction; do not block while turning to sprint away.
         if(p.getLookAngle().dot(target.position().subtract(p.position()).normalize())<.3)return false;
         w.actor.aim(w.token(),target.getEyePosition());
-        if(w.healingOperation==null)w.healingOperation=UUID.randomUUID();
-        w.actor.useHand(w.token(),w.healingOperation,InteractionHand.OFF_HAND);return true;
+        if(w.shieldOperation==null||w.wasBlocking&&!p.isUsingItem()){w.shieldOperation=UUID.randomUUID();w.wasBlocking=false;}
+        w.actor.useHand(w.token(),w.shieldOperation,InteractionHand.OFF_HAND);w.wasBlocking|=p.isUsingItem()&&p.getUsedItemHand()==InteractionHand.OFF_HAND;return true;
     }
     private static boolean eat(SkillWork w){
         var p=w.player();if(w.healingWasUsing&&!p.isUsingItem()){if(p.getFoodData().getFoodLevel()>w.foodBefore)w.session.add("nativeFoodConsumptions",1);w.healingWasUsing=false;w.healingOperation=null;}if(p.getFoodData().getFoodLevel()>=20)return false;
-        for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(stack.has(DataComponents.FOOD)&&!stack.is(Items.ROTTEN_FLESH)&&!stack.is(Items.SPIDER_EYE)&&!stack.is(Items.PUFFERFISH)&&!stack.is(Items.POISONOUS_POTATO)){
+        for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(w.session.spec().kind()==SkillSpec.Kind.FARM&&CropAdapter.adapters().stream().anyMatch(a->stack.is(a.seed()))&&w.count(stack.getItem())<=1)continue;if(stack.has(DataComponents.FOOD)&&!stack.is(Items.ROTTEN_FLESH)&&!stack.is(Items.SPIDER_EYE)&&!stack.is(Items.PUFFERFISH)&&!stack.is(Items.POISONOUS_POTATO)){
             if(!w.equip(stack.getItem()))return true;
             if(w.healSlot!=i||w.healingOperation==null){w.healSlot=i;w.healingOperation=UUID.randomUUID();}
             if(!w.healingWasUsing)w.foodBefore=p.getFoodData().getFoodLevel();w.actor.useHand(w.token(),w.healingOperation,InteractionHand.MAIN_HAND);w.healingWasUsing|=p.isUsingItem();phase(w,"EATING_IN_SAFE_SPACE");return true;

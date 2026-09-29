@@ -17,12 +17,13 @@ final class CombatAwareness {
         protectedEntity=rule.protect().isBlank()?null:rule.protect().equals("$owner")?w.runtime.server.getPlayerList().getPlayer(w.session.owner()):p.level().getEntity(UUID.fromString(rule.protect())) instanceof LivingEntity e?e:null;
         if(protectedEntity!=null&&protectedEntity.level()!=p.level())protectedEntity=null;
         if(w.tick()<nextScan)return;nextScan=w.tick()+4+Math.floorMod(w.token().hashCode(),3);scans++;
-        var rows=new ArrayList<Threat>();var entities=p.level().getEntitiesOfClass(LivingEntity.class,p.getBoundingBox().inflate(rule.awareness()),e->e!=p&&e.isAlive());
+        var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
         for(var e:entities){
-            if(e instanceof net.minecraft.world.entity.player.Player||e.isAlliedTo(p)||e instanceof OwnableEntity own&&own.getOwnerReference()!=null||rule.excluded().contains(e.getUUID()))continue;
+            boolean forbidden=e instanceof net.minecraft.world.entity.player.Player||e.isAlliedTo(p)||e instanceof OwnableEntity own&&own.getOwnerReference()!=null||rule.excluded().contains(e.getUUID());
             boolean self=e instanceof Mob mob&&mob.getTarget()==p;
             boolean protect=protectedEntity!=null&&e instanceof Mob mob&&mob.getTarget()==protectedEntity;
             boolean attacked=p.getLastHurtByMob()==e&&p.tickCount-p.getLastHurtByMobTimestamp()<100;
+            if(forbidden&&!self&&!protect&&!attacked)continue;
             boolean specified=e.getUUID().toString().equals(rule.target());
             if(!(e instanceof Enemy)&&!self&&!protect&&!attacked&&!specified)continue;
             double d=e.distanceTo(p);boolean sight=p.hasLineOfSight(e);
@@ -35,15 +36,15 @@ final class CombatAwareness {
                 case SPECIFIED->specified;
             };
             Vec3 center=protectedEntity!=null?protectedEntity.position():anchor;
-            if(e.position().distanceTo(center)>rule.leash())eligible=false;
+            if(forbidden||e.position().distanceTo(center)>rule.leash())eligible=false;
             var actual=NativeCombatStates.read(e,p);
             long neighbors=entities.stream().filter(other->other!=e&&other instanceof Enemy&&other.distanceToSqr(e)<16).count();
-            double score=(self?8:0)+(protect?18:0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);
+            double score=(self?8:0)+(protect?18+(NativeCombatStates.meleeAt(e,protectedEntity,protectedEntity.position())?30:0):0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);
             rows.add(new Threat(e,actual,eligible,protect,score));
         }
         threats=List.copyOf(rows);
         projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001));
-        if(rows.stream().anyMatch(Threat::eligible)||projectiles.stream().anyMatch(s->projectileRisk(s,p.position())>1))lastThreatTick=w.tick();
+        if(!rows.isEmpty()||projectiles.stream().anyMatch(s->projectileRisk(s,p.position())>1))lastThreatTick=w.tick();
         var best=rows.stream().filter(Threat::eligible).max(Comparator.comparingDouble(Threat::score)).orElse(null);
         if(best!=null){if(selected!=best.entity){selected=best.entity;selectedAt=w.tick();w.session.add("targetChanges",1);}}else if(selected==null||!selected.isAlive()||selected.position().distanceTo(center(w))>rule.leash()||w.tick()-lastThreatTick>40)selected=null;
     }
@@ -59,5 +60,5 @@ final class CombatAwareness {
         return risk;
     }
     private double projectileRisk(Projectile shot,Vec3 point){var v=shot.getDeltaMovement();var delta=point.add(0,1,0).subtract(shot.position());double t=Math.max(0,Math.min(12,delta.dot(v)/Math.max(.0001,v.lengthSqr())));double miss=shot.position().add(v.scale(t)).distanceTo(point.add(0,1,0));return Math.max(0,2-miss);}
-    Map<String,Object> view(){return Map.of("observations",scans,"target",selected==null?"":selected.getUUID().toString(),"threats",threats.stream().map(t->Map.of("actual",t.state,"eligible",t.eligible,"selectionScore",t.score)).toList(),"projectileThreats",projectiles.size(),"lastThreatTick",lastThreatTick);}
+    Map<String,Object> view(){return Map.of("targetName",selected==null?"":selected.getName().getString(),"observations",scans,"target",selected==null?"":selected.getUUID().toString(),"threats",threats.stream().map(t->Map.of("actual",t.state,"eligible",t.eligible,"selectionScore",t.score)).toList(),"projectileThreats",projectiles.size(),"lastThreatTick",lastThreatTick);}
 }

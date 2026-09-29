@@ -24,6 +24,6 @@ final class MovementSkills {
         if(!candidates.isEmpty()){w.wanderTarget=candidates.get(new Random(w.token().getMostSignificantBits()^w.tick()).nextInt(candidates.size()));w.wanderSearch=null;w.session.phase("WANDER");w.actor.move(w.token(),w.wanderTarget);return;}
         if(w.wanderSearch.exhausted()||w.wanderSearch.reached().size()>512){w.wanderSearch=null;w.waitFor(w.wanderEvaluator.encounteredUnloaded()?"WAITING_CHUNKS":"NO_REACHABLE_IDLE_POINT",40);}
     }
-    static void guard(SkillWork w){if(w.session.spec().area()==null){var target=w.combat.protectedEntity;if(target==null){w.waitFor("PROTECTED_TARGET_ABSENT",10);return;}if(w.player().distanceTo(target)>w.session.spec().startDistance())w.actor.move(w.token(),target.position());else w.waitFor("PROTECTING_TARGET",10);}else if(w.session.spec().route().isEmpty())wander(w);else patrol(w);}
+    static void guard(SkillWork w){if(w.session.spec().area()==null||w.session.spec().combat().engagement()==dev.mineagent.runtime.core.task.CombatPolicy.Engagement.PROTECT){var target=w.combat.protectedEntity;if(target==null){w.waitFor("PROTECTED_TARGET_ABSENT",10);return;}double distance=w.player().distanceTo(target);if(distance<=w.session.spec().stopDistance())w.chasing=false;else if(distance>w.session.spec().startDistance())w.chasing=true;if(w.chasing)w.actor.move(w.token(),target.position());else w.waitFor("PROTECTING_TARGET",10);}else if(w.session.spec().route().isEmpty())wander(w);else patrol(w);}
     private MovementSkills(){}
 }
