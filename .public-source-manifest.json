@@ -934,8 +934,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "82039c3f4a6f60a8e7ba266c7aca2d2c759f4b6ac697158580609c8bc2a83338",
-      "bytes": 291832
+      "sha256": "576232b5547ba7ab40188e91d6ad888c63747892d58c27471a70a6884a8ff826",
+      "bytes": 292983
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1389,8 +1389,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "c751b3e9436684fa5402e2af4d848a3f70a8b6d3255747be5fae9bfc70b9742a",
-      "bytes": 72571
+      "sha256": "7c35396e52809e3b23c673dc339eda5a3dd0f3418d03dc5df0a3b86f1a0b0087",
+      "bytes": 72576
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/NativeChatSegments.java",
@@ -2414,8 +2414,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSession.java",
-      "sha256": "103b93946b9b7967d6c4b6836d32c9fde07f9570c57b84de49e95ffa61acdeff",
-      "bytes": 4379
+      "sha256": "fedd4d9b642df811568d1728695903cff4606c9ab2fb2e6b7263aeb1d881cc55",
+      "bytes": 4596
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSpec.java",
@@ -3004,8 +3004,8 @@
     },
     {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
-      "sha256": "88c48cdc9cbcbc4a81d9e0ead3366728aa2ceacb3411cc0b22c27745056090c0",
-      "bytes": 3021
+      "sha256": "9662d90732250b29af496a7e64eae45b4efcc147bd35a9acc8f7258810031424",
+      "bytes": 3102
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3209,8 +3209,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeNavigationIntent.java",
-      "sha256": "04939e34ac50a8a2d7870762a0674616a4add2518550d5a6a0485d9c67dd024c",
-      "bytes": 4845
+      "sha256": "63d5bff372b947085be516b5da97fed3f7c0406a540472c24cfeced5922fd2a8",
+      "bytes": 5279
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeSurfaceNavigation.java",
@@ -3354,23 +3354,28 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomousBodyClient.java",
-      "sha256": "d5cc9dfd1996cc146ad4724ab31c6269e10784c826ad4d99bf3b64e205a1126c",
-      "bytes": 16006
+      "sha256": "78c883336ba4ca49d9ba8ddbfe04236f2420d71f62b72260813ffbdfdbcd9b1f",
+      "bytes": 13751
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomyVirtualInput.java",
+      "sha256": "8e1cad2f992edd680237e896e128f14aaaa13d91487823e9d008bc63f15ef5ea",
+      "bytes": 892
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "sha256": "c2bf531e89eeb252d2a5844639e1f5c5875d9c365e8aebc32bda51dcd2ee8ae1",
-      "bytes": 6415
+      "sha256": "7c253688af4730cfba611f924cbffa44ad06c963bd9adec6f0f4daa69a95a36c",
+      "bytes": 7308
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "a8ec9043cd84b922d3a1c6d7c1e9e4bb54cb46edadd585964f03725c7c214289",
-      "bytes": 17105
+      "sha256": "d0010f4323e5c5fbb68c6f7b2c4f555e4a876dc12a8d1dccb6d131f73ae3f94e",
+      "bytes": 20576
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
-      "sha256": "198fd973ab03d62e7df1593e1fc882190b74ddd77b963e6c65ddef27620ebfe3",
-      "bytes": 14019
+      "sha256": "b104abaea584439a189902e8109450a128a2b2738a3ef02208947a217e7300dc",
+      "bytes": 14120
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyReviewScreen.java",
@@ -3556,6 +3561,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",
       "sha256": "b1141de7882801d767c90ced3e541215be5b1eca30876b847cff7fca3b0a5fa9",
       "bytes": 13490
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
+      "sha256": "1d15561292c63eb4f2d8deea8933b200d94e8fa385d4906c79b896184103b43b",
+      "bytes": 5723
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/KubeInterfaceRenderer.java",
@@ -4508,6 +4518,16 @@
       "bytes": 481
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/AutonomyGameInputMixin.java",
+      "sha256": "837468492f09334fea627e167bf0250c133fba83f9ec1403dd7cae0b0a1c8b82",
+      "bytes": 1079
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/AutonomyKeyboardInputMixin.java",
+      "sha256": "3b83085ef06b0ded5aea0db1883b83851a1383ece920214b94f3c34a88e8e4e0",
+      "bytes": 793
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/AvatarRendererMixin.java",
       "sha256": "11b00c0b00a8ac399a5213d428a2064f0233569954b594205eab783e6820469d",
       "bytes": 1532
@@ -4594,8 +4614,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/PlayerBodyMouseMixin.java",
-      "sha256": "6db399a39ef1dde2b517beb0f084f1dbfb7b9a965be0ae51d964f00215166bb1",
-      "bytes": 577
+      "sha256": "2d23ec8cdf548d68c7533e558646e8685dd08025e5ea44f30d376ef4defa24bf",
+      "bytes": 796
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/PlayerControlKeyAccess.java",
@@ -4654,8 +4674,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/network/AutonomyPayloads.java",
-      "sha256": "bcfdfb8c8697bfdab1fa5636eccf9e7657bfeb9d657012c78383adf75be68726",
-      "bytes": 2303
+      "sha256": "91d7830656688b1eb3711ca1a8c5277c1339294267a6691e0ee085b7194b39c7",
+      "bytes": 2320
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/network/MineAgentNetwork.java",
@@ -4754,8 +4774,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "59cc1e982999ebcdec472a83078ef6d4ef0493434329f5808f15bd349625829b",
-      "bytes": 5624
+      "sha256": "43b2d60525b5d323cd92d80e807808c29930db313adebca21b00f649b53ec4d0",
+      "bytes": 5668
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillActor.java",
@@ -4764,13 +4784,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "sha256": "1d49d72eef063ce2b09339518bc4580da1cf2eae93e2198c6bc4eca264da92c8",
-      "bytes": 15924
+      "sha256": "88a16fa61d2e457f3ad582f786d14969ff24e3ec1925af99beff872d86b3163c",
+      "bytes": 16530
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "sha256": "2c9df0c0fb5b496c58b56ec92fc7c4a243431c6f9fb0337ee38643b9de75fc89",
-      "bytes": 7538
+      "sha256": "31f0fa8000e2399029cd9ecb5825f41527bf631a31349450f156866ff859a5fe",
+      "bytes": 7555
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/AgentTaskExecutor.java",
@@ -4789,8 +4809,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/AutonomousPlayerAgent.java",
-      "sha256": "7d2d7ae0d718b59fa65ec440c7ebf6e7f26989fd4895a79a26dcb9b1c92bdc63",
-      "bytes": 18265
+      "sha256": "c5a05ff5a36e83d8a792911af5bef3466bf2fdd00366d650b1913707c0523f56",
+      "bytes": 18787
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/CraftingUseSmokeServer.java",
@@ -5844,8 +5864,8 @@
     },
     {
       "path": "neoforge/src/main/resources/mineagent_client.mixins.json",
-      "sha256": "722a84fd83cc2eb30b6baccbb8c23d78c27da593f2fd85a5166a78584a0b1a5b",
-      "bytes": 1141
+      "sha256": "910735cd0ac0b67c9fb298b3ff3bc6d554ea480b6343c9e3dd4c7e5ac092a829",
+      "bytes": 1219
     },
     {
       "path": "neoforge/src/main/resources/mineagent_container.mixins.json",

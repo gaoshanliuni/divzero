@@ -14,7 +14,7 @@ public final class AutonomyPayloads {
     public record Input(UUID session,UUID consent,String kind,boolean paused) implements CustomPacketPayload {
         public static final Type<Input> TYPE=new Type<>(Identifier.fromNamespaceAndPath("mineagent_runtime","autonomy_input"));
         public static final StreamCodec<RegistryFriendlyByteBuf,Input> CODEC=CustomPacketPayload.codec((v,b)->{b.writeUUID(v.session);b.writeUUID(v.consent);b.writeUtf(v.kind,16);b.writeBoolean(v.paused);},b->new Input(b.readUUID(),b.readUUID(),b.readUtf(16),b.readBoolean()));
-        public Input{if(!Set.of("START","STOP","HEARTBEAT").contains(kind))throw new IllegalArgumentException("AUTONOMY_INPUT");}public Type<Input> type(){return TYPE;}
+        public Input{if(!Set.of("START","STOP","HEARTBEAT","PAUSE","RESUME").contains(kind))throw new IllegalArgumentException("AUTONOMY_INPUT");}public Type<Input> type(){return TYPE;}
     }
     public record Frame(UUID session,UUID consent,long sequence,String data) implements CustomPacketPayload {
         public static final Type<Frame> TYPE=new Type<>(Identifier.fromNamespaceAndPath("mineagent_runtime","autonomy_frame"));

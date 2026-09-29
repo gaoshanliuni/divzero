@@ -11,6 +11,8 @@
     "client.AgentPlayerInfoSkinMixin",
     "client.AgentNameMixin",
     "client.PlayerControlKeyAccess",
+    "client.AutonomyKeyboardInputMixin",
+    "client.AutonomyGameInputMixin",
     "client.PlayerBodyMouseMixin",
     "client.PlayerBodyFocusMixin",
     "client.PlayerBodyLevelMixin",

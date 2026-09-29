@@ -80,8 +80,27 @@ public final class PersistentSkillSmokeClient {
         action("focus-only-test-game",()->{org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(null);});
         action("start-real-player-farm",()->tool("farm_area",area("player_farm","player",3,101,6,3,101,6).put("crop","minecraft:wheat")));
         waitFor("native-player-input-harvest-replant",1800,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=1));
+        action("released-cursor-and-append-button",()->{require(!mc().mouseHandler.isMouseGrabbed(),"AUTONOMY_CURSOR_NOT_RELEASED");dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick("append");require(mc().screen instanceof net.minecraft.client.gui.screens.ChatScreen,"APPEND_DID_NOT_OPEN_CHAT");return CompletableFuture.completedFuture(null);});
+        action("grow-while-chat-open",()->server(p->{crops(p,3,3,6);return null;}));
+        waitFor("chat-does-not-pause-farming",1000,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=2));
+        action("open-native-f2-while-farming",()->{require(mc().screen instanceof net.minecraft.client.gui.screens.ChatScreen,"CHAT_WAS_CLOSED_BY_CONTROL");dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.open();return server(p->{crops(p,3,3,6);return null;});});
+        waitFor("f2-does-not-pause-farming",1000,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=3));
+        action("background-test-game",()->{mc().setScreen(null);org.lwjgl.glfw.GLFW.glfwIconifyWindow(mc().getWindow().handle());return server(p->{crops(p,3,3,6);return null;});});
+        waitFor("background-does-not-pause-farming",1400,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=4));
+        action("restore-test-game",()->{org.lwjgl.glfw.GLFW.glfwRestoreWindow(mc().getWindow().handle());org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(null);});
+        waitFor("panel-ready-after-background",150,()->CompletableFuture.completedFuture(mc().isWindowActive()&&Boolean.TRUE.equals(dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.observation().get("visible"))));
+        action("pause-using-hud-button",()->{dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick("pause");return CompletableFuture.completedFuture(null);});
+        waitFor("manual-pause-acknowledged",150,()->CompletableFuture.completedFuture(AutonomousBodyClient.manuallyPaused()));
+        action("grow-during-manual-pause",()->server(p->{crops(p,3,3,6);baseline=p.level().getServer().getTickCount();return null;}));
+        waitFor("manual-pause-blocks-actions",150,()->server(p->{if(p.level().getServer().getTickCount()-baseline<40)return false;require(p.level().getBlockState(new BlockPos(3,101,6)).getValue(CropBlock.AGE)==7,"MANUAL_PAUSE_STILL_HARVESTED");return true;}));
+        action("continue-using-hud-button",()->{dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick("pause");return CompletableFuture.completedFuture(null);});
+        waitFor("manual-resume-continues-work",1000,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=5));
+        action("exit-using-hud-button",()->{screen("real-player-controls");dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick("exit");require(!AutonomousBodyClient.active(),"EXIT_BUTTON_FAILED");return CompletableFuture.completedFuture(null);});
+        waitFor("exit-button-cancels-skill",150,()->state("player_farm",s->s.path("state").asText().equals("CANCELLED")));
+        action("restart-to-check-escape",()->tool("farm_area",area("player_esc","player",3,101,6,3,101,6).put("crop","minecraft:wheat")));
+        waitFor("escape-session-active",150,()->CompletableFuture.completedFuture(AutonomousBodyClient.active()&&!mc().mouseHandler.isMouseGrabbed()));
         action("real-player-escape",()->{screen("real-player-farm");require(AutonomousBodyClient.active(),"PLAYER_ADAPTER_NOT_ACTIVE");PlayerBodyControlClient.physicalKey(mc().getWindow().handle(),1,new net.minecraft.client.input.KeyEvent(256,0,0));require(!AutonomousBodyClient.active(),"ESC_DID_NOT_RELEASE");return CompletableFuture.completedFuture(null);});
-        waitFor("escape-cancels-skill",150,()->state("player_farm",s->s.path("state").asText().equals("CANCELLED")));
+        waitFor("escape-cancels-skill",150,()->state("player_esc",s->s.path("state").asText().equals("CANCELLED")));
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){if(!Boolean.getBoolean("mineagent.skillSmoke")||done)return;try{
         if(mc().player==null||mc().getSingleplayerServer()==null)return;ticks++;if(!initialized){initialized=true;prepare();stageAt=ticks;}if(ticks%100==0)Files.writeString(root().resolve("progress.json"),JSON.writeValueAsString(Map.of("stage",STEPS.isEmpty()?"DONE":STEPS.getFirst().name,"ticks",ticks,"busy",busy,"observed",lastObservation==null?Map.of():lastObservation,"input",NativeSkillInput.observation())));
