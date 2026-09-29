@@ -42,7 +42,7 @@ public final class PersistentSkillSmokeClient {
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(playerActor()){action("real-player-equipment-and-input",()->{org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return server(p->{var b=body(p);p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();for(int i=0;i<36;i++)p.getInventory().setItem(i,b.getInventory().getItem(i).copy());p.inventoryMenu.broadcastChanges();b.teleportTo(p.level(),27.5,101,25.5,Set.of(),0,0,true);return null;});});}
-        if(mode.equals("navigation")){navigation();return;}if(mode.equals("fishing")){fishing();return;}if(mode.equals("combat")){combat();return;}if(mode.equals("player")){player();return;}if(mode.equals("cooperation")){cooperation();return;}if(mode.equals("patrol")){patrol();return;}if(mode.equals("performance")){performance();return;}if(mode.equals("lifecycle")){lifecycle();return;}if(mode.equals("uncertain")){uncertain();return;}if(mode.equals("crops")){cropAdapters();return;}work();
+        if(mode.equals("navigation")){navigation();return;}if(mode.equals("fishing")||mode.equals("fishing_defense")){fishing();return;}if(mode.equals("combat")){combat();return;}if(mode.equals("player")){player();return;}if(mode.equals("cooperation")){cooperation();return;}if(mode.equals("patrol")){patrol();return;}if(mode.equals("performance")){performance();return;}if(mode.equals("lifecycle")){lifecycle();return;}if(mode.equals("uncertain")){uncertain();return;}if(mode.equals("crops")){cropAdapters();return;}work();
     }
     private static void corridor(ServerPlayer p,boolean openEntrance){
         for(int x=-1;x<=23;x++)for(int y=101;y<=107;y++){p.level().setBlock(new BlockPos(x,y,-1),Blocks.STONE.defaultBlockState(),2);p.level().setBlock(new BlockPos(x,y,1),Blocks.STONE.defaultBlockState(),2);}for(int y=101;y<=107;y++){p.level().setBlock(new BlockPos(-1,y,0),Blocks.STONE.defaultBlockState(),2);p.level().setBlock(new BlockPos(23,y,0),Blocks.STONE.defaultBlockState(),2);}
@@ -84,8 +84,15 @@ public final class PersistentSkillSmokeClient {
         waitFor("cancel-is-terminal",100,()->server(p->{if(p.level().getServer().getTickCount()-baseline<40)return false;require(body(p).position().distanceToSqr(stoppedAt)<.1,"CANCELLED_SKILL_MOVED");return true;}));
     }
     private static void fishing(){
+        boolean defense=System.getProperty("mineagent.skillSmokeMode","").equals("fishing_defense");
         action("native-fishing-water-and-shore",()->server(p->{for(int x=-6;x<=-1;x++)for(int z=12;z<=18;z++)for(int y=99;y<=100;y++)p.level().setBlock(new BlockPos(x,y,z),Blocks.WATER.defaultBlockState(),2);controlled(p).teleportTo(p.level(),.5,101,14.5,Set.of(),90,25,true);return null;}));
-        action("start-fishing",()->tool("fish_at",area("fish","ai",-6,100,12,-1,100,18).put("limit",1)));
+        if(defense)action("unenchanted-rod-for-interruption-window",()->server(p->{controlled(p).getInventory().setItem(5,new ItemStack(Items.FISHING_ROD));return null;}));
+        action("start-fishing",()->tool("fish_at",area("fish","ai",-6,100,12,-1,100,18).put("limit",1).put("defend",defense)));
+        if(defense){
+            waitFor("owned-hook-waiting-before-threat",1500,()->state("fish",s->s.path("phase").asText().equals("FISH_WAIT_BITE")));
+            action("threat-interrupts-owned-cast",()->server(p->{var b=controlled(p);var mob=EntityType.ZOMBIE.create(p.level(),EntitySpawnReason.COMMAND);mob.setPos(b.getX()+1.8,b.getY(),b.getZ());mob.setNoAi(true);mob.setHealth(4);mob.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.IRON_HELMET));p.level().addFreshEntity(mob);return null;}));
+            waitFor("fishing-session-keeps-progress-through-defense",1500,()->state("fish",s->s.path("counters").path("verifiedHits").asInt()>0&&s.path("counters").path("interruptedCasts").asInt()==1));
+        }
         waitFor("actual-bite-reel-loot",7500,()->state("fish",s->s.path("state").asText().equals("COMPLETED")&&s.path("counters").path("fishingCatches").asInt()==1));
     }
     private static void combat(){
