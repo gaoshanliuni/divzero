@@ -3153,5 +3153,11 @@
   "当前正在使用物品，请稍后重试。": "An item is in use; try again shortly.",
   "请先关闭正在使用的容器。": "Close the current container first.",
   "该物品不能放入目标装备格。": "This item cannot be placed in the destination equipment slot.",
-  "没有管理该 AI 背包的权限。": "You do not have permission to manage this AI inventory."
+  "没有管理该 AI 背包的权限。": "You do not have permission to manage this AI inventory.",
+  "鞋子": "Boots",
+  "护腿": "Leggings",
+  "胸甲": "Chestplate",
+  "头盔": "Helmet",
+  "副手": "Offhand",
+  "数量": "Amount"
 }

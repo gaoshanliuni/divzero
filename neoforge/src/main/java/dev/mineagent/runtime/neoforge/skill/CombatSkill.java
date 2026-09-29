@@ -150,8 +150,9 @@ final class CombatSkill {
         boolean contactDanger=actual.inNativeMeleeRange()&&!actual.meleeRestricted()&&actual.attacks().stream().anyMatch(a->a.running()&&a.kind().equals("MELEE")&&(a.cooldownTicks()<0||a.cooldownTicks()<5));
         if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION&&(attackedRecently||contactDanger&&!(inReach&&ready)||actual.areaAttack())){
             phase(w,"MELEE_EXIT");
-            move(w,w.positioning.choose(w,"RETREAT",withdrawal),target,false);
-            shield(w,target);return;
+            boolean longReach=enemyReach>reach;
+            move(w,w.positioning.choose(w,"RETREAT",withdrawal),target,longReach);
+            if(!longReach||!w.positioning.longRetreat())shield(w,target);return;
         }
         if(!inReach){
             phase(w,"MELEE_APPROACH");
@@ -169,7 +170,7 @@ final class CombatSkill {
         // Client attacks are acknowledged by native cooldown/damage; never assume a hit or knockback.
         if(p.getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt){
             w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;
-            phase(w,combo?"STAP_SPACE":"MELEE_EXIT");w.sprintApproach=false;if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION)move(w,exit,target,false);
+            phase(w,combo?"STAP_SPACE":"MELEE_EXIT");w.sprintApproach=false;if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION)move(w,exit,target,enemyReach>reach);
         }
     }
     /** Actual health damage plus continuing native melee contact outranks ordinary pursuit and equipment choice. */
