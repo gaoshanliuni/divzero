@@ -14,7 +14,9 @@ public final class ToolArguments {
         try {
             String source=input.strip();
             if(source.startsWith("\uFEFF"))source=source.substring(1).strip();
-            if(source.startsWith("```json\n")||source.startsWith("```\n")){
+            if(source.startsWith("```")){
+                int lineBreak=source.indexOf('\n');String fence=lineBreak<0?source:source.substring(0,lineBreak).strip();
+                if(!(fence.equalsIgnoreCase("```json")||fence.equals("```")))throw new IllegalArgumentException("AGENT_TOOL_JSON_INVALID");
                 if(!source.endsWith("```"))throw new IllegalArgumentException("AGENT_TOOL_JSON_INVALID");
                 source=source.substring(source.indexOf('\n')+1,source.length()-3).strip();
             }

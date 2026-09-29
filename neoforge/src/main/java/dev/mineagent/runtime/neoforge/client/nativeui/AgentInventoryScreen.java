@@ -16,14 +16,18 @@ public final class AgentInventoryScreen extends AbstractContainerScreen<AgentInv
     @Override public void extractBackground(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partial){
         super.extractBackground(graphics,mouseX,mouseY,partial);
         int x=leftPos,y=topPos;
-        // Use vanilla artwork, retaining texture-pack support. Hide the unused crafting area.
-        graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x,y,0,0,176,83,256,256);
-        graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x,y+83,0,77,176,89,256,256);
-        graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x,y+172,0,67,176,101,256,256);
-        graphics.fill(x+94,y+16,x+170,y+77,0xffc6c6c6);
+        // Stretch only neutral panel/border pixels. Copying whole inventory bands would
+        // leave a second, non-interactive set of slots behind the real container slots.
+        graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x+4,y+4,4,4,168,imageHeight-8,1,1,256,256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x,y,0,0,176,4,256,256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x,y+imageHeight-4,0,162,176,4,256,256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x,y+4,0,4,4,imageHeight-8,4,1,256,256);
+        graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x+172,y+4,172,4,4,imageHeight-8,4,1,256,256);
+        graphics.fill(x+27,y+17,x+74,y+90,0xff404040);
         for(int i=0;i<menu.slots.size();i++){var slot=menu.slots.get(i);graphics.blit(RenderPipelines.GUI_TEXTURED,TEXTURE,x+slot.x-1,y+slot.y-1,7,83,18,18,256,256);}
         int selected=Math.clamp(menu.selectedHotbar.get(),0,8);int sx=x+7+18*selected;
         graphics.fill(sx,y+154,sx+18,y+156,0xff4b8f36);graphics.fill(sx,y+172,sx+18,y+174,0xff4b8f36);
+        graphics.item(menu.getSlot(32+selected).getItem(),x+115,y+45);
         var body=minecraft.level==null?null:minecraft.level.getPlayerByUUID(menu.agentId);
         if(body!=null)InventoryScreen.extractEntityInInventoryFollowsMouse(graphics,x+27,y+18,x+73,y+89,29,0.0625f,mouseX,mouseY,body);
         graphics.text(font,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("主手槽位")),x+96,y+25,0xff404040,false);

@@ -1434,8 +1434,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolArguments.java",
-      "sha256": "13fb34acf64c18cd233be637c16690f933eb7e9b1882fd7f84c8f506d5181f2a",
-      "bytes": 1791
+      "sha256": "3066a2123c7efd4a11cd78a260516829132604d28b0ece0d45088c8acc4568a3",
+      "bytes": 2019
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureAnimation.java",
@@ -2784,8 +2784,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolArgumentsTest.java",
-      "sha256": "917c7288417455a0a560a543adab9658092824285437f944c175a3accf1097ef",
-      "bytes": 1064
+      "sha256": "2c84801de727c33f1448c7fd971763a951af57abc69a0f044484dc02b573a96e",
+      "bytes": 1189
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureAnimationTest.java",
@@ -3544,8 +3544,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "4db49d773f83d06125e9f3f05c88a0da59c45ffd9dc336f6ac3867c7fa7b8c1a",
-      "bytes": 89797
+      "sha256": "88528549099cdd7502a52ac46414abcc172c853763fd0c1ed4912f3201bce2e5",
+      "bytes": 90197
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -3739,8 +3739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentInventoryScreen.java",
-      "sha256": "06048c6b742f5c2c01ed358b639a38ac297a8d20de8335ab23d3dedf33e0e670",
-      "bytes": 2304
+      "sha256": "ed11852216aa6d84be8993225a628cbb5278990b75d274b1ad3c2bfa1d756430",
+      "bytes": 2684
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentModelPanel.java",
@@ -3859,8 +3859,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeFunctionalSmokeClient.java",
-      "sha256": "2a1bab413e98551bba29f6f9628bbfbe2b496e0a210a417b26f8be6b9d63bdb9",
-      "bytes": 11811
+      "sha256": "faebd4ab33b81578ac66436e4bd01f445483db34c66f23f53a29b3b9e06b531c",
+      "bytes": 14492
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeGenerationPanel.java",
