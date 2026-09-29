@@ -3134,5 +3134,8 @@
   "保持攻击边缘，等待冷却": "Hold the edge of reach while cooling down",
   "本次控制已完成": "Control sequence completed",
   "已退出托管": "Takeover ended",
-  "托管已结束": "Takeover ended"
+  "托管已结束": "Takeover ended",
+  "视角：第一人称": "View: First person",
+  "视角：第三人称（背后）": "View: Third person (back)",
+  "视角：第三人称（正面）": "View: Third person (front)"
 }

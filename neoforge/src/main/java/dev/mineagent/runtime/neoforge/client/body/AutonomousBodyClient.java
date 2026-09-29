@@ -29,6 +29,7 @@ public final class AutonomousBodyClient {
     private static void release(){AutonomyVirtualInput.clear();for(var k:keys()){key(k,false);((PlayerControlKeyAccess)k).mineagent$bodyClicks(0);}}
     private static void cancelUse(){var mc=Minecraft.getInstance();if(mc.gameMode!=null&&mc.player!=null){mc.gameMode.stopDestroyBlock();if(mc.player.isUsingItem())mc.player.stopUsingItem();mc.player.setSprinting(false);}}
     public static boolean active(){return flight!=null;}
+    static Object cameraSession(){return flight;}
     private static boolean identity(Flight f){var mc=Minecraft.getInstance();return mc.getConnection()!=null&&mc.getConnection().getConnection()==f.wire&&mc.level==f.level&&mc.player==f.player&&mc.player.isAlive()&&!mc.player.isSpectator()&&f.offer.dimension().equals(mc.level.dimension().identifier().toString());}
     private static boolean usable(){var mc=Minecraft.getInstance();return mc.player!=null&&mc.level!=null&&!mc.isPaused()&&!mc.player.isPassenger();}
     public static boolean blocksPhysical(){return active()&&Minecraft.getInstance().screen==null;}

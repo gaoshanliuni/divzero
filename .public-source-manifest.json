@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "files": [
     {
       "path": ".gitattributes",
@@ -728,6 +728,11 @@
       "bytes": 844
     },
     {
+      "path": "client/src/main/java/dev/mineagent/runtime/client/control/TakeoverCameraRotation.java",
+      "sha256": "4212cad82b16617f41361a9efc1216cd3c9cd830105b1862a66acf257c96235f",
+      "bytes": 1220
+    },
+    {
       "path": "client/src/main/java/dev/mineagent/runtime/client/control/UiLanguageCatalog.java",
       "sha256": "64b8f50cc310d6d5cbe55d0bff853119feef092d6902e65cb8233c11641b92e3",
       "bytes": 987
@@ -944,8 +949,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "aecee2e48ee8e05a25c4b543779993562fe0cde32d9bb5de79aecf10014c98bf",
-      "bytes": 298989
+      "sha256": "562ea6ca2433ae6438215e690d2aeada01874e01f0495d5955a45f20850b3962",
+      "bytes": 299175
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -971,6 +976,11 @@
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ScopedEscapeExitTest.java",
       "sha256": "3215dd22bd17361ad23e83ae927e3162e62b18d51ecd9b5dcc41ed5f78c749dc",
       "bytes": 1682
+    },
+    {
+      "path": "client/src/test/java/dev/mineagent/runtime/client/control/TakeoverCameraRotationTest.java",
+      "sha256": "d69a951e512df68761f9e443d0502563bed18d799d04e8dfea778d68c369e3ad",
+      "bytes": 1574
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/UiLanguagePreferencesTest.java",
@@ -3073,6 +3083,11 @@
       "bytes": 11207
     },
     {
+      "path": "docs/TAKEOVER_CAMERA.md",
+      "sha256": "1c87c24805fe90dcb914d6ccc00daac19590ce9ec42365ac184449ab83377bb2",
+      "bytes": 1684
+    },
+    {
       "path": "docs/THIRD_PARTY_NOTICES.md",
       "sha256": "8596af1ac51ae1db617e609beb54cc1d5c6072f953d665834465318e5e7967c7",
       "bytes": 3429
@@ -3138,8 +3153,13 @@
       "bytes": 2289
     },
     {
+      "path": "docs/releases/1.0.22.md",
+      "sha256": "c9f145652be71e692a6eaab1351d99439bd6747db4f414e5cb81d5669a49a6c6",
+      "bytes": 782
+    },
+    {
       "path": "gradle.properties",
-      "sha256": "b2e5406f8fa68f3b1b3c0db484fd1276d53b9555478832036c359c0a6d87cd75",
+      "sha256": "65f9bf156f415f5bf47d38046ad122f4fa4c84126412184071b0e91a19230974",
       "bytes": 496
     },
     {
@@ -3469,8 +3489,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomousBodyClient.java",
-      "sha256": "8da5ff9ae8df6762f1f70a4d434b31f4b24034c457704e0fdd3f33766cc881cd",
-      "bytes": 14124
+      "sha256": "291ad2cafea322b6da5817b48c3db3776b3331d5b9828c4c388638e6cf618397",
+      "bytes": 14174
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomyVirtualInput.java",
@@ -3489,13 +3509,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "ebb844a871b49a8b3a70129c70f9bef5f084198027b28afa24c3e86907b63b98",
-      "bytes": 71035
+      "sha256": "6ae01fcd42fe9f7d39e68e83135f9d63ea8b49fd2aafd655f71ebd5d0bca0106",
+      "bytes": 75433
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
-      "sha256": "9ca262baf439d4b25fb971696306a88d62ee27215d0dee8aa42066ef90994f75",
-      "bytes": 14938
+      "sha256": "286cad639ce5aa6db6f49eca578ac1b6a3b36c648364539cbe38e55549202fd0",
+      "bytes": 15120
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyReviewScreen.java",
@@ -3506,6 +3526,16 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodySmokeClient.java",
       "sha256": "f45695d63c606b401319a5a3431ccfc670585555eafaa3f1e1f19dbb9edd97c5",
       "bytes": 9418
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/TakeoverCameraClient.java",
+      "sha256": "5b339b7e5f17950fc8526526b0f3e5d148aaf051b259f836ef89e0d733fe7bca",
+      "bytes": 3915
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/TakeoverCameraSmokeClient.java",
+      "sha256": "06826217f5ae06b94e47be42435f83cdaf9f62e8999cbdb9033d4c6de04ed763",
+      "bytes": 3341
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/AiNameHover.java",
@@ -3684,8 +3714,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
-      "sha256": "acc75a8e39690f5e6cd74b9782fd878d12373fa4133149ea7bf4e2c7e6e81079",
-      "bytes": 5739
+      "sha256": "0172dd6716da87bc2e88de6818b1274aff56e594af318a2b7614c394390a2fec",
+      "bytes": 6363
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/KubeInterfaceRenderer.java",
