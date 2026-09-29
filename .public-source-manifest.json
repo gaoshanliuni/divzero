@@ -3059,8 +3059,8 @@
     },
     {
       "path": "docs/TACTICAL_PLAYER_BEHAVIOR.md",
-      "sha256": "68cdc8393ac29b0d1fe0178688e893e8f1e706dcba5a78f1c2d214216fd5c531",
-      "bytes": 4685
+      "sha256": "ab71e2ed5fc4bef3f043746fb941888fde6c904df75797b07ab91444e26b8360",
+      "bytes": 5138
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3459,8 +3459,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "sha256": "db65cca1e917f38fe4598fe6335ce15601c1da863d45c91bc6c34b647404b11c",
-      "bytes": 9659
+      "sha256": "0094b16ac3e80be148195bf9476d5af05de82746fa1ed37111e36392c0db4db8",
+      "bytes": 9771
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
@@ -4874,8 +4874,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/AiSkillActor.java",
-      "sha256": "fdf9351d2131106ef9f0f0de41ceb0021706d34589865fe552ae0a714df31b18",
-      "bytes": 6212
+      "sha256": "4d82159e0891746617325ea6935b4ae7eb1cc9d99d570097952b326439f00384",
+      "bytes": 6289
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
@@ -4934,8 +4934,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "6b108f509ed91dbdd70bda22e4ca1c8572a3f1267c668019b2e1b7b93fb896e0",
-      "bytes": 8009
+      "sha256": "9b7fbf8bac5eb84984dbbdd37100168c6c9798b1a9964d390b5f14c69c30eb06",
+      "bytes": 8089
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillAcceptanceFaults.java",
