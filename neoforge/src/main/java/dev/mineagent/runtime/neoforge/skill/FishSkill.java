@@ -17,7 +17,7 @@ final class FishSkill {
         if(!p.level().hasChunkAt(w.block)||!p.level().getFluidState(w.block).is(FluidTags.WATER)){w.abandonTarget();w.waitFor("FISHING_SPOT_CHANGED",40);return;}
         if(w.workStage==0){
             if(w.operation!=null){
-                if(!w.saved.isDone())return;w.actor.aim(w.token(),Vec3.atCenterOf(w.block));w.actor.useItem(w.token(),w.operation,false);w.executed=true;
+                if(!w.saved.isDone())return;w.actor.aim(w.token(),Vec3.atCenterOf(w.block));if(p.fishing==null&&w.workStage==0||p.fishing!=null&&w.workStage==2)w.actor.useItem(w.token(),w.operation,false);w.executed=true;
                 if(p.fishing!=null){w.hook=p.fishing.getUUID();w.confirm("CAST_CONFIRMED",Map.of("hook",w.hook.toString()));w.workStage=1;w.session.phase("FISH_WAIT_BITE");w.startedTick=w.tick();}
                 else if(w.tick()-w.startedTick>80)w.pause("FISH_CAST_OUTCOME_UNCERTAIN");return;
             }
@@ -32,7 +32,7 @@ final class FishSkill {
             w.session.transition(dev.mineagent.runtime.core.task.SkillSession.State.WAITING,"WAITING_FOR_REAL_BITE");if(w.tick()-w.startedTick>7200)w.pause("FISHING_NO_BITE_REQUIRES_NEW_SPOT");return;
         }
         if(w.workStage==2){
-            if(!w.saved.isDone())return;w.actor.aim(w.token(),Vec3.atCenterOf(w.block));w.actor.useItem(w.token(),w.operation,false);w.executed=true;
+            if(!w.saved.isDone())return;w.actor.aim(w.token(),Vec3.atCenterOf(w.block));if(p.fishing==null&&w.workStage==0||p.fishing!=null&&w.workStage==2)w.actor.useItem(w.token(),w.operation,false);w.executed=true;
             if(p.fishing==null){int fishStat=p.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.FISH_CAUGHT));var after=inventory(p);int newItems=p.level().getEntitiesOfClass(ItemEntity.class,p.getBoundingBox().inflate(8),e->!w.nearbyItemsBefore.contains(e.getUUID())).stream().mapToInt(e->e.getItem().getCount()).sum();boolean pickup=!after.equals(w.fishInventoryBefore);
                 if(w.fishedEvent&&(fishStat>w.fishStatBefore||newItems>0||pickup)){w.session.add("fishingCatches",1);w.session.add("nativeFishingDrops",w.fishedItems);if(pickup)w.session.add("fishingPickupObserved",1);w.confirm("REEL_VERIFIED",Map.of("hook",w.hook.toString(),"rodDamageAfter",Integer.toString(p.getMainHandItem().getDamageValue()),"pickupObserved",Boolean.toString(pickup)));w.hook=null;w.workStage=0;
                     if(!w.session.spec().repeat()||w.session.spec().limit()>0&&w.session.count("fishingCatches")>=w.session.spec().limit()){w.completed("FISHING_TARGET_MET");return;}w.waitFor("NEXT_CAST",20);return;}

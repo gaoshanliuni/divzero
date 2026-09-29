@@ -12,10 +12,10 @@ import net.minecraft.world.phys.*;
 import java.util.*;
 
 public final class AiSkillActor implements SkillActor {
-    private final MineAgentPlayer body;private long navigation=-1;private UUID owner,operation;private Vec3 destination;
-    public AiSkillActor(MineAgentPlayer body){this.body=body;}
+    private final MineAgentPlayer body;private final Object level;private final net.minecraft.world.level.GameType mode;private long navigation=-1;private UUID owner,operation;private Vec3 destination;
+    public AiSkillActor(MineAgentPlayer body){this.body=body;level=body.level();mode=body.gameMode.getGameModeForPlayer();}
     public ServerPlayer player(){return body;}public BodyControlCoordinator controls(){return body.controls();}
-    public boolean current(){return body.canAct()&&MineAgentRuntimeServices.bodies(body.level().getServer()).body(body.agentId()).orElse(null)==body;}
+    public boolean current(){return body.canAct()&&body.level()==level&&body.gameMode.getGameModeForPlayer()==mode&&MineAgentRuntimeServices.bodies(body.level().getServer()).body(body.agentId()).orElse(null)==body;}
     public boolean inputReady(){return current()&&body.containerMenu==body.inventoryMenu;}
     private void require(UUID session,dev.mineagent.runtime.api.agent.BodyDomain domain){if(!inputReady()||!controls().owns(session,domain))throw new IllegalStateException("SKILL_CONTROL_CHANGED");owner=session;}
     public String move(UUID session,Vec3 target){require(session,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT);var c=body.movementController();if(navigation<0||c.commandRevision()!=navigation){c.movePreciselyTo(target);navigation=c.commandRevision();destination=target;}else if(destination==null||destination.distanceToSqr(target)>.09){c.updateTarget(navigation,target);destination=target;}return c.outcome();}
