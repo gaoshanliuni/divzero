@@ -47,7 +47,7 @@ public final class ConversationAgentTools {
     public static CompletableFuture<Map<String,Object>> execute(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
-            JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
+            JsonNode args=ToolArguments.parse(tool,arguments);
             if(Set.of("inspect_skills","inspect_behavior").contains(tool)){keys(args);return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(s).inspect(p,agent);}
             if(tool.equals("inspect_buildings")){keys(args,"id","offset");return ServerBuildings.inspect(p,agent,args);}
             if(tool.equals("verify_building")){keys(args,"id","revision");return ServerBuildings.verify(p,agent,args,permit);}

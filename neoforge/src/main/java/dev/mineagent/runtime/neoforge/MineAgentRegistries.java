@@ -22,6 +22,8 @@ import dev.mineagent.runtime.neoforge.content.MediaScreenBlock;
 import dev.mineagent.runtime.neoforge.content.MediaScreenBlockEntity;
 
 public final class MineAgentRegistries {
+    private static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENUS=DeferredRegister.create(Registries.MENU,MineAgentRuntimeMod.MOD_ID);
+    public static final DeferredHolder<net.minecraft.world.inventory.MenuType<?>,net.minecraft.world.inventory.MenuType<dev.mineagent.runtime.neoforge.ui.AgentInventoryMenu>> AGENT_INVENTORY=MENUS.register("agent_inventory",()->net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create(dev.mineagent.runtime.neoforge.ui.AgentInventoryMenu::new));
     private static final DeferredRegister<TicketType> TICKET_TYPES =
             DeferredRegister.create(Registries.TICKET_TYPE, MineAgentRuntimeMod.MOD_ID);
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MineAgentRuntimeMod.MOD_ID);
@@ -106,6 +108,7 @@ public final class MineAgentRegistries {
     }
 
     public static void register(IEventBus modBus) {
+        MENUS.register(modBus);
         TICKET_TYPES.register(modBus);
         DATA_COMPONENTS.register(modBus);
         BLOCKS.register(modBus);

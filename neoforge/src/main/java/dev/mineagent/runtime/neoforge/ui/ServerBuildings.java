@@ -94,11 +94,39 @@ public final class ServerBuildings {
         authorize(p,agent,true);require(permit.getAsBoolean(),"CANCELLED");var h=handle(p,agent,id(args));retireCompleted(h);var server=p.level().getServer();
         if(action.equals("pause")){require(h.job!=null,"NOT_RUNNING");h.job.pause();return CompletableFuture.completedFuture(Map.of("id",h.key.id,"status","PAUSE_REQUESTED","verification","UNVERIFIED"));}
         require(h.job==null&&!h.busy,"BUSY");h.busy=true;var result=new CompletableFuture<Map<String,Object>>();
-        h.opened.thenCompose(ledger->io(()->{var head=ledger.head();require(head.revision()==revision(args),"STALE_REVISION");if(action.equals("resume"))head=ledger.resume();else if(action.equals("recover")){require(Set.of("UNKNOWN","PARTIAL").contains(head.status()),"NOT_RECOVERABLE");}else head=ledger.start(head.revision(),action.toUpperCase(Locale.ROOT));return new Object[]{ledger,head,ledger.design(head.revision())};})).whenComplete((bundle,error)->server.execute(()->{
-            h.busy=false;if(error!=null){result.completeExceptionally(error);return;}if(h.closed){result.completeExceptionally(new IllegalStateException("BUILDING_SERVER_STOPPED"));return;}
+        h.opened.thenCompose(ledger->io(()->{
+            var before=ledger.head();
+            try {
+                require(before.revision()==revision(args),"STALE_REVISION");
+                // Read/validate the immutable definition before starting or resuming a durable operation.
+                var design=ledger.design(before.revision());var head=before;
+                if(action.equals("resume"))head=ledger.resume();
+                else if(action.equals("recover"))require(Set.of("UNKNOWN","PARTIAL").contains(head.status()),"NOT_RECOVERABLE");
+                else head=ledger.start(head.revision(),action.toUpperCase(Locale.ROOT));
+                return new Object[]{ledger,head,design,null};
+            }catch(IllegalArgumentException|IllegalStateException rejected){
+                // An async exception is not evidence of an uncertain world write. Only return a
+                // correction receipt after confirming that this request did not change the ledger.
+                if(!before.equals(ledger.head()))throw rejected;
+                return new Object[]{ledger,before,null,controlRejection(h.key.id,before,rejected)};
+            }
+        })).whenComplete((bundle,error)->server.execute(()->{
+            h.busy=false;if(error!=null){result.completeExceptionally(error);return;}if(bundle[3]!=null){result.complete((Map<String,Object>)bundle[3]);return;}if(h.closed){result.completeExceptionally(new IllegalStateException("BUILDING_SERVER_STOPPED"));return;}
             var design=(BuildingDesign)bundle[2];if(!design.dimension().equals(p.level().dimension().identifier().toString())){result.completeExceptionally(new IllegalStateException("BUILDING_DIMENSION"));return;}
             h.job=new BuildJob(p,agent,h,(ConstructionLedger)bundle[0],(ConstructionLedger.Head)bundle[1],action.equals("recover"),permit,result);
         }));return result;
+    }
+    private static Map<String,Object> controlRejection(String id,ConstructionLedger.Head head,RuntimeException rejected){
+        String guidance=switch(head.status()){
+            case "PLANNED"->"Apply this revision once. Recovery is not needed for a plan that has not run.";
+            case "UNVERIFIED","VERIFIED"->"Do not apply again. Call verify_building for this id/revision; if it fails, inspect and plan a corrected local revision.";
+            case "PAUSED"->"Resume the existing revision; do not apply it again.";
+            case "UNKNOWN","PARTIAL"->"Inspect and recover uncertain cells before deciding whether to undo; do not replay apply.";
+            case "PREPARING","APPLYING"->"The operation is already running. Inspect its status instead of starting another apply.";
+            case "UNDONE"->"Use redo to restore this revision, or inspect before planning another revision.";
+            default->"Inspect this building and its history, then choose an action valid for its current state.";
+        };
+        var out=new LinkedHashMap<String,Object>();out.put("id",id);out.put("status","REJECTED");out.put("error",Objects.toString(rejected.getMessage(),"BUILDING_CONTROL_REJECTED"));out.put("revision",head.revision());out.put("activeRevision",head.activeRevision());out.put("persistentStatus",head.status());out.put("existingOperation",head.operation());out.put("worldModified",false);out.put("ledgerModified",false);out.put("retryGuidance",guidance);return out;
     }
     private static final class BuildJob implements Work {
         final ServerPlayer player;final UUID agent;final Handle handle;final ConstructionLedger ledger;final ConstructionLedger.Head initial;final ServerLevel level;final long permission;final BooleanSupplier permit;final CompletableFuture<Map<String,Object>> result;
@@ -167,7 +195,7 @@ public final class ServerBuildings {
     public static CompletableFuture<Map<String,Object>> verify(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){
         authorize(p,agent,false);var h=handle(p,agent,id(args));retireCompleted(h);require(!h.busy&&h.job==null,"BUSY");h.busy=true;var result=new CompletableFuture<Map<String,Object>>();var server=p.level().getServer();
         h.opened.thenCompose(ledger->io(()->{var head=ledger.head();require(head.revision()==revision(args)&&head.activeRevision()==head.revision(),"VERIFICATION_REVISION");require(Set.of("UNVERIFIED","VERIFIED").contains(head.status()),"NOT_APPLIED");ledger.verified(head.operation(),head.revision(),false,"");return new Object[]{ledger,head,ledger.design(head.revision()),ledger.bounds(head.revision(),null),ledger.footprintHash(head.revision()),ledger.count(head.revision())};})).whenComplete((data,error)->server.execute(()->{
-            h.busy=false;if(error!=null){result.completeExceptionally(error);return;}if(h.closed){result.completeExceptionally(new IllegalStateException("BUILDING_SERVER_STOPPED"));return;}
+            h.busy=false;if(error!=null){result.completeExceptionally(error);return;}if(bundle[3]!=null){result.complete((Map<String,Object>)bundle[3]);return;}if(h.closed){result.completeExceptionally(new IllegalStateException("BUILDING_SERVER_STOPPED"));return;}
             h.job=new BuildingVerifier(p,agent,h.key.id,(ConstructionLedger)data[0],(ConstructionLedger.Head)data[1],(BuildingDesign)data[2],(int[])data[3],(String)data[4],(Long)data[5],permit,result);
         }));return result;
     }

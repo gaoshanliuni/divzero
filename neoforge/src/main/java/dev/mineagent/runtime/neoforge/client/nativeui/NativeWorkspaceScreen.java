@@ -27,6 +27,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     }
     private static final java.util.concurrent.ExecutorService STATE_IO=java.util.concurrent.Executors.newSingleThreadExecutor(Thread.ofVirtual().name("native-workspace-state").factory());
     private static String stateScope;private static long saveAt;private static Model model=new Model();private static NativeWorkspaceScreen active;private static Object connection,level;
+    private final boolean compact=Minecraft.getInstance().getWindow().getGuiScaledWidth()<540;
     private final UIElement root,desktop=new UIElement(),dock=new UIElement(),content=new UIElement(),directory=new UIElement();private final ScrollerView history=new ScrollerView();
     private final Map<String,WorkspaceWindow> windows=new LinkedHashMap<>();private WorkspaceWindow chatWindow,filesWindow;private final Selector<Choice> agentChoice=new Selector<>();private final Map<String,String> knownAgents=new HashMap<>();
     private record Choice(String key,String label){@Override public String toString(){return label;}}
@@ -42,25 +43,26 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private NativeWorkspaceScreen(){this(new UIElement());}
     private NativeWorkspaceScreen(UIElement root){
         super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal("DivZero"));this.root=root;composer.setId("conversation-composer");composer.registerValueListener(value->saveDraft());
-        root.getLayout().widthPercent(100).heightPercent(100).paddingAll(7);root.getStyle().backgroundTexture(new ColorRectTexture(0x35080d15));
-        var toolbar=NativeUiTheme.card(row());toolbar.getLayout().height(36).paddingAll(6).marginBottom(5);toolbar.getStyle().zIndex(2000);root.addChild(toolbar);
-        var brand=NativeUiTheme.text("DivZero",NativeUiTheme.ACCENT,13);brand.getLayout().width(72);toolbar.addChild(brand);
-        toolbar.addChild(button(t("对话"),this::showChat));toolbar.addChild(button(t("AI 玩家"),()->WorkspacePanels.agents(this)));toolbar.addChild(button(t("包管理"),()->WorkspacePanels.packages(this)));toolbar.addChild(button(t("文件"),this::showFiles));toolbar.addChild(button(t("建筑计划"),()->NativeBuildingPanel.open(this,model.agent)));
-        var spacer=new UIElement();spacer.getLayout().flex(1);toolbar.addChild(spacer);toolbar.addChild(decisions);toolbar.addChild(button(t("设置"),()->WorkspacePanels.settings(this)));toolbar.addChild(NativeUiTheme.iconButton("×",this::onClose));
-        desktop.getLayout().flex(1).widthPercent(100);root.addChild(desktop);
-        dock.getLayout().height(28).widthPercent(100).flexDirection(FlexDirection.ROW).paddingVertical(3);dock.getStyle().zIndex(2000);root.addChild(dock);
-        status.setId("workspace-status");status.getLayout().height(13).widthPercent(100);status.textStyle(style->style.fontSize(8).textColor(0xffffffff));root.addChild(status);
+        root.getLayout().widthPercent(100).heightPercent(100).paddingAll(compact?4:7);root.getStyle().backgroundTexture(new ColorRectTexture(0x35080d15));
+        var toolbar=NativeUiTheme.card(row());toolbar.getLayout().height(compact?29:36).flexShrink(0).paddingAll(compact?3:6).marginBottom(3);toolbar.getStyle().zIndex(2000);root.addChild(toolbar);
+        var brand=NativeUiTheme.text("DivZero",NativeUiTheme.ACCENT,13);brand.getLayout().width(compact?39:72).flexShrink(0);if(compact)brand.textStyle(style->style.fontSize(9));toolbar.addChild(brand);
+        toolbar.addChild(button(t("对话"),this::showChat));toolbar.addChild(button(t("AI 玩家"),()->WorkspacePanels.agents(this)));toolbar.addChild(button(t("包管理"),()->WorkspacePanels.packages(this)));toolbar.addChild(button(t("文件"),this::showFiles));toolbar.addChild(button(t(compact?"建筑":"建筑计划"),()->NativeBuildingPanel.open(this,model.agent)));
+        var spacer=new UIElement();spacer.getLayout().flex(1);toolbar.addChild(spacer);toolbar.addChild(decisions);toolbar.addChild(button(t("设置"),()->WorkspacePanels.settings(this)));toolbar.addChild(button(t("尺寸"),this::scaleSettings));toolbar.addChild(NativeUiTheme.iconButton("×",this::onClose));
+        desktop.getLayout().flex(1).minHeight(0).widthPercent(100);root.addChild(desktop);
+        dock.getLayout().height(compact?23:28).flexShrink(0).widthPercent(100).flexDirection(FlexDirection.ROW).paddingVertical(3);dock.getStyle().zIndex(2000);root.addChild(dock);
+        status.setId("workspace-status");status.getLayout().height(11).flexShrink(0).widthPercent(100);status.textStyle(style->style.fontSize(8).textColor(0xffffffff));root.addChild(status);
         search.textFieldStyle(style->style.placeholder(Component.literal(t("搜索对话"))));search.registerValueListener(value->{listBefore=0;listPages.clear();nextList=System.currentTimeMillis()+350;});
         agentChoice.setOnValueChanged(choice->{if(choice!=null&&!choice.key().equals(model.agent))selectAgent(choice.key());});
         history.viewPort.getStyle().backgroundTexture(NativeUiTheme.inset());
         var frameWitness=new UIElement(){@Override protected void drawBackgroundAdditional(com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext context){NativePackageViews.workspacePainted(NativeWorkspaceScreen.this);}};
         frameWitness.getLayout().positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE).left(0).top(0).width(1).height(1);frameWitness.setActive(false);root.addChild(frameWitness);
+        if(compact)for(var child:toolbar.getChildren())if(child instanceof Button button){button.getLayout().height(21).minHeight(21).paddingHorizontal(3).marginRight(2);button.text.textStyle(style->style.fontSize(8));}
         showChat();drawAgents();
     }
     WorkspaceWindow window(String id,String title,float width,float height){
         var old=windows.get(id);if(old!=null&&!old.closed()){old.reveal();return old;}
         var mc=Minecraft.getInstance();float w=mc.getWindow().getGuiScaledWidth(),h=mc.getWindow().getGuiScaledHeight();int cascade=windows.size()%5;
-        var value=new WorkspaceWindow(desktop,dock,title,16+cascade*18,48+cascade*12,Math.max(240,Math.min(width,w-36)),Math.max(170,Math.min(height,h-105)),closed->{model.placements.put(id,closed.placement());windows.remove(id);saveAt=System.currentTimeMillis()+300;});windows.put(id,value);var placement=model.placements.get(id);if(placement!=null)value.dialog.overlay.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.LAYOUT_CHANGED,event->{value.restore(placement);event.currentElement.removeEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.LAYOUT_CHANGED,event.currentListener);});return value;
+        var value=new WorkspaceWindow(desktop,dock,title,compact?0:16+cascade*18,compact?0:48+cascade*12,Math.max(240,Math.min(width,w-(compact?8:36))),Math.max(150,Math.min(height,h-(compact?65:105))),closed->{model.placements.put(id,closed.placement());windows.remove(id);saveAt=System.currentTimeMillis()+300;});windows.put(id,value);var placement=model.placements.get(id);if(placement!=null)value.dialog.overlay.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.LAYOUT_CHANGED,event->{value.restore(placement);event.currentElement.removeEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.LAYOUT_CHANGED,event.currentListener);});return value;
     }
     public static void openForAgent(String id,String name){open();if(!name.equals("AI")||!active.knownAgents.containsKey(id))active.knownAgents.put(id,name);active.conversationWith(id);}
     public static void openConversation(String agent,String name,String conversation){openForAgent(agent,name);active.select(conversation);}
@@ -110,18 +112,29 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private void showChat(){
         page="chat";nextMessages=0;
         if(chatWindow!=null&&!chatWindow.closed()){chatWindow.reveal();return;}
-        page="chat";chatWindow=window("chat",t("对话"),720,500);chatWindow.body.clearAllChildren();var body=row();body.getLayout().flex(1);chatWindow.body.addChild(body);
-        directory.clearAllChildren();directory.getLayout().width(150).heightPercent(100).paddingRight(8);body.addChild(directory);directory.addChild(NativeUiTheme.text(t("AI 与会话"),NativeUiTheme.MUTED,8));agentChoice.getLayout().height(25).widthPercent(100);directory.addChild(agentChoice);
+        page="chat";chatWindow=window("chat",t("对话"),720,500);chatWindow.body.clearAllChildren();var body=row();body.getLayout().flex(1).minHeight(0).minWidth(0);chatWindow.body.addChild(body);
+        directory.clearAllChildren();directory.setDisplay(!compact);directory.getLayout().width(compact?110:150).minWidth(compact?110:150).flexShrink(0).heightPercent(100).paddingRight(8);body.addChild(directory);directory.addChild(NativeUiTheme.text(t("AI 与会话"),NativeUiTheme.MUTED,8));agentChoice.getLayout().height(25).widthPercent(100);directory.addChild(agentChoice);
         directory.addChild(button(t("新建对话"),()->write("create",Map.of("title",t("新的对话"),"autoTitle","true"),state->{select(state.get("conversationId").getAsString());list();})));
         search.getLayout().height(24).widthPercent(100).marginTop(5);directory.addChild(search);
         var filter=new Selector<Choice>();filter.setCandidates(List.of(new Choice("ACTIVE",t("进行中")),new Choice("ARCHIVED",t("已归档")),new Choice("DELETED",t("已删除"))));filter.setValue(new Choice(model.filter,t(model.filter.equals("ACTIVE")?"进行中":model.filter.equals("ARCHIVED")?"已归档":"已删除")),false);filter.setOnValueChanged(choice->{model.filter=choice.key();listBefore=0;listPages.clear();list();});filter.getLayout().height(23).widthPercent(100);directory.addChild(filter);
         conversationButtons.clear();conversationTitles.clear();renderedListNext=renderedListBefore=-1;conversationList=new ScrollerView();conversationList.getLayout().flex(1).widthPercent(100);directory.addChild(conversationList);conversationPager.clearAllChildren();conversationPager.getLayout().height(25);directory.addChild(conversationPager);
-        content.clearAllChildren();content.getLayout().flex(1).heightPercent(100).paddingLeft(8);body.addChild(content);heading.setText(Component.literal(model.selected==null?t("选择或新建对话"):model.selected.get("title").getAsString()));heading.textStyle(style->style.fontSize(12).textColor(NativeUiTheme.TEXT).textShadow(false));content.addChild(heading);
-        var controls=row();controls.getLayout().height(26);controls.addChild(button(t("更早"),()->messages(nextBefore)));controls.addChild(button(t("最新"),()->{rows.clear();history.clearAllScrollViewChildren();messages(0);}));controls.addChild(button(t("重命名"),this::renameConversation));controls.addChild(button(t("更多"),this::conversationOptions));content.addChild(controls);
-        history.getLayout().flex(1).widthPercent(100).marginVertical(6);content.addChild(history);
-        composer.getLayout().height(62).widthPercent(100);composer.setValue(draftText().split("\n",-1),false);content.addChild(composer);
-        var actions=row();actions.getLayout().height(27).paddingTop(4);actions.addChild(button(t("发送"),this::send));actions.addChild(button(t("停止"),this::cancel));actions.addChild(button(t("附件"),this::showFiles));actions.addChild(button(t("语音输入"),()->{var session=NativeWorkspaceConnection.current();if(session!=null&&model.selected!=null)Minecraft.getInstance().setScreen(new NativeSpeechScreen(this,session.binding().worldId(),UUID.fromString(model.agent),UUID.fromString(model.conversation),context));}));content.addChild(actions);
+        content.clearAllChildren();content.getLayout().flex(1).minWidth(0).minHeight(0).heightPercent(100).paddingLeft(compact?2:8);body.addChild(content);heading.setText(Component.literal(model.selected==null?t("选择或新建对话"):model.selected.get("title").getAsString()));heading.getLayout().height(compact?13:18).flexShrink(0);heading.textStyle(style->style.fontSize(compact?9:12).textColor(NativeUiTheme.TEXT).textShadow(false));content.addChild(heading);
+        var controls=row();controls.getLayout().height(compact?22:26).flexShrink(0);if(compact)controls.addChild(button(t("会话"),()->directory.setDisplay(!directory.isDisplayed())));controls.addChild(button(t("更早"),()->messages(nextBefore)));controls.addChild(button(t("最新"),()->{rows.clear();history.clearAllScrollViewChildren();messages(0);}));controls.addChild(button(t("重命名"),this::renameConversation));controls.addChild(button(t("更多"),this::conversationOptions));content.addChild(controls);
+        history.getLayout().flex(1).minHeight(24).widthPercent(100).marginVertical(compact?2:6);content.addChild(history);
+        composer.getLayout().height(compact?38:62).minHeight(compact?38:62).flexShrink(0).widthPercent(100);composer.setValue(draftText().split("\n",-1),false);content.addChild(composer);
+        var actions=row();actions.getLayout().height(compact?24:27).flexShrink(0).paddingTop(compact?1:4);actions.addChild(button(t("发送"),this::send));actions.addChild(button(t("停止"),this::cancel));actions.addChild(button(t("附件"),this::showFiles));actions.addChild(button(t("语音输入"),()->{var session=NativeWorkspaceConnection.current();if(session!=null&&model.selected!=null)Minecraft.getInstance().setScreen(new NativeSpeechScreen(this,session.binding().worldId(),UUID.fromString(model.agent),UUID.fromString(model.conversation),context));}));content.addChild(actions);
         if(!model.agent.isEmpty()&&NativeWorkspaceConnection.ready())list();
+    }
+    private void scaleSettings(){
+        var panel=window("gui-scale",t("界面尺寸"),260,170);panel.body.clearAllChildren();
+        panel.body.addChild(NativeUiTheme.text(t("游戏 UI 尺寸"),NativeUiTheme.TEXT,10));var choices=row();panel.body.addChild(choices);
+        for(int size=2;size<=4;size++){final int scale=size;var button=button(Integer.toString(size),()->changeScale(scale));button.setId("gui-scale-"+size);choices.addChild(button);}
+    }
+    void changeScale(int scale){
+        if(scale<2||scale>4)throw new IllegalArgumentException("GUI_SCALE");saveDraft();persistState();
+        var mc=Minecraft.getInstance();mc.options.guiScale().set(scale);mc.options.save();mc.resizeGui();
+        // Rebuild responsive geometry once, retaining the model and draft rather than on each tick.
+        String selected=model.conversation;active=new NativeWorkspaceScreen();mc.setScreen(active);if(!selected.isBlank())active.messages(0);
     }
     private void conversationOptions(){
         if(model.selected==null||model.conversation.isBlank())return;String selected=model.conversation,agent=model.agent;var window=window("conversation-options-"+selected,t("会话操作"),365,270);window.body.clearAllChildren();

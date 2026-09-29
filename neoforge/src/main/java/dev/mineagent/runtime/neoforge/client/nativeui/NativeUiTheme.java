@@ -13,6 +13,15 @@ import java.util.List;
 public final class NativeUiTheme {
     public static final int TEXT=0xff262626,MUTED=0xff4a4a4a,ACCENT=0xff264b20;
     public static String state(String code){return dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(switch(code){case "READY"->"就绪";case "CREATOR"->"创造模式";case "SURVIVAL"->"生存模式";case "NOT_LOADED","UNLOADED"->"身体未加载";case "PLANNED"->"待施工";case "PREPARING"->"准备中";case "APPLYING"->"施工中";case "VERIFIED"->"验证通过";case "UNVERIFIED"->"尚未验证";case "PAUSED"->"已暂停";case "UNDONE"->"已撤销";case "PARTIAL"->"部分完成";case "CONFLICT"->"发生冲突";case "UNKNOWN"->"结果待核对";case "REJECTED"->"已拒绝";case "EMPTY"->"尚无计划";default->code;});}
+    /** Only authored enum/config selectors opt in; model IDs and user-defined labels stay literal. */
+    public static void options(Selector<String> selector){selector.setCandidateUIProvider(value->new TextElement().setText(Component.literal(option(value))));}
+    public static String option(String value){if(value==null)return "";return dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t(switch(value){
+        case "ALL"->"全部";case "ACTIVE"->"进行中";case "ARCHIVED"->"已归档";case "HOT"->"当前内容";case "RUNNING"->"运行中";case "WAITING_FOR_PLAYER"->"等待玩家";case "FAILED"->"失败";case "COMPLETED","FINISHED"->"已完成";case "CANCELLED"->"已取消";case "EXPIRED"->"已过期";
+        case "RECORD_ONLY"->"仅记录";case "AGENT_WAKE"->"唤醒 AI";case "SCRIPT"->"脚本";case "STATE_PUSH"->"推送状态";case "GENERAL"->"通用任务";
+        case "GENERATION"->"生成内容";case "UI_PACKAGE"->"界面内容包";case "WORLD_CONTENT"->"世界内容";case "UI_PATCH"->"修改界面";case "WORLD_PATCH"->"修改世界";case "LINK"->"关联内容";case "SERVER"->"服务端";case "CLIENT"->"客户端";
+        case "Provider"->"模型服务";case "Runtime"->"运行设置";case "Security"->"权限与安全";case "Speech"->"语音";case "Appearance"->"外观";case "Budget"->"用量预算";case "Memory"->"记忆";case "World"->"世界";case "Agents"->"AI 玩家";case "Tools"->"工具";
+        case "openai-compatible,ollama"->"兼容 API 优先，本机模型备用";case "ollama,openai-compatible"->"本机模型优先，兼容 API 备用";default->state(value);
+    });}
     private NativeUiTheme(){}
     public static Stylesheet mc(){return StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.MC);}
     public static UI ui(UIElement root){root.addClass(NativeButtonFeedback.ROOT_CLASS);return UI.of(root,List.of(mc()),size->size);}

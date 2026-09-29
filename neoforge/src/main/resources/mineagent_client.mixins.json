@@ -29,6 +29,7 @@
     "client.LivingEntityPartsMixin",
     "client.EntityRenderContextMixin",
     "client.NativeButtonMixin",
+    "client.NativeSelectorMixin",
     "client.ContainerScreenGeometry",
     "client.SpritePixelsAccess",
     "client.AttachedWidgetReleaseAccess"

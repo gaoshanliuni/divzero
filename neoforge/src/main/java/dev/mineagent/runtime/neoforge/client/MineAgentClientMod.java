@@ -68,6 +68,9 @@ public final class MineAgentClientMod {
     }
 
     @SubscribeEvent
+    static void registerInventoryScreen(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event){event.register(dev.mineagent.runtime.neoforge.MineAgentRegistries.AGENT_INVENTORY.get(),dev.mineagent.runtime.neoforge.client.nativeui.AgentInventoryScreen::new);}
+
+    @SubscribeEvent
     static void registerKeyMappings(RegisterKeyMappingsEvent event) {
         event.registerCategory(CATEGORY);
         event.register(OPEN_CONTROL_CENTER);

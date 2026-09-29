@@ -30,7 +30,7 @@ public final class NativeButtonFeedback {
     private final UIEventListener outsideRelease=event->{if(event.button==0&&!contains(event.target))cancel(false);};
 
     public NativeButtonFeedback(Button button){
-        this.button=button;access=(Access)button;button.setFocusable(true);
+        this.button=button;access=(Access)button;button.setFocusable(selectorDialog()==null);
         button.addEventListener(UIEvents.KEY_DOWN,this::keyDown);
         button.addEventListener(UIEvents.KEY_UP,this::keyUp);
         button.addEventListener(UIEvents.FOCUS_OUT,event->cancel(false));
@@ -43,8 +43,9 @@ public final class NativeButtonFeedback {
                     ||keyArmed>=0&&!button.isFocused()))cancel(true);
         });
     }
-    public static boolean owns(Button button){for(UIElement node=button;node!=null;node=node.getParent())if(node.hasClass(ROOT_CLASS))return true;return false;}
+    public static boolean owns(UIElement button){for(UIElement node=button;node!=null;node=node.getParent())if(node.hasClass(ROOT_CLASS))return true;return false;}
     public static void install(Button button){if(owns(button)&&button instanceof Access access)access.divzero$feedback();}
+    private UIElement selectorDialog(){for(var node=button.getParent();node!=null;node=node.getParent())if(node.hasClass("__selector_dialog__"))return node;return null;}
     private boolean armed(){return mouseArmed||keyArmed>=0;}
     private boolean contains(UIElement target){for(var node=target;node!=null;node=node.getParent())if(node==button)return true;return false;}
     private boolean usable(){
@@ -54,7 +55,7 @@ public final class NativeButtonFeedback {
     }
     public void mouseDown(UIEvent event){
         event.stopPropagation();if(event.button!=0||!usable()||!Minecraft.getInstance().isWindowActive())return;
-        cancel(false);button.getModularUI().requestFocus(button);mouseArmed=true;HELD.add(this);
+        cancel(false);var dialog=selectorDialog();button.getModularUI().requestFocus(dialog==null?button:dialog);mouseArmed=true;HELD.add(this);
         releaseRoot=button;while(releaseRoot.getParent()!=null)releaseRoot=releaseRoot.getParent();
         releaseRoot.addEventListener(UIEvents.MOUSE_UP,outsideRelease,true);visual(Button.State.PRESSED,false);
     }

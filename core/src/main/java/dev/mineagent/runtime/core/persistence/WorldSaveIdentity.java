@@ -28,8 +28,9 @@ public final class WorldSaveIdentity implements AutoCloseable {
             db=DriverManager.getConnection("jdbc:sqlite:"+home.resolve("world-identities.db"));var service=new WorldSaveIdentity(home,save,legacyHint,db,pathLease);service.initialize();
             service.recoverPending();
             var status=service.status();
-            // Only an empty Runtime world-data inventory can be safely treated as a first installation.
-            if(status.state().equals("UNANCHORED")&&status.candidates().isEmpty()&&!status.more())service.bind("FRESH",null,status.challenge(),true,"SYSTEM_EMPTY_ROOT");
+            // A genuinely unbound new save gets its own scope even when other worlds share
+            // this runtime directory. No old scope is adopted or modified by this default.
+            if(status.state().equals("UNANCHORED"))service.bind("FRESH",null,status.challenge(),true,"SYSTEM_NEW_SAVE");
             var current=service.status();if(current.state().equals("READY"))service.scopeLease=lease(home.resolve("identity-scope-locks"),current.scopeId().toString());
             return service;
         }catch(Exception failure){if(db!=null)try{db.close();}catch(Exception ignored){}pathLease.close();throw failure;}

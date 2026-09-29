@@ -10,7 +10,7 @@ import java.util.*;
 
 /** Owner-scoped, server-thread inventory transactions. Clients supply slots, never item stacks. */
 public final class ServerAgentInventory {
-    private static MineAgentPlayer body(ServerPlayer viewer, Map<String,String> args) {
+    static MineAgentPlayer body(ServerPlayer viewer, Map<String,String> args) {
         var server=viewer.level().getServer();
         if(!server.isSameThread()||server.getPlayerList().getPlayer(viewer.getUUID())!=viewer)throw new SecurityException("INVENTORY_CONNECTION_CHANGED");
         var manager=MineAgentRuntimeServices.bodies(server);UUID id=UUID.fromString(args.get("agentId"));
@@ -19,6 +19,12 @@ public final class ServerAgentInventory {
         var body=manager.body(id).orElseThrow(()->new IllegalStateException("INVENTORY_AGENT_OFFLINE"));
         if(!body.isAlive()||!viewer.isAlive()||body.level()!=viewer.level())throw new IllegalStateException("INVENTORY_WORLD_CHANGED");
         return body;
+    }
+
+    public static Map<String,Object> open(ServerPlayer viewer,Map<String,String> args){
+        var body=body(viewer,args);if(body.containerMenu!=body.inventoryMenu)throw new IllegalStateException("INVENTORY_CONTAINER_BUSY");
+        var opened=viewer.openMenu(new net.minecraft.world.SimpleMenuProvider((id,inventory,player)->new AgentInventoryMenu(id,inventory,body),body.getName()),data->data.writeUUID(body.agentId()));
+        if(opened.isEmpty())throw new IllegalStateException("INVENTORY_OPEN_REJECTED");return Map.of("status","OPENED","containerId",opened.getAsInt(),"agentId",body.agentId());
     }
 
     private static String revision(ServerPlayer player) {
