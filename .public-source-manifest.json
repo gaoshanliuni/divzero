@@ -1389,8 +1389,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "7c35396e52809e3b23c673dc339eda5a3dd0f3418d03dc5df0a3b86f1a0b0087",
-      "bytes": 72576
+      "sha256": "954c43f7aff2d99ce83df7624f6f9e19cc93209ce3f66b211e40bbb3e563f3ee",
+      "bytes": 72934
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/NativeChatSegments.java",
@@ -2349,8 +2349,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/AutonomyPlan.java",
-      "sha256": "c79091878d2e4040375e16533e92d01dffa7ad20fe0faa6da961d1cf51220724",
-      "bytes": 3207
+      "sha256": "5053f9ae7c8bb2122ec55a9e9b22fa20b1f19ff0d9bb06e4940b8f5383c6d446",
+      "bytes": 4540
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/AutonomySessionPolicy.java",
@@ -2909,8 +2909,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/AutonomyPlanTest.java",
-      "sha256": "ddfd268748bcebf45ac7e87fedcbd380a25e9e8bdd2db78ea447e872ad112e41",
-      "bytes": 3379
+      "sha256": "66a756b5e6ac4a472d15b07aa50d8fb3364d3e4d1765544c80ea8f3b13e92c54",
+      "bytes": 4229
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/NavigationSearchTest.java",
@@ -4819,8 +4819,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/AutonomousPlayerAgent.java",
-      "sha256": "1589c6571c0f6d4c80e852cd87097266d910cacd1508cefe7c6b66d4cca73f51",
-      "bytes": 19079
+      "sha256": "f68b77bf4841cbe0abac7bc9fd3955f4cb7313eb4035b383505bd596845f0784",
+      "bytes": 21261
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/CraftingUseSmokeServer.java",
@@ -5059,8 +5059,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationBodyTools.java",
-      "sha256": "625e87eb7b18cc58945d020c859b982929c0c42c1b5b49da85d39df98627b90f",
-      "bytes": 5854
+      "sha256": "726d2abc392b43f1605bc68a04cc1ac776048b2b1b5bbbd3366824fe3fd61ad8",
+      "bytes": 5880
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationBuildSmokeServer.java",

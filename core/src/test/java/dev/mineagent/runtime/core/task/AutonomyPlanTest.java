@@ -3,6 +3,14 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class AutonomyPlanTest {
+    @Test void persistentGoalsUseAValidatedLocalSkillInsteadOfInputMicros()throws Exception{
+        String request="""
+            {"action":"SKILL","target":[0,0,0],"ticks":1,"slot":0,"summary":"持续维护麦田","skill":{"id":"local_farm","kind":"FARM","actor":"player","dimension":"minecraft:overworld","expected_revision":0,"min":[1,64,1],"max":[4,65,4]}}
+            """;
+        var plan=AutonomyPlan.parse(request);assertEquals("SKILL",plan.action());assertEquals(SkillSpec.Kind.FARM,SkillSpec.parse(new com.fasterxml.jackson.databind.ObjectMapper().readTree(plan.skill()),null).kind());
+        assertThrows(IllegalArgumentException.class,()->new AutonomyPlan("MOVE",List.of(0d,0d,0d),1,0,"invalid",plan.skill()));
+        assertThrows(Exception.class,()->AutonomyPlan.parse(request.replace("\"max\":[4,65,4]","\"max\":[0,60,0]")));
+    }
  @Test void explicitSneakHasBinarySlot(){assertDoesNotThrow(()->new AutonomyPlan("SNEAK",List.of(0d,0d,0d),1,1,"潜行"));assertThrows(IllegalArgumentException.class,()->new AutonomyPlan("SNEAK",List.of(0d,0d,0d),1,2,"错误"));}
 
     @Test void uiResumeDoesNotReplayFailedRequestsOrReplanUnchangedIdle(){

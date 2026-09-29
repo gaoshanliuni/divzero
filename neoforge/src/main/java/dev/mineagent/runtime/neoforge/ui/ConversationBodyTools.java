@@ -12,11 +12,13 @@ public final class ConversationBodyTools {
         var s=p.level().getServer();var manager=MineAgentRuntimeServices.bodies(s);var b=manager.body(agent).orElseThrow(()->new IllegalStateException("AGENT_BODY_UNAVAILABLE"));
         var config=MineAgentRuntimeServices.config(s);String key="agent."+agent+".follow";
         String action=read?"inspect":a.path("action").asText();String status="OBSERVED";
-        if(!read){if(Set.of("move","follow","stop","teleport_to_player").contains(action))dev.mineagent.runtime.neoforge.skill.SkillRuntime.cancelForBody(p,agent);if(!b.canAct())throw new IllegalStateException("AGENT_BODY_NOT_ALIVE");if(b.taskControlOwned()&&!(action.equals("stop")&&(NativeAgentBlockActions.stop(p,agent)||NativeAgentPathBuilder.stop(p,agent))))throw new IllegalStateException("AGENT_BODY_TASK_OWNS_INPUT");
+        if(!read){if(!b.canAct())throw new IllegalStateException("AGENT_BODY_NOT_ALIVE");
             if(!Set.of("move","look","sprint","sneak","select","drop","follow","stop","teleport_to_player").contains(action))throw new IllegalArgumentException("AGENT_BODY_ACTION");
             if(action.equals("move")||action.equals("look")){var target=a.path("target");if(!target.isArray()||target.size()!=3)throw new IllegalArgumentException("AGENT_BODY_TARGET");for(var part:target)if(!part.isNumber()||!Double.isFinite(part.doubleValue())||Math.abs(part.doubleValue())>30000000)throw new IllegalArgumentException("AGENT_BODY_TARGET");}
             if(action.equals("follow")&&!p.getUUID().equals(b.ownerPlayerId()))throw new SecurityException("AGENT_FOLLOW_OWNER_REQUIRED");
             if(action.equals("teleport_to_player")&&!p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))throw new SecurityException("AGENT_TELEPORT_PERMISSION");
+            if(Set.of("move","follow","stop","teleport_to_player").contains(action))dev.mineagent.runtime.neoforge.skill.SkillRuntime.cancelForBody(p,agent);
+            if(b.taskControlOwned()&&!(action.equals("stop")&&(NativeAgentBlockActions.stop(p,agent)||NativeAgentPathBuilder.stop(p,agent))))throw new IllegalStateException("AGENT_BODY_TASK_OWNS_INPUT");
             if(Set.of("move","stop","teleport_to_player").contains(action)||action.equals("follow")){
                 var r=config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(config.snapshot().revision(),Map.of(key,Boolean.toString(action.equals("follow")))),true);if(!r.accepted())throw new IllegalStateException("AGENT_BODY_CONFIG_CONFLICT");
             }
