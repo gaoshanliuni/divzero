@@ -54,7 +54,7 @@ final class FarmSkill {
         state=w.player().level().getBlockState(w.block);
         if(w.action.equals("HARVEST_BREAK")&&w.nativeBreak){w.session.add("harvested",1);w.nativeBreak=false;w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state)));w.session.phase("FARM_REPLANT");w.workStage=2;return;}
         if(w.action.equals("HARVEST_USE")&&w.crop.supports(state)&&!w.crop.mature(state)&&w.nativeUse){w.session.add("harvested",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state)));w.abandonTarget();return;}
-        if(w.action.equals("PLANT")&&w.crop.supports(state)&&w.nativeUse&&(w.player().hasInfiniteMaterials()||w.nativeConsumed==1)){w.session.add("planted",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state),"seedCountAfter",Integer.toString(w.count(w.crop.seed()))));w.abandonTarget();if(w.session.spec().limit()>0&&w.session.count("planted")>=w.session.spec().limit())w.completed("FARM_LIMIT_REACHED");return;}
+        if(w.action.equals("PLANT")&&w.crop.supports(state)&&w.nativeUse&&(w.player().hasInfiniteMaterials()||w.nativeConsumed==1)){SkillAcceptanceFaults.beforePlantReceipt();w.session.add("planted",1);w.confirm("VERIFIED",Map.of("after",BlockStateParser.serialize(state),"seedCountAfter",Integer.toString(w.count(w.crop.seed()))));w.abandonTarget();if(w.session.spec().limit()>0&&w.session.count("planted")>=w.session.spec().limit())w.completed("FARM_LIMIT_REACHED");return;}
         if(w.interruptedOperation||w.tick()-w.startedTick>120){w.pause("FARM_OUTCOME_UNCERTAIN_RECONCILE");return;}
         if(w.action.equals("HARVEST_BREAK"))w.actor.breakBlock(w.token(),w.operation,w.block);else w.actor.useBlock(w.token(),w.operation,w.action.equals("PLANT")?w.block.below():w.block);
     }

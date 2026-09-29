@@ -18,7 +18,8 @@ public final class PersistentSkillSmokeClient {
     private static final List<UUID> manyAgents=new ArrayList<>();
     private static boolean playerActor(){return System.getProperty("mineagent.skillSmokeActor","ai").equals("player");}
     private static ServerPlayer controlled(ServerPlayer p){return playerActor()?p:body(p);}
-    private static Minecraft mc(){return Minecraft.getInstance();}private static Path root()throws Exception{return Files.createDirectories(mc().gameDirectory.toPath().resolve("persistent-skill-smoke"));}
+    private static Minecraft mc(){return Minecraft.getInstance();}private static Path root()throws Exception{return Files.createDirectories(mc().gameDirectory.toPath().resolve(Boolean.getBoolean("mineagent.skillSmokeResume")?"persistent-skill-resume":"persistent-skill-smoke"));}
+    private static Path identityFile(){return mc().gameDirectory.toPath().resolve("persistent-skill-smoke/identity.json");}
     private static void require(boolean value,String reason){if(!value)throw new IllegalStateException(reason);}
     private static <T> CompletableFuture<T> server(Function<ServerPlayer,T> work){var out=new CompletableFuture<T>();var s=mc().getSingleplayerServer();UUID player=mc().player.getUUID();s.submit(()->work.apply(s.getPlayerList().getPlayer(player))).whenComplete((value,error)->mc().execute(()->{if(error!=null)out.completeExceptionally(error);else out.complete(value);}));return out;}
     private static MineAgentPlayer body(ServerPlayer p){return MineAgentRuntimeServices.bodies(p.level().getServer()).body(agent).orElseThrow();}
@@ -33,6 +34,7 @@ public final class PersistentSkillSmokeClient {
     private static CompletableFuture<JsonNode> stop(String id){return tool("control_skill",JSON.createObjectNode().put("id",id).put("expected_revision",1).put("action","stop"));}
     private static void screen(String name){try{net.minecraft.client.Screenshot.takeScreenshot(mc().getMainRenderTarget(),image->{try(image){image.writeToFile(root().resolve(name+".png"));}catch(Exception failure){fail(failure);}});}catch(Exception e){fail(e);}}
     private static void prepare(){
+        if(Boolean.getBoolean("mineagent.skillSmokeResume")){restoreLifecycle();return;}
         action("world-and-real-survival-bodies",()->server(p->{
             var s=p.level().getServer();s.getPlayerList().op(p.nameAndId());p.setGameMode(GameType.CREATIVE);WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);p.teleportTo(p.level(),.5,101,-3.5,Set.of(),0,0,true);
             for(int x=-12;x<=31;x++)for(int z=-7;z<=26;z++)for(int y=98;y<=109;y++)p.level().setBlock(new BlockPos(x,y,z),y<=100?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),2);
@@ -40,7 +42,7 @@ public final class PersistentSkillSmokeClient {
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(playerActor()){action("real-player-equipment-and-input",()->{org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return server(p->{var b=body(p);p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();for(int i=0;i<36;i++)p.getInventory().setItem(i,b.getInventory().getItem(i).copy());p.inventoryMenu.broadcastChanges();b.teleportTo(p.level(),27.5,101,25.5,Set.of(),0,0,true);return null;});});}
-        if(mode.equals("navigation")){navigation();return;}if(mode.equals("fishing")){fishing();return;}if(mode.equals("combat")){combat();return;}if(mode.equals("player")){player();return;}if(mode.equals("cooperation")){cooperation();return;}if(mode.equals("patrol")){patrol();return;}if(mode.equals("performance")){performance();return;}work();
+        if(mode.equals("navigation")){navigation();return;}if(mode.equals("fishing")){fishing();return;}if(mode.equals("combat")){combat();return;}if(mode.equals("player")){player();return;}if(mode.equals("cooperation")){cooperation();return;}if(mode.equals("patrol")){patrol();return;}if(mode.equals("performance")){performance();return;}if(mode.equals("lifecycle")){lifecycle();return;}if(mode.equals("uncertain")){uncertain();return;}work();
     }
     private static void navigation(){
         action("forced-door-slab-crouch-water-ladder-route",()->server(p->{var b=body(p);for(int x=-1;x<=23;x++)for(int y=101;y<=107;y++){p.level().setBlock(new BlockPos(x,y,-1),Blocks.STONE.defaultBlockState(),2);p.level().setBlock(new BlockPos(x,y,1),Blocks.STONE.defaultBlockState(),2);}for(int y=101;y<=107;y++){p.level().setBlock(new BlockPos(-1,y,0),Blocks.STONE.defaultBlockState(),2);p.level().setBlock(new BlockPos(23,y,0),Blocks.STONE.defaultBlockState(),2);}
@@ -107,6 +109,34 @@ public final class PersistentSkillSmokeClient {
     private static void performance(){
         action("sixteen-isolated-navigation-intents",()->server(p->{var manager=MineAgentRuntimeServices.bodies(p.level().getServer());for(int i=0;i<16;i++){int x=-8+(i%4)*3,z=3+(i/4)*4;var id=manager.createPersistentAt("并发寻路"+i,p.getUUID(),p.level(),new Vec3(x+.5,101,z+.5)).agentId();manyAgents.add(id);var b=manager.body(id).orElseThrow();b.movementController().movePreciselyTo(new Vec3(x+14.5,101,z+.5));}baseline=p.level().getServer().getTickCount();return null;}));
         waitFor("all-searches-get-budget-and-move",1600,()->server(p->{var manager=MineAgentRuntimeServices.bodies(p.level().getServer());int moved=0;var values=new ArrayList<Object>();for(var id:manyAgents){var b=manager.body(id).orElseThrow();if(b.movementController().executedSteps()>0)moved++;values.add(Map.of("id",id,"position",b.position().toString(),"navigation",b.movementController().evidence()));}if(moved<16)return false;var budget=dev.mineagent.runtime.neoforge.body.NativeNavigationBudget.get(p.level().getServer()).observation();require(((Number)budget.get("maxReservedNodesPerTick")).intValue()<=1024,"SEARCH_BUDGET_EXCEEDED");EVIDENCE.add(Map.of("agents",16,"elapsedTicks",p.level().getServer().getTickCount()-baseline,"budget",budget,"navigation",values));return true;}));
+    }
+    private static void lifecycle(){
+        action("restart-farm-plot",()->server(p->{crops(p,3,3,6);return null;}));
+        action("start-restartable-intent",()->tool("farm_area",area("saved_farm","ai",3,101,6,3,101,6).put("crop","minecraft:wheat")));
+        waitFor("durable-progress-before-restart",1200,()->state("saved_farm",s->s.path("counters").path("planted").asInt()>=1));
+        action("pause-before-world-close",()->tool("control_skill",JSON.createObjectNode().put("id","saved_farm").put("expected_revision",1).put("action","pause")));
+        action("persist-restart-identity",()->server(p->{try{crops(p,3,3,6);Files.writeString(root().resolve("identity.json"),JSON.writeValueAsString(Map.of("agent",agent,"seeds",body(p).getInventory().countItem(Items.WHEAT_SEEDS),"sourcePhase","PREPARED_FOR_REAL_RESTART")));return null;}catch(Exception e){throw new CompletionException(e);}}));
+    }
+    private static void restoreLifecycle(){
+        action("read-same-world-identity",()->{try{agent=UUID.fromString(JSON.readTree(Files.readString(identityFile())).path("agent").asText());return CompletableFuture.completedFuture(null);}catch(Exception e){return CompletableFuture.failedFuture(e);}});
+        waitFor("same-ai-restored",600,()->server(p->MineAgentRuntimeServices.bodies(p.level().getServer()).body(agent).isPresent()));
+        action("observe-saved-session",()->tool("inspect_skills",JSON.createObjectNode()).thenAccept(value->{var s=session(value,"saved_farm");require(s.path("state").asText().equals("PAUSED")&&s.path("revision").asInt()==2&&s.path("counters").path("planted").asInt()==1,"RESTART_DID_NOT_PRESERVE_PAUSED_PROGRESS");EVIDENCE.add(value);}));
+        action("restart-observation-start",()->server(p->{baseline=p.level().getServer().getTickCount();return null;}));
+        waitFor("restart-does-not-replay",350,()->server(p->{if(p.level().getServer().getTickCount()-baseline<160)return false;try{var original=JSON.readTree(Files.readString(identityFile()));require(body(p).getInventory().countItem(Items.WHEAT_SEEDS)==original.path("seeds").asInt(),"RESTART_CONSUMED_INVENTORY");require(p.level().getBlockState(new BlockPos(3,101,6)).getValue(CropBlock.AGE)==7,"RESTART_CHANGED_PAUSED_CROP");return true;}catch(Exception e){throw new CompletionException(e);}}));
+        action("explicit-resume-saved-session",()->tool("control_skill",JSON.createObjectNode().put("id","saved_farm").put("expected_revision",2).put("action","resume")));
+        waitFor("saved-session-continues",1200,()->state("saved_farm",s->s.path("counters").path("planted").asInt()==2));
+        action("cancel-resumed-session",()->tool("control_skill",JSON.createObjectNode().put("id","saved_farm").put("expected_revision",3).put("action","stop")));
+    }
+    private static void uncertain(){
+        action("uncertain-effect-plot",()->server(p->{crops(p,3,3,6);return null;}));
+        action("one-cycle-with-receipt-fault",()->tool("farm_area",area("uncertain_farm","ai",3,101,6,3,101,6).put("repeat",false).put("crop","minecraft:wheat")));
+        waitFor("native-effect-retained-with-uncertain-receipt",1200,()->tool("inspect_skills",JSON.createObjectNode()).thenApply(value->{lastObservation=value;var s=session(value,"uncertain_farm");if(!s.path("state").asText().equals("PAUSED"))return false;require(s.path("receipt").path("state").asText().equals("PREPARED")&&s.path("reason").asText().contains("ACCEPTANCE_AFTER_NATIVE_PLANT"),"FAULT_NOT_AFTER_REAL_PLANT");EVIDENCE.add(value);return true;}));
+        action("record-actual-effect",()->server(p->{require(p.level().getBlockState(new BlockPos(3,101,6)).is(Blocks.WHEAT),"UNKNOWN_WORLD_EFFECT_MISSING");baseline=body(p).getInventory().countItem(Items.WHEAT_SEEDS);return Map.of("seedCountAfterNativePlant",baseline);}));
+        action("reject-blind-resume",()->server(p->ConversationAgentTools.execute(p,agent,UUID.randomUUID(),"control_skill",JSON.createObjectNode().put("id","uncertain_farm").put("expected_revision",1).put("action","resume").toString(),()->true)).thenCompose(Function.identity()).handle((value,error)->{require(error!=null||!"APPLIED".equals(value.get("status")),"UNCERTAIN_RESUMED_WITHOUT_RECONCILE");return Map.of("blindResumeRejected",true);}));
+        action("observe-instead-of-replay",()->tool("control_skill",JSON.createObjectNode().put("id","uncertain_farm").put("expected_revision",1).put("action","reconcile")));
+        action("new-explicit-resume-after-observation",()->tool("control_skill",JSON.createObjectNode().put("id","uncertain_farm").put("expected_revision",2).put("action","resume")));
+        waitFor("reconciled-scan-complete",500,()->state("uncertain_farm",s->s.path("state").asText().equals("COMPLETED")));
+        action("no-second-consumption",()->server(p->{require(body(p).getInventory().countItem(Items.WHEAT_SEEDS)==baseline,"UNCERTAIN_ACTION_REPLAYED");return null;}));
     }
     private static void player(){
         action("player-farm-setup",()->server(p->{body(p).teleportTo(p.level(),5.5,101,16.5,Set.of(),0,0,true);p.setGameMode(GameType.SURVIVAL);p.teleportTo(p.level(),.5,101,6.5,Set.of(),-90,0,true);p.getInventory().clearContent();p.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));p.getInventory().setItem(12,new ItemStack(Items.WHEAT_SEEDS,12));p.inventoryMenu.broadcastChanges();crops(p,3,3,6);return null;}));

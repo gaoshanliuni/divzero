@@ -21,6 +21,7 @@ final class SkillWork {
     double healthBefore;long shotsBefore;UUID fighting,combatOperation;String suspendedPhase;boolean chasing,nativeBreak,interruptedOperation;Vec3 wanderTarget;long lastSave;int combatAt,combatAmmo;
     boolean fishedEvent,tillPlot,shotLogged,nativeUse;int fishedItems,fishStatBefore,nativeConsumed,nativeDurability;Map<String,Integer> fishInventoryBefore=Map.of();Set<UUID> nearbyItemsBefore=Set.of();
     NativeTraversalEvaluator wanderEvaluator;SurfaceReachability wanderSearch;
+    LivingEntity lastCombatTarget;
     SkillWork(SkillRuntime runtime,SkillSession session,long dbRevision){this.runtime=runtime;this.session=session;this.dbRevision=dbRevision;}
     ServerPlayer player(){return actor.player();}int tick(){return runtime.server.getTickCount();}UUID token(){return session.id();}
     Map<String,Object> view(){var out=new LinkedHashMap<String,Object>();out.put("session",session.snapshot());out.put("actor",actor==null?Map.of():actor.observation());out.put("currentTarget",block==null?List.of():List.of(block.getX(),block.getY(),block.getZ()));out.put("nextCheckTick",nextTick);out.put("pendingReceipt",!saved.isDone());return out;}
