@@ -25,7 +25,7 @@ final class SkillWork {
     final CombatAwareness combat=new CombatAwareness();final CombatPositioning positioning=new CombatPositioning();
     String tactic="OBSERVE";int tacticAt,lastAttackAt=-10000,lastHitAt=-10000,lastDefenseTick,healSlot=-1;UUID healingOperation;boolean combatInterrupted;
     int lastCombatTick=-1,foodBefore;boolean lastCombatResult,healingWasUsing;
-    int contactSince=-1,lastContactDamage=-10000,contactClearSince=-1;boolean contactEscape,contactRunAndHit;Vec3 contactEscapeOrigin,contactEscapeLastPosition;
+    int contactSince=-1,lastContactDamage=-10000,contactClearSince=-1;boolean contactEscape,contactRunAndHit,sprintApproach;Vec3 contactEscapeOrigin,contactEscapeLastPosition;UUID lastMeleeHitTarget;int lastMeleeHitTick=-10000,comboStreak;
     UUID extensionOperation,shieldOperation;boolean wasBlocking;FishingTackleAdapter tackle=FishingTackleAdapter.VANILLA;
     private String lastNotice="";private int lastNoticeTick=-10000;
     void notice(String key,String fallback){if(key.equals(lastNotice)&&tick()-lastNoticeTick<200)return;lastNotice=key;lastNoticeTick=tick();var owner=runtime.server.getPlayerList().getPlayer(session.owner());if(owner==null)return;String name=MineAgentRuntimeServices.bodies(runtime.server).definitions().stream().filter(d->d.agentId().equals(session.agent())).map(d->d.displayName()).findFirst().orElse("AI");owner.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+name+"] ").append(net.minecraft.network.chat.Component.translatableWithFallback("mineagent.behavior."+key,fallback)));}

@@ -25,7 +25,7 @@ public final class NativeBehaviorPanel {
         status=NativeUiTheme.text(t("读取行为状态…"),NativeUiTheme.ACCENT,10);body.addChild(status);targetStatus=NativeUiTheme.text("",NativeUiTheme.MUTED,9);body.addChild(targetStatus);progress=NativeUiTheme.text("",NativeUiTheme.MUTED,9);body.addChild(progress);
         actor=selector(body,"执行身体",new String[][]{{"ai","AI 自己"},{"player","接管我的身体"}});actor.setOnValueChanged(value->{active=null;initialized=false;actorPending=true;next=0;});
         mode=selector(body,"主工作",new String[][]{{"IDLE","待命"},{"WANDER","自由活动"},{"FOLLOW","跟随"},{"PATROL","巡逻"},{"GUARD","警戒"},{"FARM","农务"},{"FISH","钓鱼"},{"COMBAT","战斗"}});
-        strategy=selector(body,"战斗方式",new String[][]{{"AUTO","自动选择"},{"HIT_AND_RUN","近战跑打"},{"RANGED_KITE","远程控距"},{"HOLD_POSITION","守住阵地"},{"DISENGAGE","脱离交战"}});
+        strategy=selector(body,"战斗方式",new String[][]{{"AUTO","自动选择"},{"HIT_AND_RUN","近战跑打"},{"MELEE_COMBO","近战连击控距"},{"RANGED_KITE","远程控距"},{"HOLD_POSITION","守住阵地"},{"DISENGAGE","脱离交战"}});
         engagement=selector(body,"交战规则",new String[][]{{"SELF_DEFENSE","只自卫"},{"PROTECT","保护对象"},{"CLEAR_AREA","清理防区"},{"SPECIFIED","只攻击指定对象"},{"NONE","不攻击"}});
         target=selector(body,"目标 / 保护对象",new String[][]{{"$owner","主人"}});
         region=selector(body,"区域来源",new String[][]{{"LOOK","看向的位置"},{"CURRENT","当前位置"},{"PREVIOUS","沿用当前工作区域"},{"COMBAT","沿用当前防区"}});

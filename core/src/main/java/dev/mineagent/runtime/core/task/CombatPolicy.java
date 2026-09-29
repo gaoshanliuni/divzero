@@ -7,7 +7,7 @@ import java.util.*;
 public record CombatPolicy(Strategy strategy, Engagement engagement, String protect,
                            Set<UUID> excluded, double leash, double awareness,String target,SkillSpec.Area area) {
     public CombatPolicy(Strategy strategy,Engagement engagement,String protect,Set<UUID> excluded,double leash,double awareness){this(strategy,engagement,protect,excluded,leash,awareness,"",null);}
-    public enum Strategy { AUTO, HIT_AND_RUN, RANGED_KITE, HOLD_POSITION, DISENGAGE }
+    public enum Strategy { AUTO, HIT_AND_RUN, MELEE_COMBO, RANGED_KITE, HOLD_POSITION, DISENGAGE }
     public enum Engagement { NONE, SELF_DEFENSE, PROTECT, CLEAR_AREA, SPECIFIED }
     public CombatPolicy {
         Objects.requireNonNull(strategy);Objects.requireNonNull(engagement);

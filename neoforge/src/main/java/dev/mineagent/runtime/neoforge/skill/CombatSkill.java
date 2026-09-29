@@ -72,14 +72,15 @@ final class CombatSkill {
     private static void move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
         if(next==null){w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return;}
         boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.contactEscape);
-        if(sprintEscape&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
-        w.actor.sprint(w.token(),sprintEscape);
+        var heading=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());var look=w.player().getLookAngle();boolean sprintClosing=w.sprintApproach&&!escape&&w.tick()-w.lastAttackAt>=2&&heading.lengthSqr()>.001&&new Vec3(look.x,0,look.z).normalize().dot(heading.normalize())>.75;
+        if((sprintEscape||sprintClosing)&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
+        w.actor.sprint(w.token(),sprintEscape||sprintClosing);
         if(target!=null&&!sprintEscape)w.actor.aim(w.token(),target.getEyePosition());
         else {var direction=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());if(direction.lengthSqr()>.001)w.actor.aim(w.token(),w.player().getEyePosition().add(direction.normalize().scale(4)));}
         if(w.actor.moveTactically(w.token(),w.positioning.route()).equals("ROUTE_CHANGED")){w.actor.haltMotion(w.token());w.positioning.reset();}
     }
     private static void fight(SkillWork w,LivingEntity target){
-        var p=w.player();var rule=w.session.spec().combat();
+        var p=w.player();var rule=w.session.spec().combat();w.sprintApproach=false;
         if(target!=null&&(target instanceof net.minecraft.world.entity.player.Player||target.isAlliedTo(p)||target instanceof OwnableEntity owned&&owned.getOwnerReference()!=null)){w.combat.selected=null;return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
         if(escapeContact(w,target,contacts))return;
@@ -116,7 +117,16 @@ final class CombatSkill {
         double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);
         boolean ready=p.getAttackStrengthScale(.5f)>=.95f;
         boolean inReach=p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)&&visible;
-        boolean attackedRecently=w.tick()-w.lastAttackAt<8||!ready;
+        boolean combo=rule.strategy()==CombatPolicy.Strategy.MELEE_COMBO||rule.strategy()==CombatPolicy.Strategy.AUTO&&w.combat.threats.size()==1&&health>.5;
+        boolean knockedAway=w.tick()-w.lastMeleeHitTick<24&&target.getUUID().equals(w.lastMeleeHitTarget)&&actual.velocity().dot(target.position().subtract(p.position()))>.01;
+        if(combo&&!ready){
+            double spacing=reach+.2;
+            if(w.tick()-w.lastAttackAt<3||distance<spacing){phase(w,"STAP_SPACE");move(w,w.positioning.choose(w,"RETREAT",spacing+.2),target,false);}
+            else if(knockedAway&&distance>spacing+.7){phase(w,"COMBO_PRESSURE");w.sprintApproach=true;move(w,w.positioning.choose(w,"APPROACH",spacing),target,false);}
+            else {phase(w,"COMBO_SPACING");w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);}
+            return;
+        }
+        boolean attackedRecently=w.tick()-w.lastAttackAt<(combo?3:8)||!ready;
         boolean contactDanger=actual.inNativeMeleeRange()&&!actual.meleeRestricted()&&actual.attacks().stream().anyMatch(a->a.running()&&a.kind().equals("MELEE")&&(a.cooldownTicks()<0||a.cooldownTicks()<5));
         if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION&&(attackedRecently||contactDanger&&!(inReach&&ready)||actual.areaAttack())){
             phase(w,"MELEE_EXIT");
@@ -126,7 +136,7 @@ final class CombatSkill {
         if(!inReach){
             phase(w,"MELEE_APPROACH");
             if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);return;}
-            move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2)),target,false);return;
+            w.sprintApproach=true;move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2)),target,false);return;
         }
         if(!ready){phase(w,"COOLDOWN_GUARD");shield(w,target);return;}
         Vec3 exit=w.positioning.choose(w,"RETREAT",withdrawal);
@@ -139,7 +149,7 @@ final class CombatSkill {
         // Client attacks are acknowledged by native cooldown/damage; never assume a hit or knockback.
         if(p.getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt){
             w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;
-            phase(w,"MELEE_EXIT");if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION)move(w,exit,target,false);
+            phase(w,combo?"STAP_SPACE":"MELEE_EXIT");w.sprintApproach=false;if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION)move(w,exit,target,false);
         }
     }
     /** Actual health damage plus continuing native melee contact outranks ordinary pursuit and equipment choice. */
