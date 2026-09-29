@@ -3059,8 +3059,8 @@
     },
     {
       "path": "docs/TACTICAL_PLAYER_BEHAVIOR.md",
-      "sha256": "60c16d33c9c2fbc5492d37a4f89f4cdb0ab4a93fcae8747eeb655136601757ed",
-      "bytes": 4375
+      "sha256": "68cdc8393ac29b0d1fe0178688e893e8f1e706dcba5a78f1c2d214216fd5c531",
+      "bytes": 4685
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3469,8 +3469,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "47f2f59318ab97b241ae14e43f0f35b7703f76d400e149e5f85c24814acda17b",
-      "bytes": 63446
+      "sha256": "f616c88f4310631de2cfa615a19d13fabc165b4edb00049fe567bc7be9269738",
+      "bytes": 63858
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
