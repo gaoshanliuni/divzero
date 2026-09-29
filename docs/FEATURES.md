@@ -8,7 +8,7 @@
 
 DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，通过自然语言、世界感知、长期记忆和动态创造，让 AI 角色真正参与游戏世界。
 
-本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**源码 1.0.22 / 协议11**，最新 Release 为 1.0.21，客户端与服务端一起更新；旧版1.0.20为协议10。管理操作需要开启作弊／真实管理权限，首次在聊天中选择启用即可立即使用。
+本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**1.0.22 / 协议11**，客户端与服务端一起更新；旧版1.0.20为协议10。管理操作需要开启作弊／真实管理权限，首次在聊天中选择启用即可立即使用。
 
 ## 模型选择会显著影响效果
 
@@ -136,7 +136,7 @@ F2 → 设置 → Provider 管理 API URL、保密 Key 与模型。真实模型�
 - **低净空通行**：按真实方块碰撞体与站立／潜行体型规划；门、栅栏门、半砖、地毯和台阶之外，也识别需要低头潜行的通道。进入前自动潜行，安全离开后恢复；更低空间会返回路线受阻。可通过对话持续开启或关闭潜行。
 - **接管本人**：玩家明确提出后直接启动，无逐轮二次确认。持续观察和重新规划，左侧 HUD 显示公开决策摘要与下一路点。
 - 玩家明确要求接管本人后，AI 使用原生客户端输入持续执行。进入托管释放鼠标；**T、F2、切换电脑窗口及最小化均不中断**。MC 面板提供“暂停 / 继续、退出、追加命令”，按钮松开时触发；聊天栏 / F2 的 Esc 只处理界面；**回到游戏画面后双击 Esc 结束托管**。退出恢复原失焦暂停设置，死亡、断线、世界或权限变化仍释放控制。
-- **1.0.22（当前源码，尚未发行）**：托管观察相机按渲染帧平滑。原生 F5（含改绑）或面板视角按钮切换第一人称、第三人称背后/正面，保持 AI 实际瞄准、导航和动作不变。[实机结果](TAKEOVER_CAMERA.md)。
+- **1.0.22**：托管观察相机按渲染帧平滑。原生 F5（含改绑）或面板视角按钮切换第一人称、第三人称背后/正面，保持 AI 实际瞄准、导航和动作不变。[实机结果](TAKEOVER_CAMERA.md)。
 - 持续技能支持跟随、巡逻、警戒、漫步、原生战斗、农务和钓鱼；同一运行时使用 AI 身体与真人输入两个适配器。常规工作不逐株请求模型。
 - 共享通行判定支持已加载区域的门、低通道、台阶、梯子与水域。
 
@@ -256,7 +256,7 @@ DivZero 使用 [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob
 
 DivZero AI Runtime is an intelligent AI framework for Minecraft. Natural language interaction, world awareness, persistent memory, and dynamic creation let AI characters actively participate in the game world.
 
-This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **Source 1.0.22 / protocol 11**, with 1.0.21 as the latest published Release: update clients and servers together. The older 1.0.20 release uses protocol 10. Administrative actions require cheats or real administrator permissions. Click Enable in the first-entry chat prompt for immediate activation.
+This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **1.0.22 / protocol 11:** update clients and servers together. The older 1.0.20 release uses protocol 10. Administrative actions require cheats or real administrator permissions. Click Enable in the first-entry chat prompt for immediate activation.
 
 ## Your model makes a major difference
 
@@ -383,7 +383,7 @@ Creature definitions can be updated and persisted. Keyframe animations include i
 - **Low-clearance navigation:** planning uses actual block collision shapes and standing/crouching dimensions. In addition to doors, fence gates, slabs, carpets, and stairs, it recognizes passages requiring crouching. The AI crouches before entering and stands up when safe; lower spaces return a blocked route. Chat can enable or disable persistent sneaking.
 - **Take over your player:** starts when you explicitly request it, without reconfirming every planning round. The AI observes and replans continuously. A left-side HUD shows a public action summary and the next waypoint.
 - Explicitly requested player takeover uses native client input and releases the mouse cursor. **T, F2, switching windows and minimizing do not interrupt it.** The MC panel provides Pause/Continue, Exit and Add command, triggered on release. **Double-tap Esc in the game surface to exit; Esc in chat/F2 only handles the open UI.** Exiting restores your original focus-pause setting; death, disconnects, world and permission changes still release control.
-- **1.0.22 (current source, not yet released)** interpolates the observation camera per render frame. Vanilla F5, including remapped bindings, and the panel cycle first person, third-person back and front without changing AI aim, navigation or actions. [In-game results](TAKEOVER_CAMERA.md).
+- **1.0.22** interpolates the observation camera per render frame. Vanilla F5, including remapped bindings, and the panel cycle first person, third-person back and front without changing AI aim, navigation or actions. [In-game results](TAKEOVER_CAMERA.md).
 - Persistent follow, patrol, guard, wander, combat, farming and fishing share one runtime with separate AI-body and real-player input adapters. Routine work runs locally.
 - Shared traversal handles doors, low passages, steps, ladders and water in loaded areas.
 

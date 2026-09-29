@@ -14,7 +14,7 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 
 
 **[下载 JAR](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](docs/FEATURES.md) · [安装说明](docs/BUILD_JAR.md) · [问题反馈](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-最新 Release 为 **1.0.21 开发测试版**；公开 main 已包含 **1.0.22 托管相机修复**，尚未发布新 Release。支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**，网络协议仍为 **11**。客户端与服务端请同步更新；旧版 1.0.20 使用协议 10。建议使用已备份的测试存档。[下载已发布的 1.0.21](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.21)。
+当前为 **1.0.22 开发测试版**，包含托管相机平滑与原生视角切换修复。支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**，网络协议仍为 **11**。客户端与服务端请同步更新；旧版 1.0.20 使用协议 10。建议使用已备份的测试存档。[下载 1.0.22](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.22)。
 
 ## LDLib2 原生工作区与持续技能
 
@@ -163,7 +163,7 @@ Through natural language interaction, world awareness, persistent memory, and dy
 
 **[Download JARs](https://github.com/gaoshanliuni/divzero/releases) · [All features](docs/FEATURES.md#english) · [Installation](docs/BUILD_JAR.md) · [Report an issue](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-The latest published development/test release is **1.0.21**. Public main also includes the **1.0.22 takeover camera fix**, without a new Release yet. Requirements remain **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**, using **protocol 11**. The older 1.0.20 release uses protocol 10. Keep the main mod version in sync on clients and servers. Back up your world before testing. [Download published 1.0.21](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.21).
+**1.0.22 is a development/test release** with smooth takeover camera rendering and native perspective controls. Requirements remain **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**, using **protocol 11**. The older 1.0.20 release uses protocol 10. Keep the main mod version in sync on clients and servers. Back up your world before testing. [Download 1.0.22](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.22).
 
 ## Native LDLib2 workspace and persistent skills
 

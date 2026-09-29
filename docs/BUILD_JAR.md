@@ -1,14 +1,14 @@
-# 1.0.21：安装、升级与构建
+# 1.0.22：安装、升级与构建
 
-[返回首页](../README.md) · [Release 附件](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.21) · [功能说明](FEATURES.md)
+[返回首页](../README.md) · [Release 附件](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.22) · [功能说明](FEATURES.md)
 
-支持 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，1.0.21 开发测试版网络协议为 **11**；旧版 1.0.20 为协议 10。客户端和服务端使用同版主模组。
+支持 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，1.0.22 开发测试版网络协议为 **11**；旧版 1.0.20 为协议 10。客户端和服务端使用同版主模组。
 
 ## 下载哪些附件
 
 | Release Assets 文件 | 安装范围 |
 |---|---|
-| `DivZero-mineagent-1.0.21.jar` | 必需，DivZero 主模组 |
+| `DivZero-mineagent-1.0.22.jar` | 必需，DivZero 主模组 |
 | `ldlib2-neoforge-26.1-26.1.2.41.jar` | 必需，F2、AI 专属面板、原生预览与 HUD |
 | `kubejs-neoforge-26.1.2-8.0.6.jar` | AI 创建、修改动态原生界面及交互 |
 | `better-advanced-tooltips-2601.1.0-build.9.jar` | 上述 KubeJS 版本的依赖 |
@@ -28,6 +28,8 @@
 ## 当前入口与操作
 
 F2 / Ctrl+M 共用 MC 主题工作区；右键 AI 打开专属状态、人设、会话、背包与内容面板。确认、填入、复制选项在原生聊天和 F2 均可点击。
+
+1.0.22 的托管观察相机按渲染帧平滑。原生 F5（含改绑）及面板的视角按钮可切换第一人称、第三人称背后和正面，只改变观察画面，不改变 AI 实际瞄准和行动。
 
 托管开始释放鼠标；T、F2、切换窗口和最小化继续执行。面板提供暂停/继续、退出和追加命令。聊天、F2 等界面里的 Esc 只处理界面；无界面的游戏画面内，600ms 内两次独立按下 Esc 才退出，长按不计。退出恢复原失焦暂停设置。具体技能和恢复边界见 [本地战斗与工作模式](TACTICAL_PLAYER_BEHAVIOR.md) 和 [持续玩家技能](PERSISTENT_PLAYER_SKILLS.md)。
 
@@ -50,3 +52,5 @@ Download the main JAR and LDLib2 from **Release Assets**. Add KubeJS and Better 
 Click **Enable** in chat on first entry. Open F2 → Settings → Provider for API settings. F2 and Ctrl+M share the MC-themed workspace; right-click an AI for its panel. During player takeover, the cursor stays free and chat, F2 and window switching do not pause work. Use Pause/Continue, Exit or Add command on the panel. Esc inside chat, F2 or another screen only handles that screen. With no screen open, press Esc twice within 600ms to exit takeover; holding the key does not count.
 
 HTML/CSS/DOM packages need an explicit native rewrite. This release provides four individual runtime JAR attachments and no MCEF/WebGUI package.
+
+In 1.0.22, the takeover camera interpolates between body ticks. Use vanilla F5 (including remapped keys) or the panel's perspective button to cycle first person, third-person back and front without changing AI aim or actions.

@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "710155b3a4bce68fb2e8418fb9766407904f3675106a2a306bd1a156df6791e3",
-      "bytes": 22598
+      "sha256": "fe9c2886e6a04e9fe269f64993baefbfcab3a80d1afe2dc0c7186ff66188db3f",
+      "bytes": 22503
     },
     {
       "path": "agent/build.gradle",
@@ -3024,8 +3024,8 @@
     },
     {
       "path": "docs/BUILD_JAR.md",
-      "sha256": "f93c8c00b74f66ee3d998b72a691adbc0d54c0d260519e8dcebd4a27e86be881",
-      "bytes": 4865
+      "sha256": "709d090da014b74760a8c4290658c7e44972b4c9dd72fd8e6c8abc872ab52a0a",
+      "bytes": 5306
     },
     {
       "path": "docs/CINEMATIC_FILMS.md",
@@ -3034,8 +3034,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "d61a2478b38c6f93fcb1290516fb557fe5c67236ac499b21ea322937144005e2",
-      "bytes": 45438
+      "sha256": "583f02c580c25ca249856b50ca1eced152a5926cb3c3f7b5b9d579ebca51a773",
+      "bytes": 45283
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -3154,8 +3154,8 @@
     },
     {
       "path": "docs/releases/1.0.22.md",
-      "sha256": "9b965f33f4456a8037c30d30b7d1a48d5b85d2d71135dc0b04518c2900731564",
-      "bytes": 984
+      "sha256": "02a8c74859cc6e0624ef2d4b23afc8fba2012c13024587b41319d16a72fc47cb",
+      "bytes": 986
     },
     {
       "path": "gradle.properties",
