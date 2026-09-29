@@ -38,6 +38,7 @@ public final class MineAgentMovementController {
         if(!NativeSurfaceNavigation.openOnPath(p,waypoint)){intent.stop("INTERACTION_BLOCKED");return;}
         boolean swim=step.action()==Action.SWIM||step.action()==Action.ENTER_WATER;
         boolean climb=step.action()==Action.CLIMB;
+        p.setSwimming(swim&&p.isInWater());
         p.applySneaking(!swim&&!climb&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
         p.lookAlongPath(waypoint.add(0,p.getEyeHeight(),0));
         if((step.action()==Action.JUMP||step.action()==Action.LEAVE_WATER)&&offset.y>.65&&p.onGround())p.jumpFromGround();

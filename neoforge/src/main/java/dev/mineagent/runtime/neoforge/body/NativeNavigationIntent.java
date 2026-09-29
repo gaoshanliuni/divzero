@@ -35,7 +35,7 @@ public final class NativeNavigationIntent {
             search=new SurfacePathfinder.Search(start,goal,evaluator);searchStarted=tick;
         }
         if(search!=null){
-            if(tick-searchStarted>100||!evaluator.current()){search=null;retry.waitUntil(tick+1);reason="SEARCH_STALE";return null;}
+            if(!evaluator.current()){search=null;retry.waitUntil(tick+1);reason="SEARCH_STALE";return null;}
             var budget=NativeNavigationBudget.get(p.level().getServer());int count=budget.claim(budgetId,tick);if(count==0){reason="BUDGET_EXHAUSTED";return null;}evaluator.beginSlice();var result=search.advance(count,budget::timeAvailable);expanded=result.expanded();reason=result.status().name();
             if(result.status()==Status.FOUND){steps=result.steps();index=0;search=null;retry.succeeded(tick);if(steps.isEmpty())return null;}
             else if(result.status()!=Status.BUDGET_EXHAUSTED){search=null;retry.failed(tick);if(result.status()==Status.NO_PATH&&retry.failures()>=3)stop("UNREACHABLE");return null;}
