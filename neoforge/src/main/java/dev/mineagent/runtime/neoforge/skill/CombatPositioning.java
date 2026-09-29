@@ -93,11 +93,13 @@ final class CombatPositioning {
         double vertical=((dev.mineagent.runtime.neoforge.mixin.CombatJumpAccess)p).divzero$jumpPower(),gravity=p.getGravity();
         if(vertical<=0||vertical>.44||gravity<=0)return false;
         var start=p.position();var direction=NativeTraversalEvaluator.point(chosenRoute.get(2).to()).subtract(start).multiply(1,0,1).normalize();
-        double speed=Math.max(p.getDeltaMovement().horizontalDistance(),p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.4);
-        speed=Math.min(.36,speed);double height=0;double startingRisk=w.combat.collisionRisk(w,start,0);
+        double speed=Math.min(.36,p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.4);
+        var momentum=p.getDeltaMovement().multiply(1,0,1);if(momentum.horizontalDistanceSqr()>.36)return false;
+        var drift=Vec3.ZERO;double height=0;double startingRisk=w.combat.collisionRisk(w,start,0);
         for(int tick=1;tick<=20;tick++){
             height+=vertical;vertical=(vertical-gravity)*.98;
-            var point=start.add(direction.scale(speed*tick)).add(0,Math.max(0,height),0);
+            drift=drift.add(momentum);momentum=momentum.scale(.91);
+            var point=start.add(direction.scale(speed*tick)).add(drift).add(0,Math.max(0,height),0);
             if(!p.level().hasChunkAt(net.minecraft.core.BlockPos.containing(point))||!p.level().noCollision(p,p.getBoundingBox().move(point.subtract(start))))return false;
             // Jumping does not grant immunity: evaluate the same native melee/projectile boxes along the arc.
             if(w.combat.collisionRisk(w,point,tick)>Math.max(2,startingRisk)&&tick>=3)return false;
