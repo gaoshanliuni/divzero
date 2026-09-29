@@ -57,7 +57,7 @@ public final class TakeoverCameraClient {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void cameraAngles(ViewportEvent.ComputeCameraAngles event) {
-        if (!synchronizeContext() || event.getCamera().getEntity() != player
+        if (!synchronizeContext() || event.getCamera().entity() != player
                 || player.isPassenger() || player.isSleeping()) return;
         var angles = ROTATION.sample(event.getPartialTick());
         // This event runs before native front/back offset and collision clipping.

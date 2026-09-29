@@ -31,7 +31,7 @@ public final class TakeoverCameraSmokeClient {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void camera(ViewportEvent.ComputeCameraAngles event) {
         var mc = Minecraft.getInstance();
-        if (!recording || !AutonomousBodyClient.active() || event.getCamera().getEntity() != mc.player) return;
+        if (!recording || !AutonomousBodyClient.active() || event.getCamera().entity() != mc.player) return;
         bodyYaw = mc.player.getYRot();
         bodyPitch = mc.player.getXRot();
         eventYaw = event.getYaw();

@@ -3529,13 +3529,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/TakeoverCameraClient.java",
-      "sha256": "5b339b7e5f17950fc8526526b0f3e5d148aaf051b259f836ef89e0d733fe7bca",
-      "bytes": 3915
+      "sha256": "6bb3c2ceb12f8b8a71819b27281850835ec1b39988b40f83bfca0ad6e6ef4d09",
+      "bytes": 3912
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/TakeoverCameraSmokeClient.java",
-      "sha256": "06826217f5ae06b94e47be42435f83cdaf9f62e8999cbdb9033d4c6de04ed763",
-      "bytes": 3341
+      "sha256": "506e829b034d393c41ed5b4a6c3935a883e7f8dc0d05930f6b3e640b6e29fdc7",
+      "bytes": 3338
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/AiNameHover.java",
