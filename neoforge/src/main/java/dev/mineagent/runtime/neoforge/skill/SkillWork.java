@@ -22,12 +22,13 @@ final class SkillWork {
     boolean fishedEvent,tillPlot,shotLogged,nativeUse;int fishedItems,fishStatBefore,nativeConsumed,nativeDurability;Map<String,Integer> fishInventoryBefore=Map.of();Set<UUID> nearbyItemsBefore=Set.of();
     NativeTraversalEvaluator wanderEvaluator;SurfaceReachability wanderSearch;
     LivingEntity lastCombatTarget;
+    final CombatFootwork footwork=new CombatFootwork();String jumpKind="COUNTER";int jumpTapUntil=-1,sideStepUntil=-1;Vec3 footworkPosition;
     final CombatAwareness combat=new CombatAwareness();final CombatPositioning positioning=new CombatPositioning();
     String tactic="OBSERVE";int tacticAt,lastAttackAt=-10000,lastHitAt=-10000,lastDefenseTick,healSlot=-1;UUID healingOperation;boolean combatInterrupted;
     int lastCombatTick=-1,foodBefore;boolean lastCombatResult,healingWasUsing;
     int contactSince=-1,lastContactDamage=-10000,contactClearSince=-1;boolean contactEscape,contactRunAndHit,sprintApproach;Vec3 contactEscapeOrigin,contactEscapeLastPosition;UUID lastMeleeHitTarget;int lastMeleeHitTick=-10000,comboStreak;
     UUID extensionOperation,shieldOperation;boolean wasBlocking;FishingTackleAdapter tackle=FishingTackleAdapter.VANILLA;
-    int lastCounterJump=-10000,observedCounterJump=-10000;double counterJumpY;
+    int lastTacticalJump=-10000,observedTacticalJump=-10000;double tacticalJumpY;
     private String lastNotice="";private int lastNoticeTick=-10000;
     void notice(String key,String fallback){if(key.equals(lastNotice)&&tick()-lastNoticeTick<200)return;lastNotice=key;lastNoticeTick=tick();var owner=runtime.server.getPlayerList().getPlayer(session.owner());if(owner==null)return;String name=MineAgentRuntimeServices.bodies(runtime.server).definitions().stream().filter(d->d.agentId().equals(session.agent())).map(d->d.displayName()).findFirst().orElse("AI");owner.sendSystemMessage(net.minecraft.network.chat.Component.literal("["+name+"] ").append(net.minecraft.network.chat.Component.translatableWithFallback("mineagent.behavior."+key,fallback)));}
     final Map<UUID,SkillLootCollector.Drop> loot=new LinkedHashMap<>();final Map<Item,Integer> lootBefore=new HashMap<>();Set<UUID> dropBefore=Set.of();final Set<UUID> pickedDrops=new HashSet<>();int lootRetries;Long blockedLootTerrain;

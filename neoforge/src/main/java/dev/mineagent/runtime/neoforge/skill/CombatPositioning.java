@@ -16,8 +16,8 @@ final class CombatPositioning {
     boolean pending(){return !open.isEmpty();}
     boolean longRetreat(){return selectedDistance>3;}
     Vec3 choose(SkillWork w,String intent,double desiredDistance){
-        exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE","SPACE").contains(intent);
-        var actor=w.player();boolean jumping=w.tick()-w.lastCounterJump<=20&&!actor.onGround()&&actor.getY()-w.counterJumpY>=0&&actor.getY()-w.counterJumpY<1.6;var feet=jumping?new Vec3(actor.getX(),w.counterJumpY,actor.getZ()):actor.position();
+        exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE","SPACE","SIDE_LEFT","SIDE_RIGHT","JUMP_TAP").contains(intent);
+        var actor=w.player();boolean jumping=w.tick()-w.lastTacticalJump<=20&&!actor.onGround()&&actor.getY()-w.tacticalJumpY>=0&&actor.getY()-w.tacticalJumpY<1.6;var feet=jumping?new Vec3(actor.getX(),w.tacticalJumpY,actor.getZ()):actor.position();
         if(waypoint!=null){
             var p=w.player();boolean reached=(p.position().subtract(waypoint).horizontalDistanceSqr()<.10||heading!=null&&p.position().subtract(waypoint).dot(heading)>.12)&&Math.abs(feet.y-waypoint.y)<.5;
             boolean targetMoved=w.combat.selected!=null&&targetAtWaypoint!=null&&w.combat.selected.position().distanceToSqr(targetAtWaypoint)>4;
@@ -44,6 +44,14 @@ final class CombatPositioning {
         }
         double best=Double.POSITIVE_INFINITY;var target=w.combat.selected;
         for(int index=0;index<candidates.size()&&budget.timeAvailable();index++){var route=candidates.get(Math.floorMod(candidateCursor++,candidates.size()));var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()))).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
+            score+=w.combat.collisionRisk(w,point,4)*1.5;
+            if(target!=null&&(intent.equals("SIDE_LEFT")||intent.equals("SIDE_RIGHT"))){
+                var forward=target.position().subtract(origin).multiply(1,0,1).normalize();var left=new Vec3(forward.z,0,-forward.x);var delta=point.subtract(origin);
+                double lateral=delta.dot(left)*(intent.equals("SIDE_LEFT")?1:-1);
+                if(lateral<.65||delta.horizontalDistanceSqr()>12||delta.dot(forward)>.7)continue;
+                score+=Math.abs(lateral-1.8)*5;
+            }
+            if(intent.equals("JUMP_TAP")&&route.steps.size()<3)continue;
             // Avoid being knocked off an edge, even when a little melee damage is the cheaper exit.
             score+=route.steps.stream().mapToInt(step->edgeExposure(w,step.to())).max().orElse(0)*10000;
             double damage=0;for(var threat:w.combat.threats)if(threat.entity().isAlive()&&route.steps.stream().anyMatch(step->NativeCombatStates.meleeAt(threat.entity(),w.player(),NativeTraversalEvaluator.point(step.to())))){var attribute=threat.entity().getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);damage+=attribute==null?4:Math.max(0,attribute.getValue());}
@@ -54,7 +62,7 @@ final class CombatPositioning {
             if(onwards.stream().noneMatch(edge->evaluator.neighbors(edge.to()).stream().anyMatch(next->!next.to().equals(route.node)&&route.steps.stream().noneMatch(step->step.from().equals(next.to())))))score+=100;
             if(target!=null)score+=Math.abs(point.distanceTo(target.position())-desiredDistance)*(intent.equals("COUNTER")?14:intent.equals("SPACE")||intent.equals("APPROACH")?8:1.1);
             if(target!=null&&intent.equals("COUNTER")&&point.distanceTo(target.position())>=origin.distanceTo(target.position())-.2)continue;
-            if(intent.equals("RETREAT")||intent.equals("RECOVER")||intent.equals("LURE")){
+            if(intent.equals("RETREAT")||intent.equals("RECOVER")||intent.equals("LURE")||intent.equals("JUMP_TAP")){
                 score-=origin.distanceTo(point)*.45;
                 if(w.combat.protectedEntity!=null&&point.distanceTo(w.combat.protectedEntity.position())<origin.distanceTo(w.combat.protectedEntity.position())-.5)score+=100;
                 var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());if(owner!=null&&owner!=w.player()&&owner.level()==w.player().level()&&point.distanceTo(owner.position())<origin.distanceTo(owner.position())-.5)score+=100;
@@ -70,6 +78,32 @@ final class CombatPositioning {
         return selected;
     }
     private int edgeExposure(SkillWork w,Node node){return exposure.computeIfAbsent(node,n->{int danger=0;for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){if(dx==0&&dz==0)continue;int x=n.x()+dx,z=n.z()+dz;var at=new Vec3(x+.5,n.y(),z+.5);var pos=net.minecraft.core.BlockPos.containing(at);if(!evaluator.loaded(pos)){danger++;continue;}if(w.player().level().getFluidState(pos).is(net.minecraft.tags.FluidTags.LAVA)){danger++;continue;}if(!evaluator.clear(at,net.minecraft.world.entity.Pose.STANDING,true)&&!evaluator.clear(at,net.minecraft.world.entity.Pose.CROUCHING,true))continue;if(evaluator.positions(x,z,n.y()).stream().noneMatch(floor->Math.abs(floor.y()-n.y())<=1.25))danger++;}return danger;});}
+    double sideRisk(SkillWork w,int side){
+        var target=w.combat.selected;if(target==null)return Double.POSITIVE_INFINITY;
+        var origin=w.player().position();var forward=target.position().subtract(origin).multiply(1,0,1).normalize();var lateral=new Vec3(forward.z,0,-forward.x).scale(side);
+        if(evaluator==null)evaluator=new NativeTraversalEvaluator(w.player());evaluator.beginSlice();double risk=0;
+        for(int i=1;i<=3;i++){
+            var point=origin.add(lateral.scale(i*.55)).subtract(forward.scale(.2*i));var node=evaluator.closest(point);
+            if(node==null||Math.abs(NativeTraversalEvaluator.point(node).y-origin.y)>.5||edgeExposure(w,node)>0||!w.player().level().noCollision(w.player(),w.player().getBoundingBox().move(point.subtract(origin))))return Double.POSITIVE_INFINITY;
+            risk=Math.max(risk,w.combat.collisionRisk(w,point,i)+w.combat.risk(w,point)*.5);
+        }return risk;
+    }
+    boolean jumpTapSafe(SkillWork w){
+        var p=w.player();if(!jumpSafe(w)||p.getAbilities().flying||p.isFallFlying()||p.hasEffect(net.minecraft.world.effect.MobEffects.LEVITATION)||p.hasEffect(net.minecraft.world.effect.MobEffects.SLOW_FALLING)||w.combat.incoming(w))return false;
+        double vertical=((dev.mineagent.runtime.neoforge.mixin.CombatJumpAccess)p).divzero$jumpPower(),gravity=p.getGravity();
+        if(vertical<=0||vertical>.44||gravity<=0)return false;
+        var start=p.position();var direction=NativeTraversalEvaluator.point(chosenRoute.get(2).to()).subtract(start).multiply(1,0,1).normalize();
+        double speed=Math.max(p.getDeltaMovement().horizontalDistance(),p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.4);
+        speed=Math.min(.36,speed);double height=0;double startingRisk=w.combat.collisionRisk(w,start,0);
+        for(int tick=1;tick<=20;tick++){
+            height+=vertical;vertical=(vertical-gravity)*.98;
+            var point=start.add(direction.scale(speed*tick)).add(0,Math.max(0,height),0);
+            if(!p.level().hasChunkAt(net.minecraft.core.BlockPos.containing(point))||!p.level().noCollision(p,p.getBoundingBox().move(point.subtract(start))))return false;
+            // Jumping does not grant immunity: evaluate the same native melee/projectile boxes along the arc.
+            if(w.combat.collisionRisk(w,point,tick)>Math.max(2,startingRisk)&&tick>=3)return false;
+            if(height<=0){var floor=evaluator.closest(point);return floor!=null&&Math.abs(NativeTraversalEvaluator.point(floor).y-start.y)<.25&&edgeExposure(w,floor)==0&&w.combat.collisionRisk(w,point,4)<=2;}
+        }return false;
+    }
     boolean jumpSafe(SkillWork w){
         var p=w.player();boolean supported=p.onGround()||p.getDeltaMovement().y<=.01&&p.level().noCollision(p,p.getBoundingBox())&&!p.level().noCollision(p,p.getBoundingBox().move(0,-.04,0));if(!supported||p.isInWater()||p.isCrouching()||chosenRoute.size()<3)return false;
         var direction=NativeTraversalEvaluator.point(chosenRoute.get(2).to()).subtract(p.position());

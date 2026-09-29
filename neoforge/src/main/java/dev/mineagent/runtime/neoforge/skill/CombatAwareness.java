@@ -60,6 +60,13 @@ final class CombatAwareness {
         for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;
         return risk;
     }
+    double collisionRisk(SkillWork w,Vec3 point,int ticks){
+        double risk=0;for(var threat:threats)if(threat.entity.isAlive()){
+            if(NativeCombatStates.meleeAtAfter(threat.entity,w.player(),point,ticks))risk+=threat.state.openingTicks(w.player().level().getGameTime())>ticks+2?2:18;
+            if(threat.state.areaAttack()&&threat.entity.position().distanceTo(point)<8)risk+=30;
+        }
+        for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;return risk;
+    }
     private double projectileRisk(Projectile shot,Vec3 point){var v=shot.getDeltaMovement();var delta=point.add(0,1,0).subtract(shot.position());double t=Math.max(0,Math.min(12,delta.dot(v)/Math.max(.0001,v.lengthSqr())));double miss=shot.position().add(v.scale(t)).distanceTo(point.add(0,1,0));return Math.max(0,2-miss);}
     boolean incoming(SkillWork w){return projectiles.stream().anyMatch(shot->projectileRisk(shot,w.player().position())>.6);}
     Map<String,Object> view(){return Map.of("targetName",selected==null?"":selected.getName().getString(),"observations",scans,"target",selected==null?"":selected.getUUID().toString(),"threats",threats.stream().map(t->Map.of("actual",t.state,"eligible",t.eligible,"urgent",t.urgent,"selectionScore",t.score)).toList(),"projectileThreats",projectiles.size(),"lastThreatTick",lastThreatTick);}

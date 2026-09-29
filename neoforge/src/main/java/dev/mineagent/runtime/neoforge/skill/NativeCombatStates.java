@@ -74,5 +74,11 @@ public final class NativeCombatStates {
         if(enemy instanceof Mob mob&&mob instanceof CombatMobRangeAccess access){var item=mob.getActiveItem().get(DataComponents.ATTACK_RANGE);double max=item==null?CombatMobRangeAccess.divzero$defaultReach():item.effectiveMaxRange(mob),min=item==null?0:item.effectiveMinRange(mob);var target=actor.getHitbox().move(position.subtract(actor.position()));return access.divzero$attackBox(max).intersects(target)&&(min<=0||!access.divzero$attackBox(min).intersects(target));}
         return enemy.getBoundingBox().inflate(2).intersects(actor.getDimensions(actor.getPose()).makeBoundingBox(position));
     }
+    /** Short-horizon translation of the actual native attack box; prediction never becomes a stun claim. */
+    public static boolean meleeAtAfter(LivingEntity enemy,LivingEntity actor,Vec3 position,int ticks){
+        int horizon=Math.clamp(ticks,0,4);var velocity=enemy.getDeltaMovement();
+        var drift=new Vec3(velocity.x*horizon,0,velocity.z*horizon);if(drift.lengthSqr()>4)drift=drift.normalize().scale(2);
+        return meleeAt(enemy,actor,position.subtract(drift));
+    }
     private NativeCombatStates(){}
 }

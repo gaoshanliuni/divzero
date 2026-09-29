@@ -37,6 +37,7 @@
     "CombatCrossbowGoalAccess",
     "CombatArrowStateAccess",
     "CombatMobRangeAccess",
+    "CombatJumpAccess",
     "SkillItemUseOutcomeMixin"
   ],
   "injectors": {

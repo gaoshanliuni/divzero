@@ -39,7 +39,7 @@ public final class MineAgentMovementController {
         if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
         var step=intent.tick(p);if(step==null)return;var waypoint=intent.waypoint(step);var offset=waypoint.subtract(p.position());
         if(pendingJumpRevision!=commandRevision||pendingJumpOwner==null||!p.controls().owns(pendingJumpOwner,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT)){pendingJumpRevision=-1;pendingJumpOwner=null;}
-        else if(p.onGround()&&p.isSprinting()){intent.tacticalJump(p);p.jumpFromGround();pendingJumpRevision=-1;pendingJumpOwner=null;}
+        else if(p.onGround()){intent.tacticalJump(p);p.jumpFromGround();pendingJumpRevision=-1;pendingJumpOwner=null;}
         if(!NativeSurfaceNavigation.openOnPath(p,waypoint)){intent.stop("INTERACTION_BLOCKED");return;}
         boolean swim=step.action()==Action.SWIM||step.action()==Action.ENTER_WATER;
         boolean climb=step.action()==Action.CLIMB;

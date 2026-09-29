@@ -17,9 +17,9 @@ final class CombatSkill {
         w.lastCombatTick=w.tick();w.lastCombatResult=advance(w);return w.lastCombatResult;
     }
     private static boolean advance(SkillWork w){
-        if(w.lastCounterJump>w.observedCounterJump&&w.tick()-w.lastCounterJump<=8&&w.player().getY()>w.counterJumpY+.2){w.observedCounterJump=w.lastCounterJump;w.session.add("observedCounterJumps",1);}
+        if(w.lastTacticalJump>w.observedTacticalJump&&w.tick()-w.lastTacticalJump<=8&&w.player().getY()>w.tacticalJumpY+.2){w.observedTacticalJump=w.lastTacticalJump;w.session.add(w.jumpKind.equals("JUMP_TAP")?"observedJumpTaps":"observedCounterJumps",1);if(w.jumpKind.equals("JUMP_TAP")&&!w.player().isSprinting())w.session.add("jumpTapSprintResets",1);}
         if(w.combatStage==0&&w.combatOperation!=null&&(w.player().getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt)){w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;}
-        observeRelease(w);observeFood(w);w.combat.scan(w);
+        observeRelease(w);observeFood(w);w.combat.scan(w);observeFootwork(w);
         if(w.combat.contacts(w)>0){if(w.contactSince<0)w.contactSince=w.tick();}else w.contactSince=-1;
         var spec=w.session.spec();var rule=spec.combat();
         if(rule.engagement()==CombatPolicy.Engagement.NONE&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"ENGAGEMENT_DISABLED");}
@@ -56,7 +56,7 @@ final class CombatSkill {
     private static void finishDefense(SkillWork w){
         if(!w.combatInterrupted)return;
         w.actor.stop(w.token());w.actor.controls().release(w.token());w.combatInterrupted=false;w.fighting=null;w.combatOperation=null;w.combatStage=0;w.healingOperation=null;w.contactEscape=false;w.contactRunAndHit=false;w.contactSince=w.contactClearSince=-1;
-        w.session.phase(w.suspendedPhase==null?"SCAN":w.suspendedPhase);w.stand=null;w.search=null;w.positioning.reset();
+        w.session.phase(w.suspendedPhase==null?"SCAN":w.suspendedPhase);w.stand=null;w.search=null;w.positioning.reset();w.footwork.reset();w.jumpTapUntil=w.sideStepUntil=-1;
         w.session.transition(State.RUNNING,"DEFENSE_FINISHED_RECHECK_WORK");w.session.add("workResumptions",1);w.nextTick=w.tick();w.runtime.persist(w);if(w.session.spec().kind()!=SkillSpec.Kind.COMBAT)w.notice("resumed","威胁已解除，重新检查并继续原工作。");
     }
     static void combat(SkillWork w){interruptOrContinue(w);}
@@ -138,10 +138,14 @@ final class CombatSkill {
             if(!w.tactic.equals("COUNTER_APPROACH")){w.session.add("counterOpenings",1);if(actual.meleeRestricted())w.session.add("counterStunOpenings",1);else w.session.add("counterCooldownOpenings",1);}
             phase(w,"COUNTER_APPROACH");w.sprintApproach=true;
             if(!move(w,w.positioning.choose(w,"COUNTER",Math.max(1,reach-.2)),target,false)){if(!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;}
-            if(counter&&distance>reach+1&&opening>closing+8&&w.tick()-w.lastCounterJump>=20&&w.positioning.jumpSafe(w)&&p.isSprinting()){
-                w.counterJumpY=p.getY();w.actor.jump(w.token());w.lastCounterJump=w.tick();w.session.add("counterJumpAttempts",1);
+            if(counter&&distance>reach+1&&opening>closing+8&&w.tick()-w.lastTacticalJump>=20&&w.positioning.jumpSafe(w)&&p.isSprinting()){
+                w.jumpKind="COUNTER";w.tacticalJumpY=p.getY();w.actor.jump(w.token());w.lastTacticalJump=w.tick();w.session.add("counterJumpAttempts",1);
             }
             return;
+        }
+        if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){
+            if(jumpTap(w,target,withdrawal))return;
+            if(w.tick()-w.lastAttackAt>=3&&(!ready||w.combat.incoming(w))&&sideStep(w,target,reach+.4))return;
         }
         boolean combo=rule.strategy()==CombatPolicy.Strategy.MELEE_COMBO||rule.strategy()==CombatPolicy.Strategy.AUTO&&w.combat.threats.size()==1&&health>.5;
         boolean knockedAway=w.tick()-w.lastMeleeHitTick<24&&target.getUUID().equals(w.lastMeleeHitTarget)&&actual.velocity().dot(target.position().subtract(p.position()))>.01;
@@ -178,6 +182,35 @@ final class CombatSkill {
             w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;
             phase(w,combo?"STAP_SPACE":"MELEE_EXIT");w.sprintApproach=false;if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION)move(w,exit,target,enemyReach>reach);
         }
+    }
+    private static void observeFootwork(SkillWork w){
+        var position=w.player().position();var target=w.combat.selected;
+        if(w.footworkPosition!=null&&target!=null&&w.sideStepUntil>=w.tick()){
+            var toward=target.position().subtract(position).multiply(1,0,1).normalize();double moved=position.subtract(w.footworkPosition).dot(new Vec3(toward.z,0,-toward.x));
+            if(Math.abs(moved)>.006){w.session.add(moved>0?"nativeStrafeLeftTicks":"nativeStrafeRightTicks",1);w.session.add("nativeStrafeDistanceMilli",(long)(Math.abs(moved)*1000));}
+            if(!NativeCombatStates.meleeAt(target,w.player(),position))w.session.add("strafeOutsideNativeAttackBoxTicks",1);
+        }w.footworkPosition=position;
+    }
+    private static boolean sideStep(SkillWork w,LivingEntity target,double spacing){
+        if(target==null||w.player().isInWater()||w.player().isCrouching()||w.combat.contacts(w)>1||w.contactEscape)return false;
+        double left=w.positioning.sideRisk(w,1),right=w.positioning.sideRisk(w,-1);int before=w.footwork.side(),side=w.footwork.choose(w.tick(),left,right);
+        if(side==0)return false;var point=w.positioning.choose(w,side>0?"SIDE_LEFT":"SIDE_RIGHT",spacing);if(point==null)return false;
+        if(w.player().isUsingItem()){w.actor.stop(w.token());w.shieldOperation=null;w.healingOperation=null;}
+        w.sprintApproach=false;phase(w,side>0?"AD_LEFT":"AD_RIGHT");if(side!=before)w.session.add("adDirectionChanges",1);w.sideStepUntil=w.tick()+3;
+        return move(w,point,target,false);
+    }
+    private static boolean jumpTap(SkillWork w,LivingEntity target,double spacing){
+        var p=w.player();
+        if(w.jumpTapUntil>=w.tick()&&w.tick()-w.lastTacticalJump<14){
+            phase(w,"JUMP_TAP");w.sprintApproach=false;return move(w,w.positioning.choose(w,"JUMP_TAP",spacing),target,false);
+        }
+        if(target==null||w.tick()-w.lastMeleeHitTick>4||!target.getUUID().equals(w.lastMeleeHitTarget)||w.tick()-w.lastTacticalJump<28||w.combat.contacts(w)>1||p.getHealth()<p.getMaxHealth()*.4)return false;
+        var point=w.positioning.choose(w,"JUMP_TAP",spacing);if(point==null)return false;
+        boolean grounded=p.onGround()||p.getDeltaMovement().y<=.01&&!p.level().noCollision(p,p.getBoundingBox().move(0,-.04,0));
+        if(!w.footwork.jumpReady(w.tick(),grounded,true,w.positioning.jumpTapSafe(w)))return false;
+        w.sprintApproach=false;phase(w,"JUMP_TAP");if(!move(w,point,target,false))return false;
+        w.footwork.jumped(w.tick());w.jumpKind="JUMP_TAP";w.tacticalJumpY=p.getY();w.lastTacticalJump=w.tick();w.jumpTapUntil=w.tick()+12;
+        w.actor.jump(w.token());w.session.add("jumpTapAttempts",1);return true;
     }
     /** Actual health damage plus continuing native melee contact outranks ordinary pursuit and equipment choice. */
     private static boolean counterBeforeEscape(SkillWork w,LivingEntity target,int contacts){

@@ -3201,5 +3201,9 @@
   "API 密钥未配置": "API Key not configured",
   "语音识别密钥": "ASR Key",
   "我发起请求的任意 AI": "Any Agent I initiate requests with",
-  "代码助手": "Coder"
+  "代码助手": "Coder",
+  "短跳调整走位": "Hop to reposition",
+  "短跳调整攻击节奏，检查落点": "Jump-tap and check the landing",
+  "向左变向，避开攻击区域": "Strafe left out of the attack area",
+  "向右变向，避开攻击区域": "Strafe right out of the attack area"
 }
