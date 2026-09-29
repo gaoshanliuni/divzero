@@ -171,13 +171,20 @@ final class CombatSkill {
     }
     private static boolean eat(SkillWork w){
         var p=w.player();if(p.getFoodData().getFoodLevel()>=20)return false;
-        for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(w.session.spec().kind()==SkillSpec.Kind.FARM&&CropAdapter.adapters().stream().anyMatch(a->stack.is(a.seed()))&&w.count(stack.getItem())<=1)continue;if(stack.has(DataComponents.FOOD)&&!stack.is(Items.ROTTEN_FLESH)&&!stack.is(Items.SPIDER_EYE)&&!stack.is(Items.PUFFERFISH)&&!stack.is(Items.POISONOUS_POTATO)){
+        for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(food(w,stack)){
             if(!w.equip(stack.getItem()))return true;
             if(w.healSlot!=i||w.healingOperation==null){w.healSlot=i;w.healingOperation=UUID.randomUUID();}
             if(!w.healingWasUsing)w.foodBefore=p.getFoodData().getFoodLevel();w.actor.useHand(w.token(),w.healingOperation,InteractionHand.MAIN_HAND);w.healingWasUsing|=p.isUsingItem();phase(w,"EATING_IN_SAFE_SPACE");return true;
         }}return false;
     }
-    private static boolean safeToEat(SkillWork w){return w.combat.risk(w,w.player().position())<2&&w.combat.threats.stream().allMatch(t->t.entity().distanceTo(w.player())>3+40*Math.max(t.state().velocity().horizontalDistance(),t.state().movementSpeed()));}
+    private static boolean safeToEat(SkillWork w){
+        var p=w.player();int remaining=40;
+        if(w.healingOperation!=null&&p.isUsingItem()&&p.getUsedItemHand()==InteractionHand.MAIN_HAND&&p.getUseItem().has(DataComponents.FOOD))remaining=p.getUseItemRemainingTicks();
+        else for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(food(w,stack)){remaining=stack.getUseDuration(p);break;}}
+        final int untilFinished=Math.max(0,remaining)+8;
+        return w.combat.risk(w,p.position())<2&&w.combat.threats.stream().allMatch(t->t.entity().distanceTo(p)>3+untilFinished*Math.max(t.state().velocity().horizontalDistance(),t.state().movementSpeed()));
+    }
+    private static boolean food(SkillWork w,ItemStack stack){return stack.has(DataComponents.FOOD)&&!stack.is(Items.ROTTEN_FLESH)&&!stack.is(Items.SPIDER_EYE)&&!stack.is(Items.PUFFERFISH)&&!stack.is(Items.POISONOUS_POTATO)&&!(w.session.spec().kind()==SkillSpec.Kind.FARM&&CropAdapter.adapters().stream().anyMatch(a->stack.is(a.seed()))&&w.count(stack.getItem())<=1);}
     private static void observeFood(SkillWork w){if(w.healingWasUsing&&!w.player().isUsingItem()){if(w.player().getFoodData().getFoodLevel()>w.foodBefore)w.session.add("nativeFoodConsumptions",1);w.healingWasUsing=false;w.healingOperation=null;}}
     private CombatSkill(){}
 }
