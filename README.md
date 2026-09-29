@@ -32,6 +32,10 @@ AI 与真人托管共用跟随、巡逻、警戒、漫步、战斗、农务和�
 
 [本地战斗与独立工作模式](docs/TACTICAL_PLAYER_BEHAVIOR.md) · [原生界面与建筑升级](docs/NATIVE_UI_MIGRATION_STATUS.md) · [持续技能验收](docs/PERSISTENT_PLAYER_SKILLS.md) · [十项动态能力](docs/NATIVE_TEN_SCENARIOS.md)
 
+**1.0.21 候选**把主工作、战斗方式和交战规则分开。可以说“继续种田，遇怪跑打，打完接着种”，或在 F2 / 右键 AI 的行为模式页只改战斗规则。模型理解目标，本地执行移动、选敌、攻击和工作循环。
+
+![F2 的独立工作与战斗设置，默认 MC 主题](docs/images/behavior-workspace.png)
+
 ## 模型选择会显著影响效果
 
 **最终效果很大程度取决于所选模型的能力。** 复杂建造、实体设计、多步骤规划与工具调用，不同模型的表现可能差异很大。追求更好的效果时，建议尝试 Claude、Grok、GPT 等系列中较新、能力更强的模型，并通过模组支持的兼容 API 接入；具体兼容性、费用与实际表现以所用服务为准。
@@ -174,6 +178,10 @@ AI bodies and player takeover share follow, patrol, guard, wander, combat, farmi
 ![Takeover controls: Pause, Exit and Add command](docs/images/player-takeover.png)
 
 [Local tactics and independent work modes](docs/TACTICAL_PLAYER_BEHAVIOR.md) · [Native UI and building migration](docs/NATIVE_UI_MIGRATION_STATUS.md) · [Persistent skills](docs/PERSISTENT_PLAYER_SKILLS.md) · [Ten dynamic scenarios](docs/NATIVE_TEN_SCENARIOS.md)
+
+The **1.0.21 candidate** separates work, combat style and engagement rules. Say “keep farming, kite monsters, then resume farming”, or edit combat rules in F2 / the AI profile. The model interprets goals; local code handles movement, targeting, attacks and repeated work.
+
+![MC-themed work and combat controls in the AI profile](docs/images/behavior-agent-profile.png)
 
 ## Your model makes a major difference
 

@@ -10,9 +10,20 @@ final class CombatPositioning {
     record Route(Node node,List<PathStep> steps,double worstRisk){}
     private NativeTraversalEvaluator evaluator;private final Deque<Route> open=new ArrayDeque<>();private final Set<Node> seen=new HashSet<>();private final List<Route> candidates=new ArrayList<>();
     private Vec3 origin;private int started;private String purpose="";private Vec3 selected;private double selectedDistance;private int candidateCursor;
+    private Vec3 waypoint,heading,targetAtWaypoint;private Node waypointNode;private int waypointAt;private double waypointRisk;private String waypointPurpose="";
     boolean pending(){return !open.isEmpty();}
     boolean longRetreat(){return selectedDistance>3;}
     Vec3 choose(SkillWork w,String intent,double desiredDistance){
+        if(waypoint!=null){
+            var p=w.player();boolean reached=p.position().subtract(waypoint).horizontalDistanceSqr()<.10&&Math.abs(p.getY()-waypoint.y)<.5;
+            boolean targetMoved=w.combat.selected!=null&&targetAtWaypoint!=null&&w.combat.selected.position().distanceToSqr(targetAtWaypoint)>4;
+            evaluator.beginSlice();var current=evaluator.closest(p.position());
+            boolean traversable=current!=null&&(current.equals(waypointNode)||evaluator.neighbors(current).stream().anyMatch(edge->edge.to().equals(waypointNode)));
+            boolean safe=traversable&&p.level().noCollision(p,p.getDimensions(p.getPose()).makeBoundingBox(waypoint).deflate(.05))&&w.combat.risk(w,waypoint)<=Math.max(waypointRisk+2,w.combat.risk(w,p.position())+1);
+            if(!reached&&intent.equals(waypointPurpose)&&!targetMoved&&w.tick()-waypointAt<24&&safe)return waypoint;
+            if(!reached)w.session.add("tacticalWaypointRechecks",1);
+            waypoint=null;origin=null;
+        }
         if(origin==null||w.tick()-started>8||origin.distanceToSqr(w.player().position())>1||!purpose.equals(intent)){
             evaluator=new NativeTraversalEvaluator(w.player());origin=w.player().position();started=w.tick();purpose=intent;selected=null;open.clear();seen.clear();candidates.clear();var node=evaluator.closest(origin);if(node!=null){seen.add(node);open.add(new Route(node,List.of(),w.combat.risk(w,origin)));}
         }
@@ -37,9 +48,12 @@ final class CombatPositioning {
             }
             if(target!=null&&intent.equals("LURE")){var a=origin.subtract(target.position()).normalize();var b=point.subtract(target.position()).normalize();score-=Math.abs(a.x*b.z-a.z*b.x)*2;}
             // Execute the first checked edge; do not hand an endpoint to a different route search.
-            if(score<best){best=score;selectedDistance=origin.distanceTo(point);selected=NativeTraversalEvaluator.point(route.steps.getFirst().to());}
+            var next=NativeTraversalEvaluator.point(route.steps.getFirst().to());var direction=new Vec3(next.x-origin.x,0,next.z-origin.z).normalize();
+            if(heading!=null)score+=(1-heading.dot(direction))*.8;
+            if(score<best){best=score;selectedDistance=origin.distanceTo(point);selected=next;waypointNode=route.steps.getFirst().to();}
         }
+        if(selected!=null){waypoint=selected;waypointAt=w.tick();waypointPurpose=intent;waypointRisk=w.combat.risk(w,waypoint);targetAtWaypoint=target==null?null:target.position();heading=new Vec3(waypoint.x-w.player().getX(),0,waypoint.z-w.player().getZ()).normalize();w.session.add("tacticalWaypoints",1);}
         return selected;
     }
-    void reset(){origin=null;selected=null;}
+    void reset(){origin=null;selected=null;waypoint=null;waypointNode=null;heading=null;targetAtWaypoint=null;}
 }

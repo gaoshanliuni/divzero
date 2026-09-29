@@ -69,7 +69,7 @@ final class CombatSkill {
         if(w.combatStage==2&&!w.shotLogged&&w.count(Items.ARROW)<w.combatAmmo){w.shotLogged=true;w.session.add("arrowsReleased",1);log(w,"RELEASE_OBSERVED");}
     }
     private static void move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
-        if(next==null){phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return;}
+        if(next==null){w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return;}
         boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.contactEscape);
         if(sprintEscape&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
         w.actor.sprint(w.token(),sprintEscape);
@@ -145,16 +145,16 @@ final class CombatSkill {
         if(contacts>0){if(w.contactSince<0)w.contactSince=w.tick();}else w.contactSince=-1;
         if(!w.contactEscape&&contacts>0&&w.tick()-w.contactSince>=1&&w.tick()-w.lastContactDamage<=20){
             observeRelease(w);w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;
-            w.contactEscape=true;w.contactRunAndHit=true;w.contactClearSince=-1;w.contactEscapeOrigin=w.player().position();w.positioning.reset();w.session.add("contactEscapes",1);w.notice("contact_escape","先拉开距离，再继续跑打。");
+            w.contactEscape=true;w.contactRunAndHit=true;w.contactClearSince=-1;w.contactEscapeOrigin=w.player().position();w.contactEscapeLastPosition=w.player().position();w.positioning.reset();w.session.add("contactEscapes",1);w.notice("contact_escape","先拉开距离，再继续跑打。");
         }
         if(!w.contactEscape)return false;
         boolean clear=contacts==0&&!w.combat.flanked(w)&&w.combat.risk(w,w.player().position())<4;
         if(clear){if(w.contactClearSince<0)w.contactClearSince=w.tick();}else w.contactClearSince=-1;
         if(w.contactClearSince>=0&&w.tick()-w.contactClearSince>=6&&w.tick()-w.lastContactDamage>=10){
-            w.contactEscape=false;w.contactSince=w.contactClearSince=-1;w.actor.haltMotion(w.token());w.positioning.reset();w.lastAttackAt=w.tick();w.session.add("contactEscapeResumptions",1);return false;
+            w.contactEscape=false;w.contactSince=w.contactClearSince=-1;w.actor.haltMotion(w.token());w.positioning.reset();w.lastAttackAt=w.tick();w.session.add("contactEscapeResumptions",1);w.session.add("nativeMeleeClearanceVerified",1);return false;
         }
         phase(w,"CONTACT_ESCAPE");
-        if(w.player().isSprinting())w.session.add("nativeContactSprintTicks",1);
+        if(w.player().isSprinting()&&w.contactEscapeLastPosition!=null){double travel=w.player().position().distanceTo(w.contactEscapeLastPosition);if(travel>.001){w.session.add("nativeContactSprintTicks",1);w.session.add("nativeContactSprintDistanceMilli",(long)(travel*1000));}}w.contactEscapeLastPosition=w.player().position();
         if(w.contactEscapeOrigin!=null)w.session.add("contactEscapeDistanceMilli",Math.max(0,(long)(w.player().position().distanceTo(w.contactEscapeOrigin)*1000)-w.session.count("contactEscapeDistanceMilli")));
         move(w,w.positioning.choose(w,"RETREAT",Math.max(7,w.player().getAttackRangeWith(w.player().getMainHandItem()).effectiveMaxRange(w.player())+4)),target,true);
         return true;

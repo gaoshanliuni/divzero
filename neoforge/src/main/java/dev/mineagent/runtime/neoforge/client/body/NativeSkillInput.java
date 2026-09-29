@@ -13,19 +13,19 @@ import java.util.*;
 /** Executes only frames inside the existing local autonomy identity/lease boundary. */
 public final class NativeSkillInput {
     private static String command="";private static boolean clicked;private static int doorCooldown;private static final Set<String> COMPLETED=new LinkedHashSet<>();
-    private static int climbed,swam,crouched,moved;private static Vec3 lastPosition;
+    private static int climbed,swam,crouched,moved,aimTick=-1,aimsThisTick,maxAimsPerTick;private static Vec3 lastPosition;
     private static Minecraft mc(){return Minecraft.getInstance();}
     private static void key(KeyMapping k,boolean down){AutonomyVirtualInput.key(k,down);}
-    public static void reset(){command="";clicked=false;doorCooldown=0;COMPLETED.clear();climbed=swam=crouched=moved=0;lastPosition=null;}
-    public static Map<String,Object> motionEvidence(){return Map.of("climbingTicks",climbed,"swimmingTicks",swam,"crouchingTicks",crouched,"observedMovingTicks",moved);}
+    public static void reset(){command="";clicked=false;doorCooldown=0;COMPLETED.clear();climbed=swam=crouched=moved=0;aimTick=-1;aimsThisTick=maxAimsPerTick=0;lastPosition=null;}
+    public static Map<String,Object> motionEvidence(){return Map.of("climbingTicks",climbed,"swimmingTicks",swam,"crouchingTicks",crouched,"observedMovingTicks",moved,"maxAimUpdatesPerTick",maxAimsPerTick);}
     public static Map<String,Object> observation(){var p=mc().player;return Map.of("command",command,"clicked",clicked,"deduplicatedOperations",COMPLETED.size(),"position",p==null?"":p.position().toString(),"mainHand",p==null?"":p.getMainHandItem().toString(),"hit",Objects.toString(mc().hitResult),"focused",mc().isWindowActive(),"mouseGrabbed",mc().mouseHandler.isMouseGrabbed());}
     public static void validate(JsonNode n){if(!n.isObject()||!Set.of("MOVE","HALT","HALT_MOTION","HOTBAR","OFFHAND","BREAK","USE_BLOCK","USE_ONCE","HOLD","RELEASE","ATTACK_ENTITY","LOOK","JUMP","SNEAK").contains(n.path("action").asText()))throw new IllegalArgumentException("SKILL_INPUT_FRAME");UUID.fromString(n.path("operation").asText());vector(n.path("target"));if(n.has("aim"))vector(n.get("aim"));if(n.has("hand")&&!Set.of("MAIN_HAND","OFF_HAND").contains(n.get("hand").asText()))throw new IllegalArgumentException("SKILL_INPUT_HAND");if(n.has("motion")){var m=n.get("motion");if(m.has("motion")||!m.path("action").asText().equals("MOVE"))throw new IllegalArgumentException("SKILL_INPUT_MOTION");validate(m);}if(n.has("slot")&&(!n.get("slot").isIntegralNumber()||n.get("slot").asInt()<0||n.get("slot").asInt()>35))throw new IllegalArgumentException("SKILL_INPUT_SLOT");}
     public static void tick(JsonNode n){
-        validate(n);if(n.has("motion"))tick(n.get("motion"));var mc=mc();var p=mc.player;if(p==null||mc.gameMode==null)return;String action=n.path("action").asText(),next=n.path("operation").asText()+"/"+action;
+        validate(n);if(n.has("motion")){var motion=(com.fasterxml.jackson.databind.node.ObjectNode)n.get("motion").deepCopy();if(n.has("aim"))motion.set("aim",n.get("aim"));else if(Set.of("HOLD","USE_ONCE","ATTACK_ENTITY","USE_BLOCK","BREAK").contains(n.path("action").asText()))motion.set("aim",n.get("target"));tick(motion);}var mc=mc();var p=mc.player;if(p==null||mc.gameMode==null)return;String action=n.path("action").asText(),next=n.path("operation").asText()+"/"+action;
         if(!next.equals(command)){command=next;clicked=COMPLETED.contains(next);}var target=vector(n.path("target"));
         if(action.equals("HALT_MOTION")){if(p.isUsingItem())((PlayerControlKeyAccess)mc.options.keyUse).mineagent$bodyDown(true);if(n.has("aim"))turn(vector(n.get("aim")));return;}
         if(action.equals("HALT")){mc.gameMode.stopDestroyBlock();p.stopUsingItem();return;}
-        key(mc.options.keyShift,n.path("sneaking").asBoolean());
+        if(!n.has("motion"))key(mc.options.keyShift,n.path("sneaking").asBoolean());
         if(action.equals("JUMP")){key(mc.options.keyJump,true);return;}if(action.equals("SNEAK"))return;
         if(action.equals("OFFHAND")){if(!clicked&&p.containerMenu==p.inventoryMenu&&p.containerMenu.getCarried().isEmpty()){int slot=n.path("slot").asInt();mc.gameMode.handleContainerInput(p.inventoryMenu.containerId,slot<9?slot+36:slot,40,ContainerInput.SWAP,p);markClicked();}return;}
         if(action.equals("HOTBAR")){if(!clicked){int slot=n.path("slot").asInt();if(slot<9){p.getInventory().setSelectedSlot(slot);markClicked();}else if(p.containerMenu==p.inventoryMenu&&p.containerMenu.getCarried().isEmpty()){mc.gameMode.handleContainerInput(p.inventoryMenu.containerId,slot,p.getInventory().getSelectedSlot(),ContainerInput.SWAP,p);markClicked();}}return;}
@@ -39,7 +39,7 @@ public final class NativeSkillInput {
             String edge=n.path("pathAction").asText();key(mc.options.keyJump,edge.equals("CLIMB")&&delta.y>0||p.isInWater()&&delta.y>.1||delta.y>.65&&delta.horizontalDistanceSqr()<2);
             key(mc.options.keySprint,n.path("sprinting").asBoolean()||p.isInWater()&&(edge.equals("SWIM")||edge.equals("ENTER_WATER")));key(mc.options.keyShift,n.path("sneaking").asBoolean()||edge.equals("CROUCH")||p.isInWater()&&delta.y< -.2||!p.isInWater()&&dev.mineagent.runtime.neoforge.body.NativeSurfaceNavigation.requiresSneaking(p,target));return;
         }
-        turn(target);
+        if(!n.has("motion"))turn(target);
         var hit=p.pick(p.blockInteractionRange(),0,false);boolean blockHit=hit instanceof BlockHitResult b&&b.getType()==HitResult.Type.BLOCK&&b.getBlockPos().equals(BlockPos.containing(target));
         if(action.equals("BREAK")){if(blockHit){var block=(BlockHitResult)hit;if(!clicked){mc.gameMode.startDestroyBlock(block.getBlockPos(),block.getDirection());markClicked();}else mc.gameMode.continueDestroyBlock(block.getBlockPos(),block.getDirection());p.swing(net.minecraft.world.InteractionHand.MAIN_HAND);}else mc.gameMode.stopDestroyBlock();return;}
         if(action.equals("USE_BLOCK")){if(p.isUsingItem())((PlayerControlKeyAccess)mc.options.keyUse).mineagent$bodyDown(true);if(blockHit&&!clicked){var result=mc.gameMode.useItemOn(p,net.minecraft.world.InteractionHand.MAIN_HAND,(BlockHitResult)hit);if(!result.consumesAction())for(var hand:net.minecraft.world.InteractionHand.values())if(mc.gameMode.useItem(p,hand).consumesAction()||p.isUsingItem())break;if(p.isUsingItem())((PlayerControlKeyAccess)mc.options.keyUse).mineagent$bodyDown(true);p.swing(net.minecraft.world.InteractionHand.MAIN_HAND);markClicked();}return;}
@@ -50,6 +50,6 @@ public final class NativeSkillInput {
     private static boolean aligned(Vec3 target){var delta=target.subtract(mc().player.getEyePosition()).normalize();return delta.dot(mc().player.getLookAngle())>.995;}
     private static Vec3 vector(JsonNode n){if(!n.isArray()||n.size()!=3)throw new IllegalArgumentException("SKILL_INPUT_VECTOR");double[] v=new double[3];for(int i=0;i<3;i++)if(!n.get(i).isNumber()||!Double.isFinite(v[i]=n.get(i).asDouble())||Math.abs(v[i])>30_000_000)throw new IllegalArgumentException("SKILL_INPUT_VECTOR");return new Vec3(v[0],v[1],v[2]);}
     private static double angle(double x,double z){return Math.toDegrees(Math.atan2(-x,z));}
-    private static void turn(Vec3 target){var p=mc().player;var d=target.subtract(p.getEyePosition());float yaw=(float)angle(d.x,d.z),pitch=(float)-Math.toDegrees(Math.atan2(d.y,Math.hypot(d.x,d.z)));p.setYRot(p.getYRot()+Mth.clamp(Mth.wrapDegrees(yaw-p.getYRot()),-15,15));p.setXRot(Mth.clamp(p.getXRot()+Mth.clamp(pitch-p.getXRot(),-12,12),-90,90));}
+    private static void turn(Vec3 target){var p=mc().player;if(aimTick!=p.tickCount){aimTick=p.tickCount;aimsThisTick=0;}maxAimsPerTick=Math.max(maxAimsPerTick,++aimsThisTick);var d=target.subtract(p.getEyePosition());float yaw=(float)angle(d.x,d.z),pitch=(float)-Math.toDegrees(Math.atan2(d.y,Math.hypot(d.x,d.z)));p.setYRot(p.getYRot()+Mth.clamp(Mth.wrapDegrees(yaw-p.getYRot()),-15,15));p.setXRot(Mth.clamp(p.getXRot()+Mth.clamp(pitch-p.getXRot(),-12,12),-90,90));}
     private NativeSkillInput(){}
 }
