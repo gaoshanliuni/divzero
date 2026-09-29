@@ -22,6 +22,7 @@ public final class MineAgentMovementController {
     public int executedSteps(){return executedSteps;}
     public boolean stopIfCurrent(long command){if(command!=commandRevision)return false;intent.stop("CANCELLED");return true;}
     public void movePreciselyTo(Vec3 target){start(target,.2);}
+    public boolean followCheckedRoute(MineAgentPlayer player,List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> route){if(!intent.followCheckedRoute(player,route))return false;commandRevision++;return true;}
     public void moveTo(Vec3 target){start(target,.8);}
     private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=0;traversedFloors.clear();}
     /** Tracking a moving entity does not replace the command or discard a still-useful route. */
@@ -40,7 +41,7 @@ public final class MineAgentMovementController {
         boolean climb=step.action()==Action.CLIMB;
         p.setSwimming(swim&&p.isInWater());
         p.applySneaking(!swim&&!climb&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
-        p.lookAlongPath(waypoint.add(0,p.getEyeHeight(),0));
+        var travelHeading=new Vec3(offset.x,0,offset.z);if(travelHeading.lengthSqr()>.001)p.lookAlongPath(p.getEyePosition().add(travelHeading.normalize().scale(4)));
         if((step.action()==Action.JUMP||step.action()==Action.LEAVE_WATER)&&offset.y>.65&&p.onGround())p.jumpFromGround();
         double friction=Math.max(.1,p.level().getBlockState(p.blockPosition().below()).getBlock().getFriction());
         var useEffects=p.getUseItem().getOrDefault(net.minecraft.core.component.DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT);

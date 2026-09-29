@@ -3126,5 +3126,6 @@
   "本地技能运行中，游戏画面双击 Esc 退出": "Local skill active; double-tap Esc in game to exit",
   "本次决策失败，接管会话保留；可追加指令或在游戏画面双击 Esc 退出": "Decision failed; add an instruction or double-tap Esc in game to exit",
   "游戏画面双击 Esc 退出；其它游戏键鼠忽略。死亡、断线自动释放。": "Double-tap Esc in game to exit; other game input is ignored. Death or disconnect releases control.",
-  "到达目标保持待命；界面和切窗不中断，游戏画面双击 Esc 退出。": "Remain idle at the destination. UI and focus changes do not interrupt; double-tap Esc in game to exit."
+  "到达目标保持待命；界面和切窗不中断，游戏画面双击 Esc 退出。": "Remain idle at the destination. UI and focus changes do not interrupt; double-tap Esc in game to exit.",
+  "攻击阻挡者，争取突围": "Attack a blocker to create an escape"
 }

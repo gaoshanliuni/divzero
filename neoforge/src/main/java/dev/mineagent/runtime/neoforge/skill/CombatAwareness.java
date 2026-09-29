@@ -36,7 +36,7 @@ final class CombatAwareness {
                 case SPECIFIED->specified;
             };
             Vec3 center=protectedEntity!=null?protectedEntity.position():anchor;
-            if(forbidden||e.position().distanceTo(center)>rule.leash())eligible=false;
+            if(forbidden||e.position().distanceTo(center)>rule.leash()&&!(self||protect||attacked||imminent))eligible=false;
             var actual=NativeCombatStates.read(e,p);
             long neighbors=entities.stream().filter(other->other!=e&&other instanceof Enemy&&other.distanceToSqr(e)<16).count();
             double score=(self?8:0)+(protect?18+(NativeCombatStates.meleeAt(e,protectedEntity,protectedEntity.position())?30:0):0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);

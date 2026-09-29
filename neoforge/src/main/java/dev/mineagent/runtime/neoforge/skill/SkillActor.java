@@ -23,4 +23,5 @@ public interface SkillActor {
     void attack(UUID session,UUID operation,Entity entity);
     void stop(UUID session);Map<String,Object> observation();
     default void haltMotion(UUID session){stop(session);}
+    default String moveTactically(UUID session,List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> route){return move(session,dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator.point(route.getFirst().to()));}
 }

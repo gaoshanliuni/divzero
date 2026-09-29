@@ -75,8 +75,8 @@ final class CombatSkill {
         if(sprintEscape&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
         w.actor.sprint(w.token(),sprintEscape);
         if(target!=null&&!sprintEscape)w.actor.aim(w.token(),target.getEyePosition());
-        else w.actor.aim(w.token(),next.add(0,w.player().getEyeHeight(),0));
-        w.actor.move(w.token(),next);
+        else {var direction=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());if(direction.lengthSqr()>.001)w.actor.aim(w.token(),w.player().getEyePosition().add(direction.normalize().scale(4)));}
+        if(w.actor.moveTactically(w.token(),w.positioning.route()).equals("ROUTE_CHANGED")){w.actor.haltMotion(w.token());w.positioning.reset();}
     }
     private static void fight(SkillWork w,LivingEntity target){
         var p=w.player();var rule=w.session.spec().combat();
@@ -112,12 +112,13 @@ final class CombatSkill {
             phase(w,"RANGED_REPOSITION");return;
         }
         if(w.combatStage!=0){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;}
+        if(!weapon(w)){w.actor.haltMotion(w.token());return;}
         double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);
         boolean ready=p.getAttackStrengthScale(.5f)>=.95f;
         boolean inReach=p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)&&visible;
         boolean attackedRecently=w.tick()-w.lastAttackAt<8||!ready;
         boolean contactDanger=actual.inNativeMeleeRange()&&!actual.meleeRestricted()&&actual.attacks().stream().anyMatch(a->a.running()&&a.kind().equals("MELEE")&&(a.cooldownTicks()<0||a.cooldownTicks()<5));
-        if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION&&(attackedRecently||contactDanger||actual.areaAttack())){
+        if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION&&(attackedRecently||contactDanger&&!(inReach&&ready)||actual.areaAttack())){
             phase(w,"MELEE_EXIT");
             move(w,w.positioning.choose(w,"RETREAT",withdrawal),target,false);
             shield(w,target);return;
@@ -125,7 +126,7 @@ final class CombatSkill {
         if(!inReach){
             phase(w,"MELEE_APPROACH");
             if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);return;}
-            move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.6)),target,false);return;
+            move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2)),target,false);return;
         }
         if(!ready){phase(w,"COOLDOWN_GUARD");shield(w,target);return;}
         Vec3 exit=w.positioning.choose(w,"RETREAT",withdrawal);
@@ -157,8 +158,19 @@ final class CombatSkill {
         phase(w,"CONTACT_ESCAPE");
         if(w.player().isSprinting()&&w.contactEscapeLastPosition!=null){double travel=w.player().position().distanceTo(w.contactEscapeLastPosition);if(travel>.001){w.session.add("nativeContactSprintTicks",1);w.session.add("nativeContactSprintDistanceMilli",(long)(travel*1000));}}w.contactEscapeLastPosition=w.player().position();
         if(w.contactEscapeOrigin!=null)w.session.add("contactEscapeDistanceMilli",Math.max(0,(long)(w.player().position().distanceTo(w.contactEscapeOrigin)*1000)-w.session.count("contactEscapeDistanceMilli")));
-        move(w,w.positioning.choose(w,"RETREAT",Math.max(7,w.player().getAttackRangeWith(w.player().getMainHandItem()).effectiveMaxRange(w.player())+4)),target,true);
+        Vec3 exit=w.positioning.choose(w,"RETREAT",Math.max(7,w.player().getAttackRangeWith(w.player().getMainHandItem()).effectiveMaxRange(w.player())+4));
+        move(w,exit,target,true);breakthrough(w,exit);
         return true;
+    }
+    private static void breakthrough(SkillWork w,Vec3 exit){
+        if(w.session.spec().combat().engagement()==CombatPolicy.Engagement.NONE)return;
+        var p=w.player();var corridor=exit==null?p.getBoundingBox().inflate(3):p.getBoundingBox().expandTowards(exit.subtract(p.position())).inflate(.35);
+        var blocker=w.combat.threats.stream().filter(t->t.eligible()&&t.entity().isAlive()&&corridor.intersects(t.entity().getBoundingBox())&&p.hasLineOfSight(t.entity())&&p.isWithinAttackRange(p.getMainHandItem(),t.entity().getHitbox(),0)).min(Comparator.comparingDouble(t->p.distanceToSqr(t.entity()))).orElse(null);
+        if(blocker==null||p.getAttackStrengthScale(.5f)<.95f||!weapon(w))return;
+        phase(w,"BREAKTHROUGH");w.fighting=blocker.entity().getUUID();w.actor.aim(w.token(),blocker.entity().getEyePosition());
+        if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("breakthroughAttempts",1);}
+        w.actor.attack(w.token(),w.combatOperation,blocker.entity());
+        if(p.getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt){w.lastAttackAt=w.tick();log(w,"NATIVE_BREAKTHROUGH_ATTACK_OBSERVED");w.combatOperation=null;}
     }
     private static boolean weapon(SkillWork w){
         var p=w.player();if(p.getMainHandItem().is(ItemTags.SWORDS)||p.getMainHandItem().is(ItemTags.AXES))return true;
