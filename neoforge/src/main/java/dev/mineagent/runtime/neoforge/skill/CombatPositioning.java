@@ -38,7 +38,8 @@ final class CombatPositioning {
             for(var edge:evaluator.neighbors(route.node)){
                 var next=NativeTraversalEvaluator.point(edge.to());if(Math.abs(next.y-origin.y)>1.25||next.distanceToSqr(origin)>49||!seen.add(edge.to()))continue;
                 if(edge.action()==Action.DROP&&(edge.from().y()-edge.to().y()>1.25||evaluator.transition(edge.to(),edge.from())==null))continue;
-                if(!withdrawal&&next.distanceTo(w.combat.center(w))>w.session.spec().combat().leash())continue;
+                var policy=w.session.spec().combat();boolean assigned=policy.area()!=null&&policy.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(next.x,next.y,next.z));
+                if(!withdrawal&&!dev.mineagent.runtime.core.task.CombatBounds.canAdvance(assigned,next.distanceTo(w.combat.center(w)),origin.distanceTo(w.combat.center(w)),policy.leash()))continue;
                 var steps=new ArrayList<>(route.steps);steps.add(edge);open.add(new Route(edge.to(),List.copyOf(steps),Math.max(route.worstRisk,w.combat.risk(w,next))));
             }
         }

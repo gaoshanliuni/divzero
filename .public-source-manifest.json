@@ -2393,6 +2393,11 @@
       "bytes": 1515
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/CombatBounds.java",
+      "sha256": "68ef583fa0684b8d6f93410f83c34c3f64a7a9d53ef383ecc13784b940825319",
+      "bytes": 434
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/CombatFootwork.java",
       "sha256": "7c3515809be102ec77534dd21ce7ff1b1040382b54b5bfd5b9b412e1025837a2",
       "bytes": 1051
@@ -2978,6 +2983,11 @@
       "bytes": 1496
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatBoundsTest.java",
+      "sha256": "9b4553466b2e287f8952016b460aee39cb3517839c4575581c24aeb43967876d",
+      "bytes": 610
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatFootworkTest.java",
       "sha256": "3618a8a21e705ecf3b634f5d794ec326aaec082278c01b08730e525679b108e6",
       "bytes": 1119
@@ -3554,8 +3564,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "9d0d3697803a0463e5a8f2dddaed4713fec02c94954308b2cf2e244eefc83e73",
-      "bytes": 92029
+      "sha256": "8305aea2ba5f12386ccd546a5798d23bfdae8ff08113a699c6016469998b8831",
+      "bytes": 92094
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5024,8 +5034,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatAwareness.java",
-      "sha256": "36c7f6943db45c132dff975b3c55dc0dd25c3223bd54240d8c5b88f1e71b10e5",
-      "bytes": 8068
+      "sha256": "c16b633ee66960f646a1a6feeb6e730b8ffc69dbed9512be59573f08bdfe9a23",
+      "bytes": 8230
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatEquipmentAdapter.java",
@@ -5034,8 +5044,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "c4b42485e4b7bdf4d8f4eae00e9cee2016bd6af9aa5dffbc28bff1794d634c1f",
-      "bytes": 13544
+      "sha256": "4807d2f1cb847bf472c963f8ed46824faba92caace1169e75b9491b0fae85ba0",
+      "bytes": 13820
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
