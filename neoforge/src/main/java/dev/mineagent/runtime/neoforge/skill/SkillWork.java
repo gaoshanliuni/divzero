@@ -24,7 +24,7 @@ final class SkillWork {
     LivingEntity lastCombatTarget;
     final CombatAwareness combat=new CombatAwareness();final CombatPositioning positioning=new CombatPositioning();
     String tactic="OBSERVE";int tacticAt,lastAttackAt=-10000,lastHitAt=-10000,lastDefenseTick,healSlot=-1;UUID healingOperation;boolean combatInterrupted;
-    int lastCombatTick=-1;boolean lastCombatResult;
+    int lastCombatTick=-1,foodBefore;boolean lastCombatResult,healingWasUsing;
     SkillWork(SkillRuntime runtime,SkillSession session,long dbRevision){this.runtime=runtime;this.session=session;this.dbRevision=dbRevision;}
     ServerPlayer player(){return actor.player();}int tick(){return runtime.server.getTickCount();}UUID token(){return session.id();}
     Map<String,Object> view(){var out=new LinkedHashMap<String,Object>();out.put("session",session.snapshot());out.put("actor",actor==null?Map.of():actor.observation());out.put("currentTarget",block==null?List.of():List.of(block.getX(),block.getY(),block.getZ()));out.put("nextCheckTick",nextTick);out.put("pendingReceipt",!saved.isDone());out.put("combat",combat.view());out.put("tactic",tactic);return out;}

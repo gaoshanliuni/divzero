@@ -181,6 +181,7 @@ public final class ServerUiRuntime {
             }
             if (!packet.channel().equals("command")) throw new IllegalArgumentException("UI_CHANNEL");
             if(Set.of("interface.read","interface.control").contains(request.action())){nativeInterfaces(viewer,packet.requestId(),request);return;}
+            if(Set.of("behavior.read","behavior.write").contains(request.action())){behavior(viewer,packet.requestId(),request);return;}
             if(Set.of("building.read","building.write").contains(request.action())){buildings(viewer,packet.requestId(),request);return;}
             if(Set.of("studio.read","studio.write").contains(request.action())){javaStudio(viewer,packet.requestId(),request);return;}
             if(Set.of("preferences.read","preferences.write").contains(request.action())){preferences(viewer,packet.requestId(),request);return;}
@@ -315,6 +316,18 @@ public final class ServerUiRuntime {
                 send(viewer,packet,"receipt",write?sessions.complete(request,code,values):new Receipt(request.operationId(),code,values));
             }catch(Exception failure){send(viewer,packet,"receipt",new Receipt(request.operationId(),Code.FAILED,Map.of("errorCode","INTERFACE_RESULT_UNAVAILABLE")));}}));
         }catch(Exception error){var values=Map.of("errorCode",Objects.toString(error.getMessage(),"INTERFACE_FAILED"));send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}
+    }
+    private void behavior(ServerPlayer viewer,UUID packet,Request request){
+        boolean write=request.action().equals("behavior.write");boolean begun=false;
+        try{
+            restoreScope(viewer,request);var binding=sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow().binding();
+            if(!binding.ownerPackageId().equals(TRUSTED_SHELL_PACKAGE)||binding.actorKind()!=ActorKind.PLAYER||!binding.actorId().equals(viewer.getUUID()))throw new SecurityException("BEHAVIOR_TRUSTED_PANEL");
+            var access=sessions.checkRead(viewer.getUUID(),request,"agent.manage");if(access!=Code.OK){send(viewer,packet,"receipt",Receipt.of(request.operationId(),access));return;}
+            var args=request.arguments();if(!args.keySet().equals(write?Set.of("agentId","tool","source"):Set.of("agentId")))throw new IllegalArgumentException("BEHAVIOR_PANEL_ARGUMENTS");
+            if(write){var reserved=sessions.begin(viewer.getUUID(),request,"agent.manage",true);if(reserved.code()!=Code.OK){send(viewer,packet,"receipt",reserved);return;}begun=true;}
+            UUID agent=UUID.fromString(args.get("agentId"));var future=write?ServerBehaviorPanel.write(viewer,agent,request.operationId(),args.get("tool"),args.get("source"),()->sessions.checkRead(viewer.getUUID(),request,"agent.manage")==Code.OK):ServerBehaviorPanel.read(viewer,agent);
+            future.whenComplete((value,error)->server.execute(()->{try{var values=error==null?Map.of("state",json.writeValueAsString(value)):Map.of("errorCode",Objects.toString(error.getMessage(),"BEHAVIOR_FAILED"));send(viewer,packet,"receipt",write?sessions.complete(request,error==null?Code.APPLIED:Code.FAILED,values):new Receipt(request.operationId(),error==null?Code.OBSERVED:Code.FAILED,values));}catch(Exception ignored){}}));
+        }catch(Exception error){try{var values=Map.of("errorCode",Objects.toString(error.getMessage(),"BEHAVIOR_FAILED"));send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}catch(Exception ignored){}}
     }
     private void buildings(ServerPlayer viewer,UUID packet,Request request){
         boolean write=request.action().equals("building.write");boolean begun=false;String capability="task.manage";

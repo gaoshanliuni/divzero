@@ -65,9 +65,9 @@ final class CombatSkill {
         if(w.combatStage==2&&!w.shotLogged&&w.count(Items.ARROW)<w.combatAmmo){w.shotLogged=true;w.session.add("arrowsReleased",1);log(w,"RELEASE_OBSERVED");}
     }
     private static void move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
-        if(next==null){phase(w,"NO_SAFE_EXIT");shield(w,target);return;}
-        w.actor.sprint(w.token(),escape&&next.distanceToSqr(w.player().position())>9);
-        if(target!=null&&(!escape||next.distanceToSqr(w.player().position())<9))w.actor.aim(w.token(),target.getEyePosition());
+        if(next==null){phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return;}
+        w.actor.sprint(w.token(),escape&&w.positioning.longRetreat());
+        if(target!=null&&(!escape||!w.positioning.longRetreat()))w.actor.aim(w.token(),target.getEyePosition());
         else w.actor.aim(w.token(),next.add(0,w.player().getEyeHeight(),0));
         w.actor.move(w.token(),next);
     }
@@ -80,8 +80,8 @@ final class CombatSkill {
         boolean retreat=rule.strategy()==CombatPolicy.Strategy.DISENGAGE||health<.3||flanked||contacts>1;
         if(retreat||target==null){
             phase(w,health<.3?"RECOVER":flanked||contacts>1?"LURE":"RETREAT");
-            move(w,w.positioning.choose(w,w.tactic,withdrawal+2),target,true);
-            if(health<.7&&w.combat.risk(w,p.position())<2&&eat(w))return;
+            move(w,w.positioning.choose(w,w.tactic,health<.3?14:withdrawal+2),target,true);
+            if(health<.7&&w.combat.risk(w,p.position())<2&&w.combat.threats.stream().allMatch(t->t.entity().distanceTo(p)>3+40*Math.max(t.state().velocity().horizontalDistance(),t.state().movementSpeed()))&&eat(w))return;
             shield(w,target);return;
         }
         double distance=p.distanceTo(target);boolean visible=p.hasLineOfSight(target);
@@ -152,11 +152,11 @@ final class CombatSkill {
         w.actor.useHand(w.token(),w.healingOperation,InteractionHand.OFF_HAND);return true;
     }
     private static boolean eat(SkillWork w){
-        var p=w.player();if(p.getFoodData().getFoodLevel()>=20)return false;
+        var p=w.player();if(w.healingWasUsing&&!p.isUsingItem()){if(p.getFoodData().getFoodLevel()>w.foodBefore)w.session.add("nativeFoodConsumptions",1);w.healingWasUsing=false;w.healingOperation=null;}if(p.getFoodData().getFoodLevel()>=20)return false;
         for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(stack.has(DataComponents.FOOD)&&!stack.is(Items.ROTTEN_FLESH)&&!stack.is(Items.SPIDER_EYE)&&!stack.is(Items.PUFFERFISH)&&!stack.is(Items.POISONOUS_POTATO)){
             if(!w.equip(stack.getItem()))return true;
             if(w.healSlot!=i||w.healingOperation==null){w.healSlot=i;w.healingOperation=UUID.randomUUID();}
-            w.actor.useHand(w.token(),w.healingOperation,InteractionHand.MAIN_HAND);phase(w,"EATING_IN_SAFE_SPACE");return true;
+            if(!w.healingWasUsing)w.foodBefore=p.getFoodData().getFoodLevel();w.actor.useHand(w.token(),w.healingOperation,InteractionHand.MAIN_HAND);w.healingWasUsing|=p.isUsingItem();phase(w,"EATING_IN_SAFE_SPACE");return true;
         }}return false;
     }
     private CombatSkill(){}

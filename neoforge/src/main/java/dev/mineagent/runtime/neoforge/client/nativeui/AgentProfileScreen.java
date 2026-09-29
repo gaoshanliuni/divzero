@@ -28,7 +28,7 @@ public final class AgentProfileScreen extends NativeInputScreen {
         var identity=WorkspacePanels.row();identity.getLayout().height(76);card.addChild(identity);var portrait=NativeUiTheme.card(new UIElement());portrait.getLayout().width(56).height(72);portrait.getStyle().overlayTexture(com.lowdragmc.lowdraglib2.gui.texture.GuiTexture.of((context,x,y,w,h)->{var mc=Minecraft.getInstance();if(mc.level!=null&&mc.level.getEntity(agent) instanceof net.minecraft.world.entity.LivingEntity entity)net.minecraft.client.gui.screens.inventory.InventoryScreen.renderEntityInInventoryFollowsAngle(context.graphics,(int)x,(int)y,(int)(x+w),(int)(y+h),28,0,0,0,entity);}));identity.addChild(portrait);
         var metrics=new UIElement();metrics.getLayout().flex(1).paddingLeft(9).paddingTop(12);identity.addChild(metrics);summary=NativeUiTheme.text("",NativeUiTheme.MUTED,9);metrics.addChild(summary);health.getLayout().height(12).widthPercent(100).marginTop(6).marginBottom(10);health.label.setDisplay(false);health.barContainer.getLayout().paddingAll(2);metrics.addChild(health);
         var body=WorkspacePanels.row();body.getLayout().flex(1);card.addChild(body);var navigation=new UIElement();navigation.getLayout().width(108).heightPercent(100);body.addChild(navigation);content.getLayout().flex(1).heightPercent(100).paddingLeft(12);body.addChild(content);
-        for(var item:List.of(new String[]{"overview","状态"},new String[]{"persona","人设"},new String[]{"chat","对话"},new String[]{"content","创建的内容"},new String[]{"inventory","背包"},new String[]{"appearance","外观"})){
+        for(var item:List.of(new String[]{"overview","状态"},new String[]{"behavior","行为模式"},new String[]{"persona","人设"},new String[]{"chat","对话"},new String[]{"content","创建的内容"},new String[]{"inventory","背包"},new String[]{"appearance","外观"})){
             var button=NativeUiTheme.button(t(item[1]),()->{tab=item[0];draw();});button.getLayout().widthPercent(100).marginBottom(5);navigation.addChild(button);
         }
         status=NativeUiTheme.text(t("读取 AI…"),NativeUiTheme.MUTED,8);status.getLayout().height(18);card.addChild(status);draw();
@@ -44,6 +44,7 @@ public final class AgentProfileScreen extends NativeInputScreen {
     private void draw(){
         uiEpoch++;content.clearAllChildren();
         switch(tab){
+            case "behavior"->{long epoch=uiEpoch;NativeBehaviorPanel.attach(content,agent.toString(),()->current()&&uiEpoch==epoch&&tab.equals("behavior"));}
             case "persona"->persona();
             case "chat"->conversations();
             case "inventory"->inventory();

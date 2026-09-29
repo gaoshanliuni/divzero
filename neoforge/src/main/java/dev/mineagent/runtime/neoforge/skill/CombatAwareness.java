@@ -16,7 +16,7 @@ final class CombatAwareness {
         var p=w.player();var rule=w.session.spec().combat();if(anchor==null)anchor=p.position();
         protectedEntity=rule.protect().isBlank()?null:rule.protect().equals("$owner")?w.runtime.server.getPlayerList().getPlayer(w.session.owner()):p.level().getEntity(UUID.fromString(rule.protect())) instanceof LivingEntity e?e:null;
         if(protectedEntity!=null&&protectedEntity.level()!=p.level())protectedEntity=null;
-        if(w.tick()<nextScan)return;nextScan=w.tick()+4;scans++;
+        if(w.tick()<nextScan)return;nextScan=w.tick()+4+Math.floorMod(w.token().hashCode(),3);scans++;
         var rows=new ArrayList<Threat>();var entities=p.level().getEntitiesOfClass(LivingEntity.class,p.getBoundingBox().inflate(rule.awareness()),e->e!=p&&e.isAlive());
         for(var e:entities){
             if(e instanceof net.minecraft.world.entity.player.Player||e.isAlliedTo(p)||e instanceof OwnableEntity own&&own.getOwnerReference()!=null||rule.excluded().contains(e.getUUID()))continue;
@@ -42,7 +42,7 @@ final class CombatAwareness {
             rows.add(new Threat(e,actual,eligible,protect,score));
         }
         threats=List.copyOf(rows);
-        projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner() instanceof net.minecraft.world.entity.player.Player)&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001));
+        projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001));
         if(rows.stream().anyMatch(Threat::eligible)||projectiles.stream().anyMatch(s->projectileRisk(s,p.position())>1))lastThreatTick=w.tick();
         var best=rows.stream().filter(Threat::eligible).max(Comparator.comparingDouble(Threat::score)).orElse(null);
         if(best!=null){if(selected!=best.entity){selected=best.entity;selectedAt=w.tick();w.session.add("targetChanges",1);}}else if(selected==null||!selected.isAlive()||selected.position().distanceTo(center(w))>rule.leash()||w.tick()-lastThreatTick>40)selected=null;

@@ -9,7 +9,9 @@ import java.util.*;
 final class CombatPositioning {
     record Route(Node node,List<PathStep> steps,double worstRisk){}
     private NativeTraversalEvaluator evaluator;private final Deque<Route> open=new ArrayDeque<>();private final Set<Node> seen=new HashSet<>();private final List<Route> candidates=new ArrayList<>();
-    private Vec3 origin;private int started;private String purpose="";private Vec3 selected;
+    private Vec3 origin;private int started;private String purpose="";private Vec3 selected;private double selectedDistance;private int candidateCursor;
+    boolean pending(){return !open.isEmpty();}
+    boolean longRetreat(){return selectedDistance>3;}
     Vec3 choose(SkillWork w,String intent,double desiredDistance){
         if(origin==null||w.tick()-started>8||origin.distanceToSqr(w.player().position())>1||!purpose.equals(intent)){
             evaluator=new NativeTraversalEvaluator(w.player());origin=w.player().position();started=w.tick();purpose=intent;selected=null;open.clear();seen.clear();candidates.clear();var node=evaluator.closest(origin);if(node!=null){seen.add(node);open.add(new Route(node,List.of(),w.combat.risk(w,origin)));}
@@ -26,7 +28,7 @@ final class CombatPositioning {
             }
         }
         double best=Double.POSITIVE_INFINITY;var target=w.combat.selected;
-        for(var route:candidates){var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()))).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
+        for(int index=0;index<candidates.size()&&budget.timeAvailable();index++){var route=candidates.get(Math.floorMod(candidateCursor++,candidates.size()));var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()))).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
             if(target!=null)score+=Math.abs(point.distanceTo(target.position())-desiredDistance)*(intent.equals("APPROACH")?5:1.1);
             if(intent.equals("RETREAT")||intent.equals("RECOVER")||intent.equals("LURE")){
                 score-=origin.distanceTo(point)*.45;
@@ -35,7 +37,7 @@ final class CombatPositioning {
             }
             if(target!=null&&intent.equals("LURE")){var a=origin.subtract(target.position()).normalize();var b=point.subtract(target.position()).normalize();score-=Math.abs(a.x*b.z-a.z*b.x)*2;}
             // Execute the first checked edge; do not hand an endpoint to a different route search.
-            if(score<best){best=score;selected=NativeTraversalEvaluator.point(route.steps.getFirst().to());}
+            if(score<best){best=score;selectedDistance=origin.distanceTo(point);selected=NativeTraversalEvaluator.point(route.steps.getFirst().to());}
         }
         return selected;
     }
