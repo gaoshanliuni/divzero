@@ -90,7 +90,10 @@ public final class NativeFunctionalSmokeClient {
                 case 39->{if(conversation(a,"HISTORY_A_ONLY")&&mc().screen instanceof NativeWorkspaceScreen screen){var editor=findElement(root(),"conversation-composer");if(editor!=null&&pointer(editor,true)&&pointer(editor,false)){editorAt=ticks;advance("focus-native-composer");}}}
                 case 40->{if(ticks-editorAt<12)return;var screen=(NativeWorkspaceScreen)mc().screen;var editor=findElement(root(),"conversation-composer");require(screen.smokeInputState().get("editor").equals("conversation-composer"),"IME_EDITOR_FOCUS_MISSING");focusChanges=(Integer)screen.smokeInputState().get("focusChanges");editorX=editor.getPositionX();editorY=editor.getPositionY();editorAt=ticks;advance("start-stream-layout-stability-check");}
                 case 41->{var screen=(NativeWorkspaceScreen)mc().screen;var editor=findElement(root(),"conversation-composer");require(screen.smokeInputState().get("focusChanges").equals(focusChanges)&&editor.getPositionX()==editorX&&editor.getPositionY()==editorY,"COMPOSER_FOCUS_OR_LAYOUT_FLICKER");NativeWorkspaceScreen.push("conversationChanged",new com.google.gson.JsonObject());if(ticks-editorAt>=45)advance("stable-editor-across-polling");}
-                case 42->{var screen=(NativeWorkspaceScreen)mc().screen;var ime=screen.smokeIme();checked.add("preedit-kept-separate-and-committed-once");result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"ime",ime,"modelCalls",0));}
+                case 42->{var screen=(NativeWorkspaceScreen)mc().screen;var ime=screen.smokeIme();checked.add("preedit-kept-separate-and-committed-once");require(ime.get("status").equals("PASS"),"IME_CALLBACK_FAILED");AgentProfileScreen.open(agent,"界面验收");advance("open-profile-scale-four");}
+                case 43->{if(mc().screen instanceof AgentProfileScreen&&click("对话"))advance("profile-scale-four-chat");}
+                case 44->{if(mc().screen instanceof AgentProfileScreen&&click("背包"))advance("profile-scale-four-inventory");}
+                case 45->{if(mc().screen instanceof AgentInventoryScreen){mc().player.closeContainer();result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}}
             }
         }catch(Throwable error){result.completeExceptionally(error);}
     }
