@@ -280,7 +280,7 @@ public final class ServerConversations implements AutoCloseable {
         var local=dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).localReply(operation);
         if(local!=null){
             var flight=new Flight(operation,viewer,agent);flight.conversation=id;flights.put(operation,flight);
-            local.whenComplete((reply,error)->server.execute(()->{try{if(!live(flight)||!store.pending(operation)){retire(flight);return;}store.finish(operation,error==null?"COMPLETE":"FAILED",error==null?reply:null,error==null?"":"SKILL_LOCAL_COMMAND_FAILED");changed(flight);retire(flight);}catch(Exception failed){failGeneration(flight,"CONVERSATION_STORE_WRITE_FAILED");}}));
+            local.whenComplete((reply,error)->server.execute(()->{try{if(!live(flight)||!store.pending(operation)){retire(flight);return;}store.finish(operation,error==null?"COMPLETE":"FAILED",error==null?reply:null,error==null?"":"SKILL_LOCAL_COMMAND_FAILED");changed(flight);if(error==null&&!String.valueOf(dev.mineagent.runtime.core.config.WebSettingsCatalog.routing(snapshot).get("textProvider")).isBlank())ServerConversationTitles.completed(server,store,viewer,agent,id,original,reply,()->changed(flight));retire(flight);}catch(Exception failed){failGeneration(flight,"CONVERSATION_STORE_WRITE_FAILED");}}));
             return Map.of("state",json.writeValueAsString(store.get(viewer.getUUID(),agent,id)),"operationId",operation.toString(),"duplicate","false");
         }
         try{

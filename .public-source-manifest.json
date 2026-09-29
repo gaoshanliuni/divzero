@@ -3069,8 +3069,8 @@
     },
     {
       "path": "docs/TACTICAL_PLAYER_BEHAVIOR.md",
-      "sha256": "6f947092ca14a9fe9211c98f82365214593dadee49afd5e12bfb7a3f87c294c0",
-      "bytes": 10509
+      "sha256": "de41a0fc1d1976f49c5d4c5ecfdcae68cebdec45fb40fe581daef7e8db93a976",
+      "bytes": 11148
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3124,8 +3124,8 @@
     },
     {
       "path": "docs/images/player-takeover.png",
-      "sha256": "a142ea24ea16781a8adefaa581f16d4b4ad67010cc21ab05759b4b329e4bb89e",
-      "bytes": 1056130
+      "sha256": "de23c13a80dc65310a67a85b04ddf8e6fe5d6662caadb14bb201c3f7f492e5b1",
+      "bytes": 1220777
     },
     {
       "path": "docs/releases/1.0.20.md",
@@ -5624,8 +5624,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "5b113ba88586bef9a06ecaf8d51bf3fb58852c41f95e70690a1191c77891e2f8",
-      "bytes": 74009
+      "sha256": "1fa1611514db62ecc3ac800cbf5a1787f5951c483167f089914655900fe4e9bf",
+      "bytes": 74243
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEntityInterop.java",
