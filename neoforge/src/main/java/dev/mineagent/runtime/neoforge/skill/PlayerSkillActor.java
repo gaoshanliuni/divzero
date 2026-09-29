@@ -23,6 +23,7 @@ public final class PlayerSkillActor implements SkillActor {
         if(!inputReady())return "PAUSED_INPUT";var step=navigation.tick(player);if(step!=null)send(session,"MOVE",navOperation,navigation.waypoint(step),0,-1,step.action().name());else send(session,"HALT",navOperation,player.position(),0,-1,"");return navigation.status();}
     public void aim(UUID session,Vec3 target){aim=target;}
     public void sprint(UUID session,boolean enabled){sprinting=enabled;}
+    public void haltMotion(UUID session){motion=null;sprinting=false;navigation.stop("HOLD_POSITION");destination=null;send(session,"HALT_MOTION",navOperation,aim==null?player.getEyePosition().add(player.getLookAngle()):aim,0,-1,"");}
     public boolean select(UUID session,int slot){if(!inputReady())return false;if(selectionOperation==null||selectionSlot!=slot){selectionSlot=slot;selectionWanted=player.getInventory().getItem(slot).getItem();selectionOperation=UUID.randomUUID();}send(session,"HOTBAR",selectionOperation,player.position(),slot,-1,"");return slot<9&&player.getInventory().getSelectedSlot()==slot;}
     public boolean equipOffhand(UUID session,int slot){if(!inputReady())return false;if(offhandOperation==null||offhandSlot!=slot){offhandOperation=UUID.randomUUID();offhandSlot=slot;}send(session,"OFFHAND",offhandOperation,player.position(),slot,-1,"");return player.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD);}
     public void useHand(UUID session,UUID op,net.minecraft.world.InteractionHand value){hand=value.name();try{useItem(session,op,true);}finally{hand="";}}

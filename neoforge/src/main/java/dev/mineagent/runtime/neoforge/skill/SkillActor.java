@@ -22,4 +22,5 @@ public interface SkillActor {
     void releaseItem(UUID session,UUID operation);
     void attack(UUID session,UUID operation,Entity entity);
     void stop(UUID session);Map<String,Object> observation();
+    default void haltMotion(UUID session){stop(session);}
 }

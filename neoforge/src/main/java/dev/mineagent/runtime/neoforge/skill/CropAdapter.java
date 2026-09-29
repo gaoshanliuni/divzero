@@ -13,6 +13,19 @@ public interface CropAdapter {
     default boolean mature(ServerPlayer player,BlockPos position,BlockState state){return mature(state);}
     default boolean requiresSeedBeforeHarvest(){return !harvestByUse();}
     default boolean harvestByUse(){return false;}
+    /** Expected item kinds for capacity checks; custom adapters may supply their own products. */
+    default List<Item> harvestProducts(){
+        if(block()==Blocks.WHEAT)return List.of(Items.WHEAT,Items.WHEAT_SEEDS);
+        if(block()==Blocks.BEETROOTS)return List.of(Items.BEETROOT,Items.BEETROOT_SEEDS);
+        if(block()==Blocks.POTATOES)return List.of(Items.POTATO,Items.POISONOUS_POTATO);
+        if(block()==Blocks.CARROTS||block()==Blocks.NETHER_WART||block()==Blocks.SWEET_BERRY_BUSH)return List.of(seed());
+        return List.of();
+    }
+    default boolean canStoreHarvest(ServerPlayer player){
+        int empty=0;var needed=new HashSet<>(harvestProducts());
+        for(int i=0;i<36;i++){var stack=player.getInventory().getItem(i);if(stack.isEmpty())empty++;else if(stack.getCount()<stack.getMaxStackSize())needed.removeIf(item->ItemStack.isSameItemSameComponents(stack,new ItemStack(item)));}
+        return harvestProducts().isEmpty()?empty>0:needed.size()<=empty;
+    }
     default boolean canPlant(ServerPlayer player,BlockPos crop){return player.level().getBlockState(crop).isAir()&&block().defaultBlockState().canSurvive(player.level(),crop);}
     List<CropAdapter> REGISTRY=new java.util.concurrent.CopyOnWriteArrayList<>();
     static void register(CropAdapter adapter){Objects.requireNonNull(adapter);if(REGISTRY.stream().anyMatch(a->a.id().equals(adapter.id())))throw new IllegalArgumentException("CROP_ADAPTER_DUPLICATE");REGISTRY.add(adapter);}

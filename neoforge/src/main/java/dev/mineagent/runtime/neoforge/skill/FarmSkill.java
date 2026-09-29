@@ -23,7 +23,7 @@ final class FarmSkill {
         boolean harvest=w.crop!=null&&w.crop.supports(state)&&w.crop.mature(w.player(),w.block,state),plant=w.crop!=null&&w.crop.canPlant(w.player(),w.block);
         if(!harvest&&!plant){w.abandonTarget();return;}
         if(w.crop.requiresSeedBeforeHarvest()&&w.count(w.crop.seed())<1){w.session.add("missingSeeds",1);w.abandonTarget();w.waitFor("SEED_REQUIRED_FOR_REPLANT",40);return;}
-        if(!w.inventorySpace()){w.waitFor("INVENTORY_FULL",40);return;}
+        if(harvest&&!w.crop.canStoreHarvest(w.player())){w.waitFor("INVENTORY_FULL",40);return;}
         if(!w.reach(w.block,dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.Kind.BLOCK))return;
         // The crop may have changed while navigating. A new operation must use a fresh expectation.
         state=w.player().level().getBlockState(w.block);harvest=w.crop.supports(state)&&w.crop.mature(w.player(),w.block,state);plant=w.crop.canPlant(w.player(),w.block);

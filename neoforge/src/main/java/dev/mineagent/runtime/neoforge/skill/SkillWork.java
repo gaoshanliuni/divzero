@@ -60,7 +60,7 @@ final class SkillWork {
     }
     int count(Item item){return player().getInventory().countItem(item);}
     boolean equip(Item item){if(player().getMainHandItem().is(item))return true;for(int i=0;i<36;i++)if(player().getInventory().getItem(i).is(item)){actor.select(token(),i);return player().getMainHandItem().is(item);}return false;}
-    boolean inventorySpace(){for(int i=0;i<36;i++){var s=player().getInventory().getItem(i);if(s.isEmpty()||s.getCount()<s.getMaxStackSize())return true;}return false;}
+    boolean inventorySpace(){for(int i=0;i<36;i++)if(player().getInventory().getItem(i).isEmpty())return true;return false;}
     /** Persist before issuing a side effect. Re-entry observes this operation, never allocates another. */
     boolean prepare(String action,Map<String,String> before){if(operation!=null)return saved.isDone()&&!ioFailed;operation=UUID.randomUUID();this.action=action;executed=false;nativeUse=false;nativeConsumed=nativeDurability=0;startedTick=tick();var receipt=new LinkedHashMap<>(before);receipt.put("operation",operation.toString());receipt.put("state","PREPARED");receipt.put("action",action);receipt.put("actorEntityId",Integer.toString(player().getId()));receipt.put("intentRevision",Long.toString(session.revision()));receipt.put("dimension",session.spec().dimension());session.receipt(receipt);runtime.persist(this);return false;}
     void confirm(String result,Map<String,String> observed){var receipt=new LinkedHashMap<>(session.receipt());receipt.put("state",result);receipt.putAll(observed);session.receipt(receipt);runtime.persist(this);operation=null;executed=false;interruptedOperation=false;actor.stop(token());}

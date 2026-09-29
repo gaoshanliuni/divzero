@@ -119,7 +119,7 @@ final class CombatSkill {
         }
         if(!inReach){
             phase(w,"MELEE_APPROACH");
-            if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.stop(w.token());shield(w,target);return;}
+            if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);return;}
             move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.6)),target,false);return;
         }
         if(!ready){phase(w,"COOLDOWN_GUARD");shield(w,target);return;}
