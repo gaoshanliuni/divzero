@@ -38,11 +38,21 @@ public final class PersistentSkillModelSmokeClient {
         for(var actor:List.of(p,body)){actor.getInventory().clearContent();actor.getInventory().setItem(0,new ItemStack(Items.IRON_HOE));actor.getInventory().setItem(1,new ItemStack(Items.WHEAT_SEEDS,48));actor.inventoryMenu.broadcastChanges();}
         conversation=ServerConversations.get(s).store().create(p.getUUID(),agent,UUID.randomUUID(),"持续技能自然对话",false).conversationId();return null;
     }catch(Exception e){throw new CompletionException(e);}});}
-    private static CompletableFuture<Void> send(){return server(p->{try{
+    private static CompletableFuture<Void> send(){
+        if(Boolean.getBoolean("mineagent.skillModelPlanner"))return server(p->{try{
+            operation=UUID.randomUUID();String goal="接管我的身体持续照顾眼前这排小麦，成熟收割并补种，等待生长直到我停止。用原生生存交互，不用游戏指令改方块。";
+            var result=dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.submit(p,agent,operation,goal);
+            evidence.add(Map.of("entry","generic-takeover-planner","goal",goal,"result",result));return null;
+        }catch(Exception e){throw new CompletionException(e);}});
+        return server(p->{try{
         operation=UUID.randomUUID();String text=playerActor()?"接管我的身体，照顾眼前这排小麦，成熟就收，收完补种；之后继续等待生长，直到我主动停止。背包里有种子和锄头。不要用指令改方块。":"把我面前这排成熟的小麦照顾好，成熟了就收，收完补种；你自己干，持续等到我叫停。你的背包里有种子和锄头。不要建东西，也不要用指令改方块。";
         ServerConversations.get(p.level().getServer()).write(p,operation,Map.of("kind","send","agentId",agent.toString(),"conversationId",conversation.toString(),"expectedRevision","1","text",text));evidence.add(Map.of("prompt",text,"operation",operation,"conversation",conversation));return null;
     }catch(Exception e){throw new CompletionException(e);}});}
-    private static CompletableFuture<Boolean> modelDone(){return server(p->{try{
+    private static CompletableFuture<Boolean> modelDone(){
+        if(Boolean.getBoolean("mineagent.skillModelPlanner"))return server(p->{var observed=dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.inspect(p);require(!"WAITING_FOR_INSTRUCTION".equals(observed.get("state")),"GENERIC_PLANNER_FAILED_"+observed);return observed;}).thenCompose(observed->inspect().thenApply(value->{
+            for(var row:value.path("skills"))if(row.path("session").path("spec").path("actor").asText().equals("player")&&row.path("session").path("spec").path("kind").asText().equals("FARM")){require(((Number)observed.get("rounds")).intValue()>0,"GENERIC_PLANNER_NOT_USED");evidence.add(Map.of("planner",observed,"handoff",value));return true;}return false;
+        }));
+        return server(p->{try{
         var store=ServerConversations.get(p.level().getServer()).store();var context=store.context(p.getUUID(),agent,conversation,null).orElseThrow();if(Set.of("PENDING","GENERATING").contains(context.requestState()))return false;
         evidence.add(context);require(context.operationId().equals(operation)&&context.requestState().equals("COMPLETE"),"MODEL_RESULT_"+context.requestState()+"_"+context.errorCode());var message=store.message(p.getUUID(),agent,conversation,context.assistantMessageId());var text=new StringBuilder();for(int offset=0;offset<message.textLength();){var part=store.chunk(p.getUUID(),agent,conversation,message.messageId(),message.revision(),offset,4096);text.append(part.text());offset+=part.text().length();}reply=text.toString();evidence.add(Map.of("reply",reply));return true;
     }catch(Exception e){throw new CompletionException(e);}});}

@@ -2984,8 +2984,8 @@
     },
     {
       "path": "docs/NATIVE_INSTALLATION.md",
-      "sha256": "707361bd655a5a571b802ac27a2648d08eef470ee50d9b73ddade89da57745d9",
-      "bytes": 2178
+      "sha256": "8aabd0bcd80dffbe6369540e4b49ac271f84292db3d6b4cf32e3edc25c6218bc",
+      "bytes": 2645
     },
     {
       "path": "docs/NATIVE_TEN_SCENARIOS.md",
@@ -2999,13 +2999,13 @@
     },
     {
       "path": "docs/NATIVE_UI_MIGRATION_STATUS.md",
-      "sha256": "e8c55ab587565d68d1b142c3076353edff729ee345531a7da8a5c3dd6ed93f55",
-      "bytes": 6194
+      "sha256": "0b0e8eb4dca464a3b40b346657024531a922512efde2af87248b9c84a73d8a81",
+      "bytes": 6771
     },
     {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
-      "sha256": "a0feaf29002361ad7512f6d83e64918f60662b9190a2030517d83956ee2a758c",
-      "bytes": 4416
+      "sha256": "d9f944f7d61a2e41d4d1e8fbb7db0b2933a53b9e197bc26df0360caf9cfd81d4",
+      "bytes": 7632
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3369,8 +3369,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
-      "sha256": "bbdaf982331d182c6b551c45eedeb0087b01c5a24ecd45080e40fb5d7e4aacc3",
-      "bytes": 9339
+      "sha256": "2313cb88a1de793f24205667cf89b797cb306898b72291605919ae52fb18a504",
+      "bytes": 10649
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
