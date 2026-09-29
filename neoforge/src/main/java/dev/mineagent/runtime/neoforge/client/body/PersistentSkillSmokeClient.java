@@ -263,10 +263,12 @@ public final class PersistentSkillSmokeClient {
         hudClick("exit-using-hud-button","exit");
         action("exit-restores-user-preference",()->{require(!AutonomousBodyClient.active(),"EXIT_BUTTON_FAILED");require(mc().options.pauseOnLostFocus,"FOCUS_PAUSE_PREFERENCE_NOT_RESTORED");return CompletableFuture.completedFuture(null);});
         waitFor("exit-button-cancels-skill",150,()->state("player_farm",s->s.path("state").asText().equals("CANCELLED")));
+        action("remember-explicit-takeover-request",()->server(p->{oldBehaviorRequest=UUID.randomUUID();dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(p.level().getServer()).accepted(p,agent,oldBehaviorRequest,"接管我的身体，照顾农田");return null;}));
         action("restart-to-check-escape",()->tool("farm_area",area("player_esc","player",3,101,6,3,101,6).put("crop","minecraft:wheat")));
         waitFor("escape-session-active",150,()->CompletableFuture.completedFuture(AutonomousBodyClient.active()&&!mc().mouseHandler.isMouseGrabbed()));
         action("real-player-escape",()->{screen("real-player-farm");require(AutonomousBodyClient.active(),"PLAYER_ADAPTER_NOT_ACTIVE");PlayerBodyControlClient.physicalKey(mc().getWindow().handle(),1,new net.minecraft.client.input.KeyEvent(256,0,0));require(!AutonomousBodyClient.active(),"ESC_DID_NOT_RELEASE");return CompletableFuture.completedFuture(null);});
         waitFor("escape-cancels-skill",150,()->state("player_esc",s->s.path("state").asText().equals("CANCELLED")));
+        action("escape-invalidates-old-model-takeover",()->server(p->{var authority=dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(p.level().getServer());require(!authority.current(p,agent,oldBehaviorRequest)&&!authority.playerRequested(p,agent,oldBehaviorRequest),"ESC_ALLOWED_OLD_MODEL_TO_RETAKE_BODY");return null;}));
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){if(!Boolean.getBoolean("mineagent.skillSmoke")||done)return;try{
         if(mc().player==null||mc().getSingleplayerServer()==null)return;ticks++;if(!initialized){initialized=true;prepare();stageAt=ticks;}if(ticks%100==0)Files.writeString(root().resolve("progress.json"),JSON.writeValueAsString(Map.of("stage",STEPS.isEmpty()?"DONE":STEPS.getFirst().name,"ticks",ticks,"busy",busy,"observed",lastObservation==null?Map.of():lastObservation,"input",NativeSkillInput.observation())));

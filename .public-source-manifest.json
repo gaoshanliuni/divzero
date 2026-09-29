@@ -3059,8 +3059,8 @@
     },
     {
       "path": "docs/TACTICAL_PLAYER_BEHAVIOR.md",
-      "sha256": "b3a94d8c8b83c21acd843c01db0e7393ced2edcda7ea3e5d213e4fb1646da632",
-      "bytes": 2680
+      "sha256": "a61bf84d37123d851fc094689ab8cf4c3f4d96c7fdad8653f77e21659f1707eb",
+      "bytes": 3173
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3469,8 +3469,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "063c99e866744e6328fd1d82cdb8448ba06fe729a234abefe337222a6571a872",
-      "bytes": 57017
+      "sha256": "a048dc3df93c1618e7b4b185d2374c2b93f461673c809dcab273de2b0f66b630",
+      "bytes": 57627
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -4949,18 +4949,18 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillLootCollector.java",
-      "sha256": "6254e5f811867322bf514aba4a76defdb6b4d11844a3d4b445ec2b50681c6daf",
-      "bytes": 3150
+      "sha256": "8dba2606a262061f5ea747605abcfb2c8c860a49aed4aaa1c82a0fed96dcc370",
+      "bytes": 4093
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "sha256": "ab9141720a0b96b1bc0c743caadc1df4b23a9d289a143350e811b6ac1c658c02",
-      "bytes": 30837
+      "sha256": "268dc2ebdc48299817062163e66b1e2b3e6d009e5cd190b1e1dc39f076cf6bd9",
+      "bytes": 30863
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "sha256": "5ac817716a5cc3abfa654fc4045eab89b777b13304d8c9bc1aa33b9cf86a3f59",
-      "bytes": 9784
+      "sha256": "2b46ac8395c64ec856be2a0178c8d989c8b292d86596f5ca2b70f7ea2b67ee8b",
+      "bytes": 9808
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/AgentTaskExecutor.java",
@@ -4979,8 +4979,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/AutonomousPlayerAgent.java",
-      "sha256": "ddb02625a181c7ead42ab3bef2e5072f893d0c05c2edb4ecd6d8e86a44333947",
-      "bytes": 21898
+      "sha256": "59cc43425cd3398e8b99d3b62809bcdd336f5692d95d248eeb6190b5eacfe5d4",
+      "bytes": 22016
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/CraftingUseSmokeServer.java",

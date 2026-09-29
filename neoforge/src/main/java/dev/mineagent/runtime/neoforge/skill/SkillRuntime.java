@@ -140,7 +140,7 @@ public final class SkillRuntime {
         int count=event.getOriginalStack().getCount()-event.getCurrentStack().getCount();if(count<=0)return;
         for(var w:r.work.values())if(w.actor!=null&&w.actor.player()==player&&w.session.runnable()){
             UUID id=event.getItemEntity().getUUID();boolean owned=w.loot.containsKey(id)||w.operation!=null&&(w.action.startsWith("HARVEST")||w.action.equals("FISH_REEL"))&&!w.dropBefore.contains(id)&&w.block!=null&&event.getItemEntity().position().distanceToSqr(Vec3.atCenterOf(w.block))<64;
-            if(!owned)continue;w.session.add("lootPickedUp",count);w.pickedDrops.add(id);if(event.getCurrentStack().isEmpty())w.loot.remove(id);w.lootRetries=0;r.persist(w);
+            if(!owned)continue;w.session.add("lootPickedUp",count);w.pickedDrops.add(id);if(event.getCurrentStack().isEmpty())w.loot.remove(id);w.lootRetries=0;w.blockedLootTerrain=null;r.persist(w);
         }
     }
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST) public static void shieldBlocked(net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent event){
