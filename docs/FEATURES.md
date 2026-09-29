@@ -141,7 +141,7 @@ F2 → 设置 → Provider 管理 API URL、保密 Key 与模型。真实模型�
 
 ![MC 托管面板](images/player-takeover.png)
 
-主工作、战斗方式和交战规则独立。可以说“继续种田，遇怪近战跑打，打完接着种”，或在 F2 / 右键 AI → 行为模式中只修改战斗规则。支持 AUTO、近战跑打、远程控距、守住阵地、脱离交战；规则包含不攻击、自卫、保护对象、清理防区和指定目标。原生伤害、冷却、弹道和装备消耗保持生效。
+主工作、战斗方式和交战规则独立。可以说“继续种田，遇怪近战跑打，打完接着种”，或在 F2 / 右键 AI → 行为模式中只修改战斗规则。支持 AUTO、近战跑打、近战连击控距（combo / W-tap / S-tap）、远程控距、守住阵地、脱离交战；规则包含不攻击、自卫、保护对象、清理防区和指定目标。原生伤害、冷却、弹道和装备消耗保持生效。
 
 [本地战斗候选验收与边界](TACTICAL_PLAYER_BEHAVIOR.md) · [实际技能、恢复与多人预约验收](PERSISTENT_PLAYER_SKILLS.md)
 
@@ -387,7 +387,7 @@ Creature definitions can be updated and persisted. Keyframe animations include i
 
 ![MC takeover panel](images/player-takeover.png)
 
-Work, combat style and engagement rules are independent. Use “keep farming, kite monsters in melee, then continue farming”, or change combat rules in F2 / the AI profile → Behavior. Tactics include auto, melee hit-and-run, ranged kiting, holding position and disengaging; native cooldowns, damage, projectiles and inventory costs still apply.
+Work, combat style and engagement rules are independent. Use “keep farming, kite monsters in melee, then continue farming”, or change combat rules in F2 / the AI profile → Behavior. Tactics include auto, melee hit-and-run, combo spacing with native sprint resets, ranged kiting, holding position and disengaging; native cooldowns, damage, projectiles and inventory costs still apply.
 
 [Local tactics candidate tests and limits](TACTICAL_PLAYER_BEHAVIOR.md) · [Skill, recovery and reservation tests](PERSISTENT_PLAYER_SKILLS.md)
 

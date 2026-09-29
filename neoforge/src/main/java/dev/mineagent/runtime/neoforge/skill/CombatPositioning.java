@@ -16,7 +16,7 @@ final class CombatPositioning {
     boolean pending(){return !open.isEmpty();}
     boolean longRetreat(){return selectedDistance>3;}
     Vec3 choose(SkillWork w,String intent,double desiredDistance){
-        exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE").contains(intent);
+        exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE","SPACE").contains(intent);
         if(waypoint!=null){
             var p=w.player();boolean reached=(p.position().subtract(waypoint).horizontalDistanceSqr()<.10||heading!=null&&p.position().subtract(waypoint).dot(heading)>.12)&&Math.abs(p.getY()-waypoint.y)<.5;
             boolean targetMoved=w.combat.selected!=null&&targetAtWaypoint!=null&&w.combat.selected.position().distanceToSqr(targetAtWaypoint)>4;

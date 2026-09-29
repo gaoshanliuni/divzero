@@ -944,8 +944,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "5e7a3010cfc2ad7749232cc072df010e979e95f4434bd66f62ec81f09f83753a",
-      "bytes": 298854
+      "sha256": "aecee2e48ee8e05a25c4b543779993562fe0cde32d9bb5de79aecf10014c98bf",
+      "bytes": 298989
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -3024,8 +3024,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "1f46df1bc3483cd932534a590bd7ce23a78bf76c89c846674c8917ce20419182",
-      "bytes": 44757
+      "sha256": "bb2cfdd7d346d3e89ff55ccb6a0e4e9cbec48a374b44201b5e3d4fe31a67dd75",
+      "bytes": 44846
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -3054,8 +3054,8 @@
     },
     {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
-      "sha256": "be2648de39351c3eed04f2a4369e7c6949fb5156327c0f8af718e01ba1e1724c",
-      "bytes": 8477
+      "sha256": "ba5a862f080501a9b8647873d39f9e0123d0e4c190a72aa910b1a07d95800a88",
+      "bytes": 8679
     },
     {
       "path": "docs/PUBLISHING.md",
@@ -3069,8 +3069,8 @@
     },
     {
       "path": "docs/TACTICAL_PLAYER_BEHAVIOR.md",
-      "sha256": "374b7ee4354dfa588aebe79a8bcd525e63abcf31f36dfaf612eefea0e69af967",
-      "bytes": 8535
+      "sha256": "6f947092ca14a9fe9211c98f82365214593dadee49afd5e12bfb7a3f87c294c0",
+      "bytes": 10509
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3134,8 +3134,8 @@
     },
     {
       "path": "docs/releases/1.0.21.md",
-      "sha256": "f554c93517e3015bf1dd30e037aa6dd64d6711fc1d4753ae10e50e1bde65f6ab",
-      "bytes": 1991
+      "sha256": "2d741b92f20da83230b62a10b6f41c677303676ee176566f588e42ad946723e8",
+      "bytes": 1979
     },
     {
       "path": "gradle.properties",
@@ -3469,8 +3469,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomousBodyClient.java",
-      "sha256": "c620e4c21f0ce0d584387d59cc509dad5eaae15f3ea3c7a53f4efd9c6b4ea16a",
-      "bytes": 13829
+      "sha256": "8da5ff9ae8df6762f1f70a4d434b31f4b24034c457704e0fdd3f33766cc881cd",
+      "bytes": 14124
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomyVirtualInput.java",
@@ -3489,13 +3489,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "8ea197a80fc82cf84776643f74ce22a8ef18273cbe26af2515749f8b0f7531d1",
-      "bytes": 70958
+      "sha256": "ebb844a871b49a8b3a70129c70f9bef5f084198027b28afa24c3e86907b63b98",
+      "bytes": 71035
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
-      "sha256": "1923af332eec0c72c70b23a83ce36a673ac9a22bb4ea8f3cac3e8d63ba305687",
-      "bytes": 15012
+      "sha256": "9ca262baf439d4b25fb971696306a88d62ee27215d0dee8aa42066ef90994f75",
+      "bytes": 14938
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyReviewScreen.java",
@@ -4914,8 +4914,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "e14ec3f976aa934321b1e72bc3c04c94861e76db0bec62d88fda44793328c31f",
-      "bytes": 8726
+      "sha256": "a6e1be920f5c40d3a5a29c7d078934c416cde7ec219418043b47214451f44ed4",
+      "bytes": 8734
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",

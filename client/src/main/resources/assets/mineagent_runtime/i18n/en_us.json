@@ -3131,5 +3131,8 @@
   "近战连击控距": "Melee combo spacing",
   "短退控距，等待下一次出手": "Step back and time the next strike",
   "跟进实际击退，衔接下一击": "Follow observed knockback for the next strike",
-  "保持攻击边缘，等待冷却": "Hold the edge of reach while cooling down"
+  "保持攻击边缘，等待冷却": "Hold the edge of reach while cooling down",
+  "本次控制已完成": "Control sequence completed",
+  "已退出托管": "Takeover ended",
+  "托管已结束": "Takeover ended"
 }
