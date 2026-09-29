@@ -48,6 +48,7 @@ public final class ConversationAgentTools {
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=JSON.readTree(arguments);if(args==null||!args.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");
+            if(tool.equals("inspect_skills")){keys(args);return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(s).inspect(p,agent);}
             if(tool.equals("inspect_buildings")){keys(args,"id","offset");return ServerBuildings.inspect(p,agent,args);}
             if(tool.equals("verify_building")){keys(args,"id","revision");return ServerBuildings.verify(p,agent,args,permit);}
             if(tool.equals("search_images")){keys(args,"query");return ServerBlockTextures.search(args);}
@@ -142,6 +143,8 @@ public final class ConversationAgentTools {
         if(result.isEmpty()||result.getCount()>result.getMaxStackSize())throw new IllegalArgumentException("AGENT_ITEM_COUNT");return result;
     }
     private static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,UUID operation,String tool,JsonNode a,BooleanSupplier permit,UUID conversation)throws Exception{
+        if(dev.mineagent.runtime.core.task.SkillTools.START.contains(tool)){dev.mineagent.runtime.core.task.SkillTools.canonical(tool,a.toString());return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).start(p,agent,operation,null,a,dev.mineagent.runtime.core.task.SkillTools.kind(tool),permit);}
+        if(tool.equals("control_skill")){dev.mineagent.runtime.core.task.SkillTools.canonical(tool,a.toString());return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).control(p,agent,a);}
         if(tool.equals("set_chat_messages")){keys(a,"limit","mark","thinking","expected_revision");Integer limit=a.has("limit")?number(a,"limit",1,16384):null;String mark=a.has("mark")?text(a,"mark",256):null;String thinking=a.has("thinking")?text(a,"thinking",16):null;Long expected=null;if(a.has("expected_revision")){if(!a.get("expected_revision").isIntegralNumber()||!a.get("expected_revision").canConvertToLong()||a.get("expected_revision").longValue()<0)throw new IllegalArgumentException("CHAT_MESSAGES_REVISION");expected=a.get("expected_revision").longValue();}if(limit==null&&mark==null&&thinking==null)throw new IllegalArgumentException("CHAT_MESSAGES_ARGUMENTS");return ServerChatMessageSettings.request(p,limit,mark,thinking,expected,permit);}
         Map<String,Object> result;
         switch(tool){

@@ -164,9 +164,16 @@ public final class MineAgentScriptHost {
         if (body == null) {
             return false;
         }
-        body.movementController().moveTo(new net.minecraft.world.phys.Vec3(x, y, z));
+        var operation=UUID.randomUUID();long[] command={-1};if(!body.claimTaskControl(operation,()->authority.getAsBoolean()&&body.canAct()&&(command[0]<0||body.movementController().commandRevision()==command[0]&&body.movementController().outcome().equals("MOVING")),()->{if(command[0]>=0)body.movementController().stopIfCurrent(command[0]);}))return false;
+        body.movementController().moveTo(new net.minecraft.world.phys.Vec3(x, y, z));command[0]=body.movementController().commandRevision();
         return true;
     }
+
+    public java.util.concurrent.CompletableFuture<java.util.Map<String,Object>> startSkill(String agentId,String definition)throws Exception{
+        requireServerThread();var owner=server.getPlayerList().getPlayer(actorId);if(owner==null)throw new IllegalStateException("SKILL_SCRIPT_OWNER_OFFLINE");var json=new com.fasterxml.jackson.databind.ObjectMapper();String canonical=dev.mineagent.runtime.core.task.SkillTools.canonical("start_skill",definition);return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(server).start(owner,UUID.fromString(agentId),UUID.randomUUID(),null,json.readTree(canonical),null,authority);
+    }
+    public java.util.concurrent.CompletableFuture<java.util.Map<String,Object>> inspectSkills(String agentId){requireServerThread();var owner=server.getPlayerList().getPlayer(actorId);if(owner==null)throw new IllegalStateException("SKILL_SCRIPT_OWNER_OFFLINE");return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(server).inspect(owner,UUID.fromString(agentId));}
+    public java.util.concurrent.CompletableFuture<java.util.Map<String,Object>> controlSkill(String agentId,String request)throws Exception{requireServerThread();var owner=server.getPlayerList().getPlayer(actorId);if(owner==null)throw new IllegalStateException("SKILL_SCRIPT_OWNER_OFFLINE");var json=new com.fasterxml.jackson.databind.ObjectMapper();return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(server).control(owner,UUID.fromString(agentId),json.readTree(dev.mineagent.runtime.core.task.SkillTools.canonical("control_skill",request)));}
 
     public void broadcast(String message) {
         requireServerThread();

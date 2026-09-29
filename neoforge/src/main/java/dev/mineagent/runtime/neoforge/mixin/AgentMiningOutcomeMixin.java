@@ -15,7 +15,7 @@ public abstract class AgentMiningOutcomeMixin {
     @Inject(method="removeBlock",at=@At("HEAD"),cancellable=true)
     private void mineagent$guard(BlockPos pos,BlockState state,boolean canHarvest,ItemStack tool,CallbackInfoReturnable<Boolean> result){if(player instanceof MineAgentPlayer body&&(!body.validateTaskControl()||!body.validateMiningState(pos)))result.setReturnValue(false);}
     @Inject(method="removeBlock",at=@At("RETURN"))
-    private void mineagent$removed(BlockPos pos,BlockState state,boolean canHarvest,ItemStack tool,CallbackInfoReturnable<Boolean> result){if(player instanceof MineAgentPlayer body)body.nativeMiningResult(pos,state,tool,result.getReturnValueZ());}
+    private void mineagent$removed(BlockPos pos,BlockState state,boolean canHarvest,ItemStack tool,CallbackInfoReturnable<Boolean> result){if(player instanceof MineAgentPlayer body)body.nativeMiningResult(pos,state,tool,result.getReturnValueZ());dev.mineagent.runtime.neoforge.skill.SkillRuntime.nativeBreak(player,pos,result.getReturnValueZ());}
     @Inject(method="destroyBlock",at=@At("RETURN"))
     private void mineagent$rejected(BlockPos pos,CallbackInfoReturnable<Boolean> result){if(!result.getReturnValueZ()&&player instanceof MineAgentPlayer body)body.nativeMiningRejected(pos);}
 }

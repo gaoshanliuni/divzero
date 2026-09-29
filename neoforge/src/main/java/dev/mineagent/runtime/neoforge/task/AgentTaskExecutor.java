@@ -63,6 +63,7 @@ public final class AgentTaskExecutor {
                 continue;
             }
             if(MineAgentRuntimeServices.agentUiLinks(server).forTask(task.taskId(),task.intentRevision()).isPresent())continue;
+            if(dev.mineagent.runtime.neoforge.skill.SkillRuntime.taskActive(server,task.taskId()))continue;
             if(task.runnableStepIds().contains("execute")&&task.steps().stream().noneMatch(s->Set.of("plan","replan").contains(s.stepId())))continue;
             if(worldActions.hasPlan(task.taskId(),task.intentRevision()))continue;
             if(!task.runnableStepIds().contains("plan_ui")&&(planningBodies.containsKey(task.agentId())||worldActions.busy(task.agentId())))continue;

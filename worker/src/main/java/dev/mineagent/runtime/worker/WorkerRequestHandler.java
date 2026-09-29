@@ -571,6 +571,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
                     {"type":"object","properties":{"package_id":{"type":"string","format":"uuid"},"base_revision":{"type":"integer","minimum":1},"prompt":{"type":"string","minLength":1,"maxLength":8192}},"required":["package_id","base_revision","prompt"],"additionalProperties":false}
                     """));
             String scope=String.valueOf(request.payload().getOrDefault("toolScope","GENERAL"));
+            if(scope.equals("GENERAL"))for(var name:dev.mineagent.runtime.core.task.SkillTools.TOOLS){var skill=dev.mineagent.runtime.core.task.SkillTools.definition(name);tools.add(new dev.mineagent.runtime.worker.provider.ToolDefinition(skill.name(),skill.description(),skill.parameters()));}
             if(scope.equals("GENERAL")){
                 tools.add(new dev.mineagent.runtime.worker.provider.ToolDefinition("inspect_native_environment","单独调用，只读查看当前Native原始class快照状态/physicalSide/environment。NOT_CAPTURED时先明确调用refresh_native_api；状态不是运行效果证明。",dev.mineagent.runtime.worker.provider.NativeApiToolSchemas.EMPTY));
                 tools.add(new dev.mineagent.runtime.worker.provider.ToolDefinition("refresh_native_api","单独调用，捕获当前FML resolved named modules的原始class资源，不初始化类、不读取常量/方法体。等待真实回执后再用snapshot查询；不能循环刷新等待环境变化。",dev.mineagent.runtime.worker.provider.NativeApiToolSchemas.EMPTY));

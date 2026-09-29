@@ -1,0 +1,74 @@
+package dev.mineagent.runtime.neoforge.skill;
+
+import com.fasterxml.jackson.databind.*;
+import dev.mineagent.runtime.api.agent.BodyDomain;
+import dev.mineagent.runtime.core.task.*;
+import dev.mineagent.runtime.core.task.SkillSession.State;
+import dev.mineagent.runtime.core.persistence.SqliteRuntimeRepository;
+import dev.mineagent.runtime.neoforge.MineAgentRuntimeServices;
+import dev.mineagent.runtime.neoforge.body.*;
+import dev.mineagent.runtime.neoforge.task.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.*;
+
+/** Persistent intent scheduler. Model latency is outside every local skill work cycle. */
+@EventBusSubscriber(modid="mineagent_runtime")
+public final class SkillRuntime {
+    private static final ObjectMapper JSON=new ObjectMapper();private static final String SPACE="player_skills_v1";
+    private static final Map<MinecraftServer,SkillRuntime> ALL=new IdentityHashMap<>();private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
+    final MinecraftServer server;final WorkReservations<String> reservations=new WorkReservations<>();private final Map<UUID,SkillWork> work=new LinkedHashMap<>();private final CompletableFuture<Void> loaded=new CompletableFuture<>();private int scanBudget;private long deadline;
+    private final Set<UUID> legacyPending=new HashSet<>();
+    private SkillRuntime(MinecraftServer server){this.server=server;CropAdapter.defaults();var world=MineAgentRuntimeServices.worldId(server);CompletableFuture.supplyAsync(()->{try(var db=new SqliteRuntimeRepository(database())){return db.list(world,SPACE);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((rows,error)->server.execute(()->{if(error!=null){loaded.completeExceptionally(error);return;}try{for(var row:rows){var session=SkillSession.restore(JSON.readValue(row.payload(),SkillSession.Snapshot.class));work.put(session.id(),new SkillWork(this,session,row.revision()));}loaded.complete(null);}catch(Exception e){loaded.completeExceptionally(e);}}));}
+    public static SkillRuntime get(MinecraftServer server){return ALL.computeIfAbsent(server,SkillRuntime::new);}
+    public static boolean taskActive(MinecraftServer server,UUID task){var r=ALL.get(server);return r!=null&&r.work.values().stream().anyMatch(w->task.equals(w.session.snapshot().task())&&!w.session.terminal());}
+    public static void legacyFollow(ServerPlayer owner,UUID agent){var r=get(owner.level().getServer());if(!r.loaded.isDone()||r.loaded.isCompletedExceptionally()||r.legacyPending.contains(agent)||r.work.values().stream().anyMatch(w->w.session.agent().equals(agent)&&w.session.spec().actor().equals("ai")&&!w.session.terminal()))return;r.legacyPending.add(agent);var args=JSON.createObjectNode().put("id","owner_follow").put("expected_revision",0).put("dimension",owner.level().dimension().identifier().toString()).put("target","$owner");r.start(owner,agent,UUID.randomUUID(),null,args,SkillSpec.Kind.FOLLOW,()->Boolean.parseBoolean(MineAgentRuntimeServices.config(r.server).snapshot().values().getOrDefault("agent."+agent+".follow","false"))).whenComplete((v,e)->r.server.execute(()->r.legacyPending.remove(agent)));}
+    private java.nio.file.Path database(){return server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");}
+    private void authorize(ServerPlayer p,UUID agent){if(server.getPlayerList().getPlayer(p.getUUID())!=p||!ServerTaskStart.allowed(p,agent))throw new SecurityException("SKILL_PERMISSION");}
+    public CompletableFuture<Map<String,Object>> inspect(ServerPlayer p,UUID agent){authorize(p,agent);return loaded.thenApply(v->{authorize(p,agent);return Map.of("status","OBSERVED","skills",work.values().stream().filter(w->w.session.owner().equals(p.getUUID())&&w.session.agent().equals(agent)).map(SkillWork::view).toList(),"kinds",Arrays.stream(SkillSpec.Kind.values()).map(Enum::name).toList(),"actors",List.of("ai","player"),"cropAdapters",CropAdapter.adapters().stream().map(CropAdapter::id).toList(),"lifecycle","RUNNING/WAITING/SUSPENDED/PAUSED/COMPLETED/FAILED/CANCELLED; STARTED is not goal completion");});}
+    public CompletableFuture<Map<String,Object>> start(ServerPlayer p,UUID agent,UUID operation,UUID task,JsonNode arguments,SkillSpec.Kind alias,BooleanSupplier permit){
+        authorize(p,agent);var spec=SkillSpec.parse(arguments,alias);if(!spec.dimension().equals(p.level().dimension().identifier().toString()))throw new IllegalArgumentException("SKILL_DIMENSION");
+        if(!arguments.path("expected_revision").isIntegralNumber()||arguments.path("expected_revision").asLong()!=0)throw new IllegalArgumentException("SKILL_CREATE_REVISION_ZERO");
+        return loaded.thenCompose(v->{try{authorize(p,agent);if(!permit.getAsBoolean())throw new IllegalStateException("SKILL_CONTEXT_CHANGED");
+            var existing=work.get(operation);if(existing!=null)return CompletableFuture.completedFuture(existing.view());
+            if(work.values().stream().anyMatch(w->w.session.owner().equals(p.getUUID())&&w.session.agent().equals(agent)&&w.session.spec().id().equals(spec.id())&&!w.session.terminal()))throw new IllegalStateException("SKILL_ID_ALREADY_ACTIVE");
+            if(spec.allowTeleport()&&!p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))throw new SecurityException("SKILL_TELEPORT_PERMISSION");
+            if(!spec.target().isBlank()&&!spec.target().equals("$owner")){var entity=p.level().getEntity(UUID.fromString(spec.target()));if(entity==null)throw new IllegalStateException("SKILL_TARGET_NOT_OBSERVED");if(spec.kind()==SkillSpec.Kind.COMBAT&&entity instanceof ServerPlayer)throw new SecurityException("SKILL_COMBAT_PLAYER_TARGET_NOT_SUPPORTED");}
+            for(var old:work.values())if(old.session.owner().equals(p.getUUID())&&old.session.agent().equals(agent)&&old.session.spec().actor().equals(spec.actor())&&!old.session.terminal()){old.session.control(old.session.revision(),"stop");old.release();persist(old);}
+            var session=new SkillSession(operation,p.getUUID(),agent,MineAgentRuntimeServices.worldId(server),task,spec);var w=new SkillWork(this,session,0);work.put(operation,w);persist(w);
+            var result=new CompletableFuture<Map<String,Object>>();w.saved.whenComplete((written,error)->server.execute(()->{try{if(error!=null)throw new CompletionException(error);authorize(p,agent);if(!permit.getAsBoolean()){session.transition(State.PAUSED,"START_CONTEXT_CHANGED");persist(w);}else w.bind(p);result.complete(Map.of("status","STARTED","skill",w.view(),"goalComplete",false));}catch(Exception failure){session.transition(State.PAUSED,"START_FAILED");persist(w);result.completeExceptionally(failure);}}));return result;
+        }catch(Exception failure){return CompletableFuture.failedFuture(failure);}});
+    }
+    public CompletableFuture<Map<String,Object>> control(ServerPlayer p,UUID agent,JsonNode n){authorize(p,agent);return loaded.thenCompose(v->{try{
+        authorize(p,agent);String id=n.path("id").asText();var w=work.values().stream().filter(a->a.session.owner().equals(p.getUUID())&&a.session.agent().equals(agent)&&(a.session.spec().id().equals(id)||a.session.id().toString().equals(id))).reduce((a,b)->b).orElseThrow(()->new IllegalStateException("SKILL_NOT_FOUND"));
+        if(!n.path("expected_revision").isIntegralNumber())throw new IllegalArgumentException("SKILL_REVISION");String action=n.path("action").asText();
+        if(action.equals("reconcile")){w.release();var body=w.session.spec().actor().equals("player")?p:MineAgentRuntimeServices.bodies(server).body(agent).orElseThrow();var observed=new LinkedHashMap<String,String>();observed.put("observedActorEntityId",Integer.toString(body.getId()));observed.put("observedPosition",body.position().toString());observed.put("observedMainHand",body.getMainHandItem().toString());observed.put("observedHook",body.fishing==null?"":body.fishing.getUUID().toString());String coordinate=w.session.receipt().get("block");if(coordinate!=null){var xyz=coordinate.split(",\\s*");if(xyz.length==3){var pos=new BlockPos(Integer.parseInt(xyz[0].trim()),Integer.parseInt(xyz[1].trim()),Integer.parseInt(xyz[2].trim()));if(!body.level().hasChunkAt(pos))throw new IllegalStateException("SKILL_RECONCILE_CHUNK_UNLOADED");observed.put("observedBlock",net.minecraft.commands.arguments.blocks.BlockStateParser.serialize(body.level().getBlockState(pos)));}}String item=w.session.receipt().get("seed");if(item!=null){var nativeItem=net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse(item));observed.put("observedSeedCount",Integer.toString(body.getInventory().countItem(nativeItem)));}w.session.reconcile(n.path("expected_revision").asLong(),observed);}
+        else {w.session.control(n.path("expected_revision").asLong(),action);w.release();if(action.equals("resume"))w.bind(p);if(action.equals("stop")&&w.actor instanceof PlayerSkillActor)AutonomousPlayerAgent.endLocalSkill(p,w.token());}
+        persist(w);var reply=new CompletableFuture<Map<String,Object>>();w.saved.whenComplete((x,error)->server.execute(()->{if(error!=null)reply.completeExceptionally(error);else reply.complete(Map.of("status","APPLIED","skill",w.view()));}));return reply;
+    }catch(Exception failure){return CompletableFuture.failedFuture(failure);}});}
+    void persist(SkillWork w){try{String payload=JSON.writeValueAsString(w.session.snapshot());UUID world=MineAgentRuntimeServices.worldId(server);w.saved=w.saved.thenRunAsync(()->{try(var db=new SqliteRuntimeRepository(database())){var result=db.compareAndSet(world,SPACE,w.session.id().toString(),w.dbRevision,payload,System.currentTimeMillis());if(!result.accepted())throw new IllegalStateException("SKILL_JOURNAL_CONFLICT");w.dbRevision++;}catch(Exception e){w.ioFailed=true;throw new CompletionException(e);}},IO);}catch(Exception e){w.ioFailed=true;}}
+    boolean scan(){if(scanBudget<=0||System.nanoTime()>=deadline)return false;scanBudget--;return true;}
+    private void tick(){if(!loaded.isDone()||loaded.isCompletedExceptionally())return;scanBudget=384;deadline=System.nanoTime()+4_000_000;reservations.expire(server.getTickCount());
+        for(var w:work.values().stream().sorted(Comparator.comparingLong(a->a.lastTick)).toList()){
+            if(System.nanoTime()>=deadline)break;if(!w.session.runnable())continue;w.lastTick=server.getTickCount();
+            try{if(w.ioFailed){w.pause("JOURNAL_UNKNOWN_RECONCILE");continue;}if(!w.saved.isDone())continue;var owner=server.getPlayerList().getPlayer(w.session.owner());if(owner==null||!owner.isAlive()||!ServerTaskStart.allowed(owner,w.session.agent())){w.pause("OWNER_OR_PERMISSION_CHANGED");continue;}
+                if(w.actor==null){w.bind(owner);if(w.actor==null)continue;}if(!w.actor.current()||!w.actor.player().level().dimension().identifier().toString().equals(w.session.spec().dimension())){if(w.actor instanceof PlayerSkillActor){w.session.control(w.session.revision(),"stop");w.release();persist(w);}else w.pause("BODY_OR_DIMENSION_CHANGED");continue;}
+                w.actor.controls().validate();if(!w.actor.inputReady()){w.release();w.session.transition(State.WAITING,"INPUT_OR_MENU_PAUSED");continue;}if(server.getTickCount()<w.nextTick)continue;
+                if(!w.acquire())continue;w.step();
+            }catch(Exception failure){w.pause("SKILL_ERROR_"+Objects.toString(failure.getMessage(),failure.getClass().getSimpleName()));}
+        }
+    }
+    @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post e){var runtime=ALL.get(e.getServer());if(runtime!=null)runtime.tick();}
+    @SubscribeEvent public static void stop(net.neoforged.neoforge.event.server.ServerStoppingEvent e){var r=ALL.remove(e.getServer());if(r!=null){for(var w:r.work.values()){if(!w.session.terminal())w.pause("SERVER_RESTART");}try{CompletableFuture.allOf(r.work.values().stream().map(w->w.saved).toArray(CompletableFuture[]::new)).get(10,TimeUnit.SECONDS);}catch(Exception ignored){}}}
+    public static boolean cancelForBody(ServerPlayer p,UUID agent){var r=ALL.get(p.level().getServer());if(r==null)return false;boolean cancelled=false;for(var w:r.work.values())if(w.session.owner().equals(p.getUUID())&&w.session.agent().equals(agent)&&!w.session.terminal()){w.session.control(w.session.revision(),"stop");w.release();r.persist(w);cancelled=true;}return cancelled;}
+    public static void nativeBreak(ServerPlayer player,BlockPos position,boolean removed){var r=ALL.get(player.level().getServer());if(r==null||!removed)return;for(var w:r.work.values())if(w.actor!=null&&w.actor.player()==player&&w.session.runnable()&&w.executed&&w.operation!=null&&w.action.equals("HARVEST_BREAK")&&position.equals(w.block))w.nativeBreak=true;}
+    @SubscribeEvent public static void damage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event){if(!(event.getSource().getEntity() instanceof ServerPlayer player)||event.getHealthDamage()<=0)return;var r=ALL.get(player.level().getServer());if(r==null)return;for(var w:r.work.values())if(w.actor!=null&&w.actor.player()==player&&w.fighting!=null&&w.fighting.equals(event.getEntity().getUUID())){w.session.add("verifiedHits",1);w.session.add("damageMilliHearts",(long)(event.getHealthDamage()*1000));}}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST) public static void fished(net.neoforged.neoforge.event.entity.player.ItemFishedEvent event){if(event.isCanceled()||!(event.getEntity() instanceof ServerPlayer p))return;var r=ALL.get(p.level().getServer());if(r==null)return;for(var w:r.work.values())if(w.actor!=null&&w.actor.player()==p&&w.hook!=null&&w.hook.equals(event.getHookEntity().getUUID())&&w.operation!=null&&w.action.equals("FISH_REEL")){w.fishedEvent=true;w.fishedItems=event.getDrops().stream().mapToInt(net.minecraft.world.item.ItemStack::getCount).sum();}}
+}

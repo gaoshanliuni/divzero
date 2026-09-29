@@ -152,7 +152,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
         }
         ServerPlayer owner = server.getPlayerList().getPlayer(body.ownerPlayerId());
         if (owner != null && owner.level() == body.level()) {
-            body.movementController().moveTo(owner.position());
+            dev.mineagent.runtime.neoforge.skill.SkillRuntime.legacyFollow(owner,agentId);
         }
     }
 
@@ -446,8 +446,8 @@ public final class MineAgentBodyManager implements AutoCloseable {
             if(body.taskControlOwned())continue;
             if(!Boolean.parseBoolean(config.snapshot().values().getOrDefault("agent."+body.agentId()+".follow","false")))continue;
             ServerPlayer owner = server.getPlayerList().getPlayer(body.ownerPlayerId());
-            if (owner != null && owner.level() == body.level() && body.distanceToSqr(owner) > 36.0) {
-                body.movementController().moveTo(owner.position());
+            if (owner != null && owner.level() == body.level()) {
+                dev.mineagent.runtime.neoforge.skill.SkillRuntime.legacyFollow(owner,body.agentId());
             }
         }
     }

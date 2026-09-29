@@ -1,0 +1,22 @@
+package dev.mineagent.runtime.neoforge.skill;
+
+import dev.mineagent.runtime.agent.body.BodyControlCoordinator;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
+import java.util.*;
+
+/** The local skill loop is shared; only this boundary may execute physical input. */
+public interface SkillActor {
+    ServerPlayer player();BodyControlCoordinator controls();
+    boolean current();boolean inputReady();
+    String move(UUID session,Vec3 destination);void aim(UUID session,Vec3 target);
+    boolean select(UUID session,int slot);
+    void breakBlock(UUID session,UUID operation,BlockPos target);
+    void useBlock(UUID session,UUID operation,BlockPos target);
+    void useItem(UUID session,UUID operation,boolean hold);
+    void releaseItem(UUID session,UUID operation);
+    void attack(UUID session,UUID operation,Entity entity);
+    void stop(UUID session);Map<String,Object> observation();
+}

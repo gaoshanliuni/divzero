@@ -1,0 +1,32 @@
+package dev.mineagent.runtime.neoforge.skill;
+
+import dev.mineagent.runtime.agent.body.BodyControlCoordinator;
+import dev.mineagent.runtime.neoforge.MineAgentRuntimeServices;
+import dev.mineagent.runtime.neoforge.body.MineAgentPlayer;
+import dev.mineagent.runtime.neoforge.body.InteractionTargetResolver;
+import net.minecraft.core.*;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.*;
+import java.util.*;
+
+public final class AiSkillActor implements SkillActor {
+    private final MineAgentPlayer body;private long navigation=-1;private UUID owner,operation;private Vec3 destination;
+    public AiSkillActor(MineAgentPlayer body){this.body=body;}
+    public ServerPlayer player(){return body;}public BodyControlCoordinator controls(){return body.controls();}
+    public boolean current(){return body.canAct()&&MineAgentRuntimeServices.bodies(body.level().getServer()).body(body.agentId()).orElse(null)==body;}
+    public boolean inputReady(){return current()&&body.containerMenu==body.inventoryMenu;}
+    private void require(UUID session,dev.mineagent.runtime.api.agent.BodyDomain domain){if(!inputReady()||!controls().owns(session,domain))throw new IllegalStateException("SKILL_CONTROL_CHANGED");owner=session;}
+    public String move(UUID session,Vec3 target){require(session,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT);var c=body.movementController();if(navigation<0||c.commandRevision()!=navigation){c.movePreciselyTo(target);navigation=c.commandRevision();destination=target;}else if(destination==null||destination.distanceToSqr(target)>.09){c.updateTarget(navigation,target);destination=target;}return c.outcome();}
+    public void aim(UUID session,Vec3 target){require(session,dev.mineagent.runtime.api.agent.BodyDomain.LOOK);body.aim(session,target,8);}
+    public boolean select(UUID session,int slot){require(session,dev.mineagent.runtime.api.agent.BodyDomain.INVENTORY);if(slot<0||slot>=36)return false;if(slot<9)body.getInventory().setSelectedSlot(slot);else body.getInventory().pickSlot(slot);body.inventoryMenu.broadcastChanges();return true;}
+    private boolean child(UUID session,UUID op){require(session,dev.mineagent.runtime.api.agent.BodyDomain.MAIN_HAND);if(op.equals(operation))return false;if(operation!=null)controls().releaseChild(operation);if(!controls().claimChild(session,op,this::current,()->{body.abortMiningIfCurrent(op);body.abortItemUseIfCurrent(op);}))throw new IllegalStateException("SKILL_CHILD_BUSY");operation=op;return true;}
+    public void breakBlock(UUID session,UUID op,BlockPos target){if(child(session,op)&&!body.beginMining(target,op))throw new IllegalStateException("SKILL_MINING_REJECTED");}
+    public void useBlock(UUID session,UUID op,BlockPos target){if(!child(session,op))return;if(!body.isWithinBlockInteractionRange(target,0)||!InteractionTargetResolver.lineOfSight(body,body.getEyePosition(),Vec3.atCenterOf(target),target,false))throw new IllegalStateException("SKILL_BLOCK_OUT_OF_REACH");var hit=new BlockHitResult(Vec3.atCenterOf(target).add(0,.5,0),Direction.UP,target,false);boolean sneak=body.isShiftKeyDown();body.setShiftKeyDown(false);try{body.gameMode.useItemOn(body,body.level(),body.getMainHandItem(),InteractionHand.MAIN_HAND,hit);body.swing(InteractionHand.MAIN_HAND);}finally{body.setShiftKeyDown(sneak);}body.inventoryMenu.broadcastChanges();}
+    public void useItem(UUID session,UUID op,boolean hold){var hand=hold&&!body.getMainHandItem().is(net.minecraft.world.item.Items.BOW)&&body.getOffhandItem().is(net.minecraft.world.item.Items.SHIELD)?InteractionHand.OFF_HAND:InteractionHand.MAIN_HAND;if(child(session,op)&&!body.beginTaskItemUse(op,hand))throw new IllegalStateException("SKILL_ITEM_USE_REJECTED");}
+    public void releaseItem(UUID session,UUID op){require(session,dev.mineagent.runtime.api.agent.BodyDomain.MAIN_HAND);if(op.equals(operation)&&body.ownsItemUse(op)&&body.isUsingItem())body.releaseUsingItem();}
+    public void attack(UUID session,UUID op,Entity entity){if(!entity.isAlive()||body.distanceToSqr(entity)>9||!body.hasLineOfSight(entity)||body.getAttackStrengthScale(.5f)<.95f)return;if(!child(session,op))return;body.attack(entity);body.swing(InteractionHand.MAIN_HAND);}
+    public void stop(UUID session){if(owner!=null&&!owner.equals(session))return;if(navigation>=0)body.movementController().stopIfCurrent(navigation);if(operation!=null){body.abortMiningIfCurrent(operation);body.abortItemUseIfCurrent(operation);controls().releaseChild(operation);}operation=null;navigation=-1;destination=null;owner=null;}
+    public Map<String,Object> observation(){return Map.of("adapter","AI_SERVER_PLAYER","entityId",body.getId(),"navigation",body.movementController().outcome(),"movement",body.movementController().evidence());}
+}
