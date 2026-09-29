@@ -121,7 +121,7 @@ final class CombatSkill {
         boolean knockedAway=w.tick()-w.lastMeleeHitTick<24&&target.getUUID().equals(w.lastMeleeHitTarget)&&actual.velocity().dot(target.position().subtract(p.position()))>.01;
         if(combo&&!ready){
             double spacing=reach+.2;
-            if(w.tick()-w.lastAttackAt<3||distance<spacing){phase(w,"STAP_SPACE");move(w,w.positioning.choose(w,"RETREAT",spacing+.2),target,false);}
+            if(w.tick()-w.lastAttackAt<3||distance<spacing){phase(w,"STAP_SPACE");move(w,w.positioning.choose(w,"SPACE",spacing+.2),target,false);}
             else if(knockedAway&&distance>spacing+.7){phase(w,"COMBO_PRESSURE");w.sprintApproach=true;move(w,w.positioning.choose(w,"APPROACH",spacing),target,false);}
             else {phase(w,"COMBO_SPACING");w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);}
             return;

@@ -3069,8 +3069,8 @@
     },
     {
       "path": "docs/TACTICAL_PLAYER_BEHAVIOR.md",
-      "sha256": "36397b10c7509684e44b370feb57c06ec52851cbc0a4271d30d643f19ce9257f",
-      "bytes": 7884
+      "sha256": "374b7ee4354dfa588aebe79a8bcd525e63abcf31f36dfaf612eefea0e69af967",
+      "bytes": 8535
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -4914,13 +4914,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "fcb538c5b84002604bbc0133eeffc7787faf81ef4c2d7bf6dd5840e1b8e172bf",
-      "bytes": 8702
+      "sha256": "e14ec3f976aa934321b1e72bc3c04c94861e76db0bec62d88fda44793328c31f",
+      "bytes": 8726
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "9a14d2dcd026ea26a1ba622864c8162569e781665f7a93746fa11be0a342d9f0",
-      "bytes": 22633
+      "sha256": "7ce7bb35f5ae6f7820ca72b7f7b58f4fd157e0c84ef6c324c98799fce1a4fdcf",
+      "bytes": 22631
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",

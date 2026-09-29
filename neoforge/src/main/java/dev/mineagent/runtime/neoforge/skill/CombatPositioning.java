@@ -32,7 +32,7 @@ final class CombatPositioning {
         }
         var budget=NativeNavigationBudget.get(w.runtime.server);int allowed=budget.claim(w.token(),w.tick());evaluator.beginSlice();
         for(int i=0;i<allowed&&!open.isEmpty()&&budget.timeAvailable();i++){
-            var route=open.removeFirst();var point=NativeTraversalEvaluator.point(route.node);if(route.steps.size()>=2&&evaluator.neighbors(route.node).stream().filter(edge->!route.steps.stream().anyMatch(step->step.from().equals(edge.to()))).count()>=1)candidates.add(route);
+            var route=open.removeFirst();var point=NativeTraversalEvaluator.point(route.node);if(route.steps.size()>=1&&evaluator.neighbors(route.node).stream().filter(edge->!route.steps.stream().anyMatch(step->step.from().equals(edge.to()))).count()>=1)candidates.add(route);
             if(route.steps.size()>=7)continue;
             for(var edge:evaluator.neighbors(route.node)){
                 var next=NativeTraversalEvaluator.point(edge.to());if(Math.abs(next.y-origin.y)>1.25||next.distanceToSqr(origin)>49||!seen.add(edge.to()))continue;
@@ -51,7 +51,7 @@ final class CombatPositioning {
             var onwards=evaluator.neighbors(route.node).stream().filter(edge->!route.steps.stream().anyMatch(step->step.from().equals(edge.to()))).toList();
             score+=Math.max(0,3-onwards.size())*2;
             if(onwards.stream().noneMatch(edge->evaluator.neighbors(edge.to()).stream().anyMatch(next->!next.to().equals(route.node)&&route.steps.stream().noneMatch(step->step.from().equals(next.to())))))score+=100;
-            if(target!=null)score+=Math.abs(point.distanceTo(target.position())-desiredDistance)*(intent.equals("APPROACH")?5:1.1);
+            if(target!=null)score+=Math.abs(point.distanceTo(target.position())-desiredDistance)*(intent.equals("SPACE")||intent.equals("APPROACH")?8:1.1);
             if(intent.equals("RETREAT")||intent.equals("RECOVER")||intent.equals("LURE")){
                 score-=origin.distanceTo(point)*.45;
                 if(w.combat.protectedEntity!=null&&point.distanceTo(w.combat.protectedEntity.position())<origin.distanceTo(w.combat.protectedEntity.position())-.5)score+=100;
