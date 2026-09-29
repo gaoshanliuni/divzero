@@ -8,7 +8,7 @@
 
 DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，通过自然语言、世界感知、长期记忆和动态创造，让 AI 角色真正参与游戏世界。
 
-本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**协议6**，客户端与服务端一起更新。管理操作需要开启作弊／真实管理权限，首次可用 `/ai accept` 初始化。
+本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**协议10**，客户端与服务端一起更新。管理操作需要开启作弊／真实管理权限，首次在聊天中选择启用即可立即使用。
 
 ## 模型选择会显著影响效果
 
@@ -18,24 +18,17 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，通过�
 
 ## 常用操作入口
 
-优先使用直接命令，例如 `/ai create "星河"`。默认按 **Ctrl+M** 打开原生面板，按 **F2** 打开 Web 工作区；按键可在游戏设置中调整。
+| 操作 | 入口 |
+|---|---|
+| 启用当前世界 | 首次聊天中的“启用”；F2 → 设置 → 此世界启用设置可更改 |
+| 创建 / 查看 AI | `/ai create "星河"`、`/ai list`；F2 → AI 玩家 |
+| API URL、Key、模型 | F2 → 设置 → Provider；Key 使用本机保密输入 |
+| 对话 / 默认 AI | 原生聊天 `@星河 …`；`/ai default`；F2 → 对话 |
+| 思考显示 / 深度 | `/ai thinking see`、`/ai thinking deep`；F2 对话中按需展开 |
+| 人设、会话、血量、背包与内容 | 右键该 AI，打开专属面板 |
+| 删除 / 重命名对话 | `/ai chat delete`；F2 → 对话 → 更多 / 重命名 |
 
-| 操作 | 命令／聊天 | 原生面板 | F2 界面 |
-|---|---|---|---|
-| 初始化本人权限 | `/ai accept` | 权限与信任 | 更多 → 配置与权限 |
-| 创建 AI | `/ai create "星河"` | AI 玩家 → 创建 | AI 管理 → 创建 AI |
-| AI 列表 | `/ai list` | AI 玩家 | AI 管理 |
-| API URL | — | 模型 → URL／四个平台预设 | 更多 → API 设置 → URL／预设 |
-| 设置／替换 Key | — | 模型 → Key → 保存 | 更多 → API 设置 → 设置 / 替换 API Key |
-| 获取／选择模型 | — | 模型 → 选择模型 | 更多 → API 设置 → 模型列表 |
-| 自定义模型名 | — | 模型 → 模型名称 | API 设置 → 使用自定义模型 |
-| 对话 | `@AI名字 …` | 会话与选择 | 对话 |
-| 默认响应 AI | `/ai default`；`/ai default off` | 命令打开选择菜单 | 可通过对话让 AI 设置 |
-| 原生思考显示 | `/ai thinking see` | 会话与选择 → 聊天思考 | 对话中的显示开关 |
-| 思考深度 | `/ai thinking deep` | 命令打开选择菜单 | 可通过对话让 AI 设置 |
-| 删除当前对话 | `/ai chat delete` | — | 对话 → 删除对话 |
-
-F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。API URL 和模型列表提供可选值；中文或带空格的 AI 名字可用引号包住。
+F2 与 Ctrl+M 打开同一 LDLib2 MC 工作区。右键 AI 的专属面板绑定被点击的 AI。保存 URL / Key 后可获取模型列表，也可输入自定义模型名；不要把 Key 发到聊天中。
 
 ## 1. 对话、模型与 AI 管理
 
@@ -43,7 +36,7 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 |---|---|
 | 原生聊天 | `@AI名字` 选中 AI，Tab 自动补全；用自然语言提需求。 |
 | F2 对话 | 持久对话记录、新建／切换会话、查看原文、归档／恢复与上下文详情；删除会取消该会话的在途请求和未发队列，后续建立新上下文。 |
-| 流式回复 | 边生成边显示；超过原生聊天单条长度时拆分发送，完整保留内容。 |
+| 流式回复 | 正文与 Provider 返回的思考分别原位流式更新，F2 保留完整历史。 |
 | 打断与恢复 | 忙时默认排队，上一条结束后自动发送；可点“打断并发送”或“取消发送这条消息”。打断操作绑定对应请求。失败可“核对后继续”，先读真实状态，根据核对结果继续操作。 |
 | 思考显示 | 原生显示 `[AI名字][思考]…`，`/ai thinking see` 切换原生显示，F2 对话记录保留完整内容；`/ai thinking deep` 选择深度。AI 也可调用设置能力；官方 DeepSeek 的实际深度参数已验证。 |
 | Provider | DeepSeek、OpenAI 兼容 API、GLM 智谱／Z.AI、Ollama 等配置入口；GLM 凭据联验待完成。 |
@@ -53,13 +46,13 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 | 每 AI 模型 | 各 AI 可使用全局模型或单独指定当前兼容 API 的模型，配置按 AI 隔离，API URL 与 Key 共用。 |
 | AI 数量与名字 | 支持持续创建；目录分页、名称分包补全，已有70名 Native 测试。硬件／区块资源仍有限。 |
 | 长任务 | 对话支持持续工具调用；提供主动停止、Provider／传输边界及操作结果核对。 |
-| 彩色互动消息 | AI 可设置聊天颜色，发复制、填入输入框、确认选择等可点击消息。 |
+| 彩色互动消息 | 原生聊天和 F2 均支持确认选择、填入输入框和复制；选项保留原会话身份、到期与重复点击检查。 |
 
-原生面板“模型”页将 URL、模型和 Key 放在同一页，顶部 DeepSeek／GLM／OpenAI／Ollama 预设可直接填入 URL，按钮统一为“保存”。真实模型验收已覆盖 DeepSeek；GLM 凭据联验和 Ollama 本地推理验证待完成。
+F2 → 设置 → Provider 管理 API URL、保密 Key 与模型。真实模型验收覆盖 DeepSeek；GLM 和 Ollama 按实际适配范围使用。
 
-![原生模型设置：URL、模型与 Key 同页](images/native-model-settings.png)
+![右键 AI 的专属状态、人设与内容面板](images/native-agent-profile.png)
 
-图中 Key 输入框为空，保存后的 Key 以保密方式管理。
+专属面板提供血量、背包、人设、会话与该 AI 创建内容。对话标题可由 AI 自动生成，玩家重命名后不会被自动覆盖。
 
 ### 多 AI 并行与请求隔离
 
@@ -74,6 +67,8 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 - **内置／玩家皮肤**：18款内置人物与体型、复制玩家皮肤。
 - **PNG 热换肤**：选择本地 PNG，或让 AI 生成、导出、修改标准 UV 像素画；64×64、64×32，wide/slim。保留同一 AI 身份、名字、跟随与任务。
 - **YSM**：安装兼容 YSM 和模型后选择目录内外观，热切换无需重启；卸载 Mod 本身仍需重启。PNG/YSM 的具体组合按实际模型与版本验证。
+
+“这里是我家”可结合发送时的位置存入事实记忆；“我喜欢钻石胸甲配铁裤子”可存入偏好，后续跨会话取用。具体自动记忆与装备取用实测见 [十项场景](NATIVE_TEN_SCENARIOS.md)。
 
 ## 3. 读取与修改现有世界
 
@@ -99,6 +94,9 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 单计划包围盒最大 **2048×2048×2048**，磁盘分页、分 Tick 操作。实际仍受世界高度／边界、已加载区块、权限、磁盘及写入前状态校验约束，满体积填充性能待专项验证。部分完成按实际回执继续处理。
 
 刷石机已在真实 DeepSeek 建造流程后验证连续三次圆石再生；生存建造需要准备相应材料。
+
+
+建筑计划以稳定构件 ID 组织地板、墙、屋顶等，支持模板、旋转、镜像与阵列，局部修改只执行差异。多边形墙支持厚度、内部孔洞和可选封顶/封底；空心结构不会隐式清空内部。步骤支持暂停、继续、冲突检查撤销/重做；实际方块验证绑定建筑、范围与版本，未验证不得报告建成。
 
 ## 5. 实时创造物品、模型与玩法
 
@@ -130,15 +128,20 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 
 ![实际生成的星球伙伴](images/creature.png)
 
-生物定义可更新并持久保存，支持 idle／walk／random／hurt／attack／death／interact／ride 关键帧动画，以及平移、旋转、缩放。当前提供**整体网格动画**，模型以几何颜色为主；骨骼、分部件及外部纹理适配列入扩展范围。骑乘／交易／喂食冲突时按当前交互契约选择，详见技术范围。
+生物定义可更新并持久保存，支持 idle／walk／random／hurt／attack／death／interact／ride 关键帧动画，以及平移、旋转、缩放。支持整体网格、父子刚性骨骼和局部部件动画；原生实体及局部模型替换按实际 Renderer 适配范围使用，不宣称任意模组都兼容。骑乘／交易／喂食冲突时按当前交互契约选择，详见技术范围。
 
 ## 7. AI 身体与玩家接管
 
 - **AI自己的实体**：移动／局部寻路、转向、奔跑、潜行、选物品、丢物品、跟随、停止跟随、传送到玩家。
 - **低净空通行**：按真实方块碰撞体与站立／潜行体型规划；门、栅栏门、半砖、地毯和台阶之外，也识别需要低头潜行的通道。进入前自动潜行，安全离开后恢复；更低空间会返回路线受阻。可通过对话持续开启或关闭潜行。
 - **接管本人**：玩家明确提出后直接启动，无逐轮二次确认。持续观察和重新规划，左侧 HUD 显示公开决策摘要与下一路点。
-- 到达目标进入待命，会话持续保留。**Esc 或明确要求停止**结束；T/F2、失焦和界面暂停输入但保留会话，死亡／断线／世界或权限变化会保护释放。
-- 当前导航覆盖已加载区域的局部地面；飞行、游泳和载具按对应能力使用。本机电脑命令采用独立确认。
+- 玩家明确要求接管本人后，AI 使用原生客户端输入持续执行。进入托管释放鼠标；**T、F2、切换电脑窗口及最小化均不中断**。MC 面板提供“暂停 / 继续、退出、追加命令”，按钮松开时触发；**ESC 结束托管**。退出恢复原失焦暂停设置，死亡、断线、世界或权限变化仍释放控制。
+- 持续技能支持跟随、巡逻、警戒、漫步、原生战斗、农务和钓鱼；同一运行时使用 AI 身体与真人输入两个适配器。常规工作不逐株请求模型。
+- 共享通行判定支持已加载区域的门、低通道、台阶、梯子与水域。
+
+![MC 托管面板](images/player-takeover.png)
+
+[实际技能、恢复与多人预约验收](PERSISTENT_PLAYER_SKILLS.md)
 
 ### 搭建可复用道路
 
@@ -179,17 +182,22 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 
 图中展示 177 方块的放置结果。内容保留另有箱子7钻石、命名实体及延迟 Tick 的实际回归。复杂乘客／拴绳／悬挂、Mod 跨坐标引用、超大 NBT 流式读取、Bedrock、LZ4／`.mcc` 等仍有边界；各格式按已实现字段读取。
 
-## 9. F2、预览、悬浮窗口与实时网页
+## 9. LDLib2 工作区、预览与 AI 动态界面
 
-- 独立半透明窗口，可分别显示／隐藏、最小化、关闭、悬浮；每个窗口单独控制。AI 可按权限改变窗口状态。
-- 一级“包管理”、文件与附件入口；较少使用的设置进入更多菜单。包管理补齐自有生物列表，物品模型和生物均可进入统一预览。
-- 模型／结构预览：左拖自由旋转，右／中键平移，滚轮双向缩放，复位；使用连续视角操作。
-- 大建筑可能显示范围预览，建筑颜色采用近似投影，完整材质渲染按预览类型提供。
-- 生成 WebUI 可持续读取坐标、附近方块等真实信息；后台暂停、关闭释放、上下文失效停止。刷新读数直接使用本地数据订阅。
+- F2 / Ctrl+M 共用原生工作区，默认 MC 主题；内置功能不要求 KubeJS。窗口支持拖动、缩放、最小化与关闭，标题按钮为正方形，松开触发并有按下反馈。
+- 右键 AI 打开专属面板。对话、模型、权限、文件、包管理、双语与预览统一迁移；MCEF 不再作为依赖或备用渲染。
+- AI 通过 KubeJS 构建新的控件树、样式与交互；数据增量更新，结构验证成功再替换，失败保留旧界面和匹配输入。正常热更新无需退出世界、重启或全局 reload。
+- LDLib2 HUD 支持独立 ID、标题、图标、分数、进度和任务状态，默认被动显示，需要点击时进入明确交互模式。
+- AI 可自动打开实体、物品和建筑预览，也可发送聊天/F2按钮；原生场景可旋转、平移、缩放，现场建筑支持材质快照。
+- 可附加熔炉时间、酿造台配方及预览按钮，创建桌面窗口和实体血条。LDLib2 宿主支持撤销样式；其它第三方菜单按附加控件与适配范围处理。
 
-![F2 独立模型预览与包管理入口](images/preview.png)
+![原生模型预览](images/native-preview.png)
 
-![真实坐标与附近石头统计读数](images/live-readout.png)
+![真实模型生成的熔炉时间与进度附加层](images/native-furnace.png)
+
+![模型修改原生商店后保留输入](images/native-shop.png)
+
+截图是已验收的游戏画面，商店示例只扣本地演示余额。完整边界见 [十项场景](NATIVE_TEN_SCENARIOS.md) 与 [迁移状态](NATIVE_UI_MIGRATION_STATUS.md)。
 
 ## 脚本与扩展
 
@@ -205,7 +213,7 @@ F2 的 Key 操作打开本机保密输入页；原生模型页可同页填写。
 - WORLD_REOPEN：保存计划，正常重开后生效；界面标注待重开状态。
 - BOOT／CLIENT 原生代码：保留专门安装／执行和每台本机的确认，分别校验服务端和本机权限。
 
-高级运行能力通过 Web 管理入口使用。技术 revision/hash 在详情中提供，玩家通过选项操作。
+高级运行能力通过 F2 原生包管理与设置入口使用。技术 revision/hash 在详情中提供，玩家通过选项操作。
 
 ## 11. 本机 Python、依赖安装与完整输出
 
@@ -223,7 +231,7 @@ Java直接管理固定校验的 `python-build-standalone install_only_stripped`�
 
 ## 截图与验证范围
 
-截图来自 Native 测试，其中潜行与道路图片为本轮新采集，模型设置为同版本功能的已验证截图；模型生成与 Native 动作分别保留验证记录，验证覆盖列出的具体场景。
+界面截图已更新为 LDLib2 实机验收画面，世界建造和生物截图保留对应历史场景；模型生成与 Native 动作分别保留验证记录，验证覆盖列出的具体场景。
 
 多人创建者审批已用独立 ServerPlayer 身份验证，双真实客户端联验列入后续验证。事件队列 BACKPRESSURE 状态与测试断言的统一列入维护项。
 
@@ -245,7 +253,7 @@ DivZero 使用 [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob
 
 DivZero AI Runtime is an intelligent AI framework for Minecraft. Natural language interaction, world awareness, persistent memory, and dynamic creation let AI characters actively participate in the game world.
 
-This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **Protocol 6:** update clients and servers together. Administrative actions require cheats or real administrator permissions. Use `/ai accept` for initial setup.
+This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **Protocol 10:** update clients and servers together. Administrative actions require cheats or real administrator permissions. Click Enable in the first-entry chat prompt for immediate activation.
 
 ## Your model makes a major difference
 
@@ -255,24 +263,17 @@ All existing project demos use the more budget-friendly **DeepSeek 4 Flash** (in
 
 ## Common controls
 
-Direct commands are the quickest way to perform common actions, such as `/ai create "Nova"`. **Ctrl+M** opens the native panel, and **F2** opens the web workspace by default. Key bindings can be changed in Minecraft settings.
+| Action | Entry |
+|---|---|
+| Enable this world | Click Enable in the first-entry chat prompt; change it in F2 → Settings → World activation |
+| Create / list AIs | `/ai create "Nova"`, `/ai list`; F2 → AI Players |
+| API URL, key and model | F2 → Settings → Provider; keys use local confidential input |
+| Chat / default AI | `@Nova …`, `/ai default`; F2 → Chat |
+| Thinking display / depth | `/ai thinking see`, `/ai thinking deep`; expand thinking in F2 |
+| Personality, conversations, health, inventory and creations | Right-click the relevant AI for its own panel |
+| Delete / rename a conversation | `/ai chat delete`; F2 → Chat → More / Rename |
 
-| Action | Command / chat | Native panel | F2 workspace |
-|---|---|---|---|
-| Initialize your permissions | `/ai accept` | Permissions and Trust | More → Configuration and Permissions |
-| Create an AI | `/ai create "Nova"` | AI Players → Create | AI Management → Create AI |
-| List AIs | `/ai list` | AI Players | AI Management |
-| API URL | — | Model → URL / Four provider presets | More → API Settings → URL / Presets |
-| Set / replace a key | — | Model → Key → Save | More → API Settings → Set / Replace API Key |
-| Fetch / select a model | — | Model → Select Model | More → API Settings → Model List |
-| Custom model name | — | Model → Model Name | API Settings → Use Custom Model |
-| Chat | `@AIName …` | Conversations and Selection | Chat |
-| Default responding AI | `/ai default`; `/ai default off` | The command opens a selection menu | Ask the AI to configure it |
-| Show thinking in native chat | `/ai thinking see` | Conversations and Selection → Chat Thinking | Toggle in Chat |
-| Thinking depth | `/ai thinking deep` | The command opens a selection menu | Ask the AI to configure it |
-| Delete the current conversation | `/ai chat delete` | — | Chat → Delete Conversation |
-
-F2 opens a local confidential input page for keys; the native Model page supports inline entry. API URLs and model names have selectable options. Put AI names containing spaces or Chinese characters in quotes where needed.
+F2 and Ctrl+M open the same LDLib2 MC workspace. Right-clicking an AI opens a panel bound to that AI. Fetch models after saving the URL/key, or enter a custom model ID. Never post API keys in chat.
 
 ## 1. Conversations, models, and AI management
 
@@ -280,7 +281,7 @@ F2 opens a local confidential input page for keys; the native Model page support
 |---|---|
 | Native chat | Mention `@AIName`, use Tab completion, and describe what you want in natural language. |
 | F2 chat | Persistent history, new/switch conversations, original text, archive/restore, and context details. Deleting a conversation cancels its in-flight request and unsent queue, then starts fresh context. |
-| Streaming replies | Replies appear as they are generated. Long replies are split across native chat messages without dropping the full content. |
+| Streaming replies | Native reply and provider-returned thinking messages update in place while streaming; F2 retains full history. |
 | Interrupt and resume | New messages queue by default and send after the previous message finishes. Choose “Interrupt and Send” or cancel a queued message. Interrupts target the relevant operation. “Verify and Continue” checks actual state before deciding how to proceed after a failure. |
 | Thinking display | Native chat shows `[AIName][Thinking]…`. Use `/ai thinking see` to toggle it and `/ai thinking deep` to choose depth. F2 keeps the full returned thinking text. The AI can also change these settings; official DeepSeek depth parameters have been verified. |
 | Providers | Configuration entries for DeepSeek, OpenAI-compatible APIs, GLM via Zhipu/Z.AI, and Ollama. Live GLM credential testing is pending. |
@@ -292,11 +293,11 @@ F2 opens a local confidential input page for keys; the native Model page support
 | Long tasks | Continued tool calls, active stopping, provider/transport boundaries, and verification of actual operation results. |
 | Colored interactive messages | AIs can send colored messages with copy, fill-chat, and confirmation actions. |
 
-The native Model page puts URL, model, and key on one page. DeepSeek/GLM/OpenAI/Ollama presets fill the URL, and the save button is simply “Save.” Live model testing covers DeepSeek; live GLM credentials and local Ollama inference remain unverified.
+F2 → Settings → Provider manages the API URL, confidential key and model. Live tests cover DeepSeek; GLM and Ollama depend on actual compatibility.
 
-![Native model settings: URL, model, and key on one page](images/native-model-settings.png)
+![AI-specific status, personality and creation panel](images/native-agent-profile.png)
 
-The key field in this screenshot is empty. Saved keys are managed confidentially.
+Right-click an AI for health, inventory, personality, conversations and its creations. AI-generated conversation titles respect player renaming.
 
 ### Parallel AIs and request isolation
 
@@ -309,6 +310,8 @@ Different AIs run concurrently while each conversation stays ordered, with per-r
 - **Built-in / player skins:** 18 built-in character/body variants, plus copying player skins.
 - **Hot-swappable PNG skins:** import a local PNG or ask the AI to generate, export, or edit standard-UV pixel art. Supports 64×64 and 64×32, wide/slim. The same AI identity, name, following state, and task are preserved.
 - **YSM:** with a compatible YSM installation and model, select appearances from its model directory without restarting. Removing the mod itself still requires a restart. Specific PNG/YSM combinations depend on the actual versions and models.
+
+The AI can remember “this place is my home” using the location captured when the message was sent, or recall a preferred equipment combination in later conversations. See [ten scenarios](NATIVE_TEN_SCENARIOS.md) for automatic memory and equipment tests.
 
 ## 3. Reading and modifying the existing world
 
@@ -327,6 +330,8 @@ Placement rules check the actual destination. If any position in a multi-block p
 
 Try “Enchant the sword in my hand,” “Remove only Speed,” or “Enable keep-inventory and disable PvP.”
 
+A bounded bulldozer supports continuous clearing with protection checks and explicit start/stop. Image search can supply scoped block-texture overrides with restoration; vanilla stone was tested, not every third-party material or renderer.
+
 ## 4. Building and world geometry
 
 Supports lines, planes, walls/shells, non-rectangular extrusion, ramps, Bezier curves, bilinear surfaces, cylinders, ellipsoids, and domes, plus mirroring, rotation, arrays/path repetition, material rules, full BlockState values, and local replacement.
@@ -334,6 +339,8 @@ Supports lines, planes, walls/shells, non-rectangular extrusion, ramps, Bezier c
 A plan's bounding box may be up to **2048×2048×2048**, using disk paging and work spread across ticks. World height/borders, loaded chunks, permissions, disk space, and pre-write state checks still apply. Filling the entire maximum volume has not been performance-tested. Partial completion is handled using actual execution results.
 
 A cobblestone generator built through the live DeepSeek workflow was verified to regenerate cobblestone three times. Survival construction requires the corresponding materials.
+
+Building plans use stable component IDs for floors, walls and roofs, with templates, rotation, mirroring and arrays. Local edits apply differences; hollow walls do not implicitly clear interiors. Pause/resume and conflict-aware undo/redo preserve steps. Actual block checks bind completion to the building, scope and version.
 
 ## 5. Creating items, models, and gameplay at runtime
 
@@ -365,15 +372,20 @@ Choose **friendly, neutral, or hostile** creatures with custom geometry, attribu
 
 ![A generated planet companion](images/creature.png)
 
-Creature definitions can be updated and persisted. Keyframe animations include idle, walk, random, hurt, attack, death, interact, and ride, with translation, rotation, and scale. These are currently **whole-mesh animations** with primarily geometry-based colors. Skeletal animation, separate animated parts, and external textures remain extension areas. Overlapping riding/trading/feeding behavior follows the current interaction contract.
+Creature definitions can be updated and persisted. Keyframe animations include idle, walk, random, hurt, attack, death, interact, and ride, with translation, rotation, and scale. Whole-mesh, hierarchical rigid-bone and part animations are supported. Native entities and local model replacements depend on the actual renderer adapter; this does not imply universal mod compatibility. Overlapping riding/trading/feeding behavior follows the current interaction contract.
 
 ## 7. AI movement and player takeover
 
 - **The AI's own entity:** movement/local pathfinding, turning, sprinting, sneaking, selecting/dropping items, following/stopping, and teleporting to the player.
 - **Low-clearance navigation:** planning uses actual block collision shapes and standing/crouching dimensions. In addition to doors, fence gates, slabs, carpets, and stairs, it recognizes passages requiring crouching. The AI crouches before entering and stands up when safe; lower spaces return a blocked route. Chat can enable or disable persistent sneaking.
 - **Take over your player:** starts when you explicitly request it, without reconfirming every planning round. The AI observes and replans continuously. A left-side HUD shows a public action summary and the next waypoint.
-- Arrival leaves the session idle but active. **Esc or an explicit stop request ends it.** T/F2, unfocused windows, and open screens pause input but retain the session. Death, disconnects, world changes, or permission changes release control.
-- Navigation currently focuses on local ground movement in loaded areas. Flying, swimming, and vehicles depend on their respective capabilities. Local computer commands require separate confirmation.
+- Explicitly requested player takeover uses native client input and releases the mouse cursor. **T, F2, switching windows and minimizing do not interrupt it.** The MC panel provides Pause/Continue, Exit and Add command, triggered on release. **ESC ends takeover.** Exiting restores your original focus-pause setting; death, disconnects, world and permission changes still release control.
+- Persistent follow, patrol, guard, wander, combat, farming and fishing share one runtime with separate AI-body and real-player input adapters. Routine work runs locally.
+- Shared traversal handles doors, low passages, steps, ladders and water in loaded areas.
+
+![MC takeover panel](images/player-takeover.png)
+
+[Skill, recovery and reservation tests](PERSISTENT_PLAYER_SKILLS.md)
 
 ### Build reusable routes
 
@@ -414,17 +426,22 @@ Choose facing direction, rotation, and mirroring. **Preserve contents is the def
 
 This image shows placement of 177 blocks. Separate preservation checks cover a container holding seven diamonds, a named entity, and scheduled ticks. Complex passengers/leashes/hanging entities, mod-specific cross-coordinate references, streaming very large NBT, Bedrock, LZ4, and `.mcc` still have limitations. Each format is read according to its implemented fields.
 
-## 9. F2, previews, floating windows, and live webpages
+## 9. LDLib2 workspace, previews and AI-created interfaces
 
-- Independent translucent windows can be shown/hidden, minimized, closed, or kept floating. The AI can change window state when authorized.
-- Package Management is a top-level entry, alongside files/attachments; less-used settings live under More. Owned creatures are listed, and both items and creatures use the shared preview.
-- Model/structure preview: left-drag to rotate freely, right/middle-drag to pan, scroll in either direction to zoom, and reset the view.
-- Large structures may use a bounds preview. Building colors are approximated; full textures depend on the preview type.
-- Generated WebUIs can subscribe to real coordinates and nearby block statistics. Background views pause, closed views release subscriptions, and invalid contexts stop updates. Readouts use local data subscriptions.
+- F2 / Ctrl+M share the native MC-themed workspace; built-in features do not require KubeJS. Windows support dragging, resizing, minimizing and closing. Square title buttons trigger on release with pressed feedback.
+- Right-click an AI for its dedicated panel. Chat, models, permissions, files, packages, languages and previews use the same UI system, without a browser renderer fallback.
+- AI-created KubeJS widget trees, styles and interactions update live. Data changes are incremental; structural candidates replace the old view only after validation. Failed updates preserve the view and matching input, without routine world restarts or global reloads.
+- LDLib2 HUDs have independent IDs and can combine titles, icons, scores, progress and task state. They are passive unless explicitly put into interaction mode.
+- The AI can open entity/item/building previews or send chat/F2 buttons. Native scenes support rotation, panning and zoom; world snapshots include building textures.
+- Attach furnace timing or brewing recipes with preview buttons, create desktop windows and entity health panels. Reversible restyling supports LDLib2 hosts; other mod screens depend on attachment/adapter support.
 
-![F2 model preview and the Package Management entry](images/preview.png)
+![Native model preview](images/native-preview.png)
 
-![Live coordinates and nearby stone-block counts](images/live-readout.png)
+![Model-created furnace timing and progress attachment](images/native-furnace.png)
+
+![Edited native shop retaining input](images/native-shop.png)
+
+These are actual tested game captures. The shop example changes only a local demonstration balance. See [ten scenarios](NATIVE_TEN_SCENARIOS.md) and [migration status](NATIVE_UI_MIGRATION_STATUS.md) for scope.
 
 ## Scripts and extensions
 
@@ -440,7 +457,7 @@ View, validate, copy, and enable package versions, with dedicated resource/data/
 - **WORLD_REOPEN:** save a plan for the next normal world reopening; the UI marks it as pending.
 - **BOOT/CLIENT native code:** dedicated installation/execution and per-machine confirmation remain in place, with separate server and local permission checks.
 
-Advanced runtime capabilities are available through web management. Technical revision/hash values are in the details; normal player actions use selectable options.
+Advanced runtime capabilities are available through native F2 package management and settings. Technical revision/hash values are in the details; normal player actions use selectable options.
 
 ## 11. Local Python, dependency installation, and full output
 
@@ -458,7 +475,7 @@ Complete stdout/stderr is saved and paginated. Timeouts or cancellations may lea
 
 ## Screenshots and verification scope
 
-Screenshots come from actual native runs. Crouching and route images were newly captured for those checks; model settings use an already verified screenshot of the corresponding features. Model generation and native actions have separate records covering the specific listed scenarios.
+UI screenshots now show tested LDLib2 game captures; world construction and creature images retain their historical scenario context. Model generation and native actions have separate records covering the specific listed scenarios.
 
 Creator approval was checked using separate ServerPlayer identities. Testing with two real clients remains pending. Aligning event-queue BACKPRESSURE states and test assertions remains a maintenance item.
 

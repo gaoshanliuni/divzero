@@ -1,100 +1,52 @@
-# 版本、安装与构建
+# 1.0.20：安装、升级与构建
 
-[返回首页](../README.md) · [Releases](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](FEATURES.md) · [Build JAR](https://github.com/gaoshanliuni/divzero/actions/workflows/build-jar.yml)
+[返回首页](../README.md) · [Release 附件](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.20) · [功能说明](FEATURES.md)
 
-## 安装
+支持 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，网络协议 **10**。客户端和服务端使用同版主模组。
 
-支持 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，网络协议 **7**。客户端与服务端请使用同版主模组。
+## 下载哪些附件
 
-从 Release 的 Assets 选择以下三份文件：
-
-1. `DivZero-mineagent-<版本>.jar`：主模组。
-2. `webgui-neoforge-1.6.2+mc26.1.2.jar`：WebGUI。
-3. 与系统及游戏所用 Java 架构匹配的一个 MCEF。
-
-| 系统／Java 架构 | MCEF 文件 |
+| Release Assets 文件 | 安装范围 |
 |---|---|
-| Windows x64 | `mcef-offline-neoforge-windows_amd64.jar` |
-| Linux x64 | `mcef-offline-neoforge-linux_amd64.jar` |
-| macOS Intel | `mcef-offline-neoforge-macos_amd64.jar` |
-| macOS Apple Silicon | `mcef-offline-neoforge-macos_arm64.jar` |
+| `DivZero-mineagent-1.0.20.jar` | 必需，DivZero 主模组 |
+| `ldlib2-neoforge-26.1-26.1.2.41.jar` | 必需，F2、AI 专属面板、原生预览与 HUD |
+| `kubejs-neoforge-26.1.2-8.0.6.jar` | AI 创建、修改动态原生界面及交互 |
+| `better-advanced-tooltips-2601.1.0-build.9.jar` | 上述 KubeJS 版本的依赖 |
 
-完整 Release 提供6个运行 JAR，每位玩家安装其中3个。每个实例保留一份主模组、一份 WebGUI 和一个 MCEF 平台包。
+**内置 F2 只需前两个 JAR；完整 AI 动态界面安装四个。** Rhino 已嵌入主模组。附件保留原文件名，直接下载各个 JAR；GitHub 自动生成的 Source code 压缩包是源码。
 
-关闭游戏，备份存档，将选定 JAR 放入 `mods`。MCEF 平台包内置 Chromium/JCEF 运行库；AI API 和在线网页使用网络连接。本机 Python 支持 Windows x64。
+## 从旧版升级
 
-## 初始化与创建 AI
+1. 关闭游戏，备份现有实例和存档。
+2. 移除该实例旧版 DivZero，以及为旧 DivZero 安装的 WebGUI、MCEF / MCEF-Offline 平台包。若其它模组仍依赖它们，使用独立实例进行迁移。
+3. 将需要的上表 JAR 放入 `mods`，同一 Mod 只保留一份版本；服务端与客户端同步更新。
+4. 进入世界，在聊天中点击 **启用 / 禁用**。启用立即生效，无需输入 AI ACCEPT 或退出重进。
+5. F2 → **设置 → Provider** 配置 API URL、保密 Key 和模型；F2 → **AI 玩家** 创建 AI，或使用 `/ai create "星河"`。原生聊天 `@星河 你好` 或 F2 对话即可使用。
 
-进入已启用作弊／具备管理权限的世界：
+新版本不打包或发行 MCEF、JCEF、WebGUI JAR，不包含浏览器核心下载、离线包或修复流程。不要删除存档或数据库来完成升级。旧 HTML/CSS/DOM 内容需要显式重写为 LDLib2 原生定义；无关资源和玩法代码应保留。
 
-```mcfunction
-/ai accept
-/ai create "星河"
-```
+## 当前入口与操作
 
-API 设置任选以下入口：
+F2 / Ctrl+M 共用 MC 主题工作区；右键 AI 打开专属状态、人设、会话、背包与内容面板。确认、填入、复制选项在原生聊天和 F2 均可点击。
 
-| 设置 | 原生面板 | F2 界面 |
-|---|---|---|
-| 打开设置 | Ctrl+M → 模型 | F2 → 更多 → API 设置 |
-| API URL | 选择 DeepSeek／GLM／OpenAI／Ollama 预设，或编辑 URL | 选择地址预设，或编辑 URL |
-| API Key | 同页 Key 输入框 → 保存 | 设置 / 替换 API Key → 本机保密输入页 |
-| 模型 | 选择模型，或编辑模型名称 | 获取模型列表 → 选择名称；也可选择使用自定义模型 |
-| 创建 AI | AI 玩家 → 创建 | AI 管理 → 创建 AI |
+托管开始释放鼠标；T、F2、切换窗口和最小化继续执行。面板提供暂停/继续、退出和追加命令，ESC 结束托管；退出恢复原失焦暂停设置。具体技能和恢复边界见 [持续玩家技能](PERSISTENT_PLAYER_SKILLS.md)。
 
-DeepSeek 默认 `deepseek-flash`。保存 URL／Key 后可获取 `/v1/models` 列表。Key 仅在游戏设置填写。
+## 校验、许可与构建
 
-原生聊天输入 `@星河 你好`，Tab 可补全 AI 名字；F2 → 对话提供相同聊天能力。`/ai default` 可选择只对本人响应的默认 AI。
+Release 正文列出四个独立运行附件的 SHA-256、用途、源码提交和 Actions 记录。依赖的固定下载、哈希、许可及对应源码见 [第三方声明](THIRD_PARTY_NOTICES.md) 和 [固定依赖清单](../scripts/stage-native-ui-dependencies.ps1)。Actions 工件还含 BUILD-INFO、DEPENDENCIES 和 SHA256SUMS，保留 7 天；Release 的 JAR 附件不依赖临时 Actions 下载链接。
 
-## Release 内容与校验
+- main 推送与 Pull Request：只构建、测试并保存工件。
+- 手动 Actions → **Build JAR → Run workflow**：`build_only=true` 仅构建；`false` 按所选 main 提交发布开发预发布。
+- `standard` 为标准构建；`include_media_tools` 可加入固定版本的可选 Windows 媒体工具，来源与许可另行列明。
+- 发布先创建 draft，上传并核对四个运行 JAR，公开后再次验证下载。
+- Tag、Release 标题和主 JAR 版本均来自 `gradle.properties`。不移动旧 Tag，不用新源码覆盖已发布的旧版本。
 
-Release Assets 提供运行 JAR，SHA-256 校验值列在正文。GitHub 的 Source code ZIP/tar.gz 用于查看和构建源码。
+本项目维护流程由公开 GitHub Actions 编译。CI 不代替游戏或真实模型验收；[升级状态](NATIVE_UI_MIGRATION_STATUS.md)、[十项场景](NATIVE_TEN_SCENARIOS.md)、[持续技能](PERSISTENT_PLAYER_SKILLS.md) 分别记录已测范围。旧版本变更见对应历史 Release。
 
-主 JAR 内含项目许可和第三方说明。WebGUI/MCEF 保留各自许可；MCEF 对应源码链接到固定上游版本。完整构建身份、依赖清单和打包审计保留在 Actions 工件中，保存7天；固定来源入口见仓库文档与上游 Release。
+## English quick install
 
-## 版本规则
+Download the main JAR and LDLib2 from **Release Assets**. Add KubeJS and Better Advanced Tooltips for AI-created interfaces; Rhino is embedded. Close the game, back up the instance, remove the old DivZero browser dependencies and replace the main JAR. Keep clients and servers on the same version.
 
-当前 Mod 版本为 **1.0.4**，以已提交 `gradle.properties` 的 `mod_version` 为准，不再自动覆盖成日期版本。历史 `-SNAPSHOT` 提交仍使用 UTC 日期＋公开提交序号；文件名中的提交号、运行 ID 和 attempt 区分构建身份。
+Click **Enable** in chat on first entry. Open F2 → Settings → Provider for API settings. F2 and Ctrl+M share the MC-themed workspace; right-click an AI for its panel. During player takeover, the cursor stays free and chat, F2 and window switching do not pause work. Use Pause/Continue, Exit or Add command on the panel; ESC ends takeover.
 
-`get-build-version.ps1` 使用完整 Git 提交记录，Actions 采用 `fetch-depth: 0`。构建通过 `-Pmod_version=...` 将版本写入 JAR 文件名、NeoForge 元数据和发布信息。
-
-Windows 本地构建需要 Java 25 和 PowerShell 7：
-
-```powershell
-$version = ./scripts/get-build-version.ps1
-./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$version" :neoforge:jar --no-configuration-cache
-```
-
-输出目录为 `neoforge/build/libs/`。
-
-## Actions 构建与发布
-
-- main 推送：构建、测试和打包成功后生成开发预发布。
-- Pull Request：构建与测试。
-- Actions → Build JAR → Run workflow：手动构建，main 可发布。
-- `standard`：标准版。选择 `include_media_tools` 后构建 `with-media`，包含固定版本的可选媒体工具。
-- 发布流程：创建 draft → 上传运行 JAR → 检查文件集合／大小／SHA-256 → 公开 Release。
-
-构建 job 使用只读权限；发布 job 使用临时 GitHub Token。CI 覆盖公开源码构建和选定测试；游戏场景与模型联验范围见 [功能清单](FEATURES.md)。
-
-### 发布命名
-
-当前版本 **1.0.4**，Tag与Release标题均为 `1.0.4`，主模组附件为 `DivZero-mineagent-1.0.4.jar`。依赖JAR保留各自名称。源码提交、变体和运行号保存在构建信息/正文，不再拼入主JAR名或版本Tag。已发布版本Tag不强制移动；同版本不同源码会明确拒绝，后续源码发布需提升版本号。
-
-本轮起不再本地编译，由main推送触发GitHub Actions编译与检查。
-
-## 1.0.1 修复说明
-
-修复进入含长名称原生计分板的世界时崩溃（`invalid scoreboard objective snapshot`），保留计分板名称和分数；读取异常不再逃逸展示 Tick。退出游戏并备份存档后替换旧的主模组JAR，不需要删除存档、数据库或计分板。1.0.0的Tag和附件保持不变。新增长名称及故障隔离单测；用户原世界入图复验尚待完成。
-
-## 1.0.2 增量
-
-增加刚性骨骼/局部动画，修正高低差误潜行；独立AI/规划/文件/包任务无固定并发数限制，取消和结果按请求隔离；F2历史批量读取、缓存和变更通知，流式写库移至后台。同会话及同一本机Python环境仍保持有序。协议7须双端更新；新增场景真实DeepSeek与Native画面联验尚待完成，CI单测不替代实际游戏验收。
-
-## 1.0.3 F2 修复
-
-F2注册原生文本输入焦点及IME预编辑；流式回复保持节点并跟随当前末尾，手动翻阅历史时保持位置，点击“最新消息”恢复跟随。超过4096字符的活跃回复可继续显示新内容。实际浏览器回归通过；游戏窗口的具体Windows输入法候选词兼容尚待Native复验。协议仍7，退出游戏并备份后替换旧主模组JAR。
-
-## 1.0.4 原生聊天
-
-默认保留1024条、最高16384条；`/ai msg limit 16384`修改，`/ai msg`提供点击选项。**不加时间前缀**，悬停`[AI名字]`查看该消息收到时的日期时间。`/ai msg mark time`恢复默认，`/ai msg mark off`关闭，`/ai msg mark 消息时间：{yyyy-MM-dd HH:mm:ss}`自定义悬停内容。AI已开放inspect_chat_messages/set_chat_messages，设置只影响请求者本机。较低上限裁剪旧原生显示缓存，不删除F2/数据库会话；协议仍7。
+HTML/CSS/DOM packages need an explicit native rewrite. This release provides four individual runtime JAR attachments and no MCEF/WebGUI package.

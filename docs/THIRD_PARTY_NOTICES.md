@@ -6,17 +6,18 @@
 |---|---|---|
 | Jsoup | 1.18.3，MIT | HTML 解析；许可副本位于 Worker resources，Maven 工件 SHA-256 在构建时验证 |
 | Acorn | 8.15.0，MIT | JavaScript 语法解析；解析器与许可位于 scripting resources |
-| WebGUI | 1.6.2+mc26.1.2，MIT | [上游源码](https://github.com/mc-webgui/webgui/tree/v1.6.2) |
-| MCEF / MCEF-Offline | 2.2.0，LGPL-2.1-or-later | [MCEF 上游](https://github.com/Keksuccino/mcef/) · [Offline 分发](https://github.com/gaoshanliuni/MCEF-Offline)，精确版本见 `gradle/mcef-offline.lock.json` |
+| LDLib2 | 26.1.2.41，LGPL-3.0-only | 原生 UI / HUD；[上游源码](https://github.com/Low-Drag-MC/LDLib2) · [对应版本源码 JAR](https://cdn.modrinth.com/data/B1CBVXHX/versions/15aCZh6V/ldlib2-neoforge-26.1-26.1.2.41-sources.jar) |
+| KubeJS | 26.1.2-8.0.6，LGPL-3.0-only | AI 动态界面；[上游源码](https://github.com/KubeJS-Mods/KubeJS) · [对应版本源码 JAR](https://maven.latvian.dev/releases/dev/latvian/mods/kubejs-neoforge/26.1.2-8.0.6/kubejs-neoforge-26.1.2-8.0.6-sources.jar) |
+| Better Advanced Tooltips | 2601.1.0-build.9，MIT | KubeJS 依赖；[源码与许可](https://github.com/latvian-dev/better-advanced-tooltips) |
 | Gradle Wrapper | 构建文件所列版本 | 保留上游脚本与许可声明 |
 
 NeoForge 与 Minecraft 开发依赖由构建工具获取。游戏本体由用户按其许可安装；YSM 与模型使用对应项目的安装和许可流程。其他 Maven 依赖见模块构建文件。
 
-## MCEF 原生运行库与对应源码
+## 原生界面依赖分发
 
-MCEF Offline 平台 JAR 包含固定 JCEF/CEF 运行库及其第三方声明。Release 正文提供该固定版本的 `mcef-offline-corresponding-sources.jar` 链接，源码包包含 fork 修改和对应 JCEF 源码。
+Release 以独立附件提供原始依赖 JAR，保留上游许可，不修改依赖二进制。固定 Modrinth 版本、SHA-256、来源与对应源码在 [准备脚本](../scripts/stage-native-ui-dependencies.ps1) 中列明；Actions 的 DEPENDENCIES.json 记录同一信息。Rhino 已嵌入 DivZero，来源和许可随主 JAR 保留。
 
-分发版本、完整 hash、大小与上游提交见 lock 文件；安装范围见 [MCEF_OFFLINE.md](MCEF_OFFLINE.md)。
+1.0.20 起不再分发 MCEF、JCEF 或 WebGUI。历史版本的许可与来源见对应历史 Tag；[旧方案迁移提示](MCEF_OFFLINE.md) 不再提供当前浏览器安装指引。
 
 ## 可选 Windows x64 媒体依赖
 

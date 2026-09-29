@@ -47,6 +47,9 @@ $short=$Commit.Substring(0,12)
 $tag=[string]$versions.modVersion
 $title=[string]$versions.modVersion
 $marker="<!-- divzero-version-release-v1 version=$($versions.modVersion) commit=$Commit variant=$Variant -->"
+$changeFile=Join-Path $root "docs/releases/$($versions.modVersion).md"
+if (-not (Test-Path -LiteralPath $changeFile -PathType Leaf)) { throw 'RELEASE_CHANGELOG_MISSING' }
+$changes=[IO.File]::ReadAllText($changeFile)
 $notes=@"
 $marker
 ## $title
@@ -54,28 +57,37 @@ $marker
 Minecraft $($versions.minecraftVersion), NeoForge $($versions.neoForgeVersion), Java $($versions.requiredJavaVersion).
 源码：[$short](https://github.com/$repo/commit/$Commit) · [构建记录](https://github.com/$repo/actions/runs/$run)
 
-### 原生界面
-
-F2 使用 LDLib2 MC 主题工作区，右键 AI 打开专属面板。首次进入世界可点击聊天中的启用按钮立即使用。
-AI 创建的原生界面与 HUD 通过 KubeJS 构建，普通 HUD 默认不占用鼠标。无 MCEF/WebGUI 依赖或备用浏览器。
+$changes
 
 ### 下载附件（Assets）
 
-| 附件 | 用途 |
-| --- | --- |
-| $($info.jar) | DivZero 主模组 |
-| ldlib2-neoforge-26.1-26.1.2.41.jar | F2 与原生 UI 必需 |
-| kubejs-neoforge-26.1.2-8.0.6.jar | AI 动态界面所需 |
-| better-advanced-tooltips-2601.1.0-build.9.jar | KubeJS 的依赖 |
+| 附件 | 用途 | 是否必需 |
+| --- | --- | --- |
+| $($info.jar) | DivZero 主模组 | 是 |
+| ldlib2-neoforge-26.1-26.1.2.41.jar | F2 与原生 UI / HUD | 是 |
+| kubejs-neoforge-26.1.2-8.0.6.jar | AI 动态界面 | 使用 AI 动态界面时 |
+| better-advanced-tooltips-2601.1.0-build.9.jar | KubeJS 依赖 | 安装 KubeJS 时 |
 
-Rhino 已内置于主模组。请在独立测试实例中安装，不加入 MCEF 或 WebGUI。
-[安装说明](https://github.com/$repo/blob/$Commit/docs/NATIVE_INSTALLATION.md) · [验收状态](https://github.com/$repo/blob/$Commit/docs/NATIVE_UI_BUILDING_MIGRATION.md)
-依赖许可和准确来源在本次 Actions 的 DEPENDENCIES.json；对应源代码链接也在该文件。
+内置 F2 只需前两个附件，完整 AI 动态界面安装四个。Rhino 已内嵌。新版本不打包或发行 MCEF / WebGUI，也没有浏览器备用渲染。
+
+### 升级方法
+
+关闭游戏并备份实例，移除旧 DivZero 主 JAR 和为旧版安装的 MCEF / WebGUI，放入所需新附件。客户端与服务端同步升级；保留存档和数据库。旧 HTML/CSS/DOM 内容需显式迁移为原生界面。
+
+首次进入世界点击聊天中的“启用”即可使用。F2 → 设置 → Provider 配置模型；右键 AI 打开专属面板。
+
+[安装说明](https://github.com/$repo/blob/$Commit/docs/BUILD_JAR.md) · [升级状态](https://github.com/$repo/blob/$Commit/docs/NATIVE_UI_MIGRATION_STATUS.md) · [持续技能实测](https://github.com/$repo/blob/$Commit/docs/PERSISTENT_PLAYER_SKILLS.md)
+[依赖许可与固定对应源码](https://github.com/$repo/blob/$Commit/docs/THIRD_PARTY_NOTICES.md) · [锁定来源与 SHA-256](https://github.com/$repo/blob/$Commit/scripts/stage-native-ui-dependencies.ps1)
+
+![LDLib2 MC 工作区](https://raw.githubusercontent.com/$repo/$Commit/docs/images/native-workspace.png)
+![原生托管面板](https://raw.githubusercontent.com/$repo/$Commit/docs/images/player-takeover.png)
+
 构建通过不代表全部游戏场景验收。GitHub Source code 压缩包不是 Mod 安装包。
 "@
 # All staged files remain verified, but only runtime JARs become public Release assets.
 $verifiedCount=$files.Count
 function Select-RuntimeFiles($Info,$AllFiles,$Manifest) {
+if (@($AllFiles | Where-Object { $_.Name -match '(?i)(mcef|webgui|jcef)' }).Count) { throw 'RELEASE_BROWSER_FILE_FORBIDDEN' }
 $publishNames=@([string]$Info.jar,'ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar')
 if (@($publishNames | Sort-Object -Unique).Count -ne $publishNames.Count) { throw 'RELEASE_RUNTIME_LIST_DUPLICATE' }
 foreach ($name in $publishNames) {

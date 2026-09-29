@@ -81,10 +81,14 @@ Write-Output "SOURCE_BUILD_VERSION_TEST_PASSED=$buildVersion"
     $info.jar='native-sources.jar';$rejected=$false
     try{Select-RuntimeFiles $info $all $hashes | Out-Null}catch{if($_.Exception.Message -ne 'RELEASE_RUNTIME_JAR_REQUIRED'){throw};$rejected=$true}
     if(-not $rejected){throw 'SOURCE_JAR_WAS_PUBLISHABLE_AS_MAIN'}
+    $info.jar='DivZero-test.jar';$rejected=$false
+    try{Select-RuntimeFiles $info ($all+@([pscustomobject]@{Name='mcef-offline-neoforge-windows_amd64.jar'})) $hashes | Out-Null}catch{if($_.Exception.Message -ne 'RELEASE_BROWSER_FILE_FORBIDDEN'){throw};$rejected=$true}
+    if(-not $rejected){throw 'LEGACY_BROWSER_WAS_ALLOWED_IN_STAGING'}
     Write-Output 'RUNTIME_ONLY_NATIVE_SELECTION_PASSED=4'
 }
 $fixture = Join-Path $root ('build/ci-release-test-' + [Guid]::NewGuid().ToString('N'))
-foreach ($dir in @('scripts','docs/licenses','neoforge/build/libs')) { New-Item -ItemType Directory -Path (Join-Path $fixture $dir) -Force | Out-Null }
+foreach ($dir in @('scripts','docs/licenses','docs/releases','neoforge/build/libs')) { New-Item -ItemType Directory -Path (Join-Path $fixture $dir) -Force | Out-Null }
+Copy-Item -LiteralPath (Join-Path $root "docs/releases/$buildVersion.md") -Destination (Join-Path $fixture "docs/releases/$buildVersion.md")
 foreach ($script in @('get-build-version.ps1','get-release-versions.ps1','package-ci-artifact.ps1','stage-native-ui-dependencies.ps1','publish-ci-release.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $script) -Destination (Join-Path $fixture "scripts/$script") }
 foreach ($file in @('gradle.properties','build.gradle','neoforge/build.gradle','LICENSE','docs/THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $root $file) -Destination (Join-Path $fixture $file) }
 $props = Get-Content -LiteralPath (Join-Path $root 'gradle.properties') -Raw | ConvertFrom-StringData

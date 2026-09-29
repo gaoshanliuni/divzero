@@ -1,4 +1,25 @@
-# 功能截图
+# 当前原生界面实机截图
+
+[首页](../../README.md) · [功能说明](../FEATURES.md)
+
+以下为已验收隔离 Minecraft 实例的原始 PNG，按原字节发布，未用生成图、合成图或旧浏览器画面冒充新界面。已检查画面无 API Key、私人对话或路径，PNG 不含文本/EXIF 元数据。图片展示对应场景，功能边界见相关验收文档。
+
+| 图片 | 场景 | 原图 SHA-256 |
+|---|---|---|
+| [native-workspace.png](native-workspace.png) | LDLib2 MC 主题 F2 工作区；空会话布局 | `904e5b3509d927e5466b91b5edbbb258c904f854f8ca706a1ba37dd20ae74139` |
+| [native-agent-profile.png](native-agent-profile.png) | 右键 AI 的专属状态、人设、会话、内容与背包面板 | `e1938ac01828dccd032f7b588405eea6a5d06e1d3ea7aaf7aef71d8af3a839d9` |
+| [native-preview.png](native-preview.png) | LDLib2 原生几何预览测试；旋转、平移与缩放入口 | `058360c4bcef3896702d88b4c10c464137c04946df123b5e7e22f191d1ddc44b` |
+| [native-shop.png](native-shop.png) | 真实模型创建并修改后的原生商店；保留“橡木”搜索；按钮仅扣本地演示余额 | `54c146df8c3ca540db8a33432079cf0c0f7063c43c90b2d30f242f70e37d2d8a` |
+| [native-furnace.png](native-furnace.png) | 真实模型创建的原版熔炉计时与进度附加层 | `97a2eda6d5fb5f2258c5028517eaa0b57b2f6464bd735fa4d0e7fa1fe73e8c31` |
+| [player-takeover.png](player-takeover.png) | 真人农务托管；MC 面板暂停、退出、追加命令；独立输入与鼠标释放 | `a142ea24ea16781a8adefaa581f16d4b4ad67010cc21ab05759b4b329e4bb89e` |
+
+工作区、专属面板与预览来自原生 UI 联验；商店来自真实模型定义的布局修正复验；熔炉来自真实模型创建；托管来自玩家原生输入与后台执行联验。商店示例不发放物品，预览图展示几何测试体，不代表所有模型或 Renderer。
+
+## 历史世界画面与旧 UI 留档
+
+以下原图及校验信息保留其历史含义。`native-model-settings.png`、`preview.png`、`live-readout.png` 为旧界面记录，已从当前功能插图中替换，不能代表 1.0.20 的操作入口。其余世界建造、生物和多 AI 图片仍展示相应游戏内容。
+
+### 历史截图目录
 
 [全部功能与操作入口](../FEATURES.md)
 

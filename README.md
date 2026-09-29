@@ -14,7 +14,23 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 
 
 **[下载 JAR](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](docs/FEATURES.md) · [安装说明](docs/BUILD_JAR.md) · [问题反馈](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-当前为开发测试版，支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**。网络协议 **6**，客户端与服务端请同步更新。建议使用已备份的测试存档。
+当前为开发测试版，支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**。网络协议 **10**，客户端与服务端请同步更新。建议使用已备份的测试存档。
+
+## LDLib2 原生工作区与持续技能
+
+**1.0.20** 统一采用 LDLib2，默认 MC 主题。F2 内置工作区直接由 DivZero 构建，不要求 KubeJS。AI 动态界面由 KubeJS 构建，支持实时创建、结构更新失败回滚和输入保持；HUD 默认不抢鼠标。HTML/CSS/DOM 内容需显式迁移。
+
+![LDLib2 MC 主题的 F2 工作区](docs/images/native-workspace.png)
+
+对 AI 说“创建商店，增加搜索框，再改成深色”，可以修改同一个已打开界面。以下实机图展示模型生成并修改后的原生商店；该示例按钮只演示本地余额，不发物品。
+
+![AI 动态原生商店，改版后保留搜索输入](docs/images/native-shop.png)
+
+AI 与真人托管共用跟随、巡逻、警戒、漫步、战斗、农务和钓鱼技能。常规工作由本地循环执行，支持防御打断、重新核对后恢复，以及多 AI 工作点预约。
+
+![托管面板：暂停、退出、追加命令](docs/images/player-takeover.png)
+
+[原生界面与建筑升级](docs/NATIVE_UI_MIGRATION_STATUS.md) · [持续技能验收](docs/PERSISTENT_PLAYER_SKILLS.md) · [十项动态能力](docs/NATIVE_TEN_SCENARIOS.md)
 
 ## 模型选择会显著影响效果
 
@@ -24,26 +40,26 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 
 
 ## 快速开始
 
-1. 从 Release 下载主模组、WebGUI，以及与你系统和 Java 架构匹配的一个 MCEF JAR，放入 `mods`。
-2. 开启作弊／取得服务器管理权限，进入世界后输入 `/ai accept`。
-3. 选择一个模型设置入口：**Ctrl+M → 模型**，或 **F2 → 更多 → API 设置**。配置 API URL、Key 和模型；DeepSeek 默认 `deepseek-flash`。
-4. 输入 **`/ai create "星河"`** 创建 AI。也可用 Ctrl+M → AI 玩家 → 创建，或 F2 → AI 管理 → 创建 AI。
+1. 从新 Release 的 **Assets** 下载主模组与 **LDLib2**；需要 AI 动态界面时再安装 **KubeJS + Better Advanced Tooltips**，放入 `mods`。
+2. 首次进入世界，在聊天中点击 **启用**，立即可用，无需退出重进。涉及世界修改的操作仍遵循服务器权限。
+3. 打开 **F2 → 设置 → Provider**（Ctrl+M 也打开同一工作区）。配置 API URL、Key 和模型；DeepSeek 默认 `deepseek-flash`。
+4. 输入 **`/ai create "星河"`** 创建 AI。也可用 F2 → AI 玩家 → 创建。
 5. 在原生聊天输入 `@星河 你好` 开始对话；`@` 后按 Tab 选择名字。F2 → 对话也可聊天。
 6. 输入 `/ai default` 选择默认响应 AI，之后直接发消息即可。该设置只对当前玩家生效。
 
 ## 常用入口
 
-| 任务 | 直接命令／对话 | 原生面板（Ctrl+M） | F2 界面 |
-|---|---|---|---|
-| 创建 AI | `/ai create "星河"` | AI 玩家 → 创建 | AI 管理 → 创建 AI |
-| API 地址与模型 | — | 模型 → 预设／URL／选择模型 | 更多 → API 设置 |
-| 设置 Key | — | 模型 → Key → 保存 | 更多 → API 设置 → 设置 / 替换 API Key |
-| 与 AI 对话 | `@星河 …`；`/ai default` 选择默认 AI | 会话与选择 | 对话 |
-| 思考显示 | `/ai thinking see` | 会话与选择 → 聊天思考 | 对话 → 思考显示开关 |
-| 思考深度 | `/ai thinking deep` | 命令打开选择菜单 | 可通过对话让 AI 设置 |
-| 删除当前对话 | `/ai chat delete` | — | 对话 → 删除对话 |
+| 操作 | 入口 |
+|---|---|
+| 启用当前世界 | 首次聊天中的“启用”；F2 → 设置 → 此世界启用设置可更改 |
+| 创建 / 查看 AI | `/ai create "星河"`、`/ai list`；F2 → AI 玩家 |
+| API URL、Key、模型 | F2 → 设置 → Provider；Key 使用本机保密输入 |
+| 对话 / 默认 AI | 原生聊天 `@星河 …`；`/ai default`；F2 → 对话 |
+| 思考显示 / 深度 | `/ai thinking see`、`/ai thinking deep`；F2 对话中按需展开 |
+| 人设、会话、血量、背包与内容 | 右键该 AI，打开专属面板 |
+| 删除 / 重命名对话 | `/ai chat delete`；F2 → 对话 → 更多 / 重命名 |
 
-F2 的 Key 按钮打开本机保密输入页；原生“模型”页提供同页输入。保存 URL／Key 后可获取模型列表，点击选择，或选择“使用自定义模型”填写名称。Key 请仅在游戏设置中填写。
+F2 与 Ctrl+M 打开同一 LDLib2 MC 工作区。右键 AI 的专属面板绑定被点击的 AI。保存 URL / Key 后可获取模型列表，也可输入自定义模型名；不要把 Key 发到聊天中。
 
 ## 可以这样玩
 
@@ -103,7 +119,7 @@ F2 → 文件，或对话 → 附件，选择建筑文件交给 AI。支持结�
 
 你创建的 AI 默认响应你本人。其他玩家 @ 它时，你会收到“响应一次、始终允许、拒绝一次、始终拒绝”四个选项；F2 → AI 设置可管理全部允许、全部拒绝或允许名单。
 
-玩家明确要求接管本人后，AI 持续控制身体与视角，左侧显示行动摘要和下一路点。**Esc 停止**；打开界面或失焦时暂停输入。
+玩家明确要求接管本人后，AI 使用原生客户端输入持续执行。进入托管释放鼠标；**T、F2、切换电脑窗口及最小化均不中断**。MC 面板提供“暂停 / 继续、退出、追加命令”，按钮松开时触发；**ESC 结束托管**。退出恢复原失焦暂停设置，死亡、断线、世界或权限变化仍释放控制。
 
 Java 管理的专用 Python 可执行本机任务、安装第三方库，每次在原生聊天中查看并确认。
 
@@ -123,7 +139,7 @@ Copyright 2026 gaoshanliuni and DivZero contributors。项目版权与许可声�
 
 ## 下载与项目
 
-Release 提供主模组、WebGUI 和四个平台的 MCEF 备选包；每位玩家安装三份 JAR。版本号以对应 Release 为准，校验值列在 Release 正文。
+新 Release 提供四个独立运行 JAR 附件：DivZero、LDLib2、KubeJS、Better Advanced Tooltips。内置 F2 仅需前两者；完整 AI 动态界面安装全部四个。Rhino 已内嵌。新版本不打包、不发行 MCEF / WebGUI，校验值列在 Release 正文。
 
 [源码与技术说明](docs/SOURCE_SNAPSHOT.md) · [发布流程](docs/PUBLISHING.md) · [第三方声明](docs/THIRD_PARTY_NOTICES.md) · [截图来源](docs/images/README.md)
 
@@ -141,7 +157,23 @@ Through natural language interaction, world awareness, persistent memory, and dy
 
 **[Download JARs](https://github.com/gaoshanliuni/divzero/releases) · [All features](docs/FEATURES.md#english) · [Installation](docs/BUILD_JAR.md) · [Report an issue](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-This is a development/test release for **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**. Network protocol: **6**. Keep the main mod version in sync on clients and servers. Back up your world before testing.
+This is a development/test release for **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**. Network protocol: **10**. Keep the main mod version in sync on clients and servers. Back up your world before testing.
+
+## Native LDLib2 workspace and persistent skills
+
+**1.0.20** uses LDLib2 with the MC theme. DivZero builds the built-in F2 workspace directly, without requiring KubeJS. KubeJS builds AI-created interfaces with live updates, rollback on invalid structure changes and retained input. Passive HUDs leave game input available. HTML/CSS/DOM packages require explicit migration.
+
+![LDLib2 MC F2 workspace](docs/images/native-workspace.png)
+
+Ask for a shop, add a search field, then change its style while keeping input. This actual screenshot shows the model-created native shop after editing; its demonstration purchase button changes only a local balance and does not grant items.
+
+![AI-created native shop with retained search input](docs/images/native-shop.png)
+
+AI bodies and player takeover share follow, patrol, guard, wander, combat, farming and fishing skills. Local loops handle routine work, defense interruptions, verified recovery and work reservations between AIs.
+
+![Takeover controls: Pause, Exit and Add command](docs/images/player-takeover.png)
+
+[Native UI and building migration](docs/NATIVE_UI_MIGRATION_STATUS.md) · [Persistent skills](docs/PERSISTENT_PLAYER_SKILLS.md) · [Ten dynamic scenarios](docs/NATIVE_TEN_SCENARIOS.md)
 
 ## Your model makes a major difference
 
@@ -151,26 +183,26 @@ All existing project demos use the more budget-friendly **DeepSeek 4 Flash** (in
 
 ## Quick start
 
-1. Download the main mod, WebGUI, and **one** MCEF JAR matching your operating system and Java architecture from Releases. Put them in `mods`.
-2. Enable cheats or obtain server administrator permissions. After entering your world, run `/ai accept`.
-3. Open **Ctrl+M → Model**, or **F2 → More → API Settings**. Configure the API URL, key, and model. DeepSeek defaults to `deepseek-flash`.
-4. Run **`/ai create "Nova"`** to create a companion. You can also use Ctrl+M → AI Players → Create, or F2 → AI Management → Create AI.
+1. Download the main mod and **LDLib2** from the new Release **Assets**. Add **KubeJS + Better Advanced Tooltips** for AI-created interfaces. Put the JARs in `mods`.
+2. Click **Enable** in chat on first entry. It takes effect immediately without rejoining; world modifications still require the relevant server permissions.
+3. Open **F2 → Settings → Provider**; Ctrl+M opens the same workspace. Configure the API URL, key, and model. DeepSeek defaults to `deepseek-flash`.
+4. Run **`/ai create "Nova"`** to create a companion. You can also use F2 → AI Players → Create.
 5. Type `@Nova Hello` in Minecraft chat. Press Tab after `@` to complete an AI name. You can also chat through F2 → Chat.
 6. Run `/ai default` to select your default responding AI, then send messages without mentioning it each time. This setting applies only to you.
 
 ## Common controls
 
-| Task | Command / chat | Native panel (Ctrl+M) | F2 workspace |
-|---|---|---|---|
-| Create an AI | `/ai create "Nova"` | AI Players → Create | AI Management → Create AI |
-| API URL and model | — | Model → Preset / URL / Select Model | More → API Settings |
-| Set a key | — | Model → Key → Save | More → API Settings → Set / Replace API Key |
-| Chat | `@Nova …`; select a default AI with `/ai default` | Conversations and Selection | Chat |
-| Show thinking in chat | `/ai thinking see` | Conversations and Selection → Chat Thinking | Chat → Thinking display toggle |
-| Thinking depth | `/ai thinking deep` | The command opens a selection menu | Ask the AI to change it |
-| Delete the current conversation | `/ai chat delete` | — | Chat → Delete Conversation |
+| Action | Entry |
+|---|---|
+| Enable this world | Click Enable in the first-entry chat prompt; change it in F2 → Settings → World activation |
+| Create / list AIs | `/ai create "Nova"`, `/ai list`; F2 → AI Players |
+| API URL, key and model | F2 → Settings → Provider; keys use local confidential input |
+| Chat / default AI | `@Nova …`, `/ai default`; F2 → Chat |
+| Thinking display / depth | `/ai thinking see`, `/ai thinking deep`; expand thinking in F2 |
+| Personality, conversations, health, inventory and creations | Right-click the relevant AI for its own panel |
+| Delete / rename a conversation | `/ai chat delete`; F2 → Chat → More / Rename |
 
-F2 opens a local confidential input screen for API keys; the native Model page has an inline key field. After saving the URL/key, fetch and select a model, or choose “Use Custom Model” and enter its name. Enter keys only in the in-game settings.
+F2 and Ctrl+M open the same LDLib2 MC workspace. Right-clicking an AI opens a panel bound to that AI. Fetch models after saving the URL/key, or enter a custom model ID. Never post API keys in chat.
 
 ## Things to try
 
@@ -230,7 +262,7 @@ Messages queue while the AI is busy. You can choose “Interrupt and Send” or 
 
 An AI you create responds directly to you by default. When another player mentions it, you can allow once, always allow, deny once, or always deny. F2 → AI Settings provides allow-all, deny-all, and allow-list controls.
 
-When you explicitly ask the AI to take over your player, it continuously controls your body and view while showing an action summary and the next waypoint on the left. **Press Esc to stop.** Opening a screen or losing focus pauses input.
+Explicitly requested player takeover uses native client input and releases the mouse cursor. **T, F2, switching windows and minimizing do not interrupt it.** The MC panel provides Pause/Continue, Exit and Add command, triggered on release. **ESC ends takeover.** Exiting restores your original focus-pause setting; death, disconnects, world and permission changes still release control.
 
 A dedicated Python runtime managed by Java can perform local tasks and install third-party libraries. Review and approve each request in Minecraft chat.
 
@@ -250,6 +282,6 @@ Copyright 2026 gaoshanliuni and DivZero contributors. See [NOTICE](NOTICE) for t
 
 ## Downloads and project information
 
-Each release provides the main mod, WebGUI, and four platform-specific MCEF alternatives. Each player installs three JARs. Refer to the corresponding Release for its version and checksums.
+New Releases provide four separate runtime JAR attachments: DivZero, LDLib2, KubeJS and Better Advanced Tooltips. Built-in F2 requires the first two; install all four for AI-created interfaces. Rhino is embedded. New releases do not package or distribute MCEF / WebGUI. Checksums are in the release notes.
 
 [Source and technical notes](docs/SOURCE_SNAPSHOT.md) · [Publishing](docs/PUBLISHING.md) · [Third-party notices](docs/THIRD_PARTY_NOTICES.md) · [Screenshot sources](docs/images/README.md)
