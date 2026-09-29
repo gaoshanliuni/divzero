@@ -98,10 +98,11 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         String signature=model.agents+"|"+model.agent;if(signature.equals(agentSignature))return;agentSignature=signature;
         var choices=new ArrayList<Choice>();for(var raw:model.agents){var value=raw.getAsJsonObject();String id=value.get("id").getAsString(),name=value.get("name").getAsString();knownAgents.put(id,name);choices.add(new Choice(id,name));}
         if(!model.agent.isEmpty()&&choices.stream().noneMatch(c->c.key().equals(model.agent)))choices.add(new Choice(model.agent,knownAgents.getOrDefault(model.agent,"AI")));
-        agentChoice.setCandidates(choices);if(model.agent.isEmpty()&&!choices.isEmpty()){selectAgent(choices.getFirst().key());return;}for(var choice:choices)if(choice.key().equals(model.agent)){agentChoice.setValue(choice,false);break;}
+        agentChoice.setCandidates(choices);if(model.agent.isEmpty()&&!choices.isEmpty()){selectAgent(choices.getFirst().key(),false);return;}for(var choice:choices)if(choice.key().equals(model.agent)){agentChoice.setValue(choice,false);break;}
     }
 
-    private void selectAgent(String id){saveDraft();releaseConversationFocus();model.agent=id;model.conversation="";model.selected=null;model.generation++;listBefore=0;rows.clear();history.clearAllScrollViewChildren();drawAgents();composer.setValue(draftText().split("\n",-1),false);heading.setText(Component.literal(t("选择或新建对话")));showChat();list();}
+    private void selectAgent(String id){selectAgent(id,true);}
+    private void selectAgent(String id,boolean bringChatForward){saveDraft();releaseConversationFocus();model.agent=id;model.conversation="";model.selected=null;model.generation++;listBefore=0;rows.clear();history.clearAllScrollViewChildren();drawAgents();composer.setValue(draftText().split("\n",-1),false);heading.setText(Component.literal(t("选择或新建对话")));if(bringChatForward||chatWindow==null||chatWindow.closed())showChat();list();}
     private void showChat(){
         if(chatWindow!=null&&!chatWindow.closed()){chatWindow.reveal();return;}
         page="chat";chatWindow=window("chat",t("对话"),720,500);chatWindow.body.clearAllChildren();var body=row();body.getLayout().flex(1);chatWindow.body.addChild(body);

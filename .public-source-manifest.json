@@ -2934,8 +2934,8 @@
     },
     {
       "path": "docs/NATIVE_TEN_SCENARIOS.md",
-      "sha256": "c56c91193b886f08f66c62fe53529ebfb16be8c4b9153fdf12cdd2c54b214372",
-      "bytes": 4518
+      "sha256": "031c193657c13b600658290b3f7794b4e5518dd305c8c3bc202974349e2b8bb4",
+      "bytes": 4891
     },
     {
       "path": "docs/NATIVE_UI_BUILDING_MIGRATION.md",
@@ -3714,8 +3714,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "sha256": "0ef7f5271531584bf5ad747888b0e71ee266700062d188fbe6d69aad52ae6225",
-      "bytes": 46334
+      "sha256": "3038aa3f030aab138bbb606f4e7277b8b0988b95c447c780ce83471cdae1fd59",
+      "bytes": 46487
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PersonaLibraryBar.java",
