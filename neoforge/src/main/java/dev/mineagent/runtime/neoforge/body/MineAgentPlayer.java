@@ -113,6 +113,7 @@ public final class MineAgentPlayer extends ServerPlayer {
     public MineAgentMovementController movementController() {
         return movementController;
     }
+    public float navigationSpeedFactor(){return getBlockSpeedFactor();}
 
     @Override public Component getName(){return agentDisplayName==null?super.getName():agentDisplayName;}
     @Override public Component getTabListDisplayName(){return agentDisplayName;}

@@ -152,6 +152,9 @@ public final class MineAgentBodyManager implements AutoCloseable {
         }
         ServerPlayer owner = server.getPlayerList().getPlayer(body.ownerPlayerId());
         if (owner != null && owner.level() == body.level()) {
+            var snapshot=config.snapshot();if(!config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(snapshot.revision(),Map.of("agent."+agentId+".follow","true")),true).accepted())throw new IllegalStateException("AGENT_FOLLOW_CONFIG_CHANGED");
+            if(dev.mineagent.runtime.neoforge.skill.SkillRuntime.following(server,agentId))return;
+            dev.mineagent.runtime.neoforge.skill.SkillRuntime.cancelForBody(owner,agentId);
             dev.mineagent.runtime.neoforge.skill.SkillRuntime.legacyFollow(owner,agentId);
         }
     }

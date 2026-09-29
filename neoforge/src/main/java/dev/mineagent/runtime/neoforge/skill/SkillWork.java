@@ -30,8 +30,8 @@ final class SkillWork {
         session.transition(State.SUSPENDED,"HIGHER_PRIORITY_BEHAVIOR");return false;}
     void release(){if(actor!=null){actor.stop(token());actor.controls().release(token());}runtime.reservations.release(token());}
     void pause(String reason){release();if(!session.terminal())session.transition(State.PAUSED,reason);if(!ioFailed)runtime.persist(this);}
-    void waitFor(String reason,int ticks){release();session.transition(State.WAITING,reason);nextTick=tick()+ticks;if(tick()-lastSave>100){runtime.persist(this);lastSave=tick();}}
-    void completed(String reason){release();session.transition(State.COMPLETED,reason);runtime.persist(this);}
+    void waitFor(String reason,int ticks){release();session.transition(State.WAITING,reason);nextTick=tick()+ticks;if(actor instanceof PlayerSkillActor p)p.report(reason,false);if(tick()-lastSave>100){runtime.persist(this);lastSave=tick();}}
+    void completed(String reason){release();session.transition(State.COMPLETED,reason);if(actor instanceof PlayerSkillActor p)p.report(reason,true);runtime.persist(this);}
     void step()throws Exception{
         session.transition(State.RUNNING,"");
         if(CombatSkill.interruptOrContinue(this))return;
@@ -41,7 +41,7 @@ final class SkillWork {
         }
     }
     boolean at(Vec3 target){return player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<.35;}
-    boolean move(Vec3 target){if(at(target)){actor.stop(token());return true;}String state=actor.move(token(),target);if(state.equals("UNREACHABLE")||state.equals("INTERACTION_BLOCKED")){session.add("unreachable",1);waitFor(state,60);abandonTarget();wanderTarget=null;wanderSearch=null;}return false;}
+    boolean move(Vec3 target){if(at(target)){actor.stop(token());return true;}String state=actor.move(token(),target);if(state.equals("ARRIVED")&&player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<1.251){actor.stop(token());return true;}if(state.equals("UNREACHABLE")||state.equals("INTERACTION_BLOCKED")){session.add("unreachable",1);waitFor(state,60);abandonTarget();wanderTarget=null;wanderSearch=null;}return false;}
     boolean reach(BlockPos target,InteractionTargetResolver.Kind kind){
         if(stand!=null)return move(stand);
         if(search==null)search=InteractionTargetResolver.block(player(),target,kind);

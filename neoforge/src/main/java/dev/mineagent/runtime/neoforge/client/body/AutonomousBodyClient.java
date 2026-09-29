@@ -27,7 +27,7 @@ public final class AutonomousBodyClient {
     private static List<KeyMapping> keys(){var o=Minecraft.getInstance().options;return List.of(o.keyUp,o.keyDown,o.keyLeft,o.keyRight,o.keyJump,o.keyShift,o.keySprint,o.keyAttack,o.keyUse);}
     private static void key(KeyMapping k,boolean value){((PlayerControlKeyAccess)k).mineagent$bodyDown(value);}
     private static void release(){AutonomyVirtualInput.clear();for(var k:keys()){key(k,false);((PlayerControlKeyAccess)k).mineagent$bodyClicks(0);}}
-    private static void cancelUse(){var mc=Minecraft.getInstance();if(mc.gameMode!=null&&mc.player!=null){mc.gameMode.stopDestroyBlock();if(mc.player.isUsingItem()){if(flight!=null&&flight.state.has("skill"))mc.player.stopUsingItem();else mc.gameMode.releaseUsingItem(mc.player);}mc.player.setSprinting(false);}}
+    private static void cancelUse(){var mc=Minecraft.getInstance();if(mc.gameMode!=null&&mc.player!=null){mc.gameMode.stopDestroyBlock();if(mc.player.isUsingItem())mc.player.stopUsingItem();mc.player.setSprinting(false);}}
     public static boolean active(){return flight!=null;}
     private static boolean identity(Flight f){var mc=Minecraft.getInstance();return mc.getConnection()!=null&&mc.getConnection().getConnection()==f.wire&&mc.level==f.level&&mc.player==f.player&&mc.player.isAlive()&&!mc.player.isSpectator()&&f.offer.dimension().equals(mc.level.dimension().identifier().toString());}
     private static boolean usable(){var mc=Minecraft.getInstance();return mc.player!=null&&mc.level!=null&&!mc.isPaused()&&!mc.player.isPassenger();}

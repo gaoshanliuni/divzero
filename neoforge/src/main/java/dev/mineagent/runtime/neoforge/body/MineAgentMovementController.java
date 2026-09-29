@@ -34,7 +34,7 @@ public final class MineAgentMovementController {
         p.applySneaking(p.canAct()&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
         if(!p.canAct()||intent.target().isEmpty())return;
         if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
-        var step=intent.tick(p);if(step==null)return;var waypoint=NativeTraversalEvaluator.point(step.to());var offset=waypoint.subtract(p.position());
+        var step=intent.tick(p);if(step==null)return;var waypoint=intent.waypoint(step);var offset=waypoint.subtract(p.position());
         if(!NativeSurfaceNavigation.openOnPath(p,waypoint)){intent.stop("INTERACTION_BLOCKED");return;}
         boolean swim=step.action()==Action.SWIM||step.action()==Action.ENTER_WATER;
         boolean climb=step.action()==Action.CLIMB;
@@ -42,10 +42,13 @@ public final class MineAgentMovementController {
         p.applySneaking(!swim&&!climb&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
         p.lookAlongPath(waypoint.add(0,p.getEyeHeight(),0));
         if((step.action()==Action.JUMP||step.action()==Action.LEAVE_WATER)&&offset.y>.65&&p.onGround())p.jumpFromGround();
-        double speed=Math.max(.01,p.getAttributeValue(Attributes.MOVEMENT_SPEED))*(p.isCrouching()?.3:1.1);
-        var horizontal=new Vec3(offset.x,0,offset.z);if(horizontal.lengthSqr()>.001){p.move(MoverType.SELF,horizontal.normalize().scale(Math.min(speed,horizontal.length())));executedSteps++;if(p.isCrouching())crouchingSteps++;}
-        if(climb&&p.onClimbable()){p.setDeltaMovement(p.getDeltaMovement().x,Math.max(-.15,Math.min(.2,offset.y)),p.getDeltaMovement().z);p.move(MoverType.SELF,new Vec3(0,Math.max(-.1,Math.min(.12,offset.y)),0));climbingSteps++;}
-        if(swim&&p.isInWater()){p.setDeltaMovement(p.getDeltaMovement().x,0,p.getDeltaMovement().z);p.move(MoverType.SELF,new Vec3(0,Math.max(-.1,Math.min(.1,offset.y)),0));swimmingSteps++;}
+        double friction=Math.max(.1,p.level().getBlockState(p.blockPosition().below()).getBlock().getFriction());
+        double speed=Math.max(0,p.getAttributeValue(Attributes.MOVEMENT_SPEED))*(p.isInWater()?1+p.getAttributeValue(Attributes.WATER_MOVEMENT_EFFICIENCY):.216/(friction*friction*friction)/Math.max(.05,1-friction*.91))*p.navigationSpeedFactor();
+        if(p.isCrouching())speed*=p.getAttributeValue(Attributes.SNEAKING_SPEED);
+        var horizontal=new Vec3(offset.x,0,offset.z);if(horizontal.lengthSqr()>.001&&speed>0){p.move(MoverType.SELF,horizontal.normalize().scale(Math.min(speed,horizontal.length())));executedSteps++;if(p.isCrouching())crouchingSteps++;}
+        // Native travel integrates vertical velocity once; do not additionally move by the same input.
+        if(climb&&p.onClimbable()){p.setDeltaMovement(p.getDeltaMovement().x,Math.max(-.15,Math.min(.2,offset.y)),p.getDeltaMovement().z);climbingSteps++;}
+        if(swim&&p.isInWater()){p.setDeltaMovement(p.getDeltaMovement().x,Math.max(-.1,Math.min(.1,offset.y)),p.getDeltaMovement().z);swimmingSteps++;}
         if(step.action()==Action.LEAVE_WATER&&p.isInWater()&&offset.y>0)p.setDeltaMovement(p.getDeltaMovement().x,.25,p.getDeltaMovement().z);
     }
 }

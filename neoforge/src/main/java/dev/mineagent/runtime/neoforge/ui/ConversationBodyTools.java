@@ -33,6 +33,6 @@ public final class ConversationBodyTools {
             b.inventoryMenu.broadcastChanges();
         }
         var rows=new ArrayList<Object>();for(int i=0;i<b.getInventory().getContainerSize();i++){var stack=b.getInventory().getItem(i);if(!stack.isEmpty())rows.add(Map.of("slot",i,"item",stack.toString(),"name",stack.getHoverName().getString(),"count",stack.getCount()));}
-        var out=new LinkedHashMap<String,Object>(Map.of("status",status,"entity",agent,"position",List.of(b.getX(),b.getY(),b.getZ()),"yaw",b.getYRot(),"pitch",b.getXRot(),"sprinting",b.isSprinting(),"following",Boolean.parseBoolean(config.snapshot().values().getOrDefault(key,"false")),"movement",b.movementController().outcome(),"inventory",rows,"mainHand",b.getMainHandItem().toString()));out.put("sneaking",b.isShiftKeyDown());out.put("pose",b.getPose().name());out.put("manualSneak",b.movementController().manualSneak());return out;
+        var out=new LinkedHashMap<String,Object>(Map.of("status",status,"entity",agent,"position",List.of(b.getX(),b.getY(),b.getZ()),"yaw",b.getYRot(),"pitch",b.getXRot(),"sprinting",b.isSprinting(),"following",Boolean.parseBoolean(config.snapshot().values().getOrDefault(key,"false"))||dev.mineagent.runtime.neoforge.skill.SkillRuntime.following(s,agent),"movement",b.movementController().outcome(),"inventory",rows,"mainHand",b.getMainHandItem().toString()));out.put("sneaking",b.isShiftKeyDown());out.put("pose",b.getPose().name());out.put("manualSneak",b.movementController().manualSneak());return out;
     }
 }

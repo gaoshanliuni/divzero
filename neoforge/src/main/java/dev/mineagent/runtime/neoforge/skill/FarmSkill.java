@@ -38,7 +38,7 @@ final class FarmSkill {
             if(!w.player().level().hasChunkAt(pos)){w.session.add("unloaded",1);continue;}var state=w.player().level().getBlockState(pos);CropAdapter crop=CropAdapter.find(state).filter(a->spec.crop().isBlank()||a.id().equals(spec.crop())).filter(a->a.mature(state)).orElse(null);
             if(crop==null&&state.isAir())crop=CropAdapter.adapters().stream().filter(a->spec.crop().isBlank()||a.id().equals(spec.crop())).filter(a->a.canPlant(w.player(),pos)&&w.count(a.seed())>0).findFirst().orElse(null);
             boolean till=crop==null&&state.isAir()&&spec.till()&&tillable(w.player().level().getBlockState(pos.below()));if(till)crop=CropAdapter.adapters().stream().filter(a->a.block() instanceof net.minecraft.world.level.block.CropBlock&&(spec.crop().isBlank()||a.id().equals(spec.crop()))&&w.count(a.seed())>0).findFirst().orElse(null);
-            if(crop==null)continue;if(!w.runtime.reservations.reserve(w.reservation(pos),w.token(),w.tick(),100))continue;
+            if(crop==null)continue;if(!w.runtime.reservations.reserve(w.reservation(pos),w.token(),w.tick(),100)){w.session.add("reservationConflicts",1);continue;}
             w.block=pos.immutable();w.crop=crop;w.tillPlot=till;w.stand=null;w.search=null;w.session.phase("FARM_APPROACH");return;
         }
     }

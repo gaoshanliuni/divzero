@@ -12,6 +12,7 @@ public interface SkillActor {
     ServerPlayer player();BodyControlCoordinator controls();
     boolean current();boolean inputReady();
     String move(UUID session,Vec3 destination);void aim(UUID session,Vec3 target);
+    void sprint(UUID session,boolean enabled);
     boolean select(UUID session,int slot);
     void breakBlock(UUID session,UUID operation,BlockPos target);
     void useBlock(UUID session,UUID operation,BlockPos target);

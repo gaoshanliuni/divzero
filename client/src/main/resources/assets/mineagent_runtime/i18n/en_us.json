@@ -3028,5 +3028,14 @@
   "追加命令": "Add command",
   "选择装备": "Selecting equipment",
   "释放蓄力": "Releasing charged item",
-  "钓鱼": "Fishing"
+  "钓鱼": "Fishing",
+  "本次任务已完成，等待新指令": "Task complete; waiting for a new command",
+  "等待作物成熟": "Waiting for crops to mature",
+  "等待鱼咬钩": "Waiting for a bite",
+  "等待补种种子": "Waiting for replanting seeds",
+  "背包已满，等待整理": "Inventory full; waiting for space",
+  "保持跟随距离": "Maintaining follow distance",
+  "在路标处停留": "Waiting at waypoint",
+  "等待区块加载": "Waiting for chunks to load",
+  "准备下一次抛竿": "Preparing the next cast"
 }

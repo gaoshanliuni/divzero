@@ -19,6 +19,7 @@ public final class NativeNavigationIntent {
     public String reason(){return reason;}
     public double tolerance(){return tolerance;}
     public List<PathStep> remaining(){return steps.subList(Math.min(index,steps.size()),steps.size());}
+    public Vec3 waypoint(PathStep step){var n=step.to();return target!=null&&index==steps.size()-1&&n.x()==(int)Math.floor(target.x)&&n.z()==(int)Math.floor(target.z)?new Vec3(target.x,n.y(),target.z):NativeTraversalEvaluator.point(n);}
     public Map<String,Object> evidence(){return Map.of("plans",plans,"expanded",expanded,"reason",reason,"nextSearchTick",retry.next(),"failedSearches",retry.failures());}
     public PathStep tick(ServerPlayer p){
         if(target==null)return null;int tick=p.level().getServer().getTickCount();
@@ -27,7 +28,7 @@ public final class NativeNavigationIntent {
         if(lastPosition==null||lastPosition.distanceToSqr(p.position())>=.01){lastPosition=p.position();stuck=0;}else if(!remaining().isEmpty())stuck++;
         boolean moved=plannedTarget!=null&&plannedTarget.distanceToSqr(target)>2.25;
         if(moved||stuck>=30){search=null;steps=List.of();index=0;if(stuck>=30){reason="TEMPORARY_CONGESTION";retry.waitUntil(tick+10);}stuck=0;}
-        while(index<steps.size()){var next=NativeTraversalEvaluator.point(steps.get(index).to());if(next.subtract(p.position()).horizontalDistanceSqr()<Math.min(.1,tolerance*tolerance)&&Math.abs(next.y-p.getY())<.26)index++;else break;}
+        while(index<steps.size()){var next=waypoint(steps.get(index));if(next.subtract(p.position()).horizontalDistanceSqr()<Math.min(.1,tolerance*tolerance)&&Math.abs(next.y-p.getY())<.26)index++;else break;}
         if(index>=steps.size()&&search==null&&retry.ready(tick)){
             evaluator=new NativeTraversalEvaluator(p);Node start=evaluator.closest(p.position());Vec3 routeTarget=target;boolean segment=target.distanceToSqr(p.position())>16*16;if(segment)routeTarget=p.position().add(target.subtract(p.position()).normalize().scale(16));Node goal=evaluator.closest(routeTarget);plans++;plannedTarget=target;
             if(segment&&goal==null){for(int radius=1;radius<=3&&goal==null;radius++)for(int dx=-radius;dx<=radius&&goal==null;dx++)for(int dz=-radius;dz<=radius;dz++){var candidate=evaluator.closest(routeTarget.add(dx,0,dz));if(candidate!=null&&NativeTraversalEvaluator.point(candidate).distanceToSqr(p.position())>4){goal=candidate;break;}}}
@@ -38,12 +39,13 @@ public final class NativeNavigationIntent {
         if(search!=null){
             if(!evaluator.current()){search=null;retry.waitUntil(tick+1);reason="SEARCH_STALE";return null;}
             var budget=NativeNavigationBudget.get(p.level().getServer());int count=budget.claim(budgetId,tick);if(count==0){reason="BUDGET_EXHAUSTED";return null;}evaluator.beginSlice();var result=search.advance(count,budget::timeAvailable);expanded=result.expanded();reason=result.status().name();
-            if(result.status()==Status.FOUND){steps=result.steps();index=0;search=null;retry.succeeded(tick);if(steps.isEmpty())return null;}
+            if(result.status()==Status.FOUND){steps=result.steps();index=0;search=null;retry.succeeded(tick);if(steps.isEmpty()){var here=evaluator.closest(p.position());if(here!=null){boolean wet=evaluator.water(here),crouch=!wet&&NativeSurfaceNavigation.requiresSneaking(p,target);steps=List.of(new PathStep(here,here,wet?Action.SWIM:crouch?Action.CROUCH:Action.WALK,wet?Posture.SWIMMING:crouch?Posture.CROUCHING:Posture.STANDING,1));}else return null;}}
             else if(result.status()!=Status.BUDGET_EXHAUSTED){search=null;retry.failed(tick);if(result.status()==Status.NO_PATH&&retry.failures()>=3)stop("UNREACHABLE");return null;}
             else return null;
         }
         if(index>=steps.size())return null;var step=steps.get(index);var check=new NativeTraversalEvaluator(p);
-        if(check.transition(step.from(),step.to())==null){steps=List.of();index=0;reason=check.encounteredUnloaded()?"WAITING_CHUNKS":"ROUTE_CHANGED";retry.waitUntil(tick+5);return null;}
+        var pose=step.posture()==Posture.SWIMMING?net.minecraft.world.entity.Pose.SWIMMING:step.posture()==Posture.CROUCHING?net.minecraft.world.entity.Pose.CROUCHING:net.minecraft.world.entity.Pose.STANDING;
+        if(!step.from().equals(step.to())&&check.transition(step.from(),step.to())==null||!check.clear(waypoint(step),pose,check.water(step.from())||check.water(step.to()))){steps=List.of();index=0;reason=check.encounteredUnloaded()?"WAITING_CHUNKS":"ROUTE_CHANGED";retry.waitUntil(tick+5);return null;}
         return step;
     }
 }

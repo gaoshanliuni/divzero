@@ -5,9 +5,9 @@ import org.spongepowered.asm.mixin.*;import org.spongepowered.asm.mixin.injectio
 /** Per-call hand consumption is independent of unrelated item pickups in the same inventory tick. */
 @Mixin(ServerPlayerGameMode.class)
 public abstract class SkillItemUseOutcomeMixin {
-    @Unique private final java.util.Deque<ItemStack> divzero$skillUses=new java.util.ArrayDeque<>();
+    @Unique private final java.util.Deque<java.util.Map.Entry<Boolean,ItemStack>> divzero$skillUses=new java.util.ArrayDeque<>();
     @Inject(method="useItemOn",at=@At("HEAD"))
-    private void divzero$beforeSkillUse(ServerPlayer player,Level level,ItemStack stack,InteractionHand hand,BlockHitResult hit,CallbackInfoReturnable<InteractionResult> result){divzero$skillUses.push(dev.mineagent.runtime.neoforge.skill.SkillRuntime.observingUse(player,hit.getBlockPos())?stack.copy():ItemStack.EMPTY);}
+    private void divzero$beforeSkillUse(ServerPlayer player,Level level,ItemStack stack,InteractionHand hand,BlockHitResult hit,CallbackInfoReturnable<InteractionResult> result){divzero$skillUses.push(new java.util.AbstractMap.SimpleImmutableEntry<>(dev.mineagent.runtime.neoforge.skill.SkillRuntime.observingUse(player,hit.getBlockPos()),stack.copy()));}
     @Inject(method="useItemOn",at=@At("RETURN"))
-    private void divzero$afterSkillUse(ServerPlayer player,Level level,ItemStack stack,InteractionHand hand,BlockHitResult hit,CallbackInfoReturnable<InteractionResult> result){if(divzero$skillUses.isEmpty())return;var before=divzero$skillUses.pop();if(!before.isEmpty())dev.mineagent.runtime.neoforge.skill.SkillRuntime.nativeUse(player,hit.getBlockPos(),before,stack,result.getReturnValue().consumesAction());}
+    private void divzero$afterSkillUse(ServerPlayer player,Level level,ItemStack stack,InteractionHand hand,BlockHitResult hit,CallbackInfoReturnable<InteractionResult> result){if(divzero$skillUses.isEmpty())return;var before=divzero$skillUses.pop();if(before.getKey())dev.mineagent.runtime.neoforge.skill.SkillRuntime.nativeUse(player,hit.getBlockPos(),before.getValue(),stack,result.getReturnValue()!=null&&result.getReturnValue().consumesAction());}
 }

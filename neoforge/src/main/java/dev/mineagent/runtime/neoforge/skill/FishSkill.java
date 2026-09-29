@@ -29,7 +29,7 @@ final class FishSkill {
             var hook=p.fishing;if(hook==null||hook.isRemoved()){w.pause("OWNED_HOOK_DISAPPEARED");return;}
             if(hook.getPlayerOwner()!=p||!hook.getUUID().equals(w.hook)){w.pause("FISH_HOOK_OWNERSHIP_CHANGED");return;}
             if(hook instanceof SkillFishingHookAccess bite&&bite.divzero$skillNibble()>0){w.workStage=2;w.fishedEvent=false;w.fishedItems=0;w.fishStatBefore=p.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.FISH_CAUGHT));w.fishInventoryBefore=inventory(p);w.nearbyItemsBefore=p.level().getEntitiesOfClass(ItemEntity.class,p.getBoundingBox().inflate(8)).stream().map(ItemEntity::getUUID).collect(java.util.stream.Collectors.toSet());w.prepare("FISH_REEL",Map.of("hook",w.hook.toString(),"rodDamage",Integer.toString(p.getMainHandItem().getDamageValue())));return;}
-            w.session.transition(dev.mineagent.runtime.core.task.SkillSession.State.WAITING,"WAITING_FOR_REAL_BITE");if(w.tick()-w.startedTick>7200)w.pause("FISHING_NO_BITE_REQUIRES_NEW_SPOT");return;
+            w.session.transition(dev.mineagent.runtime.core.task.SkillSession.State.WAITING,"WAITING_FOR_REAL_BITE");if(w.actor instanceof PlayerSkillActor adapter&&w.tick()%20==0)adapter.report("WAITING_FOR_REAL_BITE",false);if(w.tick()-w.startedTick>7200)w.pause("FISHING_NO_BITE_REQUIRES_NEW_SPOT");return;
         }
         if(w.workStage==2){
             if(!w.saved.isDone())return;w.actor.aim(w.token(),Vec3.atCenterOf(w.block));if(p.fishing==null&&w.workStage==0||p.fishing!=null&&w.workStage==2)w.actor.useItem(w.token(),w.operation,false);w.executed=true;
