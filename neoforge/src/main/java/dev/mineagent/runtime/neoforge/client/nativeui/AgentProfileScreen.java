@@ -19,6 +19,7 @@ public final class AgentProfileScreen extends NativeInputScreen {
     private final UUID agent;private final Object connection;private UIElement root;private final UIElement content=new UIElement();
     private final TextElement title,summary,status;private final ProgressBar health=new ProgressBar();
     private String personaDraft;private long personaDraftRevision=-1;private boolean personaSaving;private JsonObject snapshot;private String tab="overview";private int inventoryOffset,contentOffset;private long nextRead;private boolean busy;private long personaRevision=-1,uiEpoch;
+    private String conversationFilter="ACTIVE";private long conversationBefore;private final Deque<Long> conversationPages=new ArrayDeque<>();
     private AgentProfileScreen(UUID agent,String name){this(agent,name,new UIElement());}
     private AgentProfileScreen(UUID agent,String name,UIElement root){
         super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal(name));this.agent=agent;this.root=root;connection=Minecraft.getInstance().getConnection();
@@ -35,11 +36,12 @@ public final class AgentProfileScreen extends NativeInputScreen {
     }
     public static void open(UUID agent,String name){Minecraft.getInstance().setScreen(new AgentProfileScreen(agent,name));NativeWorkspaceConnection.open();}
     public void smokeBehaviorTab(boolean release){NativeBehaviorPanel.smokeClickElement(root,t("行为模式"),release);}
+    UIElement smokeRoot(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return root;}
     private static String t(String text){return ClientLanguage.t(text);}
     private boolean current(){return connection==Minecraft.getInstance().getConnection()&&Minecraft.getInstance().screen==this;}
     @Override public void tick(){super.tick();NativeUiTheme.controls(root);if(!current())return;long now=System.currentTimeMillis();if(busy||now<nextRead||!NativeWorkspaceConnection.ready())return;busy=true;nextRead=now+1000;
         WorkspacePanels.request("agent.panelRead",Map.of("agentId",agent.toString(),"inventoryOffset",Integer.toString(inventoryOffset),"contentOffset",Integer.toString(contentOffset))).whenComplete((receipt,error)->{
-            busy=false;if(!current())return;if(error!=null){WorkspacePanels.failure(status,error);return;}var value=WorkspacePanels.state(receipt);boolean first=snapshot==null;boolean changed=first||tab.equals("inventory")&&!value.get("inventory").equals(snapshot.get("inventory"))||tab.equals("content")&&!value.get("contents").equals(snapshot.get("contents"));snapshot=value;title.setText(Component.literal(value.get("name").getAsString()));float max=value.get("maxHealth").getAsFloat(),hp=value.get("health").getAsFloat();health.setProgress(max<=0?0:hp/max);summary.setText(Component.literal(NativeUiTheme.state(value.get("bodyState").getAsString())+"  ·  "+t("生命值")+" "+(int)hp+" / "+(int)max+"  ·  "+t("饱食度")+" "+value.get("food").getAsInt()));if(!tab.equals("persona"))status.setText(Component.literal(""));if(changed&&(!tab.equals("persona")||first))draw();
+            busy=false;if(!current())return;if(error!=null){WorkspacePanels.failure(status,error);return;}var value=WorkspacePanels.state(receipt);boolean first=snapshot==null;boolean changed=first||tab.equals("content")&&!value.get("contents").equals(snapshot.get("contents"));snapshot=value;title.setText(Component.literal(value.get("name").getAsString()));float max=value.get("maxHealth").getAsFloat(),hp=value.get("health").getAsFloat();health.setProgress(max<=0?0:hp/max);summary.setText(Component.literal(NativeUiTheme.state(value.get("bodyState").getAsString())+"  ·  "+t("生命值")+" "+(int)hp+" / "+(int)max+"  ·  "+t("饱食度")+" "+value.get("food").getAsInt()));if(!tab.equals("persona"))status.setText(Component.literal(""));if(changed&&(!tab.equals("persona")||first))draw();
         });
     }
     private void draw(){
@@ -63,22 +65,12 @@ public final class AgentProfileScreen extends NativeInputScreen {
     void smokeTab(String value){if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");tab=value;draw();}
     private void conversations(){
         long epoch=uiEpoch;content.addChild(WorkspacePanels.text(t("选择已有对话，或让 AI 为新对话生成简称。")));var list=WorkspacePanels.scroller(content);
+        var filters=WorkspacePanels.row();filters.getLayout().height(25);content.addChild(filters);
+        for(var choice:List.of(new String[]{"ACTIVE","进行中"},new String[]{"ARCHIVED","已归档"},new String[]{"DELETED","已删除"}))filters.addChild(NativeUiTheme.button((choice[0].equals(conversationFilter)?"● ":"")+t(choice[1]),()->{conversationFilter=choice[0];conversationBefore=0;conversationPages.clear();draw();}));
         content.addChild(NativeUiTheme.button(t("新建对话"),()->WorkspacePanels.request("conversation.write",Map.of("kind","create","agentId",agent.toString(),"title",t("新的对话"),"autoTitle","true")).whenComplete((receipt,error)->{if(!current())return;if(error!=null)WorkspacePanels.failure(status,error);else NativeWorkspaceScreen.openConversation(agent.toString(),title.getText().getString(),WorkspacePanels.state(receipt).get("conversationId").getAsString());})));
-        WorkspacePanels.request("conversation.read",Map.of("kind","list","agentId",agent.toString(),"state","ACTIVE","search","","before","0")).whenComplete((receipt,error)->{if(!current()||uiEpoch!=epoch)return;if(error!=null){WorkspacePanels.failure(status,error);return;}for(var raw:WorkspacePanels.state(receipt).getAsJsonArray("conversations")){var value=raw.getAsJsonObject();list.addScrollViewChild(NativeUiTheme.button(value.get("title").getAsString(),()->NativeWorkspaceScreen.openConversation(agent.toString(),title.getText().getString(),value.get("conversationId").getAsString())));}});
+        WorkspacePanels.request("conversation.read",Map.of("kind","list","agentId",agent.toString(),"state",conversationFilter,"search","","before",Long.toString(conversationBefore))).whenComplete((receipt,error)->{if(!current()||uiEpoch!=epoch)return;if(error!=null){WorkspacePanels.failure(status,error);return;}var data=WorkspacePanels.state(receipt);for(var raw:data.getAsJsonArray("conversations")){var value=raw.getAsJsonObject();var button=NativeUiTheme.button(value.get("title").getAsString(),()->NativeWorkspaceScreen.openConversation(agent.toString(),title.getText().getString(),value.get("conversationId").getAsString()));button.setId("profile-conversation-"+value.get("conversationId").getAsString());list.addScrollViewChild(button);}var pager=WorkspacePanels.row();pager.getLayout().height(25);content.addChild(pager);if(!conversationPages.isEmpty())pager.addChild(NativeUiTheme.button(t("上一页"),()->{conversationBefore=conversationPages.pop();draw();}));long next=data.get("nextBefore").getAsLong();if(next>0)pager.addChild(NativeUiTheme.button(t("下一页"),()->{conversationPages.push(conversationBefore);conversationBefore=next;draw();}));});
     }
-    private void inventory(){
-        if(snapshot==null)return;if(!snapshot.get("inventoryVisible").getAsBoolean()){content.addChild(WorkspacePanels.text(t("没有权限或 AI 当前离线")));return;}
-        var list=WorkspacePanels.scroller(content);
-        for(var raw:snapshot.getAsJsonArray("inventory")){
-            var slot=raw.getAsJsonObject();var row=WorkspacePanels.row();row.getLayout().height(32).marginBottom(5);list.addScrollViewChild(row);var icon=new UIElement();icon.getLayout().width(28).height(28);row.addChild(icon);
-            if(!slot.get("empty").getAsBoolean())try{
-                ItemStack stack=slot.get("stack").getAsString().isEmpty()?new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(slot.get("item").getAsString())),slot.get("count").getAsInt()):ItemStack.CODEC.parse(Minecraft.getInstance().level.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),net.minecraft.nbt.TagParser.parseCompoundFully(slot.get("stack").getAsString())).getOrThrow();
-                icon.getStyle().backgroundTexture(new ItemStackTexture(stack));icon.getStyle().tooltips(Component.literal(slot.get("name").getAsString()));
-            }catch(Exception invalid){status.setText(Component.literal(t("部分物品预览不可用，名称与数量仍保留。")));}
-            row.addChild(WorkspacePanels.text(slot.get("empty").getAsBoolean()?"—":slot.get("name").getAsString()+" × "+slot.get("count").getAsInt()));
-        }
-        var pager=WorkspacePanels.row();pager.getLayout().height(26);content.addChild(pager);pager.addChild(NativeUiTheme.button(t("上一页"),()->{inventoryOffset=Math.max(0,inventoryOffset-9);nextRead=0;}));if(snapshot.get("nextInventoryOffset").getAsInt()>=0)pager.addChild(NativeUiTheme.button(t("下一页"),()->{inventoryOffset=snapshot.get("nextInventoryOffset").getAsInt();nextRead=0;}));
-    }
+    private void inventory(){long epoch=uiEpoch;NativeInventoryPanel.attach(content,agent.toString(),()->current()&&uiEpoch==epoch&&tab.equals("inventory"));}
     private void contents(){
         if(snapshot!=null&&!snapshot.getAsJsonObject("contents").get("private").getAsBoolean())content.addChild(NativeUiTheme.button(t("建筑计划"),()->{NativeWorkspaceScreen.openForAgent(agent.toString(),title.getText().getString());NativeBuildingPanel.open((NativeWorkspaceScreen)Minecraft.getInstance().screen,agent.toString());}));
         if(snapshot!=null&&!snapshot.getAsJsonObject("contents").get("private").getAsBoolean())content.addChild(NativeUiTheme.button(t("该 AI 的已保存界面"),()->{NativeWorkspaceScreen.openForAgent(agent.toString(),title.getText().getString());NativeSavedInterfacesPanel.open((NativeWorkspaceScreen)Minecraft.getInstance().screen,agent.toString());}));

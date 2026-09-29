@@ -51,7 +51,8 @@ final class CombatPositioning {
             var onwards=evaluator.neighbors(route.node).stream().filter(edge->!route.steps.stream().anyMatch(step->step.from().equals(edge.to()))).toList();
             score+=Math.max(0,3-onwards.size())*2;
             if(onwards.stream().noneMatch(edge->evaluator.neighbors(edge.to()).stream().anyMatch(next->!next.to().equals(route.node)&&route.steps.stream().noneMatch(step->step.from().equals(next.to())))))score+=100;
-            if(target!=null)score+=Math.abs(point.distanceTo(target.position())-desiredDistance)*(intent.equals("SPACE")||intent.equals("APPROACH")?8:1.1);
+            if(target!=null)score+=Math.abs(point.distanceTo(target.position())-desiredDistance)*(intent.equals("COUNTER")?14:intent.equals("SPACE")||intent.equals("APPROACH")?8:1.1);
+            if(target!=null&&intent.equals("COUNTER")&&point.distanceTo(target.position())>=origin.distanceTo(target.position())-.2)continue;
             if(intent.equals("RETREAT")||intent.equals("RECOVER")||intent.equals("LURE")){
                 score-=origin.distanceTo(point)*.45;
                 if(w.combat.protectedEntity!=null&&point.distanceTo(w.combat.protectedEntity.position())<origin.distanceTo(w.combat.protectedEntity.position())-.5)score+=100;
@@ -68,5 +69,13 @@ final class CombatPositioning {
         return selected;
     }
     private int edgeExposure(SkillWork w,Node node){return exposure.computeIfAbsent(node,n->{int danger=0;for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){if(dx==0&&dz==0)continue;int x=n.x()+dx,z=n.z()+dz;var at=new Vec3(x+.5,n.y(),z+.5);var pos=net.minecraft.core.BlockPos.containing(at);if(!evaluator.loaded(pos)){danger++;continue;}if(w.player().level().getFluidState(pos).is(net.minecraft.tags.FluidTags.LAVA)){danger++;continue;}if(!evaluator.clear(at,net.minecraft.world.entity.Pose.STANDING,true)&&!evaluator.clear(at,net.minecraft.world.entity.Pose.CROUCHING,true))continue;if(evaluator.positions(x,z,n.y()).stream().noneMatch(floor->Math.abs(floor.y()-n.y())<=1.25))danger++;}return danger;});}
+    boolean jumpSafe(SkillWork w){
+        var p=w.player();if(!p.onGround()||p.isInWater()||p.isCrouching()||chosenRoute.size()<3)return false;
+        var direction=NativeTraversalEvaluator.point(chosenRoute.get(2).to()).subtract(p.position());
+        if(Math.abs(direction.y)>.1||direction.horizontalDistanceSqr()<3)return false;
+        var unit=new Vec3(direction.x,0,direction.z).normalize();
+        for(var step:chosenRoute.subList(0,3)){var d=NativeTraversalEvaluator.point(step.to()).subtract(NativeTraversalEvaluator.point(step.from()));if(Math.abs(d.y)>.1||new Vec3(d.x,0,d.z).normalize().dot(unit)<.9||edgeExposure(w,step.to())>0)return false;}
+        return p.level().noCollision(p,p.getBoundingBox().move(0,1.3,0).expandTowards(unit.scale(2.5)));
+    }
     void reset(){origin=null;selected=null;waypoint=null;waypointNode=null;heading=null;targetAtWaypoint=null;chosenRoute=List.of();exposure.clear();}
 }

@@ -53,7 +53,7 @@ final class CombatAwareness {
     boolean flanked(SkillWork w){var p=w.player().position();for(var a:threats)if(a.entity.distanceTo(w.player())<6)for(var b:threats)if(a!=b&&b.entity.distanceTo(w.player())<6&&a.entity.position().subtract(p).normalize().dot(b.entity.position().subtract(p).normalize())<-.2)return true;return false;}
     double risk(SkillWork w,Vec3 point){
         double risk=0;for(var threat:threats){var e=threat.entity;if(!e.isAlive())continue;double d=e.position().distanceTo(point),future=e.position().add(e.getDeltaMovement().scale(5)).distanceTo(point);risk+=Math.max(0,5-Math.min(d,future))*2;
-            if(NativeCombatStates.meleeAt(e,w.player(),point))risk+=threat.state.meleeRestricted()?3:18;
+            if(NativeCombatStates.meleeAt(e,w.player(),point))risk+=threat.state.openingTicks(w.player().level().getGameTime())>=6?2:threat.state.meleeRestricted()?3:18;
             double areaRange=threat.state.attacks().stream().filter(a->a.kind().equals("AREA")&&a.running()).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
             if(areaRange>0&&d<areaRange+1)risk+=30+Math.max(0,areaRange-d)*5;if(threat.state.ranged()&&e.hasLineOfSight(w.player()))risk+=Math.max(0,8-d);
         }
@@ -61,5 +61,6 @@ final class CombatAwareness {
         return risk;
     }
     private double projectileRisk(Projectile shot,Vec3 point){var v=shot.getDeltaMovement();var delta=point.add(0,1,0).subtract(shot.position());double t=Math.max(0,Math.min(12,delta.dot(v)/Math.max(.0001,v.lengthSqr())));double miss=shot.position().add(v.scale(t)).distanceTo(point.add(0,1,0));return Math.max(0,2-miss);}
+    boolean incoming(SkillWork w){return projectiles.stream().anyMatch(shot->projectileRisk(shot,w.player().position())>.6);}
     Map<String,Object> view(){return Map.of("targetName",selected==null?"":selected.getName().getString(),"observations",scans,"target",selected==null?"":selected.getUUID().toString(),"threats",threats.stream().map(t->Map.of("actual",t.state,"eligible",t.eligible,"urgent",t.urgent,"selectionScore",t.score)).toList(),"projectileThreats",projectiles.size(),"lastThreatTick",lastThreatTick);}
 }

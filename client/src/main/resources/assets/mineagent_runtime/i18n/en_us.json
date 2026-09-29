@@ -3137,5 +3137,21 @@
   "托管已结束": "Takeover ended",
   "视角：第一人称": "View: First person",
   "视角：第三人称（背后）": "View: Third person (back)",
-  "视角：第三人称（正面）": "View: Third person (front)"
+  "视角：第三人称（正面）": "View: Third person (front)",
+  "先选物品，再点目标格；不同物品可整组交换。": "Select an item, then a destination slot. Different items can swap as whole stacks.",
+  "背包 / 装备": "Inventory / Equipment",
+  "取消选择": "Clear selection",
+  "你的背包": "Your inventory",
+  "背包已变化，请重新选择物品。": "Inventory changed; select the item again.",
+  "已移动物品": "Items moved",
+  "读取对话…": "Loading conversation…",
+  "把握攻击间隔，跳冲接近": "Jump and sprint through the attack opening",
+  "把握攻击间隔，疾跑反击": "Sprint in during the attack opening",
+  "AI 当前离线或不在同一世界。": "The AI is offline or in another world.",
+  "背包已变化，请刷新后重试。": "Inventory changed; refresh and try again.",
+  "目标格已满。": "The destination slot is full.",
+  "当前正在使用物品，请稍后重试。": "An item is in use; try again shortly.",
+  "请先关闭正在使用的容器。": "Close the current container first.",
+  "该物品不能放入目标装备格。": "This item cannot be placed in the destination equipment slot.",
+  "没有管理该 AI 背包的权限。": "You do not have permission to manage this AI inventory."
 }

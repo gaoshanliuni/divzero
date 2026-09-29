@@ -26,6 +26,7 @@ public final class NativeCombatStates {
         public boolean meleeRestricted(){return restrictions.stream().anyMatch(r->r.remainingTicks>0&&r.blocksMelee);}
         public boolean areaAttack(){return attacks.stream().anyMatch(a->a.kind.equals("AREA")&&a.running);}
         public boolean ranged(){return attacks.stream().anyMatch(a->a.kind.equals("RANGED"));}
+        public int openingTicks(long now){return dev.mineagent.runtime.core.task.CombatOpening.availableTicks(attacks.stream().map(a->new dev.mineagent.runtime.core.task.CombatOpening.Attack(a.kind,a.cooldownTicks,a.running)).toList(),restrictions.stream().map(r->new dev.mineagent.runtime.core.task.CombatOpening.Restriction(r.remainingTicks,r.blocksMelee,r.blocksRanged)).toList(),(int)Math.max(0,now-observedTick));}
     }
     private static final List<Adapter> ADAPTERS=new CopyOnWriteArrayList<>();
     private record Motion(long tick,Vec3 velocity,Vec3 change,long elapsed){}

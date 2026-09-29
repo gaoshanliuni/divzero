@@ -83,7 +83,9 @@ final class CombatSkill {
         var p=w.player();var rule=w.session.spec().combat();w.sprintApproach=false;
         if(target!=null&&(target instanceof net.minecraft.world.entity.player.Player||target.isAlliedTo(p)||target instanceof OwnableEntity owned&&owned.getOwnerReference()!=null)){w.combat.selected=null;return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
-        if(escapeContact(w,target,contacts))return;
+        boolean openingCounter=counterBeforeEscape(w,target,contacts);
+        if(openingCounter&&w.contactEscape){w.contactEscape=false;w.contactClearSince=-1;w.positioning.reset();w.session.add("contactCounterOpenings",1);}
+        if(!openingCounter&&escapeContact(w,target,contacts))return;
         double health=p.getHealth()/Math.max(1,p.getMaxHealth());
         if(health<.7&&p.getFoodData().getFoodLevel()<20&&safeToEat(w)){
             if(w.healingOperation==null)w.actor.stop(w.token());
@@ -100,6 +102,8 @@ final class CombatSkill {
         if(CombatEquipmentAdapter.execute(w,target)){phase(w,"ADAPTED_WEAPON");return;}
         double distance=p.distanceTo(target);boolean visible=p.hasLineOfSight(target);
         var actual=NativeCombatStates.read(target,p);
+        double enemyReach=actual.attacks().stream().filter(a->a.kind().equals("MELEE")).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
+        withdrawal=Math.max(withdrawal,enemyReach+p.getBbWidth()/2+target.getBbWidth()/2+1);
         boolean haveBow=w.count(Items.BOW)>0&&(w.count(Items.ARROW)>0||p.hasInfiniteMaterials());
         boolean meleeAvailable=false;for(int slot=0;slot<36;slot++){var held=p.getInventory().getItem(slot);if(held.is(ItemTags.SWORDS)||held.is(ItemTags.AXES)){meleeAvailable=true;break;}}
         boolean stalled=w.lastAttackAt>=0&&w.tick()-w.lastAttackAt>120;
@@ -117,6 +121,22 @@ final class CombatSkill {
         double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);
         boolean ready=p.getAttackStrengthScale(.5f)>=.95f;
         boolean inReach=p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)&&visible;
+        int opening=actual.openingTicks(p.level().getGameTime());
+        double speed=p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*(p.getFoodData().getFoodLevel()>6?2.8:2.1);
+        int closing=CombatOpening.closingTicks(distance,reach,speed);
+        int ownCooldown=(int)Math.ceil((1-p.getAttackStrengthScale(.5f))*20/Math.max(.1,p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED)));
+        boolean counter=CombatOpening.canCounter(opening,closing,ownCooldown,w.combat.incoming(w));
+        // A distant archer's reload can also buy a short burst of progress between volleys.
+        boolean advanceBetweenShots=actual.ranged()&&opening>=10&&ownCooldown<opening-4&&health>.45&&!w.combat.incoming(w);
+        if(!inReach&&visible&&(counter||advanceBetweenShots)&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
+            if(!w.tactic.equals("COUNTER_APPROACH")){w.session.add("counterOpenings",1);if(actual.meleeRestricted())w.session.add("counterStunOpenings",1);else w.session.add("counterCooldownOpenings",1);}
+            phase(w,"COUNTER_APPROACH");w.sprintApproach=true;
+            move(w,w.positioning.choose(w,"COUNTER",Math.max(1,reach-.2)),target,false);
+            if(counter&&distance>reach+1&&opening>closing+8&&w.tick()-w.lastCounterJump>=20&&w.positioning.jumpSafe(w)&&p.isSprinting()){
+                w.actor.jump(w.token());w.lastCounterJump=w.tick();w.session.add("counterJumpAttempts",1);
+            }
+            return;
+        }
         boolean combo=rule.strategy()==CombatPolicy.Strategy.MELEE_COMBO||rule.strategy()==CombatPolicy.Strategy.AUTO&&w.combat.threats.size()==1&&health>.5;
         boolean knockedAway=w.tick()-w.lastMeleeHitTick<24&&target.getUUID().equals(w.lastMeleeHitTarget)&&actual.velocity().dot(target.position().subtract(p.position()))>.01;
         if(combo&&!ready){
@@ -153,6 +173,13 @@ final class CombatSkill {
         }
     }
     /** Actual health damage plus continuing native melee contact outranks ordinary pursuit and equipment choice. */
+    private static boolean counterBeforeEscape(SkillWork w,LivingEntity target,int contacts){
+        var p=w.player();if(target==null||contacts>1||p.getHealth()<p.getMaxHealth()*.5||p.getAttackStrengthScale(.5f)<.95f||w.session.spec().combat().strategy()==CombatPolicy.Strategy.DISENGAGE)return false;
+        var actual=NativeCombatStates.read(target,p);double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);
+        double speed=p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)/(p.isSprinting()?1.3:1)*(p.getFoodData().getFoodLevel()>6?2.8:2.1);
+        return CombatOpening.canCounter(actual.openingTicks(p.level().getGameTime()),CombatOpening.closingTicks(p.distanceTo(target),reach,speed),0,w.combat.incoming(w));
+    }
+    /** Actual damage still forces withdrawal whenever there is no verified counterattack window. */
     private static boolean escapeContact(SkillWork w,LivingEntity target,int contacts){
         if(contacts>0){if(w.contactSince<0)w.contactSince=w.tick();}else w.contactSince=-1;
         if(!w.contactEscape&&contacts>0&&w.tick()-w.contactSince>=1&&w.tick()-w.lastContactDamage<=20){

@@ -13,6 +13,7 @@ public interface SkillActor {
     boolean current();boolean inputReady();
     String move(UUID session,Vec3 destination);void aim(UUID session,Vec3 target);
     void sprint(UUID session,boolean enabled);
+    void jump(UUID session);
     boolean select(UUID session,int slot);
     boolean equipOffhand(UUID session,int slot);
     void breakBlock(UUID session,UUID operation,BlockPos target);

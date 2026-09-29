@@ -33,6 +33,8 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private final TextElement status=label(""),heading=label("DivZero");private final TextArea composer=new TextArea();private final TextField search=new TextField();
     private final Button decisions=button(NativeDecisionPanel.label(),()->NativeDecisionPanel.open(this));
     private final Map<String,MessageRow> rows=new LinkedHashMap<>();private final Map<String,Long> loading=new HashMap<>();
+    private final Map<String,Button> conversationButtons=new LinkedHashMap<>();private final Map<String,String> conversationTitles=new LinkedHashMap<>();
+    private long messagesGeneration=-1,listGeneration=-1;
     private PanelSection pendingSection;private final UUID context=UUID.randomUUID();private String page="chat",agentSignature="";private long nextMessages,nextList;private boolean messagesBusy,listBusy,writing;private long nextBefore,listBefore;private int fileOffset;private float pinPixel=-1,anchorOffset;private UIElement anchor;private boolean pinBottom;private int restoreScrollFrames;private long nextLayoutSave;
     private record MessageRow(long sequence,UIElement root,TextElement text,TextElement thinking,Button thinkingButton,MessageActions actions){}
     private NativeWorkspaceScreen(){this(new UIElement());}
@@ -67,7 +69,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     boolean revealWindow(String id){var window=windows.get(id);if(window==null||window.closed())return false;window.reveal();return true;}
     String agentName(String id){return knownAgents.getOrDefault(id,t("AI 玩家"));}
     void rememberAgent(String id,String name){knownAgents.put(id,name);}
-    void conversationWith(String id){if(!knownAgents.containsKey(id))knownAgents.put(id,"AI");selectAgent(id);if(chatWindow!=null)chatWindow.reveal();}
+    void conversationWith(String id){if(!knownAgents.containsKey(id))knownAgents.put(id,"AI");if(!id.equals(model.agent))selectAgent(id);showChat();list();}
 
     public static void openSection(PanelSection section){open();active.pendingSection=section;}
     public static void open(){
@@ -104,6 +106,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private void selectAgent(String id){selectAgent(id,true);}
     private void selectAgent(String id,boolean bringChatForward){saveDraft();releaseConversationFocus();model.agent=id;model.conversation="";model.selected=null;model.generation++;listBefore=0;rows.clear();history.clearAllScrollViewChildren();drawAgents();composer.setValue(draftText().split("\n",-1),false);heading.setText(Component.literal(t("选择或新建对话")));if(bringChatForward||chatWindow==null||chatWindow.closed())showChat();list();}
     private void showChat(){
+        page="chat";nextMessages=0;
         if(chatWindow!=null&&!chatWindow.closed()){chatWindow.reveal();return;}
         page="chat";chatWindow=window("chat",t("对话"),720,500);chatWindow.body.clearAllChildren();var body=row();body.getLayout().flex(1);chatWindow.body.addChild(body);
         directory.clearAllChildren();directory.getLayout().width(150).heightPercent(100).paddingRight(8);body.addChild(directory);directory.addChild(NativeUiTheme.text(t("AI 与会话"),NativeUiTheme.MUTED,8));agentChoice.getLayout().height(25).widthPercent(100);directory.addChild(agentChoice);
@@ -128,15 +131,19 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     }
     private void renameConversation(){if(model.selected==null)return;Dialog.stringEditorDialog(t("重命名"),model.selected.get("title").getAsString(),value->!value.isBlank()&&value.length()<=128,value->write("rename",Map.of("title",value),state->{model.selected=state;heading.setText(Component.literal(state.get("title").getAsString()));list();})).show(root);}
 
-    Map<String,Object> smokeState(){if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return Map.of("agents",model.agents.size(),"agent",model.agent,"conversation",model.conversation,"selected",model.selected==null?"":model.selected.get("title").getAsString(),"draft",String.join("\n",composer.getValue()),"messageRows",rows.size(),"bodyChars",rows.values().stream().mapToInt(row->row.text.getText().getString().length()).sum(),"visibleRows",rows.values().stream().filter(row->row.root.getSizeHeight()>0&&row.text.getSizeHeight()>0).count());}
+    Map<String,Object> smokeState(){if(!Boolean.getBoolean("mineagent.nativeUiSmoke")&&!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return Map.of("agents",model.agents.size(),"agent",model.agent,"conversation",model.conversation,"selected",model.selected==null?"":model.selected.get("title").getAsString(),"draft",String.join("\n",composer.getValue()),"messageRows",rows.size(),"bodyChars",rows.values().stream().mapToInt(row->row.text.getText().getString().length()).sum(),"visibleRows",rows.values().stream().filter(row->row.root.getSizeHeight()>0&&row.text.getSizeHeight()>0).count());}
     Map<String,Object> smokeIme(){
-        if(!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");if(!Minecraft.getInstance().isWindowActive())return Map.of("status","SKIPPED_WINDOW_NOT_ACTIVE");
+        // The skill fixture also exercises the actual conversation selection widgets.
+        if(!Boolean.getBoolean("mineagent.nativeUiSmoke")&&!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");if(!Minecraft.getInstance().isWindowActive())return Map.of("status","SKIPPED_WINDOW_NOT_ACTIVE");
         String original=String.join("\n",composer.getValue());composer.setValue(new String[]{""},false);modularUI.requestFocus(composer);
         if(!preeditUpdated(new net.minecraft.client.input.PreeditEvent("拼",1,List.of("拼"),0))||!nativeComposing()||!String.join("\n",composer.getValue()).isEmpty())throw new IllegalStateException("NATIVE_PREEDIT_INSERTED_TEXT");
         keyPressed(new net.minecraft.client.input.KeyEvent(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER,0,0));if(!String.join("\n",composer.getValue()).isEmpty())throw new IllegalStateException("NATIVE_PREEDIT_ENTER_INSERTED");preeditUpdated(null);charTyped(new net.minecraft.client.input.CharacterEvent('测'));if(!String.join("\n",composer.getValue()).equals("测"))throw new IllegalStateException("NATIVE_COMMIT_NOT_EXACTLY_ONCE");
         composer.setValue(original.split("\n",-1),false);saveDraft();modularUI.requestFocus(null);return Map.of("status","PASS","kind","NATIVE_PREEDIT_CALLBACK_NOT_OS_IME_QUALITY","preeditSeparate",true,"commitOnce",true);
     }
     private ScrollerView conversationList;
+    String smokeHistory(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return rows.values().stream().map(row->row.text.getText().getString()).collect(java.util.stream.Collectors.joining("\n"));}
+    void smokeDraft(String value){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");composer.setValue(value.split("\n",-1),false);saveDraft();}
+    UIElement smokeRoot(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return root;}
     private String draftKey(){return model.agent+"/"+model.conversation;}
     private String draftText(){return model.drafts.getOrDefault(draftKey(),model.drafts.getOrDefault("legacy/"+model.conversation,""));}
     private void saveDraft(){if(!model.conversation.isEmpty()){model.drafts.put(draftKey(),String.join("\n",composer.getValue()));model.drafts.remove("legacy/"+model.conversation);saveAt=System.currentTimeMillis()+700;}}
@@ -169,14 +176,14 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         if(writing)return;writing=true;long generation=model.generation;request(true,kind,extra).whenComplete((state,error)->{writing=false;if(!current()||generation!=model.generation)return;if(error!=null){notice(error.getMessage());return;}done.accept(state);nextMessages=0;});
     }
     private void list(){
-        if(!current()||!page.equals("chat")||model.agent.isEmpty()||!NativeWorkspaceConnection.ready()||listBusy)return;
-        listBusy=true;long generation=model.generation;request(false,"list",Map.of("state",model.filter,"search",search.getValue(),"before",Long.toString(listBefore))).whenComplete((state,error)->{
-            listBusy=false;if(!current())return;if(generation!=model.generation){nextList=System.currentTimeMillis()+100;return;}if(!page.equals("chat"))return;if(error!=null){notice(error.getMessage());return;}
-            conversationList.clearAllScrollViewChildren();for(var item:state.getAsJsonArray("conversations")){var conversation=item.getAsJsonObject();String id=conversation.get("conversationId").getAsString();var select=button((id.equals(model.conversation)?"● ":"")+conversation.get("title").getAsString(),()->select(id));select.getLayout().widthPercent(100);conversationList.addScrollViewChild(select);}
+        if(!current()||!page.equals("chat")||model.agent.isEmpty()||!NativeWorkspaceConnection.ready()||listBusy&&listGeneration==model.generation)return;
+        listBusy=true;long generation=model.generation;listGeneration=generation;request(false,"list",Map.of("state",model.filter,"search",search.getValue(),"before",Long.toString(listBefore))).whenComplete((state,error)->{
+            if(listGeneration==generation)listBusy=false;if(!current())return;if(generation!=model.generation){nextList=System.currentTimeMillis()+100;return;}if(!page.equals("chat"))return;if(error!=null){notice(error.getMessage());return;}
+            conversationButtons.clear();conversationTitles.clear();conversationList.clearAllScrollViewChildren();for(var item:state.getAsJsonArray("conversations")){var conversation=item.getAsJsonObject();String id=conversation.get("conversationId").getAsString(),title=conversation.get("title").getAsString();var select=button((id.equals(model.conversation)?"● ":"")+title,()->select(id));select.setId("conversation-"+id);select.getLayout().widthPercent(100);conversationButtons.put(id,select);conversationTitles.put(id,title);conversationList.addScrollViewChild(select);}
             long next=state.get("nextBefore").getAsLong();if(next>0)conversationList.addScrollViewChild(button(t("下一页"),()->{listBefore=next;list();}));
         });
     }
-    private void select(String id){saveDraft();releaseConversationFocus();model.conversation=id;model.generation++;rows.clear();loading.clear();history.clearAllScrollViewChildren();pinBottom=true;anchor=null;pinPixel=-1;model.selected=null;composer.setValue(draftText().split("\n",-1),false);nextMessages=0;messages(0);focusConversation();}
+    private void select(String id){saveDraft();releaseConversationFocus();model.conversation=id;model.generation++;rows.clear();loading.clear();history.clearAllScrollViewChildren();pinBottom=true;anchor=null;pinPixel=-1;model.selected=null;nextBefore=0;heading.setText(Component.literal(conversationTitles.getOrDefault(id,t("读取对话…"))));for(var entry:conversationButtons.entrySet())entry.getValue().setText(Component.literal((entry.getKey().equals(id)?"● ":"")+conversationTitles.get(entry.getKey())));composer.setValue(draftText().split("\n",-1),false);nextMessages=0;messages(0);focusConversation();}
     private void focusConversation(){
         if(!current()||model.conversation.isEmpty()||!NativeWorkspaceConnection.ready())return;
         String agent=model.agent,conversation=model.conversation;long generation=model.generation;
@@ -200,9 +207,9 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
 
     private void cancel(){if(model.selected==null)return;String target=model.selected.has("activeOperation")?model.selected.get("activeOperation").getAsString():"";if(!target.isEmpty())write("cancel",Map.of("targetOperation",target),state->model.selected=state);}
     private void messages(long before){
-        if(!current()||!NativeWorkspaceConnection.ready()||model.conversation.isEmpty()||messagesBusy||!page.equals("chat"))return;messagesBusy=true;long generation=model.generation;String conversation=model.conversation;
+        if(!current()||!NativeWorkspaceConnection.ready()||model.conversation.isEmpty()||messagesBusy&&messagesGeneration==model.generation||!page.equals("chat"))return;messagesBusy=true;long generation=model.generation;messagesGeneration=generation;String conversation=model.conversation;
         request(false,"messages",Map.of("before",Long.toString(before))).whenComplete((state,error)->{
-            messagesBusy=false;if(!current()||generation!=model.generation||!conversation.equals(model.conversation))return;if(error!=null){notice(error.getMessage());return;}
+            if(messagesGeneration==generation)messagesBusy=false;if(!current()||generation!=model.generation||!conversation.equals(model.conversation))return;if(error!=null){notice(error.getMessage());return;}
             model.selected=state.getAsJsonObject("conversation");heading.setText(Component.literal(model.selected.get("title").getAsString()));nextBefore=state.get("nextBefore").getAsLong();boolean changed=false;
             var thinking=new HashMap<String,JsonObject>();if(state.has("thinking"))for(var item:state.getAsJsonObject("thinking").entrySet()){var q=item.getValue().getAsJsonObject();thinking.put(item.getKey(),q);}
             for(var item:state.getAsJsonArray("messages")){
