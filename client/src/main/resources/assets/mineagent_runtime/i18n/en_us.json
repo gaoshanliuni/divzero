@@ -3159,5 +3159,6 @@
   "胸甲": "Chestplate",
   "头盔": "Helmet",
   "副手": "Offhand",
-  "数量": "Amount"
+  "数量": "Amount",
+  "移出远程火力，再寻找接近机会": "Reposition out of ranged fire, then look for an opening"
 }

@@ -23,6 +23,7 @@ public final class MineAgentMovementController {
     public boolean stopIfCurrent(long command){if(command!=commandRevision)return false;intent.stop("CANCELLED");return true;}
     public void movePreciselyTo(Vec3 target){start(target,.2);}
     public boolean followCheckedRoute(MineAgentPlayer player,List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> route){if(!intent.followCheckedRoute(player,route))return false;commandRevision++;return true;}
+    public void tacticalJump(MineAgentPlayer player){intent.tacticalJump(player);}
     public void moveTo(Vec3 target){start(target,.8);}
     private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=0;traversedFloors.clear();}
     /** Tracking a moving entity does not replace the command or discard a still-useful route. */

@@ -17,10 +17,11 @@ final class CombatPositioning {
     boolean longRetreat(){return selectedDistance>3;}
     Vec3 choose(SkillWork w,String intent,double desiredDistance){
         exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE","SPACE").contains(intent);
+        var actor=w.player();boolean jumping=w.tick()-w.lastCounterJump<=20&&!actor.onGround()&&actor.getY()-w.counterJumpY>=0&&actor.getY()-w.counterJumpY<1.6;var feet=jumping?new Vec3(actor.getX(),w.counterJumpY,actor.getZ()):actor.position();
         if(waypoint!=null){
-            var p=w.player();boolean reached=(p.position().subtract(waypoint).horizontalDistanceSqr()<.10||heading!=null&&p.position().subtract(waypoint).dot(heading)>.12)&&Math.abs(p.getY()-waypoint.y)<.5;
+            var p=w.player();boolean reached=(p.position().subtract(waypoint).horizontalDistanceSqr()<.10||heading!=null&&p.position().subtract(waypoint).dot(heading)>.12)&&Math.abs(feet.y-waypoint.y)<.5;
             boolean targetMoved=w.combat.selected!=null&&targetAtWaypoint!=null&&w.combat.selected.position().distanceToSqr(targetAtWaypoint)>4;
-            evaluator.beginSlice();var current=evaluator.closest(p.position());
+            evaluator.beginSlice();var current=evaluator.closest(feet);
             boolean traversable=current!=null&&(current.equals(waypointNode)||evaluator.neighbors(current).stream().anyMatch(edge->edge.to().equals(waypointNode)));
             boolean safe=traversable&&edgeExposure(w,waypointNode)==0&&w.combat.risk(w,waypoint)<=Math.max(waypointRisk+2,w.combat.risk(w,p.position())+1);
             if(!reached&&intent.equals(waypointPurpose)&&!targetMoved&&w.tick()-waypointAt<24&&safe)return waypoint;
@@ -28,7 +29,7 @@ final class CombatPositioning {
             waypoint=null;origin=null;chosenRoute=List.of();
         }
         if(origin==null||w.tick()-started>8||origin.distanceToSqr(w.player().position())>1||!purpose.equals(intent)){
-            evaluator=new NativeTraversalEvaluator(w.player());origin=w.player().position();started=w.tick();purpose=intent;selected=null;open.clear();seen.clear();candidates.clear();var node=evaluator.closest(origin);if(node!=null){seen.add(node);open.add(new Route(node,List.of(),w.combat.risk(w,origin)));}
+            evaluator=new NativeTraversalEvaluator(w.player());origin=feet;started=w.tick();purpose=intent;selected=null;open.clear();seen.clear();candidates.clear();var node=evaluator.closest(origin);if(node!=null){seen.add(node);open.add(new Route(node,List.of(),w.combat.risk(w,origin)));}
         }
         var budget=NativeNavigationBudget.get(w.runtime.server);int allowed=budget.claim(w.token(),w.tick());evaluator.beginSlice();
         for(int i=0;i<allowed&&!open.isEmpty()&&budget.timeAvailable();i++){

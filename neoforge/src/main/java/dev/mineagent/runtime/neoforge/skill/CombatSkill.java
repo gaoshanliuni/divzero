@@ -70,15 +70,20 @@ final class CombatSkill {
     private static void observeRelease(SkillWork w){
         if(w.combatStage==2&&!w.shotLogged&&w.count(Items.ARROW)<w.combatAmmo){w.shotLogged=true;w.session.add("arrowsReleased",1);log(w,"RELEASE_OBSERVED");}
     }
-    private static void move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
-        if(next==null){w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return;}
+    private static boolean move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
+        if(next==null){w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return false;}
         boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.contactEscape);
         var heading=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());var look=w.player().getLookAngle();boolean sprintClosing=w.sprintApproach&&!escape&&w.tick()-w.lastAttackAt>=2&&heading.lengthSqr()>.001&&new Vec3(look.x,0,look.z).normalize().dot(heading.normalize())>.75;
         if((sprintEscape||sprintClosing)&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
         w.actor.sprint(w.token(),sprintEscape||sprintClosing);
         if(target!=null&&!sprintEscape)w.actor.aim(w.token(),target.getEyePosition());
         else {var direction=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());if(direction.lengthSqr()>.001)w.actor.aim(w.token(),w.player().getEyePosition().add(direction.normalize().scale(4)));}
-        if(w.actor.moveTactically(w.token(),w.positioning.route()).equals("ROUTE_CHANGED")){w.actor.haltMotion(w.token());w.positioning.reset();}
+        if(w.actor.moveTactically(w.token(),w.positioning.route()).equals("ROUTE_CHANGED")){w.actor.haltMotion(w.token());w.positioning.reset();return false;}return true;
+    }
+    private static void baitRanged(SkillWork w,LivingEntity target,NativeCombatStates.Snapshot actual){
+        double range=actual.attacks().stream().filter(a->a.kind().equals("RANGED")).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(12);
+        w.sprintApproach=false;phase(w,"RANGED_BAIT");w.session.add("rangedRepositions",1);
+        move(w,w.positioning.choose(w,"RETREAT",range+3),target,true);
     }
     private static void fight(SkillWork w,LivingEntity target){
         var p=w.player();var rule=w.session.spec().combat();w.sprintApproach=false;
@@ -132,7 +137,7 @@ final class CombatSkill {
         if(!inReach&&visible&&(counter||advanceBetweenShots)&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
             if(!w.tactic.equals("COUNTER_APPROACH")){w.session.add("counterOpenings",1);if(actual.meleeRestricted())w.session.add("counterStunOpenings",1);else w.session.add("counterCooldownOpenings",1);}
             phase(w,"COUNTER_APPROACH");w.sprintApproach=true;
-            move(w,w.positioning.choose(w,"COUNTER",Math.max(1,reach-.2)),target,false);
+            if(!move(w,w.positioning.choose(w,"COUNTER",Math.max(1,reach-.2)),target,false)){if(!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;}
             if(counter&&distance>reach+1&&opening>closing+8&&w.tick()-w.lastCounterJump>=20&&w.positioning.jumpSafe(w)&&p.isSprinting()){
                 w.counterJumpY=p.getY();w.actor.jump(w.token());w.lastCounterJump=w.tick();w.session.add("counterJumpAttempts",1);
             }
@@ -158,7 +163,7 @@ final class CombatSkill {
         if(!inReach){
             phase(w,"MELEE_APPROACH");
             if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);return;}
-            w.sprintApproach=true;move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2)),target,false);return;
+            w.sprintApproach=true;if(!move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2)),target,false)&&!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;
         }
         if(!ready){phase(w,"COOLDOWN_GUARD");shield(w,target);return;}
         Vec3 exit=w.positioning.choose(w,"RETREAT",withdrawal);

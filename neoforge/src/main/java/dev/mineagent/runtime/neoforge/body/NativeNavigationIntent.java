@@ -12,6 +12,8 @@ public final class NativeNavigationIntent {
     private Vec3 target,plannedTarget,lastPosition;private Object level;private NativeTraversalEvaluator evaluator;private SurfacePathfinder.Search search;
     private List<PathStep> steps=List.of();private int index,stuck,searchStarted,plans,expanded;private double tolerance=.8;private String status="IDLE",reason="";
     private boolean checkedRoute;
+    private int tacticalJumpUntil;private double tacticalJumpFloor;private boolean tacticalJumpAirborne;
+    public void tacticalJump(ServerPlayer player){if(checkedRoute){tacticalJumpUntil=player.level().getServer().getTickCount()+20;tacticalJumpFloor=player.getY();tacticalJumpAirborne=false;}}
     /** Reuse the tactical search's typed route; execution still rechecks each native transition. */
     public boolean followCheckedRoute(ServerPlayer p,List<PathStep> route){
         if(route.isEmpty()||NativeTraversalEvaluator.point(route.getFirst().from()).distanceToSqr(p.position())>16)return false;
@@ -22,7 +24,7 @@ public final class NativeNavigationIntent {
     }
     public void start(Vec3 target,double tolerance){if(target==null||!Double.isFinite(target.x)||!Double.isFinite(target.y)||!Double.isFinite(target.z))throw new IllegalArgumentException("NAVIGATION_TARGET");checkedRoute=false;this.target=target;this.tolerance=tolerance;plannedTarget=null;lastPosition=null;steps=List.of();index=stuck=plans=expanded=0;search=null;level=null;retry.reset(0);status="MOVING";reason="";}
     public void update(Vec3 at){if(target==null){start(at,tolerance);return;}if(!Double.isFinite(at.x)||!Double.isFinite(at.y)||!Double.isFinite(at.z))throw new IllegalArgumentException("NAVIGATION_TARGET");target=at;}
-    public void stop(String status){checkedRoute=false;target=null;steps=List.of();search=null;index=0;this.status=status;}
+    public void stop(String status){checkedRoute=false;tacticalJumpUntil=0;target=null;steps=List.of();search=null;index=0;this.status=status;}
     public Optional<Vec3> target(){return Optional.ofNullable(target);}
     public String status(){return status;}
     public String reason(){return reason;}
@@ -32,12 +34,14 @@ public final class NativeNavigationIntent {
     public Map<String,Object> evidence(){return Map.of("plans",plans,"expanded",expanded,"reason",reason,"nextSearchTick",retry.next(),"failedSearches",retry.failures());}
     public PathStep tick(ServerPlayer p){
         if(target==null)return null;int tick=p.level().getServer().getTickCount();
+        if(!p.onGround()&&p.getY()>tacticalJumpFloor+.1)tacticalJumpAirborne=true;
+        if(tacticalJumpAirborne&&p.onGround()||tick>tacticalJumpUntil)tacticalJumpUntil=0;
         if(level!=null&&level!=p.level()){stop("DIMENSION_CHANGED");return null;}level=p.level();
         var offset=target.subtract(p.position());if(offset.horizontalDistanceSqr()<tolerance*tolerance&&Math.abs(offset.y)<.26){stop("ARRIVED");return null;}
         if(lastPosition==null||lastPosition.distanceToSqr(p.position())>=.01){lastPosition=p.position();stuck=0;}else if(!remaining().isEmpty())stuck++;
         boolean moved=plannedTarget!=null&&plannedTarget.distanceToSqr(target)>2.25;
         if(moved||stuck>=30){search=null;steps=List.of();index=0;if(stuck>=30){reason="TEMPORARY_CONGESTION";retry.waitUntil(tick+10);}stuck=0;}
-        while(index<steps.size()){var edge=steps.get(index);var next=waypoint(edge);double dy=next.y-p.getY();boolean vertical=edge.action()==Action.CLIMB?(edge.to().y()>edge.from().y()?dy<=.02&&dy> -1.25:dy>= -.02&&dy<1.25):Math.abs(dy)<.26;if(next.subtract(p.position()).horizontalDistanceSqr()<(checkedRoute&&index<steps.size()-1?.1:Math.min(.1,tolerance*tolerance))&&vertical)index++;else break;}
+        while(index<steps.size()){var edge=steps.get(index);var next=waypoint(edge);boolean flatJump=tacticalJumpUntil>0&&Math.abs(next.y-tacticalJumpFloor)<.1&&Math.abs(edge.from().y()-edge.to().y())<.1&&p.getY()-tacticalJumpFloor<1.6;double dy=next.y-(flatJump?tacticalJumpFloor:p.getY());boolean vertical=edge.action()==Action.CLIMB?(edge.to().y()>edge.from().y()?dy<=.02&&dy> -1.25:dy>= -.02&&dy<1.25):Math.abs(dy)<.26;var direction=next.subtract(NativeTraversalEvaluator.point(edge.from()));boolean passed=flatJump&&index<steps.size()-1&&p.position().subtract(next).dot(direction)>.02;if((passed||next.subtract(p.position()).horizontalDistanceSqr()<(checkedRoute&&index<steps.size()-1?.1:Math.min(.1,tolerance*tolerance)))&&vertical)index++;else break;}
         if(index>=steps.size()&&search==null&&retry.ready(tick)){
             evaluator=new NativeTraversalEvaluator(p);Node start=evaluator.closest(p.position());Vec3 routeTarget=target;boolean segment=target.distanceToSqr(p.position())>16*16;if(segment)routeTarget=p.position().add(target.subtract(p.position()).normalize().scale(16));Node goal=evaluator.closest(routeTarget);plans++;plannedTarget=target;
             if(segment&&goal==null){for(int radius=1;radius<=3&&goal==null;radius++)for(int dx=-radius;dx<=radius&&goal==null;dx++)for(int dz=-radius;dz<=radius;dz++){var candidate=evaluator.closest(routeTarget.add(dx,0,dz));if(candidate!=null&&NativeTraversalEvaluator.point(candidate).distanceToSqr(p.position())>4){goal=candidate;break;}}}
