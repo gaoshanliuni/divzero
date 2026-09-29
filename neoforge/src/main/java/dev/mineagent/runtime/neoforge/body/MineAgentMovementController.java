@@ -1,186 +1,50 @@
 package dev.mineagent.runtime.neoforge.body;
 
-import dev.mineagent.runtime.agent.navigation.GroundPathfinder;
-import dev.mineagent.runtime.agent.navigation.GridPos;
-import net.minecraft.commands.arguments.EntityAnchorArgument;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.CollisionContext;
+import dev.mineagent.runtime.core.task.SurfacePathfinder.Action;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
+/** Executes typed navigation steps on the existing ServerPlayer, once per native body tick. */
 public final class MineAgentMovementController {
-    private static final int MAX_EXPANDED_NODES = 8_192;
-    private static final int REPLAN_INTERVAL_TICKS = 20;
-
-    private Vec3 target;
-    private Vec3 plannedTarget;
-    private Vec3 lastProgressPosition;
-    private List<Vec3> route = List.of();
-    private int routeIndex;
-    private int ticksUntilReplan;
-    private int stuckTicks;
-    private int failedPlans;
-    private long commandRevision;
-    private String outcome="IDLE";
-    private int executedSteps,openedDoors,openedGates;private final java.util.Set<Double> traversedFloors=new java.util.LinkedHashSet<>();
+    private final NativeNavigationIntent intent=new NativeNavigationIntent();
+    private long commandRevision;private int lastTick=Integer.MIN_VALUE;
+    private int executedSteps,openedDoors,openedGates,crouchingSteps,climbingSteps,swimmingSteps;
+    private boolean manualSneak;private final Set<Double> traversedFloors=new LinkedHashSet<>();
     public void recordOpened(boolean gate){if(gate)openedGates++;else openedDoors++;}
-    public java.util.Map<String,Object> evidence(){return java.util.Map.of("steps",executedSteps,"crouchingSteps",crouchingSteps,"openedDoors",openedDoors,"openedGates",openedGates,"observedGroundHeights",java.util.List.copyOf(traversedFloors));}
-    private boolean manualSneak;
-    private int crouchingSteps;
+    public Map<String,Object> evidence(){var out=new LinkedHashMap<String,Object>();out.put("steps",executedSteps);out.put("crouchingSteps",crouchingSteps);out.put("openedDoors",openedDoors);out.put("openedGates",openedGates);out.put("observedGroundHeights",List.copyOf(traversedFloors));out.put("climbingSteps",climbingSteps);out.put("swimmingSteps",swimmingSteps);out.put("search",intent.evidence());return out;}
     public boolean manualSneak(){return manualSneak;}
-    public void setSneaking(MineAgentPlayer player,boolean enabled){manualSneak=enabled;player.applySneaking(enabled||NativeSurfaceNavigation.requiresSneaking(player,player.position()));}
-    private double arrivalDistanceSqr=.64;
-    public double arrivalTolerance(){return Math.sqrt(arrivalDistanceSqr);}
-    public void movePreciselyTo(Vec3 target){moveTo(target);arrivalDistanceSqr=.04;}
+    public void setSneaking(MineAgentPlayer p,boolean value){manualSneak=value;p.applySneaking(value||NativeSurfaceNavigation.requiresSneaking(p,p.position()));}
+    public double arrivalTolerance(){return intent.tolerance();}
     public long commandRevision(){return commandRevision;}
-    public String outcome(){return outcome;}
+    public String outcome(){return intent.status();}
     public int executedSteps(){return executedSteps;}
-    public boolean stopIfCurrent(long command){if(command!=commandRevision)return false;finish("CANCELLED");return true;}
-
-    public void moveTo(Vec3 target) {
-        if (target == null || !Double.isFinite(target.x) || !Double.isFinite(target.y)
-                || !Double.isFinite(target.z)) {
-            throw new IllegalArgumentException("invalid navigation target");
-        }
-        this.target = target;
-        arrivalDistanceSqr=.64;
-        commandRevision++;outcome="MOVING";executedSteps=0;crouchingSteps=0;openedDoors=openedGates=0;traversedFloors.clear();route=List.of();routeIndex=0;failedPlans=0;stuckTicks=0;lastProgressPosition=null;
-        this.ticksUntilReplan = 0;
-    }
-
-    public void stop() {
-        manualSneak=false;commandRevision++;finish("CANCELLED");
-    }
-    private void finish(String status){
-        outcome=status;
-        target = null;
-        plannedTarget = null;
-        route = List.of();
-        routeIndex = 0;
-        stuckTicks = 0;
-        failedPlans = 0;
-    }
-
-    public Optional<Vec3> target() {
-        return Optional.ofNullable(target);
-    }
-
-    public String backendName() {
-        return baritonePresent() ? "builtin-fallback(baritone-incompatible-server-player)" : "builtin";
-    }
-
-    public void tick(MineAgentPlayer player) {
-        player.applySneaking(player.canAct()&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(player,player.position())));
-        if (target == null || !player.canAct()) {
-            return;
-        }
-        Vec3 offset = target.subtract(player.position());
-        if (offset.horizontalDistanceSqr() < arrivalDistanceSqr && Math.abs(offset.y) < .26) {
-            finish("ARRIVED");
-            return;
-        }
-        if(player.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(player.getY()*16)/16);
-        updateProgress(player);
-        ticksUntilReplan--;
-        if ((route.isEmpty() || routeIndex >= route.size() || ticksUntilReplan <= 0
-                || plannedTarget == null || plannedTarget.distanceToSqr(target) > 4.0 || stuckTicks >= 20)
-                && (player.onGround() || player.isInWater())) {
-            plan(player);
-        }
-        if (route.isEmpty() || routeIndex >= route.size()) {
-            return;
-        }
-        Vec3 waypoint = route.get(routeIndex);
-        Vec3 waypointCenter = waypoint;
-        Vec3 waypointOffset = waypointCenter.subtract(player.position());
-        if (waypointOffset.horizontalDistanceSqr() < (routeIndex==route.size()-1?Math.min(.16,arrivalDistanceSqr):.16) && Math.abs(waypointOffset.y) < .26) {
-            routeIndex++;
-            if (routeIndex >= route.size()) {
-                return;
-            }
-            waypoint = route.get(routeIndex);
-            waypointCenter = waypoint;
-            waypointOffset = waypointCenter.subtract(player.position());
-        }
-        if(!NativeSurfaceNavigation.openOnPath(player,waypointCenter)){finish("INTERACTION_BLOCKED");return;}
-        player.applySneaking(manualSneak||NativeSurfaceNavigation.requiresSneaking(player,waypointCenter));
-        player.lookAt(EntityAnchorArgument.Anchor.EYES, waypointCenter.add(0,player.getEyeHeight(),0));
-        Vec3 horizontal = new Vec3(waypointOffset.x, 0, waypointOffset.z);
-        if (waypointOffset.y > 0.65 && player.onGround()) {
-            player.jumpFromGround();
-        }
-        if (horizontal.lengthSqr() > 0.001) {
-            Vec3 step = horizontal.normalize().scale(player.isCrouching() ? 0.065 : player.isSprinting() ? 0.16 : 0.11);
-            player.move(MoverType.SELF, step);
-            executedSteps++;if(player.isCrouching())crouchingSteps++;
-        }
-    }
-
-    private void plan(MineAgentPlayer player) {
-        ticksUntilReplan = REPLAN_INTERVAL_TICKS;
-        stuckTicks = 0;
-        plannedTarget = target;
-        BlockPos start = player.blockPosition();
-        BlockPos goal = BlockPos.containing(target);
-        int distance = Math.abs(start.getX() - goal.getX()) + Math.abs(start.getY() - goal.getY())
-                + Math.abs(start.getZ() - goal.getZ());
-        if (distance > 128) {
-            Vec3 direction = target.subtract(player.position()).normalize().scale(128);
-            goal = BlockPos.containing(player.position().add(direction));
-        }
-        var path=NativeSurfaceNavigation.find(player,Vec3.atBottomCenterOf(goal),MAX_EXPANDED_NODES);
-        if(path.isEmpty()){route=List.of();routeIndex=0;if(++failedPlans>=3)finish("UNREACHABLE");return;}
-        failedPlans=0;route=path;routeIndex=route.size()==1&&arrivalDistanceSqr<.16?0:Math.min(1,route.size());
-        if(goal.getX()==(int)Math.floor(target.x)&&goal.getZ()==(int)Math.floor(target.z))target=new Vec3(target.x,route.getLast().y,target.z);
-    }
-
-    private void updateProgress(MineAgentPlayer player) {
-        Vec3 current = player.position();
-        if (lastProgressPosition == null || current.distanceToSqr(lastProgressPosition) >= 0.01) {
-            lastProgressPosition = current;
-            stuckTicks = 0;
-        } else {
-            stuckTicks++;
-        }
-    }
-
-    private static boolean walkable(net.minecraft.server.level.ServerLevel level, BlockPos foot) {
-        if(!bodyClear(level,foot))return false;
-        BlockPos support = foot.below();
-        return !level.getBlockState(support).getCollisionShape(level, support, CollisionContext.empty()).isEmpty()
-                || !level.getFluidState(foot).isEmpty();
-    }
-
-    private static boolean bodyClear(net.minecraft.server.level.ServerLevel level, BlockPos foot) {
-        if (!level.getChunkSource().hasChunk(foot.getX()>>4,foot.getZ()>>4)||!level.getWorldBorder().isWithinBounds(foot) || foot.getY() < level.getMinY()
-                || foot.getY() + 1 > level.getMaxY()) {
-            return false;
-        }
-        var emptyContext = CollisionContext.empty();
-        boolean feetClear = level.getBlockState(foot).getCollisionShape(level, foot, emptyContext).isEmpty();
-        BlockPos head = foot.above();
-        boolean headClear = level.getBlockState(head).getCollisionShape(level, head, emptyContext).isEmpty();
-        return feetClear && headClear;
-    }
-
-    private static GridPos grid(BlockPos position) {
-        return new GridPos(position.getX(), position.getY(), position.getZ());
-    }
-
-    private static BlockPos block(GridPos position) {
-        return new BlockPos(position.x(), position.y(), position.z());
-    }
-
-    private static boolean baritonePresent() {
-        try {
-            Class.forName("baritone.api.BaritoneAPI", false, MineAgentMovementController.class.getClassLoader());
-            return true;
-        } catch (LinkageError | ClassNotFoundException unavailable) {
-            return false;
-        }
+    public boolean stopIfCurrent(long command){if(command!=commandRevision)return false;intent.stop("CANCELLED");return true;}
+    public void movePreciselyTo(Vec3 target){start(target,.2);}
+    public void moveTo(Vec3 target){start(target,.8);}
+    private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=0;traversedFloors.clear();}
+    /** Tracking a moving entity does not replace the command or discard a still-useful route. */
+    public boolean updateTarget(long command,Vec3 target){if(command!=commandRevision)return false;intent.update(target);return true;}
+    public void stop(){manualSneak=false;commandRevision++;intent.stop("CANCELLED");}
+    public Optional<Vec3> target(){return intent.target();}
+    public String backendName(){return "builtin-surface-actions";}
+    public void tick(MineAgentPlayer p){
+        int tick=p.level().getServer().getTickCount();if(lastTick==tick)return;lastTick=tick;
+        p.applySneaking(p.canAct()&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
+        if(!p.canAct()||intent.target().isEmpty())return;
+        if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
+        var step=intent.tick(p);if(step==null)return;var waypoint=NativeTraversalEvaluator.point(step.to());var offset=waypoint.subtract(p.position());
+        if(!NativeSurfaceNavigation.openOnPath(p,waypoint)){intent.stop("INTERACTION_BLOCKED");return;}
+        boolean swim=step.action()==Action.SWIM||step.action()==Action.ENTER_WATER;
+        boolean climb=step.action()==Action.CLIMB;
+        p.applySneaking(!swim&&!climb&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
+        p.lookAlongPath(waypoint.add(0,p.getEyeHeight(),0));
+        if((step.action()==Action.JUMP||step.action()==Action.LEAVE_WATER)&&offset.y>.65&&p.onGround())p.jumpFromGround();
+        double speed=Math.max(.01,p.getAttributeValue(Attributes.MOVEMENT_SPEED))*(p.isCrouching()?.3:1.1);
+        var horizontal=new Vec3(offset.x,0,offset.z);if(horizontal.lengthSqr()>.001){p.move(MoverType.SELF,horizontal.normalize().scale(Math.min(speed,horizontal.length())));executedSteps++;if(p.isCrouching())crouchingSteps++;}
+        if(climb&&p.onClimbable()){p.setDeltaMovement(p.getDeltaMovement().x,Math.max(-.15,Math.min(.2,offset.y)),p.getDeltaMovement().z);p.move(MoverType.SELF,new Vec3(0,Math.max(-.1,Math.min(.12,offset.y)),0));climbingSteps++;}
+        if(swim&&p.isInWater()){p.setDeltaMovement(p.getDeltaMovement().x,0,p.getDeltaMovement().z);p.move(MoverType.SELF,new Vec3(0,Math.max(-.1,Math.min(.1,offset.y)),0));swimmingSteps++;}
+        if(step.action()==Action.LEAVE_WATER&&p.isInWater()&&offset.y>0)p.setDeltaMovement(p.getDeltaMovement().x,.25,p.getDeltaMovement().z);
     }
 }

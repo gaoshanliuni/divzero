@@ -43,6 +43,11 @@
       "bytes": 1553
     },
     {
+      "path": "agent/src/main/java/dev/mineagent/runtime/agent/body/BodyControlCoordinator.java",
+      "sha256": "f91e924549d911d3232b4edcf459102edaf2f9d8e49ff41de38f08e9aa96b534",
+      "bytes": 3046
+    },
+    {
       "path": "agent/src/main/java/dev/mineagent/runtime/agent/chunk/ChunkCoordinate.java",
       "sha256": "def8be97ad587052ac2fae040f837227b9e85f5c319c769c14ad7b75ebe1e8c1",
       "bytes": 352
@@ -126,6 +131,16 @@
       "path": "agent/src/main/java/dev/mineagent/runtime/agent/ui/UiPresentationVerification.java",
       "sha256": "dab8e831af4ebec4bd5c375ea8da345a035f4e2add17be8847986e0a719d2abe",
       "bytes": 4384
+    },
+    {
+      "path": "agent/src/test/java/dev/mineagent/runtime/agent/body/BehaviorArbiterTest.java",
+      "sha256": "06eb529463f0f8453850be509dda6d81f3414115e710204a5b967a2ceecedd5b",
+      "bytes": 1746
+    },
+    {
+      "path": "agent/src/test/java/dev/mineagent/runtime/agent/body/BodyControlCoordinatorTest.java",
+      "sha256": "660a7b64fac144671326ad716d49fb25bb60ba5ea1469e240eafa7438e13031e",
+      "bytes": 1388
     },
     {
       "path": "agent/src/test/java/dev/mineagent/runtime/agent/ui/UiAgentControllerTest.java",
@@ -2358,6 +2373,11 @@
       "bytes": 533
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/NavigationRetry.java",
+      "sha256": "6d63bece1b8250239e2f5b4f2e65ef9757287684657770fc26bf20b1ad68ea21",
+      "bytes": 608
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/ObservedPathfinder.java",
       "sha256": "059d3e67a19e117bb0e56393bcccf1fa1a98990e2a8bf993131058c822b55aeb",
       "bytes": 1847
@@ -2399,8 +2419,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SurfacePathfinder.java",
-      "sha256": "1bb49ec14760af5ec7dcb2c8da20d0b1495922c9b3becd9b6fc97f99d67a29fe",
-      "bytes": 1464
+      "sha256": "eab36c8a2b5a95803c4372737519dfea56a9f2a8252c9e5f463a215c73d87038",
+      "bytes": 4628
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/TaskAuthorityFence.java",
@@ -2868,6 +2888,11 @@
       "bytes": 3379
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/NavigationSearchTest.java",
+      "sha256": "574145c5c2a2372c5d793db0e5ad31c88be302f6b5c2e90d512e679498d930a7",
+      "bytes": 2144
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/ReusablePathPlanTest.java",
       "sha256": "dbf2c21a9f9d01001f4dd428b75b306220a3e0a054d5b3018641936c89f0ae6e",
       "bytes": 1229
@@ -2946,6 +2971,11 @@
       "path": "docs/NATIVE_UI_MIGRATION_STATUS.md",
       "sha256": "e8c55ab587565d68d1b142c3076353edff729ee345531a7da8a5c3dd6ed93f55",
       "bytes": 6194
+    },
+    {
+      "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
+      "sha256": "2e53271e8f10473cfb0a0e6ba63baf1320bfb6a15c351b3acc92327fabf55bdf",
+      "bytes": 2075
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3124,13 +3154,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentMovementController.java",
-      "sha256": "27ab8a9a714769b265217b6d36ca4b7dd7c7c0aa19dd1c278087b3feb92a59b6",
-      "bytes": 8861
+      "sha256": "d98e53c7a7d9548104d2f89e5486263c2c0e16649cc76f9ec2cd9308e5960084",
+      "bytes": 4611
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentPlayer.java",
-      "sha256": "9f3d963d0be12a3232ef4d8ec5393d527448c5664e4f45b6157003c820ff8780",
-      "bytes": 18912
+      "sha256": "b28e1e25b59a2719444b52761de7020d4ff392aba79b1b405635a09936ece728",
+      "bytes": 19950
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeMiningState.java",
@@ -3138,9 +3168,24 @@
       "bytes": 836
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeNavigationBudget.java",
+      "sha256": "cf504c8d4a8e67a90db0253e1db3d4a40e3fc7a8b096c3c110ba86f37fa4802e",
+      "bytes": 1045
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeNavigationIntent.java",
+      "sha256": "ba37838c865a8df9611344b07743897bf1a5984bfd086e3f1778b29ef46e6c5c",
+      "bytes": 4869
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeSurfaceNavigation.java",
-      "sha256": "fe3fc0620c62752fac7869caeb3ddfce77c362cd6399de53d8d24e4d3e44cad3",
-      "bytes": 6875
+      "sha256": "d8274b7ba30a9c11895c661cf5f6a9f4fdb56076ce3337b4ebd69839b0714970",
+      "bytes": 6867
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTraversalEvaluator.java",
+      "sha256": "0d166328a286ed18fb5b46f9c364b8a77495a3989df93cb62ad6363a5ab46b8e",
+      "bytes": 5854
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/BootDependencySmokeServer.java",

@@ -37,7 +37,11 @@ public final class MineAgentPlayer extends ServerPlayer {
     private BlockPos miningTarget;
     private int miningStartedTick;
     private int actionSequence;
-    private final dev.mineagent.runtime.core.task.ActionControlLease taskControl=new dev.mineagent.runtime.core.task.ActionControlLease();
+    private final dev.mineagent.runtime.agent.body.BodyControlCoordinator taskControl=new dev.mineagent.runtime.agent.body.BodyControlCoordinator();
+    public dev.mineagent.runtime.agent.body.BodyControlCoordinator controls(){return taskControl;}
+    private UUID lookOwner;private net.minecraft.world.phys.Vec3 lookTarget;private int lookUntil;
+    public void aim(UUID owner,net.minecraft.world.phys.Vec3 target,int ticks){if(!taskControl.owns(owner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))throw new IllegalStateException("BODY_LOOK_NOT_OWNED");lookOwner=owner;lookTarget=target;lookUntil=level().getServer().getTickCount()+ticks;}
+    public void lookAlongPath(net.minecraft.world.phys.Vec3 target){if(lookTarget==null||lookUntil<level().getServer().getTickCount()||!taskControl.owns(lookOwner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,target);}
     private UUID miningOperation;
     private net.minecraft.world.level.block.state.BlockState miningExpected;
     private MiningReceipt miningReceipt;
@@ -62,9 +66,9 @@ public final class MineAgentPlayer extends ServerPlayer {
         if(tracked&&ownsItemUse(operation)&&!isUsingItem())nativeUseFinished=true;
     }
     public record MiningReceipt(UUID operation,String state,String before,String after,int toolDamageBefore,int toolDamageAfter,boolean removed,int tick){}
-    public boolean claimTaskControl(UUID token,java.util.function.BooleanSupplier guard,Runnable cancel){return canAct()&&taskControl.claim(token,guard,cancel);}
+    public boolean claimTaskControl(UUID token,java.util.function.BooleanSupplier guard,Runnable cancel){return canAct()&&taskControl.claimLegacy(token,guard,cancel);}
     public void releaseTaskControl(UUID token){taskControl.release(token);}
-    public boolean taskControlOwned(){return taskControl.owned();}
+    public boolean taskControlOwned(){return taskControl.occupied();}
     public boolean validateTaskControl(){return taskControl.validate();}
     public boolean validateMiningState(BlockPos pos){
         if(miningTarget!=null&&miningTarget.equals(pos)&&!level().getChunkSource().hasChunk(pos.getX()>>4,pos.getZ()>>4)){finishMining("TARGET_UNLOADED",false,null);return false;}
@@ -190,7 +194,7 @@ public final class MineAgentPlayer extends ServerPlayer {
         }
         super.tick();
         doTick();
-        if(isAlive()&&!lifecycle.deathAccepted()){movementController.tick(this);tickMining();}
+        if(isAlive()&&!lifecycle.deathAccepted()){movementController.tick(this);tickMining();if(lookTarget!=null&&lookUntil>=level().getServer().getTickCount()&&taskControl.owns(lookOwner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,lookTarget);}
     }
 
     @Override public void doTick(){if(isRemoved()||!playerTicks.enterTick(level().getServer().getTickCount()))return;super.doTick();}
