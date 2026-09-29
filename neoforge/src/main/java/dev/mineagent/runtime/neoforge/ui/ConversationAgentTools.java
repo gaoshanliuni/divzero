@@ -45,6 +45,14 @@ public final class ConversationAgentTools {
         return execute(p,agent,operation,tool,arguments,permit,null);
     }
     public static CompletableFuture<Map<String,Object>> execute(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
+        var action=executeChecked(p,agent,operation,tool,arguments,permit,conversation);
+        if(ConversationTools.mutation(tool))return action;
+        return action.handle((value,error)->{
+            if(error==null)return value;Throwable cause=error;while(cause instanceof CompletionException||cause instanceof ExecutionException){if(cause.getCause()==null)break;cause=cause.getCause();}
+            return Map.<String,Object>of("status","READ_FAILED","error",code(cause),"worldMutationRequested",false,"retryGuidance","Inspect current state and correct the read/verification arguments. A failed read is not proof of success or permission to replay a previous world write.");
+        });
+    }
+    private static CompletableFuture<Map<String,Object>> executeChecked(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=ToolArguments.parse(tool,arguments);

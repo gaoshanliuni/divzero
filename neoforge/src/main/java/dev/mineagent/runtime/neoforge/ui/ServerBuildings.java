@@ -195,7 +195,7 @@ public final class ServerBuildings {
     public static CompletableFuture<Map<String,Object>> verify(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){
         authorize(p,agent,false);var h=handle(p,agent,id(args));retireCompleted(h);require(!h.busy&&h.job==null,"BUSY");h.busy=true;var result=new CompletableFuture<Map<String,Object>>();var server=p.level().getServer();
         h.opened.thenCompose(ledger->io(()->{var head=ledger.head();require(head.revision()==revision(args)&&head.activeRevision()==head.revision(),"VERIFICATION_REVISION");require(Set.of("UNVERIFIED","VERIFIED").contains(head.status()),"NOT_APPLIED");ledger.verified(head.operation(),head.revision(),false,"");return new Object[]{ledger,head,ledger.design(head.revision()),ledger.bounds(head.revision(),null),ledger.footprintHash(head.revision()),ledger.count(head.revision())};})).whenComplete((data,error)->server.execute(()->{
-            h.busy=false;if(error!=null){result.completeExceptionally(error);return;}if(bundle[3]!=null){result.complete((Map<String,Object>)bundle[3]);return;}if(h.closed){result.completeExceptionally(new IllegalStateException("BUILDING_SERVER_STOPPED"));return;}
+            h.busy=false;if(error!=null){result.completeExceptionally(error);return;}if(h.closed){result.completeExceptionally(new IllegalStateException("BUILDING_SERVER_STOPPED"));return;}
             h.job=new BuildingVerifier(p,agent,h.key.id,(ConstructionLedger)data[0],(ConstructionLedger.Head)data[1],(BuildingDesign)data[2],(int[])data[3],(String)data[4],(Long)data[5],permit,result);
         }));return result;
     }

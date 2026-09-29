@@ -29,7 +29,7 @@ public final class NativeFunctionalSmokeClient {
         var slot=screen.getMenu().getSlot(index);double x=screen.getGuiLeft()+slot.x+8,y=screen.getGuiTop()+slot.y+8;
         var mouse=new net.minecraft.client.input.MouseButtonEvent(x,y,new net.minecraft.client.input.MouseButtonInfo(0,0));screen.mouseClicked(mouse,false);screen.mouseReleased(mouse);return true;
     }
-    private static com.lowdragmc.lowdraglib2.gui.ui.elements.Selector<?> findSelector(UIElement root){if(root==null)return null;if(root instanceof com.lowdragmc.lowdraglib2.gui.ui.elements.Selector<?> selector&&selector.isVisible())return selector;for(var child:root.getChildren()){var found=findSelector(child);if(found!=null)return found;}return null;}
+    private static com.lowdragmc.lowdraglib2.gui.ui.elements.Selector<?> findSelector(UIElement root){if(root==null)return null;if(root instanceof com.lowdragmc.lowdraglib2.gui.ui.elements.Selector<?> selector&&selector.isVisible()&&selector.getId().equals("conversation-filter"))return selector;for(var child:root.getChildren()){var found=findSelector(child);if(found!=null)return found;}return null;}
     private static boolean pointer(UIElement element,boolean down){
         if(element.getSizeWidth()<=0||element.getSizeHeight()<=0)return false;var screen=(com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen)mc().screen;
         float x=element.getPositionX()+element.getSizeWidth()/2,y=element.getPositionY()+element.getSizeHeight()/2;require(x>=0&&y>=0&&x<screen.width&&y<screen.height,"DROPDOWN_OUTSIDE_SCREEN");screen.modularUI.refreshHoveredElementAtScreen(x,y);
@@ -72,8 +72,8 @@ public final class NativeFunctionalSmokeClient {
                 case 24->{if(click("gui-scale-4"))advance("scale-four-native-option");}
                 case 25->{if(conversation(a,"HISTORY_A_ONLY")){require(mc().options.guiScale().get()==4,"GUI_SCALE_NOT_SAVED");require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals("draft-A"),"SCALE_DRAFT_LOST");if(click("会话"))advance("compact-conversation-directory");}}
                 case 26->{var selector=findSelector(root());if(selector!=null&&pointer(selector,true)&&pointer(selector,false))advance("dropdown-opened-by-pointer");}
-                case 27->{var selector=findSelector(root());if(selector!=null&&selector.isOpen()){var option=find(selector.dialog,"selector#overlayButton");if(option!=null&&pointer(option,true)){require(selector.isOpen(),"DROPDOWN_CLOSED_ON_PRESS");advance("dropdown-stays-open-until-release");}}}
-                case 28->{var selector=findSelector(root());if(selector!=null&&selector.isOpen()){var option=find(selector.dialog,"selector#overlayButton");if(option!=null&&pointer(option,false)){require(!selector.isOpen(),"DROPDOWN_DID_NOT_SELECT");advance("dropdown-released-selection");}}}
+                case 27->{var selector=findSelector(root());if(selector!=null&&selector.isOpen()){var option=find(selector.listView.getChildren().get(1),"selector#overlayButton");if(option!=null&&pointer(option,true)){require(selector.isOpen(),"DROPDOWN_CLOSED_ON_PRESS");advance("dropdown-stays-open-until-release");}}}
+                case 28->{var selector=findSelector(root());if(selector!=null&&selector.isOpen()){var option=find(selector.listView.getChildren().get(1),"selector#overlayButton");if(option!=null&&pointer(option,false)){require(!selector.isOpen()&&selector.getValue().toString().equals("已归档"),"DROPDOWN_DID_NOT_SELECT");advance("dropdown-released-selection");}}}
                 case 29->{net.minecraft.client.Screenshot.takeScreenshot(mc().getMainRenderTarget(),image->{try(image){image.writeToFile(mc().gameDirectory.toPath().resolve("persistent-skill-smoke/gui-scale-four.png"));}catch(Exception e){result.completeExceptionally(e);}});result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}
             }
         }catch(Throwable error){result.completeExceptionally(error);}

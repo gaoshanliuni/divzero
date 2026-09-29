@@ -949,8 +949,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "5f3e0d99f0caa91920d41e4cabb6dd42c85118305d61c8dc94bcabd6a6575249",
-      "bytes": 301591
+      "sha256": "9eec20ac337dd7a766ad28f833474d1f7e5d3131aebb2033ec6909fdd31a7602",
+      "bytes": 302214
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1334,8 +1334,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/WebSettingsCatalog.java",
-      "sha256": "6e7b6dc0e37d2ca82f21466c55e9dad4467c397ce3ab2ba800385c0b37bd3bc8",
-      "bytes": 6776
+      "sha256": "76e90e0f3eeb9a00ef1da4302247502202e4cfeff7d0b7c9c2cdbe441cd4556e",
+      "bytes": 6766
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
@@ -3544,8 +3544,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "22ecc2766633b30eb6173b2923860a47aa73140d3858d2a1233068cc4b96a9d4",
-      "bytes": 89716
+      "sha256": "4db49d773f83d06125e9f3f05c88a0da59c45ffd9dc336f6ac3867c7fa7b8c1a",
+      "bytes": 89797
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -3859,8 +3859,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeFunctionalSmokeClient.java",
-      "sha256": "0c1fdc0e215f0ac48a5082d4a5f540bf9c5fa6560f95513f934a18693ad2d78f",
-      "bytes": 11665
+      "sha256": "2a1bab413e98551bba29f6f9628bbfbe2b496e0a210a417b26f8be6b9d63bdb9",
+      "bytes": 11811
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeGenerationPanel.java",
@@ -4019,8 +4019,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "sha256": "b8a57b01ff19e86c88f325fd48a940564765da4da9c714ae8b6ce8e1fffa6c2d",
-      "bytes": 51703
+      "sha256": "f51fb9f0bec24fff7c7d093188f071d465776d6326bdc04bc142d6e925c1c95f",
+      "bytes": 51739
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PersonaLibraryBar.java",
@@ -5334,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "fb0edb1fdff749fe3d1782e4e2e8ba777e3e6e522e0c75794e00b94c1fdb2728",
-      "bytes": 64980
+      "sha256": "8ff13c5060f00d088a2e5c4c9694d37674dbe0c3556981365e87937a365e5f88",
+      "bytes": 65865
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -5699,8 +5699,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildings.java",
-      "sha256": "e37fba4fa5d23f396116430b270a20d798a2618db7ed9c2177d3a323a9dfefaf",
-      "bytes": 25605
+      "sha256": "803c3f46e07f1dc42c87ddd0788ea721c7ff7b3454fc8f8e78a8bdc06a237ebe",
+      "bytes": 25530
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBulldozers.java",

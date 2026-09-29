@@ -3183,5 +3183,12 @@
   "服务端": "Server",
   "客户端": "Client",
   "兼容 API 优先，本机模型备用": "Compatible API first, local model fallback",
-  "本机模型优先，兼容 API 备用": "Local model first, compatible API fallback"
+  "本机模型优先，兼容 API 备用": "Local model first, compatible API fallback",
+  "启用兼容 API": "Enable compatible API",
+  "兼容 API 服务地址": "Compatible API service URL",
+  "Ollama 服务地址": "Ollama service URL",
+  "ComfyUI 服务地址": "ComfyUI service URL",
+  "对话输入词元预算（1024–131072，保守估算）": "Conversation input token budget (1024–131072, conservative estimate)",
+  "每条任务链累计派发次数（0–1000000；不按日重置）": "Dispatch budget per task chain (0–1000000; does not reset daily)",
+  "单次工作进程请求派发次数（0–10000；非任务总数）": "Dispatch budget per worker request (0–10000; not per task)"
 }

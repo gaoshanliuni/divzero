@@ -38,7 +38,7 @@ public final class PersistentSkillSmokeClient {
             actor.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));actor.getInventory().setItem(1,new ItemStack(Items.COOKED_BEEF,16));actor.setItemSlot(EquipmentSlot.OFFHAND,new ItemStack(Items.SHIELD));
             actor.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.DIAMOND_HELMET));actor.setItemSlot(EquipmentSlot.CHEST,new ItemStack(Items.DIAMOND_CHESTPLATE));actor.setItemSlot(EquipmentSlot.LEGS,new ItemStack(Items.DIAMOND_LEGGINGS));actor.setItemSlot(EquipmentSlot.FEET,new ItemStack(Items.DIAMOND_BOOTS));actor.inventoryMenu.broadcastChanges();
             for(int x=-40;x<=40;x++)for(int z=-35;z<=48;z++)for(int y=98;y<=104;y++)p.level().setBlock(new BlockPos(x,y,z),y<=100?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),2);
-            p.level().setDayTime(18000);
+            p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack(),"time set midnight");
             for(int i=0;i<count;i++){var mob=EntityType.ZOMBIE.create(p.level(),EntitySpawnReason.COMMAND);double angle=i*Math.PI*2/count;mob.setPos(actor.getX()+Math.cos(angle)*7,101,actor.getZ()+Math.sin(angle)*7);mob.setPersistenceRequired();mob.setTarget(actor);p.level().addFreshEntity(mob);enemies.add(mob);}
             return Map.of("opponents",count,"allNativeAi",enemies.stream().noneMatch(e->((net.minecraft.world.entity.Mob)e).isNoAi()),"health",actor.getHealth(),"equipment","unenchanted diamond sword/armor, shield, 16 cooked beef","noRangedWeapon",true,"opponentHealth",enemies.stream().map(LivingEntity::getHealth).toList());
         }));
