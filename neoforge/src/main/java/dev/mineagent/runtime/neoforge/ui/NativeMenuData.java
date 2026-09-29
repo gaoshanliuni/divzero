@@ -38,13 +38,21 @@ public final class NativeMenuData {
                 result.add(new Recipe(id,stack.getHoverName().getString(),input,ingredients,output,stack));
             }
         }
+        for(var raw:brewing.divzero$containerMixes()){
+            var mix=(PotionMixAccess)raw;var from=(Holder<Item>)mix.divzero$from();var to=(Holder<Item>)mix.divzero$to();
+            var ingredients=mix.divzero$ingredient().items().map(h->net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(h.value()).toString()).sorted().toList();
+            for(var potion:player.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.POTION).listElements().toList()){
+                String potionId=potion.unwrapKey().orElseThrow().identifier().toString();String input=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(from.value())+" / "+potionId,output=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(to.value())+" / "+potionId;
+                var stack=PotionContents.createItemStack(to.value(),potion);String id=UUID.nameUUIDFromBytes(("container|"+input+"|"+ingredients+"|"+output).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();result.add(new Recipe(id,stack.getHoverName().getString(),input,ingredients,output,stack));
+            }
+        }
         result.sort(Comparator.comparing(Recipe::id));return result;
     }
     public static Map<String,Object> inspect(ServerPlayer player,JsonNode args){
         String query=args.path("query").asText("").toLowerCase(Locale.ROOT);int offset=args.path("offset").asInt(0);if(query.length()>128||offset<0)throw new IllegalArgumentException("BREWING_QUERY");
         var rows=recipes(player).stream().filter(r->(r.name()+r.input()+r.ingredients()+r.output()).toLowerCase(Locale.ROOT).contains(query)).toList();
         var page=rows.stream().skip(offset).limit(24).map(r->Map.of("id",r.id(),"name",r.name(),"input",r.input(),"ingredients",r.ingredients(),"output",r.output(),"container",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(r.stack().getItem()).toString())).toList();
-        return Map.of("status","OBSERVED","recipes",page,"total",rows.size(),"nextOffset",offset+24<rows.size()?offset+24:-1,"source","REGISTERED_POTION_MIXES");
+        return Map.of("status","OBSERVED","recipes",page,"total",rows.size(),"nextOffset",offset+24<rows.size()?offset+24:-1,"source","REGISTERED_POTION_AND_CONTAINER_MIXES");
     }
     public static ItemStack preview(ServerPlayer player,String id){return recipes(player).stream().filter(recipe->recipe.id().equals(id)).findFirst().orElseThrow(()->new IllegalArgumentException("PREVIEW_RECIPE_CHANGED")).stack().copy();}
     private NativeMenuData(){}
