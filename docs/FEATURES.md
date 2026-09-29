@@ -255,7 +255,7 @@ DivZero 使用 [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob
 
 DivZero AI Runtime is an intelligent AI framework for Minecraft. Natural language interaction, world awareness, persistent memory, and dynamic creation let AI characters actively participate in the game world.
 
-This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **Protocol 10:** update clients and servers together. Administrative actions require cheats or real administrator permissions. Click Enable in the first-entry chat prompt for immediate activation.
+This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **1.0.21 candidate / protocol 11:** update clients and servers together. The published 1.0.20 release still uses protocol 10. Administrative actions require cheats or real administrator permissions. Click Enable in the first-entry chat prompt for immediate activation.
 
 ## Your model makes a major difference
 

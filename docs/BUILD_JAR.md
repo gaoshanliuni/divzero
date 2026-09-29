@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [Release 附件](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.20) · [功能说明](FEATURES.md)
 
-支持 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，网络协议 **10**。客户端和服务端使用同版主模组。
+支持 **Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25**，公开 main 的 1.0.21 候选网络协议为 **11**；已发布 1.0.20 为协议 10。客户端和服务端使用同版主模组。
 
 ## 下载哪些附件
 

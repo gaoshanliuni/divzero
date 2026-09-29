@@ -3004,8 +3004,8 @@
     },
     {
       "path": "docs/BUILD_JAR.md",
-      "sha256": "067c0d6bd50687103455ecc34a18c58538b04f5b2bcbe448feb9d3aac781b629",
-      "bytes": 4482
+      "sha256": "919e9299cdba73e007c397ca1d6daf22671e25b97ed6e3f023671e1a9a8934d1",
+      "bytes": 4546
     },
     {
       "path": "docs/CINEMATIC_FILMS.md",
@@ -3014,8 +3014,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "0837b77c3da732b07d9a9533286914f71c0884799df417789ff1c6892dcaaf9a",
-      "bytes": 44550
+      "sha256": "7809de6fa07ebe8cd0426ca88d834a9b332900dbe06fe8a6deea817173c27fc0",
+      "bytes": 44622
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -4899,8 +4899,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "34d67e063c35b13d014b4c05dcf6316376d711900e123bab6569881060340e2b",
-      "bytes": 16907
+      "sha256": "4c0ecf5890770c069e79776d27e65ba2af21df5f6b36f9c06766cb4867193b9f",
+      "bytes": 17163
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
