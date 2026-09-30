@@ -19,6 +19,7 @@ public final class IsolatedCombatArena {
     }
     private record Participant(ServerPlayer owner,MineAgentPlayer body,Bounds arena,int team){}
     private static final Map<ServerPlayer,Participant> PARTICIPANTS=new WeakHashMap<>();
+    private static final Set<ServerPlayer> ARMED=Collections.newSetFromMap(new IdentityHashMap<>());
     public static boolean enabled(){String mode=System.getProperty("mineagent.skillSmokeMode","");return Boolean.getBoolean("mineagent.skillSmoke")&&(mode.startsWith("selfplay_")||mode.startsWith("policy_")||mode.equals("evoker_timeline"));}
     private static void require(ServerPlayer owner){if(!enabled()||!owner.level().getServer().isSameThread())throw new SecurityException("ISOLATED_TRAINING_ONLY");}
     public static void prepare(ServerPlayer owner,List<Bounds> arenas){
@@ -31,7 +32,8 @@ public final class IsolatedCombatArena {
                 var state=y<=a.floor||wall&&y<=a.floor+5?Blocks.BEDROCK.defaultBlockState():Blocks.AIR.defaultBlockState();var at=new BlockPos(x,y,z);
                 if(!level.getBlockState(at).equals(state))level.setBlock(at,state,2);
             }
-            for(var mob:level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class,a.space()))mob.discard();
+            var fullSpace=new AABB(a.x-a.radius,a.floor-3,a.z-a.radius,a.x+a.radius+1,level.getMaxY()+1,a.z+a.radius+1);
+            for(var entity:level.getEntities((net.minecraft.world.entity.Entity)null,fullSpace,e->!(e instanceof ServerPlayer)))entity.discard();
         }
     }
     public static Map<String,Object> place(ServerPlayer owner,MineAgentPlayer body,Bounds arena,int team,Vec3 at){
@@ -42,19 +44,20 @@ public final class IsolatedCombatArena {
         return Map.of("requested",at.toString(),"before",before.toString(),"actual",body.position().toString(),"clear",true,"supported",true,"arena",arena.id,"team",team);
     }
     public static boolean suppressRespawn(MineAgentPlayer body){return enabled()&&PARTICIPANTS.containsKey(body);}
+    public static void arm(ServerPlayer owner,List<MineAgentPlayer> bodies){require(owner);for(var body:bodies){var p=PARTICIPANTS.get(body);if(p==null||p.owner!=owner)throw new SecurityException("TRAINING_OWNER");}ARMED.addAll(bodies);}
     public static boolean opponents(ServerPlayer actor,LivingEntity target){
         if(!enabled()||!(target instanceof ServerPlayer player))return false;var a=PARTICIPANTS.get(actor);var b=PARTICIPANTS.get(player);
         return a!=null&&b!=null&&a.owner==b.owner&&a.arena.equals(b.arena)&&a.team!=b.team&&actor.level()==target.level()
                 &&a.arena.contains(actor.position())&&a.arena.contains(target.position());
     }
     public static boolean consent(ServerPlayer owner,UUID agent,ServerPlayer actor,ServerPlayer target,dev.mineagent.runtime.core.task.CombatPolicy policy){
-        var a=PARTICIPANTS.get(actor);return opponents(actor,target)&&a.owner==owner&&a.body.agentId().equals(agent)
+        var a=PARTICIPANTS.get(actor);return ARMED.contains(actor)&&ARMED.contains(target)&&opponents(actor,target)&&a.owner==owner&&a.body.agentId().equals(agent)
                 &&policy.engagement()!=dev.mineagent.runtime.core.task.CombatPolicy.Engagement.NONE
                 &&target.isAlive()&&!target.isCreative()&&!target.isSpectator()&&!policy.excluded().contains(target.getUUID())
                 &&dev.mineagent.runtime.neoforge.task.ServerTaskStart.allowed(owner,agent)
                 &&actor.level().getGameRules().get(net.minecraft.world.level.gamerules.GameRules.PVP)&&actor.canHarmPlayer(target);
     }
-    public static void retire(ServerPlayer owner,MineAgentPlayer body){require(owner);var participant=PARTICIPANTS.get(body);if(participant==null||participant.owner!=owner)throw new SecurityException("TRAINING_OWNER");SkillRuntime.get(owner.level().getServer()).stopAll(owner,body.agentId());dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.bodies(owner.level().getServer()).remove(body.agentId(),owner.getUUID(),false);PARTICIPANTS.remove(body);}
-    @net.neoforged.bus.api.SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event){PARTICIPANTS.entrySet().removeIf(entry->entry.getValue().owner.level().getServer()==event.getServer());}
+    public static void retire(ServerPlayer owner,MineAgentPlayer body){require(owner);var participant=PARTICIPANTS.get(body);if(participant==null||participant.owner!=owner)throw new SecurityException("TRAINING_OWNER");SkillRuntime.get(owner.level().getServer()).stopAll(owner,body.agentId());dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.bodies(owner.level().getServer()).remove(body.agentId(),owner.getUUID(),false);PARTICIPANTS.remove(body);ARMED.remove(body);}
+    @net.neoforged.bus.api.SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event){PARTICIPANTS.entrySet().removeIf(entry->entry.getValue().owner.level().getServer()==event.getServer());ARMED.removeIf(body->body.level().getServer()==event.getServer());}
     private IsolatedCombatArena(){}
 }

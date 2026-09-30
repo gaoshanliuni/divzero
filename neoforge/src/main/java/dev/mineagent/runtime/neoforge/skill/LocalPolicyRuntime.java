@@ -79,13 +79,14 @@ public final class LocalPolicyRuntime {
     /** Test arena model pools are data only, checksum pinned and isolated from ordinary saved player models. */
     public static void seedTrainingModel(dev.mineagent.runtime.neoforge.body.MineAgentPlayer body,String source,String expectedSha256){
         if(!body.level().getServer().isSameThread()||!IsolatedCombatArena.suppressRespawn(body))throw new SecurityException("ISOLATED_TRAINING_ONLY");
-        if(source.length()>131072||!dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(source).equals(expectedSha256))throw new IllegalArgumentException("TRAINING_MODEL_HASH");
+        if(source.length()>131072||!modelHash(source).equals(expectedSha256))throw new IllegalArgumentException("TRAINING_MODEL_HASH");
         var policy=LocalActionPolicy.parse(source);var state=state(body);state.epoch++;state.loading=state.training=false;state.pending=null;state.serving=policy;state.reference=LocalActionPolicy.referenceSamples(policy);state.samples=state.accepted=state.rejected=0;state.replay.clear();state.status="ISOLATED_TRAINING_MODEL";state.save();
     }
     public static Map<String,Object> trainingModel(dev.mineagent.runtime.neoforge.body.MineAgentPlayer body){
         if(!body.level().getServer().isSameThread()||!IsolatedCombatArena.suppressRespawn(body))throw new SecurityException("ISOLATED_TRAINING_ONLY");var state=state(body);String model=state.serving.json();
-        return Map.of("model",model,"sha256",dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(model),"samples",state.samples,"acceptedUpdates",state.accepted,"training",state.training,"replaySize",state.replay.size());
+        return Map.of("model",model,"sha256",modelHash(model),"samples",state.samples,"acceptedUpdates",state.accepted,"training",state.training,"replaySize",state.replay.size());
     }
+    private static String modelHash(String source){try{return dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(source);}catch(Exception error){throw new IllegalStateException("POLICY_HASH_UNAVAILABLE",error);}}
     public static void reset(ServerPlayer owner,UUID id){
         var state=state(owner,id);state.epoch++;state.loading=state.training=false;state.serving=PRETRAINED;state.pending=null;state.replay.clear();state.samples=state.accepted=state.rejected=0;state.validationLoss=0;state.status="PRETRAINED_RESTORED";state.save();
     }
