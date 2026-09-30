@@ -5409,8 +5409,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "97e890fe69b4bcf8d97d8167145b9e080f97d61c8e02232b0b587f5f91c237a7",
-      "bytes": 32011
+      "sha256": "4be88f8898376588ad6e18aea00a14c03b8be59157684ff65e9e42a44f8a56d4",
+      "bytes": 32053
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",

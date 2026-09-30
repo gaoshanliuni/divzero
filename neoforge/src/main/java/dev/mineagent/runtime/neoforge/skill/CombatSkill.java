@@ -111,14 +111,15 @@ final class CombatSkill {
         if(openingCounter&&w.contactEscape){w.contactEscape=false;w.contactClearSince=-1;w.positioning.reset();w.session.add("contactCounterOpenings",1);}
         if(!openingCounter&&escapeContact(w,target,contacts))return;
         double health=p.getHealth()/Math.max(1,p.getMaxHealth());
-        if(health<.7&&p.getFoodData().getFoodLevel()<20&&safeToEat(w)){
+        boolean hasFood=java.util.stream.IntStream.range(0,36).anyMatch(i->food(w,p.getInventory().getItem(i)));
+        if(health<.7&&hasFood&&p.getFoodData().getFoodLevel()<20&&safeToEat(w)){
             if(w.healingOperation==null)w.actor.stop(w.token());
             if(eat(w))return;
         }
         double withdrawal=Math.max(4,p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p)+1+contacts*.65);
         boolean recoveryOpportunity=p.hasEffect(net.minecraft.world.effect.MobEffects.REGENERATION)
                 ||p.level().getGameRules().get(net.minecraft.world.level.gamerules.GameRules.NATURAL_HEALTH_REGENERATION)
-                &&(p.getFoodData().getFoodLevel()>=18||java.util.stream.IntStream.range(0,36).anyMatch(i->food(w,p.getInventory().getItem(i))));
+                &&(p.getFoodData().getFoodLevel()>=18||hasFood);
         boolean recovering=w.recoveryWindow.shouldRecover(w.tick(),p.getHealth(),p.getMaxHealth(),recoveryOpportunity,w.lastContactDamage);
         boolean retreat=rule.strategy()==CombatPolicy.Strategy.DISENGAGE||recovering||flanked||contacts>1;
         if(retreat||target==null){
