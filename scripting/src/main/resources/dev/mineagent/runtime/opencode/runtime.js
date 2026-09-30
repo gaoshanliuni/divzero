@@ -2,8 +2,6 @@
 
 var OpenCodeCompat = (function () {
 
-const TOOL_OUTPUT_MAX_CHARS = 2000;
-
 const Token = { estimate: (input) => Math.max(0, Math.round(input.length / 4)) };
 
 const SUMMARY_TEMPLATE = `Output exactly the Markdown structure shown inside <template> and keep the section order unchanged. Do not include the <template> tags in your response.
@@ -37,8 +35,6 @@ Rules:
 - Use terse bullets, not prose paragraphs.
 - Preserve exact file paths, symbols, commands, error strings, URLs, and identifiers when known.
 - Do not mention the summary process or that context was compacted.`
-
-
 const SUMMARY_UPDATE_INSTRUCTIONS = `The <prior-summary> summarizes everything that happened before the <conversation>. Construct a new summary that combines both. The <prior-summary> is discarded after this: anything you do not carry into the new summary is lost.
 
 When combining:
@@ -48,7 +44,6 @@ When combining:
 - Move completed work from "Active" to "Completed".
 - If a blocker has been resolved, update the summary to reflect that while keeping any details still needed to continue the work.
 - Update "Objective" and "Next Move" to reflect the current work state.`
-
 
 const buildPrompt = (input) => {
   const conversation = `Here is the conversation so far:\n\n<conversation>\n${input.context.join("\n\n")}\n</conversation>`

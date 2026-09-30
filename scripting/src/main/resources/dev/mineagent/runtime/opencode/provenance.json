@@ -24,7 +24,7 @@
       "sha256": "a157df378a5baaf7a35ac1cb9c94dd29266d916329545529604274d6cddbc635"
     }
   },
-  "runtimeSha256": "d0e13de9de3719c2eee80a39203284f361503558a53f16ff91802b907573f0d8",
+  "runtimeSha256": "965ff8b24c42624d634db9faa97e059f42bf7c1f09ba4830236135ce0215e9db",
   "adaptations": [
     "Removed TypeScript annotations and module imports from selected pure functions.",
     "selectRendered accepts already-rendered atomic protocol groups; tool-call/result groups are never split.",

@@ -12,9 +12,12 @@ public final class ExecutionRecords {
     public record Scope(UUID world,UUID owner,UUID agent){}
     private ExecutionRecords(){}
     public static void write(Path database,Scope scope,UUID record,UUID request,UUID conversation,long ordinal,String tool,JsonNode arguments,Map<String,Object> result,long at)throws Exception{
+        write(database,scope,record,request,conversation,ordinal,tool,arguments,arguments.toString(),result,at);
+    }
+    public static void write(Path database,Scope scope,UUID record,UUID request,UUID conversation,long ordinal,String tool,JsonNode arguments,String rawArguments,Map<String,Object> result,long at)throws Exception{
         var value=new LinkedHashMap<String,Object>();value.put("owner",scope.owner);value.put("agent",scope.agent);value.put("world",scope.world);value.put("recordId",record);
         value.put("requestId",request);value.put("conversation",conversation);value.put("ordinal",ordinal);value.put("tool",tool);value.put("arguments",arguments);
-        value.put("result",result);value.put("observedAt",at);value.put("replayAllowed",false);
+        value.put("rawArguments",rawArguments);value.put("result",result);value.put("observedAt",at);value.put("replayAllowed",false);
         String source=JSON.writeValueAsString(value);
         try(var db=new SqliteRuntimeRepository(database)){
             var old=db.get(scope.world,NAMESPACE,record.toString());

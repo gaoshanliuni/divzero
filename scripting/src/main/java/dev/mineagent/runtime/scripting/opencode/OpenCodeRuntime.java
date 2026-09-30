@@ -23,9 +23,9 @@ public final class OpenCodeRuntime {
     }
     private static JsonNode execute(String expression,Map<String,Object> input){
         try{
-            String code=SOURCE+"\nconst input = JSON.parse(inputJson);\nJSON.stringify("+expression+");";
+            String code=SOURCE+"\nconst input = JSON.parse(inputJson);\n("+expression+");";
             Object result=new RhinoScriptRuntime(Duration.ofMillis(500)).evaluate(code,Map.of("inputJson",JSON.writeValueAsString(input)));
-            return JSON.readTree(Objects.toString(result));
+            return result instanceof Boolean flag?JSON.getNodeFactory().booleanNode(flag):JSON.getNodeFactory().textNode(Objects.toString(result));
         }catch(Exception error){throw new IllegalStateException("OPENCODE_CONTEXT_POLICY_FAILED",error);}
     }
     public static String skill(String name,String content,String base,List<String> resources){
@@ -38,8 +38,8 @@ public final class OpenCodeRuntime {
     public record Selection(String archived,String recent){}
     /** Each entry is already an atomic protocol group, including required reasoning and tool results. */
     public static Selection select(List<String> groups,int tokens){
-        var result=execute("OpenCodeCompat.selectRendered(input.groups,input.tokens) || {head:'',recent:''}",Map.of("groups",groups,"tokens",tokens));
-        return new Selection(result.path("head").asText(),result.path("recent").asText());
+        var result=execute("(() => { const s=OpenCodeCompat.selectRendered(input.groups,input.tokens) || {head:'',recent:''}; return encodeURIComponent(s.head)+'|'+encodeURIComponent(s.recent); })()",Map.of("groups",groups,"tokens",tokens)).asText().split("\\|",-1);
+        return new Selection(java.net.URLDecoder.decode(result[0],StandardCharsets.UTF_8),java.net.URLDecoder.decode(result[1],StandardCharsets.UTF_8));
     }
     /** Caller must additionally compare actual context, result and progress; repeated input alone is not a deadlock. */
     public static boolean repeatedCalls(List<Map<String,Object>> recent,String name,Map<String,Object> arguments){
