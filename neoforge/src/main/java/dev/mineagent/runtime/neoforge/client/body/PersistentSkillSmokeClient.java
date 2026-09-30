@@ -117,6 +117,7 @@ public final class PersistentSkillSmokeClient {
         })));
     }
     private static void uiFunctional(){
+        waitFor("signed-client-enable-before-workspace-ui",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});
         action("native-give-and-teleport-visible-ai-name",()->server(p->{
             var b=body(p);var uuid=b.getUUID();var source=p.createCommandSourceStack();String name=b.getName().getString();var dispatcher=p.level().getServer().getCommands().getDispatcher();
             try{int before=b.getInventory().countItem(Items.EMERALD);dispatcher.execute("give "+name+" minecraft:emerald 3",source);require(b.getInventory().countItem(Items.EMERALD)==before+3,"GIVE_ALIAS_NO_REAL_ITEMS");dispatcher.execute("tp "+name+" 3.5 101 7.5",source);require(b.position().distanceTo(new Vec3(3.5,101,7.5))<.01&&uuid.equals(b.getUUID())&&body(p)==b,"TP_ALIAS_IDENTITY_OR_POSITION");return Map.of("nativeCommands","give,tp","sameBody",true,"visibleName",name);}catch(Exception e){throw new CompletionException(e);}

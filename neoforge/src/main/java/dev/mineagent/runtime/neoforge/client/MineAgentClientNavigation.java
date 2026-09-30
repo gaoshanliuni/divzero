@@ -10,6 +10,7 @@ public final class MineAgentClientNavigation {
     }
 
     public static void open(MineAgentPayloads.OpenPanel payload) {
+        if(!MineAgentClientTrustPrompt.enabled()){Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));MineAgentClientTrustPrompt.showChoice(true);return;}
         if(payload.section().equals("WORKSPACE")){NativeWorkspaceScreen.open();return;}
         PanelSection section;
         try {

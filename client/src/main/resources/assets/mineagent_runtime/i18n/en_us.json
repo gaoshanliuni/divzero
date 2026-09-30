@@ -3206,5 +3206,9 @@
   "短跳调整攻击节奏，检查落点": "Jump-tap and check the landing",
   "向左变向，避开攻击区域": "Strafe left out of the attack area",
   "向右变向，避开攻击区域": "Strafe right out of the attack area",
-  "检查上次发现敌人的位置": "Check the last observed threat position"
+  "检查上次发现敌人的位置": "Check the last observed threat position",
+  "世界或玩家已变化，操作尚未发送。": "The world or player changed. The operation was not sent.",
+  "工作区连接超时，操作尚未发送。": "Workspace connection timed out. The operation was not sent.",
+  "工作区连接失败，操作尚未发送。": "Workspace connection failed. The operation was not sent.",
+  "请先在聊天中启用此世界的 DivZero。": "Enable DivZero for this world in chat first."
 }

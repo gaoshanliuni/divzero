@@ -35,7 +35,7 @@ public final class AgentProfileScreen extends NativeInputScreen {
         }
         status=NativeUiTheme.text(t("读取 AI…"),NativeUiTheme.MUTED,8);status.getLayout().height(compact?12:18).flexShrink(0);card.addChild(status);draw();
     }
-    public static void open(UUID agent,String name){Minecraft.getInstance().setScreen(new AgentProfileScreen(agent,name));NativeWorkspaceConnection.open();}
+    public static void open(UUID agent,String name){if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()){Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);return;}Minecraft.getInstance().setScreen(new AgentProfileScreen(agent,name));NativeWorkspaceConnection.open();}
     public void smokeBehaviorTab(boolean release){NativeBehaviorPanel.smokeClickElement(root,t("行为模式"),release);}
     UIElement smokeRoot(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return root;}
     private static String t(String text){return ClientLanguage.t(text);}
