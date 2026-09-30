@@ -33,6 +33,18 @@ public final class BlockTextureClient {
     private static String scope="",error="";private static Object connection;private static long epoch;private static boolean ready,busy;
     private record Incoming(JsonNode args,Object connection,String scope,int expectedBytes,int chunks,ByteArrayOutputStream bytes,long deadline){int next(){return (bytes.size()+59999)/60000;}}
     private static final Map<UUID,Incoming> incoming=new LinkedHashMap<>();private static final Map<UUID,String> receipts=new LinkedHashMap<>();
+    private static final Map<UUID,CompletableFuture<Map<String,Object>>> localReplies=new HashMap<>();
+    public static com.google.gson.JsonObject catalog(String query,int offset){
+        if(query==null||query.length()>128||offset<0)throw new IllegalArgumentException("BLOCK_TEXTURE_QUERY");boolean current=ready&&scope.equals(scope())&&connection==mc().getConnection();
+        var entries=current?state.textures().entrySet().stream().filter(e->(e.getKey()+" "+e.getValue().sourceUrl()).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))).sorted(Map.Entry.comparingByKey()).toList():List.<Map.Entry<String,BlockTextureStore.Texture>>of();
+        var items=entries.stream().skip(offset).limit(8).map(e->Map.of("id",e.getKey(),"sha256",e.getValue().sha256(),"sourceUrl",e.getValue().sourceUrl(),"size",e.getValue().size())).toList();
+        return new com.google.gson.Gson().toJsonTree(Map.of("items",items,"total",entries.size(),"nextOffset",offset+items.size()<entries.size()?offset+items.size():-1,"revision",current?state.revision():0,"ready",current,"error",error)).getAsJsonObject();
+    }
+    public static CompletableFuture<Map<String,Object>> clearFromCatalog(String texture,long expected){
+        if(!ready||!scope.equals(scope())||!state.textures().containsKey(texture)||state.revision()!=expected)return CompletableFuture.failedFuture(new IllegalStateException("BLOCK_TEXTURE_STALE"));
+        UUID operation=UUID.randomUUID();var future=new CompletableFuture<Map<String,Object>>();localReplies.put(operation,future);
+        try{apply(operation,JSON.createObjectNode().put("kind","catalog_clear").put("texture",texture).put("expectedRevision",expected),null,mc().getConnection());}catch(Exception error){localReplies.remove(operation);future.completeExceptionally(error);}return future;
+    }
     private static Minecraft mc(){return Minecraft.getInstance();}
     private static String scope(){
         if(mc().player==null||mc().level==null||mc().getConnection()==null||!MineAgentClientTrustPrompt.enabled()||!PanelSnapshotInbox.signatureValid())return "";
@@ -88,7 +100,8 @@ public final class BlockTextureClient {
     }
     private static void apply(UUID operation,JsonNode args,byte[] bytes,Object expectedConnection)throws Exception{
         if(busy||!ready||!scope.equals(scope())||mc().getConnection()!=expectedConnection)throw new IllegalStateException("BLOCK_TEXTURE_RELOAD_BUSY");long expected=args.path("expectedRevision").asLong(-1);if(expected!=state.revision())throw new IllegalStateException("BLOCK_TEXTURE_STALE");
-        String block=args.path("block").asText();var actual=sprites(block);var targets=new ArrayList<>(actual.keySet());if(args.has("texture")){String texture=args.path("texture").asText();if(!actual.containsKey(texture))throw new IllegalArgumentException("BLOCK_TEXTURE_NOT_USED_BY_BLOCK");targets.clear();targets.add(texture);}
+        boolean catalogClear=localReplies.containsKey(operation)&&bytes==null&&args.path("kind").asText().equals("catalog_clear");
+        String block=args.path("block").asText();var targets=new ArrayList<String>();if(catalogClear){String texture=args.path("texture").asText();if(!state.textures().containsKey(texture))throw new IllegalStateException("BLOCK_TEXTURE_STALE");targets.add(texture);}else{var actual=sprites(block);targets.addAll(actual.keySet());if(args.has("texture")){String texture=args.path("texture").asText();if(!actual.containsKey(texture))throw new IllegalArgumentException("BLOCK_TEXTURE_NOT_USED_BY_BLOCK");targets.clear();targets.add(texture);}}
         int size=args.path("size").asInt(0);if(bytes!=null)BlockTextureStore.png(bytes,size);if(bytes!=null)try(var decoded=NativeImage.read(bytes)){if(size<16||size>512||decoded.getWidth()!=size||decoded.getHeight()!=size)throw new IllegalArgumentException("BLOCK_TEXTURE_IMAGE_SIZE");}
         var before=state;var oldImages=images;var records=new LinkedHashMap<>(state.textures());var replacement=new LinkedHashMap<>(images);
         for(String target:targets){if(bytes==null){records.remove(target);replacement.remove(target);}else{records.put(target,new BlockTextureStore.Texture(args.path("sha256").asText(),args.path("sourceUrl").asText(),size));replacement.put(target,bytes);}}
@@ -97,7 +110,7 @@ public final class BlockTextureClient {
         reload().whenComplete((unused,reloadError)->mc().execute(()->{
             try{
                 if(token!=epoch||!selected.equals(scope())||mc().getConnection()!=expectedConnection)throw new IllegalStateException("BLOCK_TEXTURE_CONTEXT_CHANGED");if(reloadError!=null)throw new IllegalStateException("BLOCK_TEXTURE_RELOAD_FAILED");
-                var checked=sprites(block);for(String target:targets){if(bytes!=null)verify(target,bytes,checked.get(target));else{var name=Identifier.parse(target);if(mc().getResourceManager().getResourceOrThrow(Identifier.fromNamespaceAndPath(name.getNamespace(),"textures/"+name.getPath()+".png")).sourcePackId().equals(PACK))throw new IllegalStateException("BLOCK_TEXTURE_CLEAR_NOT_EFFECTIVE");}}
+                var checked=catalogClear?Map.<String,TextureAtlasSprite>of():sprites(block);for(String target:targets){if(bytes!=null)verify(target,bytes,checked.get(target));else{var name=Identifier.parse(target);if(mc().getResourceManager().getResourceOrThrow(Identifier.fromNamespaceAndPath(name.getNamespace(),"textures/"+name.getPath()+".png")).sourcePackId().equals(PACK))throw new IllegalStateException("BLOCK_TEXTURE_CLEAR_NOT_EFFECTIVE");}}
                 CompletableFuture.runAsync(()->{try{store().save(selected,expected,after,replacement);}catch(Exception failure){throw new CompletionException(failure);}},IO).whenComplete((saved,saveError)->mc().execute(()->{
                     if(saveError!=null){result.completeExceptionally(saveError);return;}if(token!=epoch||!selected.equals(scope())){result.completeExceptionally(new IllegalStateException("BLOCK_TEXTURE_CONTEXT_CHANGED"));return;}
                     state=after;images=Map.copyOf(replacement);error="";result.complete(Map.of("status","APPLIED","revision",after.revision(),"sha256",bytes==null?"":args.path("sha256").asText(),"block",block,"textures",targets,"verifiedSprites",bytes==null?0:targets.size(),"scope","CURRENT_PLAYER_WORLD_TEXTURE_RESOURCES"));
@@ -119,7 +132,7 @@ public final class BlockTextureClient {
             net.minecraft.client.renderer.texture.MipmapGenerator.generateMipLevels(name,new NativeImage[]{expected},0,net.minecraft.client.renderer.texture.MipmapStrategy.AUTO,0,expected.computeTransparency());
             var actual=((SpritePixelsAccess)sprite.contents()).divzero$pixels();if(actual.getWidth()!=expected.getWidth()||actual.getHeight()!=expected.getHeight())throw new IllegalStateException("BLOCK_TEXTURE_ATLAS_SIZE");for(int y=0;y<actual.getHeight();y++)for(int x=0;x<actual.getWidth();x++)if(actual.getPixel(x,y)!=expected.getPixel(x,y))throw new IllegalStateException("BLOCK_TEXTURE_ATLAS_PIXELS");}
     }
-    private static void reply(UUID id,Object expectedConnection,Map<String,Object> data){if(expectedConnection==null||expectedConnection!=mc().getConnection())return;try{String text=JSON.writeValueAsString(data);receipts.put(id,text);while(receipts.size()>128)receipts.remove(receipts.keySet().iterator().next());net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new UiPayloads.Command(id,"blockTextureReply",text));}catch(Exception ignored){error="BLOCK_TEXTURE_REPLY_FAILED";}}
+    private static void reply(UUID id,Object expectedConnection,Map<String,Object> data){var local=localReplies.remove(id);if(local!=null){if(data.get("status").equals("APPLIED"))local.complete(data);else local.completeExceptionally(new IllegalStateException(Objects.toString(data.get("error"),"BLOCK_TEXTURE_FAILED")));return;}if(expectedConnection==null||expectedConnection!=mc().getConnection())return;try{String text=JSON.writeValueAsString(data);receipts.put(id,text);while(receipts.size()>128)receipts.remove(receipts.keySet().iterator().next());net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new UiPayloads.Command(id,"blockTextureReply",text));}catch(Exception ignored){error="BLOCK_TEXTURE_REPLY_FAILED";}}
     private static String code(Throwable error){for(var cause=error;cause!=null;cause=cause.getCause())if(cause.getMessage()!=null&&cause.getMessage().matches("BLOCK_TEXTURE_[A-Z0-9_]+"))return cause.getMessage();return "BLOCK_TEXTURE_FAILED";}
     private BlockTextureClient(){}
 }

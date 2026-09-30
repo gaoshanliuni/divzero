@@ -3275,5 +3275,19 @@
   "工具与管理": "Tools and management",
   "按玩家、AI 和世界隔离；动态观察会过期。": "Scoped to player, AI and world; observations expire.",
   "媒体传输中": "Streaming media",
-  "此构建未包含媒体工具，请使用含媒体工具的安装包。": "This build has no media tools. Install the build that includes media tools."
+  "此构建未包含媒体工具，请使用含媒体工具的安装包。": "This build has no media tools. Install the build that includes media tools.",
+  "所有内容": "All content",
+  "内容包与物品": "Packages and items",
+  "自定义生物": "Custom creatures",
+  "原生生物定义": "Native entity definitions",
+  "实体行为与外观修改": "Entity behavior and appearance changes",
+  "方块与交互修改": "Block and interaction changes",
+  "方块贴图": "Block textures",
+  "恢复原贴图": "Restore original texture",
+  "搜索包、物品、生物或修改名称": "Search packages, items, creatures or changes",
+  "新创建或修改的内容会自动刷新；操作仍由原有权限与版本检查。": "New and modified content refreshes automatically. Operations retain their permission and revision checks.",
+  "删除规则": "Delete rule",
+  "删除后停止此规则的后续影响，已发生的世界变化不会被回放。": "Stop future effects of this rule. Existing world changes are not replayed.",
+  "修改内容保留原 ID；保存前检查实际版本。": "Edits retain the original ID and check the current revision before saving.",
+  "保存修改": "Save changes"
 }

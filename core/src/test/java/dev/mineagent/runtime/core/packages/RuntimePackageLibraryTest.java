@@ -37,6 +37,16 @@ class RuntimePackageLibraryTest {
     Path temporaryDirectory;
     private final Clock clock = Clock.fixed(Instant.parse("2026-09-08T00:00:00Z"), ZoneOffset.UTC);
 
+    @Test void catalogFindsDefinitionNamesWithoutChangingOwnership()throws Exception{
+        try(var signer=IdentitySigner.open(temporaryDirectory.resolve("catalog-id"));var library=RuntimePackageLibrary.open(temporaryDirectory.resolve("catalog.db"),clock,signer.publicKeyEncoded())){
+            var id=UUID.randomUUID();var world=UUID.randomUUID();var owner=UUID.randomUUID();var source=signed(signer,id,"1.0.0",true);assertTrue(library.install(source).accepted());
+            var input=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,source.canonicalSha256(),"独立内容包",null,1);var copy=RuntimePackageAssetCopy.prepare(source,input.targetId(),input.name(),signer);library.installAssetCopy(input,copy);
+            assertEquals(java.util.List.of(input.targetId()),library.catalog(world,owner,"风铃",0,8).ids());
+            assertTrue(library.catalog(world,UUID.randomUUID(),"风铃",0,8).ids().isEmpty());assertTrue(library.catalog(UUID.randomUUID(),owner,"风铃",0,8).ids().isEmpty());
+            assertTrue(library.setEnabled(copy.packageId(),1,false).accepted());assertEquals(1,library.catalog(world,owner,"风铃",0,8).total());
+        }
+    }
+
     @Test void historicalCopyIsIndependentAndFencesCurrentHead()throws Exception{
         try(var signer=IdentitySigner.open(temporaryDirectory.resolve("history-id"));var library=RuntimePackageLibrary.open(temporaryDirectory.resolve("history.db"),clock,signer.publicKeyEncoded())){
             UUID id=UUID.randomUUID(),world=UUID.randomUUID(),owner=UUID.randomUUID();var first=signed(signer,id,"1.0.0",true);assertTrue(library.install(first).accepted());assertTrue(library.setEnabled(id,1,false).accepted());

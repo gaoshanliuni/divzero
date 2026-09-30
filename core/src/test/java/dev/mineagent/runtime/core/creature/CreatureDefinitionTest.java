@@ -6,6 +6,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 class CreatureDefinitionTest {
  @TempDir Path temp;
+ @Test void catalogSearchAndPagingUseActualOwnedDefinitions()throws Exception{
+  UUID world=UUID.randomUUID(),owner=UUID.randomUUID();try(var store=new CreatureStore(temp.resolve("catalog.db"),world)){
+   for(int i=0;i<10;i++)store.put(owner,UUID.randomUUID(),0,"{\"name\":\"新生物 "+i+"\"}");store.put(UUID.randomUUID(),UUID.randomUUID(),0,"{\"name\":\"其他人的新生物\"}");
+   var first=store.catalog(owner,"新生物",0);assertEquals(10,first.get("total"));assertEquals(8,((java.util.List<?>)first.get("items")).size());assertEquals(8,first.get("nextOffset"));
+   var second=store.catalog(owner,"新生物",8);assertEquals(2,((java.util.List<?>)second.get("items")).size());assertEquals(-1,second.get("nextOffset"));assertEquals(0,store.catalog(owner,"不存在",0).get("total"));
+  }
+ }
  @Test void parsesSevenBehaviourDefinition(){var d=CreatureDefinition.parse("""
  {"name":"星球伙伴","disposition":"neutral","food":"minecraft:wheat","rideable":true,"companion":true,
  "trades":[{"input":"minecraft:emerald","output":"minecraft:apple","outputCount":2}],

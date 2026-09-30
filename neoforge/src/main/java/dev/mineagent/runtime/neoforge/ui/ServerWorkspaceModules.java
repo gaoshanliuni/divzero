@@ -29,6 +29,7 @@ final class ServerWorkspaceModules implements AutoCloseable {
         if(!permit.getAsBoolean()||server.getPlayerList().getPlayer(viewer.getUUID())!=viewer)throw new SecurityException("WORKSPACE_CONTEXT_CHANGED");
         return switch(args.getOrDefault("module","")){
             case "memory"->memory(viewer,args,write,permit);
+            case "contents"->ServerCreatedContents.handle(viewer,operation,args,write,permit);
             case "media"->CompletableFuture.completedFuture(media(viewer,args,write));
             case "backups"->{require(viewer,PermissionAction.RESTORE_BACKUP);yield CompletableFuture.completedFuture(backups.handle(viewer,operation,args,write,permit));}
             case "mods"->mods(viewer,args,write,permit);
