@@ -14,8 +14,33 @@ final class CombatPositioning {
     private Vec3 waypoint,heading,targetAtWaypoint;private Node waypointNode;private int waypointAt;private double waypointRisk;private String waypointPurpose="";
     private List<PathStep> chosenRoute=List.of();private final Map<Node,Integer> exposure=new HashMap<>();
     private PathStep attackExit;private int attackExitAt=-10000;private Object attackExitLevel;private java.util.UUID attackExitTarget;
+    private boolean quickRetreat;
+    boolean quickRetreat(){return quickRetreat;}
+    /** A short verified exit can run immediately while the wider retreat search is deferred. */
+    Vec3 retreatStep(SkillWork work){
+        quickRetreat=false;var p=work.player();if(!p.onGround())return null;var live=work.combat.threats.stream().filter(t->t.entity().isAlive()).toList();if(live.isEmpty())return null;
+        var check=new NativeTraversalEvaluator(p);check.beginSlice();var current=check.closest(p.position());if(current==null)return null;
+        Vec3 center=Vec3.ZERO;for(var threat:live)center=center.add(threat.entity().position());center=center.scale(1d/live.size());final Vec3 dangerCenter=center;
+        var owner=work.runtime.server.getPlayerList().getPlayer(work.session.owner());var protectedEntity=work.combat.protectedEntity!=null?work.combat.protectedEntity:owner;
+        var model=LocalPolicyRuntime.snapshot(p);double best=Double.POSITIVE_INFINITY;PathStep selected=null;double[] features=null;
+        for(var edge:check.neighbors(current)){
+            if(!Set.of(Action.WALK,Action.STEP_UP,Action.CROUCH,Action.DROP).contains(edge.action())||Math.abs(edge.to().y()-current.y())>1.25||edgeExposure(work,edge.to(),check)>0)continue;
+            var point=NativeTraversalEvaluator.point(edge.to());
+            if(check.neighbors(edge.to()).stream().filter(next->!next.to().equals(current)&&Math.abs(next.to().y()-edge.to().y())<=1.25&&NativeTraversalEvaluator.point(next.to()).distanceTo(dangerCenter)>=point.distanceTo(dangerCenter)-.25).count()<2)continue;
+            if(protectedEntity!=null&&protectedEntity!=p&&protectedEntity!=work.combat.selected&&protectedEntity.level()==p.level()&&!(protectedEntity instanceof net.minecraft.world.entity.player.Player other&&(other.isCreative()||other.isSpectator()))&&point.distanceTo(protectedEntity.position())<p.distanceTo(protectedEntity)-.25)continue;
+            var middle=p.position().lerp(point,.5);double risk=work.combat.risk(work,point),future=Math.max(work.combat.collisionRisk(work,middle,2),work.combat.collisionRisk(work,point,4));
+            if(work.combat.spells.risk(work,point,8)>0)continue;
+            double separation=point.distanceTo(center)-p.position().distanceTo(center);var delta=point.subtract(p.position());
+            var candidate=LocalPolicyRuntime.features(p,p.position().distanceTo(center),-separation,risk+future,1,delta,0,false,work.session.spec().kind().ordinal(),0);
+            double score=risk*2+future-separation*5+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*1.5)+(model==null?0:model.cost(candidate)*8);
+            if(score<best){best=score;selected=edge;features=candidate;}
+        }
+        if(selected==null)return null;var point=NativeTraversalEvaluator.point(selected.to());chosenRoute=List.of(selected);selectedDistance=p.position().distanceTo(point);heading=point.subtract(p.position()).multiply(1,0,1).normalize();quickRetreat=true;
+        if(features!=null)LocalPolicyRuntime.chose(work,features,point);work.session.add("checkedImmediateRetreats",1);return point;
+    }
     /** Progress toward a visible target using one checked local step; a distant archer must not freeze pursuit in a region search. */
     Vec3 approachStep(SkillWork work,net.minecraft.world.entity.LivingEntity target,double desiredDistance){
+        quickRetreat=false;
         var player=work.player();if(!player.onGround()||!player.hasLineOfSight(target)||player.distanceTo(target)<=desiredDistance)return null;
         var check=new NativeTraversalEvaluator(player);check.beginSlice();var current=check.closest(player.position());if(current==null)return null;
         var intercept=work.prediction.intercept(work,target,Math.min(8,player.distanceTo(target)/.3));
@@ -35,6 +60,7 @@ final class CombatPositioning {
     }
     /** Constant-size native escape check for an immediate strike; a full region search must not stall a ready attack. */
     Vec3 attackExit(SkillWork work,net.minecraft.world.entity.LivingEntity target){
+        quickRetreat=false;
         var player=work.player();double enemyReach=work.combat.threats.stream().filter(t->t.entity()==target).flatMap(t->t.state().attacks().stream()).filter(a->a.kind().equals("MELEE")).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);if(enemyReach>player.getAttackRangeWith(player.getMainHandItem()).effectiveMaxRange(player)+.25)return null;var owner=work.runtime.server.getPlayerList().getPlayer(work.session.owner());var check=new NativeTraversalEvaluator(player);check.beginSlice();var current=check.closest(player.position());
         if(attackExit!=null&&target.getUUID().equals(attackExitTarget)&&attackExitLevel==player.level()&&work.tick()-attackExitAt<=16
                 &&NativeTraversalEvaluator.point(attackExit.from()).subtract(player.position()).horizontalDistanceSqr()<2.25
@@ -64,6 +90,7 @@ final class CombatPositioning {
     boolean pending(){return !open.isEmpty()||!legacy&&scored.size()<candidates.size();}
     boolean longRetreat(){return selectedDistance>3;}
     Vec3 choose(SkillWork w,String intent,double desiredDistance){
+        quickRetreat=false;
         legacy=w.legacyBaseline();exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE","SPACE","SIDE_LEFT","SIDE_RIGHT","JUMP_TAP").contains(intent);
         var actor=w.player();boolean jumping=w.tick()-w.lastTacticalJump<=20&&!actor.onGround()&&actor.getY()-w.tacticalJumpY>=0&&actor.getY()-w.tacticalJumpY<1.6;var feet=jumping?new Vec3(actor.getX(),w.tacticalJumpY,actor.getZ()):actor.position();
         if(waypoint!=null){
@@ -180,5 +207,5 @@ final class CombatPositioning {
         for(var step:chosenRoute.subList(0,3)){var d=NativeTraversalEvaluator.point(step.to()).subtract(NativeTraversalEvaluator.point(step.from()));if(Math.abs(d.y)>.1||new Vec3(d.x,0,d.z).normalize().dot(unit)<.9||edgeExposure(w,step.to())>0)return false;}
         return p.level().noCollision(p,p.getBoundingBox().move(0,1.3,0).expandTowards(unit.scale(2.5)));
     }
-    void reset(){attackExit=null;attackExitLevel=null;attackExitTarget=null;origin=null;selected=null;waypoint=null;waypointNode=null;heading=null;targetAtWaypoint=null;chosenRoute=List.of();exposure.clear();}
+    void reset(){quickRetreat=false;attackExit=null;attackExitLevel=null;attackExitTarget=null;origin=null;selected=null;waypoint=null;waypointNode=null;heading=null;targetAtWaypoint=null;chosenRoute=List.of();exposure.clear();}
 }

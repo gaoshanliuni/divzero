@@ -85,7 +85,7 @@ final class CombatSkill {
             if(!w.positioning.pending()&&target!=null){if(!w.actor.recovering()){w.actor.stop(w.token());w.combatOperation=w.shieldOperation=w.healingOperation=null;w.combatStage=0;}if(w.actor.recover(w.token(),target.position())){phase(w,"TERRAIN_ESCAPE");return true;}}
             w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return false;
         }
-        boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.contactEscape);
+        boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.positioning.quickRetreat()||w.contactEscape);
         var heading=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());var look=w.player().getLookAngle();boolean sprintClosing=w.sprintApproach&&!escape&&w.tick()-w.lastAttackAt>=2&&heading.lengthSqr()>.001&&new Vec3(look.x,0,look.z).normalize().dot(heading.normalize())>.75;
         if((sprintEscape||sprintClosing)&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
         w.actor.sprint(w.token(),sprintEscape||sprintClosing);
@@ -129,8 +129,8 @@ final class CombatSkill {
         if(retreat||target==null){
             phase(w,recovering?"RECOVER":flanked||contacts>1?"LURE":"RETREAT");
             var facing=target==null?w.combat.threats.stream().map(CombatAwareness.Threat::entity).min(Comparator.comparingDouble(p::distanceToSqr)).orElse(null):target;
-            move(w,w.positioning.choose(w,w.tactic,recovering?14:withdrawal+2),facing,true);
-            if(!w.positioning.longRetreat())shield(w,facing);return;
+            var retreatPoint=contacts>0||flanked||w.combat.incoming(w)?w.positioning.retreatStep(w):null;if(retreatPoint==null)retreatPoint=w.positioning.choose(w,w.tactic,recovering?14:withdrawal+2);move(w,retreatPoint,facing,true);
+            if(!w.positioning.longRetreat()&&!w.positioning.quickRetreat())shield(w,facing);return;
         }
         if(CombatEquipmentAdapter.execute(w,target)){phase(w,"ADAPTED_WEAPON");return;}
         if(NativeRangedCombat.tick(w,target))return;
@@ -255,7 +255,7 @@ final class CombatSkill {
         phase(w,"CONTACT_ESCAPE");
         if(w.player().isSprinting()&&w.contactEscapeLastPosition!=null){double travel=w.player().position().distanceTo(w.contactEscapeLastPosition);if(travel>.001){w.session.add("nativeContactSprintTicks",1);w.session.add("nativeContactSprintDistanceMilli",(long)(travel*1000));}}w.contactEscapeLastPosition=w.player().position();
         if(w.contactEscapeOrigin!=null)w.session.add("contactEscapeDistanceMilli",Math.max(0,(long)(w.player().position().distanceTo(w.contactEscapeOrigin)*1000)-w.session.count("contactEscapeDistanceMilli")));
-        Vec3 exit=w.positioning.choose(w,"RETREAT",Math.max(7,w.player().getAttackRangeWith(w.player().getMainHandItem()).effectiveMaxRange(w.player())+4));
+        Vec3 exit=w.positioning.retreatStep(w);if(exit==null)exit=w.positioning.choose(w,"RETREAT",Math.max(7,w.player().getAttackRangeWith(w.player().getMainHandItem()).effectiveMaxRange(w.player())+4));
         move(w,exit,target,true);breakthrough(w,exit);
         return true;
     }
