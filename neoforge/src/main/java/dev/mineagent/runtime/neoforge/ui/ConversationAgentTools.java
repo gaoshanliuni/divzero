@@ -45,7 +45,13 @@ public final class ConversationAgentTools {
         return execute(p,agent,operation,tool,arguments,permit,null);
     }
     public static CompletableFuture<Map<String,Object>> execute(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
-        var action=executeChecked(p,agent,operation,tool,arguments,permit,conversation);
+        if(!ConversationTools.NAMES.contains(tool))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_UNKNOWN","category","CAPABILITY","executionState","NOT_STARTED","suggestedAction","Use inspect_capabilities and skill to find the correct tool name."));
+        final ToolValidation.Checked checked;
+        try{if(arguments==null||arguments.length()>(Set.of("plan_building","set_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
+        catch(IllegalArgumentException invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid),"category","VALIDATION","executionState","NOT_STARTED","worldModified",false,"suggestedAction","Provide one complete JSON object matching this tool's parameter definition. No operation was executed."));}
+        if(!checked.issues().isEmpty())return CompletableFuture.completedFuture(checked.rejection());
+        var action=executeChecked(p,agent,operation,tool,checked.arguments().toString(),permit,conversation);
+        if(!checked.normalized().isEmpty())action=action.thenApply(value->{var copy=new LinkedHashMap<String,Object>(value);copy.put("normalizedFields",checked.normalized());return copy;});
         if(ConversationTools.mutation(tool))return action;
         return action.handle((value,error)->{
             if(error==null)return value;Throwable cause=error;while(cause instanceof CompletionException||cause instanceof ExecutionException){if(cause.getCause()==null)break;cause=cause.getCause();}
@@ -56,6 +62,11 @@ public final class ConversationAgentTools {
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=ToolArguments.parse(tool,arguments);
+            if(tool.equals("observe")){keys(args);return ConversationMetaTools.observe(p,agent);}
+            if(tool.equals("stop_actions")){keys(args);return CompletableFuture.completedFuture(ConversationMetaTools.stop(p,agent));}
+            if(tool.equals("skill")){keys(args,"name");var group=CapabilityCatalog.require(text(args,"name",64));return CompletableFuture.completedFuture(Map.of("status","CONTEXT_SCOPE_REQUIRED","name",group.name(),"description",group.description(),"runtimeAvailabilityChanged",false));}
+            if(tool.equals("read_execution_record")){keys(args,"record_id","offset","length");var scope=new ExecutionRecords.Scope(MineAgentRuntimeServices.worldId(s),p.getUUID(),agent);var record=UUID.fromString(text(args,"record_id",36));int offset=args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0,length=args.has("length")?number(args,"length",1,8192):4096;var database=s.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");return CompletableFuture.supplyAsync(()->{try{return ExecutionRecords.read(database,scope,record,offset,length);}catch(Exception e){throw new CompletionException(e);}},IO);}
+
             if(Set.of("inspect_skills","inspect_behavior").contains(tool)){keys(args);return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(s).inspect(p,agent);}
             if(tool.equals("inspect_buildings")){keys(args,"id","offset");return ServerBuildings.inspect(p,agent,args);}
             if(tool.equals("verify_building")){keys(args,"id","revision");return ServerBuildings.verify(p,agent,args,permit);}
@@ -121,7 +132,7 @@ public final class ConversationAgentTools {
             case "inspect_webui"->{keys(args);yield Map.of("contract",dev.mineagent.runtime.worker.generation.WorldUiContract.TEXT,"watchSupported",true,"scope","WORLD_OBJECT_BOUND_PLAYER_WINDOW");}
             case "inspect_effects"->{keys(args);yield ConversationEffectTools.inspect(p);}
             case "inspect_host"->{keys(args);yield dev.mineagent.runtime.neoforge.host.LocalHostCommands.inspect(p);}
-            case "inspect_capabilities"->{keys(args);yield Map.of("localHost",dev.mineagent.runtime.neoforge.host.LocalHostCommands.inspect(p),"readyTools",ConversationTools.NAMES,"canModifyItems",itemPermission(p),"webEnabled",Boolean.parseBoolean(MineAgentRuntimeServices.config(p.level().getServer()).snapshot().values().getOrDefault("web.enabled","true")),"pending",Map.of("create_blueprint","Read-only exported NBT adapter available for local singleplayer owner; Create runtime and schematicannon not verified","dynamic_item_registry","Signed HOT packages support version2 parametric spheres/tori with smooth normals and geometry validation; items support generated geometry, item.use/restyle, charged item.release/throwItem and owner collision pickup; arbitrary Mod pickup hooks and hot FML registry IDs are not implemented","seed_map","Only actual local world inspection currently available","settings_and_music","Client settings and background audio tool adapter pending","memory_scope","Per world/player/AI facts and preferences with replacement and TTL; model explicitly queries relevant memories"));}
+            case "inspect_capabilities"->{keys(args,"query");yield CapabilityCatalog.discovery(args.path("query").asText(""),List.of());}
             case "inspect_modeling"->{keys(args);ConversationRuntimeItemSmokeServer.observedModeling=true;yield dev.mineagent.runtime.core.objects.ModelGeometryTools.capabilities();}
             case "validate_model_geometry"->{keys(args,"source","target");String source=text(args,"source",8192),target=text(args,"target",16);Map<String,Object> model;try{model=dev.mineagent.runtime.core.objects.ModelGeometryTools.inspect(source,target);}catch(IllegalArgumentException invalid){model=dev.mineagent.runtime.core.objects.ModelGeometryTools.rejection(source,invalid);}ConversationHostSmokeServer.geometry(args,model);yield model;}
             case "inspect_player"->{keys(args,"section","offset");yield player(p,text(args,"section",32),args.has("offset")?number(args,"offset",0,100000):0);}

@@ -1,0 +1,36 @@
+{
+  "repository": "https://github.com/anomalyco/opencode",
+  "commit": "2fa3363c924c5c3e367b84a87ae478296a0ed59b",
+  "license": "MIT",
+  "files": {
+    "compaction.ts": {
+      "upstream": "packages/core/src/session/compaction.ts",
+      "sha256": "35bc2da1578b6bb80a3c39c1d6c51f234f34ce6586dd4f9d230e2a31b257138d"
+    },
+    "skill.ts": {
+      "upstream": "packages/opencode/src/tool/skill.ts",
+      "sha256": "629ada0c0a0135cb003429aec233aeb165f0b98a2bd5171986bc319c11af3c07"
+    },
+    "skill.txt": {
+      "upstream": "packages/opencode/src/tool/skill.txt",
+      "sha256": "226f63ce9fd51e51431205c90ef98e53a20ba5af690fdad241eba416db49c339"
+    },
+    "processor.ts": {
+      "upstream": "packages/opencode/src/session/processor.ts",
+      "sha256": "0b31e207beda56bd9a4b9b88c9e42d89a0651dd011773748c8e2938dfc3dcb74"
+    },
+    "token.ts": {
+      "upstream": "packages/core/src/util/token.ts",
+      "sha256": "a157df378a5baaf7a35ac1cb9c94dd29266d916329545529604274d6cddbc635"
+    }
+  },
+  "runtimeSha256": "d0e13de9de3719c2eee80a39203284f361503558a53f16ff91802b907573f0d8",
+  "adaptations": [
+    "Removed TypeScript annotations and module imports from selected pure functions.",
+    "selectRendered accepts already-rendered atomic protocol groups; tool-call/result groups are never split.",
+    "renderSkill receives resolved resource URIs from Java, with no filesystem discovery or shell access.",
+    "repeats reuses the upstream doom-loop predicate; DivZero additionally checks unchanged outcomes and context.",
+    "DivZero preserves operation IDs, UNKNOWN and unverified receipts outside generated summaries.",
+    "Only these pure functions run; no OpenCode agent, subagent, shell or permission-ask runtime is enabled."
+  ]
+}

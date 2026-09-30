@@ -128,19 +128,25 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         return streamWithTools(request,tools,history,chunkConsumer,ignored->{});
     }
     public ToolCompletion streamWithTools(ModelRequest request,java.util.List<ToolDefinition> tools,java.util.List<java.util.Map<String,Object>> history,java.util.function.Consumer<String> chunkConsumer,java.util.function.Consumer<String> thinkingConsumer) {
+        return streamWithTools(request,tools,history,java.util.List.of(),chunkConsumer,thinkingConsumer);
+    }
+    public ToolCompletion streamWithTools(ModelRequest request,java.util.List<ToolDefinition> tools,java.util.List<java.util.Map<String,Object>> history,java.util.List<java.util.Map<String,Object>> messages,java.util.function.Consumer<String> chunkConsumer,java.util.function.Consumer<String> thinkingConsumer) {
         java.util.Objects.requireNonNull(thinkingConsumer, "thinkingConsumer");
         java.util.Objects.requireNonNull(chunkConsumer, "chunkConsumer");
         var body = mapper.createObjectNode();
         body.put("model", model);
         body.put("stream", true);
         configureConversationThinking(baseUri,model,body,thinkingLevel);
-        var message = body.putArray("messages").addObject();
-        message.put("role", "user");
-        content(message,request);
+        var wireMessages=body.putArray("messages");
+        if(messages.isEmpty()){var message=wireMessages.addObject();message.put("role","user");content(message,request);}
+        else for(var value:messages){
+            String role=String.valueOf(value.get("role"));if(!java.util.Set.of("system","developer","user","assistant","tool").contains(role))throw new IllegalArgumentException("MODEL_MESSAGE_ROLE");
+            var message=mapper.valueToTree(ConversationMessageAdapter.adapt(value,baseUri,model,body.path("thinking").path("type").asText().equals("enabled")));wireMessages.add(message);
+        }
         if(!tools.isEmpty()){
             var declarations=body.putArray("tools");for(var tool:tools){try{var fn=declarations.addObject().put("type","function").putObject("function");fn.put("name",tool.name());fn.put("description",tool.description());fn.set("parameters",mapper.readTree(tool.parametersJson()));}catch(Exception invalid){throw new IllegalArgumentException("TOOL_SCHEMA",invalid);}}
-            for(var old:history)((com.fasterxml.jackson.databind.node.ArrayNode)body.get("messages")).add(mapper.valueToTree(old));
         }
+        for(var old:history)wireMessages.add(mapper.valueToTree(ConversationMessageAdapter.adapt(old,baseUri,model,body.path("thinking").path("type").asText().equals("enabled"))));
         RealProviderSmokeAudit audit=null;
         try {
             audit = RealProviderSmokeAudit.begin(baseUri.resolve("chat/completions"), body);

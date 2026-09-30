@@ -185,9 +185,11 @@ public final class WorkerRequestHandler implements AutoCloseable {
             if (selected instanceof OpenAiCompatibleProvider openAi) {
                 if(Boolean.TRUE.equals(request.payload().get("conversationTools"))){
                     var conversationProvider=openAi.withTimeout(Duration.ofMinutes(4));
-                    var definitions=dev.mineagent.runtime.core.conversation.ConversationTools.ALL.stream().map(t->new dev.mineagent.runtime.worker.provider.ToolDefinition(t.name(),t.description(),t.parameters())).toList();
+                    var definitions=dev.mineagent.runtime.worker.provider.ProgressiveDeclarations.tools(request.payload().get("toolNames"));
                     var history=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(request.payload().getOrDefault("toolHistory",java.util.List.of()),new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String,Object>>>(){});
-                    var result=service(capability.name(),openAi.id(),()->conversationProvider.streamWithTools(modelRequest,definitions,history,emit,delta->deltaConsumer.accept(new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"model.stream.delta",Map.of("sequence",sequence.getAndIncrement(),"channel","thinking","delta",delta)))));calls=result.toolCalls();reasoningContent=result.reasoningContent();response=new dev.mineagent.runtime.api.model.ModelResponse(openAi.id(),result.text(),result.requestedModel(),result.responseModel());
+                    var base=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(request.payload().getOrDefault("conversationMessages",java.util.List.of()),new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String,Object>>>(){});
+                    var messages=dev.mineagent.runtime.worker.provider.ProgressiveDeclarations.messages(base,request.payload().get("loadedSkills"),modelRequest.prompt());
+                    var result=service(capability.name(),openAi.id(),()->conversationProvider.streamWithTools(modelRequest,definitions,history,messages,emit,delta->deltaConsumer.accept(new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"model.stream.delta",Map.of("sequence",sequence.getAndIncrement(),"channel","thinking","delta",delta)))));calls=result.toolCalls();reasoningContent=result.reasoningContent();response=new dev.mineagent.runtime.api.model.ModelResponse(openAi.id(),result.text(),result.requestedModel(),result.responseModel());
                 }else response = service(modelRequest.images().isEmpty()?capability.name():"VISION", openAi.id(), () -> openAi.stream(modelRequest, emit));
             } else {
                 response = complete(selected, modelRequest);

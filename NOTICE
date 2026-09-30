@@ -16,3 +16,11 @@ limitations under the License.
 The full license text is provided in the LICENSE file.
 Third-party components retain their respective licenses and notices; see:
 https://github.com/gaoshanliuni/divzero/blob/main/docs/THIRD_PARTY_NOTICES.md
+
+OpenCode reusable context and skill functions
+Copyright (c) 2025 opencode, MIT License.
+Source: https://github.com/anomalyco/opencode
+Pinned commit: 2fa3363c924c5c3e367b84a87ae478296a0ed59b
+Selected pure functions and templates are adapted for the existing Rhino runtime.
+The original sources, license, hashes and adaptation notes are packaged under
+/dev/mineagent/runtime/opencode/. OpenCode shell and agent execution are not enabled.

@@ -134,13 +134,16 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
         return streamConversation(config,capability,prompt,deltaConsumer,permit,context,operation,toolHistory,null,null);
     }
     public CompletableFuture<WorkerEnvelope> streamConversation(ServerConfigService config,String capability,String prompt,java.util.function.Consumer<WorkerEnvelope> deltaConsumer,java.util.function.BooleanSupplier permit,dev.mineagent.runtime.core.memory.PlayerPreferenceStore.Snapshot context,UUID operation,java.util.List<java.util.Map<String,Object>> toolHistory,UUID world,UUID agent){
+        return streamConversation(config,capability,prompt,deltaConsumer,permit,context,operation,toolHistory,world,agent,dev.mineagent.runtime.core.conversation.CapabilityCatalog.RESIDENT,java.util.List.of(),java.util.List.of());
+    }
+    public CompletableFuture<WorkerEnvelope> streamConversation(ServerConfigService config,String capability,String prompt,java.util.function.Consumer<WorkerEnvelope> deltaConsumer,java.util.function.BooleanSupplier permit,dev.mineagent.runtime.core.memory.PlayerPreferenceStore.Snapshot context,UUID operation,java.util.List<java.util.Map<String,Object>> toolHistory,UUID world,UUID agent,java.util.List<String> toolNames,java.util.List<String> loadedSkills,java.util.List<java.util.Map<String,Object>> messages){
         return CompletableFuture.supplyAsync(() -> {
             try {
                 if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();
                 configureProviders(config);
                 ensureWorker();
                 var prefs=context==null?null:preferences();if(context!=null)prefs.prepareUse(operation,context);
-                var payload=new java.util.LinkedHashMap<String,Object>();payload.put("capability",capability);payload.put("prompt",prompt);if(toolHistory!=null){payload.put("conversationTools",true);payload.put("toolHistory",toolHistory);}
+                var payload=new java.util.LinkedHashMap<String,Object>();payload.put("capability",capability);payload.put("prompt",prompt);if(toolHistory!=null){payload.put("conversationTools",true);payload.put("toolHistory",toolHistory);payload.put("toolNames",java.util.List.copyOf(toolNames));payload.put("loadedSkills",java.util.List.copyOf(loadedSkills));payload.put("conversationMessages",java.util.List.copyOf(messages));}
                 boolean returned=false;try{var result=worker.streamRequest(dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,dev.mineagent.runtime.core.config.AgentModelSettings.context(new WorkerEnvelope(1,operation,"model.stream",payload),world,agent)),deltaConsumer,toolHistory==null?Duration.ofSeconds(90):Duration.ofMinutes(4),()->permit.getAsBoolean()&&(context==null||prefs.current(context)));returned=result.type().equals("model.stream.result");return result;}finally{if(context!=null)prefs.finishUse(operation,returned?"RESPONSE_RETURNED":"OUTCOME_UNKNOWN");}
             } catch (Exception failure) {
                 throw new java.util.concurrent.CompletionException(failure);

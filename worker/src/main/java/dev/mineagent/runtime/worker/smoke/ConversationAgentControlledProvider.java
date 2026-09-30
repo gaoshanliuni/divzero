@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class ConversationAgentControlledProvider implements AutoCloseable {
     private final ObjectMapper json=new ObjectMapper();private final HttpServer http;private final Path game;private final AtomicInteger calls=new AtomicInteger();
     ConversationAgentControlledProvider(Path game)throws Exception{this.game=game;http=HttpServer.create(new java.net.InetSocketAddress("127.0.0.1",0),0);http.createContext("/v1/chat/completions",e->{try{
-        int count=calls.incrementAndGet();var request=json.readTree(e.getRequestBody().readNBytes(300000));if(!request.path("stream").asBoolean()||request.path("tools").size()!=dev.mineagent.runtime.core.conversation.ConversationTools.ALL.size())throw new IllegalArgumentException("CHAT_AGENT_TOOL_DECLARATIONS");
+        int count=calls.incrementAndGet();var request=json.readTree(e.getRequestBody().readNBytes(300000));if(!request.path("stream").asBoolean()||request.path("tools").isEmpty())throw new IllegalArgumentException("CHAT_AGENT_TOOL_DECLARATIONS");
         var messages=request.path("messages");String prompt=messages.get(0).path("content").asText();String latest=prompt.substring(prompt.lastIndexOf("当前用户原文："));var receipts=new ArrayList<JsonNode>();for(var m:messages)if(m.path("role").asText().equals("tool"))receipts.add(json.readTree(m.path("content").asText()));
         int n=receipts.size();var tools=new ArrayList<Map<String,Object>>();String answer="";
         if(latest.contains("手里的剑")){
