@@ -3259,7 +3259,7 @@
     },
     {
       "path": "docs/images/README.md",
-      "sha256": "38f54cea36eee151050813f869fe6a827b5ed0f967c8c8f7b73dde12759fcd2e",
+      "sha256": "cf62ee78e1e08aa73f5173972dfae409f4d324dc69d9b9d8572107e4237683c2",
       "bytes": 6929
     },
     {
@@ -3284,8 +3284,8 @@
     },
     {
       "path": "docs/images/native-content-catalog.png",
-      "sha256": "944a69847d84dea0fbb4c072be7df17d10c4cad671cbbf59259f45f43abb7b9f",
-      "bytes": 650631
+      "sha256": "7247edb3691f9640909624731b4be2f1e8b8b43fb69e42f1f1cb1e9202c11bf1",
+      "bytes": 646353
     },
     {
       "path": "docs/images/native-furnace.png",
@@ -3304,13 +3304,13 @@
     },
     {
       "path": "docs/images/native-selector-layout.png",
-      "sha256": "fd0d40507046a16228da7c58cb02c42504044d736c58dddc12296efafd1756bb",
-      "bytes": 251214
+      "sha256": "c4b1b5ab00aa30b87ec27cb596cf513ff3737cd8094259eec5099cf8cab7ba9b",
+      "bytes": 240627
     },
     {
       "path": "docs/images/native-settings-scale-four.png",
-      "sha256": "b1db794bf722e0225a33fd4f481ff2f4d7f6cb59706f1061f18e3ebac99a6eba",
-      "bytes": 251341
+      "sha256": "3b50a11a7ce1d48220582bef5e7068166d34df50c6d5819af9ad9bde1d063155",
+      "bytes": 239843
     },
     {
       "path": "docs/images/native-shop.png",
@@ -3334,8 +3334,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "9ea97c356f8071f2bcf166420fd65b0f632e9ace6b9366af1a147f6e0bb8aa26",
-      "bytes": 9009
+      "sha256": "2c259d7bcf47b3ec87de9ed458002fa8e3500d835e394b22e9984d97975a7453",
+      "bytes": 9856
     },
     {
       "path": "docs/releases/1.0.20.md",

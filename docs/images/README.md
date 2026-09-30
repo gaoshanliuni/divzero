@@ -69,7 +69,7 @@
 
 | 图片 | 实际场景 | SHA-256 |
 |---|---|---|
-| [native-settings-scale-four.png](native-settings-scale-four.png) | 尺寸 4 设置页：独立滚动区、固定保存栏及二级尺寸入口 | `b1db794bf722e0225a33fd4f481ff2f4d7f6cb59706f1061f18e3ebac99a6eba` |
+| [native-settings-scale-four.png](native-settings-scale-four.png) | 尺寸 4 设置页：独立滚动区、固定保存栏及二级尺寸入口 | `3b50a11a7ce1d48220582bef5e7068166d34df50c6d5819af9ad9bde1d063155` |
 | [native-recovery-report.png](native-recovery-report.png) | 图形化恢复报告：状态、坐标和方块图标对比，无原始 JSON | `c6d07df70eff4ce1ea58bd06d50ebbfaa4e1799bc2987533cacbe3718ca45640` |
-| [native-selector-layout.png](native-selector-layout.png) | 创建页下拉选择框与相邻按钮分开布局，标识垂直居中 | `fd0d40507046a16228da7c58cb02c42504044d736c58dddc12296efafd1756bb` |
-| [native-content-catalog.png](native-content-catalog.png) | 已打开包管理后创建内容，目录自动出现物品、生物和原版修改 | `944a69847d84dea0fbb4c072be7df17d10c4cad671cbbf59259f45f43abb7b9f` |
+| [native-selector-layout.png](native-selector-layout.png) | 创建页下拉选择框与相邻按钮分开布局，标识垂直居中 | `c4b1b5ab00aa30b87ec27cb596cf513ff3737cd8094259eec5099cf8cab7ba9b` |
+| [native-content-catalog.png](native-content-catalog.png) | 已打开包管理后创建内容，目录自动出现物品、生物和原版修改 | `7247edb3691f9640909624731b4be2f1e8b8b43fb69e42f1f1cb1e9202c11bf1` |
