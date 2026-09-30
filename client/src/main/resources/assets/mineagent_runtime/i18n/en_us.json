@@ -3423,5 +3423,7 @@
   "样本": "Samples",
   "工作中": "Working",
   "已死亡": "Dead",
-  "离线": "Offline"
+  "离线": "Offline",
+  "保留当前已验证权重": "Keeping the current validated weights",
+  "已保存权重不可用，使用预训练权重": "Saved weights unavailable; using pretrained weights"
 }

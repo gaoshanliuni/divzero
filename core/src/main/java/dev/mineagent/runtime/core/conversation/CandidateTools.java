@@ -34,7 +34,7 @@ public final class CandidateTools {
             p.putObject("actor").put("type","string").putArray("enum").add("ai").add("player");p.putObject("expected_revision").put("type","integer").put("minimum",0);required.add("actor").add("expected_revision");
             for(String key:List.of("boost","learning","neural","recovery","enhancedCritical","microHop"))p.putObject(key).put("type","boolean");for(String key:List.of("horizontalKnockback","verticalKnockback"))p.putObject(key).put("type","number").put("minimum",0).put("maximum",1);
             p.putObject("resetWeights").put("type","boolean");p.putObject("expected_model_version").put("type","integer").put("minimum",1);
-            description="修改当前世界中指定AI或本人托管身体的持久增强偏好；先inspect_behavior读取enhancements版本。Boost只能在玩家明确要求时开启，并受服务器开关限制；默认关闭。learning为可选权重学习，neural为预训练策略，recovery为共享自主脱困。resetWeights=true可恢复预训练权重，必须提供inspect_behavior返回的expected_model_version；重置后清空该角色学习样本，不影响其他角色。改变偏好不停止当前工作，也不重新接管已退出的玩家。";
+            description="修改当前世界中指定AI或本人托管身体的持久增强偏好；先inspect_behavior读取enhancements版本。Boost只能在玩家明确要求时开启，并受服务器开关限制；默认关闭。learning为默认开启的局内权重学习（可手动关闭），neural为预训练策略，recovery为共享自主脱困。resetWeights=true可恢复预训练权重，必须提供inspect_behavior返回的expected_model_version；重置后清空该角色学习样本，不影响其他角色。改变偏好不停止当前工作，也不重新接管已退出的玩家。";
         }return new ConversationTools.Definition(name,description,schema.toString());
     }
     private CandidateTools(){}

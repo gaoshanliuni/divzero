@@ -18,6 +18,7 @@ final class CombatSkill {
         w.lastCombatTick=w.tick();w.lastCombatResult=advance(w);return w.lastCombatResult;
     }
     private static boolean advance(SkillWork w){
+        if(w.lastCombatTarget!=null&&!w.lastCombatTarget.isAlive()&&w.creditedDeath!=w.lastCombatTarget&&w.lastCombatTarget.getKillCredit()==w.player()){w.creditedDeath=w.lastCombatTarget;w.session.add("verifiedKills",1);}
         if(w.lastTacticalJump>w.observedTacticalJump&&w.tick()-w.lastTacticalJump<=8&&w.player().getY()>w.tacticalJumpY+.2){w.observedTacticalJump=w.lastTacticalJump;w.session.add(w.jumpKind.equals("JUMP_TAP")?"observedJumpTaps":"observedCounterJumps",1);if(w.jumpKind.equals("JUMP_TAP")&&!w.player().isSprinting())w.session.add("jumpTapSprintResets",1);}
         if(w.combatStage==0&&w.combatOperation!=null&&(w.player().getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt)){w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;}
         observeRelease(w);observeFood(w);w.combat.scan(w);observeFootwork(w);
