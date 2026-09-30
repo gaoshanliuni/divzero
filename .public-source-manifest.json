@@ -3529,8 +3529,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "cac707b5a6849f2ec3010203a05c5de84a98205755f161ba62fc1b5af4e880bd",
-      "bytes": 15453
+      "sha256": "8a54c46e56bc625168a97b3bf887f4eb59dfafc666cbb1d1d102a1dfaa2f363c",
+      "bytes": 18667
     },
     {
       "path": "docs/releases/1.0.20.md",
@@ -4434,8 +4434,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PlayerFeedbackSmoke.java",
-      "sha256": "417fa6cf128c1cd2ce2367b23253a47591a92d3e4fa954ca04f886bf00d10897",
-      "bytes": 15721
+      "sha256": "c7cb3d0aae8d0a052ba2ae89dbfbebecc663c18768735d31e5b95da30aed9c37",
+      "bytes": 16628
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
@@ -5584,8 +5584,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/MovementSkills.java",
-      "sha256": "a51841af2ac00cae74a1c24eef5ee87f8260dcfdea6a5f5c1e1fded9ac85c590",
-      "bytes": 5182
+      "sha256": "5ed59a1365e5cb78d237a311d750c0c0d7452a915481f9a9181cb9b0df7dde27",
+      "bytes": 5306
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeAttackTimeline.java",
@@ -5659,8 +5659,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "sha256": "5681b8545596d054d410b7d1a046b8daa9fec139d46366cdf6532abb2c847edc",
-      "bytes": 11390
+      "sha256": "36e0a6a6298f0fa176d8e76092d80738e804f93c688c5e659d6b378ed5aa6b7c",
+      "bytes": 11420
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",

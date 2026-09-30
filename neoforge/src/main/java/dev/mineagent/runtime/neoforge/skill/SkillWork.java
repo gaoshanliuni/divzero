@@ -60,7 +60,7 @@ final class SkillWork {
         }
     }
     boolean at(Vec3 target){return player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<.35;}
-    boolean move(Vec3 target){if(at(target)){actor.stop(token());return true;}String state=actor.move(token(),target);if(state.equals("ARRIVED")&&player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<1.251){actor.stop(token());return true;}if(state.equals("UNREACHABLE")||state.equals("INTERACTION_BLOCKED")){session.add("unreachable",1);waitFor(state,60);abandonTarget();wanderTarget=null;wanderSearch=null;}return false;}
+    boolean move(Vec3 target){if(at(target)){actor.stop(token());return true;}String state=actor.move(token(),target);if(state.equals("ARRIVED")&&player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<1.251){actor.stop(token());return true;}if(state.equals("UNREACHABLE")||state.equals("INTERACTION_BLOCKED")||state.equals("SEARCH_LIMIT")){session.add("unreachable",1);waitFor(state,60);abandonTarget();wanderTarget=null;wanderSearch=null;}return false;}
     boolean reach(BlockPos target,InteractionTargetResolver.Kind kind){
         if(stand!=null)return move(stand);
         if(search==null)search=InteractionTargetResolver.block(player(),target,kind);
