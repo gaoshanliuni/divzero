@@ -3814,8 +3814,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "sha256": "91cf5eb3be05b3bd9297fd71443b38cdfae3f24fe5537209aecc36aa4eade083",
-      "bytes": 11975
+      "sha256": "5976a4a93698a1ff0381bae875e42d72bcfb583445e5309795f23de181ad4b1c",
+      "bytes": 12000
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
@@ -4179,8 +4179,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeInventoryPanel.java",
-      "sha256": "7a6d4b06d325b276e2087e0ddcb6f92842fd517b2a475208d0b0cb21fc66ac17",
-      "bytes": 8542
+      "sha256": "4a0b6c0bc7fb249d30120ba6c3586f0561d2067a9547a5976c0c22014362c3a6",
+      "bytes": 8537
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeLifecyclePanel.java",
@@ -5339,8 +5339,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/AiSkillActor.java",
-      "sha256": "9ae0fcb28f1378cc0c03c8a505960969187957b22031263c63135ed91a839334",
-      "bytes": 7807
+      "sha256": "396a88148e4057c1d83de3c654d07de3afdb9f167248ef61bfdabbab9a102aad",
+      "bytes": 7833
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
@@ -5349,8 +5349,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BoostRuntime.java",
-      "sha256": "3562db6895932746223dce52a77a4b04bede0da73d4de7fffa94adc5afae85ab",
-      "bytes": 4139
+      "sha256": "4baf7fd0695a38a3d75a46b3b73c125b557bd9ce0eb1aae3a8199ff79f64bc9c",
+      "bytes": 4367
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatAwareness.java",
@@ -5429,8 +5429,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "0bad0902acba183ead155a25e04b0e66af348ed321169c93c15d2c8872d364e6",
-      "bytes": 13476
+      "sha256": "f1b89af00f115a97dfd859572e9254506ed9cef50b7b9ea33d80c798a390b066",
+      "bytes": 13504
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",

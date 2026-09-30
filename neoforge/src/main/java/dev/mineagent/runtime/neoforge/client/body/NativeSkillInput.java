@@ -24,7 +24,7 @@ public final class NativeSkillInput {
         validate(n);if(n.has("motion")){var motion=(com.fasterxml.jackson.databind.node.ObjectNode)n.get("motion").deepCopy();if(n.has("aim"))motion.set("aim",n.get("aim"));else if(Set.of("HOLD","USE_ONCE","ATTACK_ENTITY","USE_BLOCK","BREAK").contains(n.path("action").asText()))motion.set("aim",n.get("target"));tick(motion);}var mc=mc();var p=mc.player;if(p==null||mc.gameMode==null)return;String action=n.path("action").asText(),next=n.path("operation").asText()+"/"+action;
         if(!next.equals(command)){command=next;clicked=COMPLETED.contains(next);}var target=vector(n.path("target"));
         if(action.equals("HALT_MOTION")){if(p.isUsingItem())((PlayerControlKeyAccess)mc.options.keyUse).mineagent$bodyDown(true);if(n.has("aim"))turn(vector(n.get("aim")));return;}
-        if(action.equals("HALT")){mc.gameMode.stopDestroyBlock();p.stopUsingItem();return;}
+        if(action.equals("HALT")){NativeBoostInput.reset();mc.gameMode.stopDestroyBlock();p.stopUsingItem();return;}
         if(!n.has("motion"))key(mc.options.keyShift,n.path("sneaking").asBoolean());
         if(action.equals("JUMP")){key(mc.options.keyJump,true);return;}if(action.equals("SNEAK"))return;
         if(action.equals("OFFHAND")){if(!clicked&&(p.containerMenu==p.inventoryMenu||p.containerMenu instanceof dev.mineagent.runtime.neoforge.ui.AgentInventoryMenu)&&p.containerMenu.getCarried().isEmpty()){int slot=n.path("slot").asInt();mc.gameMode.handleContainerInput(p.containerMenu.containerId,inventorySlot(p,slot),40,ContainerInput.SWAP,p);markClicked();}return;}

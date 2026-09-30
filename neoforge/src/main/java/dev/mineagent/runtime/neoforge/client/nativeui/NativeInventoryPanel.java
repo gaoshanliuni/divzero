@@ -97,7 +97,7 @@ public final class NativeInventoryPanel {
     static void tooltip(Screen host,net.minecraft.client.gui.GuiGraphicsExtractor graphics,int x,int y){var p=active;if(p!=null&&p.host==host&&p.hovered())p.bridge.embeddedTooltip(graphics,x,y);}
     public static double[] smokeSlotViewport(int index){
         if(!Boolean.getBoolean("mineagent.skillSmoke")||active==null||active.bridge==null)throw new IllegalStateException("SMOKE_INVENTORY_NOT_OPEN");
-        var p=active;var slot=p.bridge.getMenu().getSlot(index);var viewport=p.scroll.getViewPort();
+        var p=active;var slot=p.bridge.getMenu().getSlot(index);var viewport=p.scroll.viewPort;
         return new double[]{p.bridge.getGuiLeft()+slot.x+8,p.bridge.getGuiTop()+slot.y+8,viewport.getContentX(),viewport.getContentY(),viewport.getContentWidth(),viewport.getContentHeight()};
     }
     public static Screen activeScreen(){return active!=null&&active.valid()?active.bridge:null;}
