@@ -12,7 +12,7 @@ import java.util.function.BooleanSupplier;
 public final class NativeBehaviorPanel {
     private record Choice(String id,String label){@Override public String toString(){return t(label);}}
     private static final List<NativeBehaviorPanel> OPEN=new ArrayList<>();
-    private final String agent;private final BooleanSupplier current;private final UIElement container;private final Object hostScreen=net.minecraft.client.Minecraft.getInstance().screen;private final Object connection=net.minecraft.client.Minecraft.getInstance().getConnection(),level=net.minecraft.client.Minecraft.getInstance().level;private final TextElement status,progress,targetStatus;
+    private final String agent;private final BooleanSupplier current;private final UIElement container;private final Object hostScreen=net.minecraft.client.Minecraft.getInstance().screen;private final Object connection=net.minecraft.client.Minecraft.getInstance().getConnection(),level=net.minecraft.client.Minecraft.getInstance().level;private final TextElement status,progress,targetStatus,modelStatus;
     private final Selector<Choice> mode,strategy,engagement,target,actor,region,routeMode;
     private final Button boost,learning,neural,recovery;
     private final Selector<Integer> radius;private final JsonArray route=new JsonArray();
@@ -31,6 +31,7 @@ public final class NativeBehaviorPanel {
         var supportRow=WorkspacePanels.row();supportRow.getLayout().height(25);body.addChild(supportRow);
         neural=NativeUiTheme.button(t("神经策略：开启"),()->toggleEnhancement("neural"));recovery=NativeUiTheme.button(t("自主脱困：开启"),()->toggleEnhancement("recovery"));
         neural.getLayout().flex(1);recovery.getLayout().flex(1);supportRow.addChild(neural);supportRow.addChild(recovery);
+        modelStatus=NativeUiTheme.text("",NativeUiTheme.MUTED,9);body.addChild(modelStatus);body.addChild(NativeUiTheme.button(t("恢复预训练权重"),this::resetWeights));
         mode=selector(body,"主工作",new String[][]{{"IDLE","待命"},{"WANDER","自由活动"},{"FOLLOW","跟随"},{"PATROL","巡逻"},{"GUARD","警戒"},{"FARM","农务"},{"FISH","钓鱼"},{"COMBAT","战斗"}});
         strategy=selector(body,"战斗方式",new String[][]{{"AUTO","自动选择"},{"HIT_AND_RUN","近战跑打"},{"MELEE_COMBO","近战连击控距"},{"RANGED_KITE","远程控距"},{"HOLD_POSITION","守住阵地"},{"DISENGAGE","脱离交战"}});
         engagement=selector(body,"交战规则",new String[][]{{"SELF_DEFENSE","只自卫"},{"PROTECT","保护对象"},{"CLEAR_AREA","清理防区"},{"SPECIFIED","只攻击指定对象"},{"NONE","不攻击"}});
@@ -63,11 +64,14 @@ public final class NativeBehaviorPanel {
     }
     private JsonObject combat(){var n=new JsonObject();n.addProperty("strategy",strategy.getValue().id);n.addProperty("engagement",engagement.getValue().id);switch(engagement.getValue().id){case "PROTECT"->n.addProperty("protect",target.getValue().id);case "SPECIFIED"->{n.addProperty("target",target.getValue().id.equals("$owner")?state.getAsJsonObject("context").get("ownerId").getAsString():target.getValue().id);}case "CLEAR_AREA"->area(n);}return n;}
     private JsonObject enhancements(){return state==null||!state.has("enhancements")?null:state.getAsJsonObject("enhancements").getAsJsonObject(actor.getValue().id);}
+    private JsonObject model(){return state==null||!state.has("enhancements")?null:state.getAsJsonObject("enhancements").getAsJsonObject("models").getAsJsonObject(actor.getValue().id);}
+    private void resetWeights(){var model=model();var profile=enhancements();if(model==null||profile==null||actorPending)return;var input=new JsonObject();input.addProperty("actor",actor.getValue().id);input.addProperty("expected_revision",profile.get("revision").getAsLong());input.addProperty("expected_model_version",model.get("version").getAsLong());input.addProperty("resetWeights",true);send("set_actor_enhancements",input);}
     private void updateEnhancementLabels(){var profile=enhancements();if(profile==null)return;
         boost.setText(Component.literal(t(profile.get("boost").getAsBoolean()?"Boost：开启":"Boost：关闭")));
         learning.setText(Component.literal(t(profile.get("learning").getAsBoolean()?"权重学习模式：开启":"权重学习模式：关闭")));
         neural.setText(Component.literal(t(profile.get("neural").getAsBoolean()?"神经策略：开启":"神经策略：关闭")));
         recovery.setText(Component.literal(t(profile.get("recovery").getAsBoolean()?"自主脱困：开启":"自主脱困：关闭")));
+        var m=model();if(m!=null)modelStatus.setText(Component.literal(t(switch(m.get("status").getAsString()){case "LOADING_CHECKPOINT"->"读取已保存权重…";case "TRAINING_CANDIDATE"->"正在学习；继续使用已验证权重";case "LEARNED_VALIDATED","RESTORED_CHECKPOINT"->"使用已保存的学习权重";default->"使用预训练权重";})+" · "+t("样本")+": "+m.get("samples").getAsLong()));
     }
     private void toggleEnhancement(String field){var profile=enhancements();if(profile==null||actorPending)return;var input=new JsonObject();input.addProperty("actor",actor.getValue().id);input.addProperty("expected_revision",profile.get("revision").getAsLong());input.addProperty(field,!profile.get(field).getAsBoolean());send("set_actor_enhancements",input);}
     private void start(){try{var n=base();String kind=mode.getValue().id;if(Set.of("WANDER","GUARD","FARM","FISH").contains(kind))area(n);if(kind.equals("FOLLOW"))n.addProperty("target",target.getValue().id);if(kind.equals("PATROL")){if(route.isEmpty())throw new IllegalArgumentException(t("请先添加路标"));n.add("route",route.deepCopy());n.addProperty("repeat",!routeMode.getValue().id.equals("ONCE"));n.addProperty("ping_pong",routeMode.getValue().id.equals("PING_PONG"));}n.add("combat",combat());send("set_behavior_mode",n);}catch(Exception e){WorkspacePanels.failure(status,e);}}

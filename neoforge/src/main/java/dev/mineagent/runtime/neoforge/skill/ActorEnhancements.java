@@ -37,15 +37,18 @@ public final class ActorEnhancements {
     }
     public static Map<String,Object> update(ServerPlayer viewer,UUID agent,JsonNode input){
         if(!viewer.level().getServer().isSameThread()||!ServerTaskStart.allowed(viewer,agent))throw new SecurityException("ENHANCEMENT_PERMISSION");
-        for(var entry:input.properties())if(!Set.of("actor","expected_revision","boost","learning","neural","recovery","enhancedCritical","microHop","horizontalKnockback","verticalKnockback").contains(entry.getKey()))throw new IllegalArgumentException("ENHANCEMENT_FIELD");
+        for(var entry:input.properties())if(!Set.of("actor","expected_revision","boost","learning","neural","recovery","enhancedCritical","microHop","horizontalKnockback","verticalKnockback","resetWeights","expected_model_version").contains(entry.getKey()))throw new IllegalArgumentException("ENHANCEMENT_FIELD");
         UUID body=bodyId(viewer,agent,input.path("actor").asText("ai"));var old=read(viewer,body);
         if(!input.path("expected_revision").isIntegralNumber()||input.get("expected_revision").asLong()!=old.revision)throw new IllegalStateException("ENHANCEMENT_VERSION_CHANGED");
+        boolean reset=input.path("resetWeights").asBoolean(false);if(input.has("resetWeights")&&!input.get("resetWeights").isBoolean())throw new IllegalArgumentException("ENHANCEMENT_BOOLEAN_resetWeights");
+        if(reset){if(!input.path("expected_model_version").isIntegralNumber())throw new IllegalArgumentException("POLICY_VERSION_REQUIRED");LocalPolicyRuntime.requireResetVersion(viewer,body,input.get("expected_model_version").asLong());}
         var service=MineAgentRuntimeServices.config(viewer.level().getServer());var config=service.snapshot();String p=key(viewer,body);var patch=new LinkedHashMap<String,String>();
         for(String field:List.of("boost","learning","neural","recovery","enhancedCritical","microHop"))if(input.has(field)){if(!input.get(field).isBoolean())throw new IllegalArgumentException("ENHANCEMENT_BOOLEAN_"+field);patch.put(p+field,input.get(field).asText());}
         for(String field:List.of("horizontalKnockback","verticalKnockback"))if(input.has(field)){double value=input.get(field).asDouble(Double.NaN);if(!input.get(field).isNumber()||!Double.isFinite(value)||value<0||value>1)throw new IllegalArgumentException("ENHANCEMENT_RATIO_"+field);patch.put(p+field,Double.toString(value));}
         if(input.path("boost").asBoolean()&&!Boolean.parseBoolean(config.values().getOrDefault("autonomy.boost.allowed","true")))throw new SecurityException("BOOST_DISABLED_BY_SERVER");
         patch.put(p+"revision",Long.toString(Math.addExact(old.revision,1)));
         if(!service.apply(new ConfigPatch(config.revision(),patch),true).accepted())throw new IllegalStateException("ENHANCEMENT_VERSION_CHANGED");
+        LocalPolicyRuntime.preferencesChanged(viewer,body,old,read(viewer,body));if(reset)LocalPolicyRuntime.reset(viewer,body);
         return Map.of("status","APPLIED","workPreserved",true,"body",body,"settings",read(viewer,body));
     }
     private ActorEnhancements(){}

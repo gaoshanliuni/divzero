@@ -26,11 +26,11 @@ public final class LocalPolicyRuntime {
     private static final class State {
         LocalActionPolicy serving=PRETRAINED;final Deque<LocalActionPolicy.Sample> replay=new ArrayDeque<>();
         final UUID id;final MinecraftServer server;final Path file;
-        long samples,accepted,rejected,epoch;double validationLoss;boolean training;String status="PRETRAINED";Pending pending;
+        long samples,accepted,rejected,epoch;double validationLoss;boolean training,loading=true;String status="LOADING_CHECKPOINT";Pending pending;
         CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);
         State(ServerPlayer p,UUID id){this.id=id;server=p.level().getServer();file=server.getServerDirectory().resolve("mineagent-runtime-data/policies/"+MineAgentRuntimeServices.worldId(server)+"/"+id+".json");
             long captured=epoch;CompletableFuture.supplyAsync(()->{try{return Files.exists(file)?JSON.readTree(Files.readString(file)):null;}catch(Exception e){return null;}},IO).thenAccept(data->server.execute(()->{
-                if(captured!=epoch||data==null)return;try{serving=LocalActionPolicy.parse(data.path("model").asText());samples=data.path("samples").asLong();accepted=data.path("accepted").asLong();validationLoss=data.path("validationLoss").asDouble();status="RESTORED_CHECKPOINT";}catch(Exception invalid){status="PRETRAINED_CHECKPOINT_INVALID";}
+                if(captured!=epoch||ALL.get(server)==null||ALL.get(server).get(id)!=this)return;loading=false;if(data==null){status="PRETRAINED";return;}try{serving=LocalActionPolicy.parse(data.path("model").asText());samples=data.path("samples").asLong();accepted=data.path("accepted").asLong();validationLoss=data.path("validationLoss").asDouble();status=serving.source().equals(PRETRAINED.source())?"PRETRAINED_RESTORED":"RESTORED_CHECKPOINT";}catch(Exception invalid){status="PRETRAINED_CHECKPOINT_INVALID";}
             }));
         }
         void save(){String model=serving.json();long n=samples,a=accepted;double loss=validationLoss;
@@ -38,7 +38,8 @@ public final class LocalPolicyRuntime {
         }
     }
     private static UUID identity(ServerPlayer p){return p instanceof MineAgentPlayer body?body.agentId():p.getUUID();}
-    private static State state(ServerPlayer p){return ALL.computeIfAbsent(p.level().getServer(),s->new HashMap<>()).computeIfAbsent(identity(p),id->new State(p,id));}
+    private static State state(ServerPlayer p){return state(p,identity(p));}
+    private static State state(ServerPlayer context,UUID id){return ALL.computeIfAbsent(context.level().getServer(),s->new HashMap<>()).computeIfAbsent(id,key->new State(context,key));}
     public static double score(ServerPlayer p,double[] features){if(!ActorEnhancements.forBody(p).neural())return 0;return state(p).serving.cost(features);}
     public static LocalActionPolicy snapshot(ServerPlayer p){return ActorEnhancements.forBody(p).neural()?state(p).serving:null;}
     public static double[] features(ServerPlayer p,double distance,double progress,double risk,int steps,Vec3 delta,int edge,boolean opportunity,int kind,double materials){
@@ -49,14 +50,14 @@ public final class LocalPolicyRuntime {
         state.pending=new Pending(w.player(),w.player().level(),w.tick(),w.player().getHealth(),waypoint,w.player().position().distanceTo(waypoint),features.clone(),w.session.count("damageMilliHearts"),()->w.session.count("damageMilliHearts"),()->w.session.runnable()&&w.actor.current());
     }
     public static void outcome(ServerPlayer p,double[] features,double cost){
-        if(!Double.isFinite(cost)||!ActorEnhancements.forBody(p).learning())return;var state=state(p);state.samples++;state.replay.addLast(new LocalActionPolicy.Sample(features,Math.clamp(cost,0,1)));while(state.replay.size()>2048)state.replay.removeFirst();
+        if(!Double.isFinite(cost)||!ActorEnhancements.forBody(p).learning())return;var state=state(p);if(state.loading)return;state.samples++;state.replay.addLast(new LocalActionPolicy.Sample(features,Math.clamp(cost,0,1)));while(state.replay.size()>2048)state.replay.removeFirst();
         if(state.samples%32==0)state.save();
-        if(state.training||state.replay.size()<128||state.samples%32!=0)return;
+        if(state.loading||state.training||state.replay.size()<128||state.samples%32!=0)return;
         var data=new ArrayList<>(state.replay);var training=new ArrayList<LocalActionPolicy.Sample>();var validation=new ArrayList<LocalActionPolicy.Sample>();for(int i=0;i<data.size();i++)(i%5==0?validation:training).add(data.get(i));
         if(training.size()>768)training=new ArrayList<>(training.subList(training.size()-768,training.size()));
         var batch=List.copyOf(training);var holdout=List.copyOf(validation);var serving=state.serving;long epoch=state.epoch;state.training=true;state.status="TRAINING_CANDIDATE";
         CompletableFuture.supplyAsync(()->{var candidate=serving;for(int epochIndex=0;epochIndex<3;epochIndex++)candidate=candidate.train(batch,.002);return candidate;},LEARNING).whenComplete((candidate,error)->state.server.execute(()->{
-            state.training=false;if(ALL.get(state.server)==null||ALL.get(state.server).get(state.id)!=state||state.epoch!=epoch||!ActorEnhancements.read(p,state.id).learning())return;
+            if(ALL.get(state.server)==null||ALL.get(state.server).get(state.id)!=state||state.epoch!=epoch)return;state.training=false;if(!ActorEnhancements.read(p,state.id).learning())return;
             if(error!=null){state.rejected++;state.status="TRAINING_REJECTED";return;}
             double before=serving.loss(holdout),after=candidate.loss(holdout);state.validationLoss=after;
             if(Double.isFinite(after)&&after<before&&after<=.12){state.serving=candidate;state.accepted++;state.status="LEARNED_VALIDATED";state.save();}
@@ -64,10 +65,20 @@ public final class LocalPolicyRuntime {
         }));
     }
     public static Map<String,Object> inspect(ServerPlayer viewer,UUID id){
-        var states=ALL.get(viewer.level().getServer());var state=states==null?null:states.get(id);
+        var state=state(viewer,id);
         return state==null?Map.of("status","PRETRAINED","version",PRETRAINED.version(),"samples",0,"source",PRETRAINED.source()):Map.of("status",state.status,"version",state.serving.version(),"samples",state.samples,"acceptedUpdates",state.accepted,"rejectedUpdates",state.rejected,"validationLoss",state.validationLoss,"source",state.serving.source(),"training",state.training);
     }
-    public static void reset(ServerPlayer owner,UUID id){var states=ALL.get(owner.level().getServer());var state=states==null?null:states.get(id);if(state!=null){state.epoch++;state.serving=PRETRAINED;state.pending=null;state.replay.clear();state.status="PRETRAINED_RESTORED";state.save();}}
+    public static void requireResetVersion(ServerPlayer viewer,UUID id,long version){var state=state(viewer,id);if(state.loading)throw new IllegalStateException("POLICY_CHECKPOINT_LOADING");if(state.serving.version()!=version)throw new IllegalStateException("POLICY_VERSION_CHANGED");}
+    public static void reset(ServerPlayer owner,UUID id){
+        var state=state(owner,id);state.epoch++;state.loading=state.training=false;state.serving=PRETRAINED;state.pending=null;state.replay.clear();state.samples=state.accepted=state.rejected=0;state.validationLoss=0;state.status="PRETRAINED_RESTORED";state.save();
+    }
+    public static void preferencesChanged(ServerPlayer viewer,UUID id,ActorEnhancements.Settings before,ActorEnhancements.Settings after){
+        var values=ALL.get(viewer.level().getServer());var state=values==null?null:values.get(id);if(state==null)return;
+        if(before.learning()!=after.learning()||before.boost()!=after.boost()||before.neural()!=after.neural()){
+            state.pending=null;if(state.loading)return;state.epoch++;state.training=false;
+            state.status=state.serving==PRETRAINED?"PRETRAINED":"LEARNED_VALIDATED";
+        }
+    }
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
         var states=ALL.get(event.getServer());if(states==null)return;
         for(var state:states.values()){var pending=state.pending;if(pending==null)continue;var body=pending.body;

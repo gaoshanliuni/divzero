@@ -159,6 +159,49 @@ public final class PersistentSkillSmokeClient {
             var foreign=MineAgentRuntimeServices.bodies(p.level().getServer()).createPersistentAt("外部背包",UUID.randomUUID(),p.level(),new Vec3(25.5,101,23.5)).agentId();boolean denied=false;p.level().getServer().getPlayerList().deop(p.nameAndId());try{dev.mineagent.runtime.neoforge.ui.ServerAgentInventory.read(p,Map.of("agentId",agent.toString()));try{dev.mineagent.runtime.neoforge.ui.ServerAgentInventory.read(p,Map.of("agentId",foreign.toString()));}catch(SecurityException expected){denied=true;}}finally{p.level().getServer().getPlayerList().op(p.nameAndId());}require(denied,"FOREIGN_INVENTORY_PERMISSION_BYPASS");return Map.of("staleRejected",stale,"fullRejected",full,"equipmentComponentsPreserved",true,"invalidSlotRejected",invalid,"realSwap",true,"foreignOwnerDenied",denied);
         }));
     }
+    private static void enhancementLifecycle(){
+        action("read-real-policy-checkpoints",()->server(p->dev.mineagent.runtime.neoforge.skill.ActorEnhancements.inspect(p,agent)));
+        waitFor("policy-checkpoint-loaded",120,()->server(p->!dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.inspect(p,agent).get("status").equals("LOADING_CHECKPOINT")));
+        action("follow-before-enhancement-changes",()->tool("follow_entity",start("enhancement_follow","ai").put("target","$owner")));
+        action("boost-is-native-off-and-scaled-on",()->server(p->{
+            var b=body(p);require(!dev.mineagent.runtime.neoforge.skill.ActorEnhancements.boost(b),"BOOST_ENABLED_BY_DEFAULT");
+            b.setDeltaMovement(Vec3.ZERO);b.knockback(.4,1,0);var before=b.getDeltaMovement();
+            var old=dev.mineagent.runtime.neoforge.skill.ActorEnhancements.read(p,agent);
+            var input=JSON.createObjectNode().put("actor","ai").put("expected_revision",old.revision()).put("boost",true).put("learning",true);
+            dev.mineagent.runtime.neoforge.skill.ActorEnhancements.update(p,agent,input);require(dev.mineagent.runtime.neoforge.skill.ActorEnhancements.boost(b),"BOOST_NOT_EFFECTIVE");
+            b.setDeltaMovement(Vec3.ZERO);b.knockback(.4,1,0);var after=b.getDeltaMovement();
+            require(Math.abs(before.x)>.05&&Math.abs(after.x-before.x*.5)<.00001,"BOOST_HORIZONTAL_IMPULSE_NOT_SCALED");
+            require(Math.abs(after.y-before.y*.5)<.00001,"BOOST_VERTICAL_IMPULSE_NOT_SCALED");b.setDeltaMovement(Vec3.ZERO);
+            var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());var report=JSON.valueToTree(runtime.snapshot(p,agent));require(!session(report,"enhancement_follow").path("state").asText().equals("CANCELLED"),"ENHANCEMENT_CANCELLED_FOLLOW");
+            return Map.of("nativeKnockback",before.toString(),"boostKnockback",after.toString(),"workPreserved",true);
+        }));
+        action("reset-model-by-observed-version",()->server(p->{
+            var profile=dev.mineagent.runtime.neoforge.skill.ActorEnhancements.read(p,agent);var model=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.inspect(p,agent);
+            var input=JSON.createObjectNode().put("actor","ai").put("expected_revision",profile.revision()).put("expected_model_version",((Number)model.get("version")).longValue()).put("resetWeights",true);
+            var result=dev.mineagent.runtime.neoforge.skill.ActorEnhancements.update(p,agent,input);require(dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.inspect(p,agent).get("status").equals("PRETRAINED_RESTORED"),"POLICY_NOT_RESTORED");return result;
+        }));
+        action("stop-clears-actions-not-boost-preference",()->server(p->{dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).stopAll(p,agent);require(dev.mineagent.runtime.neoforge.skill.ActorEnhancements.read(p,agent).boost(),"STOP_CLEARED_BOOST_PREFERENCE");return dev.mineagent.runtime.neoforge.skill.ActorEnhancements.inspect(p,agent);}));
+        action("boost-off-restores-native-knockback",()->server(p->{
+            var b=body(p);var old=dev.mineagent.runtime.neoforge.skill.ActorEnhancements.read(p,agent);dev.mineagent.runtime.neoforge.skill.ActorEnhancements.update(p,agent,JSON.createObjectNode().put("actor","ai").put("expected_revision",old.revision()).put("boost",false).put("learning",false));
+            b.setDeltaMovement(Vec3.ZERO);b.knockback(.4,1,0);require(Math.abs(b.getDeltaMovement().x+.4)<.00001,"BOOST_OFF_CHANGED_NATIVE_KNOCKBACK");return dev.mineagent.runtime.neoforge.skill.ActorEnhancements.inspect(p,agent);
+        }));
+    }
+    private static void ownerDefense(){
+        for(String kind:List.of("FOLLOW","PATROL","WANDER","COMBAT")){
+            String id="owner_help_"+kind.toLowerCase(java.util.Locale.ROOT);
+            action(id+"_setup",()->server(p->{
+                var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());runtime.stopAll(p,agent);p.setGameMode(GameType.SURVIVAL);p.setHealth(20);p.getFoodData().setFoodLevel(20);p.teleportTo(p.level(),.5,101,6.5,Set.of(),0,0,true);
+                var b=body(p);b.teleportTo(p.level(),5.5,101,6.5,Set.of(),90,0,true);b.setHealth(20);b.getInventory().clearContent();b.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));
+                var target=EntityType.ZOMBIE.create(p.level(),EntitySpawnReason.COMMAND);target.setPos(.5,101,8);target.setTarget(p);target.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.IRON_HELMET));p.level().addFreshEntity(target);zombie=target.getUUID();return null;
+            }));
+            action(id+"_start",()->{var n=start(id,"ai").put("kind",kind);n.putObject("combat").put("engagement","SELF_DEFENSE");if(kind.equals("FOLLOW"))n.put("target","$owner");if(kind.equals("WANDER")){n.putArray("min").add(0).add(100).add(0);n.putArray("max").add(12).add(102).add(12);}if(kind.equals("PATROL")){n.putArray("route").addArray().add(5.5).add(101).add(10.5);}return tool("set_behavior_mode",n);});
+            waitFor(id+"_native-owner-hurt-and-assistance",600,()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(report->server(p->{
+                lastObservation=report;if(p.getHealth()>=20||session(report,id).path("counters").path("verifiedHits").asInt()==0)return false;
+                var threat=p.level().getEntity(zombie);require(!(threat instanceof LivingEntity living)||living.getHealth()<20,"ASSISTANCE_NO_ACTUAL_DAMAGE");EVIDENCE.add(Map.of("mode",kind,"ownerHealth",p.getHealth(),"report",report));if(threat!=null)threat.discard();return true;
+            })));
+        }
+        action("owner-assistance-stop",()->server(p->{dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).stopAll(p,agent);return null;}));
+    }
     private static void embeddedInventoryCombat(){
         action("combat-inventory-real-gear",()->server(p->{
             var b=body(p);b.getInventory().clearContent();b.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));b.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND,new ItemStack(Items.SHIELD));
@@ -176,6 +219,7 @@ public final class PersistentSkillSmokeClient {
         action("inventory-is-open-during-live-combat",()->server(p->{require(p.level().getEntity(zombie)!=null&&p.level().getEntity(zombie).isAlive(),"COMBAT_ENDED_BEFORE_INVENTORY_TEST");var report=JSON.valueToTree(dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).snapshot(p,agent));require(!Set.of("COMPLETED","CANCELLED","FAILED","PAUSED").contains(session(report,"inventory_battle").path("state").asText()),"INVENTORY_STOPPED_COMBAT");return Map.of("opponentAlive",true,"viewerContainer",p.containerMenu.getClass().getName());}));
         action("native-pointer-takes-ai-offhand",()->{nativeInventoryClick(4);return CompletableFuture.completedFuture(null);});
         waitFor("offhand-stack-on-native-cursor",120,()->CompletableFuture.completedFuture(mc().player.containerMenu.getCarried().is(Items.SHIELD)));
+        waitFor("scroll-real-viewport-to-owner-hotbar",160,()->CompletableFuture.completedFuture(scrollInventoryTo(dev.mineagent.runtime.neoforge.ui.AgentInventoryMenu.AGENT_SLOTS+27)));
         action("native-pointer-puts-shield-in-owner-hotbar",()->{nativeInventoryClick(dev.mineagent.runtime.neoforge.ui.AgentInventoryMenu.AGENT_SLOTS+27);return CompletableFuture.completedFuture(null);});
         waitFor("real-transfer-during-combat",160,()->server(p->{require(body(p).getOffhandItem().isEmpty(),"OFFHAND_DID_NOT_MOVE");return p.getInventory().countItem(Items.SHIELD)==1; }));
         action("embedded-inventory-screen-proof",()->{require(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen,"INVENTORY_REPLACED_F2");screen("combat-embedded-inventory");return tool("inspect_behavior",JSON.createObjectNode());});
@@ -190,6 +234,15 @@ public final class PersistentSkillSmokeClient {
         action("profile-inventory-proof-and-stop",()->{screen("profile-embedded-inventory");return server(p->{var report=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).snapshot(p,agent);require(p.getInventory().countItem(Items.SHIELD)==1,"INVENTORY_DUPLICATED_OR_LOST");dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).stopAll(p,agent);return report;});});
         action("server-invalidates-embedded-inventory",()->server(p->{p.closeContainer();return null;}));
         waitFor("server-close-preserves-ai-profile",120,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen&&mc().player.containerMenu==mc().player.inventoryMenu&&dev.mineagent.runtime.neoforge.client.nativeui.NativeInventoryPanel.activeScreen()==null));
+    }
+    private static boolean scrollInventoryTo(int index){
+        var bounds=dev.mineagent.runtime.neoforge.client.nativeui.NativeInventoryPanel.smokeSlotViewport(index);
+        if(bounds[1]>=bounds[3]+8&&bounds[1]<bounds[3]+bounds[5]-8)return true;
+        try{
+            double x=bounds[2]+bounds[4]/2,y=bounds[3]+bounds[5]/2;
+            var move=net.minecraft.client.MouseHandler.class.getDeclaredMethod("onMove",long.class,double.class,double.class);move.setAccessible(true);move.invoke(mc().mouseHandler,mc().getWindow().handle(),x*mc().getWindow().getScreenWidth()/mc().getWindow().getGuiScaledWidth(),y*mc().getWindow().getScreenHeight()/mc().getWindow().getGuiScaledHeight());
+            var scroll=net.minecraft.client.MouseHandler.class.getDeclaredMethod("onScroll",long.class,double.class,double.class);scroll.setAccessible(true);scroll.invoke(mc().mouseHandler,mc().getWindow().handle(),0d,bounds[1]<bounds[3]?2d:-2d);return false;
+        }catch(ReflectiveOperationException failure){throw new IllegalStateException(failure);}
     }
     private static void nativeInventoryClick(int index){
         try{
@@ -376,7 +429,7 @@ public final class PersistentSkillSmokeClient {
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(playerActor()){waitFor("signed-player-control-activation",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});action("real-player-equipment-and-input",()->{org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return server(p->{var b=body(p);p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();for(int i=0;i<36;i++)p.getInventory().setItem(i,b.getInventory().getItem(i).copy());p.inventoryMenu.broadcastChanges();b.teleportTo(p.level(),27.5,101,25.5,Set.of(),0,0,true);return null;});});}
-        if(mode.startsWith("water_")){waterClutch();return;}if(mode.equals("retaliation")){retaliation();return;}if(mode.equals("pvp_rules")){pvpRules();return;}if(mode.equals("duel_five")||mode.equals("policy_duel")){duelFive();return;}
+        if(mode.equals("enhancement_lifecycle")){enhancementLifecycle();return;}if(mode.equals("owner_defense")){ownerDefense();return;}if(mode.startsWith("water_")){waterClutch();return;}if(mode.equals("retaliation")){retaliation();return;}if(mode.equals("pvp_rules")){pvpRules();return;}if(mode.equals("duel_five")||mode.equals("policy_duel")){duelFive();return;}
         if(mode.equals("crowd5")||mode.equals("crowd10")||mode.equals("crowd_mixed5")||mode.equals("crowd_footwork")){crowdCombat(mode.equals("crowd10")?10:5);return;}if(mode.equals("counter_ranged")||mode.equals("counter_reach")||mode.equals("counter_crossbow")){counterCombat();return;}if(mode.equals("ui_functional")){uiFunctional();return;}if(mode.equals("module_ui")||mode.equals("design_ui")||mode.equals("media_ui")||mode.equals("mods_ui")||mode.equals("content_catalog_ui")||mode.equals("layout_ui")){waitFor("signed-client-enable-before-modules-ui",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});action(mode.equals("design_ui")?"visible-building-model-design":"visible-native-module-controls",()->mode.equals("design_ui")?dev.mineagent.runtime.neoforge.client.nativeui.NativeModulesSmokeClient.runDesign(agent):mode.equals("media_ui")?dev.mineagent.runtime.neoforge.client.nativeui.NativeModulesSmokeClient.runMedia(agent):mode.equals("mods_ui")?dev.mineagent.runtime.neoforge.client.nativeui.NativeModulesSmokeClient.runMods(agent):mode.equals("content_catalog_ui")?dev.mineagent.runtime.neoforge.client.nativeui.NativeModulesSmokeClient.runContents(agent):mode.equals("layout_ui")?dev.mineagent.runtime.neoforge.client.nativeui.NativeModulesSmokeClient.runLayout(agent):dev.mineagent.runtime.neoforge.client.nativeui.NativeModulesSmokeClient.run(agent));return;}if(mode.equals("building_ui")||mode.equals("geometry_ui")){buildingWorkspace(mode.equals("geometry_ui"));return;}if(mode.equals("inventory_combat")){embeddedInventoryCombat();return;}if(mode.equals("terrain_recovery")){terrainRecovery();return;}if(mode.equals("camera")){camera();return;}if(mode.equals("combo")){combo();return;}if(mode.equals("contact_escape")){contactEscape();return;}if(mode.equals("tactical_policy")){tacticalPolicy();return;}if(mode.equals("tactical_loot")){tacticalLoot();return;}if(mode.equals("tactical_survival")){tacticalSurvival();return;}if(mode.equals("tactical_rules")){tacticalRules();return;}if(mode.equals("tactical_ui")){tacticalUi();return;}if(mode.equals("tactical")){tactical();return;}if(mode.equals("navigation")){navigation();return;}if(mode.equals("fishing")||mode.equals("fishing_defense")){fishing();return;}if(mode.equals("combat")){combat();return;}if(mode.equals("player")){player();return;}if(mode.equals("cooperation")){cooperation();return;}if(mode.equals("patrol")){patrol();return;}if(mode.equals("performance")){performance();return;}if(mode.equals("lifecycle")){lifecycle();return;}if(mode.equals("uncertain")){uncertain();return;}if(mode.equals("crops")){cropAdapters();return;}work();
     }
     private static void tacticalUi(){

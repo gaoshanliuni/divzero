@@ -28,6 +28,7 @@ public final class NativeInventoryPanel {
     private final BooleanSupplier current;
     private final TextElement status;
     private final UIElement canvas;
+    private final com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView scroll;
     private AgentInventoryScreen bridge;
     private boolean pressed,opening;
     private static Minecraft mc(){return Minecraft.getInstance();}
@@ -39,7 +40,7 @@ public final class NativeInventoryPanel {
     private NativeInventoryPanel(UIElement parent,String agent,BooleanSupplier current){
         this.agent=agent;this.current=current;
         status=NativeUiTheme.text(t("读取背包…"),NativeUiTheme.MUTED,9);parent.addChild(status);
-        var scroll=WorkspacePanels.scroller(parent);
+        scroll=WorkspacePanels.scroller(parent);
         canvas=new UIElement(){@Override protected void drawBackgroundAdditional(IGUIContext context){
             if(bridge==null||!valid()||!(context instanceof com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext nativeContext))return;
             bridge.embedAt(Math.round(getPositionX()),Math.round(getPositionY()),host.width,host.height);
@@ -92,6 +93,12 @@ public final class NativeInventoryPanel {
         var panel=active;if(panel==null||panel.bridge==null||panel.bridge.getMenu()!=menu)return false;
         mc().player.containerMenu=mc().player.inventoryMenu;panel.bridge=null;panel.pressed=false;
         panel.status.setText(Component.literal(t("背包已关闭；请重新打开背包标签。")));return true;
+    }
+    static void tooltip(Screen host,net.minecraft.client.gui.GuiGraphicsExtractor graphics,int x,int y){var p=active;if(p!=null&&p.host==host&&p.hovered())p.bridge.embeddedTooltip(graphics,x,y);}
+    public static double[] smokeSlotViewport(int index){
+        if(!Boolean.getBoolean("mineagent.skillSmoke")||active==null||active.bridge==null)throw new IllegalStateException("SMOKE_INVENTORY_NOT_OPEN");
+        var p=active;var slot=p.bridge.getMenu().getSlot(index);var viewport=p.scroll.getViewPort();
+        return new double[]{p.bridge.getGuiLeft()+slot.x+8,p.bridge.getGuiTop()+slot.y+8,viewport.getContentX(),viewport.getContentY(),viewport.getContentWidth(),viewport.getContentHeight()};
     }
     public static Screen activeScreen(){return active!=null&&active.valid()?active.bridge:null;}
 }

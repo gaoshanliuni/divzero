@@ -3414,5 +3414,14 @@
   "代码生成模型（留空沿用 AI 当前模型）": "Code model (blank: current AI model)",
   "规划与结果检查模型（留空沿用 AI 当前模型）": "Planning and review model (blank: current AI model)",
   "轻量任务模型（摘要与标题）（留空沿用 AI 当前模型）": "Small model for summaries and titles (blank: current AI model)",
-  "背包已关闭；请重新打开背包标签。": "Inventory closed. Reopen the inventory tab."
+  "背包已关闭；请重新打开背包标签。": "Inventory closed. Reopen the inventory tab.",
+  "恢复预训练权重": "Restore pretrained weights",
+  "读取已保存权重…": "Loading saved weights…",
+  "正在学习；继续使用已验证权重": "Learning; using validated weights",
+  "使用已保存的学习权重": "Using saved learned weights",
+  "使用预训练权重": "Using pretrained weights",
+  "样本": "Samples",
+  "工作中": "Working",
+  "已死亡": "Dead",
+  "离线": "Offline"
 }
