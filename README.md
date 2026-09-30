@@ -42,6 +42,8 @@ F2 设置二级菜单的尺寸按钮可切换 2／3／4 并保留草稿。下拉
 
 后续训练已转向不同权重的神经网络自对战，覆盖近远程、人数、空地和受困条件的双向组合，并验证原生唤魔者多技能反应。[训练场修复、实战数据与当前验收进度](docs/NEURAL_SELF_PLAY.md)。
 
+并发攻击现在使用通用时间线，分别追踪飞行物、地面打击、持续区域和其他已适配攻击；按实际身体碰撞、攻击时序与地形选择闪避，再重新观察并反击。AI 本体与真人托管混合攻击实测通过；特殊 Mod 私有攻击仍需适配，未知弹道按保守预测处理。
+
 ![1.0.22 托管面板：暂停、退出、追加命令、切换视角](docs/images/player-takeover.png)
 
 **1.0.22** 平滑托管观察相机，支持原生 F5（含改绑）和面板切换第一人称、第三人称背后/正面；保持 AI 身体瞄准与行动不变。[实机验证](docs/TAKEOVER_CAMERA.md)。
@@ -205,6 +207,8 @@ Switch GUI scale to 2, 3 or 4 from the F2 settings submenu without losing drafts
 In-world weight learning defaults to ON; an explicitly saved OFF preference is preserved. The bundled small neural network was fine-tuned with native duel outcomes and ranks actions already admitted by Java permission, terrain and body checks. Background updates must pass held-out samples and a reference-drift check. See [adaptive execution and learning](docs/ADAPTIVE_AGENT_UPGRADE.md) for complete ten-bout evaluations against the frozen equal-equipment rule controller and their limits.
 
 Further training uses neural opponents with different weights, mirrored weapon, team-size, airborne-start and confined-start conditions, plus native evoker multi-attack checks. [Arena repairs, actual data and current validation](docs/NEURAL_SELF_PLAY.md).
+
+Concurrent attacks now share a per-tick timeline for projectiles, ground strikes, persistent areas and other adapted attacks. The controller checks body collisions, timing and terrain before dodging, then reassesses and counters. Mixed-attack tests passed for both AI bodies and real-player takeover; private mod attack logic still needs an adapter, and unknown trajectories remain conservative predictions.
 
 ![1.0.22 takeover controls: Pause, Exit, Add command and Perspective](docs/images/player-takeover.png)
 

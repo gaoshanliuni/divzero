@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "3528fbc966b7b34f7d8853f49a75f15aa00ce123287d509d7bbc48bbfbc88ffa",
-      "bytes": 25855
+      "sha256": "a35f97a275d5cddaeb4f830bb26f4c4e884025f21e95352ad6874e5a08846893",
+      "bytes": 26598
     },
     {
       "path": "agent/build.gradle",
@@ -3359,8 +3359,8 @@
     },
     {
       "path": "docs/NEURAL_SELF_PLAY.md",
-      "sha256": "b5d778e5538611257dedb836e4a2479e285598bf382cf8f012676c6a7bcbbe75",
-      "bytes": 10843
+      "sha256": "02647e02ab995322aa768864996a027a3c3f1819cfba25e25385a22ab3ee0574",
+      "bytes": 14275
     },
     {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
