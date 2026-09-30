@@ -24,6 +24,7 @@ public final class PvpConsent {
     static void stopped(MinecraftServer server){GRANTS.remove(server);}
     public static void revoke(ServerPlayer owner,UUID agent){var grants=GRANTS.get(owner.level().getServer());if(grants!=null)grants.remove(new Key(owner.getUUID(),agent));}
     public static boolean allowed(ServerPlayer owner,UUID agent,ServerPlayer actor,ServerPlayer target,CombatPolicy rule){
+        if(IsolatedCombatArena.consent(owner,agent,actor,target,rule))return true;
         var grants=GRANTS.get(owner.level().getServer());return grants!=null&&grants.get(new Key(owner.getUUID(),agent))==target&&rule.engagement()==CombatPolicy.Engagement.SPECIFIED&&rule.target().equals(target.getUUID().toString())
             &&target!=actor&&target.isAlive()&&!target.isSpectator()&&!target.isCreative()&&target.level()==actor.level()&&owner.level().getServer().getPlayerList().getPlayer(target.getUUID())==target
             &&ServerTaskStart.allowed(owner,agent)&&actor.level().getGameRules().get(net.minecraft.world.level.gamerules.GameRules.PVP)&&actor.canHarmPlayer(target)&&!rule.excluded().contains(target.getUUID());

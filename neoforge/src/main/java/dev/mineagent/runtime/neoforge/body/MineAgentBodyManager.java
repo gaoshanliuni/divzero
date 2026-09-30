@@ -643,6 +643,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
     }
 
     private synchronized void scheduleRespawn(MineAgentPlayer deadBody) {
+        if(dev.mineagent.runtime.neoforge.skill.IsolatedCombatArena.suppressRespawn(deadBody))return;
         AgentDefinition definition = registry.get(deadBody.agentId()).orElse(null);
         if (definition == null || bodies.get(deadBody.agentId())!=deadBody || pendingRespawns.containsKey(deadBody.agentId())
                 ||!deadBody.deathAccepted()&&!deadBody.endReturnAccepted()) {

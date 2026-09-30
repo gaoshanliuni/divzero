@@ -103,6 +103,10 @@ final class CombatSkill {
         if(target!=null&&(!SkillRuntime.attackAllowed(w,target))){w.combat.selected=null;return;}
         if(w.actor.recovering()&&target!=null){w.actor.recover(w.token(),target.position());phase(w,"TERRAIN_ESCAPE");return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
+        if(target!=null&&w.combat.spells.risk(w,p.position(),8)>0&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION
+                &&sideStep(w,target,p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p)+1)){
+            w.session.add("nativeSpellEvasions",1);return;
+        }
         if(target!=null&&!target.onGround()&&target.distanceTo(p)<8&&w.prediction.risk(w,p.position(),6,null)>=18
                 &&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
             if(sideStep(w,target,p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p)+1)){w.session.add("predictedAirborneEvasions",1);return;}

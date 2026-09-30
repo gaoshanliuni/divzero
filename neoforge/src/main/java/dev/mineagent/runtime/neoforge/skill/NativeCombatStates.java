@@ -19,10 +19,12 @@ public final class NativeCombatStates {
         default List<Attack> attacks(LivingEntity entity){return List.of();}
     }
     public record Attack(String source,String kind,int cooldownTicks,double minRange,double maxRange,boolean running){}
+    public record Spell(String source,String kind,boolean preparing,int warmupGoalTicks,int releaseInTicks,int nextCastInTicks,int castingTicks,
+                        Vec3 aimedAt,Vec3 direction,String directionKnowledge){}
     public record Snapshot(UUID entity,long observedTick,String type,UUID target,List<Attack> attacks,
                            List<Restriction> restrictions,String restrictionKnowledge,
                            int hurtAnimationTicks,int damageProtectionTicks,Vec3 velocity,Vec3 velocityChange,long velocitySampleTicks,double movementSpeed,
-                           boolean usingItem,int useTicks,boolean inNativeMeleeRange) {
+                           boolean usingItem,int useTicks,boolean inNativeMeleeRange,Vec3 lookDirection,float yaw,float pitch,List<Spell> spells) {
         public boolean meleeRestricted(){return restrictions.stream().anyMatch(r->r.remainingTicks>0&&r.blocksMelee);}
         public boolean areaAttack(){return attacks.stream().anyMatch(a->a.kind.equals("AREA")&&a.running);}
         public boolean ranged(){return attacks.stream().anyMatch(a->a.kind.equals("RANGED"));}
@@ -34,10 +36,17 @@ public final class NativeCombatStates {
     public static void register(Adapter adapter){ADAPTERS.add(Objects.requireNonNull(adapter));}
     public static Snapshot read(LivingEntity enemy,LivingEntity observer){
         if(enemy.level().getServer()==null||!enemy.level().getServer().isSameThread()||enemy.level()!=observer.level())throw new IllegalStateException("COMBAT_OBSERVATION_CONTEXT");
-        var attacks=new ArrayList<Attack>();var restrictions=new ArrayList<Restriction>();String knowledge="UNKNOWN_NO_ADAPTER";
+        var attacks=new ArrayList<Attack>();var spells=new ArrayList<Spell>();var restrictions=new ArrayList<Restriction>();String knowledge="UNKNOWN_NO_ADAPTER";
         if(enemy instanceof Mob mob){
             for(var wrapped:mob.goalSelector.getAvailableGoals()){
                 var goal=wrapped.getGoal();boolean running=wrapped.isRunning();boolean known=goal.getClass().getName().startsWith("net.minecraft.");
+                if(goal instanceof CombatSpellGoalAccess cast&&enemy instanceof net.minecraft.world.entity.monster.illager.Evoker&&known){
+                    String kind=goal.getClass().getSimpleName().contains("AttackSpell")?"FANGS":goal.getClass().getSimpleName().contains("Summon")?"SUMMON_VEX":"OTHER";
+                    boolean preparing=running&&cast.divzero$warmup()>0;var aim=mob.getTarget()==null?enemy.position().add(enemy.getLookAngle()):mob.getTarget().position();
+                    int release=preparing?(goal.requiresUpdateEveryTick()?cast.divzero$warmup():Math.max(1,cast.divzero$warmup()*2-Math.floorMod(enemy.tickCount+enemy.getId(),2))):-1;int next=Math.max(0,cast.divzero$nextCastTick()-enemy.tickCount);
+                    spells.add(new Spell(goal.getClass().getName(),kind,preparing,cast.divzero$warmup(),release,next,enemy instanceof CombatSpellcasterAccess state?state.divzero$castingTicks():-1,aim,aim.subtract(enemy.position()).normalize(),"TRACKING_TARGET_UNTIL_RELEASE"));
+                    if(!kind.equals("OTHER"))attacks.add(new Attack(goal.getClass().getName(),kind.equals("FANGS")?"GROUND_SPELL":"SUMMON",preparing?release:next,0,kind.equals("FANGS")?20:16,preparing));
+                }
                 if(goal instanceof CombatMeleeGoalAccess access){var range=mob.getActiveItem().get(DataComponents.ATTACK_RANGE);attacks.add(new Attack(goal.getClass().getName(),"MELEE",running&&known?access.divzero$attackCooldown():-1,range==null?0:range.effectiveMinRange(mob),range==null?CombatMobRangeAccess.divzero$defaultReach():range.effectiveMaxRange(mob),running));}
                 if(goal instanceof CombatRangedGoalAccess access)attacks.add(new Attack(goal.getClass().getName(),"RANGED",running&&known?access.divzero$attackCooldown():-1,0,access.divzero$attackRadius(),running));
                 if(goal instanceof CombatBowGoalAccess access)attacks.add(new Attack(goal.getClass().getName(),"RANGED",running&&known?access.divzero$attackCooldown():-1,0,Math.sqrt(access.divzero$attackRadiusSquared()),running));
@@ -63,7 +72,7 @@ public final class NativeCombatStates {
         if(enemy instanceof net.minecraft.world.entity.monster.Creeper creeper&&creeper instanceof CombatCreeperAccess state)attacks.add(new Attack("Creeper.nativeFuse","AREA",creeper.getSwellDir()>0?Math.max(0,state.divzero$maxSwell()-state.divzero$swell()):-1,0,state.divzero$explosionRadius()*2*(creeper.isPowered()?2:1),creeper.getSwellDir()>0));
         for(var adapter:ADAPTERS)if(adapter.supports(enemy)){restrictions.addAll(adapter.restrictions(enemy));attacks.addAll(adapter.attacks(enemy));knowledge="ADAPTER";}
         long now=enemy.level().getGameTime();var motion=MOTION.get(enemy);if(motion==null||motion.tick!=now){motion=new Motion(now,enemy.getDeltaMovement(),motion==null?Vec3.ZERO:enemy.getDeltaMovement().subtract(motion.velocity),motion==null?0:now-motion.tick);MOTION.put(enemy,motion);}
-        return new Snapshot(enemy.getUUID(),now,BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString(),enemy instanceof Mob mob&&mob.getTarget()!=null?mob.getTarget().getUUID():null,List.copyOf(attacks),List.copyOf(restrictions),knowledge,enemy.hurtTime,enemy.invulnerableTime,enemy.getDeltaMovement(),motion.change,motion.elapsed,enemy.getAttribute(Attributes.MOVEMENT_SPEED)==null?0:enemy.getAttributeValue(Attributes.MOVEMENT_SPEED),enemy.isUsingItem(),enemy.getTicksUsingItem(),meleeAt(enemy,observer,observer.position()));
+        return new Snapshot(enemy.getUUID(),now,BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString(),enemy instanceof Mob mob&&mob.getTarget()!=null?mob.getTarget().getUUID():null,List.copyOf(attacks),List.copyOf(restrictions),knowledge,enemy.hurtTime,enemy.invulnerableTime,enemy.getDeltaMovement(),motion.change,motion.elapsed,enemy.getAttribute(Attributes.MOVEMENT_SPEED)==null?0:enemy.getAttributeValue(Attributes.MOVEMENT_SPEED),enemy.isUsingItem(),enemy.getTicksUsingItem(),meleeAt(enemy,observer,observer.position()),enemy.getLookAngle(),enemy.getYRot(),enemy.getXRot(),List.copyOf(spells));
     }
     /** Native startup and this observer's real spear contact timer, not general damage immunity. */
     private static int kineticDelay(LivingEntity enemy,LivingEntity observer){

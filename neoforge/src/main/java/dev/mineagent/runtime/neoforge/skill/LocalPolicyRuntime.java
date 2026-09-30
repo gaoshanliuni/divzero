@@ -31,7 +31,7 @@ public final class LocalPolicyRuntime {
     private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
     private record Pending(ServerPlayer body,Object level,int tick,float health,Vec3 target,double distance,double[] features,long damage,LongSupplier damageNow,long kills,LongSupplier killsNow,BooleanSupplier current){}
     private static final class State {
-        LocalActionPolicy serving=PRETRAINED;final Deque<LocalActionPolicy.Sample> replay=new ArrayDeque<>();
+        LocalActionPolicy serving=PRETRAINED;List<LocalActionPolicy.Sample> reference=REFERENCE;final Deque<LocalActionPolicy.Sample> replay=new ArrayDeque<>();
         final UUID id;final MinecraftServer server;final Path file;
         long samples,accepted,rejected,epoch;double validationLoss;boolean training,loading=true;String status="LOADING_CHECKPOINT";Pending pending;double bestDistance;
         CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);
@@ -62,12 +62,12 @@ public final class LocalPolicyRuntime {
         if(state.loading||state.training||state.replay.size()<128||state.samples%32!=0)return;
         var data=new ArrayList<>(state.replay);var training=new ArrayList<LocalActionPolicy.Sample>();var validation=new ArrayList<LocalActionPolicy.Sample>();for(int i=0;i<data.size();i++)(i%5==0?validation:training).add(data.get(i));
         if(training.size()>768)training=new ArrayList<>(training.subList(training.size()-768,training.size()));
-        var batch=List.copyOf(training);var holdout=List.copyOf(validation);var serving=state.serving;long epoch=state.epoch;state.training=true;state.status="TRAINING_CANDIDATE";
+        var batch=List.copyOf(training);var holdout=List.copyOf(validation);var serving=state.serving;var anchors=state.reference;long epoch=state.epoch;state.training=true;state.status="TRAINING_CANDIDATE";
         CompletableFuture.supplyAsync(()->{var candidate=serving;for(int epochIndex=0;epochIndex<3;epochIndex++)candidate=candidate.train(batch,.002);return candidate;},LEARNING).whenComplete((candidate,error)->state.server.execute(()->{
             if(ALL.get(state.server)==null||ALL.get(state.server).get(state.id)!=state||state.epoch!=epoch)return;state.training=false;if(!ActorEnhancements.read(p,state.id).learning())return;
             if(error!=null){state.rejected++;state.status="TRAINING_REJECTED";return;}
             double before=serving.loss(holdout),after=candidate.loss(holdout);state.validationLoss=after;
-            if(LocalActionPolicy.acceptsUpdate(serving,candidate,holdout,REFERENCE)){state.serving=candidate;state.accepted++;state.status="LEARNED_VALIDATED";state.save();}
+            if(LocalActionPolicy.acceptsUpdate(serving,candidate,holdout,anchors)){state.serving=candidate;state.accepted++;state.status="LEARNED_VALIDATED";state.save();}
             else{state.rejected++;state.status="KEPT_PREVIOUS_WEIGHTS";}
         }));
     }
@@ -76,6 +76,16 @@ public final class LocalPolicyRuntime {
         return state==null?Map.of("status","PRETRAINED","version",PRETRAINED.version(),"samples",0,"source",PRETRAINED.source()):Map.of("status",state.status,"version",state.serving.version(),"samples",state.samples,"acceptedUpdates",state.accepted,"rejectedUpdates",state.rejected,"validationLoss",state.validationLoss,"source",state.serving.source(),"training",state.training,"replaySize",state.replay.size(),"checkpointSaved",state.saved.isDone()&&!state.saved.isCompletedExceptionally());
     }
     public static void requireResetVersion(ServerPlayer viewer,UUID id,long version){var state=state(viewer,id);if(state.loading)throw new IllegalStateException("POLICY_CHECKPOINT_LOADING");if(state.serving.version()!=version)throw new IllegalStateException("POLICY_VERSION_CHANGED");}
+    /** Test arena model pools are data only, checksum pinned and isolated from ordinary saved player models. */
+    public static void seedTrainingModel(dev.mineagent.runtime.neoforge.body.MineAgentPlayer body,String source,String expectedSha256){
+        if(!body.level().getServer().isSameThread()||!IsolatedCombatArena.suppressRespawn(body))throw new SecurityException("ISOLATED_TRAINING_ONLY");
+        if(source.length()>131072||!dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(source).equals(expectedSha256))throw new IllegalArgumentException("TRAINING_MODEL_HASH");
+        var policy=LocalActionPolicy.parse(source);var state=state(body);state.epoch++;state.loading=state.training=false;state.pending=null;state.serving=policy;state.reference=LocalActionPolicy.referenceSamples(policy);state.samples=state.accepted=state.rejected=0;state.replay.clear();state.status="ISOLATED_TRAINING_MODEL";state.save();
+    }
+    public static Map<String,Object> trainingModel(dev.mineagent.runtime.neoforge.body.MineAgentPlayer body){
+        if(!body.level().getServer().isSameThread()||!IsolatedCombatArena.suppressRespawn(body))throw new SecurityException("ISOLATED_TRAINING_ONLY");var state=state(body);String model=state.serving.json();
+        return Map.of("model",model,"sha256",dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(model),"samples",state.samples,"acceptedUpdates",state.accepted,"training",state.training,"replaySize",state.replay.size());
+    }
     public static void reset(ServerPlayer owner,UUID id){
         var state=state(owner,id);state.epoch++;state.loading=state.training=false;state.serving=PRETRAINED;state.pending=null;state.replay.clear();state.samples=state.accepted=state.rejected=0;state.validationLoss=0;state.status="PRETRAINED_RESTORED";state.save();
     }
