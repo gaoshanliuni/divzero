@@ -66,7 +66,7 @@ if (conversation.length === 0) return
   let total = 0
   let split = conversation.length
   for (let index = conversation.length - 1; index >= 0; index--) {
-    const next = total + Token.estimate(conversation[index])
+    var next = total + Token.estimate(conversation[index])
     if (next > tokens) break
     total = next
     split = index

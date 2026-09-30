@@ -23,6 +23,7 @@ templates = compaction[compaction.index('const SUMMARY_TEMPLATE'):compaction.ind
 build = compaction[compaction.index('export const buildPrompt'):compaction.index('\nexport const make')].strip()
 build = re.sub(r'export const buildPrompt = \(input: .*?\) =>', 'const buildPrompt = (input) =>', build, count=1)
 selection = compaction[compaction.index('  if (conversation.length === 0) return'):compaction.index('\nexport const buildPrompt')].strip()
+selection = selection.replace('const next =', 'var next =')  # Rhino's block const is initialized only once across loop iterations.
 selection = 'const selectRendered = (conversation, tokens) => {\n' + selection
 token = sources['token.ts'].split('export const estimate = ', 1)[1].strip()
 token = token.replace('(input: string)', '(input)').replace('CHARS_PER_TOKEN', '4')

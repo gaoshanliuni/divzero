@@ -52,11 +52,18 @@ public final class NativeCombatStates {
             // These exact native types have no general stun state. Subclasses remain unknown.
             if(Set.of("net.minecraft.world.entity.monster.zombie.Zombie","net.minecraft.world.entity.monster.skeleton.Skeleton","net.minecraft.world.entity.monster.Zombie","net.minecraft.world.entity.monster.Skeleton").contains(enemy.getClass().getName()))knowledge="NATIVE_NO_STUN";
         }
+        if(enemy instanceof net.minecraft.world.entity.player.Player player){
+            var range=player.getAttackRangeWith(player.getMainHandItem());double interval=20/Math.max(.001,player.getAttributeValue(Attributes.ATTACK_SPEED));
+            int remaining=(int)Math.ceil((1-player.getAttackStrengthScale(0))*interval);
+            attacks.add(new Attack("Player.nativeAttackStrength","MELEE",remaining,range.effectiveMinRange(player),range.effectiveMaxRange(player),true));
+            if(player.getMainHandItem().getItem() instanceof net.minecraft.world.item.BowItem||player.getMainHandItem().getItem() instanceof net.minecraft.world.item.CrossbowItem)attacks.add(new Attack("Player.nativeRangedItem","RANGED",-1,0,32,player.isUsingItem()));
+            knowledge="NATIVE_PLAYER_NO_GENERAL_STUN";
+        }
         if(enemy instanceof Ravager ravager){knowledge="NATIVE_RAVAGER";restrictions.add(new Restriction("Ravager.stunnedTick",ravager.getStunnedTick(),true,true,false));restrictions.add(new Restriction("Ravager.roarTick",ravager.getRoarTick(),true,true,false));attacks.add(new Attack("Ravager.roarTick","AREA",ravager.getRoarTick()>10?ravager.getRoarTick()-10:0,0,4,ravager.getRoarTick()>0));}
         if(enemy instanceof net.minecraft.world.entity.monster.Creeper creeper&&creeper instanceof CombatCreeperAccess state)attacks.add(new Attack("Creeper.nativeFuse","AREA",creeper.getSwellDir()>0?Math.max(0,state.divzero$maxSwell()-state.divzero$swell()):-1,0,state.divzero$explosionRadius()*2*(creeper.isPowered()?2:1),creeper.getSwellDir()>0));
         for(var adapter:ADAPTERS)if(adapter.supports(enemy)){restrictions.addAll(adapter.restrictions(enemy));attacks.addAll(adapter.attacks(enemy));knowledge="ADAPTER";}
         long now=enemy.level().getGameTime();var motion=MOTION.get(enemy);if(motion==null||motion.tick!=now){motion=new Motion(now,enemy.getDeltaMovement(),motion==null?Vec3.ZERO:enemy.getDeltaMovement().subtract(motion.velocity),motion==null?0:now-motion.tick);MOTION.put(enemy,motion);}
-        return new Snapshot(enemy.getUUID(),now,BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString(),enemy instanceof Mob mob&&mob.getTarget()!=null?mob.getTarget().getUUID():null,List.copyOf(attacks),List.copyOf(restrictions),knowledge,enemy.hurtTime,enemy.invulnerableTime,enemy.getDeltaMovement(),motion.change,motion.elapsed,enemy.getAttribute(Attributes.MOVEMENT_SPEED)==null?0:enemy.getAttributeValue(Attributes.MOVEMENT_SPEED),enemy.isUsingItem(),enemy.getTicksUsingItem(),enemy instanceof Mob mob&&mob.isWithinMeleeAttackRange(observer));
+        return new Snapshot(enemy.getUUID(),now,BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString(),enemy instanceof Mob mob&&mob.getTarget()!=null?mob.getTarget().getUUID():null,List.copyOf(attacks),List.copyOf(restrictions),knowledge,enemy.hurtTime,enemy.invulnerableTime,enemy.getDeltaMovement(),motion.change,motion.elapsed,enemy.getAttribute(Attributes.MOVEMENT_SPEED)==null?0:enemy.getAttributeValue(Attributes.MOVEMENT_SPEED),enemy.isUsingItem(),enemy.getTicksUsingItem(),meleeAt(enemy,observer,observer.position()));
     }
     /** Native startup and this observer's real spear contact timer, not general damage immunity. */
     private static int kineticDelay(LivingEntity enemy,LivingEntity observer){
@@ -70,6 +77,7 @@ public final class NativeCombatStates {
     }
     /** Evaluate the actual mob attack hitbox at a possible observer position, without moving either entity. */
     public static boolean meleeAt(LivingEntity enemy,LivingEntity actor,Vec3 position){
+        if(enemy instanceof net.minecraft.world.entity.player.Player player)return player.isWithinAttackRange(player.getMainHandItem(),actor.getHitbox().move(position.subtract(actor.position())),0);
         if(enemy instanceof Mob unknown&&!enemy.getClass().getName().startsWith("net.minecraft.")){return unknown.isWithinMeleeAttackRange(actor)||position.distanceToSqr(enemy.position())<=actor.distanceToSqr(enemy);}
         if(enemy instanceof Mob mob&&mob instanceof CombatMobRangeAccess access){var item=mob.getActiveItem().get(DataComponents.ATTACK_RANGE);double max=item==null?CombatMobRangeAccess.divzero$defaultReach():item.effectiveMaxRange(mob),min=item==null?0:item.effectiveMinRange(mob);var target=actor.getHitbox().move(position.subtract(actor.position()));return access.divzero$attackBox(max).intersects(target)&&(min<=0||!access.divzero$attackBox(min).intersects(target));}
         return enemy.getBoundingBox().inflate(2).intersects(actor.getDimensions(actor.getPose()).makeBoundingBox(position));

@@ -38,7 +38,7 @@ final class CombatAwareness {
         var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
         var hostilePositions=new dev.mineagent.runtime.core.task.SpatialNeighbors<LivingEntity>(entities.stream().filter(e->e instanceof Enemy).toList(),4,e->new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()));
         for(var e:entities){
-            boolean forbidden=e instanceof net.minecraft.world.entity.player.Player||e.isAlliedTo(p)||e instanceof OwnableEntity own&&own.getOwnerReference()!=null||rule.excluded().contains(e.getUUID());
+            boolean forbidden=!SkillRuntime.attackAllowed(w,e);
             boolean self=e instanceof Mob mob&&mob.getTarget()==p;
             boolean protect=protectedEntity!=null&&e instanceof Mob mob&&mob.getTarget()==protectedEntity;
             boolean attacked=p.getLastHurtByMob()==e&&p.tickCount-p.getLastHurtByMobTimestamp()<100;

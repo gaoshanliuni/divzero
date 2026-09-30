@@ -93,7 +93,7 @@ final class CombatSkill {
     }
     private static void fight(SkillWork w,LivingEntity target){
         var p=w.player();var rule=w.session.spec().combat();w.sprintApproach=false;
-        if(target!=null&&(target instanceof net.minecraft.world.entity.player.Player||target.isAlliedTo(p)||target instanceof OwnableEntity owned&&owned.getOwnerReference()!=null)){w.combat.selected=null;return;}
+        if(target!=null&&(!SkillRuntime.attackAllowed(w,target))){w.combat.selected=null;return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
         boolean openingCounter=counterBeforeEscape(w,target,contacts);
         if(openingCounter&&w.contactEscape){w.contactEscape=false;w.contactClearSince=-1;w.positioning.reset();w.session.add("contactCounterOpenings",1);}

@@ -34,6 +34,7 @@ public final class BehaviorAuthority {
         boolean follow=Set.of("跟着我","跟随我","followme").contains(text);
         requests.put(operation,new Request(key,raw));order.accept(key,operation,stop||follow);
         if(!ServerTaskStart.allowed(p,agent))return;
+        PvpConsent.fromChat(p,agent,raw);
         if(Set.of("停下什么也别做","停止所有行动","什么也别做","stop everything","stopeverything","停止","停下","stop").contains(text)){
             SkillRuntime.get(p.level().getServer()).stopAll(p,agent);
             MineAgentRuntimeServices.bodies(p.level().getServer()).body(agent).ifPresent(body->{body.controls().cancel();body.movementController().stop();body.stopUsingItem();});

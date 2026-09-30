@@ -24,13 +24,14 @@
       "sha256": "a157df378a5baaf7a35ac1cb9c94dd29266d916329545529604274d6cddbc635"
     }
   },
-  "runtimeSha256": "965ff8b24c42624d634db9faa97e059f42bf7c1f09ba4830236135ce0215e9db",
+  "runtimeSha256": "52cd34e02fc99b4346c749257ce8e5da12e71554c0672889e2c6a588e60c619a",
   "adaptations": [
     "Removed TypeScript annotations and module imports from selected pure functions.",
     "selectRendered accepts already-rendered atomic protocol groups; tool-call/result groups are never split.",
     "renderSkill receives resolved resource URIs from Java, with no filesystem discovery or shell access.",
     "repeats reuses the upstream doom-loop predicate; DivZero additionally checks unchanged outcomes and context.",
     "DivZero preserves operation IDs, UNKNOWN and unverified receipts outside generated summaries.",
-    "Only these pure functions run; no OpenCode agent, subagent, shell or permission-ask runtime is enabled."
+    "Only these pure functions run; no OpenCode agent, subagent, shell or permission-ask runtime is enabled.",
+    "Lower the select loop-local const next to var for Rhino block-binding semantics; the pinned algorithm and comparisons are unchanged."
   ]
 }
