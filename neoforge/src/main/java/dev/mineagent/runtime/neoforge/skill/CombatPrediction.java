@@ -29,16 +29,17 @@ final class CombatPrediction {
             var observed=history.get(id);var velocity=observed==null?entity.getDeltaMovement():observed.velocity;
             var origin=entity.position();var bounds=entity.getBoundingBox();var level=entity.level();
             double speed=entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)==null?.1:entity.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
-            return MotionForecast.predict(new MotionForecast.Input(point(origin),point(velocity),entity.onGround(),entity.getGravity(),Math.max(.02,speed*.3),observed==null?10:work.tick()-observed.tick),new MotionForecast.Collision(){
+            return MotionForecast.predict(new MotionForecast.Input(point(origin),point(velocity),entity.onGround(),entity.isNoGravity()?0:entity.getGravity(),Math.max(.02,speed*.3),observed==null?10:work.tick()-observed.tick,entity instanceof net.minecraft.world.entity.player.Player?point(entity.getLookAngle()):null),new MotionForecast.Collision(){
                 public MotionForecast.Point move(MotionForecast.Point from,MotionForecast.Point requested){
                     var at=vec(from);var displacement=vec(requested);var next=at.add(displacement);
                     if(!level.hasChunkAt(BlockPos.containing(next)))return from;
+                    if(entity instanceof net.minecraft.world.entity.monster.Vex)return point(next);
                     if(level.noCollision(entity,bounds.move(next.subtract(origin))))return point(next);
                     var vertical=at.add(0,displacement.y,0);if(level.noCollision(entity,bounds.move(vertical.subtract(origin))))at=vertical;
                     var horizontal=at.add(displacement.x,0,displacement.z);if(level.noCollision(entity,bounds.move(horizontal.subtract(origin))))at=horizontal;
                     return point(at);
                 }
-                public boolean supported(MotionForecast.Point at){return !level.noCollision(entity,bounds.move(vec(at).subtract(origin)).move(0,-.06,0));}
+                public boolean supported(MotionForecast.Point at){return !(entity instanceof net.minecraft.world.entity.monster.Vex)&&!level.noCollision(entity,bounds.move(vec(at).subtract(origin)).move(0,-.06,0));}
             },24);
         });
     }

@@ -11,16 +11,20 @@ public final class MotionForecast {
         public double length(){return Math.sqrt(x*x+y*y+z*z);}
     }
     public record Sample(int tick,Point position,Point velocity,boolean grounded,double uncertainty){}
-    public record Input(Point position,Point velocity,boolean grounded,double gravity,double acceleration,int age){}
+    public record Input(Point position,Point velocity,boolean grounded,double gravity,double acceleration,int age,Point facing){
+        public Input(Point position,Point velocity,boolean grounded,double gravity,double acceleration,int age){this(position,velocity,grounded,gravity,acceleration,age,null);}
+    }
     public interface Collision {Point move(Point from,Point displacement);boolean supported(Point at);}
     public static List<List<Sample>> predict(Input input,Collision collision,int horizon){
         if(horizon<1||horizon>40||!Double.isFinite(input.gravity)||input.gravity<0)throw new IllegalArgumentException("PREDICTION_INPUT");
         var branches=new ArrayList<List<Sample>>();
-        for(double turn:new double[]{0,-.6,.6,-1.2,1.2}){
+        var turns=new ArrayList<>(List.of(0d,-.6,.6,-1.2,1.2));if(input.facing!=null)turns.add(Double.NaN);
+        for(double turn:turns){
             var path=new ArrayList<Sample>();Point at=input.position,velocity=input.velocity;boolean ground=input.grounded;
             for(int tick=1;tick<=horizon;tick++){
-                double angle=turn*Math.min(1,tick/8d),speed=Math.hypot(input.velocity.x,input.velocity.z);
+                boolean observedHeading=Double.isNaN(turn);double angle=observedHeading?0:turn*Math.min(1,tick/8d),speed=Math.hypot(input.velocity.x,input.velocity.z);
                 double vx=input.velocity.x*Math.cos(angle)-input.velocity.z*Math.sin(angle),vz=input.velocity.z*Math.cos(angle)+input.velocity.x*Math.sin(angle);
+                if(observedHeading){double length=Math.hypot(input.facing.x,input.facing.z),desired=Math.max(speed,input.acceleration*4);if(length>.001){vx=input.facing.x/length*desired;vz=input.facing.z/length*desired;}}
                 double blend=Math.min(1,input.acceleration/Math.max(.01,speed));
                 velocity=new Point(velocity.x+(vx-velocity.x)*blend,ground?0:velocity.y,velocity.z+(vz-velocity.z)*blend);
                 var next=collision.move(at,velocity);var actual=next.subtract(at);

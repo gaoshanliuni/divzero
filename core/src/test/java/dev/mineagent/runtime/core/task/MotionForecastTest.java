@@ -3,6 +3,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static dev.mineagent.runtime.core.task.MotionForecast.*;
 class MotionForecastTest {
+    @Test void playerLookDirectionAddsAPossibleTurnWithoutReplacingObservedMomentum(){
+        var paths=predict(new Input(new Point(0,1,0),new Point(.25,-.1,0),false,.08,.03,0,new Point(0,0,1)),FLOOR,8);
+        assertEquals(6,paths.size());assertTrue(paths.getFirst().getLast().position().x()>1);
+        assertTrue(paths.getLast().getLast().position().z()>.5);assertTrue(paths.getLast().getLast().position().x()<paths.getFirst().getLast().position().x());
+    }
     private static final Collision FLOOR=new Collision(){public Point move(Point a,Point v){var n=a.add(v);return new Point(n.x(),Math.max(0,n.y()),n.z());}public boolean supported(Point a){return a.y()<=.001;}};
     @Test void fallingOpponentThreatIncludesAirAndLandingWithTurningBranches(){
         var paths=predict(new Input(new Point(0,1,0),new Point(.25,-.15,0),false,.08,.05,0),FLOOR,12);

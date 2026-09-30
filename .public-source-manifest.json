@@ -2519,8 +2519,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/MotionForecast.java",
-      "sha256": "4340d414de3388cf881f863131542e129dfb19a50a799e3316a8d5d54db5e7b4",
-      "bytes": 2367
+      "sha256": "bca4ee73ec10cc062c8fec71a7eb71ceaf6a63660571b49d6e43f9806d9f9916",
+      "bytes": 2927
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/NavigationRetry.java",
@@ -3204,8 +3204,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/MotionForecastTest.java",
-      "sha256": "160fcdd84d78a4a3db20bd31e2a4dd5de4714e2c0a6c3a5e97bb39ca005eec29",
-      "bytes": 1621
+      "sha256": "90231a8143e83c380c9cfd5cd4be2e1eeee8c331c7e283b01638dc61aa4eb899",
+      "bytes": 2086
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/NavigationSearchTest.java",
@@ -3874,8 +3874,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "6393a66a6bee8d2c3b4bcb03795bceeea8095be695e2e3fc5d78f5984208e8f0",
-      "bytes": 166250
+      "sha256": "ed72ba317f92cd3484626f32b99a67cfaac4d0318722db7502aadafa2d464d53",
+      "bytes": 172104
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5019,8 +5019,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/CombatSpellGoalAccess.java",
-      "sha256": "1fa5954f0dca850c87a38fdaeba063fb1a5a4707e435b24b45e296162e9d88b0",
-      "bytes": 406
+      "sha256": "6280e589d72b2580c0515aba89cfa0db8a3c0fcfd587bb496e13df4ca3ef83ce",
+      "bytes": 518
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/CombatSpellcasterAccess.java",
@@ -5439,8 +5439,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",
-      "sha256": "f8548cce4a0b8a03f6221840ad210a44196cf434d9d37e9da3755bf20eb71a7e",
-      "bytes": 5621
+      "sha256": "060711c36c1768bf8c33a287ec2d09e8e4c1737e8d43322b4d0056cce2a71177",
+      "bytes": 5898
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
@@ -5489,8 +5489,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeCombatStates.java",
-      "sha256": "a5a98aa3e04f4b17687132eaaacd4f2d19389f057e4acc317a92025b6134dda1",
-      "bytes": 12403
+      "sha256": "a86b37e299737557f6625a59de2a93639aeb7ced2175749b677d2d2dd7f3cf34",
+      "bytes": 13049
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
@@ -5499,8 +5499,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeSelfPlayLab.java",
-      "sha256": "7ef366c5e725f9cb7a60eb074aabbd0ffc61d24446ec46fc883a4f31ae8ef64b",
-      "bytes": 14372
+      "sha256": "e92565948806b8e7a007a605747a780f919b3cc7bb7d687ad6aac4b7570fe770",
+      "bytes": 14524
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeSpellThreats.java",
@@ -6934,8 +6934,13 @@
     },
     {
       "path": "scripts/local-policy/finetune.py",
-      "sha256": "2a2b5bef3301b281b43ba9e8ce91b278aff6db341ec371eed6fe0795b63375ed",
-      "bytes": 6215
+      "sha256": "ed1b1fb65f5ec5682b14a769c02e4c6432b1cce5cab86ecf12f0345d1cbded84",
+      "bytes": 8042
+    },
+    {
+      "path": "scripts/local-policy/model_pool.py",
+      "sha256": "b93812d8741037a8ce297092ceb5a78237f45e094c1d297552d60c3cf473e700",
+      "bytes": 2035
     },
     {
       "path": "scripts/local-policy/pretrain.py",

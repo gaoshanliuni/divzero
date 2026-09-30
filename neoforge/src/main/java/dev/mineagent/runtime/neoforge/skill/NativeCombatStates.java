@@ -45,7 +45,9 @@ public final class NativeCombatStates {
                     boolean preparing=running&&cast.divzero$warmup()>0;var aim=mob.getTarget()==null?enemy.position().add(enemy.getLookAngle()):mob.getTarget().position();
                     int release=preparing?(goal.requiresUpdateEveryTick()?cast.divzero$warmup():Math.max(1,cast.divzero$warmup()*2-Math.floorMod(enemy.tickCount+enemy.getId(),2))):-1;int next=Math.max(0,cast.divzero$nextCastTick()-enemy.tickCount);
                     spells.add(new Spell(goal.getClass().getName(),kind,preparing,cast.divzero$warmup(),release,next,enemy instanceof CombatSpellcasterAccess state?state.divzero$castingTicks():-1,aim,aim.subtract(enemy.position()).normalize(),"TRACKING_TARGET_UNTIL_RELEASE"));
-                    if(!kind.equals("OTHER"))attacks.add(new Attack(goal.getClass().getName(),kind.equals("FANGS")?"GROUND_SPELL":"SUMMON",preparing?release:next,0,kind.equals("FANGS")?20:16,preparing));
+                    int casting=enemy instanceof CombatSpellcasterAccess state?state.divzero$castingTicks():0;
+                    int earliest=preparing?release:Math.max(next,casting)+Math.max(0,cast.divzero$warmupDuration()-2);
+                    if(!kind.equals("OTHER"))attacks.add(new Attack(goal.getClass().getName(),kind.equals("FANGS")?"GROUND_SPELL":"SUMMON",earliest,0,kind.equals("FANGS")?20:16,mob.getTarget()!=null));
                 }
                 if(goal instanceof CombatMeleeGoalAccess access){var range=mob.getActiveItem().get(DataComponents.ATTACK_RANGE);attacks.add(new Attack(goal.getClass().getName(),"MELEE",running&&known?access.divzero$attackCooldown():-1,range==null?0:range.effectiveMinRange(mob),range==null?CombatMobRangeAccess.divzero$defaultReach():range.effectiveMaxRange(mob),running));}
                 if(goal instanceof CombatRangedGoalAccess access)attacks.add(new Attack(goal.getClass().getName(),"RANGED",running&&known?access.divzero$attackCooldown():-1,0,access.divzero$attackRadius(),running));
@@ -69,6 +71,7 @@ public final class NativeCombatStates {
             knowledge="NATIVE_PLAYER_NO_GENERAL_STUN";
         }
         if(enemy instanceof Ravager ravager){knowledge="NATIVE_RAVAGER";restrictions.add(new Restriction("Ravager.stunnedTick",ravager.getStunnedTick(),true,true,false));restrictions.add(new Restriction("Ravager.roarTick",ravager.getRoarTick(),true,true,false));attacks.add(new Attack("Ravager.roarTick","AREA",ravager.getRoarTick()>10?ravager.getRoarTick()-10:0,0,4,ravager.getRoarTick()>0));}
+        if(enemy instanceof net.minecraft.world.entity.monster.Vex vex){knowledge="NATIVE_VEX_CHARGE";attacks.add(new Attack("Vex.isCharging/contactBox","MELEE",vex.isCharging()?0:-1,0,vex.getBbWidth(),vex.isCharging()));}
         if(enemy instanceof net.minecraft.world.entity.monster.Creeper creeper&&creeper instanceof CombatCreeperAccess state)attacks.add(new Attack("Creeper.nativeFuse","AREA",creeper.getSwellDir()>0?Math.max(0,state.divzero$maxSwell()-state.divzero$swell()):-1,0,state.divzero$explosionRadius()*2*(creeper.isPowered()?2:1),creeper.getSwellDir()>0));
         for(var adapter:ADAPTERS)if(adapter.supports(enemy)){restrictions.addAll(adapter.restrictions(enemy));attacks.addAll(adapter.attacks(enemy));knowledge="ADAPTER";}
         long now=enemy.level().getGameTime();var motion=MOTION.get(enemy);if(motion==null||motion.tick!=now){motion=new Motion(now,enemy.getDeltaMovement(),motion==null?Vec3.ZERO:enemy.getDeltaMovement().subtract(motion.velocity),motion==null?0:now-motion.tick);MOTION.put(enemy,motion);}
@@ -86,6 +89,7 @@ public final class NativeCombatStates {
     }
     /** Evaluate the actual mob attack hitbox at a possible observer position, without moving either entity. */
     public static boolean meleeAt(LivingEntity enemy,LivingEntity actor,Vec3 position){
+        if(enemy instanceof net.minecraft.world.entity.monster.Vex vex)return vex.isCharging()&&vex.getBoundingBox().intersects(actor.getBoundingBox().move(position.subtract(actor.position())));
         if(enemy instanceof net.minecraft.world.entity.player.Player player)return player.isWithinAttackRange(player.getMainHandItem(),actor.getHitbox().move(position.subtract(actor.position())),0);
         if(enemy instanceof Mob unknown&&!enemy.getClass().getName().startsWith("net.minecraft.")){return unknown.isWithinMeleeAttackRange(actor)||position.distanceToSqr(enemy.position())<=actor.distanceToSqr(enemy);}
         if(enemy instanceof Mob mob&&mob instanceof CombatMobRangeAccess access){var item=mob.getActiveItem().get(DataComponents.ATTACK_RANGE);double max=item==null?CombatMobRangeAccess.divzero$defaultReach():item.effectiveMaxRange(mob),min=item==null?0:item.effectiveMinRange(mob);var target=actor.getHitbox().move(position.subtract(actor.position()));return access.divzero$attackBox(max).intersects(target)&&(min<=0||!access.divzero$attackBox(min).intersects(target));}
