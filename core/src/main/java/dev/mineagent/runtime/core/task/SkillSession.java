@@ -13,6 +13,14 @@ public final class SkillSession {
     public Snapshot snapshot(){return new Snapshot(id,owner,agent,world,task,taskIntent,spec,revision,state,phase,reason,cursor,waypoint,direction,Map.copyOf(counters),receipt,previous);}
     public UUID previous(){return previous;}public void previous(UUID id){previous=id;}
     public void combat(long expected,CombatPolicy policy){if(expected!=revision||terminal())throw new IllegalStateException("SKILL_STALE_OR_TERMINAL");spec=spec.withCombat(policy);revision++;}
+    public void adjust(long expected,SkillSpec next){
+        if(expected!=revision||terminal())throw new IllegalStateException("SKILL_STALE_OR_TERMINAL");
+        if(!next.id().equals(spec.id())||next.kind()!=spec.kind()||!next.actor().equals(spec.actor())||!next.dimension().equals(spec.dimension())||!next.combat().equals(spec.combat()))throw new IllegalArgumentException("SKILL_ADJUST_IDENTITY");
+        if(uncertain())throw new IllegalStateException("SKILL_RECONCILIATION_REQUIRED");
+        if(!Objects.equals(next.area(),spec.area())||!next.crop().equals(spec.crop()))cursor=0;
+        if(!next.route().equals(spec.route())&&(waypoint>=next.route().size()||waypoint>=spec.route().size()||!next.route().get(waypoint).equals(spec.route().get(waypoint))))waypoint=0;
+        spec=next;revision++;phase="SCAN";if(state!=State.PAUSED)reason="INTENT_ADJUSTED_RECHECK_TARGET";
+    }
     public SkillSpec spec(){return spec;}public UUID id(){return id;}public UUID owner(){return owner;}public UUID agent(){return agent;}public long revision(){return revision;}public State state(){return state;}public String phase(){return phase;}public String reason(){return reason;}public long cursor(){return cursor;}public int waypoint(){return waypoint;}public Map<String,String> receipt(){return receipt;}
     public boolean terminal(){return Set.of(State.CANCELLED,State.COMPLETED,State.FAILED).contains(state);}
     public boolean runnable(){return state==State.RUNNING||state==State.WAITING||state==State.SUSPENDED;}

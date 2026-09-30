@@ -41,5 +41,14 @@ public record SkillSpec(String id,Kind kind,String actor,String dimension,String
         var policy=CombatPolicy.parse(n.get("combat"),CombatPolicy.defaults(kind,n.path("defend").asBoolean(true),n.path("target").asText()));
         return new SkillSpec(n.path("id").asText(),kind,n.path("actor").asText("ai"),n.path("dimension").asText(),n.path("target").asText(),n.has("min")||n.has("max")?new Area(point(n.path("min")),point(n.path("max"))):null,route,n.path("repeat").asBoolean(true),n.path("defend").asBoolean(true),n.path("allow_teleport").asBoolean(false),n.path("ping_pong").asBoolean(false),n.path("till").asBoolean(false),n.path("start_distance").asDouble(6),n.path("stop_distance").asDouble(2.5),n.path("dwell_ticks").asInt(40),n.path("limit").asInt(0),n.path("crop").asText(),policy,n.path("resume_previous").asBoolean(false));
     }
+    public static final Set<String> ADJUST_FIELDS=Set.of("target","min","max","route","repeat","ping_pong","till","start_distance","stop_distance","dwell_ticks","limit","crop");
+    /** Modify this intent while retaining identity, actor, dimension, combat policy and completed world effects. */
+    public SkillSpec adjust(JsonNode patch){
+        if(patch==null||!patch.isObject()||patch.isEmpty()||patch.properties().stream().anyMatch(e->!ADJUST_FIELDS.contains(e.getKey())))throw new IllegalArgumentException("SKILL_ADJUST_FIELDS");
+        var n=new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("id",id).put("kind",kind.name()).put("actor",actor).put("dimension",dimension).put("target",target).put("repeat",repeat).put("defend",defend).put("allow_teleport",allowTeleport).put("ping_pong",pingPong).put("till",till).put("start_distance",startDistance).put("stop_distance",stopDistance).put("dwell_ticks",dwellTicks).put("limit",limit).put("crop",crop).put("resume_previous",resumePrevious);
+        if(area!=null){n.putArray("min").add(area.min.x).add(area.min.y).add(area.min.z);n.putArray("max").add(area.max.x).add(area.max.y).add(area.max.z);}
+        var routeValue=n.putArray("route");for(var point:route)routeValue.addArray().add(point.x).add(point.y).add(point.z);
+        for(var field:patch.properties())n.set(field.getKey(),field.getValue());return parse(n,null).withCombat(combat);
+    }
     public static Point point(JsonNode n){if(!n.isArray()||n.size()!=3||!n.get(0).isNumber()||!n.get(1).isNumber()||!n.get(2).isNumber())throw new IllegalArgumentException("SKILL_POINT");return new Point(n.get(0).asDouble(),n.get(1).asDouble(),n.get(2).asDouble());}
 }

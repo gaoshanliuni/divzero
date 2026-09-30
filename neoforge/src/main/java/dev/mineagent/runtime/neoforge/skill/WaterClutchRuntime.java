@@ -43,9 +43,9 @@ public final class WaterClutchRuntime {
             var next=position.add(velocity);if(!p.level().hasChunkAt(BlockPos.containing(next)))return null;
             var hit=p.level().clip(new ClipContext(position.add(0,.02,0),next,ClipContext.Block.COLLIDER,ClipContext.Fluid.ANY,p));
             if(hit.getType()==HitResult.Type.BLOCK){
-                if(hit.getDirection()!=Direction.UP)return null;var support=hit.getBlockPos();var source=support.above();
+                if(hit.getDirection()!=Direction.UP)return null;var support=hit.getBlockPos();if(!p.level().getFluidState(support).isEmpty())return null;var source=support.above();
                 double drop=p.fallDistance+Math.max(0,p.getY()-hit.getLocation().y);
-                if(drop<=p.getAttributeValue(Attributes.SAFE_FALL_DISTANCE)+.05||p.getAttributeValue(Attributes.FALL_DAMAGE_MULTIPLIER)<=0||!p.level().getBlockState(source).isAir()||!p.level().getFluidState(source).isEmpty())return null;
+                if(p.getType().is(net.minecraft.tags.EntityTypeTags.FALL_DAMAGE_IMMUNE)||Math.floor((drop+1.0E-6-p.getAttributeValue(Attributes.SAFE_FALL_DISTANCE))*p.getAttributeValue(Attributes.FALL_DAMAGE_MULTIPLIER))<=0||!p.level().getBlockState(source).isAir()||!p.level().getFluidState(source).isEmpty())return null;
                 if(p.level().environmentAttributes().getValue(net.minecraft.world.attribute.EnvironmentAttributes.WATER_EVAPORATES,source)||!p.level().mayInteract(p,support))return null;
                 return new Landing(support,source,new Vec3(source.getX()+.5,hit.getLocation().y,source.getZ()+.5),drop);
             }
@@ -53,13 +53,13 @@ public final class WaterClutchRuntime {
         }return null;
     }
     private static final class Clutch {
-        final ServerPlayer player;final SkillActor actor;final UUID token=UUID.randomUUID();final Object level;final int originalSlot,started;final float healthBefore;
+        final ServerPlayer player;final SkillActor actor;final UUID token=UUID.randomUUID();final Object level;final int originalSlot,started;final float healthBefore;final ItemStack originalMain;
         Landing landing;boolean placed,offhand,completing;int restoreAt;int placedAt,settledAt=-1,lastUse=-100,tries;String outcome="PREDICTED";UUID action;
-        Clutch(ServerPlayer player,Landing landing){this.player=player;this.level=player.level();this.landing=landing;originalSlot=player.getInventory().getSelectedSlot();started=player.level().getServer().getTickCount();healthBefore=player.getHealth();actor=player instanceof MineAgentPlayer ai?new AiSkillActor(ai):PlayerSkillActor.emergency(player);}
+        Clutch(ServerPlayer player,Landing landing){this.player=player;this.level=player.level();this.landing=landing;originalSlot=player.getInventory().getSelectedSlot();started=player.level().getServer().getTickCount();healthBefore=player.getHealth();originalMain=player.getMainHandItem().copy();actor=player instanceof MineAgentPlayer ai?new AiSkillActor(ai):PlayerSkillActor.emergency(player);}
         boolean current(){return player.level()==level&&allowed(player)&&actor!=null&&actor.current();}
         boolean tick(){
             int now=player.level().getServer().getTickCount();if(!current()||now-started>100){outcome=placed?"RECOVERY_DEFERRED":"CANCELLED";return true;}
-            if(completing){if(current()&&player.getInventory().getSelectedSlot()!=originalSlot&&now-restoreAt<6){actor.select(token,originalSlot);return false;}return true;}
+            if(completing){if(current()&&!restored()&&now-restoreAt<6){restoreSelection();return false;}return true;}
             if(!actor.inputReady())return false;
             if(!actor.controls().acquire(token,EnumSet.allOf(BodyDomain.class),120,this::current,()->actor.stop(token)))return false;
             actor.haltMotion(token);
@@ -97,13 +97,18 @@ public final class WaterClutchRuntime {
             if(hit.getType()==HitResult.Type.BLOCK&&hit.getBlockPos().equals(landing.source)&&now>lastUse+2){action=UUID.randomUUID();lastUse=now;outcome="RECOVERY_SENT";actor.useOnce(token,action,offhand?InteractionHand.OFF_HAND:InteractionHand.MAIN_HAND);}
             return false;
         }
+        boolean restored(){return player.getInventory().getSelectedSlot()==originalSlot&&(originalMain.isEmpty()||ItemStack.isSameItemSameComponents(player.getMainHandItem(),originalMain));}
+        void restoreSelection(){
+            if(!originalMain.isEmpty()&&!ItemStack.isSameItemSameComponents(player.getMainHandItem(),originalMain))for(int i=0;i<36;i++)if(ItemStack.isSameItemSameComponents(player.getInventory().getItem(i),originalMain)){actor.select(token,i);return;}
+            actor.select(token,originalSlot);
+        }
         void record(){var data=new LinkedHashMap<String,Object>();data.put("state",outcome);data.put("operation",token.toString());data.put("source",List.of(landing.source.getX(),landing.source.getY(),landing.source.getZ()));data.put("predictedFallDistance",landing.drop);data.put("placed",placed);data.put("healthBefore",healthBefore);data.put("healthAfter",player.getHealth());data.put("placementAttempts",tries);data.put("tick",player.level().getServer().getTickCount());RESULTS.computeIfAbsent(player.level().getServer(),s->new HashMap<>()).put(player.getUUID(),Map.copyOf(data));}
         void finish(){try{if(actor!=null){actor.stop(token);actor.controls().release(token);}}finally{record();}}
     }
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
         var server=event.getServer();if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server))return;var active=ACTIVE.computeIfAbsent(server,s->new HashMap<>());var retry=RETRY.computeIfAbsent(server,s->new HashMap<>());
         for(var p:server.getPlayerList().getPlayers())if(!active.containsKey(p.getUUID())&&server.getTickCount()>=retry.getOrDefault(p.getUUID(),0)&&allowed(p)&&hasWater(p)){var landing=predict(p);if(landing!=null)active.put(p.getUUID(),new Clutch(p,landing));}
-        for(var entry:List.copyOf(active.entrySet())){var clutch=entry.getValue();boolean done;try{done=clutch.tick();}catch(Exception failure){clutch.outcome="NATIVE_USE_REJECTED";done=true;}if(done){if(!clutch.completing&&clutch.current()&&clutch.actor.controls().owns(clutch.token,BodyDomain.INVENTORY)&&clutch.player.getInventory().getSelectedSlot()!=clutch.originalSlot){clutch.completing=true;clutch.restoreAt=server.getTickCount();clutch.actor.select(clutch.token,clutch.originalSlot);continue;}clutch.finish();active.remove(entry.getKey());retry.put(entry.getKey(),server.getTickCount()+10);}}
+        for(var entry:List.copyOf(active.entrySet())){var clutch=entry.getValue();boolean done;try{done=clutch.tick();}catch(Exception failure){clutch.outcome="NATIVE_USE_REJECTED";done=true;}if(done){if(!clutch.completing&&clutch.current()&&clutch.actor.controls().owns(clutch.token,BodyDomain.INVENTORY)&&!clutch.restored()){clutch.completing=true;clutch.restoreAt=server.getTickCount();clutch.restoreSelection();continue;}clutch.finish();active.remove(entry.getKey());retry.put(entry.getKey(),server.getTickCount()+10);}}
     }
     @SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppingEvent event){var active=ACTIVE.remove(event.getServer());if(active!=null)for(var clutch:active.values())clutch.finish();RESULTS.remove(event.getServer());RETRY.remove(event.getServer());}
 }
