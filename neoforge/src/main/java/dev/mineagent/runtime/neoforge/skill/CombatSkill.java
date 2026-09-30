@@ -76,7 +76,7 @@ final class CombatSkill {
         w.runtime.persist(w);
     }
     private static void observeRelease(SkillWork w){
-        if(w.combatStage==2&&!w.shotLogged&&w.count(Items.ARROW)<w.combatAmmo){w.shotLogged=true;w.session.add("arrowsReleased",1);log(w,"RELEASE_OBSERVED");}
+        if(w.combatStage==2&&(w.ranged.adapter.isEmpty()||w.ranged.adapter.equals("minecraft:bow"))&&!w.shotLogged&&w.count(Items.ARROW)<w.combatAmmo){w.shotLogged=true;w.session.add("arrowsReleased",1);log(w,"RELEASE_OBSERVED");}
     }
     private static boolean move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
         if(next==null){
@@ -122,22 +122,11 @@ final class CombatSkill {
             if(!w.positioning.longRetreat())shield(w,facing);return;
         }
         if(CombatEquipmentAdapter.execute(w,target)){phase(w,"ADAPTED_WEAPON");return;}
+        if(NativeRangedCombat.tick(w,target))return;
         double distance=p.distanceTo(target);boolean visible=p.hasLineOfSight(target);
         var actual=NativeCombatStates.read(target,p);
         double enemyReach=actual.attacks().stream().filter(a->a.kind().equals("MELEE")).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
         withdrawal=Math.max(withdrawal,enemyReach+p.getBbWidth()/2+target.getBbWidth()/2+1);
-        boolean haveBow=w.count(Items.BOW)>0&&(w.count(Items.ARROW)>0||p.hasInfiniteMaterials());
-        boolean meleeAvailable=false;for(int slot=0;slot<36;slot++){var held=p.getInventory().getItem(slot);if(held.is(ItemTags.SWORDS)||held.is(ItemTags.AXES)){meleeAvailable=true;break;}}
-        boolean stalled=w.lastAttackAt>=0&&w.tick()-w.lastAttackAt>120;
-        boolean ranged=rule.strategy()==CombatPolicy.Strategy.RANGED_KITE||rule.strategy()==CombatPolicy.Strategy.AUTO&&haveBow&&(!w.contactRunAndHit||!meleeAvailable)&&(distance>5||!meleeAvailable&&distance>3||stalled&&distance>4);
-        if(ranged&&haveBow){
-            double desired=Math.max(7,Math.min(12,withdrawal+4));
-            if(distance<desired-1||!visible)move(w,w.positioning.choose(w,distance<desired?"RETREAT":"RANGED",desired),target,distance<desired-2);
-            else if(distance>desired+3)move(w,w.positioning.choose(w,"APPROACH",desired),target,false);
-            else if(w.combatStage==0)w.actor.stop(w.token());
-            if(visible&&distance<24&&distance>=Math.max(4,desired-2)){bow(w,target);return;}
-            phase(w,"RANGED_REPOSITION");return;
-        }
         if(w.combatStage!=0){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;}
         if(!CombatEquipmentAdapter.melee(w,target)){w.actor.haltMotion(w.token());return;}
         double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);

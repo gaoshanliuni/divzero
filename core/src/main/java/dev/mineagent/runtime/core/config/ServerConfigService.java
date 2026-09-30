@@ -129,6 +129,9 @@ public final class ServerConfigService implements AutoCloseable {
         return ConfigPatchResult.accepted(snapshot());
     }
 
+    public synchronized long revision(){return revision;}
+    public synchronized boolean flag(String key,boolean fallback){return Boolean.parseBoolean(publicValues.getOrDefault(key,Boolean.toString(fallback)));}
+
     public synchronized PanelSnapshot snapshot() {
         var masked = new LinkedHashMap<>(publicValues);
         secretValues.forEach((key,value)->{if(!value.isBlank())masked.put(key,PanelSnapshot.SECRET_CONFIGURED);});

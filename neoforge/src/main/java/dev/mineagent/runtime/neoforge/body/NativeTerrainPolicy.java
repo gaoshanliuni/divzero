@@ -15,7 +15,7 @@ public final class NativeTerrainPolicy {
             Blocks.STONE,Blocks.ANDESITE,Blocks.DIORITE,Blocks.GRANITE,Blocks.DEEPSLATE,Blocks.TUFF,Blocks.NETHERRACK,Blocks.END_STONE,Blocks.CLAY,Blocks.MUD);
     public static boolean allowed(ServerPlayer player){
         if(!dev.mineagent.runtime.neoforge.skill.ActorEnhancements.forBody(player).recovery()||!player.isAlive()||player.isSpectator()||player.isPassenger())return false;
-        var server=player.level().getServer();if(!Boolean.parseBoolean(MineAgentRuntimeServices.config(server).snapshot().values().getOrDefault("autonomy.terrainRecovery.enabled","true")))return false;
+        var server=player.level().getServer();if(!MineAgentRuntimeServices.config(server).flag("autonomy.terrainRecovery.enabled",true))return false;
         if(player instanceof MineAgentPlayer body){var owner=server.getPlayerList().getPlayer(body.ownerPlayerId());return owner!=null&&body.canAct()&&body.taskControlOwned()&&ServerTaskStart.allowed(owner,body.agentId());}
         return AutonomousPlayerAgent.emergencySession(player)!=null;
     }
@@ -24,13 +24,13 @@ public final class NativeTerrainPolicy {
         if(!allowed(p)||!loaded(p,at)||p.level().getBlockEntity(at)!=null||!p.mayInteract(p.level(),at))return false;
         var state=p.level().getBlockState(at);var history=TerrainProvenance.get(p.level().getServer());
         if(!history.available()||history.knownPlaced(p.level(),at)||!TERRAIN.contains(state.getBlock())||!state.getFluidState().isEmpty())return false;
-        if(!Boolean.parseBoolean(MineAgentRuntimeServices.config(p.level().getServer()).snapshot().values().getOrDefault("autonomy.terrainRecovery.allowUnknownNaturalMaterials","true")))return false;
+        if(!MineAgentRuntimeServices.config(p.level().getServer()).flag("autonomy.terrainRecovery.allowUnknownNaturalMaterials",true))return false;
         if(dev.mineagent.runtime.neoforge.ui.ServerInteractionRules.denied(p,at,null,"block_break",false))return false;
         // Do not open a local pocket into fluid, falling blocks, a container or an unloaded neighbour.
         for(var direction:net.minecraft.core.Direction.values()){var neighbor=at.relative(direction);if(!loaded(p,neighbor))return false;var other=p.level().getBlockState(neighbor);if(!other.getFluidState().isEmpty()||direction==net.minecraft.core.Direction.UP&&other.getBlock() instanceof FallingBlock)return false;}
         return true;
     }
-    public static boolean mayPlace(ServerPlayer p,BlockPos at){return allowed(p)&&loaded(p,at)&&p.mayInteract(p.level(),at)&&p.level().getBlockState(at).canBeReplaced()&&p.level().getFluidState(at).isEmpty()&&!dev.mineagent.runtime.neoforge.ui.ServerInteractionRules.denied(p,at,null,"block_place",false);}
+    public static boolean mayPlace(ServerPlayer p,BlockPos at){return allowed(p)&&loaded(p,at)&&p.mayInteract(p.level(),at)&&p.level().getBlockState(at).isAir()&&p.level().getFluidState(at).isEmpty()&&!dev.mineagent.runtime.neoforge.ui.ServerInteractionRules.denied(p,at,null,"block_place",false);}
     public static int materialSlot(ServerPlayer p){
         for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(stack.getItem() instanceof BlockItem item&&(TERRAIN.contains(item.getBlock())||item.getBlock()==Blocks.COBBLESTONE||item.getBlock()==Blocks.COBBLED_DEEPSLATE||stack.is(net.minecraft.tags.ItemTags.PLANKS))&&!(item.getBlock() instanceof FallingBlock)&&item.getBlock().defaultBlockState().isCollisionShapeFullBlock(p.level(),p.blockPosition())&&!item.getBlock().defaultBlockState().hasBlockEntity()&&item.getBlock()!=Blocks.MAGMA_BLOCK)return i;}return -1;
     }

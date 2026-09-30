@@ -11,18 +11,21 @@ public final class BallisticIntercept {
     public interface Corridor {boolean clear(Point from,Point to,double time);}
     private record Candidate(Point direction,double time,double error){}
     public static Optional<Shot> solve(Point start,Physics physics,DoubleFunction<Point> target,double radius,Corridor corridor,BooleanSupplier budget){
+        return solve(start,physics,new Point(0,0,0),target,radius,corridor,budget);
+    }
+    public static Optional<Shot> solve(Point start,Physics physics,Point inherited,DoubleFunction<Point> target,double radius,Corridor corridor,BooleanSupplier budget){
         var candidates=new ArrayList<Candidate>();
         for(double time=1;time<=physics.maxTicks;time+=.25){
             if(!budget.getAsBoolean())return Optional.empty();int whole=(int)time;double fraction=time-whole,drag=Math.pow(physics.drag,whole);
             double travel=physics.drag==1?time:(1-drag)/(1-physics.drag)+fraction*drag;
             double falling=physics.drag==1?-physics.gravity*(whole*(whole-1)/2d+fraction*whole):-physics.gravity*((whole-(1-drag)/(1-physics.drag))/(1-physics.drag)+fraction*(1-drag)/(1-physics.drag));
-            var delta=target.apply(time).subtract(start);var needed=new Point(delta.x()/travel,(delta.y()-falling)/travel,delta.z()/travel);double magnitude=needed.length();
+            var delta=target.apply(time).subtract(start);var needed=new Point(delta.x()/travel,(delta.y()-falling)/travel,delta.z()/travel).subtract(inherited);double magnitude=needed.length();
             if(magnitude>.001)candidates.add(new Candidate(needed.scale(1/magnitude),time,Math.abs(magnitude-physics.speed)));
         }
         candidates.sort(Comparator.comparingDouble(Candidate::error).thenComparingDouble(Candidate::time));
         // Both direct and lobbed solutions can survive this ordering; no unbounded angle enumeration.
         for(var candidate:candidates.stream().limit(12).toList()){
-            var position=start;var velocity=candidate.direction.scale(physics.speed);
+            var position=start;var velocity=candidate.direction.scale(physics.speed).add(inherited);
             for(int tick=1;tick<=Math.min(physics.maxTicks,Math.ceil(candidate.time)+2);tick++){
                 if(!budget.getAsBoolean())return Optional.empty();var next=position.add(velocity);
                 var relative=position.subtract(target.apply(tick-1));var relativeNext=next.subtract(target.apply(tick));var motion=relativeNext.subtract(relative);double square=dot(motion,motion);

@@ -116,6 +116,9 @@ public final class NativeTerrainRecovery {
         int slot=NativeTerrainPolicy.materialSlot(player);if(slot<0){fail("BUILDING_MATERIAL_REQUIRED");return new Tick(false,null,false);}if(!controls.select(slot))return new Tick(true,null,false);
         if(planned.jumpPlace()){
             if(!jumped){if(!player.onGround())return new Tick(true,null,false);
+                double centerX=target.getX()+.5,centerZ=target.getZ()+.5;
+                if(Math.hypot(player.getX()-centerX,player.getZ()-centerZ)>.10){var centered=node(planned.from());return new Tick(true,new PathStep(centered,centered,Action.WALK,Posture.STANDING,1),false);}
+                if(!player.level().noCollision(player,player.getBoundingBox().expandTowards(0,1.3,0))){fail("JUMP_COLUMN_HEADROOM_BLOCKED");return new Tick(false,null,false);}
                 var support=Vec3.atCenterOf(target.below()).add(0,.49,0);controls.aim(support);
                 if(player.getLookAngle().dot(support.subtract(player.getEyePosition()).normalize())<.99)return new Tick(true,null,false);
                 controls.jump(operation);jumped=true;at=now;return new Tick(true,null,false);}

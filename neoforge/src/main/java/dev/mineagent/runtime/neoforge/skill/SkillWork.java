@@ -23,6 +23,7 @@ final class SkillWork {
     NativeTraversalEvaluator wanderEvaluator;SurfaceReachability wanderSearch;
     LivingEntity lastCombatTarget;
     final CombatFootwork footwork=new CombatFootwork();String jumpKind="COUNTER";int jumpTapUntil=-1,sideStepUntil=-1;Vec3 footworkPosition;
+    final NativeRangedCombat.State ranged=new NativeRangedCombat.State();
     final CombatPrediction prediction=new CombatPrediction();
     final CombatAwareness combat=new CombatAwareness();final CombatPositioning positioning=new CombatPositioning();
     String tactic="OBSERVE";int tacticAt,lastAttackAt=-10000,lastHitAt=-10000,lastDefenseTick,healSlot=-1;UUID healingOperation;boolean combatInterrupted;

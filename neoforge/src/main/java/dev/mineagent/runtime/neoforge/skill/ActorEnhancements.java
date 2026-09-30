@@ -13,19 +13,24 @@ import java.util.*;
 public final class ActorEnhancements {
     public record Settings(long revision,boolean boost,boolean learning,boolean neural,boolean recovery,
                            boolean enhancedCritical,boolean microHop,double horizontalKnockback,double verticalKnockback){}
+    private record Cached(long revision,Settings settings){}
+    private static final Map<net.minecraft.server.MinecraftServer,Map<UUID,Cached>> CACHE=new WeakHashMap<>();
     private static String key(ServerPlayer player,UUID body){return "enhancements."+MineAgentRuntimeServices.worldId(player.level().getServer())+"."+body+".";}
     public static UUID bodyId(ServerPlayer viewer,UUID agent,String actor){if(!Set.of("ai","player").contains(actor))throw new IllegalArgumentException("ENHANCEMENT_ACTOR");return actor.equals("player")?viewer.getUUID():agent;}
     public static Settings read(ServerPlayer context,UUID body){
         var values=MineAgentRuntimeServices.config(context.level().getServer()).snapshot().values();String p=key(context,body);
         return new Settings(Long.parseLong(values.getOrDefault(p+"revision","0")),Boolean.parseBoolean(values.getOrDefault(p+"boost","false")),Boolean.parseBoolean(values.getOrDefault(p+"learning","false")),Boolean.parseBoolean(values.getOrDefault(p+"neural","true")),Boolean.parseBoolean(values.getOrDefault(p+"recovery","true")),Boolean.parseBoolean(values.getOrDefault(p+"enhancedCritical","true")),Boolean.parseBoolean(values.getOrDefault(p+"microHop","true")),Double.parseDouble(values.getOrDefault(p+"horizontalKnockback","0.5")),Double.parseDouble(values.getOrDefault(p+"verticalKnockback","0.5")));
     }
-    public static Settings forBody(ServerPlayer body){return read(body,body instanceof MineAgentPlayer ai?ai.agentId():body.getUUID());}
+    public static Settings forBody(ServerPlayer body){
+        var server=body.level().getServer();UUID id=body instanceof MineAgentPlayer ai?ai.agentId():body.getUUID();long revision=MineAgentRuntimeServices.config(server).revision();
+        synchronized(CACHE){var values=CACHE.computeIfAbsent(server,s->new HashMap<>());var cached=values.get(id);if(cached!=null&&cached.revision==revision)return cached.settings;var settings=read(body,id);values.put(id,new Cached(revision,settings));return settings;}
+    }
     public static boolean executing(ServerPlayer body){
         if(!body.isAlive()||body.isRemoved()||body.isSpectator())return false;
         if(body instanceof MineAgentPlayer ai){var owner=body.level().getServer().getPlayerList().getPlayer(ai.ownerPlayerId());return owner!=null&&ai.canAct()&&ServerTaskStart.allowed(owner,ai.agentId());}
         return AutonomousPlayerAgent.emergencySession(body)!=null;
     }
-    public static boolean boost(ServerPlayer body){return executing(body)&&forBody(body).boost&&Boolean.parseBoolean(MineAgentRuntimeServices.config(body.level().getServer()).snapshot().values().getOrDefault("autonomy.boost.allowed","true"));}
+    public static boolean boost(ServerPlayer body){return executing(body)&&forBody(body).boost&&MineAgentRuntimeServices.config(body.level().getServer()).flag("autonomy.boost.allowed",true);}
     public static Map<String,Object> inspect(ServerPlayer viewer,UUID agent){
         if(!ServerTaskStart.allowed(viewer,agent))throw new SecurityException("ENHANCEMENT_PERMISSION");
         return Map.of("ai",read(viewer,agent),"player",read(viewer,viewer.getUUID()),"models",Map.of("ai",LocalPolicyRuntime.inspect(viewer,agent),"player",LocalPolicyRuntime.inspect(viewer,viewer.getUUID())),"boostAllowed",Boolean.parseBoolean(MineAgentRuntimeServices.config(viewer.level().getServer()).snapshot().values().getOrDefault("autonomy.boost.allowed","true")));

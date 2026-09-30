@@ -42,7 +42,7 @@ public final class LocalPolicyRuntime {
     public static double score(ServerPlayer p,double[] features){if(!ActorEnhancements.forBody(p).neural())return 0;return state(p).serving.cost(features);}
     public static LocalActionPolicy snapshot(ServerPlayer p){return ActorEnhancements.forBody(p).neural()?state(p).serving:null;}
     public static double[] features(ServerPlayer p,double distance,double progress,double risk,int steps,Vec3 delta,int edge,boolean opportunity,int kind,double materials){
-        return new double[]{p.getHealth()/Math.max(1,p.getMaxHealth()),Math.clamp(distance/16,0,2),p.getDeltaMovement().horizontalDistance()/.4,Math.clamp(risk/80,0,1),p.getAttackStrengthScale(.5f),Math.clamp(progress/8,-1,1),Math.clamp(risk/80,0,2),Math.clamp(steps/8d,0,2),Math.clamp(delta.x/8,-1,1),Math.clamp(delta.z/8,-1,1),Math.clamp(edge/8d,0,2),opportunity?1:0,kind/8d,p.onGround()?0:1,p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE)/10,Math.clamp(materials/8,0,2)};
+        return new double[]{p.getHealth()/Math.max(1,p.getMaxHealth()),Math.clamp(distance/16,0,2),p.getDeltaMovement().horizontalDistance()/.4,ActorEnhancements.boost(p)?1:0,p.getAttackStrengthScale(.5f),Math.clamp(progress/8,-1,1),Math.clamp(risk/80,0,2),Math.clamp(steps/8d,0,2),Math.clamp(delta.x/8,-1,1),Math.clamp(delta.z/8,-1,1),Math.clamp(edge/8d,0,2),opportunity?1:0,kind/8d,p.onGround()?0:1,p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE)/10,Math.clamp(materials/8,0,2)};
     }
     static void chose(SkillWork w,double[] features,Vec3 waypoint){
         if(!ActorEnhancements.forBody(w.player()).learning())return;var state=state(w.player());if(state.pending!=null)return;

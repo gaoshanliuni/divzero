@@ -53,7 +53,7 @@ public final class MineAgentMovementController {
             });
             if(recovery.changed())intent.recheckAfterTerrain();step=recovery.move();
         }
-        if(step==null)return;var waypoint=intent.waypoint(step);var offset=waypoint.subtract(p.position());
+        if(step==null)return;var waypoint=intent.recovery().active()?NativeTraversalEvaluator.point(step.to()):intent.waypoint(step);var offset=waypoint.subtract(p.position());
         if(tick>pendingJumpExpires||pendingJumpRevision!=commandRevision||pendingJumpOwner==null||!p.controls().owns(pendingJumpOwner,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT)){pendingJumpRevision=-1;pendingJumpOwner=null;}
         else if(p.onGround()){intent.tacticalJump(p);p.jumpFromGround();pendingJumpRevision=-1;pendingJumpOwner=null;}
         if(!NativeSurfaceNavigation.openOnPath(p,waypoint)){intent.stop("INTERACTION_BLOCKED");return;}

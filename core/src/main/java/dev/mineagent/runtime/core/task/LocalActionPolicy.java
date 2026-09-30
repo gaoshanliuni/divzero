@@ -6,7 +6,7 @@ import java.util.*;
 /** Small bounded value network. It ranks admissible Java actions; it never executes an action itself. */
 public final class LocalActionPolicy {
     public static final int INPUTS=16,HIDDEN=24;
-    public static final String SCHEMA="divzero-admissible-action-value/1";
+    public static final String SCHEMA="divzero-admissible-action-value/2";
     public record Weights(String schema,long version,double[][] hidden,double[] bias,double[] output,double outputBias,String provenance){}
     public record Sample(double[] features,double cost){public Sample{features=features.clone();if(features.length!=INPUTS||!Double.isFinite(cost)||cost<0||cost>1)throw new IllegalArgumentException("POLICY_SAMPLE");}@Override public double[] features(){return features.clone();}}
     private final Weights weights;
