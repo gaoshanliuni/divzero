@@ -3244,8 +3244,8 @@
     },
     {
       "path": "docs/TAKEOVER_CAMERA.md",
-      "sha256": "27016b818d69c40b10bf079cc36850370ab3ede1f2282a8d2a5a9f0b003f1c06",
-      "bytes": 4664
+      "sha256": "ea1921b74c13e0e6eebc94e48442d1a6faaf846e7e807b55bc290172b53e4696",
+      "bytes": 6696
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3259,8 +3259,8 @@
     },
     {
       "path": "docs/images/README.md",
-      "sha256": "cf62ee78e1e08aa73f5173972dfae409f4d324dc69d9b9d8572107e4237683c2",
-      "bytes": 6929
+      "sha256": "f9a4571497d84e2fa8e91d19b699b001a24380b4445806da7185fe56f12c52a5",
+      "bytes": 7148
     },
     {
       "path": "docs/images/behavior-agent-profile.png",
@@ -3316,6 +3316,11 @@
       "path": "docs/images/native-shop.png",
       "sha256": "54c146df8c3ca540db8a33432079cf0c0f7063c43c90b2d30f242f70e37d2d8a",
       "bytes": 689450
+    },
+    {
+      "path": "docs/images/native-takeover-free-camera.png",
+      "sha256": "b2b67cacbc02e6ac0257dfb839a340b61a45056134f44e1dbbf17a48777eebd8",
+      "bytes": 535443
     },
     {
       "path": "docs/images/native-workspace-scale-four.png",

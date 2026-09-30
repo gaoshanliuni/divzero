@@ -73,3 +73,5 @@
 | [native-recovery-report.png](native-recovery-report.png) | 图形化恢复报告：状态、坐标和方块图标对比，无原始 JSON | `c6d07df70eff4ce1ea58bd06d50ebbfaa4e1799bc2987533cacbe3718ca45640` |
 | [native-selector-layout.png](native-selector-layout.png) | 创建页下拉选择框与相邻按钮分开布局，标识垂直居中 | `c4b1b5ab00aa30b87ec27cb596cf513ff3737cd8094259eec5099cf8cab7ba9b` |
 | [native-content-catalog.png](native-content-catalog.png) | 已打开包管理后创建内容，目录自动出现物品、生物和原版修改 | `7247edb3691f9640909624731b4be2f1e8b8b43fb69e42f1f1cb1e9202c11bf1` |
+
+- `native-takeover-free-camera.png`：原生托管自由观战和返回 AI 视角按钮，1600×1100、GUI 尺寸 4。隔离运行 `810f85f9-0fe5-4bb0-95ab-d101893c5ac1`；Actions `36690288945`，模型调用 0 次。
