@@ -6,7 +6,7 @@ class StreamingToolCallsTest {
     private static final ObjectMapper JSON=new ObjectMapper();
     @Test void constructionSourceCanSpanManyWidgetsButOtherToolsKeepTheirArgumentBound()throws Exception {
         String arguments=JSON.writeValueAsString(java.util.Map.of("source","x".repeat(32000),"revision",0));
-        for(String name:java.util.List.of("plan_building","set_native_ui","edit_native_ui","repair_content_package","run_game_command")){
+        for(String name:java.util.List.of("plan_building","set_native_ui","edit_native_ui","repair_content_package","edit_package_sources","run_game_command")){
             var stream=new StreamingToolCalls();stream.accept(JSON.valueToTree(java.util.Map.of("tool_calls",java.util.List.of(java.util.Map.of("index",0,"id","call","function",java.util.Map.of("name",name,"arguments",arguments))))));
             if(!name.equals("run_game_command"))assertEquals(arguments,stream.finish().getFirst().argumentsJson());else assertThrows(IllegalArgumentException.class,stream::finish);
         }

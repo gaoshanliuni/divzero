@@ -119,6 +119,50 @@ public final class ServerPackageRuntime implements AutoCloseable {
     public Optional<RuntimePackage> worldVersion(UUID id,String hash)throws Exception{requireServerThread();var current=library.get(id).filter(p->p.canonicalSha256().equals(hash));if(current.isPresent())return current;var world=worldPatches.version(id,hash);return world.isPresent()?world:patches.version(id,hash);}
     public boolean mayWorldPatch(UUID owner,UUID agent){requireServerThread();var viewer=server.getPlayerList().getPlayer(owner);boolean op=viewer!=null&&viewer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);var permissions=MineAgentRuntimeServices.permissions(server);return allowed(owner,agent)&&permissions.allowed(owner,op,PermissionAction.RUN_CODE)&&permissions.allowed(owner,op,PermissionAction.MANAGE_PACKAGES);}
     private boolean worldPatchCurrent(PackageUiPatchJob j){var t=MineAgentRuntimeServices.tasks(server).get(j.taskId()).orElse(null);return !closed&&t!=null&&t.intentRevision()==j.taskIntentRevision()&&t.status()==dev.mineagent.runtime.api.task.TaskStatus.RUNNING&&mayWorldPatch(j.ownerPlayerId(),j.agentId())&&library.get(j.base().packageId()).filter(p->p.revision()==j.base().revision()&&p.canonicalSha256().equals(j.base().canonicalSha256())).isPresent();}
+    public java.util.concurrent.CompletableFuture<Map<String,Object>> inspectPackageSource(ServerPlayer viewer,UUID agent,UUID packageId,long revision,String path,int offset,UUID operation,java.util.function.BooleanSupplier current)throws Exception{
+        requireServerThread();if(!mayWorldPatch(viewer.getUUID(),agent)||!current.getAsBoolean())throw new SecurityException("PACKAGE_SOURCE_PERMISSION");
+        var base=ownedPackage(viewer.getUUID(),packageId,revision).orElseThrow(()->new SecurityException("PACKAGE_NOT_OWNED"));if(base.revision()!=revision)throw new IllegalStateException("STALE_PACKAGE");
+        var job=operation==null?null:worldPatches.get(viewer.getUUID(),operation);if(job!=null&&(!job.agentId().equals(agent)||!job.base().canonicalSha256().equals(base.canonicalSha256())))throw new IllegalStateException("STALE_PACKAGE_SOURCE");
+        String diagnostic=job==null?"":worldPatches.diagnostic(viewer.getUUID(),operation);if(offset<0||offset>1048576)throw new IllegalArgumentException("PACKAGE_SOURCE_OFFSET");
+        return java.util.concurrent.CompletableFuture.supplyAsync(()->{try{
+            var value=new LinkedHashMap<String,Object>();value.put("package_id",packageId);value.put("revision",revision);value.put("base_hash",base.canonicalSha256());value.put("activationMode",base.activationMode());
+            if(job!=null){value.put("operation_id",job.operationId());value.put("job_revision",job.revision());value.put("raw_sha256",job.rawOutputSha256());value.put("candidateState",job.state());value.put("diagnostic",diagnostic);}
+            if(path.isEmpty()){var files=base.resources().values().stream().sorted(Comparator.comparing(dev.mineagent.runtime.api.packages.RuntimeResourceRef::path)).toList();value.put("files",files.stream().skip(offset).limit(32).toList());value.put("nextOffset",offset+32<files.size()?offset+32:-1);return value;}
+            String source=null;
+            if(job!=null&&!job.rawOutputSha256().isEmpty()){
+                String raw=new String(content.read(job.rawOutputSha256()),java.nio.charset.StandardCharsets.UTF_8);
+                if(path.equals("raw_output"))source=raw;
+                else for(var file:new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw).path("files"))if(file.path("path").asText().equals(path)&&file.path("encoding").asText("utf8").equals("utf8"))source=file.path("content").asText();
+            }
+            if(source==null){var file=base.resources().get(path);if(file==null||file.size()>1048576||!(path.endsWith(".java")||path.endsWith(".js")||path.endsWith(".json")||file.mediaType().startsWith("text/")))throw new IllegalArgumentException("PACKAGE_SOURCE_TEXT_REQUIRED");source=new String(content.read(file.sha256()),java.nio.charset.StandardCharsets.UTF_8);}
+            int start=Math.min(offset,source.length()),end=Math.min(source.length(),start+8192);value.put("path",path);value.put("source",source.substring(start,end));value.put("source_sha256",RuntimePackageCanonicalizer.sha256(source));value.put("nextOffset",end<source.length()?end:-1);return value;
+        }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}},io).thenCompose(value->server.submit(()->{if(closed||!current.getAsBoolean()||!mayWorldPatch(viewer.getUUID(),agent))throw new SecurityException("PACKAGE_SOURCE_CONTEXT_CHANGED");return value;}));
+    }
+    public java.util.concurrent.CompletableFuture<Map<String,Object>> editPackageSources(ServerPlayer viewer,UUID agent,UUID operation,com.fasterxml.jackson.databind.JsonNode args,java.util.function.BooleanSupplier current)throws Exception{
+        requireServerThread();if(!mayWorldPatch(viewer.getUUID(),agent)||!current.getAsBoolean())throw new SecurityException("PACKAGE_SOURCE_PERMISSION");
+        UUID packageId=UUID.fromString(args.path("package_id").asText());long revision=args.path("revision").asLong();
+        var base=ownedPackage(viewer.getUUID(),packageId,revision).orElseThrow(()->new SecurityException("PACKAGE_NOT_OWNED"));if(base.revision()!=revision||!base.canonicalSha256().equals(args.path("base_hash").asText()))throw new IllegalStateException("STALE_PACKAGE");
+        String sourceHash="";
+        if(args.has("source_operation_id")){
+            var source=worldPatches.get(viewer.getUUID(),UUID.fromString(args.get("source_operation_id").asText()));
+            if(!source.agentId().equals(agent)||!source.base().canonicalSha256().equals(base.canonicalSha256())||!source.state().equals("FAILED")||source.revision()!=args.path("job_revision").asLong()||!source.rawOutputSha256().equals(args.path("raw_sha256").asText())||source.rawOutputSha256().isEmpty())throw new IllegalStateException("STALE_PACKAGE_CANDIDATE");sourceHash=source.rawOutputSha256();
+        }
+        var edits=new ArrayList<dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change>();for(var edit:args.path("edits"))edits.add(new dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change(edit.path("path").asText(),edit.path("old_text").asText(),edit.path("new_text").asText(),edit.path("replace_all").asBoolean()));
+        var submitted=worldPatches.submit(viewer.getUUID(),agent,operation,base,"Local source edit "+RuntimePackageCanonicalizer.sha256(args.toString()),true,budgetParent(operation,"PATCH"));var job=submitted.job();
+        if(submitted.duplicate())return java.util.concurrent.CompletableFuture.completedFuture(Map.of("status",job.state(),"operation_id",operation,"replayed",false));
+        var permit=new java.util.concurrent.atomic.AtomicBoolean(true);worldPatchPermits.put(job.taskId(),permit);String previous=sourceHash;var signer=MineAgentRuntimeServices.identity(server);
+        return java.util.concurrent.CompletableFuture.supplyAsync(()->{String raw=previous;try{
+            String sparse=dev.mineagent.runtime.worker.generation.WorldSourceEdits.apply(base,content,previous.isEmpty()?null:new String(content.read(previous),java.nio.charset.StandardCharsets.UTF_8),edits);raw=content.put(sparse.getBytes(java.nio.charset.StandardCharsets.UTF_8)).sha256();
+            return dev.mineagent.runtime.worker.generation.WorkerWorldPatchResult.prepare(base,sparse,"local-opencode-edit",content,signer);
+        }catch(Exception failure){return new dev.mineagent.runtime.worker.generation.WorkerWorldPatchResult(null,failure instanceof dev.mineagent.runtime.worker.generation.PackageOutputException validation?validation.code():"WORLD_PATCH_EDIT_FAILED","local-opencode-edit",raw,Objects.toString(failure.getMessage(),"Invalid source edit"));}},io).thenCompose(result->server.submit(()->{
+            try{
+                if(closed)throw new IllegalStateException("PACKAGE_SOURCE_CONTEXT_CHANGED");worldPatches.diagnostic(job,result.diagnostic());
+                var finished=!current.getAsBoolean()||!permit.get()||!worldPatchCurrent(job)?worldPatches.failed(job,"WORLD_PATCH_STALE_OR_REVOKED",result.providerId(),result.rawOutputSha256()):result.candidate()==null?worldPatches.failed(job,result.errorCode(),result.providerId(),result.rawOutputSha256()):worldPatches.ready(job,result.candidate(),result.providerId(),result.rawOutputSha256(),true);
+                var response=new LinkedHashMap<String,Object>();response.put("status",finished.state().equals("READY")?"CANDIDATE_READY":"REJECTED");response.put("operation_id",operation);response.put("package_id",packageId);response.put("revision",revision);response.put("job_revision",finished.revision());response.put("base_hash",base.canonicalSha256());response.put("raw_sha256",finished.rawOutputSha256());response.put("diagnostic",result.diagnostic());response.put("executionState","CANDIDATE_ONLY");response.put("runningVersionPreserved",true);response.put("activationMode",base.activationMode());
+                if(!finished.state().equals("READY"))response.put("error",finished.errorCode());else response.put("candidate_hash",finished.candidate().canonicalSha256());response.put("nextStep","Inspect the candidate and apply it through the existing package lifecycle controls. No running source was replaced by preparing this candidate.");return response;
+            }finally{worldPatchPermits.remove(job.taskId(),permit);}
+        }));
+    }
     public PackageUiPatchService.Submission worldPatch(ServerPlayer viewer,UUID agent,UUID operation,UUID packageId,long revision,String prompt)throws Exception{
         requireServerThread();if(!mayWorldPatch(viewer.getUUID(),agent))throw new SecurityException("PERMISSION_DENIED");
         var old=worldPatches.find(viewer.getUUID(),operation).orElse(null);var base=old==null?ownedPackage(viewer.getUUID(),packageId,revision).orElseThrow(()->new SecurityException("PACKAGE_NOT_OWNED")):old.base();
