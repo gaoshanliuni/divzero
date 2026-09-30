@@ -42,7 +42,7 @@ public final class ClientHostCommands implements LocalHostCommands.Endpoint {
   String reason=switch(error){case "HOST_CONVERSATION_CANCELLED"->"原对话已结束或不再有效。";case "HOST_PLAYER_SESSION_CHANGED","HOST_PLAYER_UNAVAILABLE"->"玩家会话已变化。";case "HOST_WORLD_SESSION_CHANGED","HOST_SERVER_STOPPED"->"已退出原世界或服务器已关闭。";case "HOST_CONNECTION_CHANGED","HOST_CONTEXT_CHANGED"->"原本机连接已变化。";case "HOST_LOCAL_OWNER_CHANGED","HOST_PERMISSION_CHANGED"->"本机账号或执行权限已变化。";case "HOST_USER_CANCELLED"->"已按你的要求停止。";case "HOST_USER_REJECTED_NOT_EXECUTED"->"你已拒绝本次执行。";case "HOST_APPROVAL_EXPIRED"->"本次确认已过期，请重新发起请求。";default->error.isEmpty()?"":"请查看本次操作的错误详情。";};
   var line=Component.literal(t("[本机 Python] ")+t(label)+(reason.isEmpty()?"":" · "+t(reason)));
   if("NOT_STARTED".equals(result.get("executionState")))line.append(Component.literal(" "+t("请求的脚本或安装命令尚未启动。")));
-  if(!error.isEmpty())line.withStyle(style->style.withHoverEvent(new HoverEvent.ShowText(Component.literal(error+" · "+result.getOrDefault("phase","")+" · "+result.getOrDefault("operation","")))));
+  if(!error.isEmpty())line.withStyle(style->style.withHoverEvent(new HoverEvent.ShowText(Component.literal(error+" · "+result.getOrDefault("phase","")+" · "+result.getOrDefault("operation","")+(result.containsKey("diagnostic")?"\n"+result.get("diagnostic"):"")))));
   return line;
  }
  private static void message(Component value){Minecraft.getInstance().gui.getChat().addClientSystemMessage(value);}

@@ -12,5 +12,6 @@ class ManagedPythonRuntimeTest {
   assertEquals(extended,ManagedPythonRuntime.commandPath(Path.of(extended)));
   assertEquals(extended,ManagedPythonRuntime.process(java.util.List.of(path.toString(),"-I"),root).command().getFirst());
   assertEquals("\\\\?\\UNC\\server\\share\\python.exe",ManagedPythonRuntime.commandPath(Path.of("\\\\server\\share\\python.exe")));
+  var module=ManagedPythonRuntime.process(java.util.List.of(path.toString(),"-I","-B","-X","utf8","-m","pip","--version"),root).command();assertEquals("-c",module.get(5));assertEquals(java.util.List.of("-m","pip","--version"),module.subList(7,module.size()));
  }
 }

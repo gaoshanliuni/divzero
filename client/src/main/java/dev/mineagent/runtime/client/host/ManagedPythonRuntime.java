@@ -20,7 +20,31 @@ public final class ManagedPythonRuntime {
  public static final long ARCHIVE_BYTES=21936514;
  public static final String URL="https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.13.15%2B20260901-x86_64-pc-windows-msvc-install_only_stripped.tar.gz";
  private static final ObjectMapper JSON=new ObjectMapper();private static final Map<Path,Object> LOCKS=new ConcurrentHashMap<>();
+ // The Windows JVM may normalize argv[0] before CreateProcess. Normalize Python's own paths too.
+ private static final String WINDOWS_ENTRY="""
+import os, sys
+prefix = chr(92) * 2 + '?' + chr(92)
+def extended(p):
+    if not isinstance(p, str) or not os.path.isabs(p) or p.startswith(prefix): return p
+    return prefix + ('UNC' + chr(92) + p[2:] if p.startswith(chr(92) * 2) else p)
+for key in ('executable', '_base_executable', 'prefix', 'exec_prefix', 'base_prefix', 'base_exec_prefix'):
+    if hasattr(sys, key): setattr(sys, key, extended(getattr(sys, key)))
+sys.path[:] = [extended(p) for p in sys.path]
+import runpy
+args = sys.argv[1:]
+if args[0] == '-m':
+    sys.argv = args[1:]
+    runpy.run_module(sys.argv[0], run_name='__main__', alter_sys=True)
+else:
+    sys.argv = args
+    runpy.run_path(args[0], run_name='__main__')
+""";
  private final Path root,archiveSource;
+ public static final class PreparationFailure extends IOException {
+  private final String diagnostic;
+  private PreparationFailure(String code,String diagnostic){super(code);this.diagnostic=diagnostic;}
+  public String diagnostic(){return diagnostic;}
+ }
  public ManagedPythonRuntime(Path gameDirectory){this(gameDirectory,null);}
  public ManagedPythonRuntime(Path gameDirectory,Path verifiedArchiveSource){try{root=gameDirectory.toRealPath().resolve("mineagent-host");}catch(IOException e){throw new IllegalArgumentException("PYTHON_GAME_DIRECTORY",e);}archiveSource=verifiedArchiveSource;}
  Path root(){return root;}
@@ -59,11 +83,15 @@ public final class ManagedPythonRuntime {
  }
  private void bootstrap(List<String> command,BooleanSupplier live)throws Exception{
   Path log=root.resolve("bootstrap-"+UUID.randomUUID()+".log");var p=process(command,root).redirectErrorStream(true).redirectOutput(log.toFile()).start();p.getOutputStream().close();var children=new LinkedHashMap<Long,ProcessHandle>();long deadline=System.nanoTime()+TimeUnit.MINUTES.toNanos(2);
-  try{while(!p.waitFor(50,TimeUnit.MILLISECONDS)){p.descendants().forEach(c->children.put(c.pid(),c));current(live);if(System.nanoTime()>deadline)throw new IOException("PYTHON_ENV_SETUP_TIMEOUT");}if(p.exitValue()!=0)throw new IOException("PYTHON_ENV_SETUP_FAILED");}finally{if(p.isAlive())LocalPythonExecutor.stop(p,children);}
+  try{while(!p.waitFor(50,TimeUnit.MILLISECONDS)){p.descendants().forEach(c->children.put(c.pid(),c));current(live);if(System.nanoTime()>deadline)throw new IOException("PYTHON_ENV_SETUP_TIMEOUT");}if(p.exitValue()!=0){String detail;try(var reader=Files.newBufferedReader(log,StandardCharsets.UTF_8)){char[] text=new char[4096];int count=reader.read(text);detail=count<0?"":new String(text,0,count);}throw new PreparationFailure("PYTHON_ENV_SETUP_FAILED",detail);}}finally{if(p.isAlive())LocalPythonExecutor.stop(p,children);}
  }
  /** Extended Win32 paths avoid a dependency on the machine-wide LongPathsEnabled setting. */
  public static String commandPath(Path path){String value=path.toAbsolutePath().normalize().toString();if(!supported()||value.startsWith("\\\\?\\"))return value;return value.startsWith("\\\\")?"\\\\?\\UNC\\"+value.substring(2):"\\\\?\\"+value;}
- public static ProcessBuilder process(List<String> command,Path cwd){var args=new ArrayList<>(command);args.set(0,commandPath(Path.of(args.getFirst())));var b=new ProcessBuilder(args).directory(new File(commandPath(cwd)));b.environment().keySet().removeIf(k->k.toUpperCase(Locale.ROOT).matches(".*(?:TOKEN|SECRET|PASSWORD|API_KEY|AUTHORIZATION).*|PYTHON.*|VIRTUAL_ENV|PIP_.*"));b.environment().put("PYTHONUTF8","1");b.environment().put("PYTHONDONTWRITEBYTECODE","1");return b;}
+ public static ProcessBuilder process(List<String> command,Path cwd){
+  var args=new ArrayList<>(command);args.set(0,commandPath(Path.of(args.getFirst())));
+  if(supported())for(int i=1;i<args.size();i++)if(args.get(i).equals("-m")||args.get(i).endsWith(".py")){args.add(i,"-c");args.add(i+1,WINDOWS_ENTRY);break;}
+  var b=new ProcessBuilder(args).directory(new File(commandPath(cwd)));b.environment().keySet().removeIf(k->k.toUpperCase(Locale.ROOT).matches(".*(?:TOKEN|SECRET|PASSWORD|API_KEY|AUTHORIZATION).*|PYTHON.*|VIRTUAL_ENV|PIP_.*"));b.environment().put("PYTHONUTF8","1");b.environment().put("PYTHONDONTWRITEBYTECODE","1");return b;
+ }
  public static void verifyArchive(Path file)throws Exception{if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)||Files.size(file)!=ARCHIVE_BYTES||!hash(file).equals(SHA256))throw new IOException("PYTHON_ARCHIVE_INTEGRITY_FAILED");}
  private static String indexHash(SortedMap<String,String> values)throws Exception{var b=new StringBuilder();values.forEach((k,v)->b.append(k).append('\0').append(v).append('\n'));return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(b.toString().getBytes(StandardCharsets.UTF_8)));}
  private static String hash(Path p)throws Exception{var digest=MessageDigest.getInstance("SHA-256");try(var in=Files.newInputStream(p)){byte[] b=new byte[65536];int n;while((n=in.read(b))!=-1)digest.update(b,0,n);}return HexFormat.of().formatHex(digest.digest());}

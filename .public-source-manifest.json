@@ -764,13 +764,13 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/LocalPythonExecutor.java",
-      "sha256": "b3ee6c4ef722241be6774a763de4a26da80d2cc838347f041b02a6720f62eea2",
-      "bytes": 9994
+      "sha256": "5a2734c66c11af941ac38e7149cb25b0454a91ec498932f9562131825352916b",
+      "bytes": 10154
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/ManagedPythonRuntime.java",
-      "sha256": "7ab2a44fdc33b772491782882837f5c3e31d3640d35cb0dfcc093aeb104c2d52",
-      "bytes": 16029
+      "sha256": "c38024f1b8badd399398528d06f73f1ba3e8fdb78073853ef0ead35b2227b480",
+      "bytes": 17486
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/preview/NativeScene.java",
@@ -1004,8 +1004,8 @@
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/host/ManagedPythonRuntimeTest.java",
-      "sha256": "1633eba247209323b41ff683d00e8c0a22e42e3a3d43693b497c0b139fe86123",
-      "bytes": 2104
+      "sha256": "77f15307811d28f7b8fecadc0646ea70cf3abe20dee4382fd44fbf64981736ed",
+      "bytes": 2364
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/preview/NativeSceneTest.java",
@@ -3514,8 +3514,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "4a3c74739cb34b81dba2f94a221b4a834131809bc412c6e241d2ec84c26b0419",
-      "bytes": 13832
+      "sha256": "36a7771af4d2f5bf650bda30840738507a60f020c6029ad92f549e3d1e3dc74e",
+      "bytes": 14305
     },
     {
       "path": "docs/releases/1.0.20.md",
@@ -4079,8 +4079,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/host/ClientHostCommands.java",
-      "sha256": "904965ca454efef15cf06b8fab3b12e5ce6236f97105b76fa71e32ab036a83ef",
-      "bytes": 16017
+      "sha256": "227ff8f7dae5163583a8fef8c9b81d3c0bd1f252ce86b2a63556d3a5ce084bb2",
+      "bytes": 16085
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/language/ClientLanguage.java",
