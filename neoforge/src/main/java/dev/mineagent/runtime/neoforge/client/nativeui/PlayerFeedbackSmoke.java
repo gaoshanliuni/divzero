@@ -43,7 +43,7 @@ public final class PlayerFeedbackSmoke {
                 check(s.getPlayerList().getPlayerByName(name)==b&&s.getPlayerList().getPlayer(agent)==b,"NATIVE_PLAYER_LOOKUP");
                 var commands=s.getCommands().getDispatcher();var source=p.createCommandSourceStack();
                 for(String command:List.of("give "+name+" minecraft:diamond 3","tp "+name+" 2.5 101 6.5","gamemode adventure "+name,"effect give "+name+" minecraft:speed 60 1","tag "+name+" add feedback_native","execute as "+name+" run tag @s add feedback_self","team add feedback","team join feedback "+name,"scoreboard objectives add feedback dummy","scoreboard players set "+name+" feedback 17"))check(commands.execute(command,source)>0,"COMMAND_FAILED_"+command);
-                check(b.getInventory().countItem(net.minecraft.world.item.Items.DIAMOND)==3&&b.getTags().containsAll(Set.of("feedback_native","feedback_self")),"COMMAND_RESULTS_MISSING");
+                check(b.getInventory().countItem(net.minecraft.world.item.Items.DIAMOND)==3&&b.entityTags().containsAll(Set.of("feedback_native","feedback_self")),"COMMAND_RESULTS_MISSING");
                 var profile=ServerAgentProfile.read(p,Map.of("agentId",agent.toString()));check(profile.get("mode").equals("ADVENTURE")&&!((List<?>)profile.get("effects")).isEmpty(),"ACTUAL_STATUS_NOT_PROJECTED");
                 check(manager.rename(agent,p.getUUID(),true,"伙伴二号"),"SECOND_RENAME_FAILED");check(b.getInventory().countItem(net.minecraft.world.item.Items.DIAMOND)==3&&b.getTeam()!=null,"RENAME_LOST_NATIVE_STATE");
                 check(s.getScoreboard().getPlayerScoreInfo(b,s.getScoreboard().getObjective("feedback")).value()==17,"RENAME_LOST_SCORE");commands.execute("gamemode survival 伙伴二号",source);
@@ -61,6 +61,7 @@ public final class PlayerFeedbackSmoke {
             var messages=((ChatHistoryAccess)mc().gui.getChat()).mineagent$messages().stream().filter(m->m.content().getString().contains("反馈原生聊天一二")).toList();if(messages.isEmpty())return CompletableFuture.completedFuture(false);
             check(messages.size()==1&&messages.getFirst().source()==GuiMessageSource.PLAYER,"NOT_SINGLE_NATIVE_PLAYER_MESSAGE");var seen=new boolean[1];messages.getFirst().content().visit((style,text)->{if(style.getClickEvent() instanceof ClickEvent.CopyToClipboard)seen[0]=true;return Optional.empty();},Style.EMPTY);check(seen[0],"PLAYER_CHAT_LOST_CLICK_ACTION");return yes();
         });
+        step("enable-local-workspace",()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return yes();dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});
         action("open-live-f2-editor",()->{NativeWorkspaceScreen.open();org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return yes();});
         step("live-f2-ready",()->CompletableFuture.completedFuture(mc().isWindowActive()&&NativeWorkspaceConnection.ready()&&mc().screen instanceof NativeWorkspaceScreen));
         action("os-clipboard-copy-cut-paste-unicode",()->{
