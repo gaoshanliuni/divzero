@@ -3504,8 +3504,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "04f67f4ab22c89e95b6111e8d0bdb655b82e77b62a0e4a8d5c3a8a7b28b5ef4e",
-      "bytes": 10940
+      "sha256": "b73e00c1aa0be0599af1394568ab7c76468edbe103342082e3dc4f6c63fe2812",
+      "bytes": 11907
     },
     {
       "path": "docs/releases/1.0.20.md",
