@@ -27,6 +27,10 @@ final class ServerCreatedContents {
             return CompletableFuture.completedFuture(Map.of("text",source.substring(source.offsetByCodePoints(0,offset),source.offsetByCodePoints(0,end)),"revision",expected,"nextOffset",end,"more",end<length,"total",length));
         }
         if(!kind.equals("preview"))ServerWorkspaceModules.require(p,dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE);
+        if(kind.equals("rename")){
+            ServerWorkspaceModules.keys(args,"module","kind","type","id","revision","name");String name=args.get("name").strip();if(name.isBlank()||name.length()>(type.equals("creatures")?48:80))throw new IllegalArgumentException("CONTENT_NAME");
+            var document=(com.fasterxml.jackson.databind.node.ObjectNode)JSON.readTree(source);document.put("name",name);var changed=new LinkedHashMap<>(args);changed.remove("name");changed.put("kind","save");changed.put("source",document.toString());return handle(p,operation,changed,true,permit);
+        }
         if(kind.equals("save")){
             ServerWorkspaceModules.keys(args,"module","kind","type","id","revision","source");var node=JSON.createObjectNode().put("source",args.get("source")).put("expected_revision",expected);
             return switch(type){

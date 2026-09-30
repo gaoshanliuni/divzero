@@ -38,11 +38,22 @@ final class NativeContentCatalogPanel {
             if(item.has("definitions"))for(var raw:item.getAsJsonArray("definitions")){var definition=raw.getAsJsonObject();card.addChild(WorkspacePanels.text(text(definition,"name")+" · "+NativeUiTheme.option(text(definition,"kind"))));}
             if(item.has("revision"))card.addChild(button("查看详情",()->WorkspacePanels.packageDetail(host,item)));else card.addChild(WorkspacePanels.text(text(item,"reason")));return;
         }
-        if(item.has("target"))card.addChild(WorkspacePanels.text(text(item,"target")));var actions=WorkspacePanels.row();actions.getLayout().height(25);card.addChild(actions);actions.addChild(button("查看与编辑",()->editor(source,item)));
+        if(item.has("target"))card.addChild(WorkspacePanels.text(text(item,"target")));var actions=WorkspacePanels.row();actions.getLayout().height(25);card.addChild(actions);actions.addChild(button("查看详情",()->details(source,item)));
         if(source.equals("creatures"))actions.addChild(button("预览",()->change(source,item,"preview",Map.of(),notice,()->{})));
         if(Set.of("entity_rules","interaction_rules").contains(source))actions.addChild(button("删除规则",()->Dialog.showCheckBox(t("删除规则"),t("删除后停止此规则的后续影响，已发生的世界变化不会被回放。"),yes->{if(yes)change(source,item,"delete",Map.of(),notice,()->{signature="";poll=0;});}).show(window.body)));
     }
     private Map<String,String> target(String source,JsonObject item,String kind){return Map.of("module","contents","kind",kind,"type",source,"id",text(item,"id"),"revision",text(item,"revision"));}
+    private void details(String source,JsonObject item){
+        var panel=host.window("content-detail-"+source+text(item,"id"),text(item,"name"),500,365);panel.body.clearAllChildren();var notice=WorkspacePanels.text(t("正在读取…"));panel.body.addChild(notice);var list=WorkspacePanels.scroller(panel.body);list.getLayout().minHeight(0);
+        source(source,item,0,new StringBuilder()).whenComplete((value,error)->{if(panel.closed()||!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}var definition=JsonParser.parseString(value).getAsJsonObject();var summary=new JsonObject();summary.add("name",definition.get("name"));summary.add("revision",item.get("revision"));
+            for(var entry:definition.entrySet()){if(entry.getKey().equals("name"))continue;if(Set.of("model","mesh","geometry","parts","animations","root","replacements").contains(entry.getKey())){summary.addProperty(t(entry.getKey().equals("animations")?"动画数据":"模型与外观数据"),t("已保存，可通过预览或高级编辑查看。"));}else summary.add(entry.getKey(),entry.getValue());}
+            NativeEvidenceView.add(host,list,summary);notice.setText(Component.literal(label(source)));
+        });
+        var actions=WorkspacePanels.row();actions.getLayout().heightAuto().minHeight(25).flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);panel.body.addChild(actions);
+        actions.addChild(button("重命名",()->Dialog.stringEditorDialog(t("重命名"),text(item,"name"),value->!value.isBlank()&&value.length()<=(source.equals("creatures")?48:80),name->change(source,item,"rename",Map.of("name",name),notice,()->{panel.close();signature="";poll=0;})).show(panel.body)));
+        if(source.equals("creatures"))actions.addChild(button("预览",()->change(source,item,"preview",Map.of(),notice,()->{})));
+        actions.addChild(button("高级源码编辑",()->editor(source,item)));
+    }
     private void editor(String source,JsonObject item){
         var panel=host.window("content-edit-"+source+text(item,"id"),text(item,"name"),520,390);panel.body.clearAllChildren();var status=WorkspacePanels.text(t("正在读取…"));panel.body.addChild(status);var input=new TextArea();input.setId("content-source-editor");input.getLayout().flex(1).minHeight(0).widthPercent(100);panel.body.addChild(input);final boolean[] ready={false};source(source,item,0,new StringBuilder()).whenComplete((value,error)->{if(panel.closed()||!live())return;if(error!=null){WorkspacePanels.failure(status,error);return;}input.setValue(value.split("\n",-1),false);ready[0]=true;status.setText(Component.literal(t("修改内容保留原 ID；保存前检查实际版本。")));});
         panel.body.addChild(button("保存修改",()->{if(!ready[0])return;ready[0]=false;change(source,item,"save",Map.of("source",String.join("\n",input.getValue())),status,()->{panel.close();signature="";poll=0;}).whenComplete((r,e)->{if(e!=null)ready[0]=true;});}));
