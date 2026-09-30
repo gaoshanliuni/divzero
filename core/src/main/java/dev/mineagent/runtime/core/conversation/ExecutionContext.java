@@ -27,7 +27,7 @@ public final class ExecutionContext {
     private static void collect(JsonNode node,String path,Map<String,Object> out){
         if(node.isObject())for(var field:node.properties()){
             String name=field.getKey().toLowerCase(Locale.ROOT),child=path+"."+field.getKey();JsonNode v=field.getValue();
-            if(v.isValueNode()&&(name.equals("id")||name.endsWith("_id")||name.endsWith("id")||Set.of("session","target","entity","dimension").contains(name)||name.contains("operation")||name.contains("record")||name.contains("revision")||name.contains("version")||name.contains("hash")||name.contains("status")||name.contains("state")||name.contains("error")||name.contains("reason")||name.contains("verified")||name.equals("expected")||name.equals("field")||name.equals("problem")||name.contains("next")||name.contains("pending")))out.put(child,JSON.convertValue(v,Object.class));
+            if(v.isValueNode()&&(name.equals("id")||name.endsWith("_id")||name.endsWith("id")||Set.of("session","target","entity","dimension","diagnostic","message","line","column","file","phase","category").contains(name)||name.contains("operation")||name.contains("record")||name.contains("revision")||name.contains("version")||name.contains("hash")||name.contains("status")||name.contains("state")||name.contains("error")||name.contains("reason")||name.contains("verified")||name.equals("expected")||name.equals("field")||name.equals("problem")||name.contains("next")||name.contains("pending")))out.put(child,JSON.convertValue(v,Object.class));
             else if(v.isContainerNode())collect(v,child,out);
         }
         else if(node.isArray())for(int i=0;i<node.size();i++)collect(node.get(i),path+"["+i+"]",out);
