@@ -3274,8 +3274,8 @@
     },
     {
       "path": "docs/ADAPTIVE_AGENT_UPGRADE.md",
-      "sha256": "98de32672469c33be3f03c3fa4c9c1269ba029a7ab4dc92443a91847ae666ee2",
-      "bytes": 8112
+      "sha256": "23bdfd231785f94abcbfc574a5fd064b9fc3b2e6c79828b4021d08e0fd2b2018",
+      "bytes": 10696
     },
     {
       "path": "docs/BUILD_JAR.md",
@@ -3396,6 +3396,11 @@
       "path": "docs/images/native-inventory-combat.png",
       "sha256": "fe2977b8c3265bce237e4493dbe43ca189acab1399554a945847e285df99a592",
       "bytes": 470490
+    },
+    {
+      "path": "docs/images/native-inventory-current.png",
+      "sha256": "330065281173b3d23bf8c144be24b8692811449a2f0ea4add2da13dc21c492b3",
+      "bytes": 476030
     },
     {
       "path": "docs/images/native-inventory-scale4.png",
