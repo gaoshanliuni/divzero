@@ -385,7 +385,7 @@ public final class ServerUiRuntime {
         try{
             restoreScope(viewer,request);
             var code=sessions.checkRead(viewer.getUUID(),request,"shell.read");if(code!=Code.OK){send(viewer,packet,"receipt",Receipt.of(request.operationId(),code));return;}
-            if(write){var receipt=sessions.begin(viewer.getUUID(),request,"shell.read",true);if(receipt.code()!=Code.ACCEPTED){send(viewer,packet,"receipt",receipt);return;}begun=true;}
+            if(write){var receipt=sessions.begin(viewer.getUUID(),request,"shell.read",true);if(receipt.code()!=Code.OK){send(viewer,packet,"receipt",receipt);return;}begun=true;}
             java.util.function.BooleanSupplier permit=()->{try{restoreScope(viewer,request);return sessions.checkRead(viewer.getUUID(),request,"shell.read")==Code.OK;}catch(Exception failure){return false;}};
             workspaceModules.handle(viewer,request.operationId(),request.arguments(),write,permit).whenComplete((value,error)->server.execute(()->{
                 try{

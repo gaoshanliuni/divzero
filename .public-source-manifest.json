@@ -6024,8 +6024,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiRuntime.java",
-      "sha256": "7dabfae3ec14cc36a3d3bd1af3ab13184656bb6698807e4c78be8d1b2b359a40",
-      "bytes": 144115
+      "sha256": "0478d2c19cc0ba7081138366921370380ad29bf77230586ac6f375d01e74f3db",
+      "bytes": 144109
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerWorkspaceBackups.java",
