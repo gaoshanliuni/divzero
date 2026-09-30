@@ -27,4 +27,16 @@ public final class InteractionTargetResolver {
         return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());
     }
     private InteractionTargetResolver(){}
+    /** Candidate feet positions must allow a real attack; the target's occupied block is not a waypoint. */
+    public static Query melee(ServerPlayer p,net.minecraft.world.entity.LivingEntity target){
+        var evaluator=new NativeTraversalEvaluator(p);var nodes=new LinkedHashSet<SurfacePathfinder.Node>();
+        double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);int radius=(int)Math.ceil(Math.min(8,reach+target.getBbWidth()));var base=target.blockPosition();
+        for(int x=-radius;x<=radius;x++)for(int z=-radius;z<=radius;z++)for(var n:evaluator.positions(base.getX()+x,base.getZ()+z,target.getY())){
+            var at=NativeTraversalEvaluator.point(n);var box=p.getDimensions(p.getPose()).makeBoundingBox(at);if(box.intersects(target.getBoundingBox()))continue;
+            var eye=at.add(0,p.getEyeHeight(),0);if(eye.distanceTo(target.getEyePosition())>reach+target.getBbWidth())continue;
+            if(lineOfSight(p,eye,target.getEyePosition(),null,false))nodes.add(n);
+        }
+        var points=nodes.stream().map(NativeTraversalEvaluator::point).sorted(Comparator.comparingDouble(at->at.distanceToSqr(p.position()))).toList();
+        return new Query(evaluator,null,points);
+    }
 }

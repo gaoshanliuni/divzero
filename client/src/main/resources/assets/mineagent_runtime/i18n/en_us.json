@@ -3468,5 +3468,8 @@
   "等待当前修改保存后切换身体": "Wait for the current changes to save before switching bodies",
   "旁观模式": "Spectator",
   "冒险模式": "Adventure",
-  "名称需要修改": "Rename required"
+  "名称需要修改": "Rename required",
+  "已被服务器封禁": "Banned by the server",
+  "名称需改为原版兼容名称": "Rename to a vanilla-compatible name",
+  "等待重生": "Waiting to respawn"
 }

@@ -949,8 +949,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "c1aaa20abb17857904d3ad98a59fdf99134e7fb9ff738c84dc50ba410fdb9b6c",
-      "bytes": 317591
+      "sha256": "06cdb134e93b2ddf8a7e596fd8dfeb5c8bee87663f098aee82e85ceb2a8c9342",
+      "bytes": 317760
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -3704,8 +3704,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "sha256": "d9eaaadc6c53eac13b2fe2690c0c86a59cf41fb2eefcfa674f9b095d3cd0a204",
-      "bytes": 2580
+      "sha256": "d06b95d08f9873d728f4e3c6ff3413da559e5af61f77300d08a0ff0f2efa8c7a",
+      "bytes": 3812
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -3739,8 +3739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeNavigationIntent.java",
-      "sha256": "628dd3df7962d9a514074768d6693cc2a42b8c327f09432f52269fc320471cf7",
-      "bytes": 9013
+      "sha256": "6b93939d084ada962ee650677f18468731c92524d689f5af02de07798f3aa0a8",
+      "bytes": 9088
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeSurfaceNavigation.java",
@@ -4184,8 +4184,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBehaviorPanel.java",
-      "sha256": "fb6745351d039311f0cbb7c54f92ef78bfc82a9ae239c95cab7205fa12191847",
-      "bytes": 25184
+      "sha256": "6536c346e2fe52c2c9977088c3bad5fb7ec567347c86ec2235f53e2aa42c228d",
+      "bytes": 25218
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",
@@ -4394,8 +4394,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
-      "sha256": "15181dd9aad8947a1af089398cf5c82fc760587db0f5284243c1a64a471d9a54",
-      "bytes": 7817
+      "sha256": "0e540fdc44231385f2bf5ae45483a53bd87579646d18c5390590593a009bc328",
+      "bytes": 7870
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewCapture.java",
@@ -4434,13 +4434,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PlayerFeedbackSmoke.java",
-      "sha256": "91c547cfb421e1221a2b83a2e283bc975988c05a969675899829c7de413b6c14",
-      "bytes": 13709
+      "sha256": "417fa6cf128c1cd2ce2367b23253a47591a92d3e4fa954ca04f886bf00d10897",
+      "bytes": 15721
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
-      "sha256": "5f25ffb213605748e398839502c758f01cd2556dd4947bbf79832caeba7ee375",
-      "bytes": 20187
+      "sha256": "a145ffd1d3284aedb6e86ba9637407675bc299eb61406b4fb0889d4eed2dddf7",
+      "bytes": 20222
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspaceSetupScreen.java",
@@ -5544,8 +5544,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "c218a5752ebf70e8b95054fe29cdaa3fdd1e131418386da07c9ff4b169a01187",
-      "bytes": 35826
+      "sha256": "67c0b8255ec2e4eb8d4948b1b04520ad3e6d82036aecc578c00c3598cee082be",
+      "bytes": 36646
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -5659,8 +5659,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "sha256": "809d8c6691e54013f65cd2aff2cb172fc73ba5803a262a6c5dc8d5a9d81778ea",
-      "bytes": 11309
+      "sha256": "5681b8545596d054d410b7d1a046b8daa9fec139d46366cdf6532abb2c847edc",
+      "bytes": 11390
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",

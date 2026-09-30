@@ -115,8 +115,13 @@ final class CombatSkill {
         if(target!=null&&!p.hasLineOfSight(target)&&contacts==0&&!w.combat.incoming(w)&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){
             if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.haltMotion(w.token());phase(w,"TARGET_OBSCURED");return;}
             // Use real navigation around the obstacle, while the ready-hit check still runs every local tick.
-            phase(w,"PURSUE_OBSCURED");w.actor.sprint(w.token(),true);String navigation=w.actor.move(w.token(),target.position());
-            if(!w.actor.recovering()&&Set.of("NO_PATH","UNREACHABLE","INTERACTION_BLOCKED","FAILED","ARRIVED").contains(navigation)){
+            if(!target.getUUID().equals(w.obscuredTarget)||w.obscuredPosition==null||w.obscuredPosition.distanceToSqr(target.position())>1||w.tick()>=w.obscuredRecheck){
+                var access=dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.melee(p,target);w.obscuredTarget=target.getUUID();w.obscuredPosition=target.position();w.obscuredRecheck=w.tick()+40;w.obscuredStand=access.candidates().isEmpty()?null:access.candidates().getFirst();
+                if(w.obscuredStand==null){w.actor.haltMotion(w.token());if(!access.evaluator().encounteredUnloaded()){w.combat.unreachable(w,target);w.positioning.reset();phase(w,"TARGET_UNREACHABLE_WAITING_CHANGE");}else phase(w,"WAITING_CHUNKS");return;}
+            }
+            if(w.obscuredStand==null){w.actor.haltMotion(w.token());return;}
+            phase(w,"PURSUE_OBSCURED");w.actor.sprint(w.token(),true);String navigation=w.actor.move(w.token(),w.obscuredStand);
+            if(!w.actor.recovering()&&Set.of("NO_PATH","UNREACHABLE","INTERACTION_BLOCKED","FAILED","ARRIVED","SEARCH_LIMIT").contains(navigation)){
                 w.combat.unreachable(w,target);w.actor.stop(w.token());w.positioning.reset();w.session.phase("TARGET_UNREACHABLE_WAITING_CHANGE");
             }return;
         }

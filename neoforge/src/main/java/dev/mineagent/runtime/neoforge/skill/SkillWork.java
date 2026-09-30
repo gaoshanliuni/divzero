@@ -15,6 +15,7 @@ import java.util.concurrent.*;
 
 /** Runtime-only handles are fenced by the persistent session, actor instance and intent revision. */
 final class SkillWork {
+    UUID obscuredTarget;Vec3 obscuredPosition,obscuredStand;int obscuredRecheck;
     final SkillRuntime runtime;final SkillSession session;SkillActor actor;CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);long dbRevision,lastTick,nextTick;volatile boolean ioFailed;boolean starting;
     java.util.function.BooleanSupplier externalAuthority=()->true;
     BlockPos block;CropAdapter crop;Vec3 stand,aim;UUID targetEntity,hook;InteractionTargetResolver.Query search;int startedTick,beforeCount,beforeDamage,workStage,combatStage;String expectedState="",action="";UUID operation;boolean executed;
