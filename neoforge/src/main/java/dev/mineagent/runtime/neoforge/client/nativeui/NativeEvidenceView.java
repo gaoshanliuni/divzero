@@ -1,0 +1,52 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+
+import com.google.gson.*;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
+import dev.mineagent.runtime.neoforge.client.language.ClientLanguage;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import java.util.*;
+
+/** Readable evidence cards. JSON remains a transport format, never the default player-facing report. */
+final class NativeEvidenceView {
+    private static final Map<String,String> LABELS=Map.ofEntries(
+        Map.entry("status","状态"),Map.entry("state","状态"),Map.entry("phase","当前步骤"),Map.entry("revision","版本"),Map.entry("activeRevision","当前生效版本"),Map.entry("expectedRevision","预期版本"),Map.entry("verification","验证结果"),Map.entry("name","名称"),Map.entry("title","标题"),Map.entry("kind","类型"),Map.entry("type","类型"),Map.entry("reason","原因"),Map.entry("error","错误原因"),Map.entry("errorCode","错误说明"),Map.entry("message","说明"),Map.entry("detail","说明"),Map.entry("report","检查报告"),Map.entry("evidence","实际检查结果"),Map.entry("checks","检查项"),Map.entry("passed","是否通过"),Map.entry("completed","是否完成"),Map.entry("conflicts","冲突位置"),Map.entry("mismatches","不符的方块"),Map.entry("written","实际写入"),Map.entry("total","总数"),Map.entry("count","数量"),Map.entry("cells","目标方块"),Map.entry("changes","改动"),Map.entry("changedBlocks","将修改方块"),Map.entry("matchedAfterPhysics","稳定后符合预期"),Map.entry("mismatchedAfterPhysics","稳定后不符合预期"),Map.entry("matched","符合预期"),Map.entry("missing","缺失内容"),Map.entry("unchanged","无需改变"),Map.entry("skipped","跳过"),Map.entry("processed","已检查"),Map.entry("progress","进度"),Map.entry("before","修改前"),Map.entry("after","修改后"),Map.entry("expected","预期"),Map.entry("desired","预期方块"),Map.entry("actual","实际"),Map.entry("position","坐标"),Map.entry("origin","起点"),Map.entry("min","起始坐标"),Map.entry("max","结束坐标"),Map.entry("bounds","范围"),Map.entry("dimension","维度"),Map.entry("scope","适用范围"),Map.entry("result","结果"),Map.entry("results","结果"),Map.entry("history","修改记录"),Map.entry("steps","操作步骤"),Map.entry("component","构件"),Map.entry("components","构件"),Map.entry("items","记录"),Map.entry("entries","条目"),Map.entry("source","来源"),Map.entry("sources","来源"),Map.entry("target","目标"),Map.entry("owner","所有者"),Map.entry("ownerId","所有者"),Map.entry("agentId","AI 标识"),Map.entry("actorId","执行者"),Map.entry("operationId","操作标识"),Map.entry("taskId","任务标识"),Map.entry("id","标识"),Map.entry("sha256","校验标识"),Map.entry("hash","校验标识"),Map.entry("canonicalSha256","内容校验标识"),Map.entry("packageId","内容包标识"),Map.entry("enabled","是否启用"),Map.entry("readOnly","只读"),Map.entry("pending","等待处理"),Map.entry("verified","已验证"),Map.entry("resumable","可继续"),Map.entry("replayAllowed","允许重试"),Map.entry("worldModified","世界已改变"),Map.entry("mode","操作类型"),Map.entry("action","操作"),Map.entry("observedAt","观察时间"),Map.entry("updatedAt","更新时间"),Map.entry("expiresAt","有效期至"),Map.entry("timestamp","记录时间"),Map.entry("bytes","大小（字节）"),Map.entry("size","大小"),Map.entry("version","版本"),Map.entry("retryGuidance","下一步建议"),Map.entry("text","说明"),Map.entry("rows","记录"),Map.entry("removed","已删除"),Map.entry("applied","已应用"),Map.entry("warnings","提示"),Map.entry("failures","失败原因"),Map.entry("dependencies","所需依赖"),Map.entry("executionMode","执行方式")
+    );
+    private static final Set<String> PAGING=Set.of("offset","nextOffset","more","textOffset","nextTextOffset","nextBefore","projection");
+    private NativeEvidenceView(){}
+    static void add(NativeWorkspaceScreen host,ScrollerView parent,JsonElement value){parent.addScrollViewChild(node(host,"",value,0));}
+    static UIElement node(NativeWorkspaceScreen host,String name,JsonElement raw,int depth){
+        JsonElement value=decoded(raw);var box=new UIElement();box.getLayout().widthPercent(100).heightAuto().flexShrink(0).marginBottom(5);
+        if(value==null||value.isJsonNull()){box.addChild(WorkspacePanels.text(label(name)+" · "+t("无")));return box;}
+        if(depth>5&&!value.isJsonPrimitive()){box.addChild(NativeUiTheme.button(label(name),()->NativeReadout.show(host,"evidence-"+UUID.randomUUID(),label(name),value)));return box;}
+        if(value.isJsonObject()){
+            var object=value.getAsJsonObject();if((object.has("before")&&object.has("after")||(object.has("expected")||object.has("desired"))&&object.has("actual"))&&(object.has("position")||object.has("x")||object.has("before")&&object.get("before").isJsonObject()))return blockChange(object);
+            if(!name.isBlank())box.addChild(NativeUiTheme.text(label(name),NativeUiTheme.ACCENT,10));
+            for(var entry:object.entrySet()){if(PAGING.contains(entry.getKey()))continue;box.addChild(node(host,entry.getKey(),entry.getValue(),depth+1));}
+        }else if(value.isJsonArray()){
+            if(coordinates(value)&&Set.of("","position","origin","min","max","center","start","end").contains(name)){box.addChild(WorkspacePanels.text((name.isBlank()?t("坐标"):label(name))+" · "+position(value)));return box;}
+            if(!name.isBlank())box.addChild(NativeUiTheme.text(label(name)+" · "+value.getAsJsonArray().size(),NativeUiTheme.ACCENT,10));int index=0;
+            for(var item:value.getAsJsonArray()){var child=node(host,item.isJsonObject()?t("记录")+" "+(++index):"",item,depth+1);child.getLayout().paddingAll(5).marginBottom(5);child.getStyle().backgroundTexture(NativeUiTheme.inset());box.addChild(child);}
+            if(value.getAsJsonArray().isEmpty())box.addChild(WorkspacePanels.text(t("无")));
+        }else{
+            String text=human(name,value);if(name.isBlank()){box.addChild(WorkspacePanels.text(text));return box;}
+            var row=WorkspacePanels.row();row.getLayout().heightAuto().minHeight(15).gapAll(8);var title=NativeUiTheme.text(label(name),NativeUiTheme.MUTED,9);title.getLayout().width(110).maxWidth(110).flexShrink(0);row.addChild(title);var data=WorkspacePanels.text(text);data.getLayout().flex(1).minWidth(0);row.addChild(data);box.addChild(row);
+        }
+        return box;
+    }
+    static UIElement blockChange(JsonObject change){
+        var card=NativeUiTheme.card(new UIElement());card.getLayout().widthPercent(100).paddingAll(6).marginBottom(6);
+        JsonElement before=change.has("before")?change.get("before"):change.has("expected")?change.get("expected"):change.get("desired"),after=change.has("after")?change.get("after"):change.get("actual");
+        JsonElement at=change.has("position")?change.get("position"):change.has("x")?change:before;
+        card.addChild(NativeUiTheme.text(t("坐标")+" · "+position(at),NativeUiTheme.MUTED,9));var row=WorkspacePanels.row();row.getLayout().heightAuto().minHeight(25);row.addChild(block(before));row.addChild(NativeUiTheme.text("→",NativeUiTheme.ACCENT,12).layout(l->l.width(16).flexShrink(0)));row.addChild(block(after));card.addChild(row);return card;
+    }
+    private static UIElement block(JsonElement value){String state=value==null?"":value.isJsonObject()?value.getAsJsonObject().has("state")?value.getAsJsonObject().get("state").getAsString():"":value.isJsonPrimitive()?value.getAsString():"";String id=state.split("\\[",2)[0];var block=Identifier.tryParse(id);var row=WorkspacePanels.row();row.getLayout().flex(1).minWidth(0).heightAuto().minHeight(24);
+        if(block!=null&&BuiltInRegistries.BLOCK.containsKey(block)){var actual=BuiltInRegistries.BLOCK.getValue(block);var icon=new UIElement();icon.getLayout().width(20).height(20).flexShrink(0);icon.getStyle().backgroundTexture(new com.lowdragmc.lowdraglib2.gui.texture.ItemStackTexture(actual.asItem()));row.addChild(icon);row.addChild(WorkspacePanels.text(actual.getName().getString()));}else row.addChild(WorkspacePanels.text(state.isBlank()?t("未读取"):state));return row;}
+    static String position(JsonElement value){if(value==null||value.isJsonNull())return t("未提供");if(coordinates(value)){var p=value.getAsJsonArray();return "X "+p.get(0).getAsString()+"   Y "+p.get(1).getAsString()+"   Z "+p.get(2).getAsString();}if(value.isJsonObject()){var o=value.getAsJsonObject();if(o.has("position"))return position(o.get("position"));if(o.has("x")&&o.has("y")&&o.has("z"))return "X "+o.get("x").getAsString()+"   Y "+o.get("y").getAsString()+"   Z "+o.get("z").getAsString();}return t("查看对应区域");}
+    private static boolean coordinates(JsonElement value){if(value==null||!value.isJsonArray()||value.getAsJsonArray().size()!=3)return false;for(var part:value.getAsJsonArray())if(!part.isJsonPrimitive()||!part.getAsJsonPrimitive().isNumber())return false;return true;}
+    private static JsonElement decoded(JsonElement value){if(value!=null&&value.isJsonPrimitive()&&value.getAsJsonPrimitive().isString()){String text=value.getAsString().strip();if(text.startsWith("{")||text.startsWith("["))try{return JsonParser.parseString(text);}catch(Exception ignored){}}return value;}
+    private static String human(String key,JsonElement value){var p=value.getAsJsonPrimitive();if(p.isBoolean())return t(p.getAsBoolean()?"是":"否");if(p.isNumber()&&Set.of("observedAt","updatedAt","expiresAt","timestamp").contains(key)){long time=p.getAsLong();if(time>100000000000L)return java.text.DateFormat.getDateTimeInstance().format(new Date(time));}String text=p.getAsString();if(Set.of("before","after","expected","actual","desired").contains(key)){var id=Identifier.tryParse(text.split("\\[",2)[0]);if(id!=null&&BuiltInRegistries.BLOCK.containsKey(id))return BuiltInRegistries.BLOCK.getValue(id).getName().getString();}if(text.isBlank())return t("无");return switch(text){case "minecraft:overworld"->t("主世界");case "minecraft:the_nether"->t("下界");case "minecraft:the_end"->t("末地");case "SAVED"->t("已保存");case "REMOVED"->t("已删除");case "READ"->t("读取范围");case "CHECK"->t("检查冲突");case "WRITE"->t("应用改动");case "VERIFY"->t("核对结果");default->NativeUiTheme.option(text);};}
+    private static String label(String key){return t(LABELS.getOrDefault(key,key));}
+    private static String t(String value){return ClientLanguage.t(value);}
+}

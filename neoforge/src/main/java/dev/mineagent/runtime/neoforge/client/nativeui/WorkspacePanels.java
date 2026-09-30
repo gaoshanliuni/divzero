@@ -23,7 +23,7 @@ final class WorkspacePanels {
         if(!Set.of(Code.OBSERVED,Code.APPLIED,Code.ACCEPTED,Code.OK).contains(receipt.code())||!receipt.values().getOrDefault("errorCode","").isBlank())throw new IllegalStateException(receipt.values().getOrDefault("errorCode",receipt.code().name()));return receipt;
     });}
     static JsonObject state(Receipt receipt){return JsonParser.parseString(receipt.values().getOrDefault("state","{}")).getAsJsonObject();}
-    static UIElement row(){var r=new UIElement(){@Override public UIElement addChild(UIElement child){if(child!=null&&child.hasClass("divzero-flow-text"))child.getLayout().widthAuto().minWidth(0).flex(1);return super.addChild(child);}};r.getLayout().flexDirection(FlexDirection.ROW).widthPercent(100).gapAll(5);return r;}
+    static UIElement row(){var r=new UIElement(){@Override public UIElement addChild(UIElement child){if(child instanceof Selector<?> selector){selector.getLayout().minWidth(96).minHeight(23).height(23);selector.preview.getLayout().minWidth(0);selector.preview.getStyle().clip(com.lowdragmc.lowdraglib2.gui.ui.data.Clip.SCISSOR);}if(child!=null&&child.hasClass("divzero-flow-text"))child.getLayout().widthAuto().minWidth(0).flex(1);return super.addChild(child);}};r.getLayout().flexDirection(FlexDirection.ROW).alignItems(dev.vfyjxf.taffy.style.AlignItems.CENTER).widthPercent(100).gapAll(5);return r;}
     static TextElement text(String value){var text=NativeUiTheme.text(value,NativeUiTheme.TEXT,9);text.addClass("divzero-flow-text");return text;}
     static ScrollerView scroller(UIElement parent){var list=new ScrollerView();list.getLayout().widthPercent(100).flex(1);parent.addChild(list);return list;}
     static UIElement card(ScrollerView parent,String title){var card=NativeUiTheme.card(new UIElement());card.getLayout().widthPercent(100).marginBottom(7);card.addChild(NativeUiTheme.text(title,NativeUiTheme.TEXT,11));parent.addScrollViewChild(card);return card;}
@@ -31,18 +31,8 @@ final class WorkspacePanels {
 
     static void settings(NativeWorkspaceScreen host){
         if(host.revealWindow("settings"))return;
-        var window=host.window("settings",t("设置"),470,380);var body=window.body;body.clearAllChildren();
-        body.addChild(NativeUiTheme.button(t("此世界启用设置"),()->{Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);}));
-        var shortcuts=new LinkedHashMap<String,Runnable>();
-        shortcuts.put(t("本机资源包"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.RESOURCE));
-        shortcuts.put(t("本机客户端代码"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.CLIENT));
-        shortcuts.put(t("启动扩展"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.BOOT));
-        shortcuts.put(t("代码工作区"),()->NativeStudioPanel.open(host));shortcuts.put(t("原生 API"),()->NativeApiPanel.open(host));
-        shortcuts.put(t("任务、调度与事件"),()->NativeTasksPanel.open(host));shortcuts.put(t("内容与反馈"),()->NativeDeliveryPanel.open(host));
-        shortcuts.put(t("界面与 HUD"),()->NativeViewsPanel.open(host));shortcuts.put(t("长期偏好"),()->NativePreferencesPanel.open(host));
-        for(var section:List.of(dev.mineagent.runtime.api.config.PanelSection.MEMORY,dev.mineagent.runtime.api.config.PanelSection.MEDIA,dev.mineagent.runtime.api.config.PanelSection.MOD_KNOWLEDGE,dev.mineagent.runtime.api.config.PanelSection.BACKUPS,dev.mineagent.runtime.api.config.PanelSection.DIAGNOSTICS))shortcuts.put(t(section.displayName()),()->NativeWorkspaceModules.open(host,section));
-        var navigation=row();navigation.getLayout().height(25);body.addChild(navigation);var destination=new Selector<String>();destination.getLayout().flex(1);destination.setCandidates(List.copyOf(shortcuts.keySet()));destination.setValue(t("任务、调度与事件"),false);navigation.addChild(destination);navigation.addChild(NativeUiTheme.button(t("打开"),()->shortcuts.get(destination.getValue()).run()));
-        var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);var footer=row();footer.getLayout().minHeight(25).heightAuto().flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);body.addChild(footer);
+        var window=host.window("settings",t("设置"),520,430);var body=window.body;body.clearAllChildren();
+        var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);fields.getLayout().minHeight(0).flex(1);var footer=row();footer.getLayout().height(25).flexShrink(0);body.addChild(footer);
         var values=new LinkedHashMap<String,String>();final JsonObject[] snapshot={null};final String[] group={"Provider"};final boolean[] busy={false};
         Runnable[] draw={null},load={null};
         draw[0]=()->{
@@ -50,11 +40,11 @@ final class WorkspacePanels {
             var groups=new LinkedHashSet<String>();for(var raw:snapshot[0].getAsJsonArray("fields"))groups.add(raw.getAsJsonObject().get("group").getAsString());
             var groupSelect=new Selector<String>();NativeUiTheme.options(groupSelect);groupSelect.setCandidates(List.copyOf(groups));groupSelect.setValue(group[0],false);groupSelect.setOnValueChanged(value->{group[0]=value;draw[0].run();});groupSelect.getLayout().flex(1);tabs.addChild(groupSelect);
             tabs.addChild(NativeUiTheme.button(t("刷新"),load[0]));
-            if(group[0].equals("Provider")){var provider=card(fields,t("模型服务状态"));provider.addChild(text(snapshot[0].get("keyConfigured").getAsBoolean()?t("API 密钥已配置"):t("API 密钥未配置")));provider.addChild(text(t("配置状态不代表连接测试；读取与保存不会调用模型。")));provider.addChild(NativeUiTheme.button(t("路由、预算与运行状态"),()->NativeReadout.show(host,"provider-state","路由、预算与运行状态",snapshot[0])));}
+            if(group[0].equals("Provider")){var provider=card(fields,t("模型服务状态"));var actions=row();actions.getLayout().height(25);provider.addChild(actions);actions.addChild(NativeUiTheme.button(t("API 密钥"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host))));actions.addChild(NativeUiTheme.button(t("选择模型"),()->Minecraft.getInstance().setScreen(new ProviderModelScreen(host))));provider.addChild(text(snapshot[0].get("keyConfigured").getAsBoolean()?t("API 密钥已配置"):t("API 密钥未配置")));provider.addChild(text(t("配置状态不代表连接测试；读取与保存不会调用模型。")));provider.addChild(NativeUiTheme.button(t("路由、预算与运行状态"),()->NativeReadout.show(host,"provider-state","路由、预算与运行状态",snapshot[0])));}
             if(group[0].equals("ComfyUI")){var workflow=card(fields,t("ComfyUI 工作流"));workflow.addChild(text(snapshot[0].get("workflowConfigured").getAsBoolean()?t("工作流已配置"):t("尚未配置 ComfyUI 工作流")));workflow.addChild(NativeUiTheme.button(t("编辑工作流"),()->NativeWorkflowPanel.open(host)));}
             for(var raw:snapshot[0].getAsJsonArray("fields")){
                 var field=raw.getAsJsonObject();if(!field.get("group").getAsString().equals(group[0]))continue;String key=field.get("key").getAsString(),value=values.getOrDefault(key,field.get("value").isJsonNull()?"":field.get("value").getAsString());
-                var card=card(fields,t(field.get("label").getAsString()));values.put(key,value);String type=field.get("type").getAsString();
+                var card=card(fields,t(field.get("label").getAsString()));card.getLayout().paddingAll(5).marginBottom(5);values.put(key,value);String type=field.get("type").getAsString();
                 if(key.equals("provider.openai.baseUrl")){var presets=new Selector<String>();var urls=Map.of("DeepSeek","https://api.deepseek.com/v1/","OpenAI","https://api.openai.com/v1/","GLM 智谱","https://open.bigmodel.cn/api/paas/v4/","GLM Z.AI","https://api.z.ai/api/paas/v4/","Ollama","http://localhost:11434/v1/");presets.setCandidates(List.of("DeepSeek","OpenAI","GLM 智谱","GLM Z.AI","Ollama"));presets.setOnValueChanged(preset->{values.put(key,urls.get(preset));draw[0].run();});card.addChild(text(t("地址模板")));card.addChild(presets);}
                 if(type.equals("boolean")){var toggle=new Toggle().setText(t("启用"));toggle.setOn(Boolean.parseBoolean(value),false);toggle.registerValueListener(v->values.put(key,v.toString()));card.addChild(toggle);}
                 else if(type.equals("providerOrder")){var order=new Selector<String>();NativeUiTheme.options(order);order.setCandidates(List.of("openai-compatible,ollama","ollama,openai-compatible"));order.setValue(value,false);order.setOnValueChanged(v->values.put(key,v));card.addChild(order);}
@@ -67,7 +57,23 @@ final class WorkspacePanels {
             Runnable save=()->{busy[0]=true;request("settings.write",Map.of("kind","save","revision",snapshot[0].get("revision").getAsString(),"values",JSON.toJson(changed),"providerChangeConfirmed","true")).whenComplete((receipt,error)->{busy[0]=false;if(window.closed())return;if(error!=null){failure(notice,error);return;}snapshot[0]=state(receipt);notice.setText(Component.literal(t("已保存")));});};
             if(changed.keySet().stream().anyMatch(k->k.endsWith("baseUrl"))&&(snapshot[0].get("keyConfigured").getAsBoolean()||snapshot[0].get("asrKeyConfigured").getAsBoolean()))Dialog.showCheckBox(t("修改 API 地址"),t("已有密钥会用于新地址，请确认该地址可信。"),yes->{if(yes)save.run();}).show(body);else save.run();
         }));
-        footer.addChild(NativeUiTheme.button(t("语音识别密钥"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host,"provider.asr.apiKey"))));footer.addChild(NativeUiTheme.button(t("API 密钥"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host))));footer.addChild(NativeUiTheme.button(t("选择模型"),()->Minecraft.getInstance().setScreen(new ProviderModelScreen(host))));footer.addChild(NativeUiTheme.button(t("权限"),()->permissions(host)));footer.addChild(NativeUiTheme.button(t("语言"),()->Minecraft.getInstance().setScreen(new dev.mineagent.runtime.neoforge.client.screen.LanguageScreen(host))));footer.addChild(NativeUiTheme.button(t("关于"),()->Minecraft.getInstance().setScreen(new dev.mineagent.runtime.neoforge.client.screen.AboutScreen(host))));load[0].run();
+        footer.addChild(NativeUiTheme.button(t("界面尺寸"),host::scaleSettings));footer.addChild(NativeUiTheme.button(t("更多设置"),()->settingsMore(host)));load[0].run();
+    }
+    static void settingsMore(NativeWorkspaceScreen host){
+        if(host.revealWindow("settings-more"))return;var window=host.window("settings-more",t("更多设置"),480,370);var scroll=scroller(window.body);scroll.getLayout().minHeight(0);
+        var display=card(scroll,t("界面与显示"));var options=row();options.getLayout().heightAuto().minHeight(25).flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);display.addChild(options);options.addChild(NativeUiTheme.button(t("界面尺寸"),host::scaleSettings));options.addChild(NativeUiTheme.button(t("语言"),()->Minecraft.getInstance().setScreen(new dev.mineagent.runtime.neoforge.client.screen.LanguageScreen(host))));options.addChild(NativeUiTheme.button(t("关于"),()->Minecraft.getInstance().setScreen(new dev.mineagent.runtime.neoforge.client.screen.AboutScreen(host))));
+        var world=card(scroll,t("世界与权限"));world.addChild(NativeUiTheme.button(t("此世界启用设置"),()->{Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);}));world.addChild(NativeUiTheme.button(t("权限与信任"),()->permissions(host)));
+        var voices=card(scroll,t("模型与语音"));voices.addChild(NativeUiTheme.button(t("API 密钥"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host))));voices.addChild(NativeUiTheme.button(t("语音识别密钥"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host,"provider.asr.apiKey"))));voices.addChild(NativeUiTheme.button(t("选择模型"),()->Minecraft.getInstance().setScreen(new ProviderModelScreen(host))));
+        var body=card(scroll,t("工具与管理"));
+        var shortcuts=new LinkedHashMap<String,Runnable>();
+        shortcuts.put(t("本机资源包"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.RESOURCE));
+        shortcuts.put(t("本机客户端代码"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.CLIENT));
+        shortcuts.put(t("启动扩展"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.BOOT));
+        shortcuts.put(t("代码工作区"),()->NativeStudioPanel.open(host));shortcuts.put(t("原生 API"),()->NativeApiPanel.open(host));
+        shortcuts.put(t("任务、调度与事件"),()->NativeTasksPanel.open(host));shortcuts.put(t("内容与反馈"),()->NativeDeliveryPanel.open(host));
+        shortcuts.put(t("界面与 HUD"),()->NativeViewsPanel.open(host));shortcuts.put(t("长期偏好"),()->NativePreferencesPanel.open(host));
+        for(var section:List.of(dev.mineagent.runtime.api.config.PanelSection.MEMORY,dev.mineagent.runtime.api.config.PanelSection.MEDIA,dev.mineagent.runtime.api.config.PanelSection.MOD_KNOWLEDGE,dev.mineagent.runtime.api.config.PanelSection.BACKUPS,dev.mineagent.runtime.api.config.PanelSection.DIAGNOSTICS))shortcuts.put(t(section.displayName()),()->NativeWorkspaceModules.open(host,section));
+        var navigation=row();navigation.getLayout().height(25);body.addChild(navigation);var destination=new Selector<String>();destination.getLayout().flex(1);destination.setCandidates(List.copyOf(shortcuts.keySet()));destination.setValue(t("任务、调度与事件"),false);navigation.addChild(destination);navigation.addChild(NativeUiTheme.button(t("打开"),()->shortcuts.get(destination.getValue()).run()));
     }
     static void permissions(NativeWorkspaceScreen host){
         if(host.revealWindow("permissions"))return;

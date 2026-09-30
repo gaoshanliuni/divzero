@@ -79,7 +79,7 @@ public final class NativeFunctionalSmokeClient {
                 case 20->{if(click("背包"))advance("f2-open-shared-inventory");}
                 case 21->{if(mc().screen instanceof AgentInventoryScreen){mc().player.closeContainer();advance("f2-native-container-entry");}}
                 case 22->{NativeWorkspaceScreen.openConversation(agent.toString(),"界面验收",a.toString());advance("open-scale-controls");}
-                case 23->{if(click("尺寸"))advance("scale-menu");}
+                case 23->{if(find(root(),"界面尺寸")==null){click("设置");}else if(click("界面尺寸"))advance("scale-menu");}
                 case 24->{if(click("gui-scale-4"))advance("scale-four-native-option");}
                 case 25->{if(conversation(a,"HISTORY_A_ONLY")){require(mc().options.guiScale().get()==4,"GUI_SCALE_NOT_SAVED");require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals("draft-A"),"SCALE_DRAFT_LOST");if(click("会话"))advance("compact-conversation-directory");}}
                 case 26->{var selector=findSelector(root());if(selector!=null&&pointer(selector,true)&&pointer(selector,false))advance("dropdown-opened-by-pointer");}

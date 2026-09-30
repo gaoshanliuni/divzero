@@ -44,10 +44,10 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private NativeWorkspaceScreen(UIElement root){
         super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal("DivZero"));this.root=root;composer.setId("conversation-composer");composer.registerValueListener(value->saveDraft());
         root.getLayout().widthPercent(100).heightPercent(100).paddingAll(compact?4:7);root.getStyle().backgroundTexture(new ColorRectTexture(0x35080d15));
-        var toolbar=NativeUiTheme.card(row());toolbar.getLayout().height(compact?29:36).flexShrink(0).paddingAll(compact?3:6).marginBottom(3);toolbar.getStyle().zIndex(2000);root.addChild(toolbar);
-        var brand=NativeUiTheme.text("DivZero",NativeUiTheme.ACCENT,13);brand.getLayout().width(compact?39:72).flexShrink(0);if(compact)brand.textStyle(style->style.fontSize(9));toolbar.addChild(brand);
+        var toolbar=NativeUiTheme.card(row());toolbar.getLayout().alignItems(dev.vfyjxf.taffy.style.AlignItems.CENTER).height(compact?29:36).flexShrink(0).paddingAll(compact?3:6).marginBottom(3);toolbar.getStyle().zIndex(2000);root.addChild(toolbar);
+        var brand=NativeUiTheme.text("DivZero",NativeUiTheme.ACCENT,13);brand.getLayout().width(compact?48:72).flexShrink(0).alignSelf(dev.vfyjxf.taffy.style.AlignItems.CENTER);if(compact)brand.textStyle(style->style.fontSize(9));toolbar.addChild(brand);
         toolbar.addChild(button(t("对话"),this::showChat));toolbar.addChild(button(t("AI 玩家"),()->WorkspacePanels.agents(this)));toolbar.addChild(button(t("包管理"),()->WorkspacePanels.packages(this)));toolbar.addChild(button(t("文件"),this::showFiles));toolbar.addChild(button(t(compact?"建筑":"建筑计划"),()->NativeBuildingPanel.open(this,model.agent)));
-        var spacer=new UIElement();spacer.getLayout().flex(1);toolbar.addChild(spacer);toolbar.addChild(decisions);toolbar.addChild(button(t("设置"),()->WorkspacePanels.settings(this)));toolbar.addChild(button(t("尺寸"),this::scaleSettings));toolbar.addChild(NativeUiTheme.iconButton("×",this::onClose));
+        var spacer=new UIElement();spacer.getLayout().flex(1);toolbar.addChild(spacer);toolbar.addChild(decisions);toolbar.addChild(button(t("设置"),()->WorkspacePanels.settings(this)));toolbar.addChild(NativeUiTheme.iconButton("×",this::onClose));
         desktop.getLayout().flex(1).minHeight(0).widthPercent(100);root.addChild(desktop);
         dock.getLayout().height(compact?23:28).flexShrink(0).widthPercent(100).flexDirection(FlexDirection.ROW).paddingVertical(3);dock.getStyle().zIndex(2000);root.addChild(dock);
         status.setId("workspace-status");status.getLayout().height(11).flexShrink(0).widthPercent(100);status.textStyle(style->style.fontSize(8).textColor(0xffffffff));root.addChild(status);
@@ -137,7 +137,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         var actions=row();actions.getLayout().height(compact?24:27).flexShrink(0).paddingTop(compact?1:4);actions.addChild(button(t("发送"),this::send));actions.addChild(button(t("停止"),this::cancel));actions.addChild(button(t("附件"),this::showFiles));actions.addChild(button(t("语音输入"),()->{var session=NativeWorkspaceConnection.current();if(session!=null&&model.selected!=null)Minecraft.getInstance().setScreen(new NativeSpeechScreen(this,session.binding().worldId(),UUID.fromString(model.agent),UUID.fromString(model.conversation),context));}));content.addChild(actions);
         if(!model.agent.isEmpty()&&NativeWorkspaceConnection.ready())list();
     }
-    private void scaleSettings(){
+    void scaleSettings(){
         var panel=window("gui-scale",t("界面尺寸"),260,170);panel.body.clearAllChildren();
         panel.body.addChild(NativeUiTheme.text(t("游戏 UI 尺寸"),NativeUiTheme.TEXT,10));var choices=row();panel.body.addChild(choices);
         for(int size=2;size<=4;size++){final int scale=size;var button=button(Integer.toString(size),()->changeScale(scale));button.setId("gui-scale-"+size);choices.addChild(button);}
