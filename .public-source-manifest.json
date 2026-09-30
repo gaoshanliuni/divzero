@@ -3289,8 +3289,8 @@
     },
     {
       "path": "docs/ADAPTIVE_AGENT_UPGRADE.md",
-      "sha256": "f9e2aa8d6fbf19d23e00d16ee29453eb631f255ba89fbcdebfcca17dfcabdecf",
-      "bytes": 13252
+      "sha256": "575548b1f67ea73dce167cda4dd0c5338abdd27e6cd7c57314ecfc76f0ccceea",
+      "bytes": 17265
     },
     {
       "path": "docs/BUILD_JAR.md",
@@ -3374,8 +3374,8 @@
     },
     {
       "path": "docs/images/README.md",
-      "sha256": "f9a4571497d84e2fa8e91d19b699b001a24380b4445806da7185fe56f12c52a5",
-      "bytes": 7148
+      "sha256": "2d6a4ac038f1445db0fd0eea04bb4cf792b5b33e73979e4d71518d93f6775944",
+      "bytes": 7738
     },
     {
       "path": "docs/images/behavior-agent-profile.png",
@@ -3414,8 +3414,8 @@
     },
     {
       "path": "docs/images/native-inventory-current.png",
-      "sha256": "330065281173b3d23bf8c144be24b8692811449a2f0ea4add2da13dc21c492b3",
-      "bytes": 476030
+      "sha256": "50aff6510183dcc1b869a6e049a60ffb7247eb20d7e07fb26d52f1709b330f05",
+      "bytes": 401006
     },
     {
       "path": "docs/images/native-inventory-scale4.png",

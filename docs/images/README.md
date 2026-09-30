@@ -75,3 +75,11 @@
 | [native-content-catalog.png](native-content-catalog.png) | 已打开包管理后创建内容，目录自动出现物品、生物和原版修改 | `7247edb3691f9640909624731b4be2f1e8b8b43fb69e42f1f1cb1e9202c11bf1` |
 
 - `native-takeover-free-camera.png`：原生托管自由观战和返回 AI 视角按钮，1600×1100、GUI 尺寸 4。隔离运行 `810f85f9-0fe5-4bb0-95ab-d101893c5ac1`；Actions `36690288945`，模型调用 0 次。
+
+## 独立背包与默认学习（2026-10-01）
+
+| 图片 | 实际场景 | SHA-256 |
+| --- | --- | --- |
+| [native-inventory-current.png](native-inventory-current.png) | 当前独立原生背包，UI 尺寸 4；战斗中打开并将 AI 副手盾牌转移到玩家真实快捷栏。隔离运行 `1d621adf-1f2a-47bb-9c0e-bc3cbbcc1961`，Actions `36743011317`，零模型调用 | `50aff6510183dcc1b869a6e049a60ffb7247eb20d7e07fb26d52f1709b330f05` |
+
+`native-inventory-combat.png` 与 `native-inventory-scale4.png` 为此前嵌入布局的历史截图，已被本次独立界面方案替代。
