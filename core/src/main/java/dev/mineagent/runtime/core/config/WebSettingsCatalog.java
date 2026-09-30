@@ -8,6 +8,11 @@ public final class WebSettingsCatalog {
     private WebSettingsCatalog(){}
     public record Field(String key,String label,String group,String type,String fallback,PermissionAction permission){}
     public static final List<Field> FIELDS=List.of(
+        new Field("provider.openai.role.chat","对话模型（留空沿用 AI 当前模型）","任务模型","text","",PermissionAction.MANAGE_PROVIDERS),
+        new Field("provider.openai.role.research","资料分析模型（留空沿用 AI 当前模型）","任务模型","text","",PermissionAction.MANAGE_PROVIDERS),
+        new Field("provider.openai.role.code","代码生成模型（留空沿用 AI 当前模型）","任务模型","text","",PermissionAction.MANAGE_PROVIDERS),
+        new Field("provider.openai.role.review","规划与结果检查模型（留空沿用 AI 当前模型）","任务模型","text","",PermissionAction.MANAGE_PROVIDERS),
+        new Field("provider.openai.role.small","轻量任务模型（摘要与标题）（留空沿用 AI 当前模型）","任务模型","text","",PermissionAction.MANAGE_PROVIDERS),
         new Field(ServiceCallBudget.TASK,"每条任务链累计派发次数（0–1000000；不按日重置）","智能服务总预算","number","0",PermissionAction.MANAGE_PROVIDERS),
         new Field(ServiceCallBudget.PAUSED,"暂停新的智能服务调用（不取消在途请求）","智能服务总预算","boolean","false",PermissionAction.MANAGE_PROVIDERS),
         new Field(ServiceCallBudget.DAILY,"全服 UTC 每日派发次数（0–1000000；0 不额外限制）","智能服务总预算","number","0",PermissionAction.MANAGE_PROVIDERS),

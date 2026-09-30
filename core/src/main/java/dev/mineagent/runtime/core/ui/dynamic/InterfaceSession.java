@@ -31,7 +31,7 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
         try{candidate=Objects.requireNonNull(builder.build(definition,copy(data)));require(scope,expected);
             if(dataRevision!=expectedData)throw new IllegalStateException("INTERFACE_DATA_CHANGED_DURING_BUILD");
             T previous=rendered;rendered=candidate;candidate=null;dispose(previous);return new Receipt(true,revision,dataRevision,"");
-        }catch(Exception failure){dispose(candidate);return new Receipt(false,revision,dataRevision,String.valueOf(failure.getMessage()));}
+        }catch(Exception|LinkageError failure){dispose(candidate);return new Receipt(false,revision,dataRevision,String.valueOf(failure.getMessage()));}
     }
     public void interactive(boolean value){requireOpen();interactive=value;}
     public void visible(boolean value){requireOpen();visible=value;}
@@ -56,7 +56,7 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
             dirtyInputs.retainAll(kept);
             if(changedSurface)interactive=next.surface()==InterfaceDefinition.Surface.SCREEN;
             dispose(previous);return new Receipt(true,revision,dataRevision,"");
-        }catch(Exception failure){dispose(candidate);return new Receipt(false,revision,dataRevision,String.valueOf(failure.getMessage()));}
+        }catch(Exception|LinkageError failure){dispose(candidate);return new Receipt(false,revision,dataRevision,String.valueOf(failure.getMessage()));}
     }
     /** Compute candidate bindings first; a failing sink leaves data/version unchanged. */
     public Receipt patch(Scope expected,long expectedRevision,long expectedDataRevision,Map<String,JsonNode> patch,
@@ -115,6 +115,6 @@ public final class InterfaceSession<T extends AutoCloseable> implements AutoClos
     private void require(Scope expected,long rev){requireOpen();if(!scope.equals(expected))throw new SecurityException("INTERFACE_SCOPE_CHANGED");if(revision!=rev)throw new IllegalStateException("INTERFACE_STALE_REVISION");}
     private void requireOpen(){if(closed)throw new IllegalStateException("INTERFACE_CLOSED");}
     private static Map<String,JsonNode> copy(Map<String,JsonNode> source){var result=new LinkedHashMap<String,JsonNode>();source.forEach((k,v)->result.put(k,v.deepCopy()));return result;}
-    private static void dispose(AutoCloseable value){if(value!=null)try{value.close();}catch(Exception ignored){/* The old UI has already been detached; never roll back a new revision because cleanup failed. */}}
+    private static void dispose(AutoCloseable value){if(value!=null)try{value.close();}catch(Exception|LinkageError ignored){/* The old UI has already been detached; never roll back a new revision because cleanup failed. */}}
     @Override public void close(){if(!closed){closed=true;dispose(rendered);rendered=null;data.clear();dirtyInputs.clear();}}
 }

@@ -32,7 +32,7 @@ public final class KubeInterfaceRenderer {
             context.evaluateString(context.topLevelScope,program,"divzero/nativeui/build.js",1,null);
             if(bridge.result()==null)throw new IllegalStateException("INTERFACE_BUILDER_NO_RESULT");
             return bridge.result();
-        }catch(Exception failure){if(bridge.result()!=null)bridge.result().close();throw failure;}
+        }catch(Exception|LinkageError failure){if(bridge.result()!=null)bridge.result().close();throw failure;}
     }
 
 }

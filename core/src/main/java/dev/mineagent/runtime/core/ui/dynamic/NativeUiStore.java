@@ -12,6 +12,7 @@ public final class NativeUiStore implements AutoCloseable {
     private static final String CANDIDATES="native_ui_candidates";
     public record Scope(UUID world,UUID owner,UUID agent){}
     public record Candidate(UUID token,long expectedRevision,String dimension,String source){}
+    public record FailedDraft(UUID token,String id,long baseRevision,String source,String diagnostic,long createdAt){}
     public record Owned(UUID agent,String id,Saved saved){}
     public record Saved(long revision,String dimension,String source,Map<String,JsonNode> data,boolean visible){
         public Saved{data=Map.copyOf(data);}
@@ -42,6 +43,20 @@ public final class NativeUiStore implements AutoCloseable {
     }
     public Optional<Candidate> pending(Scope scope,String id)throws Exception{
         var row=repository.get(scope.world,CANDIDATES,key(scope,id));return row.isEmpty()?Optional.empty():Optional.of(JSON.readValue(row.get().payload(),Candidate.class));
+    }
+    public FailedDraft failed(Scope scope,String id,UUID token,long baseRevision,String source,String diagnostic)throws Exception{
+        if(source==null||source.length()>65536||baseRevision<0)throw new IllegalArgumentException("NATIVE_UI_DRAFT_SIZE");
+        String message=diagnostic==null?"":diagnostic.substring(0,Math.min(8192,diagnostic.length()));
+        var draft=new FailedDraft(token,id,baseRevision,source,message,System.currentTimeMillis());
+        String key=key(scope,id)+":"+token;var prior=repository.get(scope.world,"native_ui_failed_drafts",key);
+        if(prior.isPresent())return JSON.readValue(prior.get().payload(),FailedDraft.class);
+        if(!repository.compareAndSet(scope.world,"native_ui_failed_drafts",key,0,JSON.writeValueAsString(draft),draft.createdAt).accepted())throw new IllegalStateException("NATIVE_UI_DRAFT_CHANGED");return draft;
+    }
+    public Optional<FailedDraft> failed(Scope scope,String id,UUID token)throws Exception{var row=repository.get(scope.world,"native_ui_failed_drafts",key(scope,id)+":"+token);return row.isEmpty()?Optional.empty():Optional.of(JSON.readValue(row.get().payload(),FailedDraft.class));}
+    public List<Map<String,Object>> failed(Scope scope,String id)throws Exception{
+        var drafts=new ArrayList<FailedDraft>();String prefix=key(scope,id)+":";
+        for(var row:repository.list(scope.world,"native_ui_failed_drafts"))if(row.recordId().startsWith(prefix))drafts.add(JSON.readValue(row.payload(),FailedDraft.class));
+        return drafts.stream().sorted(Comparator.comparingLong(FailedDraft::createdAt).reversed()).limit(16).map(d->Map.<String,Object>of("candidate_id",d.token,"base_revision",d.baseRevision,"diagnostic",d.diagnostic,"createdAt",d.createdAt)).toList();
     }
     /** Durable intent precedes any client side effect. Unknown outcomes keep this record. */
     public Candidate stage(Scope scope,String id,long expected,String dimension,String source)throws Exception{

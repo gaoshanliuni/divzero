@@ -33,7 +33,7 @@ public final class ServerNativeInterfaces {
         var out=new CompletableFuture<Map<String,Object>>();
         io(()->{try(var store=new NativeUiStore(db)){
             var value=new LinkedHashMap<String,Object>();value.put("contract",InterfaceDefinition.CONTRACT);value.put("views",store.list(scope));
-            if(args.has("id")){String id=args.path("id").asText();var saved=store.get(scope,id);value.put("saved",saved.orElse(null));value.put("pending",store.pending(scope,id).orElse(null));try(var events=new NativeUiEventStore(db)){value.put("events",events.list(scope,id));}}
+            if(args.has("id")){String id=args.path("id").asText();var saved=store.get(scope,id);value.put("saved",saved.orElse(null));value.put("pending",store.pending(scope,id).orElse(null));value.put("failedCandidates",store.failed(scope,id));if(args.has("candidate_id"))value.put("candidate",store.failed(scope,id,UUID.fromString(args.path("candidate_id").asText())).orElseThrow());try(var events=new NativeUiEventStore(db)){value.put("events",events.list(scope,id));}}
             return value;
         }}).whenComplete((value,error)->server.execute(()->{
             if(error!=null){out.completeExceptionally(error);return;}if(!current(p,agent,level,guard)){out.complete(Map.of("status","REJECTED","error","NATIVE_UI_CONTEXT_CHANGED"));return;}
@@ -81,7 +81,7 @@ public final class ServerNativeInterfaces {
                     if(error!=null){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CLIENT_ACK_TIMEOUT","replayed",false));return;}
                     if(!ack.path("status").asText().equals("APPLIED")){
                         if(ack.path("status").asText().equals("UNKNOWN")){result.complete(Map.of("status","UNKNOWN","error",ack.path("error").asText("NATIVE_UI_UNKNOWN"),"revision",expected));return;}
-                        io(()->{try(var store=new NativeUiStore(db)){store.discard(scope,id,candidate.token());return true;}}).whenComplete((discarded,e)->result.complete(Map.of("status",e==null?"REJECTED":"UNKNOWN","error",ack.path("error").asText("NATIVE_UI_BUILD_FAILED"),"revision",expected)));return;
+                        io(()->{try(var store=new NativeUiStore(db)){var draft=store.failed(scope,id,candidate.token(),expected,source,ack.path("error").asText("NATIVE_UI_BUILD_FAILED"));store.discard(scope,id,candidate.token());return draft;}}).whenComplete((draft,e)->result.complete(Map.of("status",e==null?"REJECTED":"UNKNOWN","error",ack.path("error").asText("NATIVE_UI_BUILD_FAILED"),"revision",expected,"candidate_id",candidate.token(),"executionState",e==null?"CANDIDATE_ONLY":"UNKNOWN","runningVersionPreserved",e==null)));return;
                     }
                     if(!current(p,agent,level,guard)){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_CONTEXT_CHANGED"));return;}
                     try{
@@ -97,8 +97,32 @@ public final class ServerNativeInterfaces {
                     }catch(Exception invalid){result.complete(Map.of("status","UNKNOWN","error","NATIVE_UI_INVALID_ACK"));}
                 }));
                 }));
-            }catch(Exception invalid){result.complete(Map.of("status","REJECTED","error",Objects.toString(invalid.getMessage(),"NATIVE_UI_FAILED")));}
+            }catch(Exception invalid){
+                String diagnostic=Objects.toString(invalid.getMessage(),"NATIVE_UI_FAILED");
+                if(tool.equals("set_native_ui")&&args.path("source").isTextual()&&args.path("source").asText().length()<=65536){
+                    io(()->{try(var store=new NativeUiStore(db)){return store.failed(scope,id,UUID.randomUUID(),expected,args.get("source").asText(),diagnostic);}}).whenComplete((draft,error)->{
+                        if(error!=null)result.complete(Map.of("status","REJECTED","error",diagnostic,"executionState","NOT_STARTED","runningVersionPreserved",true));
+                        else result.complete(Map.of("status","REJECTED","error",diagnostic,"candidate_id",draft.token(),"expected_revision",expected,"executionState","CANDIDATE_ONLY","runningVersionPreserved",true));
+                    });
+                }else result.complete(Map.of("status","REJECTED","error",diagnostic,"executionState","NOT_STARTED"));
+            }
         }));return result;
+    }
+    public static CompletableFuture<Map<String,Object>> edit(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){
+        var server=p.level().getServer();var scope=scope(p,agent);var level=p.level();var guard=lease(p,permit);String id=args.path("id").asText();long expected=args.path("expected_revision").asLong(-1);var db=server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");
+        require(current(p,agent,level,guard),"NATIVE_UI_PERMISSION");
+        return io(()->{try(var store=new NativeUiStore(db)){
+            String source;if(args.has("candidate_id")){var draft=store.failed(scope,id,UUID.fromString(args.path("candidate_id").asText())).orElseThrow();require(draft.baseRevision()==expected,"NATIVE_UI_DRAFT_BASE_CHANGED");source=draft.source();}
+            else {var active=store.get(scope,id).orElseThrow();require(active.revision()==expected,"NATIVE_UI_STALE_REVISION");source=active.source();}
+            for(var patch:args.path("edits")){var result=dev.mineagent.runtime.scripting.opencode.OpenCodeRuntime.edit(source,patch.path("old_text").asText(),patch.path("new_text").asText(),patch.path("replace_all").asBoolean());require(result.accepted(),"NATIVE_UI_EDIT: "+result.error());source=result.source();}
+            return source;
+        }}).handle((source,error)->{
+            if(error==null)return Map.of("source",source);Throwable cause=error;while(cause.getCause()!=null)cause=cause.getCause();return Map.of("error",Objects.toString(cause.getMessage(),"NATIVE_UI_EDIT_PREPARATION_FAILED"));
+        }).thenCompose(prepared->server.submit(()->{
+            if(prepared.containsKey("error"))return CompletableFuture.completedFuture(Map.<String,Object>of("status","REJECTED","error",prepared.get("error"),"executionState","NOT_STARTED","runningVersionPreserved",true));
+            if(!current(p,agent,level,guard))return CompletableFuture.completedFuture(Map.<String,Object>of("status","REJECTED","error","NATIVE_UI_CONTEXT_CHANGED","executionState","NOT_STARTED"));
+            var mutation=JSON.createObjectNode().put("id",id).put("expected_revision",expected).put("source",prepared.get("source"));return mutate(p,agent,"set_native_ui",mutation,guard);
+        }).thenCompose(java.util.function.Function.identity()));
     }
     static CompletableFuture<JsonNode> request(ServerPlayer p,UUID agent,JsonNode message,BooleanSupplier permit){
         UUID request=UUID.randomUUID();var future=new CompletableFuture<JsonNode>();var pending=new Pending(p,agent,p.level(),permit,future);PENDING.put(request,pending);

@@ -16,7 +16,7 @@ public final class CapabilityCatalog {
             "read_guidance inspect_buildings plan_building apply_building verify_building control_building inspect_world_geometry plan_world_geometry apply_world_geometry build_agent_path agent_block_action inspect_building_files inspect_building_file request_building_file fetch_building_file plan_building_import inspect_registry open_preview"),
         group("ui","原生界面、面板、HUD 血条、菜单附加、交互、三维预览",
             "inspect_native_ui 发现当前定义与契约；KubeJS 构建 LDLib2 原生控件和交互，不生成 HTML/MCEF。悬浮层默认 HUD，不抢鼠标；结构热更验证成功后替换，失败保留旧界面和匹配输入，数据用增量更新。菜单附加先 inspect_native_screen，实体血条用 ENTITY_HUD 的实际实体数据，酿造配方可接 open_preview。提交定义不等于交易完成；核对客户端 attachment/painted/error 回执。",
-            "inspect_native_ui set_native_ui patch_native_ui_data control_native_ui inspect_native_screen inspect_brewing_recipes open_preview"),
+            "inspect_native_ui edit_native_ui set_native_ui patch_native_ui_data control_native_ui inspect_native_screen inspect_brewing_recipes open_preview"),
         group("farming","持续农务、钓鱼与补给",
             "提交一次本地持续技能，模型不逐格种植或反复等待咬钩。默认 actor=ai；真人必须明确要求接管。农务按真实成熟度、种子、工具、站位和库存收获补种；钓鱼用真实浮漂咬钩及物品消耗。缺物资、背包满等交给本地等待/补给；遇敌保存工作进度，防御后重检恢复。只改战斗方式用 set_combat_policy，不替换主工作。",
             "farm_area fish_at inspect_behavior control_behavior set_combat_policy inspect_registry inspect_container quick_move_container close_container interact_block"),

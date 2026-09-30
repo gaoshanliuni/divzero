@@ -175,6 +175,7 @@ public final class ServerConfigService implements AutoCloseable {
                 errors.put(key, "值过长");
                 return;
             }
+            if(key.startsWith("provider.openai.role.")&&!value.isBlank()&&!AgentModelSettings.validModel(value))errors.put(key,"模型名称应为不超过 256 字符的单行文本");
             switch (key) {
                 case ServiceCallBudget.DAILY, ServiceCallBudget.REQUEST, ServiceCallBudget.PAUSED, ServiceCallBudget.TASK -> {
                     try { ServiceCallBudget.from(Map.of(key,value)); }

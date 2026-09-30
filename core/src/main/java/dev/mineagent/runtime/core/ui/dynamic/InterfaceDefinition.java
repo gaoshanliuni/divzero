@@ -71,7 +71,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
     public static InterfaceDefinition parse(String source) {
         if(source==null||source.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>MAX_SOURCE_BYTES)throw error("$","SOURCE_SIZE");
         final JsonNode doc;
-        try {doc=JSON.readTree(source);}catch(Exception e){throw error("$","INVALID_JSON");}
+        try {doc=JSON.readTree(source);}catch(com.fasterxml.jackson.core.JsonProcessingException e){throw new IllegalArgumentException("INTERFACE_INVALID_JSON at $ line "+e.getLocation().getLineNr()+", column "+e.getLocation().getColumnNr()+": "+e.getOriginalMessage(),e);}catch(Exception e){throw error("$","INVALID_JSON");}
         fields(doc,Set.of("id","title","surface","root","data","stylesheet","order","sources","handlers","attachment"),"$");
         String id=id(doc.path("id"),"$.id"),title=string(doc.path("title"),"$.title",256);
         Surface surface;

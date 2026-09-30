@@ -47,7 +47,7 @@ public final class ConversationAgentTools {
     public static CompletableFuture<Map<String,Object>> execute(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         if(!ConversationTools.NAMES.contains(tool))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_UNKNOWN","category","CAPABILITY","executionState","NOT_STARTED","suggestedAction","Use inspect_capabilities and skill to find the correct tool name."));
         final ToolValidation.Checked checked;
-        try{if(arguments==null||arguments.length()>(Set.of("plan_building","set_native_ui","repair_content_package").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
+        try{if(arguments==null||arguments.length()>(Set.of("plan_building","set_native_ui","repair_content_package","edit_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
         catch(IllegalArgumentException invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid),"category","VALIDATION","executionState","NOT_STARTED","worldModified",false,"suggestedAction","Provide one complete JSON object matching this tool's parameter definition. No operation was executed."));}
         if(!checked.issues().isEmpty())return CompletableFuture.completedFuture(checked.rejection());
         if(!p.level().getServer().isSameThread()||!current(p,permit)||ConversationTools.mutation(tool)&&!personalTool(tool)&&!tool.equals("stop_actions")&&!ServerTaskStart.allowed(p,agent))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_PERMISSION","executionState","NOT_STARTED"));
@@ -66,7 +66,7 @@ public final class ConversationAgentTools {
     }
     private static CompletableFuture<Map<String,Object>> executeChecked(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         var s=p.level().getServer();try{
-            if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui","repair_content_package").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
+            if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui","repair_content_package","edit_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=ToolArguments.parse(tool,arguments);
             if(tool.equals("observe")){keys(args);return ConversationMetaTools.observe(p,agent);}
             if(tool.equals("stop_actions")){keys(args);return CompletableFuture.completedFuture(ConversationMetaTools.stop(p,agent));}
@@ -82,7 +82,7 @@ public final class ConversationAgentTools {
             if(tool.equals("inspect_block_textures")){keys(args,"block_id");return ServerBlockTextures.request(p,agent,"inspect",args,permit);}
             if(tool.equals("inspect_bulldozers")){keys(args,"id");return ServerBulldozers.inspect(p,agent,args);}
             if(tool.equals("inspect_brewing_recipes")){keys(args,"query","offset");return CompletableFuture.completedFuture(NativeMenuData.inspect(p,args));}
-            if(tool.equals("inspect_native_ui")||tool.equals("inspect_native_screen")){keys(args,"id");return ServerNativeInterfaces.inspect(p,agent,args,permit);}
+            if(tool.equals("inspect_native_ui")||tool.equals("inspect_native_screen")){keys(args,"id","candidate_id");return ServerNativeInterfaces.inspect(p,agent,args,permit);}
             if(tool.equals("inspect_native_entities")){keys(args,"query","offset","template_id");return CompletableFuture.completedFuture(NativeEntityTemplates.inspect(p,args));}
             if(tool.equals("derive_native_entity")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(NativeEntityTemplates.derive(p,args));}
             if(tool.equals("inspect_entity_model")){keys(args,"entity_type","offset");return EntityModelProbe.request(p,args);}
@@ -190,6 +190,7 @@ public final class ConversationAgentTools {
             case "offer_file_download"->{keys(a,"file_id");return ServerFileTools.offer(p,agent,a,permit);}
             case "request_building_file"->{keys(a,"reason");return ServerBuildingFiles.request(p,agent,permit,text(a,"reason",200));}
             case "fetch_building_file"->{keys(a,"url","name");return ServerBuildingFiles.download(p,agent,a,permit);}
+            case "edit_native_ui"->{keys(a,"id","expected_revision","candidate_id","edits");return ServerNativeInterfaces.edit(p,agent,a,permit);}
             case "set_native_ui","patch_native_ui_data","control_native_ui"->{keys(a,"id","expected_revision","source","data","action");return ServerNativeInterfaces.mutate(p,agent,tool,a,permit);}
             case "plan_building"->{keys(a,"source","revision");return ServerBuildings.plan(p,agent,a,permit);}
             case "apply_building"->{keys(a,"id","revision");return ServerBuildings.apply(p,agent,a,permit);}

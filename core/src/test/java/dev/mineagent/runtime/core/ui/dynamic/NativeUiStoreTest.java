@@ -11,6 +11,11 @@ class NativeUiStoreTest {
     static final String SOURCE="""
         {"id":"quest","title":"Quest","surface":"HUD","root":{"id":"root","type":"column","children":[{"id":"score","type":"label","bind":"points"}]},"data":{"points":1}}
         """;
+    @Test void failedCandidateSurvivesWithoutReplacingTheRunningDefinition()throws Exception{
+        var scope=new NativeUiStore.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID());var db=directory.resolve("failed-drafts.db");UUID draftId=UUID.randomUUID();
+        try(var store=new NativeUiStore(db)){store.save(scope,"quest",0,"minecraft:overworld",SOURCE,Map.of("points",IntNode.valueOf(7)),true);store.failed(scope,"quest",draftId,1,"{broken","line 1 column 8: missing closing brace");assertEquals(1,store.get(scope,"quest").orElseThrow().revision());assertTrue(store.pending(scope,"quest").isEmpty());}
+        try(var store=new NativeUiStore(db)){var draft=store.failed(scope,"quest",draftId).orElseThrow();assertEquals("{broken",draft.source());assertEquals(1,draft.baseRevision());assertTrue(draft.diagnostic().contains("column 8"));assertTrue(store.failed(new NativeUiStore.Scope(scope.world(),UUID.randomUUID(),scope.agent()),"quest",draftId).isEmpty());assertEquals(7,store.get(scope,"quest").orElseThrow().data().get("points").intValue());}
+    }
     @Test void revisionsSurviveRestartAndSeparateWorldOwnerAndAgent()throws Exception{
         var scope=new NativeUiStore.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID());var db=directory.resolve("ui.db");
         try(var a=new NativeUiStore(db);var b=new NativeUiStore(db)){

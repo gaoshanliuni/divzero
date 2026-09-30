@@ -101,8 +101,8 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
         }, requests);
     }
 
-    static WorkerEnvelope summaryRequest(UUID jobId,String prompt){return new WorkerEnvelope(1,jobId,"model.completeOnce",Map.of("capability","SEMANTIC","prompt",prompt));}
-    static WorkerEnvelope presentationRequest(UUID id,String prompt){return new WorkerEnvelope(1,id,"model.completeOnce",Map.of("capability","PLANNING","prompt",prompt));}
+    static WorkerEnvelope summaryRequest(UUID jobId,String prompt){return new WorkerEnvelope(1,jobId,"model.completeOnce",Map.of("capability","SEMANTIC","prompt",prompt,"modelRole","small"));}
+    static WorkerEnvelope presentationRequest(UUID id,String prompt){return new WorkerEnvelope(1,id,"model.completeOnce",Map.of("capability","PLANNING","prompt",prompt,"modelRole","review"));}
     public CompletableFuture<WorkerEnvelope> planPresentation(ServerConfigService config,UUID id,String prompt,java.util.function.BooleanSupplier permit){return completeSingle(config,presentationRequest(id,prompt),permit);}
     public CompletableFuture<WorkerEnvelope> planPresentation(ServerConfigService config,UUID id,String prompt,java.util.function.BooleanSupplier permit,dev.mineagent.runtime.api.task.ManagedTask task){return completeSingle(config,withTask(presentationRequest(id,prompt),task),permit);}
     /** One durable summary batch is one Provider dispatch, including HTTP failures and uncertain transport. */
