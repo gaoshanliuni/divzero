@@ -17,7 +17,7 @@ class OpenCodeReuseTest {
     }
     @Test void KeepsRecentAtomicGroupsAndRecognizesOnlyMatchingNonPendingCalls(){
         var selected=OpenCodeRuntime.select(List.of("old group ".repeat(100),"new call + required reasoning + result"),15);
-        assertTrue(selected.archived().startsWith("old group"));
+        assertTrue(selected.archived().startsWith("old group"),selected::toString);
         assertEquals("new call + required reasoning + result",selected.recent());
         Map<String,Object> args=Map.of("id","house","revision",4);
         Map<String,Object> part=Map.of("type","tool","tool","verify_building","state",Map.of("status","error","input",args));

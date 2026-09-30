@@ -25,6 +25,10 @@ final class CombatAwareness {
         return selected.position;
     }
     void searchFailed(){if(searching!=null)lastSeen.remove(searching);searching=null;}
+    private int geometryTick=-1;private Boolean cachedFlanked;private final Map<UUID,Boolean> sightCache=new HashMap<>();private final Map<UUID,Boolean> reverseSightCache=new HashMap<>();
+    private void geometry(SkillWork w){if(geometryTick!=w.tick()){geometryTick=w.tick();cachedFlanked=null;sightCache.clear();reverseSightCache.clear();}}
+    private boolean sight(SkillWork w,LivingEntity entity){geometry(w);return sightCache.computeIfAbsent(entity.getUUID(),id->w.player().hasLineOfSight(entity));}
+    private boolean reverseSight(SkillWork w,LivingEntity entity){geometry(w);return reverseSightCache.computeIfAbsent(entity.getUUID(),id->entity.hasLineOfSight(w.player()));}
     LivingEntity selected;int selectedAt;double lastDamageVelocity;
     void scan(SkillWork w){
         var p=w.player();var rule=w.session.spec().combat();if(anchor==null||!w.combatInterrupted)anchor=p.position();if(rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(p.getX(),p.getY(),p.getZ())))anchor=new Vec3((rule.area().min().x()+rule.area().max().x()+1)/2,p.getY(),(rule.area().min().z()+rule.area().max().z()+1)/2);
@@ -32,6 +36,7 @@ final class CombatAwareness {
         if(protectedEntity!=null&&protectedEntity.level()!=p.level())protectedEntity=null;
         if(w.tick()<nextScan)return;nextScan=w.tick()+4+Math.floorMod(w.token().hashCode(),3);scans++;
         var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
+        var hostilePositions=new dev.mineagent.runtime.core.task.SpatialNeighbors<LivingEntity>(entities.stream().filter(e->e instanceof Enemy).toList(),4,e->new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()));
         for(var e:entities){
             boolean forbidden=e instanceof net.minecraft.world.entity.player.Player||e.isAlliedTo(p)||e instanceof OwnableEntity own&&own.getOwnerReference()!=null||rule.excluded().contains(e.getUUID());
             boolean self=e instanceof Mob mob&&mob.getTarget()==p;
@@ -40,7 +45,7 @@ final class CombatAwareness {
             if(forbidden&&!self&&!protect&&!attacked)continue;
             boolean specified=e.getUUID().toString().equals(rule.target());
             if(!(e instanceof Enemy)&&!self&&!protect&&!attacked&&!specified)continue;
-            double d=e.distanceTo(p);boolean sight=p.hasLineOfSight(e);
+            double d=e.distanceTo(p);boolean sight=sight(w,e);
             boolean approaching=e.getDeltaMovement().dot(p.position().subtract(e.position()))>0;
             boolean imminent=sight&&e instanceof Enemy&&e instanceof Mob nativeMob&&!nativeMob.isNoAi()&&(approaching&&d<6||nativeMob.getTarget()==null&&d<3);
             boolean eligible=switch(rule.engagement()){
@@ -53,7 +58,7 @@ final class CombatAwareness {
             boolean assigned=rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(e.getX(),e.getY(),e.getZ()));
             if(forbidden||e.position().distanceTo(center)>rule.leash()&&!assigned&&!(self||protect||attacked||imminent))eligible=false;
             var actual=NativeCombatStates.read(e,p);
-            long neighbors=entities.stream().filter(other->other!=e&&other instanceof Enemy&&other.distanceToSqr(e)<16).count();
+            long neighbors=hostilePositions.count(new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()),4,e);
             double score=(self?8:0)+(protect?18+(NativeCombatStates.meleeAt(e,protectedEntity,protectedEntity.position())?30:0):0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);
             rows.add(new Threat(e,actual,eligible,protect,self||protect||attacked||imminent,score));
             if(eligible&&rule.engagement()==CombatPolicy.Engagement.CLEAR_AREA){var previous=lastSeen.put(e.getUUID(),new Seen(e,e.position(),w.tick()));if(previous!=null&&w.tick()-previous.tick>20)w.session.add("threatReacquisitions",1);}
@@ -66,12 +71,15 @@ final class CombatAwareness {
     }
     Vec3 center(SkillWork w){return protectedEntity!=null?protectedEntity.position():anchor==null?w.player().position():anchor;}
     int contacts(SkillWork w){return (int)threats.stream().filter(t->t.entity.isAlive()&&NativeCombatStates.meleeAt(t.entity,w.player(),w.player().position())).count();}
-    boolean flanked(SkillWork w){var p=w.player().position();for(var a:threats)if(a.entity.distanceTo(w.player())<6)for(var b:threats)if(a!=b&&b.entity.distanceTo(w.player())<6&&a.entity.position().subtract(p).normalize().dot(b.entity.position().subtract(p).normalize())<-.2)return true;return false;}
+    boolean flanked(SkillWork w){geometry(w);if(cachedFlanked!=null)return cachedFlanked;var p=w.player();var angles=new ArrayList<Double>();
+        for(var threat:threats){var e=threat.entity;if(e.isAlive()&&e.distanceToSqr(p)<36&&Math.abs(e.getY()-p.getY())<3){var delta=e.position().subtract(p.position());if(delta.horizontalDistanceSqr()>.001)angles.add(Math.atan2(delta.z,delta.x));}}
+        return cachedFlanked=dev.mineagent.runtime.core.task.SpatialNeighbors.opposing(angles,Math.acos(-.2));
+    }
     double risk(SkillWork w,Vec3 point){
         double risk=0;for(var threat:threats){var e=threat.entity;if(!e.isAlive())continue;double d=e.position().distanceTo(point),future=e.position().add(e.getDeltaMovement().scale(5)).distanceTo(point);risk+=Math.max(0,5-Math.min(d,future))*2;
             if(NativeCombatStates.meleeAt(e,w.player(),point))risk+=threat.state.openingTicks(w.player().level().getGameTime())>=6?2:threat.state.meleeRestricted()?3:18;
             double areaRange=threat.state.attacks().stream().filter(a->a.kind().equals("AREA")&&a.running()).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
-            if(areaRange>0&&d<areaRange+1)risk+=30+Math.max(0,areaRange-d)*5;if(threat.state.ranged()&&e.hasLineOfSight(w.player()))risk+=Math.max(0,8-d);
+            if(areaRange>0&&d<areaRange+1)risk+=30+Math.max(0,areaRange-d)*5;if(threat.state.ranged()&&reverseSight(w,e))risk+=Math.max(0,8-d);
         }
         for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;
         return risk;

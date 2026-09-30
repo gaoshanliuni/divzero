@@ -40,7 +40,10 @@ public final class MineAgentCommands {
                     .then(Commands.literal("relocate").then(Commands.argument("token",StringArgumentType.word()).suggests((c,b)->dev.mineagent.runtime.neoforge.WorldIdentityRuntime.suggestToken(c.getSource(),b)).executes(c->dev.mineagent.runtime.neoforge.WorldIdentityRuntime.choose(c.getSource(),"RELOCATE",null,StringArgumentType.getString(c,"token")))))
                     .then(Commands.literal("restore_root").then(Commands.argument("token",StringArgumentType.word()).suggests((c,b)->dev.mineagent.runtime.neoforge.WorldIdentityRuntime.suggestToken(c.getSource(),b)).executes(c->dev.mineagent.runtime.neoforge.WorldIdentityRuntime.choose(c.getSource(),"RESTORE_ROOT",null,StringArgumentType.getString(c,"token"))))))
                 .then(Commands.literal("panel")
-                        .executes(context -> openPanel(context.getSource())))
+                        .executes(context -> openPanel(context.getSource()))
+                        .then(Commands.argument("agent",StringArgumentType.string())
+                            .suggests((c,b)->net.minecraft.commands.SharedSuggestionProvider.suggest(MineAgentRuntimeServices.bodies(c.getSource().getServer()).definitions().stream().map(a->StringArgumentType.escapeIfRequired(a.displayName())),b))
+                            .executes(c->openAgentPanel(c.getSource(),StringArgumentType.getString(c,"agent")))))
                 .then(Commands.literal("create")
                         .requires(source -> source.getPlayer() != null && MineAgentRuntimeServices.permissions(source.getServer())
                                 .allowed(source.getPlayer().getUUID(),
@@ -73,12 +76,24 @@ public final class MineAgentCommands {
         try {
             net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
                     source.getPlayerOrException(),
-                    new dev.mineagent.runtime.neoforge.network.MineAgentPayloads.OpenPanel("OVERVIEW"));
+                    new dev.mineagent.runtime.neoforge.network.MineAgentPayloads.OpenPanel("WORKSPACE"));
             return 1;
         } catch (Exception failure) {
             source.sendFailure(Component.literal("只能由游戏内玩家打开控制中心"));
             return 0;
         }
+    }
+
+    private static int openAgentPanel(CommandSourceStack source,String name){
+        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);
+        try{
+            var player=source.getPlayerOrException();
+            if(!MineAgentRuntimeServices.permissions(source.getServer()).allowed(player.getUUID(),source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),PermissionAction.CHAT))throw new SecurityException("CHAT_FORBIDDEN");
+            var matches=MineAgentRuntimeServices.bodies(source.getServer()).definitions().stream().filter(a->a.displayName().equalsIgnoreCase(name)||a.agentId().toString().equalsIgnoreCase(name)).toList();
+            if(matches.size()!=1){source.sendFailure(Component.literal(matches.isEmpty()?"未找到这个 AI；可用 /ai list 查看名称。":"有多个同名 AI，请使用其唯一 ID。"));return 0;}
+            var agent=matches.getFirst();var payload=new com.google.gson.JsonObject();payload.addProperty("agentId",agent.agentId().toString());payload.addProperty("name",agent.displayName());
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(java.util.UUID.randomUUID(),"agentPanelOpen",payload.toString()));return 1;
+        }catch(Exception failure){source.sendFailure(Component.literal("无法打开 AI 专属面板："+failure.getMessage()));return 0;}
     }
 
     private static int create(CommandSourceStack source, String name) {

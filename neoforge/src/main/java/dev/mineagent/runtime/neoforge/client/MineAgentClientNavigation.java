@@ -10,6 +10,7 @@ public final class MineAgentClientNavigation {
     }
 
     public static void open(MineAgentPayloads.OpenPanel payload) {
+        if(payload.section().equals("WORKSPACE")){NativeWorkspaceScreen.open();return;}
         PanelSection section;
         try {
             section = PanelSection.valueOf(payload.section());
