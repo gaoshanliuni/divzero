@@ -14,6 +14,4 @@ public abstract class AgentSelectorNameMixin {
         if(!reader.canRead()||StringReader.isQuotedStringStart(reader.peek()))return reader.readString();
         int start=reader.getCursor();while(reader.canRead()&&!Character.isWhitespace(reader.peek()))reader.skip();return reader.getString().substring(start,reader.getCursor());
     }
-    @ModifyConstant(method="parseNameOrUUID",constant=@Constant(intValue=16))
-    private int divzero$displayNameLength(int original){return 128;}
 }

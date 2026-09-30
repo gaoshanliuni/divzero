@@ -7,6 +7,20 @@ import java.time.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class AgentPersonaServiceTest {
+    @Test void renamePreservesTextIdentityActivePersonaAndRejectsStaleEditor()throws Exception{
+        var file=dir.resolve("rename.db");UUID id=UUID.randomUUID();
+        try(var service=AgentPersonaService.open(file,world,clock)){
+            var original=service.saveProfile(a,owner,false,id,"旧名称","保留完整人设\n第二行");
+            var active=service.save(a,owner,false,UUID.randomUUID(),0,"当前独立人设").persona();
+            var renamed=service.renameProfile(a,collaborator,false,id,original.revision(),"新名称");
+            assertEquals(id,renamed.id());assertEquals(original.text(),renamed.text());assertEquals(original.createdAt(),renamed.createdAt());
+            assertEquals(2,renamed.revision());assertEquals(active,service.read(a,owner,false));
+            assertThrows(IllegalStateException.class,()->service.renameProfile(a,owner,false,id,1,"旧编辑覆盖"));
+            assertThrows(SecurityException.class,()->service.renameProfile(a,other,true,id,2,"越权"));
+            assertTrue(service.profiles(a,owner,false,"旧名称",0).isEmpty());
+        }
+        try(var service=AgentPersonaService.open(file,world,clock)){assertEquals("新名称",service.profile(a,owner,false,id).name());}
+    }
     @TempDir Path dir;
     final UUID world=UUID.randomUUID(),owner=UUID.randomUUID(),collaborator=UUID.randomUUID(),other=UUID.randomUUID();
     final AgentDefinition a=new AgentDefinition(UUID.randomUUID(),"建筑师","personaA",owner,AgentMode.CREATOR,Set.of(collaborator));

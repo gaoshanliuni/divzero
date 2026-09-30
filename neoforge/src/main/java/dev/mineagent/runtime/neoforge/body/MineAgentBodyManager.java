@@ -50,6 +50,18 @@ public final class MineAgentBodyManager implements AutoCloseable {
     private Map<UUID, ChunkCoordinate> ticketCenters = Map.of();
     private RuntimeResourceLimits appliedLimits;
     private String ticketError = "";
+    private final Map<UUID,String> identityProblems=new LinkedHashMap<>();
+    private void requirePlayerName(String name,UUID self){
+        var nativeName=dev.mineagent.runtime.core.agent.AgentProfileNames.require(name);
+        if(server.getPlayerList().getPlayers().stream().anyMatch(p->!p.getUUID().equals(self)&&p.getGameProfile().name().equalsIgnoreCase(nativeName)))throw new IllegalArgumentException("AI 玩家名称与在线玩家重名");
+    }
+    private void moveScoreIdentity(String oldName,String name){
+        if(oldName==null||oldName.equals(name))return;var scoreboard=server.getScoreboard();
+        var old=net.minecraft.world.scores.ScoreHolder.forNameOnly(oldName);var next=net.minecraft.world.scores.ScoreHolder.forNameOnly(name);
+        for(var entry:scoreboard.listPlayerScores(old).object2IntEntrySet())if(scoreboard.getPlayerScoreInfo(next,entry.getKey())==null){scoreboard.getOrCreatePlayerScore(next,entry.getKey()).set(entry.getIntValue());}
+        var team=scoreboard.getPlayersTeam(oldName);if(team!=null&&scoreboard.getPlayersTeam(name)==null){scoreboard.addPlayerToTeam(name,team);scoreboard.removePlayerFromTeam(oldName,team);}
+    }
+
 
     public MineAgentBodyManager(MinecraftServer server) {
         this.server = server;
@@ -76,6 +88,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
     }
 
     public synchronized AgentDefinition create(String name, ServerPlayer owner, AgentMode mode) {
+        requirePlayerName(name,null);
         if(stopping)throw new IllegalStateException("BODY_SERVER_STOPPING");
         synchronizeCreationLimits();
         try {
@@ -107,6 +120,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
     ) {
         if(stopping)throw new IllegalStateException("BODY_SERVER_STOPPING");
         synchronizeCreationLimits();
+        requirePlayerName(name,null);
         AgentDefinition definition = registry.create(name, ownerPlayerId, mode);
         spawnBody(definition, level, position);
         return definition;
@@ -121,7 +135,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
         if(stopping)throw new IllegalStateException("BODY_SERVER_STOPPING");
         synchronizeCreationLimits();
         try {
-            var stored = persistentAgents.create(name, ownerPlayerId, AgentMode.CREATOR);
+            requirePlayerName(name,null);var stored = persistentAgents.create(name, ownerPlayerId, AgentMode.CREATOR);
             registry.restore(stored.definition());
             spawnBody(stored.definition(), level, position);
             return stored.definition();
@@ -160,6 +174,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
     }
 
     public synchronized boolean rename(UUID agentId, UUID playerId, boolean operator, String displayName) {
+        requirePlayerName(displayName,agentId);
         var persisted = persistentAgents.get(agentId);
         if (persisted.isPresent()) {
             try {
@@ -176,8 +191,8 @@ public final class MineAgentBodyManager implements AutoCloseable {
         }
         MineAgentPlayer body = bodies.get(agentId);
         if (body != null) {
-            body.setAgentDisplayName(displayName.strip());
-        }
+            String before=body.getGameProfile().name();body.setNativeName(displayName.strip());moveScoreIdentity(before,displayName.strip());dev.mineagent.runtime.neoforge.ui.ServerAgentSkins.refreshObservers(server,body);
+        }else if(identityProblems.remove(agentId)!=null)prepareRestoredBody(registry.get(agentId).orElseThrow());
         return true;
     }
 
@@ -572,6 +587,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
                     next.setAgentDisplayName(definition.displayName());next.connection.markClientLoaded();
                     next.connection.resetPosition();next.level().getChunkSource().move(next);
                     dev.mineagent.runtime.neoforge.integration.MineAgentAppearanceLifecycle.reapply(server,definition.agentId(),"respawn");
+                    dev.mineagent.runtime.neoforge.skill.SkillRuntime.bodyRespawned(next);
                 }
                 pendingRespawns.remove(pending.definition().agentId());
             }
@@ -597,6 +613,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
     public synchronized AgentDefinition createIdempotent(UUID operation,String name,ServerPlayer owner,AgentMode mode)throws Exception{
         if(stopping)throw new IllegalStateException("BODY_SERVER_STOPPING");
         synchronizeCreationLimits();
+        var same=registry.all().stream().filter(a->a.displayName().equalsIgnoreCase(name.strip())&&a.ownerPlayerId().equals(owner.getUUID())).findFirst();requirePlayerName(name,same.map(AgentDefinition::agentId).orElse(null));
         var stored=persistentAgents.createIdempotent(operation,name,owner.getUUID(),mode);
         if(registry.get(stored.definition().agentId()).isEmpty()){
             registry.restore(stored.definition());spawnBody(stored.definition(),owner.level(),owner.position().add(2,0,2));
@@ -604,16 +621,20 @@ public final class MineAgentBodyManager implements AutoCloseable {
         return registry.get(stored.definition().agentId()).orElseThrow();
     }
     public synchronized String bodyState(UUID agentId){
+        if(identityProblems.containsKey(agentId))return identityProblems.get(agentId);
         if(stopping)return "STOPPING";
         if(pendingSpawns.containsKey(agentId))return "RESTORING";
         var body=bodies.get(agentId);if(body==null)return "UNAVAILABLE";
-        if(body.deathAccepted()||body.endReturnAccepted()||!body.isAlive())return "RETURNING";
+        if(body.deathAccepted()||body.endReturnAccepted()||!body.isAlive())return pendingRespawns.containsKey(agentId)?"RETURNING":"DEAD";
         if(body.isSpectator())return "SPECTATOR";
         if(!body.canAct())return "UNAVAILABLE";
         return body.taskControlOwned()?"BUSY":"READY";
     }
 
     private void prepareRestoredBody(AgentDefinition definition){
+        try{requirePlayerName(definition.displayName(),definition.agentId());}catch(IllegalArgumentException invalid){identityProblems.put(definition.agentId(),"NAME_REQUIRES_RENAME");return;}
+        var previous=persistentAgents.previousProfileName(definition.agentId()).orElseGet(()->server.services().nameToIdCache().get(definition.agentId()).map(net.minecraft.server.players.NameAndId::name).orElse("MA_"+definition.agentId().toString().replace("-","").substring(0,12)));
+        moveScoreIdentity(previous,definition.displayName());
         var profile=new GameProfile(definition.agentId(),definition.profileName());
         var preparation=new net.minecraft.server.network.config.PrepareSpawnTask(server,new net.minecraft.server.players.NameAndId(profile));
         var connection=new MineAgentConnection((nativeServer,level,loadedProfile,info)->{
@@ -638,12 +659,23 @@ public final class MineAgentBodyManager implements AutoCloseable {
         bodies.put(definition.agentId(), body);
         dev.mineagent.runtime.neoforge.integration.MineAgentAppearanceLifecycle.reapply(
                 server, definition.agentId(), pendingRespawns.containsKey(definition.agentId()) ? "respawn" : "spawn");
+        dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(server);
         body.restoreDeadLogin();
         refreshResourceLimits();
     }
 
+    public synchronized boolean autoRespawn(UUID agent){return config.flag("agent."+agent+".autoRespawn",true);}
+    public synchronized long respawnRevision(UUID agent){return Long.parseLong(config.snapshot().values().getOrDefault("agent."+agent+".respawnRevision","0"));}
+    public synchronized Map<String,Object> respawnPolicy(UUID agent){return Map.of("enabled",autoRespawn(agent),"revision",respawnRevision(agent));}
+    public synchronized Map<String,Object> setAutoRespawn(UUID agent,long expected,boolean enabled){
+        if(!server.isSameThread()||registry.get(agent).isEmpty())throw new IllegalStateException("AGENT_NOT_FOUND");if(expected!=respawnRevision(agent))throw new IllegalStateException("RESPAWN_POLICY_CHANGED");var state=config.snapshot();
+        if(!config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(state.revision(),Map.of("agent."+agent+".autoRespawn",Boolean.toString(enabled),"agent."+agent+".respawnRevision",Long.toString(expected+1))),true).accepted())throw new IllegalStateException("RESPAWN_POLICY_SAVE_FAILED");
+        if(!enabled)pendingRespawns.computeIfPresent(agent,(id,pending)->pending.deadBody().endReturnAccepted()?pending:null);else{var body=bodies.get(agent);if(body!=null&&(body.deathAccepted()||!body.isAlive()))scheduleRespawn(body);}
+        return Map.of("status","APPLIED","policy",respawnPolicy(agent));
+    }
+    public synchronized Map<String,Object> respawnNow(UUID agent){var body=bodies.get(agent);if(body==null||!body.deathAccepted()||body.isAlive())throw new IllegalStateException("AI_NOT_WAITING_RESPAWN");var definition=registry.get(agent).orElseThrow();pendingRespawns.putIfAbsent(agent,new PendingRespawn(definition,body,server.getTickCount()+1));return Map.of("status","STARTED","agentId",agent);}
     private synchronized void scheduleRespawn(MineAgentPlayer deadBody) {
-        if(dev.mineagent.runtime.neoforge.skill.IsolatedCombatArena.suppressRespawn(deadBody))return;
+        if(stopping||!deadBody.endReturnAccepted()&&!autoRespawn(deadBody.agentId())||dev.mineagent.runtime.neoforge.skill.IsolatedCombatArena.suppressRespawn(deadBody))return;
         AgentDefinition definition = registry.get(deadBody.agentId()).orElse(null);
         if (definition == null || bodies.get(deadBody.agentId())!=deadBody || pendingRespawns.containsKey(deadBody.agentId())
                 ||!deadBody.deathAccepted()&&!deadBody.endReturnAccepted()) {

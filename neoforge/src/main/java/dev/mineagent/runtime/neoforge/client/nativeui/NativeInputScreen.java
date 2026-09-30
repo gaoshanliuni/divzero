@@ -13,7 +13,7 @@ public class NativeInputScreen extends ModularUIScreen implements NativeComposit
     @Override public void tick(){super.tick();ime.update();}
     @Override public boolean preeditUpdated(PreeditEvent event){return ime.preedit(event);}
     @Override public boolean nativeComposing(){return ime.composing();}
-    @Override public boolean keyPressed(KeyEvent event){return ime.consume(event)||super.keyPressed(event);}
+    @Override public boolean keyPressed(KeyEvent event){return ime.consume(event)||ime.shortcut(event)||super.keyPressed(event);}
     @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partial){super.extractRenderState(graphics,mouseX,mouseY,partial);ime.render(graphics,mouseX,mouseY,partial);}
     java.util.Map<String,Object> smokeInputState(){if(!Boolean.getBoolean("mineagent.skillSmoke")&&!Boolean.getBoolean("mineagent.nativeUiSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return ime.observation();}
     @Override public void removed(){ime.release();super.removed();}

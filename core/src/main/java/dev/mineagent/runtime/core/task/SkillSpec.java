@@ -11,6 +11,10 @@ public record SkillSpec(String id,Kind kind,String actor,String dimension,String
     public SkillSpec(String id,Kind kind,String actor,String dimension,String target,Area area,List<Point> route,boolean repeat,boolean defend,boolean allowTeleport,boolean pingPong,boolean till,double startDistance,double stopDistance,int dwellTicks,int limit,String crop){this(id,kind,actor,dimension,target,area,route,repeat,defend,allowTeleport,pingPong,till,startDistance,stopDistance,dwellTicks,limit,crop,null,false);}
     public String title(){return switch(kind){case IDLE->"待命";case WANDER->"区域漫步";case FOLLOW->"持续跟随";case PATROL->"路线巡逻";case GUARD->"区域警戒";case COMBAT->"战斗";case FARM->"维护农田";case FISH->"钓鱼";};}
     public SkillSpec withCombat(CombatPolicy policy){return new SkillSpec(id,kind,actor,dimension,target,area,route,repeat,policy.engagement()!=CombatPolicy.Engagement.NONE,allowTeleport,pingPong,till,startDistance,stopDistance,dwellTicks,limit,crop,policy,resumePrevious);}
+    public SkillSpec afterFollowRespawn(String nextDimension){
+        if(!kind.equals(Kind.FOLLOW)||!actor.equals("ai")||area!=null||combat.area()!=null)throw new IllegalArgumentException("RESPAWN_REGION_REQUIRES_RECHECK");
+        return new SkillSpec(id,kind,actor,nextDimension,target,area,route,repeat,defend,allowTeleport,pingPong,till,startDistance,stopDistance,dwellTicks,limit,crop,combat,resumePrevious);
+    }
     public record Point(double x,double y,double z){public Point{if(!Double.isFinite(x)||!Double.isFinite(y)||!Double.isFinite(z)||Math.abs(x)>30_000_000||Math.abs(z)>30_000_000||Math.abs(y)>4096)throw new IllegalArgumentException("SKILL_POINT");}}
     public record Area(Point min,Point max){
         public Area{Objects.requireNonNull(min);Objects.requireNonNull(max);if(min.x>max.x||min.y>max.y||min.z>max.z||max.x-min.x>2047||max.y-min.y>2047||max.z-min.z>2047)throw new IllegalArgumentException("SKILL_AREA");}

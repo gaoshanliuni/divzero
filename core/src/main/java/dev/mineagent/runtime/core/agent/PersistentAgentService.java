@@ -19,6 +19,8 @@ public final class PersistentAgentService implements AutoCloseable {
     private final AgentRegistry registry;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<UUID, Long> revisions = new LinkedHashMap<>();
+    private final Map<UUID,String> previousProfileNames=new LinkedHashMap<>();
+    public synchronized Optional<String> previousProfileName(UUID id){return Optional.ofNullable(previousProfileNames.get(id));}
     private final Map<UUID,Long> authorityGenerations=new LinkedHashMap<>();
 
     private PersistentAgentService(
@@ -32,6 +34,13 @@ public final class PersistentAgentService implements AutoCloseable {
         for (var record : repository.list(worldId, NAMESPACE)) {
             PersistentAgent agent = mapper.readValue(record.payload(), PersistentAgent.class);
             registry.restore(agent.definition());
+            var canonical=registry.get(agent.definition().agentId()).orElseThrow();
+            if(!canonical.profileName().equals(agent.definition().profileName())){
+                previousProfileNames.put(canonical.agentId(),agent.definition().profileName());
+                var migrated=new PersistentAgent(agent.revision()+1,canonical,agent.authorityGeneration());
+                if(!repository.compareAndSet(worldId,NAMESPACE,canonical.agentId().toString(),record.revision(),mapper.writeValueAsString(migrated),System.currentTimeMillis()).accepted())throw new IllegalStateException("AGENT_PROFILE_MIGRATION_CONFLICT");
+                agent=migrated;
+            }
             revisions.put(agent.definition().agentId(), agent.revision());authorityGenerations.put(agent.definition().agentId(),agent.authorityGeneration());
         }
     }

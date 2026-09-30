@@ -26,7 +26,7 @@ public record AgentDefinition(
     }
 
     public AgentDefinition withDisplayName(String name) {
-        return new AgentDefinition(agentId, name, profileName, ownerPlayerId, mode, collaboratorPlayerIds);
+        return new AgentDefinition(agentId, name, name, ownerPlayerId, mode, collaboratorPlayerIds);
     }
 
     public AgentDefinition withMode(AgentMode newMode) {

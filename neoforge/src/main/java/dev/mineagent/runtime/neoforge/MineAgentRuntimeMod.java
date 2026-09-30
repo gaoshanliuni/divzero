@@ -574,6 +574,7 @@ public final class MineAgentRuntimeMod {
     @SubscribeEvent
     public void onServerChat(net.neoforged.neoforge.event.ServerChatEvent event) {
         var player = event.getPlayer();
+        if(player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)return; // AI output is native chat, never fresh model input.
         var server = player.level().getServer();
         if(!WorldIdentityRuntime.ready(server))return;
         if(!MineAgentRuntimeServices.permissions(server).allowed(player.getUUID(),false,dev.mineagent.runtime.api.permission.PermissionAction.CHAT))return;

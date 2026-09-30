@@ -43,7 +43,7 @@ public final class AgentRegistry {
         if (agents.values().stream().anyMatch(agent -> normalizeName(agent.displayName()).equals(normalized))) {
             throw new IllegalArgumentException("AI 玩家名称已存在");
         }
-        String profileName = "MA_" + id.toString().replace("-", "").substring(0, 12);
+        String profileName = AgentProfileNames.require(displayName);
         var definition = new AgentDefinition(id, displayName.strip(), profileName, ownerPlayerId, mode, java.util.Set.of());
         agents.put(id, definition);
         return definition;
@@ -57,7 +57,7 @@ public final class AgentRegistry {
                 || agents.values().stream().anyMatch(agent -> normalizeName(agent.displayName()).equals(normalized))) {
             throw new IllegalArgumentException("persisted AI player conflicts with active registry");
         }
-        agents.put(definition.agentId(), definition);
+        agents.put(definition.agentId(), AgentProfileNames.supported(definition.displayName())?definition.withDisplayName(definition.displayName()):definition);
     }
 
     public synchronized Optional<AgentDefinition> get(UUID agentId) {
@@ -103,7 +103,7 @@ public final class AgentRegistry {
                 && normalizeName(agent.displayName()).equals(normalized))) {
             throw new IllegalArgumentException("AI 玩家名称已存在");
         }
-        agents.put(agentId, current.withDisplayName(displayName.strip()));
+        agents.put(agentId, current.withDisplayName(AgentProfileNames.require(displayName)));
         return true;
     }
 

@@ -4,9 +4,9 @@
   "package": "dev.mineagent.runtime.neoforge.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "AgentProfileAccess",
     "BoostKnockbackMixin",
     "CombatCriticalAccess",
-    "AgentCommandNameMixin",
     "AgentSelectorNameMixin",
     "AgentEntityTrackerAccess",
     "AgentTrackedEntityAccess",

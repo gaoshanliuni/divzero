@@ -27,7 +27,7 @@ public final class ServerAgentSkins {
   GameProfile old=body.getGameProfile();var props=ImmutableMultimap.<String,Property>builder();for(var entry:old.properties().entries())if(!entry.getKey().equals("textures"))props.put(entry.getKey(),entry.getValue());String data=JSON.writeValueAsString(Map.of("profileId",old.id().toString().replace("-",""),"profileName",old.name(),"textures",Map.of("SKIN",Map.of("url","mineagent:skin/"+skin.hash,"metadata",Map.of("model",skin.model.equals("slim")?"slim":"default")))));props.put("textures",new Property("textures",Base64.getEncoder().encodeToString(data.getBytes(java.nio.charset.StandardCharsets.UTF_8))));body.updateVisualProfile(new GameProfile(old.id(),old.name(),new PropertyMap(props.build())));
   refreshObservers(server,body);
  }
- private static void refreshObservers(MinecraftServer server,MineAgentPlayer body){
+ public static void refreshObservers(MinecraftServer server,MineAgentPlayer body){
   var remove=new ClientboundPlayerInfoRemovePacket(List.of(body.getUUID()));var info=ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(body));for(var viewer:server.getPlayerList().getPlayers())if(!(viewer instanceof MineAgentPlayer)){viewer.connection.send(remove);viewer.connection.send(info);}
   var chunkMap=body.level().getChunkSource().chunkMap;Object tracked=((dev.mineagent.runtime.neoforge.mixin.AgentEntityTrackerAccess)chunkMap).mineagent$entityMap().get(body.getId());if(tracked!=null){var tracker=((dev.mineagent.runtime.neoforge.mixin.AgentTrackedEntityAccess)tracked).mineagent$serverEntity();for(var viewer:chunkMap.getPlayersWatching(body)){tracker.removePairing(viewer);tracker.addPairing(viewer);}}
  }

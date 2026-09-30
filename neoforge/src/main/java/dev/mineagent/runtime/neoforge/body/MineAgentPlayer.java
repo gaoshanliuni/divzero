@@ -117,6 +117,15 @@ public final class MineAgentPlayer extends ServerPlayer {
 
     @Override public Component getName(){return agentDisplayName==null?super.getName():agentDisplayName;}
     @Override public Component getTabListDisplayName(){return agentDisplayName;}
+    public void setNativeName(String name){
+        name=dev.mineagent.runtime.core.agent.AgentProfileNames.require(name);var old=super.getGameProfile();
+        if(!name.equals(old.name())){
+            ((dev.mineagent.runtime.neoforge.mixin.AgentProfileAccess)this).divzero$profile(new GameProfile(old.id(),name,old.properties()));
+            if(visualProfile!=null)visualProfile=new GameProfile(visualProfile.id(),name,visualProfile.properties());
+            level().getServer().services().nameToIdCache().add(nameAndId());
+        }
+        setAgentDisplayName(name);refreshDisplayName();
+    }
     public void setAgentDisplayName(String displayName) {
         this.agentDisplayName = Component.literal(displayName);
         setCustomName(this.agentDisplayName);
@@ -230,7 +239,7 @@ public final class MineAgentPlayer extends ServerPlayer {
         if(isRemoved()||deathAccepted()||endReturnAccepted()||wonGame)return;
         super.showEndCredits();
         if(wonGame&&isRemoved()&&lifecycle.acceptEndReturn()){
-            stopBodyControlForReturn();deathCallback.accept(this);
+            stopBodyControlForReturn();try{dev.mineagent.runtime.neoforge.skill.SkillRuntime.bodyDied(this);}catch(RuntimeException failure){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("AI behavior death state could not be saved for {}",agentId,failure);}deathCallback.accept(this);
         }
     }
 
@@ -295,7 +304,7 @@ public final class MineAgentPlayer extends ServerPlayer {
     }
     public void nativeDeathAccepted(){
         if(getHealth()>0||!lifecycle.acceptDeath())return;
-        stopBodyControlForReturn();deathCallback.accept(this);
+        stopBodyControlForReturn();try{dev.mineagent.runtime.neoforge.skill.SkillRuntime.bodyDied(this);}catch(RuntimeException failure){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("AI behavior death state could not be saved for {}",agentId,failure);}deathCallback.accept(this);
     }
     private void stopBodyControlForReturn(){
         itemUseOperation=null;nativeUseFinished=false;

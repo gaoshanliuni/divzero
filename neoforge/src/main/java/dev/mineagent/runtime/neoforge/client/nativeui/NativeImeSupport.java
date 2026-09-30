@@ -36,6 +36,27 @@ final class NativeImeSupport {
         overlay=active&&!masked?new IMEPreeditOverlay(event,Minecraft.getInstance().font,10):null;return true;
     }
     boolean composing(){return composing;}
+    /** Text editors use the OS clipboard, independently of LDLib's object-editor clipboard cache. */
+    boolean shortcut(KeyEvent event){
+        update();if(editor==null||composing)return false;
+        int key=event.key(),mods=event.modifiers();boolean primary=(mods&(org.lwjgl.glfw.GLFW.GLFW_MOD_CONTROL|org.lwjgl.glfw.GLFW.GLFW_MOD_SUPER))!=0;
+        boolean paste=primary&&key==org.lwjgl.glfw.GLFW.GLFW_KEY_V||(mods&org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT)!=0&&key==org.lwjgl.glfw.GLFW.GLFW_KEY_INSERT;
+        boolean copy=primary&&(key==org.lwjgl.glfw.GLFW.GLFW_KEY_C||key==org.lwjgl.glfw.GLFW.GLFW_KEY_INSERT),cut=primary&&key==org.lwjgl.glfw.GLFW.GLFW_KEY_X,all=primary&&key==org.lwjgl.glfw.GLFW.GLFW_KEY_A;
+        if(!paste&&!copy&&!cut&&!all)return false;
+        var keyboard=Minecraft.getInstance().keyboardHandler;
+        if(editor instanceof TextArea area&&area instanceof dev.mineagent.runtime.neoforge.mixin.client.LdTextAreaEditAccess access){
+            if(all)access.divzero$selectAll();else if(paste&&area.isEditable())access.divzero$insert(keyboard.getClipboard().replace("\r\n","\n").replace('\r','\n'));
+            else if(copy||cut){keyboard.setClipboard(access.divzero$selection());if(cut&&area.isEditable())access.divzero$insert("");}
+            return true;
+        }
+        if(editor instanceof TextField field&&field instanceof dev.mineagent.runtime.neoforge.mixin.client.LdTextFieldEditAccess access){
+            if(all){field.setCursor(field.getValue().length());field.setSelection(0,field.getValue().length());}
+            else if(paste&&field.isEditable())field.insertText(keyboard.getClipboard());
+            else if(copy||cut){keyboard.setClipboard(access.divzero$selection());if(cut&&field.isEditable())field.insertText("");}
+            return true;
+        }
+        return false;
+    }
     boolean consume(KeyEvent event){return composing||ended!=0&&System.nanoTime()-ended<150_000_000L&&(event.key()==org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE||event.key()==org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER);}
     void render(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partial){update();if(overlay!=null){overlay.updateInputPosition(x,y);overlay.extractRenderState(graphics,mouseX,mouseY,partial);}}
     java.util.Map<String,Object> observation(){return java.util.Map.of("focusChanges",focusChanges,"areaChanges",areaChanges,"editor",editor==null?"":editor.getId(),"composing",composing);}

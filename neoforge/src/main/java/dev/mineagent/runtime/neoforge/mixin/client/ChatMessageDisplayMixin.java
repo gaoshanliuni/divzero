@@ -10,6 +10,7 @@ public abstract class ChatMessageDisplayMixin implements ChatDisplayAccess {
     @Shadow protected abstract void refreshTrimmedMessages();
     @Shadow private int chatScrollbarPos;
     @Shadow public abstract void scrollChat(int amount);
+    @Override public void mineagent$removeMessage(GuiMessage message){if(!allMessages.remove(message))return;int removed=0;for(int i=trimmedMessages.size()-1;i>=0;i--)if(trimmedMessages.get(i).parent()==message){if(i<chatScrollbarPos)removed++;trimmedMessages.remove(i);}chatScrollbarPos=Math.max(0,chatScrollbarPos-removed);scrollChat(0);}
     @Override public boolean mineagent$replaceMessage(GuiMessage before,GuiMessage after){
         int index=-1;for(int i=0;i<allMessages.size();i++)if(allMessages.get(i)==before){index=i;break;}if(index<0)return false;
         allMessages.set(index,after);int start=-1,end=-1;for(int i=0;i<trimmedMessages.size();i++)if(trimmedMessages.get(i).parent()==before){if(start<0)start=i;end=i+1;}

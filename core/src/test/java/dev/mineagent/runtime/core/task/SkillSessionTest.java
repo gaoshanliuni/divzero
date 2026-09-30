@@ -1,6 +1,13 @@
 package dev.mineagent.runtime.core.task;
 import com.fasterxml.jackson.databind.ObjectMapper;import org.junit.jupiter.api.Test;import java.util.*;import static org.junit.jupiter.api.Assertions.*;
 class SkillSessionTest {
+    @Test void respawnPreservesPolicyProgressAndExplicitStopWins()throws Exception{
+        var policy=CombatPolicy.parse(new ObjectMapper().readTree("{\"engagement\":\"PROTECT\",\"protect\":\"$owner\",\"strategy\":\"HIT_AND_RUN\"}"),CombatPolicy.defaults(SkillSpec.Kind.FARM,true,""));
+        var s=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,spec().withCombat(policy));
+        s.cursor(17);s.add("planted",8);s.receipt(Map.of("state","BODY_DIED_REOBSERVE"));s.waitForRespawn();
+        var restored=SkillSession.restore(s.snapshot());assertEquals("WAITING_RESPAWN",restored.reason());assertEquals(policy,restored.spec().combat());assertEquals(17,restored.cursor());assertEquals(8,restored.count("planted"));
+        restored.control(restored.revision(),"resume");assertTrue(restored.runnable());restored.control(restored.revision(),"stop");restored.waitForRespawn();assertEquals(SkillSession.State.CANCELLED,restored.state());
+    }
     private SkillSpec spec()throws Exception{return SkillSpec.parse(new ObjectMapper().readTree("{\"id\":\"farm\",\"kind\":\"FARM\",\"dimension\":\"minecraft:overworld\",\"min\":[0,64,0],\"max\":[4,65,4]}"),null);}
     @Test void cancelledWorkNeverResumesAndRetainsCounters()throws Exception{var s=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,spec());s.add("planted",18);s.transition(SkillSession.State.SUSPENDED,"DEFENDING");s.transition(SkillSession.State.RUNNING,"");s.control(1,"stop");assertEquals(18,s.count("planted"));assertThrows(IllegalStateException.class,()->s.control(2,"resume"));assertEquals(SkillSession.State.CANCELLED,SkillSession.restore(s.snapshot()).state());}
     @Test void savedUnknownActionRequiresObservationBeforeNewWork()throws Exception{var s=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,spec());s.receipt(Map.of("state","PREPARED","operation",UUID.randomUUID().toString()));var restored=SkillSession.restore(s.snapshot());assertThrows(IllegalStateException.class,()->restored.control(1,"resume"));restored.reconcile(1,Map.of("observedBlock","minecraft:air"));assertEquals(SkillSession.State.PAUSED,restored.state());restored.control(2,"resume");assertEquals(SkillSession.State.RUNNING,restored.state());assertEquals("PREPARED",restored.receipt().get("previousState"));}

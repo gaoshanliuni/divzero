@@ -53,7 +53,7 @@ final class CombatPrediction {
                 // Translate the tested observer position into the enemy's observed frame; preserve native reach shapes.
                 var relative=self.subtract(drift);double uncertainty=sample.uncertainty();boolean exposed=NativeCombatStates.meleeAt(entity,work.player(),relative);
                 if(!exposed){var toward=entity.position().subtract(relative).normalize();exposed=NativeCombatStates.meleeAt(entity,work.player(),relative.add(toward.scale(uncertainty)));}
-                if(exposed)worst=Math.max(worst,threat.state().openingTicks(work.player().level().getGameTime())>atTick+2?2:entity==opportunity?4:18);
+                if(exposed&&NativeCombatStates.meleeVisibleAt(entity,work.player(),self,drift))worst=Math.max(worst,threat.state().openingTicks(work.player().level().getGameTime())>atTick+2?2:entity==opportunity?4:18);
                 if(threat.state().areaAttack()&&!(entity instanceof net.minecraft.world.entity.monster.Ravager)&&!(entity instanceof net.minecraft.world.entity.monster.Creeper)&&vec(sample.position()).distanceTo(self)<8)worst=Math.max(worst,30);
             }risk+=worst;
         }return risk;

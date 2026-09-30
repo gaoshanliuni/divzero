@@ -19,7 +19,7 @@ public final class ServerConversations implements AutoCloseable {
     private static final ThreadLocal<UUID> STOP_REPLY=new ThreadLocal<>();
     private final Map<UUID,List<String>> capabilityReuse=new HashMap<>();
     private final Map<UUID,Flight> flights=new LinkedHashMap<>();
-    private static final class NativeReply{final ServerPlayer viewer;final UUID agent,conversation,assistant;final String name;int offset,thinkingOffset;boolean emitted;String deliveryState="";long lastSent,thinkingLastSent;NativeReply(ServerPlayer viewer,UUID agent,UUID conversation,UUID assistant,String name){this.viewer=viewer;this.agent=agent;this.conversation=conversation;this.assistant=assistant;this.name=name;}}
+    private static final class NativeReply{final ServerPlayer viewer;final UUID agent,conversation,assistant;final String name;int offset,thinkingOffset,nativeParts;boolean emitted;String deliveryState="";long lastSent,thinkingLastSent;NativeReply(ServerPlayer viewer,UUID agent,UUID conversation,UUID assistant,String name){this.viewer=viewer;this.agent=agent;this.conversation=conversation;this.assistant=assistant;this.name=name;}}
     private record PendingNative(ServerPlayer viewer,UUID agent,UUID conversation,String text,long expires,boolean automatic,long accessRevision,long order){PendingNative(ServerPlayer v,UUID a,UUID c,String t,long e,boolean automatic,long revision){this(v,a,c,t,e,automatic,revision,System.nanoTime());}}
     private record PendingWeb(ServerPlayer viewer,UUID agent,UUID conversation,Map<String,String> args,long order){}
     private final Map<UUID,PendingWeb> pendingWeb=new LinkedHashMap<>();
@@ -117,7 +117,7 @@ public final class ServerConversations implements AutoCloseable {
         var definition = new ConversationRichMessage(a.path("text").asText(), a.path("color").asText("#FFFFFF"), options);
         UUID boundConversation = conversation == null ? store.nativeConversation(viewer.getUUID(), agent).conversationId() : conversation;
         var saved = store.publishRich(viewer.getUUID(), agent, boundConversation, operation, definition);
-        var message = dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(requireAgent(agent).displayName(), " " + definition.text())
+        var message = net.minecraft.network.chat.Component.literal(definition.text())
                 .withStyle(style -> style.withColor(Integer.parseInt(definition.color().substring(1), 16)));
         for (int i = 0; i < options.size(); i++) {
             var b = options.get(i);
@@ -130,8 +130,8 @@ public final class ServerConversations implements AutoCloseable {
             };
             message.append(net.minecraft.network.chat.Component.literal(" [" + b.label() + "]").withStyle(style -> style.withUnderlined(true).withClickEvent(click)));
         }
-        viewer.sendSystemMessage(message);
-        return Map.of("status", "SENT", "buttons", options.size(), "conversationId", boundConversation, "messageId", saved.messageId());
+        boolean sent=dev.mineagent.runtime.neoforge.chat.AiPlayerChat.send(viewer,agent,message);
+        return Map.of("status",sent?"SENT":"STORED_NOT_DELIVERED","buttons",options.size(),"conversationId",boundConversation,"messageId",saved.messageId());
     }
     private Map<String,Object> richView(ServerPlayer viewer, UUID agent, UUID conversation, UUID message) throws Exception {
         var saved = store.richMessage(viewer.getUUID(), agent, conversation, message);
@@ -180,7 +180,13 @@ public final class ServerConversations implements AutoCloseable {
                 boolean done=terminal&&n.offset+body.length()>=message.textLength()&&n.thinkingOffset+thought.length()>=thinking.textLength();
                 if(!n.emitted||!body.isEmpty()||!thought.isEmpty()||!n.deliveryState.equals(usage.requestState())){
                     String color=MineAgentRuntimeServices.config(server).snapshot().values().getOrDefault("agent."+n.agent+".chatColor","#FFFFFF");
-                    var data=Map.of("agent",n.agent.toString(),"name",n.name,"bodyOffset",n.offset,"body",body,"thinkingOffset",n.thinkingOffset,"thinking",thought,"done",done,"state",usage.requestState(),"color",color);
+                    boolean nativeAllowed=true;
+                    if(!n.emitted||!body.isEmpty()){
+                        var visible=net.minecraft.network.chat.Component.literal(body.isEmpty()?"…":body);
+                        if(color.matches("#[A-Fa-f0-9]{6}"))visible.withStyle(style->style.withColor(Integer.parseInt(color.substring(1),16)));
+                        nativeAllowed=dev.mineagent.runtime.neoforge.chat.AiPlayerChat.stream(n.viewer,n.agent,entry.getKey(),body.isEmpty()?"typing":"body:"+n.offset,visible);if(nativeAllowed)n.nativeParts++;
+                    }
+                    var data=new LinkedHashMap<String,Object>();data.put("agent",n.agent.toString());data.put("name",requireAgent(n.agent).displayName());data.put("bodyOffset",n.offset);data.put("body",body);data.put("thinkingOffset",n.thinkingOffset);data.put("thinking",thought);data.put("done",done);data.put("state",usage.requestState());data.put("color",color);data.put("nativeParts",n.nativeParts);data.put("nativeAllowed",nativeAllowed);
                     net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(n.viewer,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(entry.getKey(),"nativeChatStream",json.writeValueAsString(data)));
                     n.offset+=body.length();n.thinkingOffset+=thought.length();n.deliveryState=usage.requestState();n.emitted=true;
                 }

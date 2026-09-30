@@ -109,5 +109,10 @@ public final class NativeCombatStates {
         var drift=new Vec3(velocity.x*horizon,0,velocity.z*horizon);if(drift.lengthSqr()>4)drift=drift.normalize().scale(2);
         return meleeAt(enemy,actor,position.subtract(drift));
     }
+    /** Geometry and visibility are separate. Ordinary native melee cannot damage through a solid wall. */
+    public static boolean meleeVisibleAt(LivingEntity enemy,LivingEntity actor,Vec3 position,Vec3 sourceDrift){
+        if(enemy instanceof net.minecraft.world.entity.monster.Vex||!enemy.getClass().getName().startsWith("net.minecraft.")&&!(enemy instanceof net.minecraft.world.entity.player.Player))return true;
+        return enemy.level().clip(new net.minecraft.world.level.ClipContext(enemy.getEyePosition().add(sourceDrift),position.add(0,actor.getEyeHeight(),0),net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,enemy)).getType()==HitResult.Type.MISS;
+    }
     private NativeCombatStates(){}
 }

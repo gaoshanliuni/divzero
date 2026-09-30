@@ -10,7 +10,7 @@ import java.util.*;
 public final class AgentPersonaService implements AutoCloseable {
     public record Persona(UUID agentId,long revision,String text,UUID updatedBy,long updatedAtEpochMillis){}
     public record Result(boolean accepted,boolean duplicate,String code,long appliedRevision,Persona persona){}
-    public record Profile(UUID id,String name,String text,long createdAt){}
+    public record Profile(UUID id,String name,String text,long createdAt,long revision){}
     private final Connection db;private final UUID world;private final Clock clock;
     private AgentPersonaService(Connection db,UUID world,Clock clock)throws SQLException{
         this.db=db;this.world=Objects.requireNonNull(world);this.clock=Objects.requireNonNull(clock);
@@ -20,6 +20,8 @@ public final class AgentPersonaService implements AutoCloseable {
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_persona_operations_v1(world_id TEXT NOT NULL,operation_id TEXT NOT NULL,fingerprint TEXT NOT NULL,applied_revision INTEGER NOT NULL,PRIMARY KEY(world_id,operation_id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_persona_profiles_v1(world_id TEXT NOT NULL,agent_id TEXT NOT NULL,profile_id TEXT NOT NULL,name TEXT NOT NULL,text TEXT NOT NULL,created_at INTEGER NOT NULL,deleted INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(world_id,agent_id,profile_id))");
         }
+        boolean revision=false;try(var s=db.createStatement();var rows=s.executeQuery("PRAGMA table_info(mineagent_persona_profiles_v1)")){while(rows.next())if(rows.getString("name").equals("revision"))revision=true;}
+        if(!revision)try(var s=db.createStatement()){s.execute("ALTER TABLE mineagent_persona_profiles_v1 ADD COLUMN revision INTEGER NOT NULL DEFAULT 1");}
     }
     public static AgentPersonaService open(Path path,UUID world,Clock clock)throws Exception{
         Path p=path.toAbsolutePath().normalize();if(p.getParent()!=null)Files.createDirectories(p.getParent());Connection db=DriverManager.getConnection("jdbc:sqlite:"+p);
@@ -35,8 +37,8 @@ public final class AgentPersonaService implements AutoCloseable {
         }return List.copyOf(result);
     }
     public synchronized Profile profile(AgentDefinition agent,UUID viewer,boolean operator,UUID id)throws SQLException{
-        authorize(agent,viewer,operator);try(var q=db.prepareStatement("SELECT name,text,created_at FROM mineagent_persona_profiles_v1 WHERE world_id=? AND agent_id=? AND profile_id=? AND deleted=0")){
-            q.setString(1,world.toString());q.setString(2,agent.agentId().toString());q.setString(3,id.toString());try(var row=q.executeQuery()){if(!row.next())throw new IllegalArgumentException("PERSONA_PROFILE_NOT_FOUND");return new Profile(id,row.getString(1),row.getString(2),row.getLong(3));}
+        authorize(agent,viewer,operator);try(var q=db.prepareStatement("SELECT name,text,created_at,revision FROM mineagent_persona_profiles_v1 WHERE world_id=? AND agent_id=? AND profile_id=? AND deleted=0")){
+            q.setString(1,world.toString());q.setString(2,agent.agentId().toString());q.setString(3,id.toString());try(var row=q.executeQuery()){if(!row.next())throw new IllegalArgumentException("PERSONA_PROFILE_NOT_FOUND");return new Profile(id,row.getString(1),row.getString(2),row.getLong(3),row.getLong(4));}
         }
     }
     /** Immutable named snapshots. Switching still uses the active persona's separate CAS save. */
@@ -46,6 +48,12 @@ public final class AgentPersonaService implements AutoCloseable {
             q.setString(1,world.toString());q.setString(2,agent.agentId().toString());q.setString(3,id.toString());q.setString(4,name);q.setString(5,text);q.setLong(6,clock.millis());q.executeUpdate();
         }
         var saved=profile(agent,viewer,operator,id);if(!saved.name.equals(name)||!saved.text.equals(text))throw new IllegalStateException("PERSONA_PROFILE_ID_REUSED");return saved;
+    }
+    public synchronized Profile renameProfile(AgentDefinition agent,UUID viewer,boolean operator,UUID id,long expected,String name)throws SQLException{
+        authorize(agent,viewer,operator);if(id==null||expected<1||name==null||name.isBlank()||name.length()>128||name.codePoints().anyMatch(Character::isISOControl))throw new IllegalArgumentException("PERSONA_PROFILE_INPUT");
+        try(var q=db.prepareStatement("UPDATE mineagent_persona_profiles_v1 SET name=?,revision=revision+1 WHERE world_id=? AND agent_id=? AND profile_id=? AND revision=? AND deleted=0")){
+            q.setString(1,name.strip());q.setString(2,world.toString());q.setString(3,agent.agentId().toString());q.setString(4,id.toString());q.setLong(5,expected);if(q.executeUpdate()!=1)throw new IllegalStateException("PERSONA_PROFILE_STALE");
+        }return profile(agent,viewer,operator,id);
     }
     public synchronized void removeProfile(AgentDefinition agent,UUID viewer,boolean operator,UUID id)throws SQLException{
         authorize(agent,viewer,operator);try(var q=db.prepareStatement("UPDATE mineagent_persona_profiles_v1 SET deleted=1 WHERE world_id=? AND agent_id=? AND profile_id=?")){q.setString(1,world.toString());q.setString(2,agent.agentId().toString());q.setString(3,id.toString());q.executeUpdate();}

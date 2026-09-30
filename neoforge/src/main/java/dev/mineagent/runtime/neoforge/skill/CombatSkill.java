@@ -36,7 +36,7 @@ final class CombatSkill {
         }
         boolean projectileDanger=w.combat.incoming(w);
         boolean cooling=w.combatInterrupted&&w.tick()-w.combat.lastThreatTick<40;
-        boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.urgent()&&t.entity().distanceTo(w.player())<8);
+        boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.urgent()&&t.entity().distanceTo(w.player())<8&&!w.combat.deferred(w,t.entity()));
         if(target==null&&!projectileDanger&&!cooling&&!closeThreat&&!w.contactEscape){
             if(w.combatInterrupted&&w.player().getHealth()<w.player().getMaxHealth()*.7&&w.player().getFoodData().getFoodLevel()<20&&safeToEat(w)&&w.acquire()&&eat(w))return true;
             var lastSeen=w.combat.lastSeenSearch(w);
@@ -45,7 +45,7 @@ final class CombatSkill {
                 phase(w,"REACQUIRE_THREAT");w.session.transition(State.SUSPENDED,"CHECKING_LAST_THREAT_POSITION");w.actor.sprint(w.token(),false);w.actor.aim(w.token(),lastSeen.add(0,w.player().getEyeHeight(),0));
                 String navigation=w.actor.move(w.token(),lastSeen);if(Set.of("NO_PATH","FAILED","ARRIVED","CANCELLED").contains(navigation))w.combat.searchFailed();return true;
             }
-            finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,"NO_ELIGIBLE_THREATS");
+            finishDefense(w);return spec.kind()==SkillSpec.Kind.COMBAT&&idleCombat(w,w.combat.hasDeferred(w)?"TARGET_UNREACHABLE_WAITING_CHANGE":"NO_ELIGIBLE_THREATS");
         }
         if(!w.combatInterrupted){
             w.combatInterrupted=true;w.suspendedPhase=w.session.phase();
@@ -110,6 +110,15 @@ final class CombatSkill {
             w.session.add("noSafeDamageDodgeTicks",1);
         }else if(w.tactic.equals("DAMAGE_EVASION")){
             w.positioning.reset();phase(w,"COUNTER_REASSESS");w.session.add("postEvasionReassessments",1);
+        }
+        if(target!=null&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE&&strikeInReach(w,target,contacts))return;
+        if(target!=null&&!p.hasLineOfSight(target)&&contacts==0&&!w.combat.incoming(w)&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){
+            if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.haltMotion(w.token());phase(w,"TARGET_OBSCURED");return;}
+            // Use real navigation around the obstacle, while the ready-hit check still runs every local tick.
+            phase(w,"PURSUE_OBSCURED");w.actor.sprint(w.token(),true);String navigation=w.actor.move(w.token(),target.position());
+            if(!w.actor.recovering()&&Set.of("NO_PATH","UNREACHABLE","INTERACTION_BLOCKED","FAILED","ARRIVED").contains(navigation)){
+                w.combat.unreachable(w,target);w.actor.stop(w.token());w.positioning.reset();w.session.phase("TARGET_UNREACHABLE_WAITING_CHANGE");
+            }return;
         }
         if(target!=null&&!target.onGround()&&target.distanceTo(p)<8&&w.prediction.risk(w,p.position(),6,null)>=18
                 &&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
@@ -191,7 +200,7 @@ final class CombatSkill {
         }
         if(!ready){phase(w,"COOLDOWN_GUARD");shield(w,target);return;}
         Vec3 exit=w.positioning.attackExit(w,target);if(exit==null)exit=w.positioning.choose(w,"RETREAT",withdrawal);
-        if(exit==null&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){phase(w,"NO_SAFE_EXIT");shield(w,target);return;}
+        // An exit improves the next movement; it is not a prerequisite for an already legal native hit.
         if(!CombatEquipmentAdapter.melee(w,target))return;
         if(p.isUsingItem())p.stopUsingItem();
         w.actor.aim(w.token(),target.getEyePosition());
@@ -206,6 +215,20 @@ final class CombatSkill {
             phase(w,pushing?"COMBO_PRESSURE":combo?"STAP_SPACE":"MELEE_EXIT");w.sprintApproach=pushing;
             if(rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION)move(w,pushing?w.positioning.choose(w,"APPROACH",Math.max(1.5,reach-.4)):exit,target,!pushing&&enemyReach>reach);
         }
+    }
+    private static boolean strikeInReach(SkillWork w,LivingEntity target,int contacts){
+        var p=w.player();if(p.getAttackStrengthScale(.5f)<.95f||!p.hasLineOfSight(target)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||w.tick()-w.lastAttackAt<2)return false;
+        if(!CombatEquipmentAdapter.melee(w,target)||p.getAttackStrengthScale(.5f)<.95f||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0))return false;
+        if(contacts==0&&p.getHealth()>p.getMaxHealth()*.75&&!w.combat.incoming(w)&&!ActorEnhancements.boost(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return true;}
+        if(p.isUsingItem())p.stopUsingItem();w.actor.aimImmediately(w.token(),target.getEyePosition());
+        if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);w.session.add("inRangeStrikeAttempts",1);}
+        if(target.isBlocking()&&p.getMainHandItem().is(ItemTags.AXES)){w.shieldCounterTarget=target;w.shieldCounterAt=w.tick();w.shieldCounterItem=target.getUseItem().copy();w.session.add("shieldCounterAttempts",1);}
+        w.actor.attack(w.token(),w.combatOperation,target);phase(w,"STRIKE_IN_RANGE");
+        if(p.getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt){
+            w.lastAttackAt=w.tick();log(w,"NATIVE_ATTACK_OBSERVED");w.combatOperation=null;
+            if(w.session.spec().combat().strategy()!=CombatPolicy.Strategy.HOLD_POSITION){var exit=contacts>1?w.positioning.retreatStep(w):w.positioning.attackExit(w,target);if(exit!=null)move(w,exit,target,contacts>1||w.contactEscape);else w.actor.haltMotion(w.token());}
+        }
+        return true;
     }
     private static void observeFootwork(SkillWork w){
         var position=w.player().position();var target=w.combat.selected;
