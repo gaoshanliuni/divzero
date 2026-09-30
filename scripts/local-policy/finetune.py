@@ -18,7 +18,8 @@ parser.add_argument("--seed", type=int, default=20260930)
 args = parser.parse_args()
 reference_path = Path(__file__).resolve().parents[2] / "core/src/main/resources/dev/mineagent/runtime/policy/pretrained.json"
 reference_path = args.reference or reference_path
-initial = json.loads((args.initial or reference_path).read_text())
+initial_path = args.initial or reference_path
+initial = json.loads(initial_path.read_text())
 reference = json.loads(reference_path.read_text())
 rng = np.random.default_rng(args.seed)
 actors, evidence, groups = [], [], []
@@ -62,7 +63,20 @@ if len(actors) < 5:
 unique_groups = sorted(set(groups))
 if len(unique_groups) < 5:
     raise ValueError("Need at least five independent native matches")
-held_groups = set(rng.permutation(unique_groups)[:max(1, len(unique_groups) // 5)])
+prior_report = initial_path.with_suffix(".report.json")
+inherited_holdout, previously_seen = set(), set()
+if prior_report.exists():
+    previous = json.loads(prior_report.read_text())
+    if previous.get("sha256") != hashlib.sha256(initial_path.read_bytes()).hexdigest():
+        raise ValueError("Initial weight report does not match its model")
+    inherited_holdout = set(previous.get("heldOutMatches", []))
+    previously_seen = {e["match"] for e in previous.get("sources", []) if "match" in e}
+held_groups = inherited_holdout.intersection(unique_groups)
+new_groups = [g for g in unique_groups if g not in previously_seen]
+if new_groups:
+    held_groups.update(rng.permutation(new_groups)[:max(1, len(new_groups) // 5)])
+if not held_groups:
+    raise ValueError("No independent holdout remains for this warm-started model")
 held = {i for i, group in enumerate(groups) if group in held_groups}
 train_x = np.concatenate([x for i, (x, y) in enumerate(actors) if i not in held])
 train_y = np.concatenate([y for i, (x, y) in enumerate(actors) if i not in held])

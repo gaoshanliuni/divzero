@@ -3874,8 +3874,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "032c74a8021d3fe5cc4e4751699518807dfe3d1803d47506bfbd0af4b7746497",
-      "bytes": 172104
+      "sha256": "1419cd6660c4f04b8c8f5c1838dff24b354c7e02e06c172a8d1be7e92c62c59e",
+      "bytes": 172885
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5419,8 +5419,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatAwareness.java",
-      "sha256": "9a32d217c767d172c6bda08702735f8afd3b667a1d874d1d5a636ce3671629f0",
-      "bytes": 12716
+      "sha256": "ac233a3986950400625622c9447ee264c2a4576859f8580d233b3f1daa265ce3",
+      "bytes": 12804
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatCriticalTiming.java",
@@ -5494,13 +5494,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
-      "sha256": "33b78ae9e9041c85aa77379a6a07d0d57b6ad1fd012b21b0a06a13f3553a2d63",
-      "bytes": 11656
+      "sha256": "a50c77f974d0c500510c2f2a8f24292af6d6fde014a43a708d3e005f32741dc7",
+      "bytes": 12029
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeSelfPlayLab.java",
-      "sha256": "e92565948806b8e7a007a605747a780f919b3cc7bb7d687ad6aac4b7570fe770",
-      "bytes": 14524
+      "sha256": "6188d9c9bf7b72f6923d0cb9e671a6ca1a38c66c00492a62673a20996dcdfcb9",
+      "bytes": 14848
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeSpellThreats.java",
@@ -6934,8 +6934,8 @@
     },
     {
       "path": "scripts/local-policy/finetune.py",
-      "sha256": "ed1b1fb65f5ec5682b14a769c02e4c6432b1cce5cab86ecf12f0345d1cbded84",
-      "bytes": 8042
+      "sha256": "60b9427f9848d07597d2166c7ec3f21f8680fe3cf557907eae0f2a5c94fef15e",
+      "bytes": 8812
     },
     {
       "path": "scripts/local-policy/model_pool.py",

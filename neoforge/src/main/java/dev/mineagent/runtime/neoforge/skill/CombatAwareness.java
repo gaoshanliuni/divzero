@@ -42,7 +42,7 @@ final class CombatAwareness {
         var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());
         var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(owner!=null&&owner!=p&&owner.level()==p.level()&&owner.distanceTo(p)<=rule.awareness()*2&&owner.getLastHurtByMob()!=null&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100)bounds=bounds.minmax(owner.getBoundingBox());if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
         w.prediction.observe(w,entities);
-        var hostilePositions=new dev.mineagent.runtime.core.task.SpatialNeighbors<LivingEntity>(entities.stream().filter(e->e instanceof Enemy).toList(),4,e->new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()));
+        var hostilePositions=new dev.mineagent.runtime.core.task.SpatialNeighbors<LivingEntity>(entities.stream().filter(e->e instanceof Enemy||e instanceof net.minecraft.world.entity.player.Player&&SkillRuntime.attackAllowed(w,e)).toList(),4,e->new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()));
         for(var e:entities){
             boolean forbidden=!SkillRuntime.attackAllowed(w,e);
             boolean helpOwner=owner!=null&&owner!=p&&owner.level()==p.level()&&owner.isAlive()
