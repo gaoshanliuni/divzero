@@ -32,13 +32,15 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         return new ModelResponse(id(), completion.text(), completion.requestedModel(), completion.responseModel());
     }
 
-    public ToolCompletion completeWithTools(ModelRequest request, java.util.List<ToolDefinition> tools) {
+    public ToolCompletion completeWithTools(ModelRequest request, java.util.List<ToolDefinition> tools) {return completeWithTools(request,tools,java.util.List.of());}
+    public ToolCompletion completeWithTools(ModelRequest request, java.util.List<ToolDefinition> tools,java.util.List<java.util.Map<String,Object>> structuredMessages) {
         var body = mapper.createObjectNode();
         body.put("model", model);
         body.put("stream", false);
-        var message = body.putArray("messages").addObject();
-        message.put("role", "user");
-        content(message,request);
+        configureConversationThinking(baseUri,model,body,thinkingLevel);
+        var messages=body.putArray("messages");
+        if(structuredMessages.isEmpty()){var message=messages.addObject();message.put("role","user");content(message,request);}
+        else for(var value:structuredMessages)messages.add(mapper.valueToTree(ConversationMessageAdapter.adapt(value,baseUri,model,body.path("thinking").path("type").asText().equals("enabled"))));
         if (!tools.isEmpty()) {
             var toolArray = body.putArray("tools");
             for (ToolDefinition tool : tools) {
@@ -69,7 +71,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         if (text.isBlank() && calls.isEmpty()) {
             throw new ProviderRequestException(0, "响应缺少 assistant content/tool_calls");
         }
-        return new ToolCompletion(text, calls, model, responseModel(json));
+        return new ToolCompletion(text, calls, model, responseModel(json),responseMessage.path("reasoning_content").asText(""));
     }
 
     public double[] embed(String input) {

@@ -122,7 +122,12 @@ public final class AgentTaskExecutor {
                     }
                     try {
                         if(physical)worldActions.endPlanning(task,true);
-                        Object raw=response.payload().get("toolCalls");if(feedbackTask)dev.mineagent.runtime.core.feedback.FeedbackToolRequest.requireAllowed(raw);
+                        Object raw=response.payload().get("toolCalls");
+                        if(raw instanceof java.util.List<?> stopping&&stopping.size()==1&&stopping.getFirst() instanceof Map<?,?> call&&"stop_actions".equals(call.get("name"))){
+                            var current=MineAgentRuntimeServices.tasks(server).get(task.taskId()).orElseThrow();if(!mapper.readTree(String.valueOf(call.get("arguments"))).isEmpty())throw new IllegalArgumentException("STOP_ARGUMENTS");
+                            MineAgentRuntimeServices.tasks(server).transition(current.taskId(),current.revision(),true,TaskStatus.CANCELLED);worldActions.revokeTask(current.taskId());speak(current,"当前任务已停止；已发生的世界修改保留。");return;
+                        }
+                        if(feedbackTask)dev.mineagent.runtime.core.feedback.FeedbackToolRequest.requireAllowed(raw);
                         if(raw instanceof java.util.List<?> requests&&requests.stream().anyMatch(c->c instanceof Map<?,?> call&&"ask_player".equals(call.get("name")))){askPlayer(task,raw);return;}
                         boolean ui=raw instanceof java.util.List<?> list&&list.stream().anyMatch(c->c instanceof Map<?,?> call&&UI_TOOLS.contains(String.valueOf(call.get("name"))));
                         if(ui){executeUiTool(task,raw);return;}

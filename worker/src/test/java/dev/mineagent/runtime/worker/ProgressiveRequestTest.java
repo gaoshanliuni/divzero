@@ -35,5 +35,17 @@ class ProgressiveRequestTest {
             payload.put("toolNames",List.of("not_a_shipped_tool"));assertEquals("error",worker.handleStreaming(new WorkerEnvelope(1,UUID.randomUUID(),"model.stream",payload),delta->{}).type());assertEquals(2,captured.size());
         }finally{http.stop(0);}
     }
+    @Test void legacyTaskPlannerAlsoDisclosesOnDemandInRealHttpBodies()throws Exception{
+        var json=new ObjectMapper();var captured=new CopyOnWriteArrayList<JsonNode>();var http=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
+        http.createContext("/v1/chat/completions",exchange->{captured.add(json.readTree(exchange.getRequestBody()));String name=captured.size()==1?"skill":"move_to",args=captured.size()==1?"{\"name\":\"physical\"}":"{\"x\":1,\"y\":64,\"z\":2}";byte[] body=json.writeValueAsBytes(Map.of("model","fixture","choices",List.of(Map.of("message",Map.of("role","assistant","content","","reasoning_content","opaque_required","tool_calls",List.of(Map.of("id","c"+captured.size(),"type","function","function",Map.of("name",name,"arguments",args))))))));exchange.sendResponseHeaders(200,body.length);exchange.getResponseBody().write(body);exchange.close();});http.start();
+        try(var config=dev.mineagent.runtime.core.config.ServerConfigService.open(root.resolve("plan.db"));var worker=new WorkerRequestHandler()){
+            worker.handle(new WorkerEnvelope(1,UUID.randomUUID(),"storage.configure",Map.of("contentRoot",root.resolve("plan-content").toString())));
+            worker.handle(new WorkerEnvelope(1,UUID.randomUUID(),"provider.configure",Map.of("kind","openai-compatible","baseUrl","http://127.0.0.1:"+http.getAddress().getPort()+"/v1/","model","fixture","apiKey","fixture")));
+            var payload=Map.<String,Object>of("worldId",UUID.randomUUID().toString(),"agentId",UUID.randomUUID().toString(),"taskId",UUID.randomUUID().toString(),"taskRevision",1,"packageRevision",0,"prompt","你好","toolScope","GENERAL");
+            var reply=worker.handle(new WorkerEnvelope(1,UUID.randomUUID(),"agent.plan",payload));assertEquals("agent.plan.result",reply.type(),reply.payload().toString());assertEquals(2,captured.size());
+            assertFalse(names(captured.getFirst()).contains("move_to"));assertFalse(captured.getFirst().toString().contains("inspect_native_method_body"));assertEquals("system",captured.getFirst().path("messages").get(0).path("role").asText());
+            assertTrue(names(captured.getLast()).contains("move_to"));assertFalse(names(captured.getLast()).contains("refresh_native_api"));assertTrue(captured.getLast().toString().contains("opaque_required"));
+        }finally{http.stop(0);}
+    }
     private static List<String> names(JsonNode request){var names=new ArrayList<String>();for(var tool:request.path("tools"))names.add(tool.path("function").path("name").asText());return names;}
 }

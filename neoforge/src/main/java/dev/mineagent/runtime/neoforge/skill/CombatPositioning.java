@@ -44,8 +44,11 @@ final class CombatPositioning {
             }
         }
         double best=Double.POSITIVE_INFINITY;var target=w.combat.selected;
-        for(int index=0;index<candidates.size()&&budget.timeAvailable();index++){var route=candidates.get(Math.floorMod(candidateCursor++,candidates.size()));var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()))).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
-            score+=w.combat.collisionRisk(w,point,4)*1.5;
+        // A ready strike necessarily enters the selected opponent's reach. Price that exposure,
+        // but keep full risk for every other threat and keep all terrain/escape checks.
+        var opportunity=(intent.equals("APPROACH")||intent.equals("COUNTER"))&&w.player().getAttackStrengthScale(.5f)>=.95f&&w.player().getHealth()>w.player().getMaxHealth()*.45&&!w.combat.incoming(w)?target:null;
+        for(int index=0;index<candidates.size()&&budget.timeAvailable();index++){var route=candidates.get(Math.floorMod(candidateCursor++,candidates.size()));var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point,opportunity);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()),opportunity)).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
+            score+=w.combat.collisionRisk(w,point,4,opportunity)*1.5;
             if(target!=null&&(intent.equals("SIDE_LEFT")||intent.equals("SIDE_RIGHT"))){
                 var forward=target.position().subtract(origin).multiply(1,0,1).normalize();var left=new Vec3(forward.z,0,-forward.x);var delta=point.subtract(origin);
                 double lateral=delta.dot(left)*(intent.equals("SIDE_LEFT")?1:-1);
@@ -62,7 +65,7 @@ final class CombatPositioning {
             score+=Math.max(0,3-onwards.size())*2;
             if(onwards.stream().noneMatch(edge->evaluator.neighbors(edge.to()).stream().anyMatch(next->!next.to().equals(route.node)&&route.steps.stream().noneMatch(step->step.from().equals(next.to())))))score+=100;
             if(target!=null)score+=Math.abs(point.distanceTo(target.position())-desiredDistance)*(intent.equals("COUNTER")?14:intent.equals("SPACE")||intent.equals("APPROACH")?8:1.1);
-            if(target!=null&&intent.equals("COUNTER")&&point.distanceTo(target.position())>=origin.distanceTo(target.position())-.2)continue;
+            if(target!=null&&(intent.equals("COUNTER")||intent.equals("APPROACH"))&&origin.distanceTo(target.position())>desiredDistance+.25&&point.distanceTo(target.position())>=origin.distanceTo(target.position())-.15)continue;
             if(intent.equals("RETREAT")||intent.equals("RECOVER")||intent.equals("LURE")||intent.equals("JUMP_TAP")){
                 score-=origin.distanceTo(point)*.45;
                 if(w.combat.protectedEntity!=null&&point.distanceTo(w.combat.protectedEntity.position())<origin.distanceTo(w.combat.protectedEntity.position())-.5)score+=100;

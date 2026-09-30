@@ -75,18 +75,20 @@ final class CombatAwareness {
         for(var threat:threats){var e=threat.entity;if(e.isAlive()&&e.distanceToSqr(p)<36&&Math.abs(e.getY()-p.getY())<3){var delta=e.position().subtract(p.position());if(delta.horizontalDistanceSqr()>.001)angles.add(Math.atan2(delta.z,delta.x));}}
         return cachedFlanked=dev.mineagent.runtime.core.task.SpatialNeighbors.opposing(angles,Math.acos(-.2));
     }
-    double risk(SkillWork w,Vec3 point){
+    double risk(SkillWork w,Vec3 point){return risk(w,point,null);}
+    double risk(SkillWork w,Vec3 point,LivingEntity attackOpportunity){
         double risk=0;for(var threat:threats){var e=threat.entity;if(!e.isAlive())continue;double d=e.position().distanceTo(point),future=e.position().add(e.getDeltaMovement().scale(5)).distanceTo(point);risk+=Math.max(0,5-Math.min(d,future))*2;
-            if(NativeCombatStates.meleeAt(e,w.player(),point))risk+=threat.state.openingTicks(w.player().level().getGameTime())>=6?2:threat.state.meleeRestricted()?3:18;
+            if(NativeCombatStates.meleeAt(e,w.player(),point))risk+=threat.state.openingTicks(w.player().level().getGameTime())>=6?2:threat.state.meleeRestricted()?3:e==attackOpportunity?4:18;
             double areaRange=threat.state.attacks().stream().filter(a->a.kind().equals("AREA")&&a.running()).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
             if(areaRange>0&&d<areaRange+1)risk+=30+Math.max(0,areaRange-d)*5;if(threat.state.ranged()&&reverseSight(w,e))risk+=Math.max(0,8-d);
         }
         for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;
         return risk;
     }
-    double collisionRisk(SkillWork w,Vec3 point,int ticks){
+    double collisionRisk(SkillWork w,Vec3 point,int ticks){return collisionRisk(w,point,ticks,null);}
+    double collisionRisk(SkillWork w,Vec3 point,int ticks,LivingEntity attackOpportunity){
         double risk=0;for(var threat:threats)if(threat.entity.isAlive()){
-            if(NativeCombatStates.meleeAtAfter(threat.entity,w.player(),point,ticks))risk+=threat.state.openingTicks(w.player().level().getGameTime())>ticks+2?2:18;
+            if(NativeCombatStates.meleeAtAfter(threat.entity,w.player(),point,ticks))risk+=threat.state.openingTicks(w.player().level().getGameTime())>ticks+2?2:threat.entity==attackOpportunity?4:18;
             if(threat.state.areaAttack()&&threat.entity.position().distanceTo(point)<8)risk+=30;
         }
         for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;return risk;

@@ -21,6 +21,7 @@ public final class PvpConsent {
         if(!owner.level().getServer().isSameThread()||!ServerTaskStart.allowed(owner,agent)||target.level()!=owner.level()||!target.isAlive()||target.getUUID().equals(agent))throw new SecurityException("COMBAT_PVP_TARGET_AUTHORIZATION");
         GRANTS.computeIfAbsent(owner.level().getServer(),s->new HashMap<>()).put(new Key(owner.getUUID(),agent),target);
     }
+    static void stopped(MinecraftServer server){GRANTS.remove(server);}
     public static void revoke(ServerPlayer owner,UUID agent){var grants=GRANTS.get(owner.level().getServer());if(grants!=null)grants.remove(new Key(owner.getUUID(),agent));}
     public static boolean allowed(ServerPlayer owner,UUID agent,ServerPlayer actor,ServerPlayer target,CombatPolicy rule){
         var grants=GRANTS.get(owner.level().getServer());return grants!=null&&grants.get(new Key(owner.getUUID(),agent))==target&&rule.engagement()==CombatPolicy.Engagement.SPECIFIED&&rule.target().equals(target.getUUID().toString())
