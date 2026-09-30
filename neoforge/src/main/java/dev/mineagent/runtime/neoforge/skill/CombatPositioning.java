@@ -13,6 +13,34 @@ final class CombatPositioning {
     private Vec3 origin;private int started;private String purpose="";private Vec3 selected;private double selectedDistance;private int candidateCursor;
     private Vec3 waypoint,heading,targetAtWaypoint;private Node waypointNode;private int waypointAt;private double waypointRisk;private String waypointPurpose="";
     private List<PathStep> chosenRoute=List.of();private final Map<Node,Integer> exposure=new HashMap<>();
+    private PathStep attackExit;private int attackExitAt=-10000;private Object attackExitLevel;private java.util.UUID attackExitTarget;
+    /** Constant-size native escape check for an immediate strike; a full region search must not stall a ready attack. */
+    Vec3 attackExit(SkillWork work,net.minecraft.world.entity.LivingEntity target){
+        var player=work.player();double enemyReach=work.combat.threats.stream().filter(t->t.entity()==target).flatMap(t->t.state().attacks().stream()).filter(a->a.kind().equals("MELEE")).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);if(enemyReach>player.getAttackRangeWith(player.getMainHandItem()).effectiveMaxRange(player)+.25)return null;var owner=work.runtime.server.getPlayerList().getPlayer(work.session.owner());var check=new NativeTraversalEvaluator(player);check.beginSlice();var current=check.closest(player.position());
+        if(attackExit!=null&&target.getUUID().equals(attackExitTarget)&&attackExitLevel==player.level()&&work.tick()-attackExitAt<=16
+                &&NativeTraversalEvaluator.point(attackExit.from()).subtract(player.position()).horizontalDistanceSqr()<2.25
+                &&Math.abs(player.getY()-attackExit.from().y())<1.6&&check.transition(attackExit.from(),attackExit.to())!=null
+                &&NativeTraversalEvaluator.point(attackExit.to()).subtract(target.position()).horizontalDistanceSqr()>player.position().subtract(target.position()).horizontalDistanceSqr()+.1
+                &&(owner==null||owner==player||owner==target||NativeTraversalEvaluator.point(attackExit.to()).distanceTo(owner.position())>=player.distanceTo(owner)-.5)
+                &&edgeExposure(work,attackExit.to(),check)==0&&work.combat.risk(work,NativeTraversalEvaluator.point(attackExit.to()))<=work.combat.risk(work,player.position())+2){
+            chosenRoute=List.of(attackExit);selectedDistance=player.position().distanceTo(NativeTraversalEvaluator.point(attackExit.to()));return NativeTraversalEvaluator.point(attackExit.to());
+        }
+        if(!player.onGround()||current==null)return null;
+        var model=LocalPolicyRuntime.snapshot(player);double best=Double.POSITIVE_INFINITY;PathStep selectedEdge=null;double[] selectedFeatures=null;double initial=player.distanceTo(target),initialRisk=work.combat.risk(work,player.position());
+        for(var edge:check.neighbors(current)){
+            if(!Set.of(Action.WALK,Action.CROUCH).contains(edge.action())||Math.abs(edge.to().y()-current.y())>.25||check.transition(edge.to(),current)==null||edgeExposure(work,edge.to(),check)!=0)continue;
+            var point=NativeTraversalEvaluator.point(edge.to());if(point.distanceTo(target.position())<initial+.15)continue;
+            if(check.neighbors(edge.to()).stream().noneMatch(next->!next.to().equals(current)&&Math.abs(next.to().y()-edge.to().y())<=1.25))continue;
+            if(owner!=null&&owner!=player&&owner!=target&&point.distanceTo(owner.position())<player.distanceTo(owner)-.5)continue;
+            double risk=work.combat.risk(work,point);if(risk>initialRisk+2)continue;double future=0;
+            for(var threat:work.combat.threats)if(threat.entity().isAlive()&&NativeCombatStates.meleeAtAfter(threat.entity(),player,point,4))future+=threat.entity()==target?6:18;
+            var delta=point.subtract(player.position());var features=LocalPolicyRuntime.features(player,initial,initial-point.distanceTo(target.position()),risk+future,1,delta,0,true,work.session.spec().kind().ordinal(),0);
+            double score=risk*2+future-(point.distanceTo(target.position())-initial)*2+(model==null?0:model.cost(features)*8);
+            if(score<best){best=score;selectedEdge=edge;selectedFeatures=features;}
+        }
+        if(selectedEdge==null)return null;attackExit=selectedEdge;attackExitAt=work.tick();attackExitLevel=player.level();attackExitTarget=target.getUUID();chosenRoute=List.of(selectedEdge);selectedDistance=player.position().distanceTo(NativeTraversalEvaluator.point(selectedEdge.to()));
+        if(selectedFeatures!=null)LocalPolicyRuntime.chose(work,selectedFeatures,NativeTraversalEvaluator.point(selectedEdge.to()));work.session.add("checkedImmediateAttackExits",1);return NativeTraversalEvaluator.point(selectedEdge.to());
+    }
     List<PathStep> route(){return chosenRoute;}
     boolean pending(){return !open.isEmpty()||!legacy&&scored.size()<candidates.size();}
     boolean longRetreat(){return selectedDistance>3;}
@@ -87,7 +115,8 @@ final class CombatPositioning {
         if(selected!=null){if(!legacy&&selectedFeatures!=null)LocalPolicyRuntime.chose(w,selectedFeatures,selected);waypoint=selected;waypointAt=w.tick();waypointPurpose=intent;waypointRisk=w.combat.risk(w,waypoint);targetAtWaypoint=target==null?null:target.position();heading=new Vec3(waypoint.x-w.player().getX(),0,waypoint.z-w.player().getZ()).normalize();w.session.add("tacticalWaypoints",1);}
         return selected;
     }
-    private int edgeExposure(SkillWork w,Node node){return exposure.computeIfAbsent(node,n->{int danger=0;for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){if(dx==0&&dz==0)continue;int x=n.x()+dx,z=n.z()+dz;var at=new Vec3(x+.5,n.y(),z+.5);var pos=net.minecraft.core.BlockPos.containing(at);if(!evaluator.loaded(pos)){danger++;continue;}if(w.player().level().getFluidState(pos).is(net.minecraft.tags.FluidTags.LAVA)){danger++;continue;}if(!evaluator.clear(at,net.minecraft.world.entity.Pose.STANDING,true)&&!evaluator.clear(at,net.minecraft.world.entity.Pose.CROUCHING,true))continue;if(evaluator.positions(x,z,n.y()).stream().noneMatch(floor->Math.abs(floor.y()-n.y())<=1.25))danger++;}return danger;});}
+    private int edgeExposure(SkillWork w,Node node){return exposure.computeIfAbsent(node,n->edgeExposure(w,n,evaluator));}
+    private int edgeExposure(SkillWork w,Node node,NativeTraversalEvaluator check){int danger=0;for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){if(dx==0&&dz==0)continue;int x=node.x()+dx,z=node.z()+dz;var at=new Vec3(x+.5,node.y(),z+.5);var pos=net.minecraft.core.BlockPos.containing(at);if(!check.loaded(pos)){danger++;continue;}if(w.player().level().getFluidState(pos).is(net.minecraft.tags.FluidTags.LAVA)){danger++;continue;}if(!check.clear(at,net.minecraft.world.entity.Pose.STANDING,true)&&!check.clear(at,net.minecraft.world.entity.Pose.CROUCHING,true))continue;if(check.positions(x,z,node.y()).stream().noneMatch(floor->Math.abs(floor.y()-node.y())<=1.25))danger++;}return danger;}
     double sideRisk(SkillWork w,int side){
         var target=w.combat.selected;if(target==null)return Double.POSITIVE_INFINITY;
         var origin=w.player().position();var forward=target.position().subtract(origin).multiply(1,0,1).normalize();var lateral=new Vec3(forward.z,0,-forward.x).scale(side);
@@ -124,5 +153,5 @@ final class CombatPositioning {
         for(var step:chosenRoute.subList(0,3)){var d=NativeTraversalEvaluator.point(step.to()).subtract(NativeTraversalEvaluator.point(step.from()));if(Math.abs(d.y)>.1||new Vec3(d.x,0,d.z).normalize().dot(unit)<.9||edgeExposure(w,step.to())>0)return false;}
         return p.level().noCollision(p,p.getBoundingBox().move(0,1.3,0).expandTowards(unit.scale(2.5)));
     }
-    void reset(){origin=null;selected=null;waypoint=null;waypointNode=null;heading=null;targetAtWaypoint=null;chosenRoute=List.of();exposure.clear();}
+    void reset(){attackExit=null;attackExitLevel=null;attackExitTarget=null;origin=null;selected=null;waypoint=null;waypointNode=null;heading=null;targetAtWaypoint=null;chosenRoute=List.of();exposure.clear();}
 }

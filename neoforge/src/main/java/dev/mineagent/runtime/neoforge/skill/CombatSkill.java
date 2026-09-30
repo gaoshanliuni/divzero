@@ -177,7 +177,7 @@ final class CombatSkill {
             w.sprintApproach=true;if(!move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2)),target,false)&&!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;
         }
         if(!ready){phase(w,"COOLDOWN_GUARD");shield(w,target);return;}
-        Vec3 exit=w.positioning.choose(w,"RETREAT",withdrawal);
+        Vec3 exit=w.positioning.attackExit(w,target);if(exit==null)exit=w.positioning.choose(w,"RETREAT",withdrawal);
         if(exit==null&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){phase(w,"NO_SAFE_EXIT");shield(w,target);return;}
         if(!CombatEquipmentAdapter.melee(w,target))return;
         if(p.isUsingItem())p.stopUsingItem();

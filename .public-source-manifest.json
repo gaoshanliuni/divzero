@@ -5379,8 +5379,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "ccb2ccb5fb81fcc4c281c55b7e382288716e6972380f22670326bcbd21a4c469",
-      "bytes": 15622
+      "sha256": "75a03f5af3f672eafdb54bf2e8094be3c5162f155a74a639aebb0ce8743fc88f",
+      "bytes": 20035
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",
@@ -5389,8 +5389,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "4b7a19e3fcaa65d3eb809adb7f6b7406e6390c2622cc7b38b4301142c81f13e5",
-      "bytes": 31447
+      "sha256": "39e82a83d74ee33402576bbf2059b432741b23c6c547013e5cc0dbab9c689dde",
+      "bytes": 31501
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
