@@ -7318,6 +7318,11 @@
       "bytes": 6357
     },
     {
+      "path": "worker/src/test/java/dev/mineagent/runtime/worker/media/BundledMediaToolsTest.java",
+      "sha256": "5c2b3c4acb2caa858819646f11f79945d2b35be30e2a1d726805d910e2d5d331",
+      "bytes": 5259
+    },
+    {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/process/ManagedWorkerProcessTest.java",
       "sha256": "de1693812cca4607835275316e040865f5bc7dc26b58196bc942bdb6fd64749e",
       "bytes": 11481
