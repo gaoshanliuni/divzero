@@ -4034,8 +4034,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeFunctionalSmokeClient.java",
-      "sha256": "9c4aa17bc31a3f3c3510982df3fc7adfd66d85883db584846e31ac20b185967f",
-      "bytes": 23893
+      "sha256": "5b61bcb27f57b0df4f86c5d45c2a4c8a6ba8454551aeeb6caac759b315d8d8f1",
+      "bytes": 24059
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeGenerationPanel.java",
