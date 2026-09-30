@@ -58,7 +58,12 @@ public final class MineAgentBodyManager implements AutoCloseable {
     private void moveScoreIdentity(String oldName,String name){
         if(oldName==null||oldName.equals(name))return;var scoreboard=server.getScoreboard();
         var old=net.minecraft.world.scores.ScoreHolder.forNameOnly(oldName);var next=net.minecraft.world.scores.ScoreHolder.forNameOnly(name);
-        for(var entry:scoreboard.listPlayerScores(old).object2IntEntrySet())if(scoreboard.getPlayerScoreInfo(next,entry.getKey())==null){scoreboard.getOrCreatePlayerScore(next,entry.getKey()).set(entry.getIntValue());}
+        for(var entry:scoreboard.listPlayerScores(old).object2IntEntrySet())if(scoreboard.getPlayerScoreInfo(next,entry.getKey())==null){
+            var info=scoreboard.getPlayerScoreInfo(old,entry.getKey());var score=scoreboard.getOrCreatePlayerScore(next,entry.getKey(),true);score.set(entry.getIntValue());
+            score.numberFormatOverride(info.numberFormat());if(info.isLocked())score.lock();else score.unlock();
+            for(var row:scoreboard.listPlayerScores(entry.getKey()))if(row.owner().equals(oldName)){score.display(row.display());break;}
+            scoreboard.resetSinglePlayerScore(old,entry.getKey());
+        }
         var team=scoreboard.getPlayersTeam(oldName);if(team!=null&&scoreboard.getPlayersTeam(name)==null){scoreboard.addPlayerToTeam(name,team);scoreboard.removePlayerFromTeam(oldName,team);}
     }
 

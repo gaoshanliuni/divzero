@@ -120,7 +120,7 @@ public final class MineAgentPlayer extends ServerPlayer {
     public void setNativeName(String name){
         name=dev.mineagent.runtime.core.agent.AgentProfileNames.require(name);var old=super.getGameProfile();
         if(!name.equals(old.name())){
-            ((dev.mineagent.runtime.neoforge.mixin.AgentProfileAccess)this).divzero$profile(new GameProfile(old.id(),name,old.properties()));
+            ((dev.mineagent.runtime.neoforge.mixin.AgentProfileAccess)(Object)this).divzero$profile(new GameProfile(old.id(),name,old.properties()));
             if(visualProfile!=null)visualProfile=new GameProfile(visualProfile.id(),name,visualProfile.properties());
             level().getServer().services().nameToIdCache().add(nameAndId());
         }
