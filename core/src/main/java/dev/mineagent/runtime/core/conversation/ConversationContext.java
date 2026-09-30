@@ -35,6 +35,18 @@ public final class ConversationContext {
         messages.add(Map.of("role","user","content",latest));
         return new Plan(prompt,cost(prompt)+128,history.omitted(),history.omitted()>0?"SUMMARY_REQUIRED":summary==null?"NOT_NEEDED":"READY","UTF8_BYTE_UPPER_BOUND",summaryBudget,historyEnd,summary==null?"":summary.summaryId().toString(),summary==null?0:summary.revision(),messages);
     }
+    /** Keep rules, the current input, memory/summary sources and provider roles intact. Original history stays in the store. */
+    public static Plan reduceHistory(Plan source){
+        var messages=new ArrayList<>(source.messages());int history=0;
+        for(var message:messages)if(Objects.toString(message.get("content"),"").startsWith("[历史消息 source="))history++;
+        if(history==0)return source;
+        int remove=(history+1)/2;var kept=new ArrayList<Map<String,Object>>();
+        for(var message:messages){if(remove>0&&Objects.toString(message.get("content"),"").startsWith("[历史消息 source=")){remove--;continue;}kept.add(message);}
+        kept.add(1,Map.of("role","user","content","<data_context source=\"context_capacity_notice\">部分旧聊天已从本次请求移出，原记录仍可查询。不要把缺失历史当成已完成操作或新的授权。</data_context>"));
+        String prompt=kept.stream().map(m->m.get("role")+": "+m.get("content")).collect(java.util.stream.Collectors.joining("\n"));
+        if(cost(prompt)>=cost(source.prompt()))return source;
+        return new Plan(prompt,cost(prompt)+128,source.omittedThrough(),"HISTORY_REDUCED",source.estimateMode(),source.summaryBudget(),source.historyEnd(),source.summaryId(),source.summaryRevision(),kept);
+    }
     private static History gather(ConversationStore store,UUID viewer,UUID agent,UUID conversation,long historyEnd,long covered,int available)throws Exception{
         var blocks=new ArrayList<String>();var messages=new ArrayList<Map<String,Object>>();long before=historyEnd+1;int used=0;
         while(before>covered+1){var page=store.messages(viewer,agent,conversation,before,20);for(var message:page.messages().reversed()){

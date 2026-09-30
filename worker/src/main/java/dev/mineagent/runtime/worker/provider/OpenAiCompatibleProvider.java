@@ -160,19 +160,18 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
             if (apiKey != null && !apiKey.isBlank()) {
                 builder.header("Authorization", "Bearer " + apiKey);
             }
-            var response = client.send(builder.build(), java.net.http.HttpResponse.BodyHandlers.ofLines());
+            var response = client.send(builder.build(), java.net.http.HttpResponse.BodyHandlers.ofInputStream());
             dev.mineagent.runtime.worker.WorkerCancellation.watch(response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                try (var lines = response.body()) {
-                    throw new ProviderRequestException(response.statusCode(),
-                            "openai-compatible streaming HTTP " + response.statusCode() + ": PROVIDER_REJECTED");
+                try (var rejected = response.body()) {
+                    throw ProviderRequestException.rejected(response.statusCode(),response.headers().firstValue("Retry-After").orElse(""),rejected.readNBytes(8192));
                 }
             }
             var result = new StringBuilder();var reasoning=new StringBuilder();var streamedTools=new StreamingToolCalls();
             String reportedModel="";
             com.fasterxml.jackson.databind.JsonNode usage = null;
             boolean completed=false;
-            try (var lines = response.body()) {
+            try (var reader=new java.io.BufferedReader(new java.io.InputStreamReader(response.body(),java.nio.charset.StandardCharsets.UTF_8));var lines = reader.lines()) {
                 var iterator = lines.iterator();
                 while (iterator.hasNext()) {
                     String line = iterator.next();

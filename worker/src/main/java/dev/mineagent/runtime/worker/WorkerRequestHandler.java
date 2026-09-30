@@ -174,10 +174,10 @@ public final class WorkerRequestHandler implements AutoCloseable {
         if (!"model.stream".equals(request.type())) {
             return error(request, "UNSUPPORTED_STREAM_REQUEST", "不支持的流式请求类型: " + request.type());
         }
+        var sequence = new java.util.concurrent.atomic.AtomicInteger();
         try {
             ModelCapability capability = ModelCapability.valueOf(required(request, "capability"));
             var modelRequest = new ModelRequest(capability, required(request, "prompt"),WorkerModelImages.decode(request.payload().getOrDefault("images",java.util.List.of())));
-            var sequence = new java.util.concurrent.atomic.AtomicInteger();
             java.util.function.Consumer<String> emit = delta -> deltaConsumer.accept(new WorkerEnvelope(
                     PROTOCOL_VERSION, request.requestId(), "model.stream.delta",
                     Map.of("sequence", sequence.getAndIncrement(), "delta", delta)));
@@ -202,7 +202,11 @@ public final class WorkerRequestHandler implements AutoCloseable {
             payload.put("streamMode",selected instanceof OpenAiCompatibleProvider?"PROVIDER_STREAM":"BUFFERED_PROVIDER_REPLY");
             return new WorkerEnvelope(PROTOCOL_VERSION, request.requestId(), "model.stream.result", payload);
         } catch (RuntimeException failure) {
-            return error(request, "MODEL_STREAM_FAILED", failure.getMessage());
+            var payload=new java.util.LinkedHashMap<String,Object>();payload.put("code","MODEL_STREAM_FAILED");payload.put("message",java.util.Objects.toString(failure.getMessage(),"MODEL_STREAM_FAILED"));payload.put("deltaCount",sequence.get());
+            if(failure instanceof dev.mineagent.runtime.worker.provider.ProviderRequestException rejected){
+                payload.put("httpStatus",rejected.statusCode());payload.put("providerRejected",rejected.statusCode()>0);payload.put("retryAfterMillis",rejected.retryAfterMillis());payload.put("contextTooLarge",rejected.contextTooLarge());
+            }
+            return new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"error",payload);
         }
     }
 
