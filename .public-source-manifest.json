@@ -3303,6 +3303,11 @@
       "bytes": 998685
     },
     {
+      "path": "docs/native-workspace-integration.md",
+      "sha256": "ab50b9dd2021af3c9e84d7634ac1eaf4b55c57e45b53493918fc40afb259b96f",
+      "bytes": 4918
+    },
+    {
       "path": "docs/releases/1.0.20.md",
       "sha256": "e6d1e9df0b95bae6fd205712f3066bb111ff67bd4080ed635b698f52ce558e0d",
       "bytes": 2992
@@ -4034,8 +4039,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeModulesSmokeClient.java",
-      "sha256": "0f6e8bb4ad118f6aa0177e65f71b251d0657f168de19a5187b66cdb4d0207a09",
-      "bytes": 17837
+      "sha256": "6a997f07e4995b0d90ed4f209b6de6af6bd2be7cbd434092af2c93c285df10a1",
+      "bytes": 18296
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageAgent.java",
