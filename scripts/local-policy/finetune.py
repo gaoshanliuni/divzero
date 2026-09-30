@@ -40,6 +40,8 @@ for run in args.run:
             if not match.get("arenaVerified"):
                 raise ValueError("Unverified arena is not training data")
             case = match["scenario"]
+            if case["scenario"] == "OUTNUMBERED" and not match.get("nativeTeamsVerified"):
+                continue  # Earlier target-only groups did not prove native sweep/friendly-fire isolation.
             for fighter in match["fighters"]:
                 membership[fighter["agent"]] = {"match": f'{run.name}:{case["wave"]}:{case["lane"]}', "scenario": case["scenario"], "role": fighter["role"], "model": fighter["initialModelHash"], "outcome": match["outcome"]}
     for file in sorted((run / "game/mineagent-runtime-data/policies").glob("*/*.json")):

@@ -50,10 +50,11 @@ public final class PersistentSkillSmokeClient {
     }
     private record Duel(int group,MineAgentPlayer a,MineAgentPlayer b,UUID aId,UUID bId){}
     private static final List<Duel> duels=new ArrayList<>();private static final Set<Integer> duelFinished=new HashSet<>();private static long duelDeadline,duelStarted,duelGlobalDeadline;private static final Map<Integer,Integer> duelTerminalTicks=new HashMap<>();
+    private static int selfPlayViewTick=-1;private static boolean selfPlayCaptured;
     private static void neuralSelfPlay(){
         boolean training=System.getProperty("mineagent.skillSmokeMode","").equals("selfplay_train");int generation=Integer.getInteger("mineagent.selfPlayGeneration",0);
         action("load-verified-neural-model-pool",()->server(p->dev.mineagent.runtime.neoforge.skill.NativeSelfPlayLab.begin(p,training,2,generation)).thenCompose(Function.identity()));
-        waitFor("mirrored-neural-self-play-ten-bout-batch",12500,()->server(p->dev.mineagent.runtime.neoforge.skill.NativeSelfPlayLab.inspect(p)).thenApply(value->{lastObservation=JSON.valueToTree(value);if(!Boolean.TRUE.equals(value.get("completed")))return false;require(value.get("status").equals("COMPLETE"),"SELF_PLAY_FAILED_"+value.get("error"));EVIDENCE.add(value);return true;}));
+        waitFor("mirrored-neural-self-play-ten-bout-batch",12500,()->server(p->dev.mineagent.runtime.neoforge.skill.NativeSelfPlayLab.inspect(p)).thenApply(value->{lastObservation=JSON.valueToTree(value);if(value.get("status").equals("FIGHTING")&&!selfPlayCaptured){if(selfPlayViewTick<0){selfPlayViewTick=ticks;mc().gui.getChat().clearMessages(false);}if(ticks-selfPlayViewTick>=60){screen("neural-selfplay-arena");selfPlayCaptured=true;}}if(!Boolean.TRUE.equals(value.get("completed")))return false;require(value.get("status").equals("COMPLETE"),"SELF_PLAY_FAILED_"+value.get("error"));EVIDENCE.add(value);return true;}));
     }
     private static UUID evoker;private static LivingEntity evokerReference;private static final Map<UUID,LivingEntity> evokerVexReferences=new HashMap<>();private static final Set<UUID> evokerFangsSeen=new HashSet<>(),evokerVexSeen=new HashSet<>();private static boolean fangWarmupSeen,summonWarmupSeen,vexChargeSeen,fangStrikeSeen,overlappingSpells;private static long fangReleaseDue=-1;private static int spellReleaseError,spellReleaseReads;private static final List<Object> spellTimeline=new ArrayList<>();
     private static void evokerTimeline(){

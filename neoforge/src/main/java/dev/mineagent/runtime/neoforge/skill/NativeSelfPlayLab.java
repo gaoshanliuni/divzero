@@ -75,9 +75,10 @@ public final class NativeSelfPlayLab {
     private static void prepare(Run run){
         var owner=run.owner;var server=owner.level().getServer();owner.setGameMode(GameType.CREATIVE);
         owner.level().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.SPAWN_MOBS,false,server);owner.level().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.PVP,true,server);
-        server.getCommands().performPrefixedCommand(owner.createCommandSourceStack(),"difficulty normal");server.getCommands().performPrefixedCommand(owner.createCommandSourceStack(),"time set midnight");
+        server.getCommands().performPrefixedCommand(owner.createCommandSourceStack(),"difficulty normal");server.getCommands().performPrefixedCommand(owner.createCommandSourceStack(),"time set day");
         run.matches.clear();run.starts.clear();for(var spec:SelfPlaySchedule.wave(run.baseWave+run.wave,run.models.size()))run.matches.add(new Match(spec));
         IsolatedCombatArena.prepare(owner,run.matches.stream().map(m->m.bounds).toList());
+        var view=run.matches.getFirst().bounds;owner.getAbilities().flying=true;owner.onUpdateAbilities();owner.teleportTo(owner.level(),view.x()+.5,122,view.z()-39.5,Set.of(),0,28,true);owner.setDeltaMovement(Vec3.ZERO);
         for(var match:run.matches){
             for(int team=0;team<2;team++){
                 int count=team==0?match.spec.leftCount():match.spec.rightCount();var role=team==0?match.spec.left():match.spec.right();var model=run.models.get(team==0?match.spec.leftModel():match.spec.rightModel());
@@ -111,7 +112,7 @@ public final class NativeSelfPlayLab {
     }
     private static void finishMatch(Run run,Match match,String outcome,boolean settled){
         var rows=new ArrayList<Object>();for(var f:match.fighters){var row=new LinkedHashMap<String,Object>();row.put("agent",f.body.agentId());row.put("team",f.team);row.put("role",f.role);row.put("modelId",f.model.id);row.put("initialModelHash",f.model.sha256);row.put("health",f.body.getHealth());row.put("airborneTicks",match.airborne.getOrDefault(f.body.agentId(),0));row.put("position",f.body.position().toString());row.put("policy",LocalPolicyRuntime.trainingModel(f.body));row.put("skill",SkillRuntime.get(run.owner.level().getServer()).snapshot(run.owner,f.body.agentId()));rows.add(row);}
-        run.results.add(Map.of("scenario",match.spec,"outcome",outcome,"seconds",(System.nanoTime()-run.roundStarted)/1e9,"postDefeatObservationTicks",settled?80:0,"fighters",rows,"spawnChecks",match.spawnChecks,"arenaVerified",true,"boost",false,"bodyIdentityChecks",match.identityChecks));match.finished=true;
+        run.results.add(Map.of("scenario",match.spec,"outcome",outcome,"seconds",(System.nanoTime()-run.roundStarted)/1e9,"postDefeatObservationTicks",settled?80:0,"fighters",rows,"spawnChecks",match.spawnChecks,"arenaVerified",true,"boost",false,"bodyIdentityChecks",match.identityChecks,"nativeTeamsVerified",true));match.finished=true;
         for(var f:match.fighters)IsolatedCombatArena.retire(run.owner,f.body);
     }
     private static void cleanup(Run run){for(var match:run.matches)if(!match.finished)for(var f:match.fighters)try{IsolatedCombatArena.retire(run.owner,f.body);}catch(Exception ignored){}}

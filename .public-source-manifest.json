@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "6e4cf4b1f336e5c6540e13caa84d896a39e65e46c07698dba27d100ef8cc8790",
-      "bytes": 25346
+      "sha256": "3528fbc966b7b34f7d8853f49a75f15aa00ce123287d509d7bbc48bbfbc88ffa",
+      "bytes": 25855
     },
     {
       "path": "agent/build.gradle",
@@ -3348,6 +3348,11 @@
       "bytes": 6771
     },
     {
+      "path": "docs/NEURAL_SELF_PLAY.md",
+      "sha256": "02d8d46cad3ff93728750fdaeae892a9c4c11b50b7b46706a1bf9da256dfdb47",
+      "bytes": 6680
+    },
+    {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
       "sha256": "ba5a862f080501a9b8647873d39f9e0123d0e4c190a72aa910b1a07d95800a88",
       "bytes": 8679
@@ -3874,8 +3879,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "1419cd6660c4f04b8c8f5c1838dff24b354c7e02e06c172a8d1be7e92c62c59e",
-      "bytes": 172885
+      "sha256": "4f859991df0ddbb8de94aa0b89a5bcc441f1e53d16be62ad10fa3716d2231b5f",
+      "bytes": 173205
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5469,8 +5474,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/IsolatedCombatArena.java",
-      "sha256": "6be06fe6308899944255f9672ad4296f0266806ee05abb92290d79e8ba911320",
-      "bytes": 6246
+      "sha256": "5a45c1411b6f0c9224230aa2a89f0d70c59a1fac2d9dfc544a0a9813afc105bd",
+      "bytes": 7360
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/LegacyCombatBaseline.java",
@@ -5499,8 +5504,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeSelfPlayLab.java",
-      "sha256": "6188d9c9bf7b72f6923d0cb9e671a6ca1a38c66c00492a62673a20996dcdfcb9",
-      "bytes": 14848
+      "sha256": "446e1d9810cf68b8c9df655cbeae9a44a31b6777b2b9952d730a524cc375d630",
+      "bytes": 15092
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeSpellThreats.java",
@@ -6934,8 +6939,8 @@
     },
     {
       "path": "scripts/local-policy/finetune.py",
-      "sha256": "60b9427f9848d07597d2166c7ec3f21f8680fe3cf557907eae0f2a5c94fef15e",
-      "bytes": 8812
+      "sha256": "b5fc3e9e8bedc50227568c51e51593dd821665fb30971ab6d5415dbc170bb860",
+      "bytes": 9010
     },
     {
       "path": "scripts/local-policy/model_pool.py",

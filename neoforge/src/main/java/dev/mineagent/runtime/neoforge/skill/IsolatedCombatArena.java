@@ -41,10 +41,11 @@ public final class IsolatedCombatArena {
         var before=body.position();body.teleportTo(owner.level(),at.x,at.y,at.z,Set.of(),team==0?-90:90,0,true);body.setDeltaMovement(Vec3.ZERO);body.fallDistance=0;
         if(body.level()!=owner.level()||body.position().distanceToSqr(at)>.0001||!body.level().noCollision(body,body.getBoundingBox())||body.level().noCollision(body,body.getBoundingBox().move(0,-.08,0)))throw new IllegalStateException("TRAINING_SPAWN_NOT_CLEAR_AND_SUPPORTED");
         PARTICIPANTS.put(body,new Participant(owner,body,arena,team));
+        var scoreboard=owner.level().getServer().getScoreboard();String teamName=teamName(owner,arena,team);var nativeTeam=scoreboard.getPlayerTeam(teamName);if(nativeTeam==null)nativeTeam=scoreboard.addPlayerTeam(teamName);nativeTeam.setAllowFriendlyFire(false);scoreboard.addPlayerToTeam(body.getScoreboardName(),nativeTeam);
         return Map.of("requested",at.toString(),"before",before.toString(),"actual",body.position().toString(),"clear",true,"supported",true,"arena",arena.id,"team",team);
     }
     public static boolean suppressRespawn(MineAgentPlayer body){return enabled()&&PARTICIPANTS.containsKey(body);}
-    public static void arm(ServerPlayer owner,List<MineAgentPlayer> bodies){require(owner);for(var body:bodies){var p=PARTICIPANTS.get(body);if(p==null||p.owner!=owner)throw new SecurityException("TRAINING_OWNER");}ARMED.addAll(bodies);}
+    public static void arm(ServerPlayer owner,List<MineAgentPlayer> bodies){require(owner);for(var body:bodies){var p=PARTICIPANTS.get(body);if(p==null||p.owner!=owner)throw new SecurityException("TRAINING_OWNER");for(var other:bodies)if(other!=body){var q=PARTICIPANTS.get(other);if(q!=null&&p.team==q.team&&body.canHarmPlayer(other))throw new IllegalStateException("TRAINING_NATIVE_FRIENDLY_FIRE_NOT_DISABLED");}}ARMED.addAll(bodies);}
     public static boolean opponents(ServerPlayer actor,LivingEntity target){
         if(!enabled()||!(target instanceof ServerPlayer player))return false;var a=PARTICIPANTS.get(actor);var b=PARTICIPANTS.get(player);
         return a!=null&&b!=null&&a.owner==b.owner&&a.arena.equals(b.arena)&&a.team!=b.team&&actor.level()==target.level()
@@ -57,7 +58,8 @@ public final class IsolatedCombatArena {
                 &&dev.mineagent.runtime.neoforge.task.ServerTaskStart.allowed(owner,agent)
                 &&actor.level().getGameRules().get(net.minecraft.world.level.gamerules.GameRules.PVP)&&actor.canHarmPlayer(target);
     }
-    public static void retire(ServerPlayer owner,MineAgentPlayer body){require(owner);var participant=PARTICIPANTS.get(body);if(participant==null||participant.owner!=owner)throw new SecurityException("TRAINING_OWNER");SkillRuntime.get(owner.level().getServer()).stopAll(owner,body.agentId());dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.bodies(owner.level().getServer()).remove(body.agentId(),owner.getUUID(),false);PARTICIPANTS.remove(body);ARMED.remove(body);}
+    private static String teamName(ServerPlayer owner,Bounds arena,int side){return "dzs"+UUID.nameUUIDFromBytes((owner.getUUID()+":"+arena.id+":"+side).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString().replace("-","").substring(0,13);}
+    public static void retire(ServerPlayer owner,MineAgentPlayer body){require(owner);var participant=PARTICIPANTS.get(body);if(participant==null||participant.owner!=owner)throw new SecurityException("TRAINING_OWNER");try{SkillRuntime.get(owner.level().getServer()).stopAll(owner,body.agentId());}finally{dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.bodies(owner.level().getServer()).remove(body.agentId(),owner.getUUID(),false);var board=owner.level().getServer().getScoreboard();var team=board.getPlayerTeam(teamName(owner,participant.arena,participant.team));if(team!=null){if(board.getPlayersTeam(body.getScoreboardName())==team)board.removePlayerFromTeam(body.getScoreboardName(),team);if(team.getPlayers().isEmpty())board.removePlayerTeam(team);}PARTICIPANTS.remove(body);ARMED.remove(body);}}
     @net.neoforged.bus.api.SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event){PARTICIPANTS.entrySet().removeIf(entry->entry.getValue().owner.level().getServer()==event.getServer());ARMED.removeIf(body->body.level().getServer()==event.getServer());}
     private IsolatedCombatArena(){}
 }

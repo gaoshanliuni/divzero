@@ -40,6 +40,8 @@ F2 设置二级菜单的尺寸按钮可切换 2／3／4 并保留草稿。下拉
 
 局内权重学习现在默认开启，已保存的手动关闭偏好仍然有效。内置小型神经网络使用原生对战结果微调，辅助选择已经通过 Java 权限、地形和身体能力检查的动作；训练在后台进行，候选权重通过留出样本与基准偏移检查后替换。十场同装备旧规则 AI 的完整评测和适用边界见 [自主执行与学习升级](docs/ADAPTIVE_AGENT_UPGRADE.md)。
 
+后续训练已转向不同权重的神经网络自对战，覆盖近远程、人数、空地和受困条件的双向组合，并验证原生唤魔者多技能反应。[训练场修复、实战数据与当前验收进度](docs/NEURAL_SELF_PLAY.md)。
+
 ![1.0.22 托管面板：暂停、退出、追加命令、切换视角](docs/images/player-takeover.png)
 
 **1.0.22** 平滑托管观察相机，支持原生 F5（含改绑）和面板切换第一人称、第三人称背后/正面；保持 AI 身体瞄准与行动不变。[实机验证](docs/TAKEOVER_CAMERA.md)。
@@ -201,6 +203,8 @@ AI bodies and player takeover share follow, patrol, guard, wander, combat, farmi
 Switch GUI scale to 2, 3 or 4 from the F2 settings submenu without losing drafts. Dropdown selection is repaired. AI inventory entries open a standalone native container, including during combat, with drag distribution, quick transfer, armor and both-hand slots. A new world uses a single Enable / Disable choice.
 
 In-world weight learning defaults to ON; an explicitly saved OFF preference is preserved. The bundled small neural network was fine-tuned with native duel outcomes and ranks actions already admitted by Java permission, terrain and body checks. Background updates must pass held-out samples and a reference-drift check. See [adaptive execution and learning](docs/ADAPTIVE_AGENT_UPGRADE.md) for complete ten-bout evaluations against the frozen equal-equipment rule controller and their limits.
+
+Further training uses neural opponents with different weights, mirrored weapon, team-size, airborne-start and confined-start conditions, plus native evoker multi-attack checks. [Arena repairs, actual data and current validation](docs/NEURAL_SELF_PLAY.md).
 
 ![1.0.22 takeover controls: Pause, Exit, Add command and Perspective](docs/images/player-takeover.png)
 
