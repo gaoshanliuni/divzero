@@ -32,7 +32,7 @@ final class WorkspacePanels {
     static void settings(NativeWorkspaceScreen host){
         if(host.revealWindow("settings"))return;
         var window=host.window("settings",t("设置"),520,430);var body=window.body;body.clearAllChildren();
-        var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);fields.getLayout().minHeight(0).flex(1);var footer=row();footer.getLayout().height(25).flexShrink(0);body.addChild(footer);
+        var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);fields.setId("settings-fields");fields.getLayout().minHeight(0).flex(1);var footer=row();footer.setId("settings-footer");footer.getLayout().height(25).flexShrink(0);body.addChild(footer);
         var values=new LinkedHashMap<String,String>();final JsonObject[] snapshot={null};final String[] group={"Provider"};final boolean[] busy={false};
         Runnable[] draw={null},load={null};
         draw[0]=()->{
