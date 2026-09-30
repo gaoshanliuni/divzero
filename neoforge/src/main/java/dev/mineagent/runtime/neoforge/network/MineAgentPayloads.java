@@ -51,6 +51,13 @@ public final class MineAgentPayloads {
         @Override public Type<SecretConfigResult> type(){return TYPE;}
     }
 
+    public record InventoryDetach(int containerId,java.util.UUID viewToken) implements CustomPacketPayload {
+        public static final Type<InventoryDetach> TYPE=MineAgentPayloads.type("inventory_detach");
+        public static final StreamCodec<RegistryFriendlyByteBuf,InventoryDetach> CODEC=CustomPacketPayload.codec(
+                (p,b)->{b.writeVarInt(p.containerId());b.writeUUID(p.viewToken());},b->new InventoryDetach(b.readVarInt(),b.readUUID()));
+        @Override public Type<InventoryDetach> type(){return TYPE;}
+    }
+
     public record PanelRequest(int agentOffset) implements CustomPacketPayload {
         public static final Type<PanelRequest> TYPE = MineAgentPayloads.type("panel_request");
         public static final StreamCodec<RegistryFriendlyByteBuf, PanelRequest> CODEC =

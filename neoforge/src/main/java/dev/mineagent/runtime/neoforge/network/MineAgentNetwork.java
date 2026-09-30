@@ -53,6 +53,8 @@ public final class MineAgentNetwork {
         ObjectAssetPayloads.register(event);
         dev.mineagent.runtime.neoforge.ui.ServerUiRuntime.register(event);
         var registrar = event.registrar("12").versioned("12").executesOn(HandlerThread.NETWORK);
+        registrar.playToServer(MineAgentPayloads.InventoryDetach.TYPE,MineAgentPayloads.InventoryDetach.CODEC,
+                (p,c)->serverWork(c,()->dev.mineagent.runtime.neoforge.ui.ServerAgentInventory.close((ServerPlayer)c.player(),p.containerId(),p.viewToken())));
         registrar.playToServer(ProviderModelsPayloads.Request.TYPE,ProviderModelsPayloads.Request.CODEC,(p,c)->serverWork(c,()->ProviderModelsPayloads.respond(p,(ServerPlayer)c.player(),c::reply)));
         registrar.playToClient(ProviderModelsPayloads.Response.TYPE,ProviderModelsPayloads.Response.CODEC,(p,c)->c.enqueueWork(()->dev.mineagent.runtime.neoforge.client.ProviderModelsClient.accept(p)));
         registrar.playToServer(MineAgentPayloads.SecretConfigWrite.TYPE,MineAgentPayloads.SecretConfigWrite.CODEC,(p,c)->serverWork(c,()->c.reply(applyNativeSecret(p,(ServerPlayer)c.player()))));

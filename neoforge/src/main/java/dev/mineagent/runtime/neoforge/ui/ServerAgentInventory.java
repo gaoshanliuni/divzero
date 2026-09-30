@@ -22,9 +22,14 @@ public final class ServerAgentInventory {
     }
 
     public static Map<String,Object> open(ServerPlayer viewer,Map<String,String> args){
-        var body=body(viewer,args);
-        var opened=viewer.openMenu(new net.minecraft.world.SimpleMenuProvider((id,inventory,player)->new AgentInventoryMenu(id,inventory,body),body.getName()),data->data.writeUUID(body.agentId()));
+        var body=body(viewer,args);var token=UUID.fromString(args.getOrDefault("viewToken",UUID.randomUUID().toString()));
+        var opened=viewer.openMenu(new net.minecraft.world.SimpleMenuProvider((id,inventory,player)->new AgentInventoryMenu(id,inventory,body,token),body.getName()),data->{data.writeUUID(body.agentId());data.writeUUID(token);});
         if(opened.isEmpty())throw new IllegalStateException("INVENTORY_OPEN_REJECTED");return Map.of("status","OPENED","containerId",opened.getAsInt(),"agentId",body.agentId());
+    }
+
+    /** Detaching an obsolete view must never close a newer inventory or another mod's menu. */
+    public static void close(ServerPlayer viewer,int containerId,UUID token){
+        if(viewer.containerMenu instanceof AgentInventoryMenu menu&&menu.containerId==containerId&&menu.viewToken.equals(token))viewer.doCloseContainer();
     }
 
     private static String revision(ServerPlayer player) {

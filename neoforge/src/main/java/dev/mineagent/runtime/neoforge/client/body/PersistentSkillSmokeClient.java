@@ -182,7 +182,14 @@ public final class PersistentSkillSmokeClient {
         action("close-f2-and-open-ai-profile",()->{mc().setScreen(null);dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen.open(agent,"持续技能搭档");return CompletableFuture.completedFuture(null);});
         action("profile-inventory-tab",()->{((dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen)mc().screen).smokeInventoryTab();return CompletableFuture.completedFuture(null);});
         waitFor("profile-native-slots-without-new-screen",300,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen&&dev.mineagent.runtime.neoforge.client.nativeui.NativeInventoryPanel.activeScreen()!=null));
+        action("obsolete-detach-cannot-close-current-inventory",()->server(p->{
+            var menu=(dev.mineagent.runtime.neoforge.ui.AgentInventoryMenu)p.containerMenu;
+            dev.mineagent.runtime.neoforge.ui.ServerAgentInventory.close(p,menu.containerId,UUID.randomUUID());
+            require(p.containerMenu==menu,"STALE_VIEW_CLOSED_CURRENT_CONTAINER");return Map.of("staleDetachRejected",true);
+        }));
         action("profile-inventory-proof-and-stop",()->{screen("profile-embedded-inventory");return server(p->{var report=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).snapshot(p,agent);require(p.getInventory().countItem(Items.SHIELD)==1,"INVENTORY_DUPLICATED_OR_LOST");dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).stopAll(p,agent);return report;});});
+        action("server-invalidates-embedded-inventory",()->server(p->{p.closeContainer();return null;}));
+        waitFor("server-close-preserves-ai-profile",120,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen&&mc().player.containerMenu==mc().player.inventoryMenu&&dev.mineagent.runtime.neoforge.client.nativeui.NativeInventoryPanel.activeScreen()==null));
     }
     private static void nativeInventoryClick(int index){
         try{

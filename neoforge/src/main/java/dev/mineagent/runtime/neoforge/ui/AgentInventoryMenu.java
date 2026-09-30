@@ -15,12 +15,14 @@ public final class AgentInventoryMenu extends AbstractContainerMenu {
     public static final int AGENT_SLOTS=41;
     private final MineAgentPlayer body;
     public final UUID agentId;
+    public final UUID viewToken;
     public final DataSlot selectedHotbar=DataSlot.standalone();
     private final Player viewer;
-    public AgentInventoryMenu(int id,Inventory inventory,RegistryFriendlyByteBuf data){this(id,inventory,null,data.readUUID());}
-    public AgentInventoryMenu(int id,Inventory inventory,MineAgentPlayer body){this(id,inventory,body,body.agentId());}
-    private AgentInventoryMenu(int id,Inventory inventory,MineAgentPlayer body,UUID agentId){
-        super(MineAgentRegistries.AGENT_INVENTORY.get(),id);this.body=body;this.agentId=agentId;viewer=inventory.player;addDataSlot(selectedHotbar);if(body!=null)selectedHotbar.set(body.getInventory().getSelectedSlot());
+    public AgentInventoryMenu(int id,Inventory inventory,RegistryFriendlyByteBuf data){this(id,inventory,null,data.readUUID(),data.readUUID());}
+    public AgentInventoryMenu(int id,Inventory inventory,MineAgentPlayer body){this(id,inventory,body,UUID.randomUUID());}
+    public AgentInventoryMenu(int id,Inventory inventory,MineAgentPlayer body,UUID viewToken){this(id,inventory,body,body.agentId(),viewToken);}
+    private AgentInventoryMenu(int id,Inventory inventory,MineAgentPlayer body,UUID agentId,UUID viewToken){
+        super(MineAgentRegistries.AGENT_INVENTORY.get(),id);this.body=body;this.agentId=agentId;this.viewToken=viewToken;viewer=inventory.player;addDataSlot(selectedHotbar);if(body!=null)selectedHotbar.set(body.getInventory().getSelectedSlot());
         var mirror=new SimpleContainer(41);
         // Equipment, main inventory and hotbar match the original player inventory layout.
         for(int row=0;row<4;row++)addAgentSlot(mirror,39-row,8,18+18*row);
