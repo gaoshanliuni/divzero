@@ -3270,5 +3270,7 @@
   "发现冲突，未执行": "Conflict; no writes",
   "部分执行": "Partially applied",
   "未执行": "Not executed",
-  "恢复快照": "Restore snapshot"
+  "恢复快照": "Restore snapshot",
+  "已请求播放": "Playback requested",
+  "工具与管理": "Tools and management"
 }

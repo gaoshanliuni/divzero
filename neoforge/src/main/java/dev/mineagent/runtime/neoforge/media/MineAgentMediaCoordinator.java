@@ -18,6 +18,9 @@ public final class MineAgentMediaCoordinator {
 
     private final MinecraftServer server;
     private final Map<UUID, Session> sessions = new LinkedHashMap<>();
+    private final Map<UUID,Map<String,Object>> outcomes=new LinkedHashMap<>();
+    private void outcome(UUID id,String status,String error){outcomes.put(id,Map.of("status",status,"error",error,"observedAt",System.currentTimeMillis()));while(outcomes.size()>256)outcomes.remove(outcomes.keySet().iterator().next());}
+    public Map<String,Object> state(UUID id){var session=sessions.get(id);return outcomes.getOrDefault(id,Map.of("status",session==null?"IDLE":session.ready?"READY":"PREPARING","error",""));}
 
     public MineAgentMediaCoordinator(MinecraftServer server) {
         this.server = java.util.Objects.requireNonNull(server, "server");
@@ -31,16 +34,19 @@ public final class MineAgentMediaCoordinator {
         try {
             binding = MediaScreenBinding.parse(entry.screenBinding());
         } catch (IllegalArgumentException invalid) {
+            outcome(entry.mediaId(),"FAILED","MEDIA_BINDING_REQUIRED");
             MineAgentRuntimeMod.LOGGER.warn("Cannot play unbound media {}", entry.mediaId());
             return;
         }
         var session = new Session(entry.mediaId(), entry.revision(), entry.kind(), entry.sourceUrl(), binding);
         sessions.put(entry.mediaId(), session);
+        outcome(entry.mediaId(),"PREPARING","");
         resolve(session, true);
     }
 
     public void stop(UUID mediaId) {
         sessions.remove(mediaId);
+        outcome(mediaId,"PAUSED","");
     }
 
     public void synchronizeClient() {
@@ -82,15 +88,18 @@ public final class MineAgentMediaCoordinator {
                                     String hash = String.valueOf(response.payload().get("sha256"));
                                     byte[] bytes = MineAgentRuntimeServices.worker(server).contentBytes(hash);
                                     MineAgentNetwork.sendMediaFrame(server, entry, position, hash, bytes);
+                                    outcome(session.mediaId,"STREAMING","");
                                     current.imageRendered = current.kind == MediaKind.IMAGE;
                                     current.frameFailures = 0;
                                 } catch (Exception transferFailure) {
+                                    outcome(session.mediaId,"FAILED","MEDIA_FRAME_TRANSFER_FAILED");
                                     MineAgentRuntimeMod.LOGGER.warn("Failed to transfer media frame {}",
                                             session.mediaId, transferFailure);
                                 }
                             } else {
                                 if (++current.frameFailures >= 3) {
                                     sessions.remove(session.mediaId);
+                                    outcome(session.mediaId,"FAILED","MEDIA_FRAME_FAILED");
                                 }
                                 MineAgentRuntimeMod.LOGGER.warn("FFmpeg frame failed for {}: {}", session.mediaId,
                                         failure == null && response != null ? response.payload() : failure);
@@ -113,14 +122,17 @@ public final class MineAgentMediaCoordinator {
                                     String hash = String.valueOf(response.payload().get("sha256"));
                                     byte[] bytes = MineAgentRuntimeServices.worker(server).contentBytes(hash);
                                     MineAgentNetwork.sendMediaAudio(server, entry, hash, bytes);
+                                    outcome(session.mediaId,"STREAMING","");
                                     current.audioFailures = 0;
                                 } catch (Exception transferFailure) {
+                                    outcome(session.mediaId,"FAILED","MEDIA_AUDIO_TRANSFER_FAILED");
                                     MineAgentRuntimeMod.LOGGER.warn("Failed to transfer media audio {}",
                                             session.mediaId, transferFailure);
                                 }
                             } else {
                                 if (++current.audioFailures >= 3) {
                                     current.hasAudio = false;
+                                    outcome(session.mediaId,"FAILED","MEDIA_AUDIO_FAILED");
                                 }
                                 MineAgentRuntimeMod.LOGGER.warn("FFmpeg audio failed for {}: {}", session.mediaId,
                                         failure == null && response != null ? response.payload() : failure);
@@ -156,6 +168,7 @@ public final class MineAgentMediaCoordinator {
                     }
                     if (failure != null || response == null || !"media.probe.result".equals(response.type())) {
                         sessions.remove(session.mediaId);
+                        outcome(session.mediaId,"FAILED","MEDIA_PROBE_FAILED");
                         MineAgentRuntimeMod.LOGGER.warn("FFprobe failed for {}: {}", session.mediaId,
                                 failure == null && response != null ? response.payload() : failure);
                         return;
@@ -168,6 +181,7 @@ public final class MineAgentMediaCoordinator {
                     session.nextFrameAt = 0;
                     session.nextAudioAt = 0;
                     session.ready = session.hasVideo || session.hasAudio;
+                    outcome(session.mediaId,session.ready?"READY":"FAILED",session.ready?"":"MEDIA_NO_PLAYABLE_STREAM");
                 }));
     }
 

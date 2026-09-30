@@ -28,7 +28,7 @@ final class ServerWorkspaceModules implements AutoCloseable {
     CompletableFuture<Map<String,Object>> handle(ServerPlayer viewer,UUID operation,Map<String,String> args,boolean write,BooleanSupplier permit)throws Exception{
         if(!permit.getAsBoolean()||server.getPlayerList().getPlayer(viewer.getUUID())!=viewer)throw new SecurityException("WORKSPACE_CONTEXT_CHANGED");
         return switch(args.getOrDefault("module","")){
-            case "memory"->memory(viewer,args,write);
+            case "memory"->memory(viewer,args,write,permit);
             case "media"->CompletableFuture.completedFuture(media(viewer,args,write));
             case "backups"->{require(viewer,PermissionAction.RESTORE_BACKUP);yield CompletableFuture.completedFuture(backups.handle(viewer,operation,args,write,permit));}
             case "mods"->mods(viewer,args,write,permit);
@@ -36,7 +36,7 @@ final class ServerWorkspaceModules implements AutoCloseable {
             default->throw new IllegalArgumentException("WORKSPACE_MODULE_UNKNOWN");
         };
     }
-    private CompletableFuture<Map<String,Object>> memory(ServerPlayer viewer,Map<String,String> args,boolean write)throws Exception{
+    private CompletableFuture<Map<String,Object>> memory(ServerPlayer viewer,Map<String,String> args,boolean write,BooleanSupplier permit)throws Exception{
         require(viewer,PermissionAction.CHAT);String scope=args.getOrDefault("scope","dialogue");UUID owner=viewer.getUUID(),world=MineAgentRuntimeServices.worldId(server);
         if(scope.equals("legacy")){
             var service=MineAgentRuntimeServices.memories(server);boolean op=operator(viewer);
@@ -57,18 +57,20 @@ final class ServerWorkspaceModules implements AutoCloseable {
         else throw new IllegalArgumentException("MEMORY_ACTION");
         var file=server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");
         return CompletableFuture.supplyAsync(()->{try(var store=new DialogueMemoryStore(file,world,owner,agent,java.time.Clock.systemUTC())){
-            if(!write)return store.inspect(args.get("query"),offset(args));
+            server.submit(()->{if(!permit.getAsBoolean()||server.getPlayerList().getPlayer(owner)!=viewer)throw new SecurityException("WORKSPACE_CONTEXT_CHANGED");require(viewer,PermissionAction.CHAT);}).join();
+            if(!write){int offset=offset(args);var inspected=store.inspect(args.get("query"),offset);var result=new LinkedHashMap<String,Object>(page((List<?>)inspected.get("entries"),0));int count=((List<?>)result.get("items")).size(),total=(Integer)inspected.get("total");result.put("total",total);result.put("nextOffset",offset+count<total?offset+count:-1);return result;}
             if(args.get("kind").equals("forget"))return Map.<String,Object>of("status","APPLIED","entry",store.forget(UUID.fromString(args.get("id")),Long.parseLong(args.get("revision"))));
             return Map.<String,Object>of("status","APPLIED","entry",store.remember(args.get("type"),args.get("topic"),args.get("value"),Long.parseLong(args.get("ttlSeconds")),"player:workspace",List.of(),Long.parseLong(args.get("revision"))));
         }catch(Exception failure){throw new CompletionException(failure);}},io);
     }
     private Map<String,Object> media(ServerPlayer viewer,Map<String,String> args,boolean write)throws Exception{
         var service=MineAgentRuntimeServices.media(server);service.setExplicitlyAllowedHosts(MineAgentRuntimeServices.mediaAllowedHosts(server));
-        if(!write){keys(args,"module","offset","query");String q=query(args);return page(service.all().stream().filter(e->(e.title()+" "+e.sourceUrl()).toLowerCase(Locale.ROOT).contains(q)).toList(),offset(args));}
+        if(!write){keys(args,"module","offset","query");String q=query(args);return page(service.all().stream().filter(e->(e.title()+" "+e.sourceUrl()).toLowerCase(Locale.ROOT).contains(q)).map(e->{var item=JSON.convertValue(e,new com.fasterxml.jackson.core.type.TypeReference<Map<String,Object>>(){});item.put("runtime",MineAgentRuntimeServices.mediaCoordinator(server).state(e.mediaId()));return item;}).toList(),offset(args));}
         String action=args.get("kind");boolean manager=MineAgentRuntimeServices.permissions(server).allowed(viewer.getUUID(),operator(viewer),PermissionAction.CONTROL_PUBLIC_MEDIA);
         if(action.equals("create")){keys(args,"module","kind","type","title","url");if(!manager)throw new SecurityException("WORKSPACE_PERMISSION_DENIED");var entry=service.add(viewer.getUUID(),MediaKind.valueOf(args.get("type")),args.get("title"),args.get("url"));broadcastMedia();return Map.of("status","APPLIED","entry",entry);}
         keys(args,"module","kind","id","revision","positionMillis");UUID id=UUID.fromString(args.get("id"));var entry=service.get(id).orElseThrow();long revision=Long.parseLong(args.get("revision"));boolean authorized=manager||entry.ownerPlayerId().equals(viewer.getUUID());
         long position=Long.parseLong(args.get("positionMillis"));if(position<0)throw new IllegalArgumentException("MEDIA_POSITION_INVALID");
+        if(action.equals("play")&&entry.screenBinding().isBlank())throw new IllegalStateException("MEDIA_BINDING_REQUIRED");
         var result=switch(action){
             case "bind_here"->service.bind(id,revision,authorized,new MediaScreenBinding(viewer.level().dimension().identifier().toString(),viewer.blockPosition().getX(),viewer.blockPosition().getY(),viewer.blockPosition().getZ()).encoded());
             case "play","pause"->service.updatePlayback(id,revision,authorized,action.equals("play"),position,entry.playbackRate());

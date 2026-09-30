@@ -1,0 +1,75 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+
+import com.google.gson.*;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
+import dev.mineagent.runtime.api.config.PanelSection;
+import dev.mineagent.runtime.neoforge.MineAgentRuntimeServices;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Blocks;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.Function;
+
+/** Isolated acceptance through visible controls and independent authoritative readback. */
+@EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
+public final class NativeModulesSmokeClient {
+    private static CompletableFuture<Map<String,Object>> result;private static UUID agent;private static int stage,ticks,wait;private static boolean busy;private static BlockPos marker;private static final List<Object> checks=new ArrayList<>();
+    public static CompletableFuture<Map<String,Object>> run(UUID id){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");agent=id;stage=ticks=wait=0;busy=false;checks.clear();result=new CompletableFuture<>();NativeWorkspaceScreen.openForAgent(id.toString(),"界面模块验收");return result;}
+    private static NativeWorkspaceScreen host(){return (NativeWorkspaceScreen)Minecraft.getInstance().screen;}
+    private static UIElement find(UIElement root,String id){if(root.getId().equals(id))return root;for(var child:root.getChildren()){var value=find(child,id);if(value!=null)return value;}return null;}
+    private static boolean click(String text){var candidates=new ArrayList<Button>();buttons(host().smokeRoot(),text,candidates);Collections.reverse(candidates);for(var button:candidates){if(button.getSizeWidth()<1||button.getSizeHeight()<1)continue;float x=button.getPositionX()+button.getSizeWidth()/2,y=button.getPositionY()+button.getSizeHeight()/2;var screen=host();if(x<0||y<0||x>=screen.width||y>=screen.height)continue;screen.modularUI.refreshHoveredElementAtScreen(x,y);boolean hovered=false;for(var node=screen.modularUI.getLastHoveredElement();node!=null;node=node.getParent())if(node==button)hovered=true;if(!hovered)continue;var widget=com.lowdragmc.lowdraglib2.gui.ui.ModularUIClientAccess.getWidget(screen.modularUI);var event=new net.minecraft.client.input.MouseButtonEvent(x,y,new net.minecraft.client.input.MouseButtonInfo(0,0));widget.mouseClicked(event,false);widget.mouseReleased(event);return true;}return false;}
+    private static void buttons(UIElement root,String text,List<Button> out){if(root instanceof Button button&&(text.equals(button.getId())||text.equals(button.text.getText().getString())))out.add(button);for(var child:root.getChildren())buttons(child,text,out);}
+    private static boolean hasText(UIElement root,String text){if(root instanceof TextElement label&&label.getText().getString().equals(text)&&label.getSizeHeight()>0)return true;for(var child:root.getChildren())if(hasText(child,text))return true;return false;}
+    private static void next(String check){checks.add(check);stage++;wait=0;}
+    private static void require(boolean value,String error){if(!value)throw new IllegalStateException(error);}
+    private static void server(Function<ServerPlayer,Boolean> action,String label){busy=true;var mc=Minecraft.getInstance();mc.getSingleplayerServer().submit(()->action.apply(mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID()))).whenComplete((ok,error)->mc.execute(()->{busy=false;if(error!=null)result.completeExceptionally(error);else if(ok)next(label);}));}
+    @SubscribeEvent public static void tick(ClientTickEvent.Post event){if(result==null||result.isDone())return;try{
+        if(++ticks>3000)throw new IllegalStateException("MODULE_UI_TIMEOUT_"+stage);if(ticks%100==0)java.nio.file.Files.writeString(Minecraft.getInstance().gameDirectory.toPath().resolve("module-ui-progress.json"),new Gson().toJson(Map.of("stage",stage,"ticks",ticks,"checks",checks)));if(busy||!NativeWorkspaceConnection.ready()||!(Minecraft.getInstance().screen instanceof NativeWorkspaceScreen))return;
+        switch(stage){
+            case 0->{NativeWorkspaceScreen.openSection(PanelSection.MEMORY);next("open-memory-route");}
+            case 1->{if(click("新增记忆"))next("visible-add-memory");}
+            case 2->{if(find(host().smokeRoot(),"memory-topic") instanceof TextField topic&&find(host().smokeRoot(),"memory-value") instanceof TextArea value){topic.setText("家",true);value.setValue(new String[]{"minecraft:overworld x=425 y=101 z=50"},true);if(click("保存"))next("visible-save-memory");}}
+            case 3->{busy=true;WorkspacePanels.request("workspace.read",Map.of("module","memory","scope","dialogue","agentId",agent.toString(),"query","家","offset","0")).whenComplete((reply,error)->{busy=false;if(error!=null){result.completeExceptionally(error);return;}var items=WorkspacePanels.state(reply).getAsJsonArray("items");if(items.size()==1&&items.get(0).getAsJsonObject().get("value").getAsString().contains("425"))next("authoritative-memory-persisted");});}
+            case 4->server(p->{try(var store=new dev.mineagent.runtime.core.memory.DialogueMemoryStore(p.level().getServer().getServerDirectory().resolve("mineagent-runtime-data/runtime.db"),MineAgentRuntimeServices.worldId(p.level().getServer()),p.getUUID(),agent,java.time.Clock.systemUTC())){require(store.context("回家",8000).contains("425"),"WORKSPACE_MEMORY_NOT_RECALLED");return true;}catch(Exception error){throw new CompletionException(error);}},"ui-memory-consumed-by-real-recall");
+            case 5->{NativeWorkspaceScreen.openSection(PanelSection.BACKUPS);server(p->{marker=p.blockPosition().offset(1,0,0);p.level().setBlockAndUpdate(marker,Blocks.STONE.defaultBlockState());return true;},"snapshot-marker-stone");}
+            case 6->{if(click("创建快照"))next("visible-snapshot-editor");}
+            case 7->{if(find(host().smokeRoot(),"snapshot-label") instanceof TextField field){field.setText("可见按钮快照",true);if(click("创建快照"))next("visible-create-snapshot");}}
+            case 8->server(p->{var values=MineAgentRuntimeServices.snapshots(p.level().getServer()).all();if(values.stream().noneMatch(s->s.label().equals("可见按钮快照")))return false;p.level().setBlockAndUpdate(marker,Blocks.GOLD_BLOCK.defaultBlockState());return true;},"actual-snapshot-saved-before-world-edit");
+            case 9->{if(hasText(host().smokeRoot(),"恢复操作结果")&&click("×")){NativeWorkspaceScreen.openSection(PanelSection.BACKUPS);next("close-backup-result");}}
+            case 10->{if(click("预览恢复差异"))next("visible-preview-backup");}
+            case 11->{var matches=new ArrayList<Button>();buttons(host().smokeRoot(),"按此预览恢复",matches);if(!matches.isEmpty())server(p->{p.level().setBlockAndUpdate(marker,Blocks.DIAMOND_BLOCK.defaultBlockState());return true;},"concurrent-player-edit-after-preview");}
+            case 12->{if(click("按此预览恢复"))next("visible-restore-stale-preview");}
+            case 13->{if(++wait>30)server(p->{require(p.level().getBlockState(marker).is(Blocks.DIAMOND_BLOCK),"BACKUP_OVERWROTE_LATER_PLAYER_EDIT");return true;},"restore-conflict-preserved-diamond");}
+            case 14->{if(hasText(host().smokeRoot(),"恢复操作结果")&&click("×")){NativeWorkspaceScreen.openSection(PanelSection.BACKUPS);next("dismiss-conflict-result");}}
+            case 15->{if(click("预览恢复差异"))next("fresh-preview-before-restore");}
+            case 16->{if(click("按此预览恢复"))next("visible-restore-fresh-preview");}
+            case 17->server(p->p.level().getBlockState(marker).is(Blocks.STONE),"restore-actually-restored-stone");
+            case 18->{if(++wait>20&&hasText(host().smokeRoot(),"恢复操作结果")&&click("×")){NativeWorkspaceScreen.openSection(PanelSection.BACKUPS);next("dismiss-restore-result");}}
+            case 19->{if(click("修改历史"))next("visible-change-history");}
+            case 20->{if(click("撤销"))next("visible-undo-snapshot-restore");}
+            case 21->server(p->p.level().getBlockState(marker).is(Blocks.DIAMOND_BLOCK),"undo-restored-previous-diamond");
+            case 22->{if(++wait>20&&hasText(host().smokeRoot(),"恢复操作结果")&&click("×")){NativeWorkspaceScreen.openSection(PanelSection.BACKUPS);next("dismiss-undo-result");}}
+            case 23->{if(click("重做"))next("visible-redo-snapshot-restore");}
+            case 24->server(p->p.level().getBlockState(marker).is(Blocks.STONE),"redo-restored-stone");
+            case 25->{NativeWorkspaceScreen.openSection(PanelSection.MEDIA);next("open-media-route");}
+            case 26->{if(click("添加媒体"))next("visible-add-media");}
+            case 27->{if(find(host().smokeRoot(),"media-title") instanceof TextField title&&find(host().smokeRoot(),"media-url") instanceof TextField url){title.setText("界面媒体验收",true);url.setText("https://example.com/divzero-test-image.png",true);if(click("添加"))next("visible-save-media");}}
+            case 28->server(p->MineAgentRuntimeServices.media(p.level().getServer()).all().stream().anyMatch(e->e.title().equals("界面媒体验收")),"media-persisted");
+            case 29->{if(click("绑定到当前位置"))next("visible-media-binding");}
+            case 30->server(p->{var entry=MineAgentRuntimeServices.media(p.level().getServer()).all().stream().filter(e->e.title().equals("界面媒体验收")).findFirst().orElseThrow();return !entry.screenBinding().isBlank();},"media-binding-persisted");
+            case 31->{NativeWorkspaceScreen.openSection(PanelSection.DIAGNOSTICS);next("open-diagnostics-route");}
+            case 32->{busy=true;WorkspacePanels.request("workspace.read",Map.of("module","diagnostics","offset","0")).whenComplete((reply,error)->{busy=false;if(error!=null)result.completeExceptionally(error);else{require(WorkspacePanels.state(reply).get("usedMemoryBytes").getAsLong()>0,"DIAGNOSTICS_NOT_LIVE");next("diagnostics-live-server-values");}});}
+            case 33->server(p->{p.level().getServer().getPlayerList().deop(p.nameAndId());return true;},"remove-operator-for-permission-check");
+            case 34->{busy=true;WorkspacePanels.request("workspace.read",Map.of("module","backups","kind","list","offset","0")).whenComplete((reply,error)->{busy=false;if(error==null)result.completeExceptionally(new IllegalStateException("BACKUP_PERMISSION_BYPASS"));else next("backup-permission-denied");});}
+            case 35->server(p->{p.level().getServer().getPlayerList().op(p.nameAndId());return true;},"restore-fixture-operator");
+            default->result.complete(Map.of("status","PASS","checks",List.copyOf(checks),"modelCalls",0));
+        }
+    }catch(Exception failure){result.completeExceptionally(failure);}}
+}
