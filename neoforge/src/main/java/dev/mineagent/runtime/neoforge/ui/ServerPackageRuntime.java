@@ -129,6 +129,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         MineAgentRuntimeServices.worker(server).generateWorldPatch(MineAgentRuntimeServices.config(server),job,MineAgentRuntimeServices.identity(server),dispatch).whenComplete((result,error)->server.execute(()->{
             worldPatchPermits.remove(job.taskId(),permit);if(closed)return;
             try{
+                if(result!=null)worldPatches.diagnostic(job,result.diagnostic());
                 if(error!=null||result==null)worldPatches.fail(job,"WORLD_PATCH_GENERATION_FAILED");
                 else if(!result.errorCode().isEmpty())worldPatches.failed(job,result.errorCode(),result.providerId(),result.rawOutputSha256());
                 else if(!permit.get()||!worldPatchCurrent(job))worldPatches.failed(job,"WORLD_PATCH_STALE_OR_REVOKED",result.providerId(),result.rawOutputSha256());
@@ -152,7 +153,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         if(offset<0||offset>256||sourceOffset<0||sourceOffset>1_048_576)throw new IllegalArgumentException("WORLD_PATCH_OFFSET");
         var next=job.candidate()==null?job.base():job.candidate();var all=new TreeSet<String>();all.addAll(job.base().resources().keySet());all.addAll(next.resources().keySet());all.removeIf(p->p.startsWith("ui/"));
         var files=all.stream().skip(offset).limit(16).map(p->{var a=job.base().resources().get(p);var b=next.resources().get(p);return Map.of("path",p,"beforeHash",a==null?"":a.sha256(),"afterHash",b==null?"":b.sha256(),"changed",!Objects.equals(a,b));}).toList();
-        var meta=new LinkedHashMap<String,Object>();meta.put("activationMode",job.base().activationMode().name());meta.put("operationId",operation);meta.put("state",job.state());meta.put("baseRevision",job.base().revision());meta.put("baseHash",job.base().canonicalSha256());meta.put("candidateRevision",next.revision());meta.put("candidateHash",job.candidate()==null?"":job.candidate().canonicalSha256());meta.put("files",files);meta.put("offset",offset);meta.put("more",offset+files.size()<all.size());
+        var meta=new LinkedHashMap<String,Object>();meta.put("diagnostic",worldPatches.diagnostic(owner,operation));meta.put("executionState",job.state().equals("FAILED")?"CANDIDATE_ONLY":job.state());meta.put("activationMode",job.base().activationMode().name());meta.put("operationId",operation);meta.put("state",job.state());meta.put("baseRevision",job.base().revision());meta.put("baseHash",job.base().canonicalSha256());meta.put("candidateRevision",next.revision());meta.put("candidateHash",job.candidate()==null?"":job.candidate().canonicalSha256());meta.put("files",files);meta.put("offset",offset);meta.put("more",offset+files.size()<all.size());
         String source="",sha="";int length=0;
         if(path!=null&&!path.isEmpty()){
             if(!all.contains(path))throw new IllegalArgumentException("WORLD_PATCH_SOURCE_PATH");var ref=(before?job.base():next).resources().get(path);

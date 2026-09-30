@@ -28,7 +28,7 @@ public final class WorldPackagePatchBuilder {
             var old=base.resources().get(path);String media=old!=null?old.mediaType():path.endsWith(".js")?"application/javascript":path.endsWith(".json")?"application/json":path.endsWith(".png")?"image/png":boot?(path.endsWith(".java")?"text/x-java-source":"application/octet-stream"):null;
             if(media==null)throw new IllegalArgumentException("WORLD_PATCH_MEDIA");
             var side=old!=null?old.side():boot?base.entrypoints().get("boot").side():path.startsWith("server/")?RuntimeResourceSide.SERVER:RuntimeResourceSide.COMMON;
-            if(media.equals("application/json"))JSON.readTree(bytes);
+            if(media.equals("application/json"))try{JSON.readTree(bytes);}catch(com.fasterxml.jackson.core.JsonProcessingException invalid){var at=invalid.getLocation();throw new PackageOutputException("WORLD_PATCH_JSON",path+":"+(at==null?1:at.getLineNr())+":"+(at==null?1:at.getColumnNr())+": "+invalid.getOriginalMessage());}
             var blob=store.put(bytes);resources.put(path,new RuntimeResourceRef(path,blob.sha256(),side,media,bytes.length));
         }
         if(root.has("delete")){
@@ -49,9 +49,9 @@ public final class WorldPackagePatchBuilder {
         if(boot){var before=dev.mineagent.runtime.core.boot.BootExtensionPlan.read(base,store);var after=dev.mineagent.runtime.core.boot.BootExtensionPlan.read(draft,store);if(!before.modId().equals(after.modId()))throw new IllegalArgumentException("WORLD_PATCH_BOOT_MOD_ID");}
         else{
         var plan=WorldContentPlan.resolve(draft,store);var preflight=new ScriptPreflight();var registration=new RegistrationPreflight();
-        for(var source:plan.modules().values())if(!preflight.inspect(source).accepted())throw new IllegalArgumentException("WORLD_PATCH_PREFLIGHT");
+        for(var module:plan.modules().entrySet()){var check=preflight.inspect(module.getValue());if(!check.accepted())throw new PackageOutputException("WORLD_PATCH_PREFLIGHT",diagnostics(module.getKey(),check));}
         for(var restore:plan.restoreEntrypoints().values())for(var module:plan.modules().entrySet()){
-            var check=module.getKey().equals(restore)?registration.lifecycle(module.getValue()):registration.inspect(module.getValue());if(!check.accepted())throw new IllegalArgumentException("WORLD_PATCH_REGISTRATION");
+            var check=module.getKey().equals(restore)?registration.lifecycle(module.getValue()):registration.inspect(module.getValue());if(!check.accepted())throw new PackageOutputException("WORLD_PATCH_REGISTRATION",diagnostics(module.getKey(),check));
         }
         for(var d:draft.definitions().values())for(var path:d.resourcePaths()){
             var ref=resources.get(path);if(ref==null)throw new IllegalArgumentException("WORLD_PATCH_DECLARED_RESOURCE");
@@ -65,6 +65,7 @@ public final class WorldPackagePatchBuilder {
         var candidate=new RuntimePackage(draft.packageId(),draft.type(),draft.name(),draft.version(),draft.activationMode(),draft.dependencies(),draft.permissions(),entries,draft.definitions(),resources,draft.origin(),draft.enabled(),draft.revision(),hash,Base64.getEncoder().encodeToString(signer.sign(hash.getBytes(StandardCharsets.US_ASCII))),draft.updatedAtEpochMillis(),draft.nativeCompatibility());
         WorldPatchPolicy.require(base,candidate);return candidate;
     }
+    private static String diagnostics(String path,PreflightResult check){return check.diagnostics().stream().map(d->path+":"+d.line()+": "+d.code()+" — "+d.message()).collect(java.util.stream.Collectors.joining("\n"));}
     private static void path(String path){RuntimeEntrypoint.requireRelativePath(path);if(path.length()>256||path.startsWith("ui/")||!path.matches("[A-Za-z0-9_@.-]+(?:/[A-Za-z0-9_@.-]+)*"))throw new IllegalArgumentException("WORLD_PATCH_PATH");}
     private static String text(JsonNode node,String key){if(!node.path(key).isTextual())throw new IllegalArgumentException("WORLD_PATCH_FIELD");return node.path(key).textValue();}
     private static void only(JsonNode node,Set<String> fields){if(node==null||!node.isObject()||node.properties().stream().anyMatch(e->!fields.contains(e.getKey())))throw new IllegalArgumentException("WORLD_PATCH_FIELDS");}

@@ -69,7 +69,7 @@ public final class PackageUiPatchService implements AutoCloseable {
         var base=library.get(suppliedBase.packageId()).orElseThrow(()->new IllegalStateException("PACKAGE_MISSING"));if(!matches(base,suppliedBase,suppliedBase.revision()))throw new IllegalStateException("STALE_PACKAGE");
         if(worldMode)WorldPatchPolicy.requireBase(base);
         var active=jobs.values().stream().filter(j->Set.of("PENDING","READY","APPLYING","ROLLING_BACK").contains(j.state())).toList();
-        if(active.size()>=4||active.stream().anyMatch(j->j.ownerPlayerId().equals(owner)||j.base().packageId().equals(base.packageId())))throw new IllegalStateException("UI_PATCH_BUSY");
+        if(active.stream().anyMatch(j->j.base().packageId().equals(base.packageId())))throw new IllegalStateException("UI_PATCH_BUSY");
         var task=tasks.create(agent,owner,(worldMode?"世界内容修改: ":"网页修改: ")+prompt.substring(0,Math.min(80,prompt.length())),60,List.of(new TaskStepSpec(generateStep,Set.of()),new TaskStepSpec(applyStep,Set.of(generateStep))),parent);
         var job=new PackageUiPatchJob(operation,world,owner,agent,task.taskId(),task.intentRevision(),base,null,prompt,"PENDING","","","",0,1,clock.millis());
         try{if(!repo.compareAndSet(world,NS,operation.toString(),0,json.writeValueAsString(job),clock.millis()).accepted())throw new IllegalStateException("UI_PATCH_CAS");}
@@ -109,6 +109,12 @@ public final class PackageUiPatchService implements AutoCloseable {
         if(!result.accepted())return save(job,"STALE",result.errorCode(),job.candidate(),job.providerId(),job.rawOutputSha256(),job.headRevision());
         return save(job,"ROLLED_BACK","",job.candidate(),job.providerId(),job.rawOutputSha256(),job.headRevision()+1);
     }
+    public synchronized void diagnostic(PackageUiPatchJob ticket,String message)throws Exception{
+        requireOpen();var job=ticket(ticket);String value=Objects.toString(message,"");if(value.length()>16384)value=value.substring(0,16384);
+        String space=NS+"_diagnostics";var old=repo.get(world,space,job.operationId().toString());
+        if(!repo.compareAndSet(world,space,job.operationId().toString(),old.map(row->row.revision()).orElse(0L),json.writeValueAsString(Map.of("message",value)),clock.millis()).accepted())throw new IllegalStateException("PATCH_DIAGNOSTIC_CHANGED");
+    }
+    public synchronized String diagnostic(UUID owner,UUID operation)throws Exception{requireOpen();owned(owner,operation);var row=repo.get(world,NS+"_diagnostics",operation.toString());return row.isEmpty()?"":json.readTree(row.get().payload()).path("message").asText();}
     public synchronized PackageUiPatchJob fail(PackageUiPatchJob ticket,String error)throws Exception{requireOpen();var job=ticket(ticket);if(!job.state().equals("PENDING"))return job;pause(job);return save(job,"FAILED",error!=null&&error.matches("[A-Z][A-Z0-9_]{0,63}")?error:"UI_PATCH_FAILED",null,"","",0);}
     public synchronized PackageUiPatchJob failed(PackageUiPatchJob ticket,String error,String provider,String raw)throws Exception{
         requireOpen();var job=ticket(ticket);if(!job.state().equals("PENDING"))return job;

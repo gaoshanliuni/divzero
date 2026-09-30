@@ -1999,8 +1999,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/PackageUiPatchService.java",
-      "sha256": "692bb3930508d956903c7b9750ae62a23958010663d05341874a06488a632ade",
-      "bytes": 21330
+      "sha256": "a224a2d7eb5ff935cf2c3d69bec65d0dac47f7e11ed07decff1a5283ed1a6075",
+      "bytes": 22145
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ProductionContentCatalog.java",
@@ -3264,8 +3264,8 @@
     },
     {
       "path": "docs/ADAPTIVE_AGENT_UPGRADE.md",
-      "sha256": "81fda46d1d4f7817263952d9c553df3531af2f1465565ee0f28ede16e80e02ca",
-      "bytes": 2133
+      "sha256": "abcf15f919f870f19f671973e082d1d8049eba35bd92e2d500263b5717e0cbb0",
+      "bytes": 7629
     },
     {
       "path": "docs/BUILD_JAR.md",
@@ -3381,6 +3381,16 @@
       "path": "docs/images/native-furnace.png",
       "sha256": "97a2eda6d5fb5f2258c5028517eaa0b57b2f6464bd735fa4d0e7fa1fe73e8c31",
       "bytes": 838617
+    },
+    {
+      "path": "docs/images/native-inventory-combat.png",
+      "sha256": "fe2977b8c3265bce237e4493dbe43ca189acab1399554a945847e285df99a592",
+      "bytes": 470490
+    },
+    {
+      "path": "docs/images/native-inventory-scale4.png",
+      "sha256": "822e856e376452f64c95b6e54c2c58b91a6c5ad152f6ff6359dc56e43ce574d9",
+      "bytes": 183809
     },
     {
       "path": "docs/images/native-preview.png",
@@ -6199,8 +6209,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "sha256": "d4019392c6a58368e56c59b569a7df976a8c76fdcea2f6d458287714ef8789ca",
-      "bytes": 60473
+      "sha256": "ff224625192a6158c7d23926bade3a431b0111aa9d8a2c1cb248b746c548cc43",
+      "bytes": 60704
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -7089,8 +7099,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorkerWorldPatchResult.java",
-      "sha256": "8ed3e4c835f7d9d801fd590724224ac003c0f3d3bd7d90b9cea51ed841e966ba",
-      "bytes": 1124
+      "sha256": "e34cddd3887deae7d0bdccb53c17c30b8e8f0c055be2fc09fd4fd2cc3f0db200",
+      "bytes": 1455
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldContentPrompt.java",
@@ -7099,8 +7109,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldPackagePatchBuilder.java",
-      "sha256": "84b0cee3d72429a88b655edea921baeb037f73970714d29fb5d4c19a3fd4afe3",
-      "bytes": 7923
+      "sha256": "2585b3d56741c9eb8f5e555c74007c9ad77865d5c6060fdf4348d2dacb4caf75",
+      "bytes": 8501
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldPatchPrompt.java",
