@@ -3834,8 +3834,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "3c4b1c0c410bc0be79f2f3ac934ba64edaa382ef61723e4fbd0b52a1d74fb19e",
-      "bytes": 142743
+      "sha256": "df57d409fceb1912c7c53cd36e636104e75ca4b41aecf726cab48bb1bafb93d0",
+      "bytes": 145511
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5734,8 +5734,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "991f2db013b32531b78861f32f4a445e8841b677003da7070fd7ec6046d1ab1d",
-      "bytes": 70806
+      "sha256": "2037e72640b4722d2c4b2792b390f315f939d3b93bfdaa01194301c97b7a3653",
+      "bytes": 71202
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",

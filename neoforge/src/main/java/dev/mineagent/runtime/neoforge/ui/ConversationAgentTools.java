@@ -52,10 +52,13 @@ public final class ConversationAgentTools {
         if(!checked.issues().isEmpty())return CompletableFuture.completedFuture(checked.rejection());
         if(!p.level().getServer().isSameThread()||!current(p,permit)||ConversationTools.mutation(tool)&&!personalTool(tool)&&!tool.equals("stop_actions")&&!ServerTaskStart.allowed(p,agent))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_PERMISSION","executionState","NOT_STARTED"));
         var invocation=new ToolLifecycleEvents.Invocation(MineAgentRuntimeServices.worldId(p.level().getServer()),p.getUUID(),agent,operation,tool,checked.arguments().toString());
-        var veto=ToolLifecycleEvents.before(invocation);if(veto.isPresent())return CompletableFuture.completedFuture(veto.orElseThrow());
+        var veto=ToolLifecycleEvents.before(invocation);if(veto.isPresent()){ToolLifecycleEvents.after(invocation,veto.orElseThrow());return CompletableFuture.completedFuture(veto.orElseThrow());}
         // executeChecked repeats live authority and all domain admission after extension validation.
         var action=executeChecked(p,agent,operation,tool,checked.arguments().toString(),permit,conversation);
-        action=action.thenApply(value->{var server=p.level().getServer();server.execute(()->ToolLifecycleEvents.after(invocation,value));return value;});
+        action=action.whenComplete((value,failure)->{
+            var receipt=value!=null?value:Map.<String,Object>of("status",ConversationTools.mutation(tool)?"UNKNOWN":"READ_FAILED","error",ConversationTools.mutation(tool)?"AGENT_TOOL_OUTCOME_UNKNOWN":failure==null?"AGENT_TOOL_EMPTY_RECEIPT":code(failure),"executionState",ConversationTools.mutation(tool)?"UNKNOWN":"READ_FAILED");
+            p.level().getServer().execute(()->ToolLifecycleEvents.after(invocation,receipt));
+        });
         if(!checked.normalized().isEmpty())action=action.thenApply(value->{var copy=new LinkedHashMap<String,Object>(value);copy.put("normalizedFields",checked.normalized());return copy;});
         action=action.thenApply(ToolErrors::explain);
         if(ConversationTools.mutation(tool))return action;
