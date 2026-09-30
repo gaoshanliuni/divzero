@@ -19,6 +19,7 @@ import java.util.function.*;
 public final class LocalPolicyRuntime {
     private static final ObjectMapper JSON=new ObjectMapper();
     private static final LocalActionPolicy PRETRAINED=LocalActionPolicy.pretrained();
+    private static final List<LocalActionPolicy.Sample> REFERENCE=LocalActionPolicy.referenceSamples(PRETRAINED);
     private static final Map<MinecraftServer,Map<UUID,State>> ALL=new IdentityHashMap<>();
     private static final ExecutorService LEARNING=Executors.newSingleThreadExecutor(Thread.ofPlatform().daemon().name("divzero-policy-learning").factory());
     private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
@@ -60,7 +61,7 @@ public final class LocalPolicyRuntime {
             if(ALL.get(state.server)==null||ALL.get(state.server).get(state.id)!=state||state.epoch!=epoch)return;state.training=false;if(!ActorEnhancements.read(p,state.id).learning())return;
             if(error!=null){state.rejected++;state.status="TRAINING_REJECTED";return;}
             double before=serving.loss(holdout),after=candidate.loss(holdout);state.validationLoss=after;
-            if(Double.isFinite(after)&&after<before&&after<=.12){state.serving=candidate;state.accepted++;state.status="LEARNED_VALIDATED";state.save();}
+            if(LocalActionPolicy.acceptsUpdate(serving,candidate,holdout,REFERENCE)){state.serving=candidate;state.accepted++;state.status="LEARNED_VALIDATED";state.save();}
             else{state.rejected++;state.status="KEPT_PREVIOUS_WEIGHTS";}
         }));
     }

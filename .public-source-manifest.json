@@ -2499,8 +2499,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/LocalActionPolicy.java",
-      "sha256": "4547a4ed21f6758b4820be7bfe4c4bf53cb11ff104a6a1566c2ad1ca163b8f4e",
-      "bytes": 4612
+      "sha256": "436090ebfd1268c46d04dfc4a61e332878bca366098cdd275a8302831253b298",
+      "bytes": 5713
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/MotionForecast.java",
@@ -3169,8 +3169,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/LocalActionPolicyTest.java",
-      "sha256": "be8471c75cc7970dd919e87714f26b9593a703551db80bf5e41aff2765e4e909",
-      "bytes": 1130
+      "sha256": "dea0257442ea3fb542a58ee16bc9f41a7516ba1cbd9757b39739650b1ceabb65",
+      "bytes": 1812
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/MotionForecastTest.java",
@@ -5419,8 +5419,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/LocalPolicyRuntime.java",
-      "sha256": "04c3f33e82c4d369c74dd4ac5868bea6db7d4c71aabbf54c4be6a4563ff807f8",
-      "bytes": 10306
+      "sha256": "a3aa3171195bb81382aa808bd0fd544ec26c8968b3cb7b69123f338c77b49e72",
+      "bytes": 10440
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/MovementSkills.java",
@@ -5434,8 +5434,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
-      "sha256": "fdcbc9634429d74afbe656af42514ad281627fda38fde9cb22a8d3d58f4e1ece",
-      "bytes": 10133
+      "sha256": "a847c92e6a9fe7acee1cb95791e468d4545808c841b72a61fd584ed2be2e4b26",
+      "bytes": 10286
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
@@ -5474,8 +5474,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "sha256": "c81eb57c15f88ad5c29fc892ebd8c78a30d2811ee8c1fdc56d5c0cd560fd3ecb",
-      "bytes": 44733
+      "sha256": "87d9c4d9baa563250327efd73a3e54f8ee97b45243d90ad6915c367fff657a94",
+      "bytes": 45163
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",

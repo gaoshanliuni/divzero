@@ -14,7 +14,7 @@ import java.util.*;
 
 /** Native charge/use differences are explicit; a camera aim or submitted release is never a hit receipt. */
 final class NativeRangedCombat {
-    static final class State {String adapter="";Vec3 aim,origin,target;int planned=-10000,shootStage;UUID release;boolean deferred;}
+    static final class State {String adapter="";Vec3 aim,origin,target;int planned=-10000,shootStage;UUID release,issuedOperation;int issuedAt=-10000;boolean deferred;}
     private record Vanilla(String id,Item item,Use use,double speed,double gravity,double range,double pitchOffset,double areaRadius) implements RangedWeaponAdapter {
         public boolean matches(ItemStack stack){return stack.is(item);}
         public boolean ammunition(net.minecraft.server.level.ServerPlayer p,ItemStack stack){
@@ -76,8 +76,9 @@ final class NativeRangedCombat {
         if(w.combatStage==2){
             if(p.getLookAngle().dot(aim.subtract(p.getEyePosition()).normalize())<.997)return true;
             w.session.phase("RANGED_RELEASE");
+            state.issuedOperation=w.combatOperation;state.issuedAt=w.tick();
             if(adapter.use()==RangedWeaponAdapter.Use.CHARGE_RELEASE)w.actor.releaseItem(w.token(),w.combatOperation);
-            else {if(state.release==null){state.release=UUID.randomUUID();w.combatOperation=state.release;}w.actor.useOnce(w.token(),w.combatOperation,InteractionHand.MAIN_HAND);}
+            else {if(state.release==null){state.release=UUID.randomUUID();w.combatOperation=state.release;}state.issuedOperation=w.combatOperation;w.actor.useOnce(w.token(),w.combatOperation,InteractionHand.MAIN_HAND);}
             if(!p.isUsingItem()&&w.tick()-w.combatAt>=6){w.combatStage=0;w.combatOperation=null;w.lastAttackAt=w.tick();state.planned=-10000;}
         }return true;
     }

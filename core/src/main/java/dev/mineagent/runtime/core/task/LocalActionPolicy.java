@@ -25,6 +25,20 @@ public final class LocalActionPolicy {
     public static LocalActionPolicy parse(String json){try{return new LocalActionPolicy(new ObjectMapper().readValue(json,Weights.class));}catch(Exception invalid){throw new IllegalArgumentException("POLICY_CHECKPOINT_INVALID",invalid);}}
     public static LocalActionPolicy pretrained(){try(var in=LocalActionPolicy.class.getResourceAsStream("/dev/mineagent/runtime/policy/pretrained.json")){if(in==null)throw new IllegalStateException("POLICY_PRETRAINED_MISSING");return parse(new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8));}catch(java.io.IOException failure){throw new IllegalStateException(failure);}}
     public double loss(List<Sample> samples){if(samples.isEmpty())return 0;double loss=0;for(var sample:samples){double delta=cost(sample.features)-sample.cost;loss+=delta*delta;}return loss/samples.size();}
+    /** Deterministic reference coverage supplements live holdout loss; it is not a PvP win-rate test. */
+    public static List<Sample> referenceSamples(LocalActionPolicy reference){
+        var random=new Random(20260930L);var samples=new ArrayList<Sample>();
+        for(int i=0;i<192;i++){
+            var x=new double[INPUTS];for(int j=0;j<INPUTS;j++)x[j]=random.nextDouble();
+            x[3]=i%2;x[5]=random.nextDouble()*2-1;x[8]=random.nextDouble()*2-1;x[9]=random.nextDouble()*2-1;x[12]=(i%8)/8d;x[13]=(i/2)%2;
+            samples.add(new Sample(x,reference.cost(x)));
+        }return List.copyOf(samples);
+    }
+    public static boolean acceptsUpdate(LocalActionPolicy previous,LocalActionPolicy candidate,List<Sample> liveHoldout,List<Sample> reference){
+        if(liveHoldout.size()<16||reference.size()<64)return false;
+        double before=previous.loss(liveHoldout),after=candidate.loss(liveHoldout),anchor=candidate.loss(reference);
+        return Double.isFinite(after)&&Double.isFinite(anchor)&&after<before&&after<=.12&&anchor<=.006&&anchor<=previous.loss(reference)+.001;
+    }
     public LocalActionPolicy train(List<Sample> samples,double rate){
         if(samples.isEmpty()||samples.size()>1024||rate<=0||rate>.05)throw new IllegalArgumentException("POLICY_TRAINING_INPUT");
         double[][] wh=new double[HIDDEN][];for(int i=0;i<HIDDEN;i++)wh[i]=weights.hidden[i].clone();double[] bh=weights.bias.clone(),wo=weights.output.clone();double bo=weights.outputBias;
