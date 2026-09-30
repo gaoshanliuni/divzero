@@ -3994,8 +3994,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeEvidenceView.java",
-      "sha256": "50f402792de0266c499c29e2f530f9d07b2ee1545cee1813967eefe3721b4667",
-      "bytes": 13941
+      "sha256": "f219eb60c205cd04f87df492c336e989311a547a1ee4e59b1bc009e4c1ce1e76",
+      "bytes": 14264
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeExtrasSmokeClient.java",
@@ -4144,8 +4144,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
-      "sha256": "23ebe0efc8f29e02e259886d1ffd904628e0a6c65b2fd0fc798dfb86146a0f0f",
-      "bytes": 7106
+      "sha256": "07561c67f04f080ba19dc1fcd329098fa48f897c6ec02d0c7671442b34c1e225",
+      "bytes": 7451
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewCapture.java",
