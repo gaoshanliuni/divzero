@@ -2,6 +2,11 @@ package dev.mineagent.runtime.core.conversation;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class ToolValidationTest {
+    @Test void combatRadiusReportsItsActualFieldBeforeSkillDispatch(){
+        var result=ToolValidation.check("guard_area",ToolArguments.parse("guard_area","{\"id\":\"guard\",\"expected_revision\":0,\"dimension\":\"minecraft:overworld\",\"min\":[0,64,0],\"max\":[8,68,8],\"combat\":{\"awareness\":40}}"));
+        assertTrue(result.issues().stream().anyMatch(i->i.field().equals("combat.awareness")&&i.expected().equals("4..32")));
+        assertEquals("NOT_STARTED",result.rejection().get("executionState"));
+    }
     @Test void packageActivationRejectsIncompleteLocationAndMissingVersionBeforeExecution(){
         var result=ToolValidation.check("activate_package_version",ToolArguments.parse("activate_package_version","{\"package_id\":\"00000000-0000-0000-0000-000000000001\",\"position\":[0,64]}"));
         assertTrue(result.issues().stream().anyMatch(i->i.field().equals("position")));

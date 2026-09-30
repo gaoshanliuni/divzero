@@ -2584,8 +2584,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillTools.java",
-      "sha256": "a6a52238f3813d66b34d297971645c76652e9c0ff7c20050d919f167a8ef186a",
-      "bytes": 9721
+      "sha256": "824062c7f265cb3e141365164f4d836c28829d3fadc64fe95cf591224a44042e",
+      "bytes": 9781
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SneakClearance.java",
@@ -2974,8 +2974,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolValidationTest.java",
-      "sha256": "00b1dfa6ff576ea67133eac718ca3ec3a4a4b54e1757a9e92e2324fa8490a3fd",
-      "bytes": 3107
+      "sha256": "fb3ec1285a5ce49b8a234abee1876168ec1c91c1ae3b9afcd08b4767670c9346",
+      "bytes": 3624
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureAnimationTest.java",
@@ -3874,7 +3874,7 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "ed72ba317f92cd3484626f32b99a67cfaac4d0318722db7502aadafa2d464d53",
+      "sha256": "032c74a8021d3fe5cc4e4751699518807dfe3d1803d47506bfbd0af4b7746497",
       "bytes": 172104
     },
     {

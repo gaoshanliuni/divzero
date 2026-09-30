@@ -65,7 +65,7 @@ public final class PersistentSkillSmokeClient {
             var caster=EntityType.EVOKER.create(p.level(),EntitySpawnReason.COMMAND);caster.setPos(9.5,101,6.5);caster.setTarget(actor);caster.setPersistenceRequired();p.level().addFreshEntity(caster);evoker=caster.getUUID();
             return Map.of("caster",evoker,"distance",caster.distanceTo(actor),"nativeSpellGoals",true,"boost",false,"noModelCalls",true);
         }));
-        action("local-response-to-spells-and-summoned-vex",()->{var n=start("evoker_defense","ai");n.putArray("min").add(-23).add(98).add(-17);n.putArray("max").add(23).add(124).add(29);n.putObject("combat").put("engagement","CLEAR_AREA").put("strategy","AUTO").put("awareness",40).put("leash",48);return tool("guard_area",n);});
+        action("local-response-to-spells-and-summoned-vex",()->{var n=start("evoker_defense","ai");n.putArray("min").add(-23).add(98).add(-17);n.putArray("max").add(23).add(124).add(29);n.putObject("combat").put("engagement","CLEAR_AREA").put("strategy","AUTO").put("awareness",32).put("leash",48);return tool("guard_area",n);});
         waitFor("actual-warmups-fangs-vex-and-native-combat-outcome",6000,()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(report->server(p->{
             var actor=controlled(p);require(actor.isAlive(),"EVOKER_NATIVE_COMBAT_DEFEAT");var caster=p.level().getEntity(evoker);
             if(caster instanceof net.minecraft.world.entity.LivingEntity living&&living.isAlive()){
