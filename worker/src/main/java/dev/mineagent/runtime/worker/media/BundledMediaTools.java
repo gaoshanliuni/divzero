@@ -27,23 +27,23 @@ public final class BundledMediaTools {
     public static BundledMediaTools windowsX64(Path installRoot) {
         var hashes = java.util.Map.ofEntries(
                 java.util.Map.entry("LICENSE.txt", "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"),
-                java.util.Map.entry("bin/avcodec-62.dll", "87f17571aafaf4af460d4f35f99674ae6a94a7531ce79050a416b7d54182a1a9"),
-                java.util.Map.entry("bin/avdevice-62.dll", "0d9ef5990a9bac5a9d385e46850e05a3c54173495cd160f27898889299e282b1"),
-                java.util.Map.entry("bin/avfilter-11.dll", "da7d380d738534eae0e1deccf9825777f98e2046ca2612a3a73a4aee302064eb"),
-                java.util.Map.entry("bin/avformat-62.dll", "7f8b5dfd7eb945522c0e089cbdff230d6c4f108d2229f669176da87aa1d2ebb2"),
-                java.util.Map.entry("bin/avutil-60.dll", "13f412ff746ec2f2813b0a3d184a34361bdb425635e26d3974325148fdd6bce8"),
-                java.util.Map.entry("bin/ffmpeg.exe", "0d600a70c6b62c45c8078638d1ecd4ed05545f3fb6ac2d19b406e3ae8d70c961"),
-                java.util.Map.entry("bin/ffprobe.exe", "a413e4866082dd7eb29a4a4e4b2fa13c76b546950ad0071cbff62e10b414119e"),
-                java.util.Map.entry("bin/swresample-6.dll", "2d96741de9b7cd36ea6246d3d1c688f4ff0b4586af0e5814f74062b0c2138e0e"),
-                java.util.Map.entry("bin/swscale-9.dll", "3aed98acf700fb6211403dc2d22bbd794652121f59c1f8ab147ffb9d4379c865")
+                java.util.Map.entry("bin/avcodec-62.dll", "f02f4c3a5fb0f5c657035cace8212d592d5f59acf2497709f8403bb05f0a1e97"),
+                java.util.Map.entry("bin/avdevice-62.dll", "eeac814d1faf3d734b57b5c3a027a8f860d7db76ff83bde9407121b037582865"),
+                java.util.Map.entry("bin/avfilter-11.dll", "0581a361ac97a02460cb9bc8325b5044e80febd154b8ac651ca6354895dc72b2"),
+                java.util.Map.entry("bin/avformat-62.dll", "4a93cca2fbd57663ceb071a453efea665aec82f91c78d7fa05e26eaf93e307b3"),
+                java.util.Map.entry("bin/avutil-60.dll", "a570924bc67ebaee8ffe64f1617d3cb6e4b0019baf768749d48890351bbdd916"),
+                java.util.Map.entry("bin/ffmpeg.exe", "c3934c14d44f7172aae94fe4c682bcfcdc1e48f1f857ca1b165110e408bdb4f6"),
+                java.util.Map.entry("bin/ffprobe.exe", "a71d1a9aec02c9a8e8ec2a94f1de273e36e1ed180904ea943b6ed597cbe6e2ce"),
+                java.util.Map.entry("bin/swresample-6.dll", "529ac5de01212cf7030d138fbd03858b993f8344fbc5088c31dc3ba9689464d6"),
+                java.util.Map.entry("bin/swscale-9.dll", "6acc42d25bd870b2f95e0183e23ebdd214edd2472eede729cda6ffba296c860a")
         );
         var manifest = new MediaToolBundleManifest(
-                "windows-x64-ffmpeg-8.1.2-yt-dlp-2026.08.19",
+                "windows-x64-ffmpeg-8.1.3-yt-dlp-2026.08.19",
                 "META-INF/mineagent/tools/yt-dlp-2026.08.19.exe",
                 "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
-                "META-INF/mineagent/tools/ffmpeg-n8.1.2-51-g7ba069f4f1-win64-lgpl-shared-8.1.zip",
-                "afb1c55ecdef6b80f6243984954dbfe350d44c7da2b64f30575c283b68214825",
-                "ffmpeg-n8.1.2-51-g7ba069f4f1-win64-lgpl-shared-8.1", hashes);
+                "META-INF/mineagent/tools/ffmpeg-n8.1.3-6-gff48edd8b2-win64-lgpl-shared-8.1.zip",
+                "1c9af2356443fec537fe1a64a5b33cb4c54fa212ad6590464423b3437e1aaa44",
+                "ffmpeg-n8.1.3-6-gff48edd8b2-win64-lgpl-shared-8.1", hashes);
         return new BundledMediaTools(installRoot, BundledMediaTools.class.getClassLoader(), manifest,
                 System.getProperty("os.name", ""), System.getProperty("os.arch", ""));
     }

@@ -6,7 +6,7 @@ if (-not $destination.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [Str
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
 $assets = @(
     @{Name='yt-dlp-2026.08.19.exe'; Hash='66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a'; Url='https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe'},
-    @{Name='ffmpeg-n8.1.2-51-g7ba069f4f1-win64-lgpl-shared-8.1.zip'; Hash='afb1c55ecdef6b80f6243984954dbfe350d44c7da2b64f30575c283b68214825'; Url='https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-07-15-39/ffmpeg-n8.1.2-51-g7ba069f4f1-win64-lgpl-shared-8.1.zip'}
+    @{Name='ffmpeg-n8.1.3-6-gff48edd8b2-win64-lgpl-shared-8.1.zip'; Hash='1c9af2356443fec537fe1a64a5b33cb4c54fa212ad6590464423b3437e1aaa44'; Url='https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-29-13-10/ffmpeg-n8.1.3-6-gff48edd8b2-win64-lgpl-shared-8.1.zip'}
 )
 foreach ($asset in $assets) {
     $target = Join-Path $destination $asset.Name

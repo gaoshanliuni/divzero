@@ -3274,5 +3274,6 @@
   "已请求播放": "Playback requested",
   "工具与管理": "Tools and management",
   "按玩家、AI 和世界隔离；动态观察会过期。": "Scoped to player, AI and world; observations expire.",
-  "媒体传输中": "Streaming media"
+  "媒体传输中": "Streaming media",
+  "此构建未包含媒体工具，请使用含媒体工具的安装包。": "This build has no media tools. Install the build that includes media tools."
 }

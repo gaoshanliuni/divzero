@@ -169,7 +169,7 @@ public final class MineAgentMediaCoordinator {
                     }
                     if (failure != null || response == null || !"media.probe.result".equals(response.type())) {
                         sessions.remove(session.mediaId);
-                        outcome(session.mediaId,"FAILED","MEDIA_PROBE_FAILED");
+                        outcome(session.mediaId,"FAILED",response!=null&&String.valueOf(response.payload().getOrDefault("message","")).contains("missing bundled media resource")?"MEDIA_TOOLS_REQUIRED":"MEDIA_PROBE_FAILED");
                         MineAgentRuntimeMod.LOGGER.warn("FFprobe failed for {}: {}", session.mediaId,
                                 failure == null && response != null ? response.payload() : failure);
                         return;

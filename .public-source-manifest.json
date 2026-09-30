@@ -9,8 +9,8 @@
     },
     {
       "path": ".github/workflows/build-jar.yml",
-      "sha256": "f4579fd70bec39d0f2dc6853fe6f3c271da277ac30ecf5b25c6b100b5b685d0a",
-      "bytes": 6025
+      "sha256": "99c664fd4ab6a8deacbd38aa6de464f0aa492228ac6be9b9a4e5e52bd6785cbc",
+      "bytes": 6405
     },
     {
       "path": ".gitignore",
@@ -949,8 +949,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "f6df7144aeef97eac97e1bbe016ef759077993a05b199622de45abc796486540",
-      "bytes": 307114
+      "sha256": "290e92d91480d7f32e9d9b2a6feb7b71b0df964780729b06313ddf436e299c45",
+      "bytes": 307271
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -3679,8 +3679,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "a12fa4e733d05dd9963d836234dbaf7db02cca8037cdbae1fc182520e3dd4085",
-      "bytes": 107422
+      "sha256": "6bbc65201cadf7338af1c51bb1746cd14521fc1f298204277abe862194bf4919",
+      "bytes": 107556
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -4039,8 +4039,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeModulesSmokeClient.java",
-      "sha256": "6a997f07e4995b0d90ed4f209b6de6af6bd2be7cbd434092af2c93c285df10a1",
-      "bytes": 18296
+      "sha256": "7e9378b5a0344dcf30a434365f658daad42f992adb116f2bcc978bd2aa89e9df",
+      "bytes": 19605
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageAgent.java",
@@ -4159,13 +4159,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceModules.java",
-      "sha256": "ee7aa9d6bf19795fd37621e91f3f1bcb8ab5a945a09c90baaa7bcf7a6617d605",
-      "bytes": 19517
+      "sha256": "13bc04a5161447da4a42cd614bc5d8f1689f8ff50a5291c878ae9f111f195898",
+      "bytes": 19900
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "sha256": "0036f0b5bf2c4cb7ecfdb6acba38a9aafbcc51ffdbaf4e3228a9132a9628d404",
-      "bytes": 52288
+      "sha256": "737708fe5be90a6afecd08c3afbf1d94357a0bf6d5a849b7be2b2fe505775836",
+      "bytes": 52433
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PersonaLibraryBar.java",
@@ -4699,8 +4699,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/media/MineAgentMediaCoordinator.java",
-      "sha256": "b2cb5f27a3cc947b9758d0986ed6a8233f07692f17b3b2c9422bd1c57dbfd1d9",
-      "bytes": 12902
+      "sha256": "dd96ad02e218c3ece20dd64f4b888c02d621dc56e49916ac3bea0f9f1c6a860c",
+      "bytes": 13046
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/AgentClientPayloadSinkMixin.java",
@@ -6629,8 +6629,8 @@
     },
     {
       "path": "scripts/prepare-media-tools.ps1",
-      "sha256": "39ade9493d953b60697b780b03cdb3b9ef7a5094fa3b06e35a0d1f1208c38c90",
-      "bytes": 1940
+      "sha256": "a77baa086c05e7a01361bcc90df29c75b9468b091d231b6b278d35669aa4ff9b",
+      "bytes": 1938
     },
     {
       "path": "scripts/publish-ci-release.ps1",
@@ -6879,8 +6879,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/media/BundledMediaTools.java",
-      "sha256": "c237074c5cf990726deb72c42dfcd4c3c5b8df67618bfdf1969d3d78cc9c6191",
-      "bytes": 12187
+      "sha256": "5153df1a7b25ea8dc1f37a19666ed7c343080caeeb042e2656cded4191142dbd",
+      "bytes": 12185
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/media/CommandRunner.java",
