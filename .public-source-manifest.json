@@ -1499,8 +1499,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolFailure.java",
-      "sha256": "49ed80b7c77aef8f5e3fb9dc2ae15473428e40922a3392951d90dd7fcdd16710",
-      "bytes": 2563
+      "sha256": "e5a077bf1c33f71a360873444531e4405c9aa9f80625d12f9adc0575dece3884",
+      "bytes": 3085
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolValidation.java",
@@ -1509,8 +1509,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/UncertainToolCalls.java",
-      "sha256": "040d76f086eb38c91d022e980daef2cb77dfd28e2c1cabe760089fba60c69e3a",
-      "bytes": 1962
+      "sha256": "48cb7063c167c45e1a45d78a0dcd77203045cb70f3bece726e6d23b84061daa1",
+      "bytes": 2197
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureAnimation.java",
@@ -6924,8 +6924,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/opencode/ExecutionProgress.java",
-      "sha256": "6e40bbb0238a6336cc33416ea1ca88de4317b92aab7c00536c8f5b7a26885fec",
-      "bytes": 4179
+      "sha256": "2a30e4334cd863f37af0bace3234c64785932ab51b9681284922ca8c8ca031d4",
+      "bytes": 4208
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/opencode/OpenCodeRuntime.java",
@@ -7744,8 +7744,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/ExecutionProgressTest.java",
-      "sha256": "0fbf78b1eb02dce287ee52d2b374ea61073d5aaf614489444e723c24da61f6eb",
-      "bytes": 2073
+      "sha256": "d00a396e9658a2b2f29274bcf4505ece42622070727ee9c2368c416fdc9eaeac",
+      "bytes": 2786
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/OpenCodeEditReuseTest.java",

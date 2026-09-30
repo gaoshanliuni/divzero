@@ -28,7 +28,7 @@ public final class ExecutionProgress {
             String key=hash(List.of(name,parameters,context)),outcome=hash(canonical(JSON.valueToTree(result)));
             var repeat=observations.computeIfAbsent(key,k->new Repeat());while(observations.size()>128)observations.remove(observations.keySet().iterator().next());
             if(!outcome.equals(repeat.outcome)){repeat.outcome=outcome;repeat.count=0;repeat.parts.clear();}
-            repeat.result=Collections.unmodifiableMap(new LinkedHashMap<>(result));repeat.count++;repeat.parts.add(Map.of("type","tool","tool",name,"state",Map.of("status","completed","input",input)));
+            repeat.result=readOnly?Map.of():dev.mineagent.runtime.core.conversation.ToolFailure.summary(result);repeat.count++;repeat.parts.add(Map.of("type","tool","tool",name,"state",Map.of("status","completed","input",input)));
             if(repeat.parts.size()>3)repeat.parts.removeFirst();
             boolean repeated=repeat.count>=3&&OpenCodeRuntime.repeatedCalls(repeat.parts,name,input);
             return new Decision(repeated,repeated&&repeat.count>=4,repeat.count);

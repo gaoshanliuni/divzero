@@ -4,6 +4,11 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class ExecutionProgressTest {
+    @Test void blocksOnlyTheRepeatedWriteAndAllowsCorrectedParameters(){
+        var guard=new ExecutionProgress();for(int i=0;i<4;i++)guard.observe("apply_building","{\"revision\":1}",Map.of("status","REJECTED","error","VERSION_CHANGED","operation_id",UUID.randomUUID().toString(),"source","x".repeat(10000)),"same",false);
+        var blocked=guard.suppressedWrite("apply_building","{\"revision\":1}","same").orElseThrow();assertEquals("NOT_STARTED",blocked.get("executionState"));assertFalse(blocked.toString().contains("xxxx"));
+        assertTrue(guard.suppressedWrite("apply_building","{\"revision\":2}","same").isEmpty());assertTrue(guard.suppressedWrite("inspect_buildings","{}","same").isEmpty());
+    }
     @Test void repeatsRequireSameArgumentsOutcomeAndContextAndDoNotCountTotalRounds(){
         var progress=new ExecutionProgress();
         for(int i=0;i<100;i++)assertFalse(progress.observe("read_file","{\"offset\":"+i+"}",Map.of("status","OBSERVED","nextOffset",i+1),"world",true).warn());

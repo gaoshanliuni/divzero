@@ -28,5 +28,7 @@ public final class ToolFailure {
         return ToolErrors.explain(out);
     }
     public static String safe(String text){String clean=SecretRedactor.redact(Objects.toString(text,""));return clean.substring(0,Math.min(clean.length(),4096));}
+    /** Circuit breakers retain diagnostics and identities, never complete scan/file/package bodies. */
+    public static Map<String,Object> summary(Map<String,Object> value){var out=new LinkedHashMap<String,Object>();for(String key:List.of("status","error","errorCode","executionState","phase","diagnostic","causes","issues","field","line","column","operation_id","record_id","id","revision","worldModified","replayAllowed"))if(value.containsKey(key))out.put(key,value.get(key));return Collections.unmodifiableMap(out);}
     private ToolFailure(){}
 }
