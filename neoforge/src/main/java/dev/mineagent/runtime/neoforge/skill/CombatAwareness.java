@@ -93,7 +93,11 @@ final class CombatAwareness {
     }
     double collisionRisk(SkillWork w,Vec3 point,int ticks){return collisionRisk(w,point,ticks,null);}
     double collisionRisk(SkillWork w,Vec3 point,int ticks,LivingEntity attackOpportunity){
-        double risk=w.prediction.risk(w,point,ticks,attackOpportunity);
+        double risk=0;
+        if(w.legacyBaseline()){for(var threat:threats)if(threat.entity.isAlive()){
+            if(NativeCombatStates.meleeAtAfter(threat.entity,w.player(),point,ticks))risk+=threat.state.openingTicks(w.player().level().getGameTime())>ticks+2?2:threat.entity==attackOpportunity?4:18;
+            if(threat.state.areaAttack()&&threat.entity.position().distanceTo(point)<8)risk+=30;
+        }}else risk=w.prediction.risk(w,point,ticks,attackOpportunity);
         for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;return risk;
     }
     private double projectileRisk(Projectile shot,Vec3 point){var v=shot.getDeltaMovement();var delta=point.add(0,1,0).subtract(shot.position());double t=Math.max(0,Math.min(12,delta.dot(v)/Math.max(.0001,v.lengthSqr())));double miss=shot.position().add(v.scale(t)).distanceTo(point.add(0,1,0));return Math.max(0,2-miss);}

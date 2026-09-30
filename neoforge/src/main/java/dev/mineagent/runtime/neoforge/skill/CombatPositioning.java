@@ -9,14 +9,15 @@ import java.util.*;
 final class CombatPositioning {
     record Route(Node node,List<PathStep> steps,double worstRisk){}
     private NativeTraversalEvaluator evaluator;private final Deque<Route> open=new ArrayDeque<>();private final Set<Node> seen=new HashSet<>();private final Set<Node> scored=new HashSet<>();private final List<Route> candidates=new ArrayList<>();
+    private boolean legacy;
     private Vec3 origin;private int started;private String purpose="";private Vec3 selected;private double selectedDistance;private int candidateCursor;
     private Vec3 waypoint,heading,targetAtWaypoint;private Node waypointNode;private int waypointAt;private double waypointRisk;private String waypointPurpose="";
     private List<PathStep> chosenRoute=List.of();private final Map<Node,Integer> exposure=new HashMap<>();
     List<PathStep> route(){return chosenRoute;}
-    boolean pending(){return !open.isEmpty()||scored.size()<candidates.size();}
+    boolean pending(){return !open.isEmpty()||!legacy&&scored.size()<candidates.size();}
     boolean longRetreat(){return selectedDistance>3;}
     Vec3 choose(SkillWork w,String intent,double desiredDistance){
-        exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE","SPACE","SIDE_LEFT","SIDE_RIGHT","JUMP_TAP").contains(intent);
+        legacy=w.legacyBaseline();exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE","SPACE","SIDE_LEFT","SIDE_RIGHT","JUMP_TAP").contains(intent);
         var actor=w.player();boolean jumping=w.tick()-w.lastTacticalJump<=20&&!actor.onGround()&&actor.getY()-w.tacticalJumpY>=0&&actor.getY()-w.tacticalJumpY<1.6;var feet=jumping?new Vec3(actor.getX(),w.tacticalJumpY,actor.getZ()):actor.position();
         if(waypoint!=null){
             var p=w.player();boolean reached=(p.position().subtract(waypoint).horizontalDistanceSqr()<.10||heading!=null&&p.position().subtract(waypoint).dot(heading)>.12)&&Math.abs(feet.y-waypoint.y)<.5;
@@ -28,7 +29,7 @@ final class CombatPositioning {
             if(!reached)w.session.add("tacticalWaypointRechecks",1);
             waypoint=null;origin=null;chosenRoute=List.of();
         }
-        if(origin==null||w.tick()-started>24||origin.distanceToSqr(w.player().position())>1||!purpose.equals(intent)){
+        if(origin==null||w.tick()-started>(legacy?8:24)||origin.distanceToSqr(w.player().position())>1||!purpose.equals(intent)){
             evaluator=new NativeTraversalEvaluator(w.player());origin=feet;started=w.tick();purpose=intent;selected=null;open.clear();seen.clear();scored.clear();candidates.clear();var node=evaluator.closest(origin);if(node!=null){seen.add(node);open.add(new Route(node,List.of(),w.combat.risk(w,origin)));}
         }
         var budget=NativeNavigationBudget.get(w.runtime.server);int allowed=budget.claim(w.token(),w.tick());evaluator.beginSlice();
@@ -43,14 +44,14 @@ final class CombatPositioning {
                 var steps=new ArrayList<>(route.steps);steps.add(edge);open.add(new Route(edge.to(),List.copyOf(steps),Math.max(route.worstRisk,w.combat.risk(w,next))));
             }
         }
-        double best=Double.POSITIVE_INFINITY;double[] selectedFeatures=null;var localPolicy=LocalPolicyRuntime.snapshot(w.player());var target=w.combat.selected;
-        var intercept=target==null?null:w.prediction.intercept(w,target,Math.min(12,origin.distanceTo(target.position())/Math.max(.15,w.player().getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.4)));
+        double best=Double.POSITIVE_INFINITY;double[] selectedFeatures=null;var localPolicy=legacy?null:LocalPolicyRuntime.snapshot(w.player());var target=w.combat.selected;
+        var intercept=target==null?null:legacy?target.position():w.prediction.intercept(w,target,Math.min(12,origin.distanceTo(target.position())/Math.max(.15,w.player().getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.4)));
 
         // A ready strike necessarily enters the selected opponent's reach. Price that exposure,
         // but keep full risk for every other threat and keep all terrain/escape checks.
         var opportunity=(intent.equals("APPROACH")||intent.equals("COUNTER"))&&w.player().getAttackStrengthScale(.5f)>=.95f&&w.player().getHealth()>w.player().getMaxHealth()*.45&&!w.combat.incoming(w)?target:null;
         for(int index=0;index<candidates.size()&&budget.timeAvailable();index++){var route=candidates.get(Math.floorMod(candidateCursor++,candidates.size()));scored.add(route.node);var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point,opportunity);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()),opportunity)).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
-            score+=w.combat.collisionRisk(w,point,4,opportunity)*1.5+w.prediction.routeRisk(w,route.steps,opportunity);
+            score+=w.combat.collisionRisk(w,point,4,opportunity)*1.5+(legacy?0:w.prediction.routeRisk(w,route.steps,opportunity));
             if(target!=null&&(intent.equals("SIDE_LEFT")||intent.equals("SIDE_RIGHT"))){
                 var forward=target.position().subtract(origin).multiply(1,0,1).normalize();var left=new Vec3(forward.z,0,-forward.x);var delta=point.subtract(origin);
                 double lateral=delta.dot(left)*(intent.equals("SIDE_LEFT")?1:-1);
@@ -83,7 +84,7 @@ final class CombatPositioning {
             if(localPolicy!=null)score+=localPolicy.cost(features)*8;
             if(score<best){selectedFeatures=features;best=score;selectedDistance=origin.distanceTo(point);selected=next;waypointNode=route.steps.getFirst().to();chosenRoute=route.steps;}
         }
-        if(selected!=null){if(selectedFeatures!=null)LocalPolicyRuntime.chose(w,selectedFeatures,selected);waypoint=selected;waypointAt=w.tick();waypointPurpose=intent;waypointRisk=w.combat.risk(w,waypoint);targetAtWaypoint=target==null?null:target.position();heading=new Vec3(waypoint.x-w.player().getX(),0,waypoint.z-w.player().getZ()).normalize();w.session.add("tacticalWaypoints",1);}
+        if(selected!=null){if(!legacy&&selectedFeatures!=null)LocalPolicyRuntime.chose(w,selectedFeatures,selected);waypoint=selected;waypointAt=w.tick();waypointPurpose=intent;waypointRisk=w.combat.risk(w,waypoint);targetAtWaypoint=target==null?null:target.position();heading=new Vec3(waypoint.x-w.player().getX(),0,waypoint.z-w.player().getZ()).normalize();w.session.add("tacticalWaypoints",1);}
         return selected;
     }
     private int edgeExposure(SkillWork w,Node node){return exposure.computeIfAbsent(node,n->{int danger=0;for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){if(dx==0&&dz==0)continue;int x=n.x()+dx,z=n.z()+dz;var at=new Vec3(x+.5,n.y(),z+.5);var pos=net.minecraft.core.BlockPos.containing(at);if(!evaluator.loaded(pos)){danger++;continue;}if(w.player().level().getFluidState(pos).is(net.minecraft.tags.FluidTags.LAVA)){danger++;continue;}if(!evaluator.clear(at,net.minecraft.world.entity.Pose.STANDING,true)&&!evaluator.clear(at,net.minecraft.world.entity.Pose.CROUCHING,true))continue;if(evaluator.positions(x,z,n.y()).stream().noneMatch(floor->Math.abs(floor.y()-n.y())<=1.25))danger++;}return danger;});}
