@@ -3429,5 +3429,6 @@
   "有效命中": "Verified hits",
   "造成伤害": "Damage dealt",
   "承受伤害": "Damage taken",
-  "使用本局学习权重": "Using weights learned this session"
+  "使用本局学习权重": "Using weights learned this session",
+  "会话连接已更新，请重试刚才的操作。当前草稿仍保留。": "The conversation connection changed. Try that action again; your draft is preserved."
 }

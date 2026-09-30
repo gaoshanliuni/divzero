@@ -38,7 +38,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private long messagesGeneration=-1,listGeneration=-1;
     private long renderedListNext=-1;
     private long renderedListBefore=-1;private final Deque<Long> listPages=new ArrayDeque<>();private final UIElement conversationPager=row();
-    private PanelSection pendingSection;private final UUID context=UUID.randomUUID();private String page="chat",agentSignature="";private long nextMessages,nextList;private boolean messagesBusy,listBusy,writing;private long nextBefore,listBefore;private int fileOffset;private float pinPixel=-1,anchorOffset;private UIElement anchor;private boolean pinBottom;private int restoreScrollFrames;private long nextLayoutSave;
+    private PanelSection pendingSection;private UUID context=UUID.randomUUID();private CompletableFuture<Boolean> focusRequest;private boolean focusReady,closed;private long nextFocusRefresh;private String page="chat",agentSignature="";private long nextMessages,nextList;private boolean messagesBusy,listBusy,writing;private long nextBefore,listBefore;private int fileOffset;private float pinPixel=-1,anchorOffset;private UIElement anchor;private boolean pinBottom;private int restoreScrollFrames;private long nextLayoutSave;
     private record MessageRow(long sequence,UIElement root,TextElement text,TextElement thinking,Button thinkingButton,MessageActions actions){}
     private NativeWorkspaceScreen(){this(new UIElement());}
     private NativeWorkspaceScreen(UIElement root){
@@ -81,7 +81,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         if(connection!=mc.getConnection()||level!=mc.level){model=new Model();connection=mc.getConnection();level=mc.level;}
         if(mc.screen instanceof NativeWorkspaceScreen){return;}
         if(active!=null&&connection==mc.getConnection()&&level==mc.level){active.saveDraft();persistState();}
-        active=new NativeWorkspaceScreen();mc.setScreen(active);NativePackageViews.workspaceOpened(active);NativeWorkspaceConnection.open();if(NativeWorkspaceConnection.ready())active.list();
+        active=new NativeWorkspaceScreen();mc.setScreen(active);NativePackageViews.workspaceOpened(active);NativeWorkspaceConnection.open();if(NativeWorkspaceConnection.ready()){active.list();active.focusConversation();}
     }
     public static void toggle(){if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()){Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);return;}if(Minecraft.getInstance().screen instanceof NativeWorkspaceScreen screen)screen.onClose();else open();}
     public static boolean visible(){return Minecraft.getInstance().screen instanceof NativeWorkspaceScreen;}
@@ -93,9 +93,11 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         if(values.containsKey("agents"))model.agents=JsonParser.parseString(values.get("agents")).getAsJsonArray();
         if(active!=null)active.drawAgents();
     }
-    public static void push(String channel,JsonElement data){if(channel.equals("deliveryInboxChanged"))NativeDeliveryPanel.changed();if(active==null)return;if(channel.equals("conversationChanged")){active.nextMessages=0;active.nextList=System.currentTimeMillis()+100;}else if(channel.equals("skinUiOpen")){NativeAppearancePanel.open(active,data.getAsJsonObject().get("agentId").getAsString());}else if(channel.equals("buildingFilesOpen")){var value=data.getAsJsonObject();if(value.has("agentId")&&!value.get("agentId").getAsString().isBlank())model.agent=value.get("agentId").getAsString();active.showFiles();}else if(channel.equals("conversationSpeechDraft")){var value=data.getAsJsonObject();if(value.has("text")&&value.get("agentId").getAsString().equals(model.agent)&&value.get("conversationId").getAsString().equals(model.conversation)&&value.get("contextId").getAsString().equals(active.context.toString())){String draft=model.drafts.getOrDefault(active.draftKey(),"");model.drafts.put(active.draftKey(),draft+value.get("text").getAsString());model.speechOps.put(active.draftKey(),value.get("speechOperation").getAsString());active.composer.setValue(model.drafts.getOrDefault(active.draftKey(),"").split("\n",-1),false);saveAt=System.currentTimeMillis()+300;active.showChat();}}}
-    private boolean current(){return active==this&&connection==Minecraft.getInstance().getConnection()&&level==Minecraft.getInstance().level;}
+    public static void push(String channel,JsonElement data){if(channel.equals("deliveryInboxChanged"))NativeDeliveryPanel.changed();if(active==null)return;if(channel.equals("conversationChanged")){active.nextMessages=0;active.nextList=System.currentTimeMillis()+100;}else if(channel.equals("skinUiOpen")){NativeAppearancePanel.open(active,data.getAsJsonObject().get("agentId").getAsString());}else if(channel.equals("buildingFilesOpen")){var value=data.getAsJsonObject();if(value.has("agentId")&&!value.get("agentId").getAsString().isBlank()&&!value.get("agentId").getAsString().equals(model.agent))active.selectAgent(value.get("agentId").getAsString(),false);active.showFiles();}else if(channel.equals("conversationSpeechDraft")){var value=data.getAsJsonObject();if(value.has("text")&&value.get("agentId").getAsString().equals(model.agent)&&value.get("conversationId").getAsString().equals(model.conversation)&&value.get("contextId").getAsString().equals(active.context.toString())){String draft=model.drafts.getOrDefault(active.draftKey(),"");model.drafts.put(active.draftKey(),draft+value.get("text").getAsString());model.speechOps.put(active.draftKey(),value.get("speechOperation").getAsString());active.composer.setValue(model.drafts.getOrDefault(active.draftKey(),"").split("\n",-1),false);saveAt=System.currentTimeMillis()+300;active.showChat();}}}
+    private boolean current(){return !closed&&active==this&&connection==Minecraft.getInstance().getConnection()&&level==Minecraft.getInstance().level;}
     private static String t(String text){return ClientLanguage.t(text);}
+    private static String errorCode(Throwable error){while((error instanceof java.util.concurrent.CompletionException||error instanceof java.util.concurrent.ExecutionException)&&error.getCause()!=null)error=error.getCause();return Objects.toString(error.getMessage(),"CONVERSATION_REQUEST_FAILED");}
+    private static String errorMessage(Throwable error){String code=errorCode(error);return code.equals("STALE_CONVERSATION_FOCUS")?t("会话连接已更新，请重试刚才的操作。当前草稿仍保留。"):code;}
     private static TextElement label(String text){var label=new TextElement().setText(Component.literal(text));label.addClass("divzero-flow-text");label.getLayout().widthPercent(100);label.textStyle(s->s.adaptiveWidth(false).adaptiveHeight(true).textWrap(TextWrap.WRAP).textColor(0xffeef2f7));return label;}
     private static UIElement row(){return WorkspacePanels.row();}
     private static Button button(String text,Runnable action){return NativeUiTheme.button(text,action);}
@@ -134,7 +136,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         var controls=row();controls.getLayout().height(compact?22:26).flexShrink(0);if(compact)controls.addChild(button(t("会话"),()->directory.setDisplay(!directory.isDisplayed())));controls.addChild(button(t("更早"),()->messages(nextBefore)));controls.addChild(button(t("最新"),()->{rows.clear();history.clearAllScrollViewChildren();messages(0);}));controls.addChild(button(t("重命名"),this::renameConversation));controls.addChild(button(t("更多"),this::conversationOptions));content.addChild(controls);
         history.getLayout().flex(1).minHeight(24).widthPercent(100).marginVertical(compact?2:6);content.addChild(history);
         composer.getLayout().height(compact?38:62).minHeight(compact?38:62).flexShrink(0).widthPercent(100);composer.setValue(draftText().split("\n",-1),false);content.addChild(composer);
-        var actions=row();actions.getLayout().height(compact?24:27).flexShrink(0).paddingTop(compact?1:4);actions.addChild(button(t("发送"),this::send));actions.addChild(button(t("停止"),this::cancel));actions.addChild(button(t("附件"),this::showFiles));actions.addChild(button(t("语音输入"),()->{var session=NativeWorkspaceConnection.current();if(session!=null&&model.selected!=null)Minecraft.getInstance().setScreen(new NativeSpeechScreen(this,session.binding().worldId(),UUID.fromString(model.agent),UUID.fromString(model.conversation),context));}));content.addChild(actions);
+        var actions=row();actions.getLayout().height(compact?24:27).flexShrink(0).paddingTop(compact?1:4);actions.addChild(button(t("发送"),this::send));actions.addChild(button(t("停止"),this::cancel));actions.addChild(button(t("附件"),this::showFiles));actions.addChild(button(t("语音输入"),()->focusedAction(()->{var session=NativeWorkspaceConnection.current();if(session!=null&&model.selected!=null)Minecraft.getInstance().setScreen(new NativeSpeechScreen(this,session.binding().worldId(),UUID.fromString(model.agent),UUID.fromString(model.conversation),context));})));content.addChild(actions);
         if(!model.agent.isEmpty()&&NativeWorkspaceConnection.ready())list();
     }
     void scaleSettings(){
@@ -152,13 +154,15 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         if(model.selected==null||model.conversation.isBlank())return;String selected=model.conversation,agent=model.agent;var window=window("conversation-options-"+selected,t("会话操作"),365,270);window.body.clearAllChildren();
         window.body.addChild(button(t("摘要、来源与预算"),()->NativeConversationExtras.open(this,agent,selected)));window.body.addChild(button(t("导入旧审计片段"),()->NativeConversationExtras.imports(this,agent)));
         String state=model.selected.get("state").getAsString();if(state.equals("ACTIVE"))window.body.addChild(button(t("归档"),()->{if(model.conversation.equals(selected))changeConversation("archive");window.close();}));else window.body.addChild(button(t("恢复"),()->{if(model.conversation.equals(selected))changeConversation("restore");window.close();}));
-        window.body.addChild(button(t("将普通聊天关联到此会话"),()->{if(model.conversation.equals(selected))write("route",Map.of("contextId",context.toString(),"enabled","true"),result->notice(t("普通聊天已关联到此会话。")));}));
-        window.body.addChild(button(t("解除普通聊天关联"),()->{if(model.conversation.equals(selected))write("route",Map.of("contextId",context.toString(),"enabled","false"),result->notice(t("已解除普通聊天关联。")));}));
+        window.body.addChild(button(t("将普通聊天关联到此会话"),()->{if(model.conversation.equals(selected))focusedWrite("route",Map.of("enabled","true"),result->notice(t("普通聊天已关联到此会话。")));}));
+        window.body.addChild(button(t("解除普通聊天关联"),()->{if(model.conversation.equals(selected))focusedWrite("route",Map.of("enabled","false"),result->notice(t("已解除普通聊天关联。")));}));
         window.body.addChild(button(t("删除会话"),()->Dialog.showCheckBox(t("删除会话"),t("删除所选会话并停止当前回复。"),yes->{if(yes&&model.conversation.equals(selected))write("delete",Map.of(),result->{model.drafts.remove(draftKey());releaseConversationFocus();model.conversation="";model.selected=null;model.generation++;rows.clear();history.clearAllScrollViewChildren();composer.setValue(new String[]{""},false);heading.setText(Component.literal(t("选择或新建对话")));list();window.close();});}).show(window.body)));
     }
     private void renameConversation(){if(model.selected==null)return;Dialog.stringEditorDialog(t("重命名"),model.selected.get("title").getAsString(),value->!value.isBlank()&&value.length()<=128,value->write("rename",Map.of("title",value),state->{model.selected=state;heading.setText(Component.literal(state.get("title").getAsString()));list();})).show(root);}
 
     Map<String,Object> smokeState(){if(!Boolean.getBoolean("mineagent.nativeUiSmoke")&&!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return Map.of("agents",model.agents.size(),"agent",model.agent,"conversation",model.conversation,"selected",model.selected==null?"":model.selected.get("title").getAsString(),"draft",String.join("\n",composer.getValue()),"messageRows",rows.size(),"bodyChars",rows.values().stream().mapToInt(row->row.text.getText().getString().length()).sum(),"visibleRows",rows.values().stream().filter(row->row.root.getSizeHeight()>0&&row.text.getSizeHeight()>0).count());}
+    Map<String,Object> smokeConversationFocus(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return Map.of("context",context.toString(),"ready",focusReady,"pending",focusRequest!=null,"notice",model.notice);}
+    void smokeFocusRefresh(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");nextFocusRefresh=0;}
     Map<String,Object> smokeIme(){
         // The skill fixture also exercises the actual conversation selection widgets.
         if(!Boolean.getBoolean("mineagent.nativeUiSmoke")&&!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");if(!Minecraft.getInstance().isWindowActive())return Map.of("status","SKIPPED_WINDOW_NOT_ACTIVE");
@@ -200,8 +204,10 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         });
     }
     private void write(String kind,Map<String,String> extra,java.util.function.Consumer<JsonObject> done){
-        if(writing)return;writing=true;long generation=model.generation;request(true,kind,extra).whenComplete((state,error)->{writing=false;if(!current()||generation!=model.generation)return;if(error!=null){notice(error.getMessage());return;}done.accept(state);nextMessages=0;});
+        if(writing)return;writing=true;long generation=model.generation;request(true,kind,extra).whenComplete((state,error)->{writing=false;if(!current()||generation!=model.generation)return;if(error!=null){if(errorCode(error).equals("STALE_CONVERSATION_FOCUS")){focusReady=false;nextFocusRefresh=0;focusConversation();}notice(errorMessage(error));return;}done.accept(state);nextMessages=0;});
     }
+    private void focusedAction(Runnable action){long generation=model.generation;focusConversation().thenAccept(ready->{if(ready&&current()&&generation==model.generation&&Minecraft.getInstance().screen==this)action.run();});}
+    private void focusedWrite(String kind,Map<String,String> extra,java.util.function.Consumer<JsonObject> done){focusedAction(()->{var args=new LinkedHashMap<>(extra);args.put("contextId",context.toString());write(kind,args,done);});}
     private void list(){
         if(!current()||!page.equals("chat")||model.agent.isEmpty()||!NativeWorkspaceConnection.ready()||listBusy&&listGeneration==model.generation)return;
         listBusy=true;long generation=model.generation;listGeneration=generation;String filter=model.filter,query=search.getValue();long before=listBefore;request(false,"list",Map.of("state",filter,"search",query,"before",Long.toString(before))).whenComplete((state,error)->{
@@ -213,16 +219,36 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         });
     }
     private void select(String id){saveDraft();releaseConversationFocus();model.conversation=id;model.generation++;rows.clear();loading.clear();history.clearAllScrollViewChildren();pinBottom=true;anchor=null;pinPixel=-1;model.selected=null;nextBefore=0;heading.setText(Component.literal(conversationTitles.getOrDefault(id,t("读取对话…"))));for(var entry:conversationButtons.entrySet())entry.getValue().setText(Component.literal((entry.getKey().equals(id)?"● ":"")+conversationTitles.get(entry.getKey())));composer.setValue(draftText().split("\n",-1),false);nextMessages=0;messages(0);focusConversation();}
-    private void focusConversation(){
-        if(!current()||model.conversation.isEmpty()||!NativeWorkspaceConnection.ready())return;
-        String agent=model.agent,conversation=model.conversation;long generation=model.generation;
-        request(true,"focus",Map.of("contextId",context.toString())).whenComplete((value,error)->{
-            if(!current()||generation!=model.generation||!agent.equals(model.agent)||!conversation.equals(model.conversation))return;
-            if(error!=null){notice(error.getMessage());return;}
-            var session=NativeWorkspaceConnection.current();if(session!=null)dev.mineagent.runtime.neoforge.client.audio.ConversationVoicePlayback.focus(session.binding().worldId(),UUID.fromString(agent),UUID.fromString(conversation),context);
-        });
+    private CompletableFuture<Boolean> focusConversation(){
+        if(!current()||model.conversation.isEmpty()||!NativeWorkspaceConnection.ready())return CompletableFuture.completedFuture(false);
+        if(focusRequest!=null)return focusRequest;
+        if(focusReady&&System.currentTimeMillis()<nextFocusRefresh)return CompletableFuture.completedFuture(true);
+        return selectFocus(false);
     }
-    private void releaseConversationFocus(){dev.mineagent.runtime.neoforge.client.audio.ConversationVoicePlayback.clear(context);if(model.conversation.isEmpty()||!NativeWorkspaceConnection.ready())return;request(true,"unfocus",Map.of("contextId",context.toString()));}
+    private CompletableFuture<Boolean> selectFocus(boolean renewed){
+        String agent=model.agent,conversation=model.conversation;long generation=model.generation;UUID requestedContext=context;
+        var pending=new CompletableFuture<Boolean>();focusRequest=pending;focusReady=false;
+        request(true,"focus",Map.of("contextId",requestedContext.toString())).whenComplete((value,error)->{
+            if(focusRequest==pending)focusRequest=null;
+            if(!current()||generation!=model.generation||!requestedContext.equals(context)||!agent.equals(model.agent)||!conversation.equals(model.conversation)){pending.complete(false);return;}
+            if(error!=null){
+                if(!renewed&&errorCode(error).equals("STALE_CONVERSATION_FOCUS")){
+                    // Expired or externally replaced selection: only renew focus, never replay a message or voice job.
+                    dev.mineagent.runtime.neoforge.client.audio.ConversationVoicePlayback.clear(requestedContext);context=UUID.randomUUID();
+                    selectFocus(true).whenComplete((ready,failure)->{if(failure==null)pending.complete(ready);else pending.completeExceptionally(failure);});return;
+                }
+                nextFocusRefresh=System.currentTimeMillis()+5000;notice(errorMessage(error));pending.complete(false);return;
+            }
+            focusReady=true;nextFocusRefresh=System.currentTimeMillis()+300000;
+            var session=NativeWorkspaceConnection.current();if(session!=null)dev.mineagent.runtime.neoforge.client.audio.ConversationVoicePlayback.focus(session.binding().worldId(),UUID.fromString(agent),UUID.fromString(conversation),requestedContext);
+            pending.complete(true);
+        });return pending;
+    }
+    private void releaseConversationFocus(){
+        UUID released=context;context=UUID.randomUUID();focusReady=false;focusRequest=null;nextFocusRefresh=0;
+        dev.mineagent.runtime.neoforge.client.audio.ConversationVoicePlayback.clear(released);
+        if(!model.conversation.isEmpty()&&NativeWorkspaceConnection.ready())request(true,"unfocus",Map.of("contextId",released.toString()));
+    }
     private void changeConversation(String kind){if(model.selected==null)return;write(kind,Map.of(),state->{model.selected=state;list();});}
     private void send(){
         String text=String.join("\n",composer.getValue());if(writing||text.isBlank()||model.selected==null)return;saveDraft();String key=draftKey();var ownerModel=model;
@@ -249,7 +275,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
                     var speaker=label(user?t("你"):knownAgents.getOrDefault(model.agent,"AI"));speaker.getLayout().flex(1).widthAuto();speaker.textStyle(style->style.textColor(user?0xffc8c8c8:0xffe4eeb5));header.addChild(speaker);
                     var body=label("");var thought=label("");thought.setDisplay(false);var toggle=button(t("思考"),()->{captureScroll();thought.setDisplay(!thought.isDisplayed());restoreScrollFrames=3;});toggle.getLayout().height(19).width(42);header.addChild(toggle);
                     if(!user){String detailAgent=model.agent,detailConversation=model.conversation;var details=button(t("详情"),()->NativeConversationExtras.context(this,detailAgent,detailConversation,id));details.getLayout().height(19).width(42);header.addChild(details);}
-                    if(!user){var voice=button(t("朗读"),()->write("voice",Map.of("messageId",id,"contextId",context.toString()),value->notice(t("正在处理…"))));voice.getLayout().height(19).width(42);header.addChild(voice);}
+                    if(!user){var voice=button(t("朗读"),()->focusedWrite("voice",Map.of("messageId",id),value->notice(t("正在处理…"))));voice.getLayout().height(19).width(42);header.addChild(voice);}
                     var actionPanel=new MessageActions(id,generation);container.addChild(body);container.addChild(thought);container.addChild(actionPanel.root);entry=new MessageRow(message.get("sequence").getAsLong(),container,body,thought,toggle,actionPanel);rows.put(id,entry);changed=true;
                 }
                 var rich=state.has("richMessages")?state.getAsJsonObject("richMessages"):new JsonObject();entry.actions.refresh(rich.has(id)?rich.get(id).getAsString():null);
@@ -320,7 +346,7 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private CompletableFuture<JsonObject> fileRequest(String kind,Map<String,Object> extra){var data=new LinkedHashMap<String,Object>(extra);data.put("kind",kind);data.put("agentId",model.agent);return BuildingFilesClient.handle(JSON.toJsonTree(data).getAsJsonObject()).thenApply(value->JSON.toJsonTree(value).getAsJsonObject());}
     private void fileAction(String kind,Map<String,Object> extra){fileRequest(kind,extra).whenComplete((value,error)->Minecraft.getInstance().execute(()->{if(!current())return;if(error!=null)notice(error.getMessage());else{notice(t("正在处理…"));nextFilePoll=0;transferWasBusy=true;}}));}
     private void files(){fileRequest("list",Map.of("query","","offset",fileOffset)).whenComplete((data,error)->Minecraft.getInstance().execute(()->{if(!current()||(filesWindow==null||filesWindow.closed()))return;if(error!=null){notice(error.getMessage());return;}fileRows.clearAllScrollViewChildren();for(var item:data.getAsJsonArray("files")){var file=item.getAsJsonObject();String id=file.get("id").getAsString();var line=new UIElement();line.getLayout().widthPercent(100).paddingAll(5);line.addChild(label(file.get("name").getAsString()));var actions=row();actions.getLayout().height(23);actions.addChild(button(t("交给 AI"),()->fileRequest("select",Map.of("fileId",id)).whenComplete((value,failure)->Minecraft.getInstance().execute(()->{if(failure!=null)notice(failure.getMessage());else if(value.has("status")&&value.get("status").getAsString().equals("SENT_TO_AI"))notice(t("AI 已收到文件，继续处理。"));else if(!model.conversation.isEmpty()){String reference="\n["+file.get("name").getAsString()+" file_id="+id+"]";String key=draftKey();String draft=model.drafts.getOrDefault(key,"");if(!draft.contains("file_id="+id))model.drafts.put(key,draft+reference);composer.setValue(model.drafts.getOrDefault(key,"").split("\n",-1),false);notice(t("已加入对话草稿，填写需求后发送。"));}else notice(t("选择或新建对话"));}))));actions.addChild(button(t("下载"),()->fileAction("download",Map.of("fileId",id))));line.addChild(actions);fileRows.addScrollViewChild(line);}}));}
-    @Override public void tick(){super.tick();NativeUiTheme.controls(root);if(!current())return;long now=System.currentTimeMillis();if(pendingSection!=null&&NativeWorkspaceConnection.ready()){var section=pendingSection;pendingSection=null;panel(section);}if(saveAt>0&&now>=saveAt)persistState();if(nextList>0&&now>=nextList){nextList=0;list();}if(page.equals("chat")&&NativeWorkspaceConnection.ready()&&now>=nextMessages){nextMessages=now+700;messages(0);}restoreScroll();if(now>=nextLayoutSave){nextLayoutSave=now+1000;for(var entry:windows.entrySet()){var value=entry.getValue().placement();if(value.width()>0&&value.height()>0&&!value.equals(model.placements.put(entry.getKey(),value)))saveAt=now+300;}}if(filesWindow!=null&&filesWindow.visible()&&now>=nextFilePoll){nextFilePoll=now+700;fileRequest("status",Map.of()).thenAccept(data->Minecraft.getInstance().execute(()->{if(!current())return;notice(data.get("status").getAsString()+(data.get("error").getAsString().isEmpty()?"":" · "+data.get("error").getAsString()));boolean busy=data.get("busy").getAsBoolean();if(transferWasBusy&&!busy)files();transferWasBusy=busy;}));}}
+    @Override public void tick(){super.tick();NativeUiTheme.controls(root);if(!current())return;long now=System.currentTimeMillis();if(now>=nextFocusRefresh)focusConversation();if(pendingSection!=null&&NativeWorkspaceConnection.ready()){var section=pendingSection;pendingSection=null;panel(section);}if(saveAt>0&&now>=saveAt)persistState();if(nextList>0&&now>=nextList){nextList=0;list();}if(page.equals("chat")&&NativeWorkspaceConnection.ready()&&now>=nextMessages){nextMessages=now+700;messages(0);}restoreScroll();if(now>=nextLayoutSave){nextLayoutSave=now+1000;for(var entry:windows.entrySet()){var value=entry.getValue().placement();if(value.width()>0&&value.height()>0&&!value.equals(model.placements.put(entry.getKey(),value)))saveAt=now+300;}}if(filesWindow!=null&&filesWindow.visible()&&now>=nextFilePoll){nextFilePoll=now+700;fileRequest("status",Map.of()).thenAccept(data->Minecraft.getInstance().execute(()->{if(!current())return;notice(data.get("status").getAsString()+(data.get("error").getAsString().isEmpty()?"":" · "+data.get("error").getAsString()));boolean busy=data.get("busy").getAsBoolean();if(transferWasBusy&&!busy)files();transferWasBusy=busy;}));}}
     private void captureScroll(){
         if(restoreScrollFrames>0)return;
         float range=Math.max(0,history.getContainerHeight()-history.viewPort.getContentHeight());
@@ -334,5 +360,5 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         restoreScrollFrames--;
     }
     @Override public void removed(){if(active!=this){super.removed();return;}saveDraft();for(var entry:windows.entrySet()){var value=entry.getValue().placement();if(value.width()>0&&value.height()>0)model.placements.put(entry.getKey(),value);}persistState();super.removed();}
-    @Override public void onClose(){saveDraft();persistState();releaseConversationFocus();super.onClose();}
+    @Override public void onClose(){saveDraft();persistState();closed=true;releaseConversationFocus();super.onClose();}
 }

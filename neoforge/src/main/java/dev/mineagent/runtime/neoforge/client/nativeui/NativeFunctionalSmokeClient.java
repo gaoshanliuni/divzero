@@ -16,6 +16,20 @@ public final class NativeFunctionalSmokeClient {
     private static net.minecraft.world.level.block.state.BlockState buildingBefore;
     private static CompletableFuture<Map<String,Object>> result;private static UUID agent,a,b,old,geometryPlan;
     private static int stage,ticks,pressedAt,pagerStage,editorAt,focusChanges;private static float editorX,editorY;private static boolean pending,chatRevealed,uiApplySubmitted;private static final List<String> checked=new ArrayList<>();
+    private static final List<String> conversationFocusIds=new ArrayList<>();
+    public static CompletableFuture<Map<String,Object>> runFocus(UUID ai,UUID first,UUID second){
+        if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
+        org.lwjgl.glfw.GLFW.glfwFocusWindow(Minecraft.getInstance().getWindow().handle());agent=ai;a=first;b=second;stage=100;ticks=0;pending=false;checked.clear();conversationFocusIds.clear();return result=new CompletableFuture<>();
+    }
+    private static void verifyConversationFocus(UUID expected,boolean fresh,boolean routed,String label){
+        if(!(mc().screen instanceof NativeWorkspaceScreen screen)||!Boolean.TRUE.equals(screen.smokeConversationFocus().get("ready")))return;
+        String context=screen.smokeConversationFocus().get("context").toString();require(!screen.smokeConversationFocus().get("notice").toString().contains("STALE_CONVERSATION_FOCUS"),"RAW_FOCUS_ERROR_VISIBLE");
+        UUID player=mc().player.getUUID();pending=true;mc().getSingleplayerServer().submit(()->{
+            var server=mc().getSingleplayerServer();var viewer=server.getPlayerList().getPlayer(player);var focused=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).focused(viewer).orElseThrow();
+            require(focused.agentId().equals(agent)&&focused.conversationId().equals(expected)&&focused.contextId().toString().equals(context),"SERVER_FOCUS_DIFFERS_FROM_VISIBLE_CONVERSATION");
+            if(routed)require(focused.nativeInput(),"NATIVE_CHAT_ROUTE_NOT_BOUND");return true;
+        }).whenComplete((value,error)->mc().execute(()->{pending=false;if(error!=null){result.completeExceptionally(error);return;}if(fresh){if(conversationFocusIds.contains(context)){result.completeExceptionally(new IllegalStateException("REUSED_CONVERSATION_SELECTION_ID"));return;}conversationFocusIds.add(context);}advance(label);}));
+    }
     public static CompletableFuture<Map<String,Object>> run(UUID ai,UUID first,UUID second,UUID oldest){
         if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
         org.lwjgl.glfw.GLFW.glfwFocusWindow(Minecraft.getInstance().getWindow().handle());
@@ -57,6 +71,24 @@ public final class NativeFunctionalSmokeClient {
             if(++ticks>1400)throw new IllegalStateException("FUNCTIONAL_UI_TIMEOUT_STAGE_"+stage+" checked="+checked+" connection="+NativeWorkspaceConnection.diagnostic()+" ui="+(mc().screen instanceof NativeWorkspaceScreen screen?screen.smokeState():mc().screen==null?"NONE":mc().screen.getClass().getName()));
             if(pending||ticks%6!=0)return;if(!mc().isWindowActive()){org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return;}
             switch(stage){
+                case 100->{NativeWorkspaceScreen.openConversation(agent.toString(),"焦点验收",a.toString());advance("open-focus-a");}
+                case 101->{if(conversation(a,"HISTORY_A_ONLY")){((NativeWorkspaceScreen)mc().screen).smokeDraft("focus-draft-A");verifyConversationFocus(a,true,false,"server-focus-a");}}
+                case 102->{if(click("conversation-"+b))advance("select-focus-b");}
+                case 103->{if(conversation(b,"HISTORY_B_ONLY"))verifyConversationFocus(b,true,false,"server-focus-b-new-id");}
+                case 104->{if(click("conversation-"+a)&&click("conversation-"+b)&&click("conversation-"+a))advance("rapid-a-b-a-with-pending-replies");}
+                case 105->{if(conversation(a,"HISTORY_A_ONLY")){require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals("focus-draft-A"),"FOCUS_SWITCH_LOST_DRAFT");verifyConversationFocus(a,true,false,"latest-focus-wins");}}
+                case 106->{((NativeWorkspaceScreen)mc().screen).onClose();advance("close-workspace-focus");}
+                case 107->{NativeWorkspaceScreen.openForAgent(agent.toString(),"焦点验收");advance("reopen-with-existing-conversation");}
+                case 108->{if(conversation(a,"HISTORY_A_ONLY"))verifyConversationFocus(a,true,false,"reopen-registers-new-focus");}
+                case 109->{if(click("更多"))advance("open-conversation-routing-options");}
+                case 110->{if(click("将普通聊天关联到此会话"))advance("route-through-visible-button");}
+                case 111->verifyConversationFocus(a,false,true,"server-confirmed-current-conversation-route");
+                case 112->{var screen=(NativeWorkspaceScreen)mc().screen;String context=screen.smokeConversationFocus().get("context").toString();UUID player=mc().player.getUUID();pending=true;
+                    mc().getSingleplayerServer().submit(()->{var server=mc().getSingleplayerServer();var viewer=server.getPlayerList().getPlayer(player);return dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).write(viewer,UUID.randomUUID(),Map.of("kind","unfocus","agentId",agent.toString(),"conversationId",a.toString(),"contextId",context));}).whenComplete((value,error)->mc().execute(()->{pending=false;if(error!=null)result.completeExceptionally(error);else{screen.smokeFocusRefresh();advance("simulate-expired-focus-without-message-replay");}}));}
+                case 113->{var screen=(NativeWorkspaceScreen)mc().screen;if(!conversationFocusIds.getLast().equals(screen.smokeConversationFocus().get("context")))verifyConversationFocus(a,true,false,"expired-id-replaced-and-confirmed");}
+                case 114->{UUID player=mc().player.getUUID();String original=conversationFocusIds.getFirst(),latest=conversationFocusIds.getLast();pending=true;
+                    mc().getSingleplayerServer().submit(()->{var server=mc().getSingleplayerServer();var viewer=server.getPlayerList().getPlayer(player);var conversations=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server);var args=Map.of("agentId",agent.toString(),"conversationId",a.toString(),"contextId",original,"kind","focus");boolean rejected=false;try{conversations.write(viewer,UUID.randomUUID(),args);}catch(IllegalStateException stale){rejected=stale.getMessage().equals("STALE_CONVERSATION_FOCUS");}require(rejected,"OLD_CONTEXT_REPLAY_ACCEPTED");conversations.write(viewer,UUID.randomUUID(),Map.of("kind","unfocus","agentId",agent.toString(),"conversationId",a.toString(),"contextId",original));require(conversations.focused(viewer).orElseThrow().contextId().toString().equals(latest),"DELAYED_UNFOCUS_CLEARED_NEW_SELECTION");return true;}).whenComplete((value,error)->mc().execute(()->{pending=false;if(error!=null)result.completeExceptionally(error);else advance("stale-focus-and-close-remain-rejected");}));}
+                case 115->{var screen=(NativeWorkspaceScreen)mc().screen;require(conversation(a,"HISTORY_A_ONLY")&&screen.smokeState().get("draft").equals("focus-draft-A"),"FOCUS_RECOVERY_SENT_OR_LOST_DRAFT");checked.add("history-and-unsent-draft-preserved");result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"selectionIds",conversationFocusIds.size(),"modelCalls",0));}
                 case 0->{NativeWorkspaceScreen.openConversation(agent.toString(),"界面验收",a.toString());advance("open-first-conversation");}
                 case 1->{if(conversation(a,"HISTORY_A_ONLY")){((NativeWorkspaceScreen)mc().screen).smokeDraft("draft-A");if(pressedAt==0){if(gesture("conversation-"+b,true)){pressedAt=ticks;NativeWorkspaceScreen.push("conversationChanged",new com.google.gson.JsonObject());}return;}if(ticks-pressedAt>=30&&gesture("conversation-"+b,false))advance("release-second-row-after-refresh");}}
                 case 2->{if(conversation(b,"HISTORY_B_ONLY")){require(((NativeWorkspaceScreen)mc().screen).smokeState().get("draft").equals(""),"DRAFT_LEAKED_TO_B");((NativeWorkspaceScreen)mc().screen).smokeDraft("draft-B");if(click("conversation-"+a))advance("click-first-row");}}
