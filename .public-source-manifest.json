@@ -1434,8 +1434,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "b81c8e59a7d4f059f9804974973e7c8d71a105621c4ff0621dc4f9c17dd552d6",
-      "bytes": 66584
+      "sha256": "ec87b45f915bb1d5e2ad8e11a7ffe38e527cec90d83134867932d9b65d2b45aa",
+      "bytes": 66760
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
@@ -1479,8 +1479,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolErrors.java",
-      "sha256": "00afb30a5ec10d632b5c1957e639aa0a233f8c8cd1e1ac1024e40232fa59f7d0",
-      "bytes": 2341
+      "sha256": "569871d586075d00b1575cc50e0e3d6d159a717415e9249cc2c215a23b7bd612",
+      "bytes": 2847
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolExecutionTraits.java",
@@ -2949,8 +2949,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolValidationTest.java",
-      "sha256": "99e029b5fa7ecd53f21b20d4eee7b53156d7be50e87a6d689693171cc0075efe",
-      "bytes": 1637
+      "sha256": "2c2333119352c591429d53bfab09420fda8ea0f60c10e453f8a9a420256e0b4e",
+      "bytes": 2555
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureAnimationTest.java",
@@ -3824,8 +3824,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "1da05703aab8b473c33b5ac7108b0f5e0d9dbafe8871d5bb79895a7728b38473",
-      "bytes": 138934
+      "sha256": "3c4b1c0c410bc0be79f2f3ac934ba64edaa382ef61723e4fbd0b52a1d74fb19e",
+      "bytes": 142743
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5464,8 +5464,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "sha256": "18a69ffcf7720f37e1cfe83904a67cc4c857aecf6620aa251ad351a0c21f8865",
-      "bytes": 43982
+      "sha256": "c81eb57c15f88ad5c29fc892ebd8c78a30d2811ee8c1fdc56d5c0cd560fd3ecb",
+      "bytes": 44733
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
@@ -5724,8 +5724,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "b28d7a279f0ca48ee1e3817c856544676f8367fc0d9f1016de38e0f7a588b26e",
-      "bytes": 70948
+      "sha256": "991f2db013b32531b78861f32f4a445e8841b677003da7070fd7ec6046d1ab1d",
+      "bytes": 70806
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -6134,8 +6134,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "2a2391262cab3aab5e9fb6e079dfef4eeca9dfe09ba8f5394e2de9b6c2ef7f2a",
-      "bytes": 91632
+      "sha256": "61272eae2e12d38faf423e4ad2b4395735782a606f2a1f14e780c7fbb05948cb",
+      "bytes": 91638
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -7329,8 +7329,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/StreamingToolCalls.java",
-      "sha256": "1c9b9611083955daff5260eb95aff1326fd0b9b489b8117aa8da88a98144b923",
-      "bytes": 2144
+      "sha256": "40ed78ca61bb2df84321fab2c741c0663dfa1250c1fa94008700762e585f363e",
+      "bytes": 2150
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/ToolCall.java",
@@ -7599,8 +7599,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/StreamingToolCallsTest.java",
-      "sha256": "f439b86f684d08fae0631e332e1d28d0fd0f51afa9fa294f870e61010810355f",
-      "bytes": 2737
+      "sha256": "da8add1fb660cbcba22bee9fa7ec8599cd7adcd0aea46c2275dd804f32da3de3",
+      "bytes": 2779
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/web/ImageTextureTest.java",

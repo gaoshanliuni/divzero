@@ -15,4 +15,10 @@ class ToolValidationTest {
         assertFalse(result.issues().isEmpty()); // ID is invalid, rather than guessed or silently replaced.
         var code=ToolValidation.check("apply_building",ToolArguments.parse("apply_building","{\"id\":\"home\",\"revision\":\"1+2\"}"));assertFalse(code.issues().isEmpty());
     }
+    @Test void unknownPropertyInRejectedCandidateIsNotAnUnknownWorldWrite(){
+        var result=ToolErrors.explain(java.util.Map.of("status","REJECTED","error","Wrapped: INTERFACE_LSS_UNKNOWN_PROPERTY: widthx at #root (build.js#6)","executionState","CANDIDATE_ONLY","candidate_id","draft","runningVersionPreserved",true));
+        assertEquals("CANDIDATE_VALIDATION",result.get("category"));assertEquals("CANDIDATE_ONLY",result.get("executionState"));assertTrue(result.get("suggestedAction").toString().contains("targeted edit"));
+        var unknown=ToolErrors.explain(java.util.Map.of("status","UNKNOWN","error","NATIVE_UI_CLIENT_ACK_TIMEOUT","executionState","UNKNOWN"));assertEquals("OUTCOME_UNKNOWN",unknown.get("category"));
+        var field=ToolErrors.explain(java.util.Map.of("status","REJECTED","error","UNKNOWN_FIELD","executionState","NOT_STARTED"));assertEquals("VALIDATION",field.get("category"));
+    }
 }

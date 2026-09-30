@@ -207,6 +207,12 @@ public final class SkillRuntime {
     public void attachScriptAuthority(UUID operation,BooleanSupplier authority){var w=work.get(operation);if(w!=null)w.externalAuthority=authority;}
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST) public static void projectile(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event){if(event.isCanceled()||event.loadedFromDisk()||!(event.getEntity() instanceof net.minecraft.world.entity.projectile.Projectile shot)||!(shot.getOwner() instanceof ServerPlayer player))return;var r=ALL.get(player.level().getServer());if(r==null)return;for(var w:r.forEntity(player))if(w.actor!=null&&w.actor.player()==player&&w.combatOperation!=null&&w.combatStage==2&&w.actor.controls().owns(w.token(),BodyDomain.MAIN_HAND)){w.session.add("nativeProjectilesSpawned",1);shot.getPersistentData().putString("mineagent_skill_session",w.token().toString());shot.getPersistentData().putString("mineagent_skill_operation",w.combatOperation.toString());}}
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void projectileContact(net.neoforged.neoforge.event.entity.ProjectileImpactEvent event){
+        if(event.isCanceled()||!(event.getProjectile().getOwner() instanceof ServerPlayer player)||!(event.getRayTraceResult() instanceof net.minecraft.world.phys.EntityHitResult hit))return;
+        var runtime=ALL.get(player.level().getServer());if(runtime==null)return;String session=event.getProjectile().getPersistentData().getStringOr("mineagent_skill_session","");
+        for(var work:runtime.forEntity(player))if(work.token().toString().equals(session)&&hit.getEntity().getUUID().equals(work.fighting))work.session.add("nativeProjectileTargetContacts",1);
+    }
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST)
     public static void critical(net.neoforged.neoforge.event.entity.player.CriticalHitEvent event){
         if(!event.isCriticalHit()||!(event.getEntity() instanceof ServerPlayer player))return;
         var runtime=ALL.get(player.level().getServer());if(runtime==null)return;

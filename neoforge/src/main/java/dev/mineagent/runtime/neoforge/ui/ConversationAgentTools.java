@@ -47,7 +47,7 @@ public final class ConversationAgentTools {
     public static CompletableFuture<Map<String,Object>> execute(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         if(!ConversationTools.NAMES.contains(tool))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_UNKNOWN","category","CAPABILITY","executionState","NOT_STARTED","suggestedAction","Use inspect_capabilities and skill to find the correct tool name."));
         final ToolValidation.Checked checked;
-        try{if(arguments==null||arguments.length()>(Set.of("plan_building","set_native_ui","repair_content_package","edit_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
+        try{if(arguments==null||arguments.length()>ConversationTools.maxArgumentCharacters(tool))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
         catch(IllegalArgumentException invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid),"category","VALIDATION","executionState","NOT_STARTED","worldModified",false,"suggestedAction","Provide one complete JSON object matching this tool's parameter definition. No operation was executed."));}
         if(!checked.issues().isEmpty())return CompletableFuture.completedFuture(checked.rejection());
         if(!p.level().getServer().isSameThread()||!current(p,permit)||ConversationTools.mutation(tool)&&!personalTool(tool)&&!tool.equals("stop_actions")&&!ServerTaskStart.allowed(p,agent))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_PERMISSION","executionState","NOT_STARTED"));
@@ -66,7 +66,7 @@ public final class ConversationAgentTools {
     }
     private static CompletableFuture<Map<String,Object>> executeChecked(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         var s=p.level().getServer();try{
-            if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui","repair_content_package","edit_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
+            if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>ConversationTools.maxArgumentCharacters(tool))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=ToolArguments.parse(tool,arguments);
             if(tool.equals("observe")){keys(args);return ConversationMetaTools.observe(p,agent);}
             if(tool.equals("stop_actions")){keys(args);return CompletableFuture.completedFuture(ConversationMetaTools.stop(p,agent));}
