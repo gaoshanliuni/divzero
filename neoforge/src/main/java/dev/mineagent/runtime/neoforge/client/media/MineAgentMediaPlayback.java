@@ -20,6 +20,10 @@ public final class MineAgentMediaPlayback {
             16 * 1024 * 1024, 512, Clock.systemUTC());
     private static final Map<String, FrameMetadata> TRANSFERS = new LinkedHashMap<>();
     private static final Map<String, TextureEntry> TEXTURES = new LinkedHashMap<>();
+    private record Desired(long revision,boolean playing,String binding){}
+    private static final Map<String,Desired> DESIRED=new LinkedHashMap<>(), incoming=new LinkedHashMap<>();
+    private static String snapshot="";
+
 
     private MineAgentMediaPlayback() {
     }
@@ -27,6 +31,7 @@ public final class MineAgentMediaPlayback {
     public static synchronized void acceptFrame(MineAgentPayloads.MediaFrameChunk chunk) {
         try {
             MediaScreenBinding.parse(chunk.binding());
+            var desired=DESIRED.get(chunk.mediaId());if(desired==null||!desired.playing()||desired.revision()!=chunk.revision()||!desired.binding().equals(chunk.binding()))return;
             var metadata = new FrameMetadata(chunk.mediaId(), chunk.revision(), chunk.binding(), chunk.positionMillis());
             FrameMetadata previous = TRANSFERS.putIfAbsent(chunk.sha256(), metadata);
             if (previous != null && !previous.equals(metadata)) {
@@ -56,16 +61,17 @@ public final class MineAgentMediaPlayback {
         } catch (NumberFormatException invalid) {
             count = 0;
         }
-        var active = new java.util.HashSet<String>();
-        for (int index = 0; index < count; index++) {
-            String prefix = "media." + index + ".";
-            if (Boolean.parseBoolean(state.values().getOrDefault(prefix + "playing", "false"))) {
-                active.add(state.values().getOrDefault(prefix + "id", ""));
-            }
+        String id=state.values().getOrDefault("snapshotId","legacy");int offset=Integer.parseInt(state.values().getOrDefault("offset","0"));
+        if(offset==0){snapshot=id;incoming.clear();}else if(!snapshot.equals(id))return;
+        for(int index=0;index<count;index++){
+            String prefix="media."+index+".";String mediaId=state.values().getOrDefault(prefix+"id","");
+            var desired=new Desired(Long.parseLong(state.values().getOrDefault(prefix+"revision","0")),Boolean.parseBoolean(state.values().getOrDefault(prefix+"playing","false")),state.values().getOrDefault(prefix+"binding",""));
+            incoming.put(mediaId,desired);DESIRED.put(mediaId,desired);
         }
-        var remove = TEXTURES.entrySet().stream()
-                .filter(entry -> !active.contains(entry.getValue().mediaId()))
-                .map(Map.Entry::getKey).toList();
+        if(!Boolean.parseBoolean(state.values().getOrDefault("complete","true")))return;
+        DESIRED.keySet().retainAll(incoming.keySet());
+        // Pause holds the last frame. A rebind/removal invalidates the old location immediately.
+        var remove=TEXTURES.entrySet().stream().filter(entry->{var desired=DESIRED.get(entry.getValue().mediaId());return desired==null||!desired.binding().equals(entry.getKey());}).map(Map.Entry::getKey).toList();
         Minecraft minecraft = Minecraft.getInstance();
         for (String binding : remove) {
             TextureEntry removed = TEXTURES.remove(binding);
@@ -82,6 +88,7 @@ public final class MineAgentMediaPlayback {
     }
 
     private static synchronized void upload(FrameMetadata metadata, byte[] bytes) {
+        var desired=DESIRED.get(metadata.mediaId());if(desired==null||!desired.playing()||desired.revision()!=metadata.revision()||!desired.binding().equals(metadata.binding()))return;
         try (var input = new ByteArrayInputStream(bytes)) {
             NativeImage image = NativeImage.read(input);
             Identifier texture = Identifier.fromNamespaceAndPath(MineAgentRuntimeMod.MOD_ID,

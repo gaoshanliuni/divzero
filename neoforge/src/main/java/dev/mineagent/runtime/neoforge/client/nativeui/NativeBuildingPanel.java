@@ -21,7 +21,7 @@ final class NativeBuildingPanel {
     private void requestDesign(){
         String key="building-request-"+agent;if(host.revealWindow(key))return;var dialog=host.window(key,t("让 AI 设计建筑"),470,310);
         dialog.body.addChild(WorkspacePanels.text(t("描述建筑、材料和用途。AI 会保存构件计划；你可检查后再开始施工。")));
-        var prompt=new TextArea();prompt.getLayout().widthPercent(100).flex(1);dialog.body.addChild(prompt);var status=WorkspacePanels.text(t("提交后会调用所选 AI 的模型。"));dialog.body.addChild(status);UUID[] pending={null};String[] conversationId={""};
+        var prompt=new TextArea();prompt.setId("building-design-prompt");prompt.getLayout().widthPercent(100).flex(1);dialog.body.addChild(prompt);var status=WorkspacePanels.text(t("提交后会调用所选 AI 的模型。"));dialog.body.addChild(status);UUID[] pending={null};String[] conversationId={""};
         dialog.body.addChild(NativeUiTheme.button(t("提交规划需求"),()->{
             if(pending[0]!=null||!live())return;String goal=String.join("\n",prompt.getValue()).strip();if(goal.isEmpty()||goal.length()>7000){status.setText(Component.literal(t("请填写建筑需求，最多 7000 个字符。")));return;}
             pending[0]=UUID.randomUUID();String request="为以下需求创建可继续修改的建筑构件计划。先勘测玩家当前所在区域，使用 plan_building 保存带稳定构件 ID 与实际验证检查的计划。本次只规划，不调用 apply_building；玩家会在建筑计划中检查并选择开始施工。需求：\n"+goal;

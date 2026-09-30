@@ -21,6 +21,7 @@ public final class MineAgentMediaCoordinator {
     private final Map<UUID,Map<String,Object>> outcomes=new LinkedHashMap<>();
     private void outcome(UUID id,String status,String error){outcomes.put(id,Map.of("status",status,"error",error,"observedAt",System.currentTimeMillis()));while(outcomes.size()>256)outcomes.remove(outcomes.keySet().iterator().next());}
     public Map<String,Object> state(UUID id){var session=sessions.get(id);return outcomes.getOrDefault(id,Map.of("status",session==null?"IDLE":session.ready?"READY":"PREPARING","error",""));}
+    public long position(MediaEntry entry){var session=sessions.get(entry.mediaId());return effectivePosition(entry,System.currentTimeMillis(),session==null?0:session.durationMillis);}
 
     public MineAgentMediaCoordinator(MinecraftServer server) {
         this.server = java.util.Objects.requireNonNull(server, "server");

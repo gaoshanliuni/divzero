@@ -1729,23 +1729,16 @@ public final class MineAgentNetwork {
 
     private static void sendMediaState(ServerPlayer player, String errorCode) {
         var entries = MineAgentRuntimeServices.media(player.level().getServer()).all();
-        int count = Math.min(20, entries.size());
-        var values = new java.util.LinkedHashMap<String, String>();
-        values.put("mediaCount", Integer.toString(count));
-        for (int index = 0; index < count; index++) {
-            var entry = entries.get(index);
-            String prefix = "media." + index + ".";
-            values.put(prefix + "id", entry.mediaId().toString());
-            values.put(prefix + "kind", entry.kind().name());
-            values.put(prefix + "title", entry.title());
-            values.put(prefix + "url", entry.sourceUrl());
-            values.put(prefix + "binding", entry.screenBinding());
-            values.put(prefix + "playing", Boolean.toString(entry.playing()));
-            values.put(prefix + "positionMillis", Long.toString(entry.positionMillis()));
-            values.put(prefix + "revision", Long.toString(entry.revision()));
+        String snapshot=java.util.UUID.randomUUID().toString();
+        for(int offset=0;offset<Math.max(1,entries.size());offset+=20){
+            int count=Math.min(20,entries.size()-offset);var values=new java.util.LinkedHashMap<String,String>();
+            values.put("snapshotId",snapshot);values.put("offset",Integer.toString(offset));values.put("complete",Boolean.toString(offset+count>=entries.size()));values.put("mediaCount",Integer.toString(count));
+            for(int index=0;index<count;index++){
+                var entry=entries.get(offset+index);String prefix="media."+index+".";
+                values.put(prefix+"id",entry.mediaId().toString());values.put(prefix+"kind",entry.kind().name());values.put(prefix+"title",entry.title());values.put(prefix+"url",entry.sourceUrl());values.put(prefix+"binding",entry.screenBinding());values.put(prefix+"playing",Boolean.toString(entry.playing()));values.put(prefix+"positionMillis",Long.toString(entry.positionMillis()));values.put(prefix+"revision",Long.toString(entry.revision()));
+            }
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new MineAgentPayloads.MediaState(errorCode,values));
         }
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
-                player, new MineAgentPayloads.MediaState(errorCode, values));
     }
 
     public static void sendMediaFrame(

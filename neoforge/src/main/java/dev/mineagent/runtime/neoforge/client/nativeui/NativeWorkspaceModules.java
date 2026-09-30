@@ -15,6 +15,7 @@ final class NativeWorkspaceModules {
     private final NativeWorkspaceScreen host;private final WorkspaceWindow window;private final String module;
     private final ScrollerView list;private final TextElement notice=WorkspacePanels.text("");private final TextField search=new TextField();
     private final Selector<Choice> agents=new Selector<>();private String scope="dialogue",backupKind="list";private int offset,next=-1;private boolean busy,indexing;private long poll;
+    private Button addMemory;
     private UUID operation;private String operationKind="";
     static void open(NativeWorkspaceScreen host,PanelSection section){if(!host.revealWindow("module-"+section.name()))new NativeWorkspaceModules(host,section);}
     private NativeWorkspaceModules(NativeWorkspaceScreen host,PanelSection section){
@@ -22,7 +23,7 @@ final class NativeWorkspaceModules {
         window=host.window("module-"+section.name(),t(section.displayName()),560,400);OPEN.add(this);
         var tools=row();window.body.addChild(tools);
         switch(module){
-            case "memory"->{tools.addChild(button("AI 事实与偏好",()->{scope="dialogue";offset=0;load();}));tools.addChild(button("共享事实与旧笔记",()->{scope="legacy";offset=0;load();}));tools.addChild(button("长期偏好",()->NativePreferencesPanel.open(host)));tools.addChild(button("新增记忆",()->memoryEditor(new JsonObject())));}
+            case "memory"->{tools.addChild(button("AI 事实与偏好",()->{scope="dialogue";addMemory.setActive(agents.getValue()!=null);offset=0;load();}));tools.addChild(button("共享事实与旧笔记",()->{scope="legacy";addMemory.setActive(true);offset=0;load();}));tools.addChild(button("长期偏好",()->NativePreferencesPanel.open(host)));addMemory=button("新增记忆",()->memoryEditor(new JsonObject()));addMemory.setActive(false);tools.addChild(addMemory);}
             case "media"->tools.addChild(button("添加媒体",this::mediaEditor));
             case "backups"->{tools.addChild(button("局部快照",()->{backupKind="list";offset=0;load();}));tools.addChild(button("修改历史",()->{backupKind="history";offset=0;load();}));tools.addChild(button("创建快照",this::snapshotEditor));}
             case "mods"->{tools.addChild(button("重新索引",()->mutate(Map.of("kind","index"),()->{indexing=true;poll=0;})));tools.addChild(button("原生 API",()->NativeApiPanel.open(host)));}
@@ -31,7 +32,7 @@ final class NativeWorkspaceModules {
         tools.addChild(button("刷新",this::load));
         if(module.equals("memory")){
             agents.getLayout().height(25).widthPercent(100);window.body.addChild(agents);agents.setOnValueChanged(choice->{offset=0;load();});
-            WorkspacePanels.request("shell.read",Map.of()).whenComplete((reply,error)->{if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}var choices=new ArrayList<Choice>();for(var raw:JsonParser.parseString(reply.values().get("agents")).getAsJsonArray()){var value=raw.getAsJsonObject();choices.add(new Choice(text(value,"id"),text(value,"name")));}agents.setCandidates(choices);choices.stream().filter(c->c.id.equals(host.selectedAgentId())).findFirst().or(()->choices.stream().findFirst()).ifPresent(c->agents.setValue(c,false));load();});
+            WorkspacePanels.request("shell.read",Map.of()).whenComplete((reply,error)->{if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}var choices=new ArrayList<Choice>();for(var raw:JsonParser.parseString(reply.values().get("agents")).getAsJsonArray()){var value=raw.getAsJsonObject();choices.add(new Choice(text(value,"id"),text(value,"name")));}agents.setCandidates(choices);choices.stream().filter(c->c.id.equals(host.selectedAgentId())).findFirst().or(()->choices.stream().findFirst()).ifPresent(c->agents.setValue(c,false));addMemory.setActive(scope.equals("legacy")||agents.getValue()!=null);load();});
             window.body.addChild(WorkspacePanels.text(t("事实与偏好按玩家、AI 和世界隔离，AI 对话会按相关性召回。动态观察必须设置有效期。")));
         }
         if(Set.of("memory","media","mods").contains(module)){var query=row();search.textFieldStyle(style->style.placeholder(Component.literal(t("搜索"))));search.getLayout().height(24).flex(1);query.addChild(search);query.addChild(button("搜索",()->{offset=0;load();}));window.body.addChild(query);}

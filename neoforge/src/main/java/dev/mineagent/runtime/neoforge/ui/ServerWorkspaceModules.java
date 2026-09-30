@@ -70,6 +70,7 @@ final class ServerWorkspaceModules implements AutoCloseable {
         if(action.equals("create")){keys(args,"module","kind","type","title","url");if(!manager)throw new SecurityException("WORKSPACE_PERMISSION_DENIED");var entry=service.add(viewer.getUUID(),MediaKind.valueOf(args.get("type")),args.get("title"),args.get("url"));broadcastMedia();return Map.of("status","APPLIED","entry",entry);}
         keys(args,"module","kind","id","revision","positionMillis");UUID id=UUID.fromString(args.get("id"));var entry=service.get(id).orElseThrow();long revision=Long.parseLong(args.get("revision"));boolean authorized=manager||entry.ownerPlayerId().equals(viewer.getUUID());
         long position=Long.parseLong(args.get("positionMillis"));if(position<0)throw new IllegalArgumentException("MEDIA_POSITION_INVALID");
+        if(action.equals("pause"))position=MineAgentRuntimeServices.mediaCoordinator(server).position(entry);
         if(action.equals("play")&&entry.screenBinding().isBlank())throw new IllegalStateException("MEDIA_BINDING_REQUIRED");
         var result=switch(action){
             case "bind_here"->service.bind(id,revision,authorized,new MediaScreenBinding(viewer.level().dimension().identifier().toString(),viewer.blockPosition().getX(),viewer.blockPosition().getY(),viewer.blockPosition().getZ()).encoded());
