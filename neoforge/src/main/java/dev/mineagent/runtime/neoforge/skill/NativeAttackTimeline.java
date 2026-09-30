@@ -77,7 +77,7 @@ public final class NativeAttackTimeline {
                     int due=Math.max(1,fuse.divzero$maxSwell()-fuse.divzero$swell());double range=fuse.divzero$explosionRadius()*2*(creeper.isPowered()?2:1);
                     radial(values,living,"EXPLOSION",due,range,living.position(),"NATIVE_FUSE_MOVING_SOURCE",false);
                 }
-                if(living instanceof Ravager ravager&&ravager.getRoarTick()>10){var bounds=ravager.getBoundingBox().inflate(4);
+                if(living instanceof Ravager ravager&&ravager.getRoarTick()>10&&ravager.getRoarTick()-10<=HORIZON){var bounds=ravager.getBoundingBox().inflate(4);
                     values.add(new Attack(ravager.getUUID()+"/roar",ravager.getUUID(),ravager.getUUID(),"ROAR","NATIVE_ROAR_BOX_TIMER",false,48,List.of(Slice.box(ravager.getRoarTick()-10,bounds,bounds))));}
                 if(living instanceof Guardian guardian&&guardian.getTarget()==actor)for(var goal:guardian.goalSelector.getAvailableGoals())if(goal.isRunning()&&goal.getGoal() instanceof CombatGuardianGoalAccess timer){
                     int due=Math.max(1,guardian.getAttackDuration()-timer.divzero$attackTime());if(due<=HORIZON){var volume=guardian.getBoundingBox().inflate(radius*2);
@@ -150,7 +150,8 @@ public final class NativeAttackTimeline {
     double risk(SkillWork work,Vec3 from,Vec3 to,int tick){observe(work);return risk(work.player(),observation,from,to,tick);}
     public static double risk(LivingEntity actor,Observation observation,Vec3 from,Vec3 to,int tick){
         double result=0;var body=actor.getBoundingBox();var first=body.move(from.subtract(actor.position()));var last=body.move(to.subtract(actor.position()));
-        for(var attack:observation.attacks())for(var slice:attack.slices())if(slice.tick()==tick&&intersects(actor,first,last,from,to,slice)){result+=attack.cost();break;}
+        long agedTick=tick+Math.max(0,actor.level().getGameTime()-observation.tick());
+        for(var attack:observation.attacks())for(var slice:attack.slices())if(slice.tick()==agedTick&&intersects(actor,first,last,from,to,slice)){result+=attack.cost();break;}
         return result;
     }
     private static boolean intersects(LivingEntity actor,AABB from,AABB to,Vec3 fromFeet,Vec3 toFeet,Slice slice){

@@ -89,7 +89,7 @@ final class CombatAwareness {
         double risk=0;for(var threat:threats){var e=threat.entity;if(!e.isAlive())continue;double d=e.position().distanceTo(point),future=e.position().add(e.getDeltaMovement().scale(5)).distanceTo(point);risk+=Math.max(0,5-Math.min(d,future))*2;
             if(NativeCombatStates.meleeAt(e,w.player(),point))risk+=threat.state.openingTicks(w.player().level().getGameTime())>=6?2:threat.state.meleeRestricted()?3:e==attackOpportunity?4:18;
             double areaRange=threat.state.attacks().stream().filter(a->a.kind().equals("AREA")&&a.running()).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
-            if(areaRange>0&&d<areaRange+1)risk+=30+Math.max(0,areaRange-d)*5;if(threat.state.ranged()&&reverseSight(w,e))risk+=Math.max(0,8-d);
+            if(areaRange>0&&!(e instanceof net.minecraft.world.entity.monster.Ravager)&&!(e instanceof net.minecraft.world.entity.monster.Creeper)&&d<areaRange+1)risk+=30+Math.max(0,areaRange-d)*5;if(threat.state.ranged()&&reverseSight(w,e))risk+=Math.max(0,8-d);
         }
         risk+=attacks.standingRisk(w,point,8);
         return risk;

@@ -30,7 +30,7 @@ final class CombatSkill {
         LivingEntity target=w.combat.selected;
         if(spec.kind()==SkillSpec.Kind.COMBAT&&!rule.target().isBlank()){
             var requested=w.player().level().getEntity(UUID.fromString(rule.target()));
-            if((requested instanceof LivingEntity e&&!e.isAlive()||requested==null&&w.lastCombatTarget!=null&&!w.lastCombatTarget.isAlive())&&!w.combat.incoming(w)){
+            if((requested instanceof LivingEntity e&&!e.isAlive()||requested==null&&w.lastCombatTarget!=null&&!w.lastCombatTarget.isAlive())&&w.combat.attacks.standingRisk(w,w.player().position(),NativeAttackTimeline.HORIZON)==0){
                 w.completed("TARGET_CONFIRMED_DEAD");return true;
             }
         }
