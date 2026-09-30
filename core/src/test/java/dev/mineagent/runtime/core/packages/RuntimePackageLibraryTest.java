@@ -40,6 +40,7 @@ class RuntimePackageLibraryTest {
     @Test void catalogFindsDefinitionNamesWithoutChangingOwnership()throws Exception{
         try(var signer=IdentitySigner.open(temporaryDirectory.resolve("catalog-id"));var library=RuntimePackageLibrary.open(temporaryDirectory.resolve("catalog.db"),clock,signer.publicKeyEncoded())){
             var id=UUID.randomUUID();var world=UUID.randomUUID();var owner=UUID.randomUUID();var source=signed(signer,id,"1.0.0",true);assertTrue(library.install(source).accepted());
+            try(var jobs=new SqliteRuntimeRepository(temporaryDirectory.resolve("catalog.db"))){jobs.initializePackageJobRetention(world);}
             var input=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,source.canonicalSha256(),"独立内容包",null,1);var copy=RuntimePackageAssetCopy.prepare(source,input.targetId(),input.name(),signer);library.installAssetCopy(input,copy);
             assertEquals(java.util.List.of(input.targetId()),library.catalog(world,owner,"风铃",0,8).ids());
             assertTrue(library.catalog(world,UUID.randomUUID(),"风铃",0,8).ids().isEmpty());assertTrue(library.catalog(UUID.randomUUID(),owner,"风铃",0,8).ids().isEmpty());

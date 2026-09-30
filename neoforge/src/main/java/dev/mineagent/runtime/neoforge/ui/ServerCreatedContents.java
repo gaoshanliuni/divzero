@@ -26,6 +26,7 @@ final class ServerCreatedContents {
             ServerWorkspaceModules.keys(args,"module","kind","type","id","revision","offset");if(!kind.equals("source"))throw new IllegalArgumentException("CONTENT_QUERY");int offset=ServerWorkspaceModules.offset(args),length=source.codePointCount(0,source.length());if(offset>length)throw new IllegalArgumentException("CONTENT_SOURCE_OFFSET");int end=Math.min(length,offset+2048);
             return CompletableFuture.completedFuture(Map.of("text",source.substring(source.offsetByCodePoints(0,offset),source.offsetByCodePoints(0,end)),"revision",expected,"nextOffset",end,"more",end<length,"total",length));
         }
+        if(!kind.equals("preview"))ServerWorkspaceModules.require(p,dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE);
         if(kind.equals("save")){
             ServerWorkspaceModules.keys(args,"module","kind","type","id","revision","source");var node=JSON.createObjectNode().put("source",args.get("source")).put("expected_revision",expected);
             return switch(type){
