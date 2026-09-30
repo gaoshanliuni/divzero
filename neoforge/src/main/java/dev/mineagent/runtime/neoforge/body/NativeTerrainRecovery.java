@@ -46,8 +46,8 @@ public final class NativeTerrainRecovery {
             public TerrainPathSearch.Block block(TerrainPathSearch.Cell c){
                 var pos=pos(c);if(!NativeTerrainPolicy.loaded(p,pos))return new TerrainPathSearch.Block(false,false,false,false,0,"unloaded");
                 var value=p.level().getBlockState(pos);String signature=signature(pos);
-                boolean fluid=!value.getFluidState().isEmpty(),clear=!fluid&&value.getCollisionShape(p.level(),pos).isEmpty();
-                boolean support=!fluid&&value.isCollisionShapeFullBlock(p.level(),pos)&&!value.is(net.minecraft.world.level.block.Blocks.MAGMA_BLOCK);
+                boolean fluid=!value.getFluidState().isEmpty(),hazard=value.is(net.minecraft.world.level.block.Blocks.FIRE)||value.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE)||value.is(net.minecraft.world.level.block.Blocks.POWDER_SNOW)||value.is(net.minecraft.world.level.block.Blocks.SWEET_BERRY_BUSH)||value.is(net.minecraft.world.level.block.Blocks.WITHER_ROSE)||value.is(net.minecraft.world.level.block.Blocks.CACTUS);boolean clear=!fluid&&!hazard&&value.getCollisionShape(p.level(),pos).isEmpty();
+                boolean support=!fluid&&!hazard&&!value.is(net.minecraft.world.level.block.Blocks.MAGMA_BLOCK)&&value.getCollisionShape(p.level(),pos).toAabbs().stream().anyMatch(box->box.maxY>=.875&&box.minX<=.2&&box.maxX>=.8&&box.minZ<=.2&&box.maxZ>=.8);
                 return new TerrainPathSearch.Block(true,clear,support,!rejected.contains(signature)&&NativeTerrainPolicy.mayBreak(p,pos),NativeTerrainPolicy.breakTicks(p,pos),signature);
             }
             public boolean canPlace(TerrainPathSearch.Cell c){return !rejected.contains(signature(pos(c)))&&NativeTerrainPolicy.mayPlace(p,pos(c));}
@@ -56,7 +56,7 @@ public final class NativeTerrainRecovery {
                 var below=c.add(0,-1,0);if(edits.containsKey(below)||!block(below).supports())return false;
                 // Exit candidates must rejoin existing traversable terrain, not end on a new pillar.
                 var at=new Vec3(c.x()+.5,c.y(),c.z()+.5);var evaluator=new NativeTraversalEvaluator(p);var node=evaluator.closest(at);
-                if(node==null||Math.abs(node.y()-at.y)>.1||!evaluator.clear(at,Pose.STANDING,false))return false;
+                if(node==null||Math.abs(node.y()-at.y)>.251||!evaluator.clear(NativeTraversalEvaluator.point(node),Pose.STANDING,false))return false;
                 if(evaluator.neighbors(node).stream().filter(edge->Math.abs(edge.to().y()-node.y())<=1.25).count()<2)return false;
                 Vec3 nextGoal=target.distanceToSqr(at)>16*16?at.add(target.subtract(at).normalize().scale(16)):target;
                 var targetNode=evaluator.closest(nextGoal);if(targetNode==null)return false;

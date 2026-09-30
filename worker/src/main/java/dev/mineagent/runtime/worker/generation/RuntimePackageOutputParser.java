@@ -150,13 +150,13 @@ public final class RuntimePackageOutputParser {
                 throw invalid("HASH_MISMATCH", "generated file hash mismatch: " + path);
             }
             if (path.endsWith(".json") || mediaType.equals("application/json")) {
-                mapper.readTree(content);
+                try{mapper.readTree(content);}catch(com.fasterxml.jackson.core.JsonProcessingException syntax){throw invalid("PACKAGE_OUTPUT_INVALID",path+":"+syntax.getLocation().getLineNr()+":"+syntax.getLocation().getColumnNr()+": "+syntax.getOriginalMessage());}
             }
             if (path.endsWith(".js") || path.endsWith(".mjs") || mediaType.equals("application/javascript") || mediaType.equals("text/javascript")) {
                 var inspected = path.startsWith("ui/") ? browserPreflight.inspect(new String(content, StandardCharsets.UTF_8))
                         : preflight.inspect(new String(content, StandardCharsets.UTF_8));
                 if (!inspected.accepted()) {
-                    throw invalid("PREFLIGHT_REJECTED", inspected.diagnostics().toString());
+                    throw invalid("PREFLIGHT_REJECTED", path+": "+inspected.diagnostics());
                 }
             }
             files.add(new GeneratedFile(path, side, mediaType, actualHash, content));

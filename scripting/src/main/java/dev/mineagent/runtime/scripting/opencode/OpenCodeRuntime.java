@@ -36,6 +36,14 @@ public final class OpenCodeRuntime {
         return execute("OpenCodeCompat.buildPrompt(input)",Map.of("previousSummary",previous==null?"":previous,"context",context)).asText();
     }
     public record Selection(String archived,String recent){}
+    public record Edit(String source,String error){public boolean accepted(){return error.isEmpty();}}
+    public static Edit edit(String source,String oldText,String newText,boolean all){
+        if(source.length()>262144||oldText.length()>32768||newText.length()>65536)throw new IllegalArgumentException("CANDIDATE_EDIT_SIZE");
+        boolean crlf=source.contains("\r\n");
+        String encoded=execute("(() => { try { return JSON.stringify({source:OpenCodeCompat.replace(input.source,input.old,input.value,input.all),error:''}); } catch(e) { return JSON.stringify({source:input.source,error:String(e.message)}); } })()",Map.of("source",source.replace("\r\n","\n"),"old",oldText.replace("\r\n","\n"),"value",newText.replace("\r\n","\n"),"all",all)).asText();
+        try{var result=JSON.readTree(encoded);String changed=result.path("source").asText();return new Edit(crlf?changed.replace("\n","\r\n"):changed,result.path("error").asText());}
+        catch(Exception error){throw new IllegalStateException("OPENCODE_EDIT_RESULT_INVALID",error);}
+    }
     /** Each entry is already an atomic protocol group, including required reasoning and tool results. */
     public static Selection select(List<String> groups,int tokens){
         var result=execute("(() => { const s=OpenCodeCompat.selectRendered(input.groups,input.tokens) || {head:'',recent:''}; return encodeURIComponent(s.head)+'|'+encodeURIComponent(s.recent); })()",Map.of("groups",groups,"tokens",tokens)).asText().split("\\|",-1);

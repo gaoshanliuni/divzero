@@ -47,7 +47,7 @@ public final class ConversationAgentTools {
     public static CompletableFuture<Map<String,Object>> execute(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         if(!ConversationTools.NAMES.contains(tool))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_UNKNOWN","category","CAPABILITY","executionState","NOT_STARTED","suggestedAction","Use inspect_capabilities and skill to find the correct tool name."));
         final ToolValidation.Checked checked;
-        try{if(arguments==null||arguments.length()>(Set.of("plan_building","set_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
+        try{if(arguments==null||arguments.length()>(Set.of("plan_building","set_native_ui","repair_content_package").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
         catch(IllegalArgumentException invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid),"category","VALIDATION","executionState","NOT_STARTED","worldModified",false,"suggestedAction","Provide one complete JSON object matching this tool's parameter definition. No operation was executed."));}
         if(!checked.issues().isEmpty())return CompletableFuture.completedFuture(checked.rejection());
         var action=executeChecked(p,agent,operation,tool,checked.arguments().toString(),permit,conversation);
@@ -61,14 +61,15 @@ public final class ConversationAgentTools {
     }
     private static CompletableFuture<Map<String,Object>> executeChecked(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         var s=p.level().getServer();try{
-            if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
+            if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>(java.util.Set.of("plan_building","set_native_ui","repair_content_package").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=ToolArguments.parse(tool,arguments);
             if(tool.equals("observe")){keys(args);return ConversationMetaTools.observe(p,agent);}
             if(tool.equals("stop_actions")){keys(args);return CompletableFuture.completedFuture(ConversationMetaTools.stop(p,agent));}
             if(tool.equals("skill")){keys(args,"name");var group=CapabilityCatalog.require(text(args,"name",64));return CompletableFuture.completedFuture(Map.of("status","CONTEXT_SCOPE_REQUIRED","name",group.name(),"description",group.description(),"runtimeAvailabilityChanged",false));}
             if(tool.equals("read_execution_record")){keys(args,"record_id","offset","length");var scope=new ExecutionRecords.Scope(MineAgentRuntimeServices.worldId(s),p.getUUID(),agent);var record=UUID.fromString(text(args,"record_id",36));int offset=args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0,length=args.has("length")?number(args,"length",1,8192):4096;var database=s.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");return CompletableFuture.supplyAsync(()->{try{return ExecutionRecords.read(database,scope,record,offset,length);}catch(Exception e){throw new CompletionException(e);}},IO);}
 
-            if(Set.of("inspect_skills","inspect_behavior").contains(tool)){keys(args,"history","offset");var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(s);return args.path("history").asBoolean(false)?runtime.history(p,agent,args.path("offset").asInt(0)):runtime.inspect(p,agent);}
+            if(Set.of("inspect_skills","inspect_behavior").contains(tool)){keys(args,"history","offset");var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(s);return args.path("history").asBoolean(false)?runtime.history(p,agent,args.path("offset").asInt(0)):runtime.inspect(p,agent).thenApply(value->{var output=new LinkedHashMap<String,Object>(value);output.put("enhancements",dev.mineagent.runtime.neoforge.skill.ActorEnhancements.inspect(p,agent));return output;});}
+            if(tool.equals("inspect_content_candidate")){keys(args,"operation_id","path","offset","length");return ServerPackageRuntime.get(s).inspectFailedCandidate(p,agent,UUID.fromString(args.path("operation_id").asText()),args.path("path").asText("raw_output"),args.path("offset").asInt(0),args.path("length").asInt(4096));}
             if(tool.equals("inspect_buildings")){keys(args,"id","offset");return ServerBuildings.inspect(p,agent,args);}
             if(tool.equals("verify_building")){keys(args,"id","revision");return ServerBuildings.verify(p,agent,args,permit);}
             if(tool.equals("search_images")){keys(args,"query");return ServerBlockTextures.search(args);}
@@ -215,7 +216,9 @@ public final class ConversationAgentTools {
             case "close_container"->{return ConversationNativeInteractions.closeMenu(p,agent,a);}
             case "python_execute","python_install_packages"->{dev.mineagent.runtime.core.host.HostCommandRequest request;if(tool.equals("python_execute")){keys(a,"purpose","script","timeout_seconds");request=new dev.mineagent.runtime.core.host.HostCommandRequest(operation,text(a,"purpose",200),text(a,"script",8192),number(a,"timeout_seconds",1,60));}else{keys(a,"purpose","packages","timeout_seconds");if(!a.path("packages").isArray()||a.path("packages").size()>16)throw new IllegalArgumentException("PYTHON_PACKAGE_ARGUMENTS");var packages=new ArrayList<String>();for(var value:a.path("packages")){if(!value.isTextual())throw new IllegalArgumentException("PYTHON_PACKAGE_ARGUMENTS");packages.add(value.asText());}request=dev.mineagent.runtime.core.host.HostCommandRequest.install(operation,text(a,"purpose",200),packages,number(a,"timeout_seconds",1,300));}var resultFuture=dev.mineagent.runtime.neoforge.host.LocalHostCommands.request(p,request);var level=p.level();WORK.computeIfAbsent(level.getServer(),k->new ArrayList<>()).add(new Work(){public boolean tick(){if(resultFuture.isDone())return true;if(!current(p,permit)||p.level()!=level){cancel();return true;}return false;}public void cancel(){dev.mineagent.runtime.neoforge.host.LocalHostCommands.cancel(operation);}});return resultFuture;}
             case "run_game_command"->{keys(a,"command");return command(p,text(a,"command",2048),permit);}
-            case "generate_content_package"->{keys(a,"prompt");return generateContent(p,agent,operation,text(a,"prompt",4096),permit);}
+            case "generate_content_package"->{keys(a,"prompt");return generateContent(p,agent,operation,text(a,"prompt",4096),null,permit);}
+            case "repair_content_package"->{keys(a,"source_operation_id","job_revision","raw_sha256","edits");return generateContent(p,agent,operation,"局部修复候选",a,permit);}
+            case "set_actor_enhancements"->{return CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.skill.ActorEnhancements.update(p,agent,a));}
             case "start_world_task"->{keys(a,"prompt");var task=ServerTaskStart.start(p,operation,agent,text(a,"prompt",4096),0,false);result=Map.of("status","TASK_STARTED_NOT_COMPLETED","taskId",task.taskId(),"state",task.status());}
             case "request_player_control"->{keys(a,"prompt");result=dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.submit(p,agent,operation,text(a,"prompt",4096));}
             case "control_player_session"->{keys(a,"action","goal");result=dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.control(p,agent,text(a,"action",16),a.path("goal").asText(""));}
@@ -237,20 +240,25 @@ public final class ConversationAgentTools {
         final String q=query,k=kind,t=topic,v=value;final int page=offset;final long life=ttl,rev=revision;final UUID key=id;var result=new CompletableFuture<Map<String,Object>>();
         CompletableFuture.supplyAsync(()->{try(var memory=new dev.mineagent.runtime.core.memory.DialogueMemoryStore(path,world,owner,agent,java.time.Clock.systemUTC())){if(!permit.getAsBoolean())return Map.<String,Object>of("status","REJECTED","error","AGENT_MEMORY_CANCELLED");return tool.equals("inspect_memories")?memory.inspect(q,page):Map.<String,Object>of("status","APPLIED","memory",tool.equals("remember")?memory.remember(k,t,v,life,a.path("source").asText("player_or_tool_context"),a.has("aliases")?java.util.stream.StreamSupport.stream(a.path("aliases").spliterator(),false).map(JsonNode::asText).toList():List.of()):memory.forget(key,rev));}catch(Exception e){return Map.<String,Object>of("status","REJECTED","error",code(e));}},IO).whenComplete((data,error)->server.execute(()->{if(error!=null)result.completeExceptionally(error);else result.complete(data);}));return result;
     }
-    private static CompletableFuture<Map<String,Object>> generateContent(ServerPlayer p,UUID agent,UUID operation,String prompt,BooleanSupplier permit){
+    private static CompletableFuture<Map<String,Object>> generateContent(ServerPlayer p,UUID agent,UUID operation,String prompt,JsonNode repair,BooleanSupplier permit){
         var server=p.level().getServer();var runtime=ServerPackageRuntime.get(server);if(!runtime.mayGenerate(p.getUUID(),agent))throw new SecurityException("AGENT_PACKAGE_PERMISSION");
         var result=new CompletableFuture<Map<String,Object>>();var level=p.level();
+        boolean accepted=false;
         try{
-            runtime.submit(p,agent,operation,prompt,"WORLD_CONTENT");
+            if(repair==null)runtime.submit(p,agent,operation,prompt,"WORLD_CONTENT");
+            else runtime.patchFailedCandidate(p,agent,operation,UUID.fromString(repair.path("source_operation_id").asText()),repair.path("job_revision").asLong(),repair.path("raw_sha256").asText(),repair.path("edits"),permit);
+            accepted=true;
             WORK.computeIfAbsent(server,k->new ArrayList<>()).add(new Work(){final long deadline=System.nanoTime()+java.time.Duration.ofMinutes(10).toNanos();
                 public void cancel(){try{if(runtime.generation(p.getUUID(),operation).filter(j->j.state().equals("GENERATING")).isPresent())runtime.cancel(p.getUUID(),operation);}catch(Exception ignored){}result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));}
                 public boolean tick()throws Exception{
-                    if(!current(p,permit)||p.level()!=level||!runtime.mayGenerate(p.getUUID(),agent)||System.nanoTime()>deadline){cancel();return true;}
+                    if(!current(p,permit)||repair==null&&p.level()!=level||!runtime.mayGenerate(p.getUUID(),agent)||System.nanoTime()>deadline){cancel();return true;}
                     var job=runtime.generation(p.getUUID(),operation).orElseThrow();if(job.state().equals("GENERATING"))return false;
-                    if(!job.state().equals("PUBLISHED")){result.completeExceptionally(new IllegalStateException("AGENT_PACKAGE_GENERATION_"+job.state()));return true;}
+                    if(!job.state().equals("PUBLISHED")){
+                        result.complete(Map.ofEntries(Map.entry("status","REJECTED"),Map.entry("error",job.errorCode()),Map.entry("category","CANDIDATE_VALIDATION"),Map.entry("executionState","CANDIDATE_ONLY"),Map.entry("worldModified",false),Map.entry("operation_id",job.operationId()),Map.entry("job_revision",job.revision()),Map.entry("raw_sha256",job.rawOutputSha256()),Map.entry("diagnostic",runtime.generationDiagnostic(p.getUUID(),operation)),Map.entry("nextStep","Read inspect_content_candidate and apply targeted repair_content_package edits. Running content is unchanged; do not regenerate the whole object or repeat UNKNOWN writes.")));return true;
+                    }
                     var pack=runtime.ownedPackage(p.getUUID(),job.packageId(),job.packageRevision()).orElseThrow();
                     var activations=new ArrayList<Object>();boolean allActive=true;
-                    if(pack.activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.HOT_RUNTIME&&!pack.definitions().isEmpty()){
+                    if(repair==null&&pack.activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.HOT_RUNTIME&&!pack.definitions().isEmpty()){
                         var nativeRuntime=dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(server);var anchor=new dev.mineagent.runtime.api.packages.RuntimeInstanceLocation(p.level().dimension().identifier().toString(),p.getX()+2,p.getY(),p.getZ(),0,0);
                         for(var def:pack.definitions().values()){
                             var currentPack=runtime.worldLibrary().get(pack.packageId()).orElseThrow();var activationId=UUID.nameUUIDFromBytes((operation+"|auto-activate|"+def.definitionId()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -260,7 +268,7 @@ public final class ConversationAgentTools {
                     result.complete(Map.of("status",allActive?"PUBLISHED_AND_ACTIVE":activations.isEmpty()?"PUBLISHED_LIFECYCLE_REQUIRED":"PUBLISHED_ACTIVATION_INCOMPLETE","packageId",pack.packageId(),"name",pack.name(),"revision",runtime.worldLibrary().get(pack.packageId()).orElseThrow().revision(),"activationMode",pack.activationMode(),"activations",activations,"executed",!activations.isEmpty(),"nextStep",allActive?"Inspect actual items/world to verify intended result":"Inspect package/activation result; never regenerate or re-run unknown instance blindly"));return true;
                 }
             });
-        }catch(Exception unknown){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN",unknown));}
+        }catch(Exception unknown){if(!accepted)result.complete(Map.of("status","REJECTED","error",code(unknown),"diagnostic",Objects.toString(unknown.getMessage(),"候选提交参数无效"),"executionState","NOT_STARTED","worldModified",false));else result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN",unknown));}
         return result;
     }
     private static CompletableFuture<Map<String,Object>> inspectCommands(ServerPlayer p,String value,int offset,BooleanSupplier permit){

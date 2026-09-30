@@ -22,9 +22,13 @@
     "token.ts": {
       "upstream": "packages/core/src/util/token.ts",
       "sha256": "a157df378a5baaf7a35ac1cb9c94dd29266d916329545529604274d6cddbc635"
+    },
+    "edit.ts": {
+      "upstream": "packages/opencode/src/tool/edit.ts",
+      "sha256": "f84d9d242137e1f18ce912188efb7a97b71bf4f255e0a69f16a1fe9d1ff236d4"
     }
   },
-  "runtimeSha256": "52cd34e02fc99b4346c749257ce8e5da12e71554c0672889e2c6a588e60c619a",
+  "runtimeSha256": "79b6c8dbc554b44db8cf33a0e070f05cda97655ba68d8f7d7dd5e7b1956dad40",
   "adaptations": [
     "Removed TypeScript annotations and module imports from selected pure functions.",
     "selectRendered accepts already-rendered atomic protocol groups; tool-call/result groups are never split.",
@@ -32,6 +36,7 @@
     "repeats reuses the upstream doom-loop predicate; DivZero additionally checks unchanged outcomes and context.",
     "DivZero preserves operation IDs, UNKNOWN and unverified receipts outside generated summaries.",
     "Only these pure functions run; no OpenCode agent, subagent, shell or permission-ask runtime is enabled.",
-    "Lower the select loop-local const next to var for Rhino block-binding semantics; the pinned algorithm and comparisons are unchanged."
+    "Lower the select loop-local const next to var for Rhino block-binding semantics; the pinned algorithm and comparisons are unchanged.",
+    "Reuse upstream exact, line-trimmed, indentation-flexible and boundary-trimmed replacements, uniqueness checks and disproportionate-span rejection. Disable fuzzy/escape matching; normalize line endings at the Java boundary. Use split/join for literal replaceAll semantics and var loop locals for Rhino. No upstream filesystem or LSP service is enabled."
   ]
 }

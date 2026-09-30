@@ -10,7 +10,8 @@ import java.nio.file.Files;
 import java.util.Arrays;
 
 /** Rebuild the candidate from verified content, not arbitrary worker response metadata or paths. */
-public record WorkerPackageResult(RuntimePackage runtimePackage, String providerId, String rawOutputSha256,String errorCode) {
+public record WorkerPackageResult(RuntimePackage runtimePackage, String providerId, String rawOutputSha256,String errorCode,String diagnostic) {
+    public WorkerPackageResult(RuntimePackage runtimePackage,String providerId,String rawOutputSha256,String errorCode){this(runtimePackage,providerId,rawOutputSha256,errorCode,"");}
     public WorkerPackageResult(RuntimePackage runtimePackage,String providerId,String rawOutputSha256){this(runtimePackage,providerId,rawOutputSha256,"");}
     public static WorkerPackageResult prepare(PackageGenerationJob job, WorkerEnvelope envelope,
             ContentAddressedStore content, IdentitySigner signer) throws Exception {
@@ -34,7 +35,8 @@ public record WorkerPackageResult(RuntimePackage runtimePackage, String provider
         if(envelope.type().equals("runtime_package.failure")){
             if(size==0){if(!rawHash.isEmpty())throw new IllegalArgumentException("RAW_OUTPUT_SIZE");}
             else if(size<1||size>24*1024*1024||Files.size(content.pathFor(rawHash))!=size||content.read(rawHash).length!=size)throw new IllegalArgumentException("RAW_OUTPUT_SIZE");
-            return new WorkerPackageResult(null,provider,rawHash,PackageGenerationFailure.normalize(p.get("code")));
+            String diagnostic=String.valueOf(p.getOrDefault("diagnostic",""));if(diagnostic.length()>16384)diagnostic=diagnostic.substring(0,16384);
+            return new WorkerPackageResult(null,provider,rawHash,PackageGenerationFailure.normalize(p.get("code")),diagnostic);
         }
         if (size < 1 || size > 24 * 1024 * 1024 || Files.size(content.pathFor(rawHash)) != size)
             throw new IllegalArgumentException("RAW_OUTPUT_SIZE");

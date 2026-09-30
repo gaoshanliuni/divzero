@@ -246,6 +246,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         var page=packages.stream().skip(offset).limit(8).map(pack->Map.of("packageId",pack.packageId(),"name",pack.name(),"version",pack.version(),"revision",pack.revision(),"canonicalSha256",pack.canonicalSha256(),"enabled",pack.enabled(),"activationMode",pack.activationMode().name())).toList();
         return Map.of("items",page,"total",packages.size(),"nextOffset",offset+page.size()<packages.size()?offset+page.size():-1,"private",false);
     }
+    public String generationDiagnostic(UUID owner,UUID operation){requireServerThread();try{return jobs.diagnostic(owner,operation);}catch(Exception unavailable){return "诊断记录不可用，请检查该候选的原始输出与操作记录。";}}
     public List<Map<String,Object>> generationViews(UUID owner){requireServerThread();return jobs.list(owner).stream().limit(32).map(j->{
         var value=new LinkedHashMap<String,Object>();value.put("operationId",j.operationId());value.put("taskId",j.taskId());value.put("agentId",j.agentId());value.put("packageId",j.packageId());value.put("packageRevision",j.packageRevision());value.put("state",j.state());value.put("errorCode",j.errorCode());value.put("providerId",j.providerId());value.put("updatedAt",j.updatedAtEpochMillis());value.put("purpose",j.purpose());value.put("nativeTypeCount",j.nativeSelection()==null?0:j.nativeSelection().types().size());value.put("nativeOverlayCount",j.nativeSelection()==null?0:j.nativeSelection().overlays().size());value.put("nativeSnapshot",j.nativeSelection()==null?"":j.nativeSelection().snapshot());value.put("nativeContextHash",j.nativeContext()==null?"":j.nativeContext().sha256());value.put("nativeCompilationSnapshot",j.nativeContext()==null?"":j.nativeContext().compilationSnapshot());
         value.put("jobRevision",j.revision());value.put("rawOutputSha256",j.rawOutputSha256());value.put("repairable",j.state().equals("FAILED")&&!j.rawOutputSha256().isEmpty()&&library.get(j.packageId()).isEmpty()&&allowed(owner,j.agentId()));
@@ -279,16 +280,10 @@ public final class ServerPackageRuntime implements AutoCloseable {
                         try {
                             if (failure != null || result == null) jobs.fail(current, dev.mineagent.runtime.worker.generation.PackageGenerationFailure.transport(failure));
                             else if(!permit.get()||!generationCurrent(current))jobs.fail(current,"GENERATION_AUTHORITY_OR_TASK_CHANGED",result.providerId(),result.rawOutputSha256());
-                            else if(!result.errorCode().isEmpty())jobs.fail(current,result.errorCode(),result.providerId(),result.rawOutputSha256());
+                            else if(!result.errorCode().isEmpty()){jobs.diagnostic(current,result.diagnostic());jobs.fail(current,result.errorCode(),result.providerId(),result.rawOutputSha256());}
                             else if (current.purpose().equals("UI_PACKAGE")&&uiEntry(result.runtimePackage()).isEmpty()) jobs.fail(current, "UI_ENTRYPOINT_MISSING",result.providerId(),result.rawOutputSha256());
                             else {
-                                if(result.runtimePackage().activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.RESOURCE_RELOAD)ResourcePackPlan.inspect(result.runtimePackage());
-                                else if(result.runtimePackage().activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.BOOT_EXTENSION)dev.mineagent.runtime.core.boot.BootExtensionPlan.validate(result.runtimePackage());
-                                else if(current.purpose().equals("WORLD_CONTENT")){
-                                    if(Set.of(dev.mineagent.runtime.api.packages.ActivationMode.DATA_RELOAD,dev.mineagent.runtime.api.packages.ActivationMode.WORLD_REOPEN).contains(result.runtimePackage().activationMode()))dev.mineagent.runtime.neoforge.content.ManagedDataPackGuard.validateReloadTargets(DataPackPlan.inspect(result.runtimePackage()));
-                                    else{var plan=WorldContentPlan.resolve(result.runtimePackage(),content);for(var definition:plan.restoreEntrypoints().keySet())dev.mineagent.runtime.neoforge.content.WorldContentRuntime.verifyRegistration(plan,definition);}
-                                }
-                                jobs.complete(current, result.runtimePackage(), result.providerId(), result.rawOutputSha256(), allowed(current.ownerPlayerId(), current.agentId())&&parentCurrent(current.operationId()));
+                                publishGenerated(current,result.runtimePackage(),result.providerId(),result.rawOutputSha256());
                             }
                         } catch (Exception commitFailure) {
                             try { jobs.fail(current, DataPackPlan.PLAN_ERRORS.contains(Objects.toString(commitFailure.getMessage(),""))?commitFailure.getMessage():"PACKAGE_COMMIT_FAILED",result==null?"":result.providerId(),result==null?"":result.rawOutputSha256()); } catch (Exception ignored) { /* Persisted GENERATING is interrupted on recovery. */ }
@@ -300,6 +295,54 @@ public final class ServerPackageRuntime implements AutoCloseable {
                     }));
         } catch (RuntimeException dispatchFailure) { permit.set(false);generationPermits.remove(job.taskId(),permit);jobs.fail(job, "WORKER_UNAVAILABLE"); }
         return new PackageGenerationService.Submission(jobs.find(viewer.getUUID(),operation).orElseThrow(),false);
+    }
+    private record LocalRepair(RuntimePackage candidate,String rawHash,String diagnostic,String error){}
+    public PackageGenerationService.Submission patchFailedCandidate(ServerPlayer viewer,UUID agent,UUID operation,UUID sourceId,long sourceRevision,String sourceHash,com.fasterxml.jackson.databind.JsonNode edits,java.util.function.BooleanSupplier caller)throws Exception{
+        requireServerThread();if(!allowed(viewer.getUUID(),agent)||!caller.getAsBoolean()||!parentCurrent(operation))throw new SecurityException("CANDIDATE_PERMISSION");
+        var source=jobs.find(viewer.getUUID(),sourceId).orElseThrow();
+        var submitted=jobs.submitRepair(viewer.getUUID(),agent,operation,sourceId,sourceRevision,sourceHash,"根据具体诊断局部修复候选，保留其它内容",true,true);
+        if(submitted.duplicate())return submitted;var ticket=submitted.job();
+        var patchesToApply=new ArrayList<dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change>();
+        for(var edit:edits)patchesToApply.add(new dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change(edit.path("path").asText(),edit.path("old_text").asText(),edit.path("new_text").asText(),edit.path("replace_all").asBoolean()));
+        var permit=new java.util.concurrent.atomic.AtomicBoolean(true);generationPermits.put(ticket.taskId(),permit);var signer=MineAgentRuntimeServices.identity(server);
+        java.util.concurrent.CompletableFuture.supplyAsync(()->{
+            String hash=sourceHash;
+            try{
+                String raw=new String(content.read(sourceHash),java.nio.charset.StandardCharsets.UTF_8);
+                String patched=dev.mineagent.runtime.worker.generation.FailedCandidatePatch.apply(raw,patchesToApply);hash=content.put(patched.getBytes(java.nio.charset.StandardCharsets.UTF_8)).sha256();
+                var parsed=new dev.mineagent.runtime.worker.generation.RuntimePackageOutputParser().parse(patched);
+                for(var file:parsed.files())content.put(file.content());
+                return new LocalRepair(dev.mineagent.runtime.worker.generation.RuntimePackagePublisher.prepare(parsed,ticket.packageId(),signer),hash,"","");
+            }catch(Exception invalid){return new LocalRepair(null,hash,Objects.toString(invalid.getMessage(),invalid.getClass().getSimpleName()),invalid instanceof dev.mineagent.runtime.worker.generation.PackageOutputException p?p.code():"CANDIDATE_VALIDATION_FAILED");}
+        },io).whenComplete((repaired,error)->server.execute(()->{
+            if(closed)return;
+            try{
+                if(!permit.get()||!caller.getAsBoolean()||!generationCurrent(ticket)){jobs.fail(ticket,"GENERATION_AUTHORITY_OR_TASK_CHANGED");return;}
+                if(error!=null||repaired==null){jobs.fail(ticket,"CANDIDATE_VALIDATION_FAILED");return;}
+                jobs.diagnostic(ticket,repaired.diagnostic);
+                if(repaired.candidate==null)jobs.fail(ticket,repaired.error,"local-opencode-edit",repaired.rawHash);
+                else publishGenerated(ticket,repaired.candidate,"local-opencode-edit",repaired.rawHash);
+            }catch(Exception failed){try{jobs.diagnostic(ticket,Objects.toString(failed.getMessage(),"CANDIDATE_LIFECYCLE_FAILED"));jobs.fail(ticket,"CANDIDATE_LIFECYCLE_FAILED","local-opencode-edit",repaired==null?sourceHash:repaired.rawHash);}catch(Exception ignored){}}
+            finally{generationPermits.remove(ticket.taskId(),permit);}
+        }));return submitted;
+    }
+    public java.util.concurrent.CompletableFuture<Map<String,Object>> inspectFailedCandidate(ServerPlayer viewer,UUID agent,UUID operation,String path,int offset,int length){
+        requireServerThread();var job=jobs.find(viewer.getUUID(),operation).orElseThrow();if(!job.agentId().equals(agent)||!allowed(viewer.getUUID(),agent))throw new SecurityException("CANDIDATE_PERMISSION");
+        String diagnostic=generationDiagnostic(viewer.getUUID(),operation);return java.util.concurrent.CompletableFuture.supplyAsync(()->{try{
+            String raw=new String(content.read(job.rawOutputSha256()),java.nio.charset.StandardCharsets.UTF_8),source=raw;var files=new ArrayList<String>();
+            try{var root=new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);for(var file:root.path("files")){files.add(file.path("path").asText());if(path.equals(file.path("path").asText()))source=file.path("content").asText();}}catch(com.fasterxml.jackson.core.JsonProcessingException invalid){if(!path.equals("raw_output"))throw invalid;}
+            if(!path.equals("raw_output")&&!files.contains(path))throw new IllegalArgumentException("CANDIDATE_FILE_MISSING");
+            int start=Math.min(offset,source.length()),end=Math.min(source.length(),start+length);return Map.<String,Object>of("operation_id",operation,"job_revision",job.revision(),"raw_sha256",job.rawOutputSha256(),"diagnostic",diagnostic,"files",files,"path",path,"source",source.substring(start,end),"offset",start,"next_offset",end<source.length()?end:-1,"runningContentChanged",false);
+        }catch(Exception error){throw new java.util.concurrent.CompletionException(error);}},io);
+    }
+    private void publishGenerated(PackageGenerationJob current,RuntimePackage pack,String provider,String rawHash)throws Exception{
+        if(pack.activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.RESOURCE_RELOAD)ResourcePackPlan.inspect(pack);
+                                else if(pack.activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.BOOT_EXTENSION)dev.mineagent.runtime.core.boot.BootExtensionPlan.validate(pack);
+                                else if(current.purpose().equals("WORLD_CONTENT")){
+                                    if(Set.of(dev.mineagent.runtime.api.packages.ActivationMode.DATA_RELOAD,dev.mineagent.runtime.api.packages.ActivationMode.WORLD_REOPEN).contains(pack.activationMode()))dev.mineagent.runtime.neoforge.content.ManagedDataPackGuard.validateReloadTargets(DataPackPlan.inspect(pack));
+                                    else{var plan=WorldContentPlan.resolve(pack,content);for(var definition:plan.restoreEntrypoints().keySet())dev.mineagent.runtime.neoforge.content.WorldContentRuntime.verifyRegistration(plan,definition);}
+                                }
+                                jobs.complete(current, pack, provider, rawHash, allowed(current.ownerPlayerId(), current.agentId())&&parentCurrent(current.operationId()));
     }
     public PackageGenerationJob cancel(UUID owner, UUID operation) throws Exception { requireServerThread(); return jobs.cancel(owner, operation); }
     public Optional<RuntimePackage> ownedPackage(UUID viewer, UUID packageId, long revision) {

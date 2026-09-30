@@ -411,7 +411,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
             if (!generated.success()) {
                 var failure=new LinkedHashMap<String,Object>();
                 failure.put("worldId",worldId);failure.put("agentId",agentId);failure.put("taskId",taskId);failure.put("taskRevision",taskRevision);failure.put("packageId",packageId);failure.put("packageRevision",packageRevision);failure.put("purpose",purpose);failure.put("origin","GENERATED");failure.put("nativeSelectionHash",nativeSelectionHash);
-                failure.put("providerId",generated.providerId());failure.put("code",generated.errorCode());
+                failure.put("providerId",generated.providerId());failure.put("code",generated.errorCode());failure.put("diagnostic",generated.diagnostic());
                 byte[] bytes=generated.rawOutput().getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 if(bytes.length>24*1024*1024){failure.put("code","RAW_OUTPUT_TOO_LARGE");bytes=new byte[0];}
                 if(repair!=null){failure.put("repairSourceOperationId",repair.operationId().toString());failure.put("repairSourceSha256",repair.rawOutputSha256());failure.put("repairSourceRevision",repair.jobRevision());}

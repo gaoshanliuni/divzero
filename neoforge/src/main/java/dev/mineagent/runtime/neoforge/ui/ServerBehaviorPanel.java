@@ -16,11 +16,12 @@ public final class ServerBehaviorPanel {
         return SkillRuntime.get(player.level().getServer()).inspect(player,agent).thenApply(data->{
             var result=new LinkedHashMap<>(data);var context=new LinkedHashMap<String,Object>();context.put("ownerId",player.getUUID().toString());context.put("dimension",player.level().dimension().identifier().toString());context.put("position",List.of(player.getX(),player.getY(),player.getZ()));
             var hit=player.pick(16,0,false);context.put("look",hit.getType()==HitResult.Type.BLOCK?List.of(hit.getLocation().x,hit.getLocation().y,hit.getLocation().z):List.of());
-            context.put("entities",player.level().getEntitiesOfClass(LivingEntity.class,player.getBoundingBox().inflate(32),e->e!=player&&e.isAlive()).stream().map(e->Map.of("id",e.getUUID().toString(),"name",e.getName().getString())).toList());result.put("context",context);return result;
+            context.put("entities",player.level().getEntitiesOfClass(LivingEntity.class,player.getBoundingBox().inflate(32),e->e!=player&&e.isAlive()).stream().map(e->Map.of("id",e.getUUID().toString(),"name",e.getName().getString())).toList());result.put("context",context);result.put("enhancements",ActorEnhancements.inspect(player,agent));return result;
         });
     }
     public static CompletableFuture<Map<String,Object>> write(ServerPlayer player,UUID agent,UUID operation,String tool,String source,BooleanSupplier current)throws Exception{
         if(!ServerTaskStart.allowed(player,agent)||!current.getAsBoolean())throw new SecurityException("BEHAVIOR_PERMISSION");
+        if(tool.equals("set_actor_enhancements"))return CompletableFuture.completedFuture(ActorEnhancements.update(player,agent,new ObjectMapper().readTree(source)));
         var authority=BehaviorAuthority.get(player.level().getServer());authority.invalidate(player,agent);long revision=authority.revision(player,agent);BooleanSupplier live=()->current.getAsBoolean()&&authority.revision(player,agent)==revision;
         var runtime=SkillRuntime.get(player.level().getServer());
         if(tool.equals("stop_all")){runtime.stopAll(player,agent);return CompletableFuture.completedFuture(Map.of("status","STOPPED"));}

@@ -28,6 +28,8 @@ final class SkillWork {
     String tactic="OBSERVE";int tacticAt,lastAttackAt=-10000,lastHitAt=-10000,lastDefenseTick,healSlot=-1;UUID healingOperation;boolean combatInterrupted;
     int lastCombatTick=-1,foodBefore;boolean lastCombatResult,healingWasUsing;
     int contactSince=-1,lastContactDamage=-10000,contactClearSince=-1;boolean contactEscape,contactRunAndHit,sprintApproach;Vec3 contactEscapeOrigin,contactEscapeLastPosition;UUID lastMeleeHitTarget;int lastMeleeHitTick=-10000,comboStreak;
+    int weaponDecisionTick=-10000,shieldCounterAt=-10000;boolean weaponBlocking;LivingEntity shieldCounterTarget;ItemStack shieldCounterItem=ItemStack.EMPTY;
+    int criticalStarted=-10000,lastCriticalJump=-10000,observedCriticalTick=-1;UUID criticalTarget,observedCriticalTarget;
     UUID extensionOperation,shieldOperation;boolean wasBlocking;FishingTackleAdapter tackle=FishingTackleAdapter.VANILLA;
     int lastTacticalJump=-10000,observedTacticalJump=-10000;double tacticalJumpY;
     private String lastNotice="";private int lastNoticeTick=-10000;
@@ -60,7 +62,7 @@ final class SkillWork {
         if(search.search()==null){waitFor(search.evaluator().encounteredUnloaded()?"WAITING_CHUNKS":"NO_INTERACTION_POSITION",60);search=null;return false;}
         var budget=NativeNavigationBudget.get(runtime.server);int allowed=budget.claim(token(),tick());if(allowed==0)return false;search.evaluator().beginSlice();var result=search.search().advance(allowed,budget::timeAvailable);
         if(result.status()==SurfacePathfinder.Status.FOUND){stand=result.steps().isEmpty()?player().position():NativeTraversalEvaluator.point(result.steps().getLast().to());search=null;return move(stand);}
-        if(result.status()!=SurfacePathfinder.Status.BUDGET_EXHAUSTED){session.add("unreachable",1);search=null;waitFor(result.status().name(),60);}return false;
+        if(result.status()!=SurfacePathfinder.Status.BUDGET_EXHAUSTED){if(result.status()==SurfacePathfinder.Status.NO_PATH&&actor.recover(token(),Vec3.atCenterOf(target))){session.phase("TERRAIN_ESCAPE");search=null;return false;}session.add("unreachable",1);search=null;waitFor(result.status().name(),60);}return false;
     }
     int count(Item item){return player().getInventory().countItem(item);}
     boolean equip(Item item){if(player().getMainHandItem().is(item))return true;for(int i=0;i<36;i++)if(player().getInventory().getItem(i).is(item)){actor.select(token(),i);return player().getMainHandItem().is(item);}return false;}

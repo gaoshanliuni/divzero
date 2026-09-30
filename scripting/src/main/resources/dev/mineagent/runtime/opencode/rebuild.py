@@ -36,12 +36,25 @@ skill = sources['skill.ts']
 start = skill.index('`<skill_content')
 end = skill.index('].join("\\n"),', start) + len('].join("\\n")')
 renderer = 'const renderSkill = (info, base, files) => { const dir = base; const path = {resolve: (base, resource) => resource}; return [\n              ' + skill[start:end] + '; };'
+edit = sources['edit.ts']
+matchers = edit[edit.index('export const SimpleReplacer'):edit.index('export const BlockAnchorReplacer')]
+matchers += edit[edit.index('export const IndentationFlexibleReplacer'):edit.index('export const EscapeNormalizedReplacer')]
+matchers += edit[edit.index('export const TrimmedBoundaryReplacer'):edit.index('export const ContextAwareReplacer')]
+replacement = edit[edit.index('export function replace('):]
+for unsupported in ['BlockAnchorReplacer', 'WhitespaceNormalizedReplacer', 'EscapeNormalizedReplacer', 'ContextAwareReplacer', 'MultiOccurrenceReplacer']:
+    replacement = replacement.replace('    '+unsupported+',\n', '')
+edit_runtime = matchers + replacement
+edit_runtime = edit_runtime.replace('export const ', 'var ').replace(': Replacer', '').replace('export function ', 'function ')
+edit_runtime = edit_runtime.replace(': string', '').replace('(text: string)', '(text)')
+# Rhino shares loop-local const bindings; no asynchronous closures are retained by these matchers.
+edit_runtime = edit_runtime.replace('const ', 'var ')
+edit_runtime = edit_runtime.replace('content.replaceAll(search, newString)', 'content.split(search).join(newString)')
 runtime = '\n\n'.join([
     '/* Portions copyright (c) 2025 opencode, MIT. See LICENSE and provenance.json. */',
     'var OpenCodeCompat = (function () {',
     'const Token = { estimate: ' + token + ' };', templates, build, selection,
-    repeats, renderer,
-    'return {buildPrompt, selectRendered, repeats, renderSkill, estimate: Token.estimate};\n})();',
+    repeats, renderer, edit_runtime,
+    'return {buildPrompt, selectRendered, repeats, renderSkill, estimate: Token.estimate, replace};\n})();',
 ]) + '\n'
 path = root / 'runtime.js'
 if '--check' in sys.argv:
@@ -50,5 +63,5 @@ if '--check' in sys.argv:
 else:
     path.write_bytes(runtime.encode('utf-8'))
     provenance['runtimeSha256'] = hashlib.sha256(runtime.encode('utf-8')).hexdigest()
-    (root / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n', encoding='utf-8')
+    (root / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n', encoding='utf-8', newline='\n')
 print('OpenCode pure-function adapter verified at ' + provenance['commit'])

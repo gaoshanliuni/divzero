@@ -66,7 +66,7 @@ public final class PackageGenerationService implements AutoCloseable {
                 ||!source.rawOutputSha256().matches("[a-f0-9]{64}")||!source.rawOutputSha256().equals(rawHash))throw new IllegalArgumentException("GENERATION_REPAIR_SOURCE_CHANGED");
         if(library.get(source.packageId()).isPresent())throw new IllegalStateException("GENERATION_REPAIR_SOURCE_INSTALLED");
         var repair=new GenerationRepairSource(source.operationId(),source.revision(),source.rawOutputSha256(),
-                source.repairSource()==null?source.prompt():source.repairSource().originalPrompt(),source.errorCode());
+                source.repairSource()==null?source.prompt():source.repairSource().originalPrompt(),source.errorCode(),diagnostic(owner,sourceOperation));
         return submit(owner,agent,operationId,prompt,true,source.purpose(),repair,dev.mineagent.runtime.core.persistence.TaskBudgetLineage.Parent.of(tasks.get(source.taskId()).orElseThrow(),"REPAIR"),source.nativeSelection());
     }
     private Submission submit(UUID owner,UUID agent,UUID operationId,String prompt,boolean authorized,String purpose,GenerationRepairSource repair,dev.mineagent.runtime.core.persistence.TaskBudgetLineage.Parent parent,dev.mineagent.runtime.core.compile.NativeCoderContext nativeSelection) throws Exception {
@@ -84,14 +84,13 @@ public final class PackageGenerationService implements AutoCloseable {
         }
         // Global retained rows/bytes are enforced atomically before this job may dispatch.
         var pending = jobs.values().stream().filter(j -> j.state().equals("GENERATING")).toList();
-        if (pending.size() >= 4 || pending.stream().anyMatch(j -> j.ownerPlayerId().equals(owner)))
-            throw new IllegalStateException("GENERATION_BUSY");
+        if(repair!=null&&pending.stream().anyMatch(j->j.packageId().equals(jobs.get(repair.operationId()).packageId())))throw new IllegalStateException("CANDIDATE_RESOURCE_BUSY");
         String title = prompt.substring(0, prompt.offsetByCodePoints(0, Math.min(80, prompt.codePointCount(0, prompt.length()))));
         String generate=purpose.equals("WORLD_CONTENT")?"generate_content":"generate_ui",publish=purpose.equals("WORLD_CONTENT")?"publish_content":"publish_ui";
         var task = tasks.create(agent, owner, (purpose.equals("WORLD_CONTENT")?"内容生成: ":"网页生成: ") + title, 60, List.of(
                 new TaskStepSpec(generate, Set.of()), new TaskStepSpec(publish, Set.of(generate))),parent);
         var job = new PackageGenerationJob(operationId, worldId, owner, agent, task.taskId(), task.intentRevision(),
-                UUID.randomUUID(), 1, prompt, "GENERATING", "", "", "", "", 1, clock.millis(),purpose,repair,nativeSelection,null);
+                repair==null?UUID.randomUUID():jobs.get(repair.operationId()).packageId(), 1, prompt, "GENERATING", "", "", "", "", 1, clock.millis(),purpose,repair,nativeSelection,null);
         try {
             var saved = repository.compareAndSet(worldId, NAMESPACE, operationId.toString(), 0, json.writeValueAsString(job), clock.millis());
             if (!saved.accepted()) throw new IllegalStateException("GENERATION_CAS_CONFLICT");
@@ -169,6 +168,16 @@ public final class PackageGenerationService implements AutoCloseable {
     }
     public synchronized dev.mineagent.runtime.core.persistence.RetainedRuntimeJobs.Page<PackageGenerationJob> history(UUID owner,String state,String archive,int offset){requireOpen();return jobs.history(owner,state,archive,offset,8);}
     public synchronized Optional<PackageGenerationJob> find(UUID owner,UUID operation){requireOpen();var job=jobs.get(operation);if(job!=null&&!job.ownerPlayerId().equals(owner))throw new SecurityException("GENERATION_OWNER_MISMATCH");return Optional.ofNullable(job);}
+    public synchronized void diagnostic(PackageGenerationJob job,String message)throws Exception{
+        requireOpen();if(find(job.ownerPlayerId(),job.operationId()).isEmpty())throw new SecurityException("GENERATION_OWNER_MISMATCH");
+        String value=message==null?"":message;if(value.length()>16384)value=value.substring(0,16384);
+        var old=repository.get(worldId,"package_generation_diagnostics",job.operationId().toString());
+        if(!repository.compareAndSet(worldId,"package_generation_diagnostics",job.operationId().toString(),old.map(value->value.revision()).orElse(0L),json.writeValueAsString(Map.of("message",value)),clock.millis()).accepted())throw new IllegalStateException("GENERATION_DIAGNOSTIC_CHANGED");
+    }
+    public synchronized String diagnostic(UUID owner,UUID operation)throws Exception{
+        if(find(owner,operation).isEmpty())throw new SecurityException("GENERATION_OWNER_MISMATCH");
+        var row=repository.get(worldId,"package_generation_diagnostics",operation.toString());return row.isEmpty()?"":json.readTree(row.get().payload()).path("message").asText();
+    }
     public synchronized boolean current(PackageGenerationJob ticket){requireOpen();var job=requireTicket(ticket);return job.state().equals("GENERATING")&&currentTask(ticket);}
     public synchronized boolean ownsPublished(UUID owner, UUID packageId, long revision) {
         requireOpen();
