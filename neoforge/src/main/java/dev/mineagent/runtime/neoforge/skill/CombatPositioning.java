@@ -21,7 +21,7 @@ final class CombatPositioning {
                 &&NativeTraversalEvaluator.point(attackExit.from()).subtract(player.position()).horizontalDistanceSqr()<2.25
                 &&Math.abs(player.getY()-attackExit.from().y())<1.6&&check.transition(attackExit.from(),attackExit.to())!=null
                 &&NativeTraversalEvaluator.point(attackExit.to()).subtract(target.position()).horizontalDistanceSqr()>player.position().subtract(target.position()).horizontalDistanceSqr()+.1
-                &&(owner==null||owner==player||owner==target||NativeTraversalEvaluator.point(attackExit.to()).distanceTo(owner.position())>=player.distanceTo(owner)-.5)
+                &&(owner==null||owner==player||owner==target||owner.level()!=player.level()||owner.isCreative()||owner.isSpectator()||NativeTraversalEvaluator.point(attackExit.to()).distanceTo(owner.position())>=player.distanceTo(owner)-.5)
                 &&edgeExposure(work,attackExit.to(),check)==0&&work.combat.risk(work,NativeTraversalEvaluator.point(attackExit.to()))<=work.combat.risk(work,player.position())+2){
             chosenRoute=List.of(attackExit);selectedDistance=player.position().distanceTo(NativeTraversalEvaluator.point(attackExit.to()));return NativeTraversalEvaluator.point(attackExit.to());
         }
@@ -31,7 +31,7 @@ final class CombatPositioning {
             if(!Set.of(Action.WALK,Action.CROUCH).contains(edge.action())||Math.abs(edge.to().y()-current.y())>.25||check.transition(edge.to(),current)==null||edgeExposure(work,edge.to(),check)!=0)continue;
             var point=NativeTraversalEvaluator.point(edge.to());if(point.distanceTo(target.position())<initial+.15)continue;
             if(check.neighbors(edge.to()).stream().noneMatch(next->!next.to().equals(current)&&Math.abs(next.to().y()-edge.to().y())<=1.25))continue;
-            if(owner!=null&&owner!=player&&owner!=target&&point.distanceTo(owner.position())<player.distanceTo(owner)-.5)continue;
+            if(owner!=null&&owner!=player&&owner!=target&&owner.level()==player.level()&&!owner.isCreative()&&!owner.isSpectator()&&point.distanceTo(owner.position())<player.distanceTo(owner)-.5)continue;
             double risk=work.combat.risk(work,point);if(risk>initialRisk+2)continue;double future=0;
             for(var threat:work.combat.threats)if(threat.entity().isAlive()&&NativeCombatStates.meleeAtAfter(threat.entity(),player,point,4))future+=threat.entity()==target?6:18;
             var delta=point.subtract(player.position());var features=LocalPolicyRuntime.features(player,initial,initial-point.distanceTo(target.position()),risk+future,1,delta,0,true,work.session.spec().kind().ordinal(),0);
@@ -89,18 +89,20 @@ final class CombatPositioning {
             if(intent.equals("JUMP_TAP")&&route.steps.size()<3)continue;
             // Avoid being knocked off an edge, even when a little melee damage is the cheaper exit.
             score+=route.steps.stream().mapToInt(step->edgeExposure(w,step.to())).max().orElse(0)*10000;
-            double damage=0;for(var threat:w.combat.threats)if(threat.entity().isAlive()&&route.steps.stream().anyMatch(step->NativeCombatStates.meleeAt(threat.entity(),w.player(),NativeTraversalEvaluator.point(step.to())))){var attribute=threat.entity().getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);damage+=attribute==null?4:Math.max(0,attribute.getValue());}
+            double damage=0;for(var threat:w.combat.threats)if(threat.entity().isAlive()&&route.steps.stream().anyMatch(step->NativeCombatStates.meleeAt(threat.entity(),w.player(),NativeTraversalEvaluator.point(step.to())))){var attribute=threat.entity().getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);damage+=legacy?(attribute==null?4:Math.max(0,attribute.getValue())):estimatedMeleeDamage(w.player(),threat.entity(),attribute==null?4:Math.max(0,attribute.getValue()));}
             double health=Math.max(1,w.player().getHealth()+w.player().getAbsorptionAmount());score+=damage/health*25;if(damage>=health)score+=1000;
             if(edgeExposure(w,route.node)>0)continue;
             var onwards=evaluator.neighbors(route.node).stream().filter(edge->!route.steps.stream().anyMatch(step->step.from().equals(edge.to()))).toList();
             score+=Math.max(0,3-onwards.size())*2;
+            int trapRisk=0;if(!legacy&&withdrawal&&target!=null){double distanceHere=point.distanceTo(target.position());long exits=onwards.stream().filter(edge->Math.abs(edge.to().y()-route.node.y())<=1.25&&NativeTraversalEvaluator.point(edge.to()).distanceTo(target.position())>=distanceHere-.1).count();trapRisk=exits==0?4:exits==1?2:0;score+=trapRisk*8;}
+
             if(onwards.stream().noneMatch(edge->evaluator.neighbors(edge.to()).stream().anyMatch(next->!next.to().equals(route.node)&&route.steps.stream().noneMatch(step->step.from().equals(next.to())))))score+=100;
             if(target!=null)score+=Math.abs(point.distanceTo(intent.equals("APPROACH")||intent.equals("COUNTER")?intercept:target.position())-desiredDistance)*(intent.equals("COUNTER")?14:intent.equals("SPACE")||intent.equals("APPROACH")?8:1.1);
             if(target!=null&&(intent.equals("COUNTER")||intent.equals("APPROACH"))&&origin.distanceTo(target.position())>desiredDistance+.25&&point.distanceTo(target.position())>=origin.distanceTo(target.position())-.15)continue;
             if(intent.equals("RETREAT")||intent.equals("RECOVER")||intent.equals("LURE")||intent.equals("JUMP_TAP")){
                 score-=origin.distanceTo(point)*.45;
                 if(w.combat.protectedEntity!=null&&point.distanceTo(w.combat.protectedEntity.position())<origin.distanceTo(w.combat.protectedEntity.position())-.5)score+=100;
-                var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());if(owner!=null&&owner!=w.player()&&owner.level()==w.player().level()&&point.distanceTo(owner.position())<origin.distanceTo(owner.position())-.5)score+=100;
+                var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());if(owner!=null&&owner!=w.player()&&owner.level()==w.player().level()&&(legacy||!owner.isCreative()&&!owner.isSpectator()&&point.distanceTo(owner.position())<w.session.spec().combat().awareness()+6)&&point.distanceTo(owner.position())<origin.distanceTo(owner.position())-.5)score+=100;
                 var area=w.session.spec().area();if(w.session.spec().kind()==dev.mineagent.runtime.core.task.SkillSpec.Kind.GUARD&&area!=null){var center=new Vec3((area.min().x()+area.max().x())/2,(area.min().y()+area.max().y())/2,(area.min().z()+area.max().z())/2);if(point.distanceToSqr(center)<origin.distanceToSqr(center)-1)score+=30;}
             }
             if(target!=null&&intent.equals("LURE")){var a=origin.subtract(target.position()).normalize();var b=point.subtract(target.position()).normalize();score-=Math.abs(a.x*b.z-a.z*b.x)*2;}
@@ -108,12 +110,18 @@ final class CombatPositioning {
             var next=NativeTraversalEvaluator.point(route.steps.getFirst().to());var direction=new Vec3(next.x-origin.x,0,next.z-origin.z).normalize();
             if(heading!=null)score+=(1-heading.dot(direction))*.8;
             double targetDistance=target==null?0:origin.distanceTo(target.position()),progress=target==null?origin.distanceTo(point):targetDistance-point.distanceTo(target.position());
-            var features=LocalPolicyRuntime.features(w.player(),targetDistance,progress,risk+routeRisk,route.steps.size(),point.subtract(origin),edgeExposure(w,route.node),opportunity!=null,w.session.spec().kind().ordinal(),0);
+            var features=LocalPolicyRuntime.features(w.player(),targetDistance,progress,risk+routeRisk,route.steps.size(),point.subtract(origin),edgeExposure(w,route.node)+trapRisk,opportunity!=null,w.session.spec().kind().ordinal(),0);
             if(localPolicy!=null)score+=localPolicy.cost(features)*8;
             if(score<best){selectedFeatures=features;best=score;selectedDistance=origin.distanceTo(point);selected=next;waypointNode=route.steps.getFirst().to();chosenRoute=route.steps;}
         }
         if(selected!=null){if(!legacy&&selectedFeatures!=null)LocalPolicyRuntime.chose(w,selectedFeatures,selected);waypoint=selected;waypointAt=w.tick();waypointPurpose=intent;waypointRisk=w.combat.risk(w,waypoint);targetAtWaypoint=target==null?null:target.position();heading=new Vec3(waypoint.x-w.player().getX(),0,waypoint.z-w.player().getZ()).normalize();w.session.add("tacticalWaypoints",1);}
         return selected;
+    }
+    private static double estimatedMeleeDamage(net.minecraft.server.level.ServerPlayer defender,net.minecraft.world.entity.LivingEntity attacker,double raw){
+        var type=net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(attacker.getType());var item=attacker.getMainHandItem();
+        if(!type.getNamespace().equals("minecraft")||item.isEnchanted()||!net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem()).getNamespace().equals("minecraft"))return Math.max(1,raw);
+        if(attacker instanceof net.minecraft.world.entity.player.Player player&&((dev.mineagent.runtime.neoforge.mixin.CombatCriticalAccess)player).divzero$canCriticalAttack(defender))raw*=1.5;
+        return Math.max(.5,dev.mineagent.runtime.core.task.CombatDamageEstimate.afterArmor(raw,defender.getArmorValue(),defender.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS)));
     }
     private int edgeExposure(SkillWork w,Node node){return exposure.computeIfAbsent(node,n->edgeExposure(w,n,evaluator));}
     private int edgeExposure(SkillWork w,Node node,NativeTraversalEvaluator check){int danger=0;for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){if(dx==0&&dz==0)continue;int x=node.x()+dx,z=node.z()+dz;var at=new Vec3(x+.5,node.y(),z+.5);var pos=net.minecraft.core.BlockPos.containing(at);if(!check.loaded(pos)){danger++;continue;}if(w.player().level().getFluidState(pos).is(net.minecraft.tags.FluidTags.LAVA)){danger++;continue;}if(!check.clear(at,net.minecraft.world.entity.Pose.STANDING,true)&&!check.clear(at,net.minecraft.world.entity.Pose.CROUCHING,true))continue;if(check.positions(x,z,node.y()).stream().noneMatch(floor->Math.abs(floor.y()-node.y())<=1.25))danger++;}return danger;}

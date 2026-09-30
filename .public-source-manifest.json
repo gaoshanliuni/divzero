@@ -2463,6 +2463,11 @@
       "bytes": 434
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/CombatDamageEstimate.java",
+      "sha256": "76070b8c96502556afbefa0999ee0c2e34eedb82ee42621f9e2af9b6f742abe5",
+      "bytes": 681
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/CombatFootwork.java",
       "sha256": "7c3515809be102ec77534dd21ce7ff1b1040382b54b5bfd5b9b412e1025837a2",
       "bytes": 1051
@@ -3146,6 +3151,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatBoundsTest.java",
       "sha256": "9b4553466b2e287f8952016b460aee39cb3517839c4575581c24aeb43967876d",
       "bytes": 610
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatDamageEstimateTest.java",
+      "sha256": "90a45ae7b2e8675c041243b2e7f2939d2207ef1c21d95bf8b14f1234d2d7e0c0",
+      "bytes": 859
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatFootworkTest.java",
@@ -5379,8 +5389,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "75a03f5af3f672eafdb54bf2e8094be3c5162f155a74a639aebb0ce8743fc88f",
-      "bytes": 20035
+      "sha256": "8944a9a50a6598f68f9ac0da8813332450260754827379a0d32912d22580d005",
+      "bytes": 21715
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",
