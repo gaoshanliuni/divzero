@@ -1429,8 +1429,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
-      "sha256": "3cf20f5fd936456801b1656c9c9368bba819ceb697f11e7fdea34e7ce9823f3d",
-      "bytes": 3537
+      "sha256": "f7a6dff732f027455c71ad55a556c4f159e0f83bebbbb2da182bddaf4a8cea31",
+      "bytes": 3644
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionRecords.java",
@@ -1469,8 +1469,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolValidation.java",
-      "sha256": "8e32a8ca68049a7bee0ba2cd1713257124dacead1ba76604c1236b79916faea0",
-      "bytes": 6178
+      "sha256": "288e81939fdf7c66e191347ab5e26b53a823f3b64c9807e54c33c5bba906ea29",
+      "bytes": 6463
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureAnimation.java",
@@ -6994,8 +6994,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/PlanningDisclosure.java",
-      "sha256": "6a8b71c9963e052f270852989c47d6c7958a43c921f032f60fbe20f369c81b57",
-      "bytes": 11675
+      "sha256": "28b87d803f80525b36d4b7d62916af56b6bc98029abff78fa2f3265d4f16fb23",
+      "bytes": 11994
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/ProgressiveDeclarations.java",
@@ -7239,8 +7239,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/ProgressiveRequestTest.java",
-      "sha256": "740d1880848f33d1edc0dcd920e65e6fd0fed112f638825b9315ae6b6ce9e794",
-      "bytes": 6929
+      "sha256": "f4b695bd54a24fdd130f4cd42e627af11b6b8ec7fe57727cd0a0c480432fa3f4",
+      "bytes": 7338
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/WorkerAgentModelTest.java",

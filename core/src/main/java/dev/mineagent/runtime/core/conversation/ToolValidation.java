@@ -35,6 +35,7 @@ public final class ToolValidation {
         if(!corrected.equals(value)){if(parent instanceof ObjectNode object)object.set(key,corrected);else if(parent instanceof ArrayNode array)array.set(Integer.parseInt(key),corrected);normalized.add(path);value=corrected;}
         boolean valid=switch(type){case "object"->value.isObject();case "array"->value.isArray();case "string"->value.isTextual();case "integer"->value.isIntegralNumber();case "number"->value.isNumber();case "boolean"->value.isBoolean();default->true;};
         if(!valid){issue(issues,path,"Invalid value type",type);return;}
+        if(schema.has("const")&&!schema.get("const").equals(value)&&!(schema.get("const").isNumber()&&value.isNumber()&&schema.get("const").decimalValue().compareTo(value.decimalValue())==0))issue(issues,path,"Value differs from the required constant",schema.get("const").toString());
         if(schema.has("enum")){boolean found=false;for(var choice:schema.get("enum"))if(choice.equals(value)){found=true;break;}if(!found)issue(issues,path,"Value is not a supported choice",schema.get("enum").toString());}
         if(value.isObject()){
             for(var field:schema.path("required"))if(!value.has(field.asText()))issue(issues,path+"."+field.asText(),"Required field is missing","present");

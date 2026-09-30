@@ -39,7 +39,7 @@ public final class PlanningDisclosure {
         return "physical";
     }
     public static List<ToolDefinition> selected(Session session,List<ToolDefinition> catalog){
-        var out=new ArrayList<ToolDefinition>();for(String name:List.of("inspect_capabilities","skill","observe","stop_actions")){var d=CapabilityCatalog.definition(name);out.add(new ToolDefinition(name,d.description(),d.parameters()));}
+        var out=new ArrayList<ToolDefinition>();for(String name:List.of("inspect_capabilities","skill","observe","stop_actions")){var d=CapabilityCatalog.definition(name);out.add(new ToolDefinition(name,name.equals("stop_actions")?"停止当前世界任务及其后续动作，保留已发生的修改；不停止其他任务。":d.description(),d.parameters()));}
         catalog.stream().filter(t->Set.of("say","ask_player").contains(t.name())).forEach(out::add);
         for(String group:session.groups)for(var tool:catalog)if(!Set.of("say","ask_player","finish_task").contains(tool.name())&&group(tool.name()).equals(group)&&out.stream().noneMatch(t->t.name().equals(tool.name())))out.add(tool);
         if(!session.groups.isEmpty())catalog.stream().filter(t->t.name().equals("finish_task")).map(t->finish(session,t)).forEach(out::add);
@@ -70,7 +70,7 @@ public final class PlanningDisclosure {
                         var args=ToolArguments.parse(call.name(),call.argumentsJson());
                         if(call.name().equals("skill")){String name=args.path("name").asText();if(!GUIDES.containsKey(name))throw new IllegalArgumentException("CAPABILITY_NOT_FOUND");if(catalog.stream().noneMatch(t->group(t.name()).equals(name)))throw new IllegalArgumentException("CAPABILITY_UNAVAILABLE_IN_SCOPE");boolean added=session.groups.add(name);observation=Map.of("status",added?"LOADED":"ALREADY_LOADED","name",name,"contextOnly",true);}
                         else if(call.name().equals("inspect_capabilities"))observation=Map.of("status","OBSERVED","groups",GUIDES.entrySet().stream().map(e->Map.of("name",e.getKey(),"description",e.getValue().split("。",2)[0],"loaded",session.groups.contains(e.getKey()))).toList());
-                        else if(call.name().equals("observe"))observation=Map.of("status","OBSERVED","source","latest_server_task_dispatch","context",prompt,"liveRead",false);
+                        else if(call.name().equals("observe"))observation=Map.of("status","OBSERVED","source","latest_server_task_dispatch","goal",prompt.split("\\n",2)[0],"latestObservation",prompt.lines().filter(line->line.startsWith("真实 Agent 身体观察")).findFirst().orElse("此次派发没有身体观察；不能猜测世界状态。"),"liveRead",false);
                         else observation=Map.of("status","NOT_EXECUTED","error","DISCOVERY_MIXED_WITH_ACTION","executionState","NOT_STARTED","suggestedAction","Load capabilities first, then submit actual actions in the next response.");
                     }catch(Exception invalid){observation=Map.of("status","REJECTED","error",Objects.toString(invalid.getMessage(),"CAPABILITY_ARGUMENTS"),"executionState","NOT_STARTED","suggestedAction","Use inspect_capabilities to choose a valid group name.");}
                     var progress=session.progress.observe(call.name(),call.argumentsJson(),observation,scope,true);if(progress.blocked())throw new IllegalStateException("PLANNING_DISCOVERY_NO_PROGRESS");
