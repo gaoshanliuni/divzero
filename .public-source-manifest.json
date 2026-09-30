@@ -2433,6 +2433,11 @@
       "bytes": 502
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/BallisticIntercept.java",
+      "sha256": "68481434d29599f32309923c92142c5ab368062b238a1a0bff40fce826b4b89f",
+      "bytes": 3251
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/BehaviorIntentOrder.java",
       "sha256": "5acf6a84ad52ede1f6d9249d93d072ffc8118f605e256cac7fefcd2364f28dc8",
       "bytes": 1515
@@ -3096,6 +3101,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/AutonomyPlanTest.java",
       "sha256": "66a756b5e6ac4a472d15b07aa50d8fb3364d3e4d1765544c80ea8f3b13e92c54",
       "bytes": 4229
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/BallisticInterceptTest.java",
+      "sha256": "ddf8e69b201d684bbf23a45f7f6dbf1c0509fa2403d701a731b8026a343047c2",
+      "bytes": 1045
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/BehaviorIntentOrderTest.java",
@@ -6649,8 +6659,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/opencode/OpenCodeRuntime.java",
-      "sha256": "3f347e2a0939e1ec40d9d33427117c5f4ab9762fa4f2deeec74064654cce8130",
-      "bytes": 4395
+      "sha256": "b01c5692564ca4df0ad2b096768e8df4a2d6713617b1afaca87e701b795fe958",
+      "bytes": 4460
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/packagehost/PackageActivationResult.java",
