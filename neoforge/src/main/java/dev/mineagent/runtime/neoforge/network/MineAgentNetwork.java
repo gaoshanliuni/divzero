@@ -377,7 +377,7 @@ public final class MineAgentNetwork {
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, panelSnapshot(player));
     }
 
-    private static java.util.Map<String,String> publicConfig(java.util.Map<String,String> values){var out=new java.util.LinkedHashMap<>(values);out.keySet().removeIf(k->k.startsWith("chat.")||k.startsWith("ai.thinking.")||k.startsWith("interaction.rules."));return out;}
+    private static java.util.Map<String,String> publicConfig(java.util.Map<String,String> values){return dev.mineagent.runtime.core.config.PanelConfigProjection.global(values);}
     private static void applyPatch(
             MineAgentPayloads.ConfigPatch payload,
             ServerPlayer player,

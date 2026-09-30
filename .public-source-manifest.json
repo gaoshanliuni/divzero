@@ -1298,6 +1298,11 @@
       "bytes": 1682
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/config/PanelConfigProjection.java",
+      "sha256": "078c1379096ba6ba396cf93fc4bc81ff2e4839680ce9dd8196ef49d61ab5733d",
+      "bytes": 622
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/PermissionConfig.java",
       "sha256": "b4a6d0c52623bd60f54d081f74f2c28d9ae7113783999c5a7c5fdee9384a41a8",
       "bytes": 953
@@ -2866,6 +2871,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/ExplicitModelRolesTest.java",
       "sha256": "36b8f31149d933df21ef88d62f5705c0ddda681914878a3d2410d69d75899313",
       "bytes": 2932
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/config/PanelConfigProjectionTest.java",
+      "sha256": "22552525f3ff816478a682decd7ff9ad66e76b5d1fa06c7066e7b666aa98f4f1",
+      "bytes": 842
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/ProviderDefaultsTest.java",
@@ -5299,8 +5309,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/network/MineAgentNetwork.java",
-      "sha256": "6e8ea79a8754996b7abd051a82234cb09d4d77e641759229abf274603a1493c0",
-      "bytes": 171220
+      "sha256": "7dd13d0207b2ac76ed2691c45239f4c8917bf9253f2e4f72dfa9359787b4f72b",
+      "bytes": 171127
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/network/MineAgentPayloads.java",
