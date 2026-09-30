@@ -2794,13 +2794,13 @@
     },
     {
       "path": "core/src/main/resources/dev/mineagent/runtime/policy/pretrained-manifest.json",
-      "sha256": "fddf09e34b8c30977a9719c765bcfad5be209b592fd18306cc1fec8220ac1282",
-      "bytes": 834
+      "sha256": "48233fe2bb3974edb8430429d69059f856c5daa8b45895ff46737f0ca885bb55",
+      "bytes": 4694
     },
     {
       "path": "core/src/main/resources/dev/mineagent/runtime/policy/pretrained.json",
-      "sha256": "16c1f89c496d18665db383aa138edcfa10484090df90ec66f705bd1676d60e04",
-      "bytes": 9022
+      "sha256": "21b32e841a351e22f62046ed0953f9146e927211e865904d3b3f8a7cf856a0ec",
+      "bytes": 9056
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/AgentPersonaServiceTest.java",
@@ -6879,13 +6879,13 @@
     },
     {
       "path": "scripts/local-policy/finetune.py",
-      "sha256": "b08bab95de2d6ca3a5040f30e5d8133e359dd72a6ea4366319c3746965fd8072",
-      "bytes": 6119
+      "sha256": "2a2b5bef3301b281b43ba9e8ce91b278aff6db341ec371eed6fe0795b63375ed",
+      "bytes": 6215
     },
     {
       "path": "scripts/local-policy/pretrain.py",
-      "sha256": "fea0440d6bc5d88ebadf3090677393c9d3a8b03dd68d500eedb75409606f525f",
-      "bytes": 2679
+      "sha256": "d319227e580013401c1105570adf0386dc39d75b2cb9a328ef48affbba669325",
+      "bytes": 2842
     },
     {
       "path": "scripts/package-ci-artifact.ps1",

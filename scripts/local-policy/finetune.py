@@ -12,10 +12,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--run", action="append", required=True, type=Path)
 parser.add_argument("--output", required=True, type=Path)
 parser.add_argument("--initial", type=Path)
+parser.add_argument("--reference", type=Path)
 parser.add_argument("--steps", type=int, default=1600)
 parser.add_argument("--seed", type=int, default=20260930)
 args = parser.parse_args()
 reference_path = Path(__file__).resolve().parents[2] / "core/src/main/resources/dev/mineagent/runtime/policy/pretrained.json"
+reference_path = args.reference or reference_path
 initial = json.loads((args.initial or reference_path).read_text())
 reference = json.loads(reference_path.read_text())
 rng = np.random.default_rng(args.seed)

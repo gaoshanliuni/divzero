@@ -1,14 +1,48 @@
 {
-  "seed": 20260930,
+  "schema": "divzero-admissible-action-value/2",
+  "version": 2,
   "architecture": "16 inputs / 24 tanh hidden / 1 sigmoid cost",
-  "trainingSamples": 20000,
-  "heldOutSamples": 4000,
-  "iterations": 2400,
-  "heldOutMSE": 0.0004161642655032598,
-  "sha256": "16c1f89c496d18665db383aa138edcfa10484090df90ec66f705bd1676d60e04",
-  "numpy": "2.3.5",
-  "source": "DivZero synthetic admissible-action cost envelopes; no external weights or player data",
-  "limits": "This validates approximation of cost labels only. Native combat and task outcome tests are separate.",
+  "sha256": "21b32e841a351e22f62046ed0953f9146e927211e865904d3b3f8a7cf856a0ec",
+  "source": "Native isolated duel outcomes, fine-tuned from the previous synthetic Java cost model",
+  "seed": 20260930,
+  "trainingSamples": 546,
+  "trainingActors": 8,
+  "trainingSamplesWithRotations": 1796,
+  "heldOutSamples": 97,
+  "heldOutMSE": 0.01934182072874184,
+  "heldOutMSEBefore": 0.02247141735986783,
+  "referenceDrift": 0.000344681418557474,
+  "iterations": 1600,
+  "basePretraining": {
+    "seed": 20260930,
+    "architecture": "16 inputs / 24 tanh hidden / 1 sigmoid cost",
+    "trainingSamples": 20000,
+    "heldOutSamples": 4000,
+    "iterations": 2400,
+    "heldOutMSE": 0.0004161642655032598,
+    "sha256": "16c1f89c496d18665db383aa138edcfa10484090df90ec66f705bd1676d60e04",
+    "numpy": "2.3.5",
+    "source": "DivZero synthetic admissible-action cost envelopes; no external weights or player data",
+    "limits": "This validates approximation of cost labels only. Native combat and task outcome tests are separate.",
+    "features": [
+      "health",
+      "distance",
+      "speed",
+      "boost_active",
+      "attack_ready",
+      "goal_progress",
+      "forecast_risk",
+      "route_length",
+      "delta_x",
+      "delta_z",
+      "edge_risk",
+      "attack_opportunity",
+      "work_kind",
+      "airborne",
+      "weapon_damage",
+      "material_cost"
+    ]
+  },
   "features": [
     "health",
     "distance",
@@ -20,11 +54,114 @@
     "route_length",
     "delta_x",
     "delta_z",
-    "edge_risk",
+    "edge_or_trap_risk",
     "attack_opportunity",
     "work_kind",
     "airborne",
     "weapon_damage",
     "material_cost"
-  ]
+  ],
+  "nativeEvaluation": {
+    "run": "b71dbe06-1b2b-4594-ad93-074d8e0690a3",
+    "controllerSource": "294ea6a629de8c6e9ffda4a91eb4869ff6773a4c",
+    "baseline": "legacy-b26680f1",
+    "matches": 10,
+    "wins": 10,
+    "equalEquipment": true,
+    "boost": false,
+    "frozenWeights": true,
+    "cases": [
+      {
+        "case": 3,
+        "outcome": "A_WON",
+        "currentOnSide": "a",
+        "currentWon": true,
+        "survivorHealth": 17.946665,
+        "seconds": 15.8560577,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 4,
+        "outcome": "B_WON",
+        "currentOnSide": "b",
+        "currentWon": true,
+        "survivorHealth": 20.0,
+        "seconds": 19.5962415,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 2,
+        "outcome": "B_WON",
+        "currentOnSide": "b",
+        "currentWon": true,
+        "survivorHealth": 13.660005,
+        "seconds": 42.1133356,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 1,
+        "outcome": "A_WON",
+        "currentOnSide": "a",
+        "currentWon": true,
+        "survivorHealth": 9.5666685,
+        "seconds": 141.8538907,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 5,
+        "outcome": "A_WON",
+        "currentOnSide": "a",
+        "currentWon": true,
+        "survivorHealth": 14.326673,
+        "seconds": 226.1041846,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 9,
+        "outcome": "A_WON",
+        "currentOnSide": "a",
+        "currentWon": true,
+        "survivorHealth": 17.733335,
+        "seconds": 17.9415237,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 10,
+        "outcome": "B_WON",
+        "currentOnSide": "b",
+        "currentWon": true,
+        "survivorHealth": 12.6866665,
+        "seconds": 18.2078315,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 8,
+        "outcome": "B_WON",
+        "currentOnSide": "b",
+        "currentWon": true,
+        "survivorHealth": 14.893331,
+        "seconds": 26.6970596,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 7,
+        "outcome": "A_WON",
+        "currentOnSide": "a",
+        "currentWon": true,
+        "survivorHealth": 17.4,
+        "seconds": 79.6881145,
+        "postDefeatObservationTicks": 80
+      },
+      {
+        "case": 6,
+        "outcome": "B_WON",
+        "currentOnSide": "b",
+        "currentWon": true,
+        "survivorHealth": 11.14667,
+        "seconds": 90.1873016,
+        "postDefeatObservationTicks": 80
+      }
+    ]
+  },
+  "limits": "This is one complete ten-bout native acceptance run of the Java controller plus neural route policy. It is not a statistical universal win rate, not proof against human players, and not proof that weights alone caused every improvement."
 }

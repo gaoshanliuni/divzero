@@ -3,9 +3,10 @@ These are admissible-action cost labels, not evidence of PvP win rate.
 No external model, player data, world files or model-service calls are used.
 """
 from pathlib import Path
-import os,json,hashlib
+import os,json,hashlib,argparse
 os.environ.setdefault('OPENBLAS_NUM_THREADS','1')
 import numpy as np
+parser=argparse.ArgumentParser();parser.add_argument("--output",type=Path,default=Path(__file__).resolve().parents[2]/"build/policy-candidates/synthetic-baseline.json");args=parser.parse_args()
 rng=np.random.default_rng(20260930)
 size=24000
 x=rng.uniform(0,1,(size,16));x[:,5]=rng.uniform(-1,1,size);x[:,8:10]=rng.uniform(-1,1,(size,2));x[:,3]=(x[:,3]>.8);x[:,11]=(x[:,11]>.5);x[:,13]=(x[:,13]>.7)
@@ -21,8 +22,8 @@ for step in range(1,2401):
   m[i]=.9*m[i]+.1*d;q[i]=.999*q[i]+.001*d*d;p-=.004*(m[i]/(1-.9**step))/(np.sqrt(q[i]/(1-.999**step))+1e-8)
 pred=1/(1+np.exp(-(np.tanh(x[valid]@w.T+b)@v+c)))
 loss=float(np.mean((pred-y[valid])**2));assert loss<.002,loss
-root=Path(__file__).resolve().parents[2]/'core/src/main/resources/dev/mineagent/runtime/policy'
+root=args.output.parent;root.mkdir(parents=True,exist_ok=True)
 model={'schema':'divzero-admissible-action-value/2','version':1,'hidden':w.tolist(),'bias':b.tolist(),'output':v.tolist(),'outputBias':float(c),'provenance':'SYNTHETIC_JAVA_COST_PRETRAINING_20260930'}
-raw=(json.dumps(model,separators=(',',':'))+'\n').encode();(root/'pretrained.json').write_bytes(raw)
+raw=(json.dumps(model,separators=(',',':'))+'\n').encode();args.output.write_bytes(raw)
 manifest={'seed':20260930,'architecture':'16 inputs / 24 tanh hidden / 1 sigmoid cost','trainingSamples':len(train),'heldOutSamples':len(valid),'iterations':2400,'heldOutMSE':loss,'sha256':hashlib.sha256(raw).hexdigest(),'numpy':np.__version__,'source':'DivZero synthetic admissible-action cost envelopes; no external weights or player data','limits':'This validates approximation of cost labels only. Native combat and task outcome tests are separate.','features':['health','distance','speed','boost_active','attack_ready','goal_progress','forecast_risk','route_length','delta_x','delta_z','edge_risk','attack_opportunity','work_kind','airborne','weapon_damage','material_cost']}
-(root/'pretrained-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8',newline='\n');print(json.dumps(manifest))
+args.output.with_suffix('.report.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8',newline='\n');print(json.dumps(manifest))
