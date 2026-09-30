@@ -3804,8 +3804,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "b8ad90a9b1f80cc74db4bee4184a158662aea0364a06ca5a8c0d36d854eda328",
-      "bytes": 119369
+      "sha256": "473e90baf15cb4ac81f1af9753dfb2221a729b2ca11ce4c3ffa263336374fe55",
+      "bytes": 126307
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -4009,8 +4009,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",
-      "sha256": "94787cc734c7f93914665016182c5ee6323d769a399dfb7737b55e7cea38ce13",
-      "bytes": 14031
+      "sha256": "c2be6d6c720b392673a69712f18045cbbcfcfc9e623df628e928f08a30b1d125",
+      "bytes": 14189
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
