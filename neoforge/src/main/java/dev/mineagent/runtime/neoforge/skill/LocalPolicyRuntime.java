@@ -73,7 +73,7 @@ public final class LocalPolicyRuntime {
     }
     public static Map<String,Object> inspect(ServerPlayer viewer,UUID id){
         var state=state(viewer,id);
-        return state==null?Map.of("status","PRETRAINED","version",PRETRAINED.version(),"samples",0,"source",PRETRAINED.source()):Map.of("status",state.status,"version",state.serving.version(),"samples",state.samples,"acceptedUpdates",state.accepted,"rejectedUpdates",state.rejected,"validationLoss",state.validationLoss,"source",state.serving.source(),"training",state.training,"replaySize",state.replay.size());
+        return state==null?Map.of("status","PRETRAINED","version",PRETRAINED.version(),"samples",0,"source",PRETRAINED.source()):Map.of("status",state.status,"version",state.serving.version(),"samples",state.samples,"acceptedUpdates",state.accepted,"rejectedUpdates",state.rejected,"validationLoss",state.validationLoss,"source",state.serving.source(),"training",state.training,"replaySize",state.replay.size(),"checkpointSaved",state.saved.isDone()&&!state.saved.isCompletedExceptionally());
     }
     public static void requireResetVersion(ServerPlayer viewer,UUID id,long version){var state=state(viewer,id);if(state.loading)throw new IllegalStateException("POLICY_CHECKPOINT_LOADING");if(state.serving.version()!=version)throw new IllegalStateException("POLICY_VERSION_CHANGED");}
     public static void reset(ServerPlayer owner,UUID id){

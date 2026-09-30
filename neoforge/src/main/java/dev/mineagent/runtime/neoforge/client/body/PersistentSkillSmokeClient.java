@@ -49,7 +49,7 @@ public final class PersistentSkillSmokeClient {
         waitFor("real-player-takes-native-authorized-damage",600,()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(value->server(p->{lastObservation=value;var state=session(value,"approved_pvp");if(state.path("counters").path("verifiedHits").asLong()<1)return false;require(p.getHealth()<20,"PVP_HAS_NO_ACTUAL_DAMAGE");EVIDENCE.add(Map.of("playerHealth",p.getHealth(),"bodyHealth",body(p).getHealth(),"skill",value));dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).stopAll(p,agent);return true;})));
     }
     private record Duel(int group,MineAgentPlayer a,MineAgentPlayer b,UUID aId,UUID bId){}
-    private static final List<Duel> duels=new ArrayList<>();private static final Set<Integer> duelFinished=new HashSet<>();private static long duelDeadline,duelStarted;private static final Map<Integer,Integer> duelTerminalTicks=new HashMap<>();
+    private static final List<Duel> duels=new ArrayList<>();private static final Set<Integer> duelFinished=new HashSet<>();private static long duelDeadline,duelStarted,duelGlobalDeadline;private static final Map<Integer,Integer> duelTerminalTicks=new HashMap<>();
     private static void duelFive(){
         String mode=System.getProperty("mineagent.skillSmokeMode","");boolean training=mode.equals("policy_train"),evaluateTen=mode.equals("policy_eval10");boolean benchmark=mode.startsWith("policy_");
         for(int wave=0;wave<(training||evaluateTen?2:1);wave++){final int batch=wave;
@@ -67,7 +67,7 @@ public final class PersistentSkillSmokeClient {
                 duels.add(new Duel(index,left,right,a,b));
             }return Map.of("pairs",5,"bodies",10,"maxSeconds",600,"world","isolated","nativeAttributes",true,"noHealingCommands",true);
         }));
-        action("start-five-pairs-concurrently-wave-"+batch,()->server(p->{var pending=new ArrayList<CompletableFuture<?>>();var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());duelStarted=System.nanoTime();duelDeadline=duelStarted+java.time.Duration.ofMinutes(10).toNanos();
+        action("start-five-pairs-concurrently-wave-"+batch,()->server(p->{var pending=new ArrayList<CompletableFuture<?>>();var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());duelStarted=System.nanoTime();if(batch==0)duelGlobalDeadline=duelStarted+java.time.Duration.ofMinutes(10).toNanos();duelDeadline=duelGlobalDeadline;
             for(var duel:duels)for(boolean first:List.of(true,false)){
                 UUID ai=first?duel.aId:duel.bId;var target=first?duel.b:duel.a;
                 dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(p.level().getServer()).accepted(p,ai,UUID.randomUUID(),"现在与 "+target.getName().getString()+" 进行 1v1 对打");
