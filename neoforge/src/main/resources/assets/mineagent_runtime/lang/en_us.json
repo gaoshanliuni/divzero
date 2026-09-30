@@ -36,5 +36,6 @@
   "mineagent.behavior.defending": "Threat detected. Defending before resuming work.",
   "mineagent.behavior.resumed": "Threats have cleared. Rechecking and resuming work.",
   "mineagent.behavior.standby_failed": "The task is complete; standby needs to be set again.",
-  "mineagent.behavior.contact_escape": "Create distance, then resume hit-and-run combat."
+  "mineagent.behavior.contact_escape": "Create distance, then resume hit-and-run combat.",
+  "key.mineagent_runtime.follow_ai_view": "Takeover: return to AI view"
 }

@@ -4,6 +4,38 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TakeoverCameraRotationTest {
+    @Test void freeObserverStaysIndependentWhileBodyKeepsTurning() {
+        var camera = new TakeoverCameraRotation();
+        camera.reset(40, 10);
+        camera.tick(60, 20);
+        camera.turn(camera.sample(.5), 90, -30);
+        assertTrue(camera.observingFreely());
+        camera.tick(-160, -45);
+        assertEquals(140, camera.sample(.1).yaw(), .0001);
+        assertEquals(-15, camera.sample(.9).pitch(), .0001);
+        camera.follow(-160, -45);
+        assertFalse(camera.observingFreely());
+        assertEquals(-160, camera.sample(0).yaw(), .0001);
+        camera.tick(-140, -25);
+        assertEquals(-150, camera.sample(.5).yaw(), .0001);
+    }
+
+    @Test void repeatedDragsWrapYawClampPitchAndContextResetDropsFreeView() {
+        var camera = new TakeoverCameraRotation();
+        camera.reset(170, 0);
+        camera.turn(camera.sample(1), 30, 150);
+        assertEquals(-160, camera.sample(1).yaw(), .0001);
+        assertEquals(90, camera.sample(1).pitch(), .0001);
+        camera.turn(new TakeoverCameraRotation.Angles(0, 0), -400, -200);
+        assertEquals(160, camera.sample(1).yaw(), .0001);
+        assertEquals(-90, camera.sample(1).pitch(), .0001);
+        camera.turn(camera.sample(1), Double.NaN, 0);
+        assertEquals(160, camera.sample(1).yaw(), .0001);
+        camera.reset(12, 4);
+        assertFalse(camera.observingFreely());
+        assertEquals(12, camera.sample(1).yaw(), .0001);
+    }
+
     @Test void rendersIntermediateAnglesWithoutConsumingOrChangingTheBodyTick() {
         var camera = new TakeoverCameraRotation();
         camera.reset(10, -6);

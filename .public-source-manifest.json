@@ -729,8 +729,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/control/TakeoverCameraRotation.java",
-      "sha256": "4212cad82b16617f41361a9efc1216cd3c9cd830105b1862a66acf257c96235f",
-      "bytes": 1220
+      "sha256": "2352a34537224001324d85ddc9287aee64dda4330748f0db654eaa822ec51bb5",
+      "bytes": 2012
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/control/UiLanguageCatalog.java",
@@ -949,8 +949,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "30bc9130d13ddc5c74c86eefaad624223202ab42c2db8dd0a8c2bd9bee9e5d3d",
-      "bytes": 312389
+      "sha256": "7a7b8364660a85e4fa0842d8bf2b9948d9b1b1b54f77ebe001e136b81a3b5ac3",
+      "bytes": 312585
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -979,8 +979,8 @@
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/TakeoverCameraRotationTest.java",
-      "sha256": "d69a951e512df68761f9e443d0502563bed18d799d04e8dfea778d68c369e3ad",
-      "bytes": 1574
+      "sha256": "40305c06e577ffdfef3b33573115e187e8583855db8a6b6e9eb1dd405f0b00d9",
+      "bytes": 3008
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/UiLanguagePreferencesTest.java",
@@ -3244,8 +3244,8 @@
     },
     {
       "path": "docs/TAKEOVER_CAMERA.md",
-      "sha256": "75500f4473d97dd40abdaf274492e6ca1529b70a1ce28f9a62ef28f24a59fd68",
-      "bytes": 2964
+      "sha256": "27016b818d69c40b10bf079cc36850370ab3ede1f2282a8d2a5a9f0b003f1c06",
+      "bytes": 4664
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
@@ -3624,8 +3624,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientMod.java",
-      "sha256": "c72634fc6f6b8ed9da14c5287697449e57a2e271fcfcee644802e872901343d7",
-      "bytes": 29075
+      "sha256": "42fb5a7c41f4c280a691600460678e348f540e81d00b63f498bd566f25b01e9d",
+      "bytes": 29320
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientNavigation.java",
@@ -3709,13 +3709,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "916b565140e8b3970650f850ccb8cc0f378f3db99eae308941550f7d88610fe9",
-      "bytes": 107856
+      "sha256": "94e81d0806f1bb7df4a37d5d8adf9135b6c813f8ade312f98313bbe81533aa9d",
+      "bytes": 114884
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
-      "sha256": "286cad639ce5aa6db6f49eca578ac1b6a3b36c648364539cbe38e55549202fd0",
-      "bytes": 15120
+      "sha256": "5541bbc7b0add1ce780ab706dddde475034855f4deae81e1f27147c4dfb40a44",
+      "bytes": 15629
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyReviewScreen.java",
@@ -3729,13 +3729,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/TakeoverCameraClient.java",
-      "sha256": "6bb3c2ceb12f8b8a71819b27281850835ec1b39988b40f83bfca0ad6e6ef4d09",
-      "bytes": 3912
+      "sha256": "ffc2a05ff5dc8314fef6577583c66b05e10389206fa947e9b31f35a7a2a04abf",
+      "bytes": 7935
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/TakeoverCameraSmokeClient.java",
-      "sha256": "506e829b034d393c41ed5b4a6c3935a883e7f8dc0d05930f6b3e640b6e29fdc7",
-      "bytes": 3338
+      "sha256": "eb58bce9aab0e7f988a8c0fa4fcccee8efe6f040bcdfd58541946025a6ad948b",
+      "bytes": 6719
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/AiNameHover.java",
@@ -3919,8 +3919,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
-      "sha256": "0172dd6716da87bc2e88de6818b1274aff56e594af318a2b7614c394390a2fec",
-      "bytes": 6363
+      "sha256": "062d3ddea84d0a8f96cd268a0060f327a8643b5b959536aed0348d7a7392fd4d",
+      "bytes": 7235
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/KubeInterfaceRenderer.java",
@@ -5074,8 +5074,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/PlayerBodyMouseMixin.java",
-      "sha256": "2d23ec8cdf548d68c7533e558646e8685dd08025e5ea44f30d376ef4defa24bf",
-      "bytes": 796
+      "sha256": "ffb2a7cb846e93406720aa581ffb8f7c23e31bac7cf3fac1f881c982b9bfc655",
+      "bytes": 883
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/PlayerControlKeyAccess.java",
@@ -6274,13 +6274,13 @@
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/lang/en_us.json",
-      "sha256": "3d13372b5ed9f7fd82324ac5803fc3ba7f8e5a0102f5091d461b590fb6a4d358",
-      "bytes": 3064
+      "sha256": "a645a97a26966a6cddc779c792a265f89da78bf4944b77e678b271bcf5e07959",
+      "bytes": 3137
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/lang/zh_cn.json",
-      "sha256": "7a22fde19656b1230e4c8a09f77e9ba54204e7768c3cf7b1d991d8efad39cfe8",
-      "bytes": 4186
+      "sha256": "2cde9748a8d341b84bda12ab47d995e18b0591573562a49402d15dfd10a9a964",
+      "bytes": 4263
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/models/block/automation_console.json",

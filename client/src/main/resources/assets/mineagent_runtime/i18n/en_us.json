@@ -3394,5 +3394,8 @@
   "复用副本": "Reusable copy",
   "即时启用": "Enable immediately",
   "重新进入世界后启用": "Enable after rejoining the world",
-  "本机代码": "Local code"
+  "本机代码": "Local code",
+  "AI 真实视角": "AI view",
+  "自由观战 · 右键拖动旋转": "Free view · Right-drag to rotate",
+  "跟随 AI · 右键拖动自由观战": "Following AI · Right-drag for free view"
 }

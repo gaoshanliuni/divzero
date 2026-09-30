@@ -61,6 +61,7 @@ public final class MineAgentClientMod {
     );
 
     public static final KeyMapping TOGGLE_WORKSPACE = new KeyMapping("key.mineagent_runtime.toggle_workspace",KeyConflictContext.UNIVERSAL,KeyModifier.NONE,InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_F2,CATEGORY);
+    public static final KeyMapping FOLLOW_AI_VIEW = new KeyMapping("key.mineagent_runtime.follow_ai_view",KeyConflictContext.IN_GAME,KeyModifier.NONE,InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_F8,CATEGORY);
     public MineAgentClientMod(ModContainer container) {
         dev.mineagent.runtime.neoforge.client.ysm.YsmRenderFallback.initialize();
         container.registerExtensionPoint(IConfigScreenFactory.class,
@@ -75,6 +76,7 @@ public final class MineAgentClientMod {
         event.registerCategory(CATEGORY);
         event.register(OPEN_CONTROL_CENTER);
         event.register(TOGGLE_WORKSPACE);
+        event.register(FOLLOW_AI_VIEW);
     }
 
     @SubscribeEvent

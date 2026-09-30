@@ -163,6 +163,10 @@ public final class PersistentSkillSmokeClient {
             var n=start("camera_patrol","player").put("repeat",false).put("dwell_ticks",10);var r=n.putArray("route");r.addArray().add(8.5).add(101).add(6.5);r.addArray().add(8.5).add(101).add(15.5);r.addArray().add(-3.5).add(101).add(15.5);return tool("patrol_route",n);
         });
         waitFor("camera-takeover-and-hud-ready",300,()->CompletableFuture.completedFuture(AutonomousBodyClient.active()&&Boolean.TRUE.equals(dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.observation().get("visible"))));
+        action("focus-camera-test-window",()->{org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(null);});
+        waitFor("camera-window-focused",200,()->CompletableFuture.completedFuture(mc().isWindowActive()));
+        action("native-right-drag-independent-observer",()->{TakeoverCameraSmokeClient.drag(true);return CompletableFuture.completedFuture(null);});
+        waitFor("ai-turns-while-observer-heading-stays-fixed",400,()->CompletableFuture.completedFuture(((Number)TakeoverCameraSmokeClient.report().get("independentBodyTurns")).intValue()>=3));
         for(var view:List.of(net.minecraft.client.CameraType.THIRD_PERSON_BACK,net.minecraft.client.CameraType.THIRD_PERSON_FRONT,net.minecraft.client.CameraType.FIRST_PERSON)){
             action("native-f5-"+view.name(),()->{float yaw=mc().player.getYRot(),pitch=mc().player.getXRot();var keys=(dev.mineagent.runtime.neoforge.mixin.client.WorkspaceKeyboardAccess)mc().keyboardHandler;var key=new net.minecraft.client.input.KeyEvent(294,0,0);keys.mineagent$keyPress(mc().getWindow().handle(),1,key);keys.mineagent$keyPress(mc().getWindow().handle(),0,key);require(mc().player.getYRot()==yaw&&mc().player.getXRot()==pitch,"F5_CHANGED_BODY_AIM");return CompletableFuture.completedFuture(null);});
             waitFor("rendered-view-"+view.name(),200,()->CompletableFuture.completedFuture(mc().options.getCameraType()==view&&((List<?>)TakeoverCameraSmokeClient.report().get("views")).contains(view.name())));
@@ -177,9 +181,46 @@ public final class PersistentSkillSmokeClient {
             dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeMouse("perspective",false);require(mc().options.getCameraType()==before.cycle(),"CAMERA_NOT_SWITCHED_ON_RELEASE");
             require(mc().player.getYRot()==yaw&&mc().player.getXRot()==pitch&&AutonomyVirtualInput.snapshot().equals(input),"VIEW_SWITCH_CHANGED_BODY_OR_INPUT");return CompletableFuture.completedFuture(null);
         });
+        action("return-to-ai-button-release",()->{
+            require(TakeoverCameraClient.observingFreely(),"F5_LOST_FREE_OBSERVER");float yaw=mc().player.getYRot(),pitch=mc().player.getXRot();
+            dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeMouse("followAi",true);require(TakeoverCameraClient.observingFreely(),"FOLLOW_AI_ON_PRESS");
+            dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeMouse("followAi",false);require(!TakeoverCameraClient.observingFreely()&&mc().options.getCameraType().isFirstPerson(),"FOLLOW_AI_BUTTON_FAILED");
+            require(yaw==mc().player.getYRot()&&pitch==mc().player.getXRot(),"FOLLOW_AI_CHANGED_BODY");return CompletableFuture.completedFuture(null);
+        });
+        action("native-f8-and-rebound-follow-shortcut",()->{
+            TakeoverCameraSmokeClient.drag(true);TakeoverCameraSmokeClient.key(297);require(!TakeoverCameraClient.observingFreely(),"F8_DID_NOT_FOLLOW_AI");
+            var binding=dev.mineagent.runtime.neoforge.client.MineAgentClientMod.FOLLOW_AI_VIEW;binding.setKey(com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(296));net.minecraft.client.KeyMapping.resetMapping();
+            TakeoverCameraSmokeClient.drag(true);TakeoverCameraSmokeClient.key(297);require(TakeoverCameraClient.observingFreely(),"OLD_F8_BINDING_STILL_ACTIVE");TakeoverCameraSmokeClient.key(296);require(!TakeoverCameraClient.observingFreely(),"REBOUND_F7_DID_NOT_FOLLOW_AI");
+            binding.setKey(com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(297));net.minecraft.client.KeyMapping.resetMapping();return CompletableFuture.completedFuture(null);
+        });
+        action("chat-and-f2-cancel-only-drag",()->{
+            for(boolean workspace:List.of(false,true)){
+                TakeoverCameraSmokeClient.drag(false);
+                if(workspace)dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.open();else mc().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));
+                require(Boolean.FALSE.equals(TakeoverCameraClient.observation().get("dragging")),"SCREEN_RETAINED_DRAG");
+                TakeoverCameraSmokeClient.key(297);require(TakeoverCameraClient.observingFreely(),"SCREEN_STOLE_FOLLOW_KEY");
+                TakeoverCameraSmokeClient.move(130,140);TakeoverCameraSmokeClient.button(0);mc().setScreen(null);
+                require(AutonomousBodyClient.active()&&TakeoverCameraClient.observingFreely(),"SCREEN_ENDED_OBSERVER_OR_TAKEOVER");
+            }return CompletableFuture.completedFuture(null);
+        });
+        action("focus-loss-clears-pending-camera-drag",()->{TakeoverCameraSmokeClient.drag(false);org.lwjgl.glfw.GLFW.glfwIconifyWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(null);});
+        waitFor("unfocused-observer-stays-independent",200,()->CompletableFuture.completedFuture(!mc().isWindowActive()&&Boolean.FALSE.equals(TakeoverCameraClient.observation().get("dragging"))&&AutonomousBodyClient.active()));
+        action("restore-observer-window",()->{org.lwjgl.glfw.GLFW.glfwRestoreWindow(mc().getWindow().handle());org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(null);});
+        waitFor("restored-observer-window-focused",200,()->CompletableFuture.completedFuture(mc().isWindowActive()));
+        action("released-drag-does-not-resume-after-focus",()->{TakeoverCameraSmokeClient.move(350,380);require(Boolean.FALSE.equals(TakeoverCameraClient.observation().get("dragging")),"STALE_DRAG_RESUMED");TakeoverCameraSmokeClient.button(0);TakeoverCameraSmokeClient.key(297);return CompletableFuture.completedFuture(null);});
         waitFor("patrol-continues-through-all-views",1800,()->state("camera_patrol",s->s.path("state").asText().equals("COMPLETED")&&s.path("counters").path("waypointsReached").asInt()==3));
+        action("pause-for-native-orbit-collision",()->{AutonomousBodyClient.togglePause();return CompletableFuture.completedFuture(null);});
+        waitFor("orbit-test-pause-acknowledged",200,()->CompletableFuture.completedFuture(AutonomousBodyClient.manuallyPaused()));
+        action("native-orbit-walls",()->server(p->{p.teleportTo(p.level(),.5,101,6.5,Set.of(),-90,0,true);for(int x=-2;x<=3;x++)for(int z=4;z<=9;z++)if(x==-2||x==3||z==4||z==9)for(int y=101;y<=104;y++)p.level().setBlock(new BlockPos(x,y,z),Blocks.STONE.defaultBlockState(),2);return null;}));
+        waitFor("orbit-walls-reached-client",200,()->CompletableFuture.completedFuture(mc().player.position().distanceTo(new Vec3(.5,101,6.5))<.1&&mc().level.getBlockState(new BlockPos(-2,102,6)).is(Blocks.STONE)));
+        action("free-orbit-inside-walls",()->{mc().options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);TakeoverCameraSmokeClient.drag(true);baseline=mc().player.tickCount;return CompletableFuture.completedFuture(null);});
+        waitFor("camera-clips-at-actual-wall",100,()->{if(mc().player.tickCount-baseline<10)return CompletableFuture.completedFuture(false);double distance=mc().gameRenderer.getMainCamera().position().distanceTo(mc().player.getEyePosition(1));require(distance>.3&&distance<3.5,"ORBIT_IGNORED_WALL_"+distance);EVIDENCE.add(Map.of("freeOrbitWallDistance",distance));screen("takeover-free-observation");return CompletableFuture.completedFuture(true);});
+        action("remove-orbit-fixture-walls",()->server(p->{for(int x=-2;x<=3;x++)for(int z=4;z<=9;z++)if(x==-2||x==3||z==4||z==9)for(int y=101;y<=104;y++)p.level().setBlock(new BlockPos(x,y,z),Blocks.AIR.defaultBlockState(),2);return null;}));
+        waitFor("free-orbit-returns-to-native-distance",150,()->{double distance=mc().gameRenderer.getMainCamera().position().distanceTo(mc().player.getEyePosition(1));if(distance<3.8)return CompletableFuture.completedFuture(false);EVIDENCE.add(Map.of("freeOrbitOpenDistance",distance));return CompletableFuture.completedFuture(true);});
+        action("restore-follow-and-running-state",()->{TakeoverCameraClient.followAi();AutonomousBodyClient.togglePause();return CompletableFuture.completedFuture(null);});
         action("real-frame-smoothing-evidence",()->{var proof=TakeoverCameraSmokeClient.report();require(((Number)proof.get("subTickAngleChanges")).intValue()>=3&&((Number)proof.get("interpolatedFrames")).intValue()>=10&&((List<?>)proof.get("views")).size()==3&&proof.get("error").equals(""),"CAMERA_RENDER_PROOF_"+proof);EVIDENCE.add(proof);return server(p->{dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).stopAll(p,agent);return null;});});
-        // The existing UI/farm/stop/death regression now runs from the front observation view.
+        action("return-to-front-observation-for-work",()->{mc().options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);TakeoverCameraSmokeClient.drag(true);return CompletableFuture.completedFuture(null);});
+        // Work and lifecycle regression also runs with an independent observation heading.
         player();
     }
     private static void combo(){
@@ -460,12 +501,12 @@ public final class PersistentSkillSmokeClient {
         waitFor("resume-server-acknowledged",200,()->tool("inspect_behavior",JSON.createObjectNode()).thenApply(data->!session(data,"player_farm").path("state").asText().equals("PAUSED")));
         waitFor("manual-resume-continues-work",1000,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=5));
         hudClick("exit-using-hud-button","exit");
-        action("exit-restores-user-preference",()->{require(!AutonomousBodyClient.active(),"EXIT_BUTTON_FAILED");require(mc().options.pauseOnLostFocus,"FOCUS_PAUSE_PREFERENCE_NOT_RESTORED");return CompletableFuture.completedFuture(null);});
+        action("exit-restores-user-preference",()->{require(!AutonomousBodyClient.active(),"EXIT_BUTTON_FAILED");require(!TakeoverCameraClient.observingFreely()&&Boolean.FALSE.equals(TakeoverCameraClient.observation().get("dragging")),"EXIT_RETAINED_OBSERVER");require(mc().options.pauseOnLostFocus,"FOCUS_PAUSE_PREFERENCE_NOT_RESTORED");return CompletableFuture.completedFuture(null);});
         waitFor("exit-button-cancels-skill",150,()->state("player_farm",s->s.path("state").asText().equals("CANCELLED")));
         action("remember-explicit-takeover-request",()->server(p->{oldBehaviorRequest=UUID.randomUUID();dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(p.level().getServer()).accepted(p,agent,oldBehaviorRequest,"接管我的身体，照顾农田");return null;}));
         action("restart-to-check-escape",()->tool("farm_area",area("player_esc","player",3,101,6,3,101,6).put("crop","minecraft:wheat")));
         waitFor("escape-session-active",150,()->{if(!mc().isWindowActive())org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(AutonomousBodyClient.active()&&!mc().mouseHandler.isMouseGrabbed()&&mc().isWindowActive());});
-        action("real-player-escape",()->{screen("real-player-farm");require(AutonomousBodyClient.active(),"PLAYER_ADAPTER_NOT_ACTIVE");var key=new net.minecraft.client.input.KeyEvent(256,0,0);long window=mc().getWindow().handle();require(PlayerBodyControlClient.physicalKey(window,1,key)&&AutonomousBodyClient.active(),"FIRST_ESC_EXITED_OR_OPENED_PAUSE");PlayerBodyControlClient.physicalKey(window,2,key);require(AutonomousBodyClient.active(),"HELD_ESC_EXITED");PlayerBodyControlClient.physicalKey(window,0,key);PlayerBodyControlClient.physicalKey(window,1,key);require(!AutonomousBodyClient.active(),"DOUBLE_ESC_DID_NOT_RELEASE");return CompletableFuture.completedFuture(null);});
+        action("real-player-escape",()->{screen("real-player-farm");require(AutonomousBodyClient.active(),"PLAYER_ADAPTER_NOT_ACTIVE");require(!TakeoverCameraClient.observingFreely(),"NEW_SESSION_RETAINED_OLD_OBSERVER");var key=new net.minecraft.client.input.KeyEvent(256,0,0);long window=mc().getWindow().handle();require(PlayerBodyControlClient.physicalKey(window,1,key)&&AutonomousBodyClient.active(),"FIRST_ESC_EXITED_OR_OPENED_PAUSE");PlayerBodyControlClient.physicalKey(window,2,key);require(AutonomousBodyClient.active(),"HELD_ESC_EXITED");PlayerBodyControlClient.physicalKey(window,0,key);PlayerBodyControlClient.physicalKey(window,1,key);require(!AutonomousBodyClient.active(),"DOUBLE_ESC_DID_NOT_RELEASE");return CompletableFuture.completedFuture(null);});
         waitFor("escape-cancels-skill",150,()->state("player_esc",s->s.path("state").asText().equals("CANCELLED")));
         action("escape-invalidates-old-model-takeover",()->server(p->{var authority=dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(p.level().getServer());require(!authority.current(p,agent,oldBehaviorRequest)&&!authority.playerRequested(p,agent,oldBehaviorRequest),"ESC_ALLOWED_OLD_MODEL_TO_RETAKE_BODY");return null;}));
         action("new-session-before-death-boundary",()->tool("farm_area",area("death_paused","player",3,101,6,3,101,6).put("crop","minecraft:wheat")));

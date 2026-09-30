@@ -52,5 +52,6 @@
   "mineagent.behavior.defending": "发现威胁，先防御，之后继续原工作。",
   "mineagent.behavior.resumed": "威胁已解除，重新检查并继续原工作。",
   "mineagent.behavior.standby_failed": "任务已完成，待命需要重新设置。",
-  "mineagent.behavior.contact_escape": "先拉开距离，再继续跑打。"
+  "mineagent.behavior.contact_escape": "先拉开距离，再继续跑打。",
+  "key.mineagent_runtime.follow_ai_view": "托管：返回 AI 真实视角"
 }
