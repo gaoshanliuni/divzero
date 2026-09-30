@@ -2599,7 +2599,7 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/TerrainPathSearch.java",
-      "sha256": "e8b917dffcc7daa072516b5f9c7f047383b96dc07d860502df69afe4dee9ea6f",
+      "sha256": "1af9567c3422ccd3c7f4a1e03c0f95e267b36e2974eaa24b10143c592570aefb",
       "bytes": 6182
     },
     {
@@ -3624,8 +3624,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainRecovery.java",
-      "sha256": "71bb18c9c3dfd1ed48ff5d50ff99aed716241095f0a51470851779c8713f987e",
-      "bytes": 13851
+      "sha256": "694b0f1e35d58a3a0a9ea0271df4034ab7adc8fa7df8898166563aeba073eadd",
+      "bytes": 14494
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTraversalEvaluator.java",
@@ -3794,8 +3794,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "d26e561134d59666bdf8e686422578a4499309047ff9b0ae4b3e8c21ed55a73b",
-      "bytes": 118822
+      "sha256": "9c88b6a07f29b58f6a1c6a1e6af35617d536c3af0a4db5bae4cb6acbf0403496",
+      "bytes": 118921
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5334,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "46f72337502cbe32096f9dc280e899b57593d6dad5447907191eaa814e23c1a7",
-      "bytes": 15372
+      "sha256": "88cfbe5bed7a3f4c8bd2cfaf64919570138aa71aa09a9d2172505cf79e26cf4a",
+      "bytes": 15491
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",
@@ -5384,8 +5384,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "e9474f2dd1f2170fc95f560ec58010cd8778d9b01248dea05563d3ccd053d054",
-      "bytes": 13230
+      "sha256": "c2fbfc676bdc0edc581a2fb7998d31f7bedddaf6f0a6772fdbc3553f88ab6317",
+      "bytes": 13326
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",

@@ -53,7 +53,7 @@ public final class TerrainPathSearch {
                     if(Math.abs(destination.x-origin.x)>radius||Math.abs(destination.z-origin.z)>radius||destination.y<origin.y-1||destination.y>origin.y+radius)continue;
                     var changes=new LinkedHashMap<>(current.state.changes);var edits=new ArrayList<Edit>();double cost=8+Math.abs(dy)*5;int used=current.state.materials;
                     // Rising needs head clearance along the whole motion, including the old column.
-                    var clearance=new LinkedHashSet<Cell>();clearance.add(destination);clearance.add(destination.add(0,1,0));
+                    var clearance=new LinkedHashSet<Cell>();clearance.add(destination.add(0,1,0));clearance.add(destination);
                     if(dy>0)clearance.add(current.state.feet.add(0,2,0));
                     boolean valid=true;
                     for(var at:clearance){var block=read(at,changes);if(!block.loaded){valid=false;break;}if(!block.clear){

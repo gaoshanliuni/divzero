@@ -32,7 +32,7 @@ public final class PlayerSkillActor implements SkillActor {
             public boolean select(int slot){return PlayerSkillActor.this.select(session,slot);}
             public void aim(Vec3 point){aimImmediately(session,point);}
             public void jump(UUID operation){send(session,"JUMP",operation,player.position(),0,-1,"");}
-            public void mine(UUID operation,BlockPos at){breakBlock(session,operation,at);}
+            public void mine(UUID operation,BlockPos at){var visible=NativeTerrainRecovery.visibleMiningPoint(player,at);if(visible!=null)send(session,"BREAK",operation,visible,0,-1,"");}
             public void place(UUID operation,net.minecraft.world.phys.BlockHitResult hit){var face=hit.getDirection();send(session,"PLACE_BLOCK",operation,hit.getLocation().subtract(new Vec3(face.getStepX(),face.getStepY(),face.getStepZ()).scale(.001)),0,face.get3DDataValue(),"");}
             public void cancel(UUID operation){motion=null;aim=null;send(session,"HALT",UUID.randomUUID(),player.position(),0,-1,"");}
         });

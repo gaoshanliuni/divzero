@@ -170,7 +170,7 @@ public final class PersistentSkillSmokeClient {
                 return Map.of("target",zombie,"roof",roof,"initialMaterials",actor.getInventory().countItem(Items.COBBLESTONE));
             }));
             action(id+"_follow",()->tool("follow_entity",start(id,"ai").put("target",zombie.toString()).put("start_distance",3).put("stop_distance",1.5)));
-            waitFor(id+"_real_exit_and_original_follow",1800,()->server(p->{var actor=controlled(p);return actor.getY()>100.8&&actor.position().distanceTo(new Vec3(7.5,101,6.5))<2.3;}).thenApply(ok->{if(ok)baseline=ticks;return ok;}));
+            waitFor(id+"_real_exit_and_original_follow",1800,()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(data->{lastObservation=data;return server(p->{var actor=controlled(p);return actor.getY()>100.8&&actor.position().distanceTo(new Vec3(7.5,101,6.5))<2.3;});}).thenApply(ok->{if(ok)baseline=ticks;return ok;}));
             waitFor(id+"_no_extra_pillaring",160,()->server(p->{if(ticks-baseline<45)return false;var actor=controlled(p);require(actor.getY()<101.3,"PILLARED_AFTER_ESCAPE");int used=16-actor.getInventory().countItem(Items.COBBLESTONE);require(used>0&&used<=3,"ESCAPE_MATERIAL_ACCOUNTING_"+used);if(roof){require(p.level().getBlockState(new BlockPos(0,100,6)).is(Blocks.BEDROCK),"EXCAVATED_PROHIBITED_ROOF");require(!p.level().getBlockState(new BlockPos(1,98,6)).is(Blocks.DIRT),"NO_COMBINED_SIDE_EXCAVATION");}else require(p.level().getBlockState(new BlockPos(0,100,6)).isAir(),"UNNECESSARY_THIRD_PILLAR_BLOCK");return true;}));
             action(id+"_evidence",()->tool("inspect_behavior",JSON.createObjectNode()));action(id+"_stop",()->stop(id));
         }

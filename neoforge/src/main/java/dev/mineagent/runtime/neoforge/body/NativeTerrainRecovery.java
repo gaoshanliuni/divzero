@@ -108,7 +108,7 @@ public final class NativeTerrainRecovery {
         if(edit.kind()==TerrainPathSearch.Kind.BREAK){
             if(!NativeTerrainPolicy.mayBreak(player,target)){fail("TERRAIN_BREAK_REVOKED");return new Tick(false,null,false);}
             int slot=NativeTerrainPolicy.toolSlot(player,target);if(!controls.select(slot))return new Tick(true,null,false);
-            controls.aim(Vec3.atCenterOf(target));
+            var visible=visibleMiningPoint(player,target);if(visible==null){fail("MINING_TARGET_OCCLUDED");return new Tick(false,null,false);}controls.aim(visible);
             int duration=NativeTerrainPolicy.breakTicks(player,target);if(duration>240||now-at>Math.max(30,duration+30)){fail("MINING_NO_CONFIRMED_PROGRESS");return new Tick(false,null,false);}
             controls.mine(operation,target);sent=true;return new Tick(true,null,false);
         }
@@ -127,6 +127,13 @@ public final class NativeTerrainRecovery {
     private Tick complete(boolean edited){learn(false);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="RECHECK_ORIGINAL_ROUTE";return new Tick(false,null,true);}
     private void fail(String why){learn(true);if(edit!=null)rejected.add(signature(pos(edit.cell())));if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="BLOCKED";reason=why;}
     private void learn(boolean failed){if(decisionFeatures==null||player==null)return;double cost=(player.level().getServer().getTickCount()-at)/120d+Math.max(0,healthBefore-player.getHealth())/Math.max(1,player.getMaxHealth())+(failed?.6:0);dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.outcome(player,decisionFeatures,cost);decisionFeatures=null;}
+    public static Vec3 visibleMiningPoint(ServerPlayer p,BlockPos target){
+        for(double y:new double[]{.5,.05,.95})for(double x:new double[]{.5,.05,.95})for(double z:new double[]{.5,.05,.95}){
+            var at=new Vec3(target.getX()+x,target.getY()+y,target.getZ()+z);
+            var hit=p.level().clip(new ClipContext(p.getEyePosition(),at,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
+            if(hit.getType()==HitResult.Type.BLOCK&&hit.getBlockPos().equals(target))return at;
+        }return null;
+    }
     public static BlockHitResult placementHit(ServerPlayer p,BlockPos target){
         for(var face:Direction.values()){
             var anchor=target.relative(face.getOpposite());if(!NativeTerrainPolicy.loaded(p,anchor)||p.level().getBlockState(anchor).getCollisionShape(p.level(),anchor).isEmpty())continue;

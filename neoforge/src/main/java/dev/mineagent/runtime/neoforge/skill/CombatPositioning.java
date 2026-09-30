@@ -8,12 +8,12 @@ import java.util.*;
 /** Bounded multi-exit exploration. Score whole routes and onward space, not only endpoints. */
 final class CombatPositioning {
     record Route(Node node,List<PathStep> steps,double worstRisk){}
-    private NativeTraversalEvaluator evaluator;private final Deque<Route> open=new ArrayDeque<>();private final Set<Node> seen=new HashSet<>();private final List<Route> candidates=new ArrayList<>();
+    private NativeTraversalEvaluator evaluator;private final Deque<Route> open=new ArrayDeque<>();private final Set<Node> seen=new HashSet<>();private final Set<Node> scored=new HashSet<>();private final List<Route> candidates=new ArrayList<>();
     private Vec3 origin;private int started;private String purpose="";private Vec3 selected;private double selectedDistance;private int candidateCursor;
     private Vec3 waypoint,heading,targetAtWaypoint;private Node waypointNode;private int waypointAt;private double waypointRisk;private String waypointPurpose="";
     private List<PathStep> chosenRoute=List.of();private final Map<Node,Integer> exposure=new HashMap<>();
     List<PathStep> route(){return chosenRoute;}
-    boolean pending(){return !open.isEmpty();}
+    boolean pending(){return !open.isEmpty()||scored.size()<candidates.size();}
     boolean longRetreat(){return selectedDistance>3;}
     Vec3 choose(SkillWork w,String intent,double desiredDistance){
         exposure.clear();boolean withdrawal=Set.of("RETREAT","RECOVER","LURE","SPACE","SIDE_LEFT","SIDE_RIGHT","JUMP_TAP").contains(intent);
@@ -28,8 +28,8 @@ final class CombatPositioning {
             if(!reached)w.session.add("tacticalWaypointRechecks",1);
             waypoint=null;origin=null;chosenRoute=List.of();
         }
-        if(origin==null||w.tick()-started>8||origin.distanceToSqr(w.player().position())>1||!purpose.equals(intent)){
-            evaluator=new NativeTraversalEvaluator(w.player());origin=feet;started=w.tick();purpose=intent;selected=null;open.clear();seen.clear();candidates.clear();var node=evaluator.closest(origin);if(node!=null){seen.add(node);open.add(new Route(node,List.of(),w.combat.risk(w,origin)));}
+        if(origin==null||w.tick()-started>24||origin.distanceToSqr(w.player().position())>1||!purpose.equals(intent)){
+            evaluator=new NativeTraversalEvaluator(w.player());origin=feet;started=w.tick();purpose=intent;selected=null;open.clear();seen.clear();scored.clear();candidates.clear();var node=evaluator.closest(origin);if(node!=null){seen.add(node);open.add(new Route(node,List.of(),w.combat.risk(w,origin)));}
         }
         var budget=NativeNavigationBudget.get(w.runtime.server);int allowed=budget.claim(w.token(),w.tick());evaluator.beginSlice();
         for(int i=0;i<allowed&&!open.isEmpty()&&budget.timeAvailable();i++){
@@ -49,7 +49,7 @@ final class CombatPositioning {
         // A ready strike necessarily enters the selected opponent's reach. Price that exposure,
         // but keep full risk for every other threat and keep all terrain/escape checks.
         var opportunity=(intent.equals("APPROACH")||intent.equals("COUNTER"))&&w.player().getAttackStrengthScale(.5f)>=.95f&&w.player().getHealth()>w.player().getMaxHealth()*.45&&!w.combat.incoming(w)?target:null;
-        for(int index=0;index<candidates.size()&&budget.timeAvailable();index++){var route=candidates.get(Math.floorMod(candidateCursor++,candidates.size()));var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point,opportunity);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()),opportunity)).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
+        for(int index=0;index<candidates.size()&&budget.timeAvailable();index++){var route=candidates.get(Math.floorMod(candidateCursor++,candidates.size()));scored.add(route.node);var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point,opportunity);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()),opportunity)).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
             score+=w.combat.collisionRisk(w,point,4,opportunity)*1.5+w.prediction.routeRisk(w,route.steps,opportunity);
             if(target!=null&&(intent.equals("SIDE_LEFT")||intent.equals("SIDE_RIGHT"))){
                 var forward=target.position().subtract(origin).multiply(1,0,1).normalize();var left=new Vec3(forward.z,0,-forward.x);var delta=point.subtract(origin);
