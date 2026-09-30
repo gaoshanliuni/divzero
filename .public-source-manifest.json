@@ -3349,8 +3349,8 @@
     },
     {
       "path": "docs/NEURAL_SELF_PLAY.md",
-      "sha256": "02d8d46cad3ff93728750fdaeae892a9c4c11b50b7b46706a1bf9da256dfdb47",
-      "bytes": 6680
+      "sha256": "b54621732e529659d952bc5953c6d755a9f9cee0fcac8b8694656d6cbf018fe8",
+      "bytes": 9580
     },
     {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
@@ -3389,8 +3389,8 @@
     },
     {
       "path": "docs/images/README.md",
-      "sha256": "2d6a4ac038f1445db0fd0eea04bb4cf792b5b33e73979e4d71518d93f6775944",
-      "bytes": 7738
+      "sha256": "fbb8fb60e3ccd564a793d91e28f6f449811fdf66470e8b607b9799834c5abb2d",
+      "bytes": 8117
     },
     {
       "path": "docs/images/behavior-agent-profile.png",
@@ -3436,6 +3436,11 @@
       "path": "docs/images/native-inventory-scale4.png",
       "sha256": "822e856e376452f64c95b6e54c2c58b91a6c5ad152f6ff6359dc56e43ce574d9",
       "bytes": 183809
+    },
+    {
+      "path": "docs/images/native-neural-selfplay-arena.png",
+      "sha256": "fc2349e2a0f389a7377856d032f3c0d401aad930fddbcc5be53114e7ad437d2e",
+      "bytes": 2226828
     },
     {
       "path": "docs/images/native-preview.png",

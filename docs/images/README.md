@@ -83,3 +83,7 @@
 | [native-inventory-current.png](native-inventory-current.png) | 当前独立原生背包，UI 尺寸 4；战斗中打开并将 AI 副手盾牌转移到玩家真实快捷栏。隔离运行 `1d621adf-1f2a-47bb-9c0e-bc3cbbcc1961`，Actions `36743011317`，零模型调用 | `50aff6510183dcc1b869a6e049a60ffb7247eb20d7e07fb26d52f1709b330f05` |
 
 `native-inventory-combat.png` 与 `native-inventory-scale4.png` 为此前嵌入布局的历史截图，已被本次独立界面方案替代。
+
+## 神经网络自对战训练场
+
+[native-neural-selfplay-arena.png](native-neural-selfplay-arena.png)：原生队伍隔离后的真实训练场，双方为神经网络控制角色，场内上空清理及出生位置经过校验。运行 `6de4c281-fc79-48a3-8969-cb2eec9c11f9`，未编辑画面。SHA-256：`fc2349e2a0f389a7377856d032f3c0d401aad930fddbcc5be53114e7ad437d2e`。
