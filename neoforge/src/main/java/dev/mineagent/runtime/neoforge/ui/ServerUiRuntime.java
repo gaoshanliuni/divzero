@@ -340,6 +340,19 @@ public final class ServerUiRuntime {
                 if(kind.equals("planBegin")||kind.equals("planChunk")){var result=kind.equals("planBegin")?buildingDocuments.begin(sourceSession,agent,args):buildingDocuments.append(sourceSession,agent,args);send(viewer,packet,"receipt",sessions.complete(request,Code.APPLIED,result));return;}
                 var uploaded=buildingDocuments.finish(sourceSession,agent,args);args.clear();args.put("source",uploaded.source());args.put("revision",Long.toString(uploaded.revision()));kind="plan";
             }
+            if(Set.of("geometryInspect","geometryApply","geometryCancel").contains(kind)){
+                ServerBuildings.authorize(viewer,agent,write);if(!args.keySet().equals(kind.equals("geometryInspect")?Set.of("planId","offset"):Set.of("planId")))throw new IllegalArgumentException("GEOMETRY_UI_ARGUMENTS");
+                var geometry=json.createObjectNode().put("plan_id",args.get("planId"));java.util.concurrent.CompletableFuture<Map<String,Object>> future;
+                if(!write&&kind.equals("geometryInspect")){geometry.put("offset",Long.parseLong(args.get("offset")));future=ConversationWorldGeometry.inspect(viewer,agent,geometry);}
+                else if(write&&kind.equals("geometryCancel"))future=java.util.concurrent.CompletableFuture.completedFuture(ConversationWorldGeometry.cancelUi(viewer,agent,geometry));
+                else if(write&&kind.equals("geometryApply")){
+                    if(!MineAgentRuntimeServices.permissions(server).allowed(viewer.getUUID(),viewer.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE))throw new SecurityException("GEOMETRY_PERMISSION");
+                    var running=ConversationWorldGeometry.apply(viewer,agent,geometry,()->sessions.checkRead(viewer.getUUID(),request,capability)==Code.OK);
+                    running.whenComplete((value,error)->server.execute(()->{try{send(viewer,java.util.UUID.randomUUID(),"buildingChanged",Map.of("agentId",agent,"geometryPlanId",args.get("planId")));}catch(Exception ignored){}}));
+                    future=java.util.concurrent.CompletableFuture.completedFuture(Map.of("status","ACCEPTED","planId",args.get("planId"),"completed",false));
+                }else throw new IllegalArgumentException("GEOMETRY_UI_CHANNEL");
+                future.whenComplete((value,error)->server.execute(()->{try{var output=error==null?Map.of("state",json.writeValueAsString(value)):Map.of("errorCode",Objects.toString(error.getMessage(),"GEOMETRY_UI_FAILED"));send(viewer,packet,"receipt",write?sessions.complete(request,error==null?Code.APPLIED:Code.FAILED,output):new Receipt(request.operationId(),error==null?Code.OBSERVED:Code.FAILED,output));}catch(Exception ignored){}}));return;
+            }
             var node=json.createObjectNode();for(var entry:args.entrySet())if(Set.of("revision","offset").contains(entry.getKey()))node.put(entry.getKey(),Long.parseLong(entry.getValue()));else node.put(entry.getKey(),entry.getValue());
             java.util.function.BooleanSupplier permit=()->sessions.checkRead(viewer.getUUID(),request,capability)==Code.OK;
             java.util.concurrent.CompletableFuture<Map<String,Object>> future;

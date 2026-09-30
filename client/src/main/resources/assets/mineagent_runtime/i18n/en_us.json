@@ -3217,5 +3217,12 @@
   "提交规划需求": "Submit design request",
   "请填写建筑需求，最多 7000 个字符。": "Enter a building request of up to 7,000 characters.",
   "建筑规划": "Building design",
-  "查看规划对话": "View design conversation"
+  "查看规划对话": "View design conversation",
+  "建筑文件导入": "Building file import",
+  "几何施工计划": "Geometry plan",
+  "查看实际差异": "Inspect actual differences",
+  "停止后续施工": "Stop further construction",
+  "菜单附加层": "Menu overlay",
+  "实体悬浮层": "Entity overlay",
+  "勘测中": "Surveying"
 }

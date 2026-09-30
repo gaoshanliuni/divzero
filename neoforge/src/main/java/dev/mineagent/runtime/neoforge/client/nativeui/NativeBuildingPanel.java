@@ -42,8 +42,17 @@ final class NativeBuildingPanel {
     private void draw(){
         content.clearAllScrollViewChildren();notice.setText(Component.literal(""));
         if(id.isBlank()){
-            if(state.getAsJsonArray("buildings").isEmpty())content.addScrollViewChild(WorkspacePanels.text(t("在对话中描述建筑需求，AI 会创建可继续修改的构件计划。")));
+            if(state.getAsJsonArray("buildings").isEmpty()&&(!state.has("geometryPlans")||state.getAsJsonArray("geometryPlans").isEmpty()))content.addScrollViewChild(WorkspacePanels.text(t("在对话中描述建筑需求，AI 会创建可继续修改的构件计划。")));
             for(var row:state.getAsJsonArray("buildings")){var item=row.getAsJsonObject();var card=WorkspacePanels.card(content,item.get("name").getAsString());card.addChild(WorkspacePanels.text(NativeUiTheme.state(item.get("status").getAsString())+" · r"+item.get("revision").getAsString()));var open=NativeUiTheme.button(t("查看构件"),()->{id=item.get("id").getAsString();offset=0;read();});open.setId("building-open-"+item.get("id").getAsString());card.addChild(open);}
+            if(state.has("geometryPlans"))for(var raw:state.getAsJsonArray("geometryPlans")){
+                var plan=raw.getAsJsonObject();String planId=plan.get("planId").getAsString(),status=plan.get("status").getAsString();var card=WorkspacePanels.card(content,t(plan.get("kind").getAsString().equals("IMPORT")?"建筑文件导入":"几何施工计划")+" · "+planId.substring(0,8));
+                card.addChild(WorkspacePanels.text(NativeUiTheme.state(status)+" · "+t("目标方块")+" "+plan.get("selected").getAsString()+" · "+t("已写入")+" "+plan.get("written").getAsString()));
+                if(!plan.get("error").getAsString().isBlank())card.addChild(WorkspacePanels.text(plan.get("error").getAsString()));
+                var controls=WorkspacePanels.row();controls.getLayout().height(25);card.addChild(controls);
+                controls.addChild(NativeUiTheme.button(t("查看实际差异"),()->NativeReadout.open(host,"geometry-plan-"+planId,"几何施工计划","building.read",page->Map.of("kind","geometryInspect","agentId",agent,"planId",planId,"offset",Integer.toString(page)),32)));
+                var apply=NativeUiTheme.button(t("开始施工"),()->geometryWrite(planId,"geometryApply"));apply.setId("geometry-apply-"+planId);apply.setActive(status.equals("PLANNED")&&plan.get("expiresAt").getAsLong()>System.currentTimeMillis());controls.addChild(apply);
+                var cancel=NativeUiTheme.button(t("停止后续施工"),()->geometryWrite(planId,"geometryCancel"));cancel.setActive(status.equals("APPLYING"));controls.addChild(cancel);
+            }
             var pages=WorkspacePanels.row();pages.getLayout().height(25);var previous=NativeUiTheme.button(t("上一页"),()->{offset=Math.max(0,offset-16);read();});previous.setActive(offset>0);pages.addChild(previous);var next=NativeUiTheme.button(t("下一页"),()->{offset=state.get("nextOffset").getAsInt();read();});next.setActive(state.has("more")&&state.get("more").getAsBoolean());pages.addChild(next);content.addScrollViewChild(pages);return;
         }
         if(!state.has("design")){content.addScrollViewChild(WorkspacePanels.text(t("没有找到建筑计划")));return;}
@@ -63,6 +72,7 @@ final class NativeBuildingPanel {
         }
         for(var item:state.getAsJsonArray("history")){var entry=item.getAsJsonObject();var card=WorkspacePanels.card(content,t(entry.get("mode").getAsString())+" · r"+entry.get("revision").getAsString());card.addChild(WorkspacePanels.text(NativeUiTheme.state(entry.get("status").getAsString())));if(!entry.get("detail").getAsString().isBlank()&&!entry.get("detail").getAsString().startsWith("{"))card.addChild(WorkspacePanels.text(entry.get("detail").getAsString()));}
     }
+    private void geometryWrite(String plan,String action){if(busy||!live())return;busy=true;WorkspacePanels.request("building.write",Map.of("kind",action,"agentId",agent,"planId",plan)).whenComplete((receipt,error)->{busy=false;if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}nextPoll=0;read();});}
     private String componentName(String id){for(var raw:state.getAsJsonObject("design").getAsJsonArray("components")){var component=raw.getAsJsonObject();if(component.get("id").getAsString().equals(id)&&component.has("name"))return component.get("name").getAsString();}return id;}
     private void action(com.lowdragmc.lowdraglib2.gui.ui.UIElement row,String label,String action,boolean allowed){var button=NativeUiTheme.button(t(label),()->write(action,null));button.setId("building-action-"+action);button.setActive(allowed);row.addChild(button);}
     private void write(String kind,String source){write(kind,source,state.get("revision").getAsString());}
