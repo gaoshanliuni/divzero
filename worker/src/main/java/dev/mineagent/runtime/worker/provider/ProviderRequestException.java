@@ -25,7 +25,7 @@ public final class ProviderRequestException extends RuntimeException {
             if(error.isTextual())details.put("diagnostic",dev.mineagent.runtime.core.conversation.ToolFailure.safe(error.asText()));
             String code=error.path("code").asText(error.path("type").asText());
             context|=java.util.Set.of("context_length_exceeded","context_window_exceeded","max_context_length_exceeded","input_too_long").contains(code);
-        }catch(Exception ignored){}
+        }catch(Exception ignored){String text=new String(body,java.nio.charset.StandardCharsets.UTF_8).replaceAll("<[^>]{0,512}>"," ").strip();if(!text.isBlank())details.put("diagnostic",dev.mineagent.runtime.core.conversation.ToolFailure.safe("HTTP "+status+": "+text));}
         long delay=0;
         try{delay=Math.multiplyExact(Long.parseLong(retryAfter.trim()),1000L);}catch(Exception number){
             try{delay=java.time.Duration.between(java.time.Instant.now(),java.time.ZonedDateTime.parse(retryAfter,java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()).toMillis();}catch(Exception ignored){}

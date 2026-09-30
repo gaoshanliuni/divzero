@@ -18,7 +18,7 @@ import java.util.function.Function;
 public final class ToolRepairSmoke {
     private static final ObjectMapper JSON=new ObjectMapper();private static final List<Object> evidence=new ArrayList<>();
     private static HttpServer http;private static CompletableFuture<Map<String,Object>> result;private static UUID agent,operation,conversation;
-    private static volatile Throwable failure;private static int ticks,rounds;private static boolean busy;private static List<String> users;private static String retryBody;
+    private static volatile Throwable failure;private static int ticks;private static volatile int rounds;private static boolean busy;private static volatile List<String> users;private static volatile String retryBody;
     private static Minecraft mc(){return Minecraft.getInstance();}
     private static void require(boolean yes,String code){if(!yes)throw new IllegalStateException(code);}
     private static <T> CompletableFuture<T> server(Function<ServerPlayer,T> work){var f=new CompletableFuture<T>();var server=mc().getSingleplayerServer();var owner=mc().player.getUUID();server.submit(()->work.apply(server.getPlayerList().getPlayer(owner))).whenComplete((v,e)->mc().execute(()->{if(e!=null)f.completeExceptionally(e);else f.complete(v);}));return f;}
@@ -29,7 +29,7 @@ public final class ToolRepairSmoke {
         var input=JSON.readTree(exchange.getRequestBody().readNBytes(4*1024*1024));require(exchange.getRequestURI().getPath().equals("/v1/chat/completions"),"FIXTURE_ENDPOINT");
         if(!input.path("stream").asBoolean()){byte[] body=JSON.writeValueAsBytes(Map.of("model","controlled-tool-repair","choices",List.of(Map.of("message",Map.of("content","故障反馈验证")))));exchange.sendResponseHeaders(200,body.length);exchange.getResponseBody().write(body);return;}
         var messages=input.path("messages");var currentUsers=new ArrayList<String>();for(var m:messages)if(m.path("role").asText().equals("user"))currentUsers.add(m.path("content").asText());
-        if(users==null)users=List.copyOf(currentUsers);else require(users.equals(currentUsers),"EXTRA_USER_PROMPT_INJECTED_AFTER_FAILURE");
+        if(users==null)users=List.copyOf(currentUsers);else if(rounds==8){require(currentUsers.size()==users.size()+1&&currentUsers.subList(0,users.size()).equals(users),"EXTRA_USER_PROMPT_INJECTED_AFTER_FAILURE");var feedback=JSON.readTree(currentUsers.getLast());require(feedback.path("source").asText().equals("provider_response_failure")&&feedback.path("executionState").asText().equals("NO_TOOL_CALLS_DISPATCHED")&&!feedback.has("prompt"),"PARTIAL_FAILURE_NOT_PURE_DIAGNOSTICS");evidence.add(feedback);}else require(users.equals(currentUsers),"EXTRA_USER_PROMPT_INJECTED_AFTER_FAILURE");
         int round=rounds++;Map<String,Object> tool=null;
         switch(round){
             case 0->tool=call("bad_args","run_game_command",Map.of("command",List.of("setblock 3 101 3 minecraft:gold_block")));
@@ -39,7 +39,8 @@ public final class ToolRepairSmoke {
             case 4->{var r=receipt(messages,"duplicate");require(r.path("error").asText().equals("PREVIOUS_WRITE_OUTCOME_UNKNOWN")&&r.path("executionState").asText().equals("NOT_STARTED"),"UNKNOWN_WRITE_WAS_REPLAYED");evidence.add(r);tool=call("inspect","inspect_operations",Map.of("operation_id",receipt(messages,"broken").path("operation_id").asText()));}
             case 5->{var r=receipt(messages,"inspect");require(r.path("status").asText().equals("OBSERVED")&&r.path("text").asText().contains("SQLiteException"),"DURABLE_FAILURE_DIAGNOSTIC_MISSING");tool=call("wrong_name","MissingTool",Map.of());}
             case 6->{require(receipt(messages,"wrong_name").path("error").asText().equals("AGENT_TOOL_UNKNOWN"),"TOOL_NAME_FAILURE_ABORTED_TURN");retryBody=input.toString();byte[] body=JSON.writeValueAsBytes(Map.of("error",Map.of("code","busy","message","controlled temporary overload")));exchange.sendResponseHeaders(503,body.length);exchange.getResponseBody().write(body);evidence.add(Map.of("providerStatus",503,"preOutput",true));return;}
-            case 7->{require(input.toString().equals(retryBody),"PROVIDER_RETRY_CHANGED_MESSAGES_OR_REPLAYED_TOOLS");}
+            case 7->{require(input.toString().equals(retryBody),"PROVIDER_RETRY_CHANGED_MESSAGES_OR_REPLAYED_TOOLS");exchange.getResponseHeaders().set("Content-Type","text/event-stream");exchange.sendResponseHeaders(200,0);event(exchange,Map.of("content","连接中断前的内容。"));return;}
+            case 8->{require(messages.toString().contains("连接中断前的内容。"),"PARTIAL_ASSISTANT_MISSING_ON_CONTINUATION");}
             default->throw new IllegalStateException("UNEXPECTED_PROVIDER_ROUND_"+round);
         }
         exchange.getResponseHeaders().set("Content-Type","text/event-stream");exchange.sendResponseHeaders(200,0);
@@ -62,8 +63,8 @@ public final class ToolRepairSmoke {
     @net.neoforged.bus.api.SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event){
         if(result==null||result.isDone())return;ticks++;if(failure!=null||ticks>1600){http.stop(0);result.completeExceptionally(new IllegalStateException("TOOL_REPAIR_"+rounds,failure));return;}if(busy||conversation==null||ticks%10!=0)return;busy=true;
         server(p->{try{var store=ServerConversations.get(p.level().getServer()).store();var usage=store.context(p.getUUID(),agent,conversation,null).orElseThrow();require(!Set.of("FAILED","CANCELLED","INTERRUPTED").contains(usage.requestState()),"CONVERSATION_INTERRUPTED_"+usage.errorCode());if(!usage.requestState().equals("COMPLETE"))return false;
-            var snapshot=store.nativeSnapshot(p.getUUID(),agent,conversation,usage.assistantMessageId(),0,0);String text=JSON.valueToTree(snapshot).toString();require(text.contains("开始验证，已有输出保留。")&&text.contains("验证结束。"),"STREAM_OUTPUT_WAS_REPLACED");require(p.level().getBlockState(new net.minecraft.core.BlockPos(3,101,3)).is(net.minecraft.world.level.block.Blocks.GOLD_BLOCK),"CORRECTED_WORLD_RESULT_MISSING");require(rounds==8,"MODEL_ROUND_COUNT");evidence.add(Map.of("requestState",usage.requestState(),"sameOperation",usage.operationId().equals(operation),"correctedWorldWrite",true,"streamPrefixAndSuffixRetained",true));return true;
-        }catch(Exception e){throw new CompletionException(e);}}).whenComplete((complete,error)->{busy=false;if(error!=null){failure=error;return;}if(complete){http.stop(0);result.complete(Map.of("status","PASS","provider","CONTROLLED_LOCAL_HTTP_NOT_MODEL","paidModelCalls",0,"streamRequests",rounds,"extraUserPrompts",0,"evidence",evidence));}});
+            var snapshot=store.nativeSnapshot(p.getUUID(),agent,conversation,usage.assistantMessageId(),0,0);String text=JSON.valueToTree(snapshot).toString();require(text.contains("开始验证，已有输出保留。")&&text.contains("验证结束。")&&text.contains("连接中断前的内容。"),"STREAM_OUTPUT_WAS_REPLACED");require(p.level().getBlockState(new net.minecraft.core.BlockPos(3,101,3)).is(net.minecraft.world.level.block.Blocks.GOLD_BLOCK),"CORRECTED_WORLD_RESULT_MISSING");require(rounds==9,"MODEL_ROUND_COUNT");evidence.add(Map.of("requestState",usage.requestState(),"sameOperation",usage.operationId().equals(operation),"correctedWorldWrite",true,"streamPrefixAndSuffixRetained",true));return true;
+        }catch(Exception e){throw new CompletionException(e);}}).whenComplete((complete,error)->{busy=false;if(error!=null){failure=error;return;}if(complete){http.stop(0);result.complete(Map.of("status","PASS","provider","CONTROLLED_LOCAL_HTTP_NOT_MODEL","paidModelCalls",0,"streamRequests",rounds,"extraUserPrompts",0,"providerFailureObservations",1,"evidence",evidence));}});
     }
     private ToolRepairSmoke(){}
 }

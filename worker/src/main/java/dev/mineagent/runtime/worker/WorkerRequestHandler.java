@@ -207,6 +207,9 @@ public final class WorkerRequestHandler implements AutoCloseable {
                 payload.put("httpStatus",rejected.statusCode());payload.put("providerRejected",rejected.statusCode()>0);payload.put("retryAfterMillis",rejected.retryAfterMillis());payload.put("contextTooLarge",rejected.contextTooLarge());payload.putAll(rejected.diagnostics());
             }
             if(!payload.containsKey("diagnostic"))payload.put("diagnostic",dev.mineagent.runtime.core.conversation.ToolFailure.result("model_request",request.requestId(),failure,dev.mineagent.runtime.core.conversation.ToolFailure.Phase.READ).get("diagnostic"));
+            if("STREAM_INCOMPLETE".equals(failure.getMessage()))payload.put("diagnostic","Provider stream ended before the completion marker. Partial output was retained; no tool calls from this incomplete response were dispatched.");
+            boolean transport="STREAM_INCOMPLETE".equals(failure.getMessage());for(Throwable cause=failure;cause!=null;cause=cause.getCause())if(cause instanceof java.io.IOException)transport=true;
+            payload.put("providerTransportFailure",transport);
             return new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"error",payload);
         }
     }

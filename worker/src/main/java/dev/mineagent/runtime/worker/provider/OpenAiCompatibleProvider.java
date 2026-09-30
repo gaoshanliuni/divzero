@@ -183,7 +183,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
                         completed=true;
                         break;
                     }
-                    var event=mapper.readTree(data);String reported=responseModel(event);
+                    var event=mapper.readTree(data);if(event.hasNonNull("error"))throw ProviderRequestException.rejected(0,"",mapper.writeValueAsBytes(event)).withoutSecret(apiKey);String reported=responseModel(event);
                     if("length".equals(event.path("choices").path(0).path("finish_reason").asText()))throw new ProviderRequestException(0,"STREAM_OUTPUT_LIMIT");
                     if(event.path("usage").isObject()) usage=event.path("usage");
                     if(!reported.isEmpty()){
