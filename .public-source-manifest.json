@@ -2619,8 +2619,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/TerrainPathSearch.java",
-      "sha256": "1af9567c3422ccd3c7f4a1e03c0f95e267b36e2974eaa24b10143c592570aefb",
-      "bytes": 6182
+      "sha256": "7632317bd5032d17a178785e8b51f587192d96123033608318b7f49e8c90a68d",
+      "bytes": 6935
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/WorkReservations.java",
@@ -3229,8 +3229,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/TerrainPathSearchTest.java",
-      "sha256": "671c15a0e365de3207e3bbcdd391a15ddf4da6cbe1aeab9d0c7cc30f978a16bb",
-      "bytes": 2539
+      "sha256": "6b36495d2b37d107f166fbbf542e599cfecc4a4ecd409dc50189593733a70aff",
+      "bytes": 3550
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/ContainerTransactionTest.java",
@@ -3679,8 +3679,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainRecovery.java",
-      "sha256": "314e7493dc2cfffbd03c3f4387b4b9e28a447848468ee64722ce2e1fc713933b",
-      "bytes": 16644
+      "sha256": "85ba5a2cfaaa88003f756aa85ab29a5c6558f119b7ba01d5fee2910093df7969",
+      "bytes": 18566
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTraversalEvaluator.java",

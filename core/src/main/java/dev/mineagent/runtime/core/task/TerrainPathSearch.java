@@ -9,6 +9,18 @@ public final class TerrainPathSearch {
         public int distance(Cell b){return Math.abs(x-b.x)+Math.abs(y-b.y)+Math.abs(z-b.z);}
     }
     public enum Kind { BREAK, PLACE }
+    /** A denied edit stays denied until its observed execution context changes, never merely with time. */
+    public static final class Rejections<C> {
+        private record Key(Cell cell,Kind kind) {}
+        private final Map<Key,C> contexts=new HashMap<>();
+        public void clear(){contexts.clear();}
+        public void reject(Cell cell,Kind kind,C context){contexts.put(new Key(cell,kind),Objects.requireNonNull(context));}
+        public boolean contains(Cell cell,Kind kind,java.util.function.Supplier<C> current){
+            var key=new Key(cell,kind);var previous=contexts.get(key);if(previous==null)return false;
+            if(previous.equals(current.get()))return true;
+            contexts.remove(key);return false;
+        }
+    }
     public record Edit(Cell cell,Kind kind,String expected,int ticks) {}
     public record Step(Cell from,Cell to,List<Edit> edits,boolean jumpPlace,double cost) {
         public Step {edits=List.copyOf(edits);}

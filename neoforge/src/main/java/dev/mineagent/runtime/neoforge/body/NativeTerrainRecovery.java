@@ -26,7 +26,13 @@ public final class NativeTerrainRecovery {
     private TerrainPathSearch.Edit edit;
     private Actions actions;
     private UUID operation;
-    private final Set<String> rejected=new HashSet<>();
+    private final TerrainPathSearch.Rejections<RejectionContext> rejected=new TerrainPathSearch.Rejections<>();
+    private record RejectionContext(BlockPos feet,List<String> terrain,boolean allowed,
+                                    net.minecraft.world.item.ItemStack material,net.minecraft.world.item.ItemStack tool){
+        @Override public boolean equals(Object value){return value instanceof RejectionContext other&&feet.equals(other.feet)&&terrain.equals(other.terrain)&&allowed==other.allowed
+                &&net.minecraft.world.item.ItemStack.matches(material,other.material)&&net.minecraft.world.item.ItemStack.matches(tool,other.tool);}
+        @Override public int hashCode(){return Objects.hash(feet,terrain,allowed);}
+    }
     private String state="IDLE",reason="";
     private int started,at,settled,changes,expanded,attempts,broken,placed,consumed,nativeConsumed;private boolean nativeBroken;private BlockPos placementAnchor;
     private boolean sent,jumped;private double[] decisionFeatures;private float healthBefore;
@@ -53,9 +59,9 @@ public final class NativeTerrainRecovery {
                 var value=p.level().getBlockState(pos);String signature=signature(pos);
                 boolean fluid=!value.getFluidState().isEmpty(),hazard=value.is(net.minecraft.world.level.block.Blocks.FIRE)||value.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE)||value.is(net.minecraft.world.level.block.Blocks.POWDER_SNOW)||value.is(net.minecraft.world.level.block.Blocks.SWEET_BERRY_BUSH)||value.is(net.minecraft.world.level.block.Blocks.WITHER_ROSE)||value.is(net.minecraft.world.level.block.Blocks.CACTUS);boolean clear=!fluid&&!hazard&&value.getCollisionShape(p.level(),pos).isEmpty();
                 boolean support=!fluid&&!hazard&&!value.is(net.minecraft.world.level.block.Blocks.MAGMA_BLOCK)&&value.getCollisionShape(p.level(),pos).toAabbs().stream().anyMatch(box->box.maxY>=.875&&box.minX<=.2&&box.maxX>=.8&&box.minZ<=.2&&box.maxZ>=.8);
-                return new TerrainPathSearch.Block(true,clear,support,!rejected.contains(signature)&&NativeTerrainPolicy.mayBreak(p,pos),NativeTerrainPolicy.breakTicks(p,pos),signature);
+                return new TerrainPathSearch.Block(true,clear,support,!rejected.contains(c,TerrainPathSearch.Kind.BREAK,()->rejectionContext(pos,TerrainPathSearch.Kind.BREAK))&&NativeTerrainPolicy.mayBreak(p,pos),NativeTerrainPolicy.breakTicks(p,pos),signature);
             }
-            public boolean canPlace(TerrainPathSearch.Cell c){return !rejected.contains(signature(pos(c)))&&NativeTerrainPolicy.mayPlace(p,pos(c));}
+            public boolean canPlace(TerrainPathSearch.Cell c){return !rejected.contains(c,TerrainPathSearch.Kind.PLACE,()->rejectionContext(pos(c),TerrainPathSearch.Kind.PLACE))&&NativeTerrainPolicy.mayPlace(p,pos(c));}
             public boolean exit(TerrainPathSearch.Cell c,Map<TerrainPathSearch.Cell,TerrainPathSearch.Kind> edits){
                 if(Math.abs(c.x()-originCell.x())+Math.abs(c.z()-originCell.z())<1)return false;
                 var below=c.add(0,-1,0);if(edits.containsKey(below)||!block(below).supports())return false;
@@ -131,7 +137,19 @@ public final class NativeTerrainRecovery {
         if(now-at>25){fail("PLACEMENT_NOT_CONFIRMED_CHECK_WORLD");return new Tick(false,null,false);}return new Tick(true,null,false);
     }
     private Tick complete(boolean edited){ACTIVE.remove(player,this);learn(false);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="RECHECK_ORIGINAL_ROUTE";return new Tick(false,null,true);}
-    private void fail(String why){ACTIVE.remove(player,this);learn(true);if(edit!=null)rejected.add(signature(pos(edit.cell())));if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="BLOCKED";reason=why;}
+    private void fail(String why){ACTIVE.remove(player,this);learn(true);if(edit!=null)rejected.reject(edit.cell(),edit.kind(),rejectionContext(pos(edit.cell()),edit.kind()));if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="BLOCKED";reason=why;}
+    private RejectionContext rejectionContext(BlockPos target,TerrainPathSearch.Kind kind){
+        var terrain=new ArrayList<String>();
+        for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++){
+            var at=target.offset(x,y,z);terrain.add(NativeTerrainPolicy.loaded(player,at)?signature(at):at.asLong()+":unloaded");
+        }
+        boolean allowed=kind==TerrainPathSearch.Kind.BREAK?NativeTerrainPolicy.mayBreak(player,target):NativeTerrainPolicy.mayPlace(player,target);
+        int slot=kind==TerrainPathSearch.Kind.BREAK?NativeTerrainPolicy.toolSlot(player,target):NativeTerrainPolicy.materialSlot(player);
+        var stack=slot<0?net.minecraft.world.item.ItemStack.EMPTY:player.getInventory().getItem(slot).copy();
+        return new RejectionContext(player.blockPosition(),List.copyOf(terrain),allowed,
+                kind==TerrainPathSearch.Kind.PLACE?stack:net.minecraft.world.item.ItemStack.EMPTY,
+                kind==TerrainPathSearch.Kind.BREAK?stack:net.minecraft.world.item.ItemStack.EMPTY);
+    }
     private void learn(boolean failed){if(decisionFeatures==null||player==null)return;double cost=(player.level().getServer().getTickCount()-at)/120d+Math.max(0,healthBefore-player.getHealth())/Math.max(1,player.getMaxHealth())+(failed?.6:0);dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.outcome(player,decisionFeatures,cost);decisionFeatures=null;}
     public static void nativeBreak(ServerPlayer p,BlockPos at,boolean removed){var recovery=ACTIVE.get(p);if(removed&&recovery!=null&&recovery.edit!=null&&recovery.edit.kind()==TerrainPathSearch.Kind.BREAK&&pos(recovery.edit.cell()).equals(at))recovery.nativeBroken=true;}
     public static boolean observingUse(ServerPlayer p,BlockPos at){var recovery=ACTIVE.get(p);return recovery!=null&&recovery.edit!=null&&recovery.edit.kind()==TerrainPathSearch.Kind.PLACE&&at.equals(recovery.placementAnchor);}
