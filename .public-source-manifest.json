@@ -2969,8 +2969,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolValidationTest.java",
-      "sha256": "6184803c3f863e0ae7ea717d35ff3c6d03bf5e9cfbe168f724c6006638fa657c",
-      "bytes": 3105
+      "sha256": "00b1dfa6ff576ea67133eac718ca3ec3a4a4b54e1757a9e92e2324fa8490a3fd",
+      "bytes": 3107
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureAnimationTest.java",

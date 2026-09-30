@@ -5,7 +5,7 @@ class ToolValidationTest {
     @Test void packageActivationRejectsIncompleteLocationAndMissingVersionBeforeExecution(){
         var result=ToolValidation.check("activate_package_version",ToolArguments.parse("activate_package_version","{\"package_id\":\"00000000-0000-0000-0000-000000000001\",\"position\":[0,64]}"));
         assertTrue(result.issues().stream().anyMatch(i->i.field().equals("position")));
-        assertTrue(result.issues().stream().anyMatch(i->i.field().equals("revision")));
+        assertTrue(result.issues().stream().anyMatch(i->i.field().equals("$.revision")));
         assertEquals("NOT_STARTED",result.rejection().get("executionState"));
     }
     @Test void reportsRouteCoordinatePathWithoutExecutingOrInventingTheMissingCoordinate(){
