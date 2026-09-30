@@ -28,7 +28,7 @@ public final class ActorEnhancements {
     public static boolean boost(ServerPlayer body){return executing(body)&&forBody(body).boost&&Boolean.parseBoolean(MineAgentRuntimeServices.config(body.level().getServer()).snapshot().values().getOrDefault("autonomy.boost.allowed","true"));}
     public static Map<String,Object> inspect(ServerPlayer viewer,UUID agent){
         if(!ServerTaskStart.allowed(viewer,agent))throw new SecurityException("ENHANCEMENT_PERMISSION");
-        return Map.of("ai",read(viewer,agent),"player",read(viewer,viewer.getUUID()),"boostAllowed",Boolean.parseBoolean(MineAgentRuntimeServices.config(viewer.level().getServer()).snapshot().values().getOrDefault("autonomy.boost.allowed","true")));
+        return Map.of("ai",read(viewer,agent),"player",read(viewer,viewer.getUUID()),"models",Map.of("ai",LocalPolicyRuntime.inspect(viewer,agent),"player",LocalPolicyRuntime.inspect(viewer,viewer.getUUID())),"boostAllowed",Boolean.parseBoolean(MineAgentRuntimeServices.config(viewer.level().getServer()).snapshot().values().getOrDefault("autonomy.boost.allowed","true")));
     }
     public static Map<String,Object> update(ServerPlayer viewer,UUID agent,JsonNode input){
         if(!viewer.level().getServer().isSameThread()||!ServerTaskStart.allowed(viewer,agent))throw new SecurityException("ENHANCEMENT_PERMISSION");

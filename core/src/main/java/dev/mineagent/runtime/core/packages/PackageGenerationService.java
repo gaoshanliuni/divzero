@@ -172,7 +172,7 @@ public final class PackageGenerationService implements AutoCloseable {
         requireOpen();if(find(job.ownerPlayerId(),job.operationId()).isEmpty())throw new SecurityException("GENERATION_OWNER_MISMATCH");
         String value=message==null?"":message;if(value.length()>16384)value=value.substring(0,16384);
         var old=repository.get(worldId,"package_generation_diagnostics",job.operationId().toString());
-        if(!repository.compareAndSet(worldId,"package_generation_diagnostics",job.operationId().toString(),old.map(value->value.revision()).orElse(0L),json.writeValueAsString(Map.of("message",value)),clock.millis()).accepted())throw new IllegalStateException("GENERATION_DIAGNOSTIC_CHANGED");
+        if(!repository.compareAndSet(worldId,"package_generation_diagnostics",job.operationId().toString(),old.map(row->row.revision()).orElse(0L),json.writeValueAsString(Map.of("message",value)),clock.millis()).accepted())throw new IllegalStateException("GENERATION_DIAGNOSTIC_CHANGED");
     }
     public synchronized String diagnostic(UUID owner,UUID operation)throws Exception{
         if(find(owner,operation).isEmpty())throw new SecurityException("GENERATION_OWNER_MISMATCH");

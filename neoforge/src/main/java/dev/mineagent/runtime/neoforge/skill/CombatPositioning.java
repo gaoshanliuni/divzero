@@ -43,7 +43,7 @@ final class CombatPositioning {
                 var steps=new ArrayList<>(route.steps);steps.add(edge);open.add(new Route(edge.to(),List.copyOf(steps),Math.max(route.worstRisk,w.combat.risk(w,next))));
             }
         }
-        double best=Double.POSITIVE_INFINITY;var target=w.combat.selected;
+        double best=Double.POSITIVE_INFINITY;double[] selectedFeatures=null;var localPolicy=LocalPolicyRuntime.snapshot(w.player());var target=w.combat.selected;
         var intercept=target==null?null:w.prediction.intercept(w,target,Math.min(12,origin.distanceTo(target.position())/Math.max(.15,w.player().getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.4)));
 
         // A ready strike necessarily enters the selected opponent's reach. Price that exposure,
@@ -78,9 +78,12 @@ final class CombatPositioning {
             // Execute the first checked edge; do not hand an endpoint to a different route search.
             var next=NativeTraversalEvaluator.point(route.steps.getFirst().to());var direction=new Vec3(next.x-origin.x,0,next.z-origin.z).normalize();
             if(heading!=null)score+=(1-heading.dot(direction))*.8;
-            if(score<best){best=score;selectedDistance=origin.distanceTo(point);selected=next;waypointNode=route.steps.getFirst().to();chosenRoute=route.steps;}
+            double targetDistance=target==null?0:origin.distanceTo(target.position()),progress=target==null?origin.distanceTo(point):targetDistance-point.distanceTo(target.position());
+            var features=LocalPolicyRuntime.features(w.player(),targetDistance,progress,risk+routeRisk,route.steps.size(),point.subtract(origin),edgeExposure(w,route.node),opportunity!=null,w.session.spec().kind().ordinal(),0);
+            if(localPolicy!=null)score+=localPolicy.cost(features)*8;
+            if(score<best){selectedFeatures=features;best=score;selectedDistance=origin.distanceTo(point);selected=next;waypointNode=route.steps.getFirst().to();chosenRoute=route.steps;}
         }
-        if(selected!=null){waypoint=selected;waypointAt=w.tick();waypointPurpose=intent;waypointRisk=w.combat.risk(w,waypoint);targetAtWaypoint=target==null?null:target.position();heading=new Vec3(waypoint.x-w.player().getX(),0,waypoint.z-w.player().getZ()).normalize();w.session.add("tacticalWaypoints",1);}
+        if(selected!=null){if(selectedFeatures!=null)LocalPolicyRuntime.chose(w,selectedFeatures,selected);waypoint=selected;waypointAt=w.tick();waypointPurpose=intent;waypointRisk=w.combat.risk(w,waypoint);targetAtWaypoint=target==null?null:target.position();heading=new Vec3(waypoint.x-w.player().getX(),0,waypoint.z-w.player().getZ()).normalize();w.session.add("tacticalWaypoints",1);}
         return selected;
     }
     private int edgeExposure(SkillWork w,Node node){return exposure.computeIfAbsent(node,n->{int danger=0;for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){if(dx==0&&dz==0)continue;int x=n.x()+dx,z=n.z()+dz;var at=new Vec3(x+.5,n.y(),z+.5);var pos=net.minecraft.core.BlockPos.containing(at);if(!evaluator.loaded(pos)){danger++;continue;}if(w.player().level().getFluidState(pos).is(net.minecraft.tags.FluidTags.LAVA)){danger++;continue;}if(!evaluator.clear(at,net.minecraft.world.entity.Pose.STANDING,true)&&!evaluator.clear(at,net.minecraft.world.entity.Pose.CROUCHING,true))continue;if(evaluator.positions(x,z,n.y()).stream().noneMatch(floor->Math.abs(floor.y()-n.y())<=1.25))danger++;}return danger;});}

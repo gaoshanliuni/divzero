@@ -3399,5 +3399,13 @@
   "自由观战 · 右键拖动旋转": "Free view · Right-drag to rotate",
   "跟随 AI · 右键拖动自由观战": "Following AI · Right-drag for free view",
   "读取背包…": "Loading inventory…",
-  "可直接拖放、拆分和穿戴装备；战斗继续。": "Drag, split and equip items directly; combat continues."
+  "可直接拖放、拆分和穿戴装备；战斗继续。": "Drag, split and equip items directly; combat continues.",
+  "Boost：关闭": "Boost: Off",
+  "Boost：开启": "Boost: On",
+  "权重学习模式：关闭": "Weight learning: Off",
+  "权重学习模式：开启": "Weight learning: On",
+  "神经策略：开启": "Neural policy: On",
+  "神经策略：关闭": "Neural policy: Off",
+  "自主脱困：开启": "Terrain recovery: On",
+  "自主脱困：关闭": "Terrain recovery: Off"
 }

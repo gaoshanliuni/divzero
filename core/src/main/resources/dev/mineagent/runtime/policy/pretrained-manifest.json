@@ -1,0 +1,30 @@
+{
+  "seed": 20260930,
+  "architecture": "16 inputs / 24 tanh hidden / 1 sigmoid cost",
+  "trainingSamples": 20000,
+  "heldOutSamples": 4000,
+  "iterations": 2400,
+  "heldOutMSE": 0.00041597638151328676,
+  "sha256": "b86565e46e8c1f05d77fe549c112af1db19bae4503ac3b1b8b03d915b085e367",
+  "numpy": "2.3.5",
+  "source": "DivZero synthetic admissible-action cost envelopes; no external weights or player data",
+  "limits": "This validates approximation of cost labels only. Native combat and task outcome tests are separate.",
+  "features": [
+    "health",
+    "distance",
+    "speed",
+    "threat_count",
+    "attack_ready",
+    "goal_progress",
+    "forecast_risk",
+    "route_length",
+    "delta_x",
+    "delta_z",
+    "edge_risk",
+    "attack_opportunity",
+    "work_kind",
+    "airborne",
+    "weapon_damage",
+    "material_cost"
+  ]
+}

@@ -20,6 +20,7 @@ public final class TerrainPathSearch {
         /** True only if this location can continue the original intent or a checked escape route. */
         boolean exit(Cell feet,Map<Cell,Kind> changes);
         double risk(Cell feet);
+        default double learnedCost(Step step,double risk){return 0;}
     }
     public record Result(String state,List<Step> steps,int expanded,double cost) {
         public Result{steps=List.copyOf(steps);}
@@ -69,7 +70,10 @@ public final class TerrainPathSearch {
                     double risk=world.risk(destination);if(!Double.isFinite(risk)||risk<0)continue;
                     // Price exposure for the complete edit-and-move interval, not just the endpoint.
                     cost+=Math.max(risk,world.risk(current.state.feet))*Math.max(1,cost/10);
-                    var step=new Step(current.state.feet,destination,edits,column,cost);var next=new State(destination,Map.copyOf(changes),used);double total=current.cost+cost;
+                    var step=new Step(current.state.feet,destination,edits,column,cost);
+                    double learned=world.learnedCost(step,risk);if(Double.isFinite(learned))cost+=Math.clamp(learned,0,10);
+                    step=new Step(step.from,step.to,step.edits,step.jumpPlace,cost);
+                    var next=new State(destination,Map.copyOf(changes),used);double total=current.cost+cost;
                     if(total>=best.getOrDefault(next,Double.POSITIVE_INFINITY))continue;
                     best.put(next,total);var path=new ArrayList<>(current.path);path.add(step);open.add(new Entry(next,List.copyOf(path),total));
                 }
