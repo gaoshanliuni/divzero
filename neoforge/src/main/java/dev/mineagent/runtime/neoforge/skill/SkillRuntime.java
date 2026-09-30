@@ -222,7 +222,7 @@ public final class SkillRuntime {
     public static void critical(net.neoforged.neoforge.event.entity.player.CriticalHitEvent event){
         if(!event.isCriticalHit()||!(event.getEntity() instanceof ServerPlayer player))return;
         var runtime=ALL.get(player.level().getServer());if(runtime==null)return;
-        for(var w:runtime.forEntity(player))if(w.session.runnable()){w.observedCriticalTick=runtime.server.getTickCount();w.observedCriticalTarget=event.getTarget().getUUID();w.session.add(ActorEnhancements.boost(player)?"boostCriticalAttempts":"nativeCriticalAttempts",1);}
+        for(var w:runtime.forEntity(player))if(w.session.runnable()){w.observedCriticalTick=runtime.server.getTickCount();w.observedCriticalTarget=event.getTarget().getUUID();w.session.add(ActorEnhancements.boost(player)?"boostCriticalAttempts":"nativeCriticalAttempts",1);if(ActorEnhancements.boost(player)&&BoostRuntime.microHopObserved(player))w.session.add("boostMicroHopHeightObserved",1);}
     }
     @SubscribeEvent public static void damage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event){
         if(event.getHealthDamage()>0&&event.getEntity() instanceof ServerPlayer owner){var runtime=ALL.get(owner.level().getServer());if(runtime!=null)for(var active:List.copyOf(runtime.byOwner.getOrDefault(owner.getUUID(),new LinkedHashSet<>())))if(active.session.runnable()&&active.actor!=null&&active.actor.current()){active.combat.nextScan=0;active.lastCombatTick=-1;}}

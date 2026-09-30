@@ -32,6 +32,7 @@ public final class BoostRuntime {
         if(body.isInWater()||body.isPassenger()||body.onClimbable()||body.hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS))return;
         event.setCriticalHit(true);event.setDamageMultiplier(Math.max(event.getDamageMultiplier(),1.5f));
     }
+    public static boolean microHopObserved(ServerPlayer body){var values=STRIKES.get(body.level().getServer());var strike=values==null?null:values.get(body.getUUID());return strike!=null&&strike.level==body.level()&&body.getY()-strike.floor>.15&&body.getY()-strike.floor<.4;}
     public static void cancel(ServerPlayer body){var values=STRIKES.get(body.level().getServer());if(values!=null)values.remove(body.getUUID());}
     /** Scale only the observed knockback impulse, keeping the actor's pre-existing movement. */
     public static void knockback(LivingEntity entity,Vec3 before){
