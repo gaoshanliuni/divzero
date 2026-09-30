@@ -1454,8 +1454,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ScopedGuidance.java",
-      "sha256": "61242e5ea132259386c01684da263e9f47bab1b89b3aa462bc3b6377587aeb65",
-      "bytes": 1667
+      "sha256": "5c7b18811ec0b608b70756d9fbc5aec0c7ef87a2f4acebac7d6601f17fc4a97b",
+      "bytes": 1683
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/SpeechInputStore.java",
