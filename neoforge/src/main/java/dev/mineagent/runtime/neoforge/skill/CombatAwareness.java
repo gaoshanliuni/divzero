@@ -35,11 +35,12 @@ final class CombatAwareness {
         protectedEntity=rule.protect().isBlank()?null:rule.protect().equals("$owner")?w.runtime.server.getPlayerList().getPlayer(w.session.owner()):p.level().getEntity(UUID.fromString(rule.protect())) instanceof LivingEntity e?e:null;
         if(protectedEntity!=null&&protectedEntity.level()!=p.level())protectedEntity=null;
         if(w.tick()<nextScan)return;nextScan=w.tick()+4+Math.floorMod(w.token().hashCode(),3);scans++;
-        var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
+        var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());
+        var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(owner!=null&&owner!=p&&owner.level()==p.level()&&owner.distanceTo(p)<=rule.awareness()*2&&owner.getLastHurtByMob()!=null&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100)bounds=bounds.minmax(owner.getBoundingBox());if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
+        w.prediction.observe(w,entities);
         var hostilePositions=new dev.mineagent.runtime.core.task.SpatialNeighbors<LivingEntity>(entities.stream().filter(e->e instanceof Enemy).toList(),4,e->new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()));
         for(var e:entities){
             boolean forbidden=!SkillRuntime.attackAllowed(w,e);
-            var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());
             boolean helpOwner=owner!=null&&owner!=p&&owner.level()==p.level()&&owner.isAlive()
                     &&Set.of(dev.mineagent.runtime.core.task.SkillSpec.Kind.FOLLOW,dev.mineagent.runtime.core.task.SkillSpec.Kind.PATROL,dev.mineagent.runtime.core.task.SkillSpec.Kind.WANDER,dev.mineagent.runtime.core.task.SkillSpec.Kind.COMBAT).contains(w.session.spec().kind())
                     &&owner.getLastHurtByMob()==e&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100
@@ -92,10 +93,7 @@ final class CombatAwareness {
     }
     double collisionRisk(SkillWork w,Vec3 point,int ticks){return collisionRisk(w,point,ticks,null);}
     double collisionRisk(SkillWork w,Vec3 point,int ticks,LivingEntity attackOpportunity){
-        double risk=0;for(var threat:threats)if(threat.entity.isAlive()){
-            if(NativeCombatStates.meleeAtAfter(threat.entity,w.player(),point,ticks))risk+=threat.state.openingTicks(w.player().level().getGameTime())>ticks+2?2:threat.entity==attackOpportunity?4:18;
-            if(threat.state.areaAttack()&&threat.entity.position().distanceTo(point)<8)risk+=30;
-        }
+        double risk=w.prediction.risk(w,point,ticks,attackOpportunity);
         for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;return risk;
     }
     private double projectileRisk(Projectile shot,Vec3 point){var v=shot.getDeltaMovement();var delta=point.add(0,1,0).subtract(shot.position());double t=Math.max(0,Math.min(12,delta.dot(v)/Math.max(.0001,v.lengthSqr())));double miss=shot.position().add(v.scale(t)).distanceTo(point.add(0,1,0));return Math.max(0,2-miss);}

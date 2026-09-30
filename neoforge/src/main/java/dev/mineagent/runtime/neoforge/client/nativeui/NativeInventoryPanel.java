@@ -39,11 +39,12 @@ public final class NativeInventoryPanel {
         status=NativeUiTheme.text(t("读取背包…"),NativeUiTheme.MUTED,9);parent.addChild(status);
         var scroll=WorkspacePanels.scroller(parent);
         canvas=new UIElement(){@Override protected void drawBackgroundAdditional(IGUIContext context){
-            if(bridge==null||!valid())return;
+            if(bridge==null||!valid()||!(context instanceof com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext nativeContext))return;
             bridge.embedAt(Math.round(getPositionX()),Math.round(getPositionY()),host.width,host.height);
             int mx=(int)mc().mouseHandler.getScaledXPos(mc().getWindow()),my=(int)mc().mouseHandler.getScaledYPos(mc().getWindow());
             if(!hovered()){mx=my=-10000;}
-            bridge.extractBackground(context.graphics,mx,my,0);bridge.extractRenderState(context.graphics,mx,my,0);bridge.embeddedTooltip(context.graphics,mx,my);
+            var graphics=nativeContext.graphics;graphics.pose().pushMatrix();
+            try{graphics.pose().identity();bridge.extractBackground(graphics,mx,my,0);bridge.extractRenderState(graphics,mx,my,0);}finally{graphics.pose().popMatrix();}
         }};
         canvas.setId("native-inventory-slots");canvas.getLayout().width(176).height(269).flexShrink(0).alignSelf(dev.vfyjxf.taffy.style.AlignItems.CENTER);
         scroll.addScrollViewChild(canvas);

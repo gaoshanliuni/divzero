@@ -25,6 +25,7 @@ public final class MineAgentMovementController {
     public void movePreciselyTo(Vec3 target){start(target,.2);}
     public boolean followCheckedRoute(MineAgentPlayer player,List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> route){if(!intent.followCheckedRoute(player,route))return false;commandRevision++;return true;}
     public void tacticalJump(MineAgentPlayer player,UUID owner){pendingJumpRevision=commandRevision;pendingJumpOwner=owner;pendingJumpExpires=player.level().getServer().getTickCount()+4;}
+    public boolean recover(MineAgentPlayer p,Vec3 target){if(intent.recovery().active())return true;if(intent.target().isEmpty())start(target,.2);return intent.recovery().request(p,target,"TACTICAL_ROUTE_EXHAUSTED");}
     public void moveTo(Vec3 target){start(target,.8);}
     private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=0;traversedFloors.clear();}
     /** Tracking a moving entity does not replace the command or discard a still-useful route. */
@@ -37,7 +38,21 @@ public final class MineAgentMovementController {
         p.applySneaking(p.canAct()&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
         if(!p.canAct()||intent.target().isEmpty())return;
         if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
-        var step=intent.tick(p);if(step==null)return;var waypoint=intent.waypoint(step);var offset=waypoint.subtract(p.position());
+        var step=intent.tick(p);
+        if(intent.recovery().active()){
+            UUID token=p.controls().owner(dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT).orElse(null);
+            var recovery=intent.recovery().tick(new NativeTerrainRecovery.Actions(){
+                public boolean current(){return token!=null&&p.canAct()&&p.controls().owns(token,EnumSet.of(dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT,dev.mineagent.runtime.api.agent.BodyDomain.LOOK,dev.mineagent.runtime.api.agent.BodyDomain.MAIN_HAND,dev.mineagent.runtime.api.agent.BodyDomain.INVENTORY));}
+                public boolean select(int slot){if(!current())return false;if(slot<9)p.getInventory().setSelectedSlot(slot);else p.getInventory().pickSlot(slot);p.inventoryMenu.broadcastChanges();return true;}
+                public void aim(Vec3 at){p.aim(token,at,8);p.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,at);}
+                public void jump(UUID operation){if(p.onGround())p.jumpFromGround();}
+                public void mine(UUID operation,net.minecraft.core.BlockPos at){if(!operation.equals(p.miningOperation())&&!p.beginMining(at,operation))throw new IllegalStateException("RECOVERY_MINING_REJECTED");}
+                public void place(UUID operation,net.minecraft.world.phys.BlockHitResult hit){p.gameMode.useItemOn(p,p.level(),p.getMainHandItem(),net.minecraft.world.InteractionHand.MAIN_HAND,hit);p.swing(net.minecraft.world.InteractionHand.MAIN_HAND);p.inventoryMenu.broadcastChanges();}
+                public void cancel(UUID operation){p.abortMiningIfCurrent(operation);p.abortItemUseIfCurrent(operation);}
+            });
+            if(recovery.changed())intent.recheckAfterTerrain();step=recovery.move();
+        }
+        if(step==null)return;var waypoint=intent.waypoint(step);var offset=waypoint.subtract(p.position());
         if(tick>pendingJumpExpires||pendingJumpRevision!=commandRevision||pendingJumpOwner==null||!p.controls().owns(pendingJumpOwner,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT)){pendingJumpRevision=-1;pendingJumpOwner=null;}
         else if(p.onGround()){intent.tacticalJump(p);p.jumpFromGround();pendingJumpRevision=-1;pendingJumpOwner=null;}
         if(!NativeSurfaceNavigation.openOnPath(p,waypoint)){intent.stop("INTERACTION_BLOCKED");return;}

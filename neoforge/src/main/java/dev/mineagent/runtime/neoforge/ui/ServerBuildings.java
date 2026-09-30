@@ -181,6 +181,7 @@ public final class ServerBuildings {
                         if(phase.equals("WRITE")){
                             require(actual(pos).equals(expected(cell)),"HISTORY_CONFLICT");var after=parse(target(cell));ConversationWorldGeometry.writable(level,pos,after);
                             level.setBlock(pos,after,Block.UPDATE_CLIENTS|Block.UPDATE_KNOWN_SHAPE);
+                            if(!after.isAir())dev.mineagent.runtime.neoforge.body.TerrainProvenance.record(level,pos,player.getUUID());
                             String actual=actual(pos);if(!actual.equals(expected(cell)))written.add(cell.sequence());require(actual.equals(target(cell)),"WRITE_READBACK_MISMATCH");
                         }else if(phase.equals("NOTIFY")){var state=level.getBlockState(pos);state.updateNeighbourShapes(level,pos,Block.UPDATE_ALL);level.updateNeighborsAt(pos,state.getBlock());}
                         else require(actual(pos).equals(target(cell)),"POST_PHYSICS_MISMATCH");

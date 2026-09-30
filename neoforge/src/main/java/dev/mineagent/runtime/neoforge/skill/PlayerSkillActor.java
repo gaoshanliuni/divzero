@@ -12,7 +12,7 @@ public final class PlayerSkillActor implements SkillActor {
     private final BodyControlCoordinator controls=new BodyControlCoordinator();private final NativeNavigationIntent navigation=new NativeNavigationIntent();private Vec3 destination,aim;private UUID navOperation=UUID.randomUUID(),selectionOperation;private int selectionSlot=-1;private net.minecraft.world.item.Item selectionWanted;private String lastAction="";
     private boolean sprinting;private ObjectNode motion;private String hand="";private UUID offhandOperation;private int offhandSlot=-1;
     private List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> checkedRoute;
-    public String moveTactically(UUID session,List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> route){if(!inputReady())return "PAUSED_INPUT";if(route!=checkedRoute){if(!navigation.followCheckedRoute(player,route))return "ROUTE_CHANGED";checkedRoute=route;destination=null;navOperation=UUID.randomUUID();}var step=navigation.tick(player);if(step!=null)send(session,"MOVE",navOperation,navigation.waypoint(step),0,-1,step.action().name());else send(session,"HALT_MOTION",navOperation,player.position(),0,-1,"");return navigation.status();}
+    public String moveTactically(UUID session,List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> route){if(!inputReady())return "PAUSED_INPUT";if(route!=checkedRoute){if(!navigation.followCheckedRoute(player,route))return "ROUTE_CHANGED";checkedRoute=route;destination=null;navOperation=UUID.randomUUID();}var step=terrain(session,navigation.tick(player));if(step!=null)send(session,"MOVE",navOperation,navigation.waypoint(step),0,-1,step.action().name());else if(!navigation.recovery().active())send(session,"HALT_MOTION",navOperation,player.position(),0,-1,"");return navigation.status();}
     public PlayerSkillActor(ServerPlayer player,UUID agent,UUID skill,String label)throws Exception{this.player=player;this.skill=skill;this.emergency=false;this.level=player.level();this.mode=player.gameMode.getGameModeForPlayer();AutonomousPlayerAgent.beginLocalSkill(player,agent,skill,label);}
     private PlayerSkillActor(ServerPlayer player,UUID session){this.player=player;this.skill=session;this.emergency=true;this.level=player.level();this.mode=player.gameMode.getGameModeForPlayer();}
     static PlayerSkillActor emergency(ServerPlayer player){UUID id=AutonomousPlayerAgent.emergencySession(player);return id==null?null:new PlayerSkillActor(player,id);}
@@ -24,7 +24,24 @@ public final class PlayerSkillActor implements SkillActor {
         if(!action.equals("HOTBAR")&&selectionOperation!=null&&player.getMainHandItem().is(selectionWanted))selectionOperation=null;lastAction=action;ObjectNode frame=JSON.createObjectNode().put("action",action).put("operation",operation.toString()).put("slot",slot).put("entity",entity).put("pathAction",pathAction).put("sprinting",sprinting);frame.putArray("target").add(target.x).add(target.y).add(target.z);if(!hand.isEmpty())frame.put("hand",hand);if(!action.equals("MOVE")&&!action.equals("HALT")&&motion!=null)frame.set("motion",motion.deepCopy());if(aim!=null)frame.putArray("aim").add(aim.x).add(aim.y).add(aim.z);if(action.equals("MOVE"))motion=frame.deepCopy();if(emergency){AutonomousPlayerAgent.emergencyFrame(player,skill,frame);return;}AutonomousPlayerAgent.localSkillFrame(player,skill,frame,switch(action){case "MOVE"->"前往操作位置";case "BREAK"->"收获成熟作物";case "USE_BLOCK"->"操作目标方块";case "HOLD"->"使用手中装备";case "RELEASE"->"释放蓄力";case "ATTACK_ENTITY"->"攻击选定目标";case "HOTBAR"->"选择装备";case "USE_ONCE"->"使用手中物品";default->"等待下一步";});
     }
     public String move(UUID session,Vec3 target){checkedRoute=null;if(destination==null){navigation.start(target,.2);destination=target;navOperation=UUID.randomUUID();}else if(destination.distanceToSqr(target)>.09){navigation.update(target);destination=target;}
-        if(!inputReady())return "PAUSED_INPUT";var step=navigation.tick(player);if(step!=null)send(session,"MOVE",navOperation,navigation.waypoint(step),0,-1,step.action().name());else send(session,"HALT",navOperation,player.position(),0,-1,"");return navigation.status();}
+        if(!inputReady())return "PAUSED_INPUT";var step=terrain(session,navigation.tick(player));if(step!=null)send(session,"MOVE",navOperation,navigation.waypoint(step),0,-1,step.action().name());else if(!navigation.recovery().active())send(session,"HALT",navOperation,player.position(),0,-1,"");return navigation.status();}
+    private dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep terrain(UUID session,dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep step){
+        if(!navigation.recovery().active())return step;motion=null;sprinting=false;
+        var result=navigation.recovery().tick(new NativeTerrainRecovery.Actions(){
+            public boolean current(){return PlayerSkillActor.this.current()&&controls.owns(session,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT);}
+            public boolean select(int slot){return PlayerSkillActor.this.select(session,slot);}
+            public void aim(Vec3 point){aimImmediately(session,point);}
+            public void jump(UUID operation){send(session,"JUMP",operation,player.position(),0,-1,"");}
+            public void mine(UUID operation,BlockPos at){breakBlock(session,operation,at);}
+            public void place(UUID operation,net.minecraft.world.phys.BlockHitResult hit){var face=hit.getDirection();send(session,"PLACE_BLOCK",operation,hit.getLocation().subtract(new Vec3(face.getStepX(),face.getStepY(),face.getStepZ()).scale(.001)),0,face.get3DDataValue(),"");}
+            public void cancel(UUID operation){motion=null;aim=null;send(session,"HALT",UUID.randomUUID(),player.position(),0,-1,"");}
+        });
+        if(result.changed())navigation.recheckAfterTerrain();return result.move();
+    }
+    public boolean recover(UUID session,Vec3 target){
+        if(!inputReady())return false;if(!navigation.recovery().active()&&!navigation.recovery().request(player,target,"TACTICAL_ROUTE_EXHAUSTED"))return false;
+        var step=terrain(session,null);if(step!=null)send(session,"MOVE",navOperation,NativeTraversalEvaluator.point(step.to()),0,-1,step.action().name());return true;
+    }
     public void aim(UUID session,Vec3 target){aim=target;}
     public void sprint(UUID session,boolean enabled){sprinting=enabled;}
     public void jump(UUID session){if(motion!=null&&inputReady()){navigation.tacticalJump(player);motion.put("jump",true);AutonomousPlayerAgent.localSkillFrame(player,skill,motion.deepCopy(),"短跳调整走位");}}

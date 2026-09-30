@@ -77,7 +77,10 @@ final class CombatSkill {
         if(w.combatStage==2&&!w.shotLogged&&w.count(Items.ARROW)<w.combatAmmo){w.shotLogged=true;w.session.add("arrowsReleased",1);log(w,"RELEASE_OBSERVED");}
     }
     private static boolean move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
-        if(next==null){w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return false;}
+        if(next==null){
+            if(!w.positioning.pending()&&target!=null&&w.actor.recover(w.token(),target.position())){phase(w,"TERRAIN_ESCAPE");return true;}
+            w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return false;
+        }
         boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.contactEscape);
         var heading=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());var look=w.player().getLookAngle();boolean sprintClosing=w.sprintApproach&&!escape&&w.tick()-w.lastAttackAt>=2&&heading.lengthSqr()>.001&&new Vec3(look.x,0,look.z).normalize().dot(heading.normalize())>.75;
         if((sprintEscape||sprintClosing)&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
@@ -95,6 +98,10 @@ final class CombatSkill {
         var p=w.player();var rule=w.session.spec().combat();w.sprintApproach=false;
         if(target!=null&&(!SkillRuntime.attackAllowed(w,target))){w.combat.selected=null;return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
+        if(target!=null&&!target.onGround()&&target.distanceTo(p)<8&&w.prediction.risk(w,p.position(),6,null)>=18
+                &&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
+            if(sideStep(w,target,p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p)+1)){w.session.add("predictedAirborneEvasions",1);return;}
+        }
         boolean openingCounter=counterBeforeEscape(w,target,contacts);
         if(openingCounter&&w.contactEscape){w.contactEscape=false;w.contactClearSince=-1;w.positioning.reset();w.session.add("contactCounterOpenings",1);}
         if(!openingCounter&&escapeContact(w,target,contacts))return;

@@ -44,11 +44,13 @@ final class CombatPositioning {
             }
         }
         double best=Double.POSITIVE_INFINITY;var target=w.combat.selected;
+        var intercept=target==null?null:w.prediction.intercept(w,target,Math.min(12,origin.distanceTo(target.position())/Math.max(.15,w.player().getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.4)));
+
         // A ready strike necessarily enters the selected opponent's reach. Price that exposure,
         // but keep full risk for every other threat and keep all terrain/escape checks.
         var opportunity=(intent.equals("APPROACH")||intent.equals("COUNTER"))&&w.player().getAttackStrengthScale(.5f)>=.95f&&w.player().getHealth()>w.player().getMaxHealth()*.45&&!w.combat.incoming(w)?target:null;
         for(int index=0;index<candidates.size()&&budget.timeAvailable();index++){var route=candidates.get(Math.floorMod(candidateCursor++,candidates.size()));var point=NativeTraversalEvaluator.point(route.node);double risk=w.combat.risk(w,point,opportunity);double routeRisk=route.steps.stream().mapToDouble(step->w.combat.risk(w,NativeTraversalEvaluator.point(step.to()),opportunity)).max().orElse(risk);double score=risk*2+routeRisk*.6+route.steps.size()*.15;
-            score+=w.combat.collisionRisk(w,point,4,opportunity)*1.5;
+            score+=w.combat.collisionRisk(w,point,4,opportunity)*1.5+w.prediction.routeRisk(w,route.steps,opportunity);
             if(target!=null&&(intent.equals("SIDE_LEFT")||intent.equals("SIDE_RIGHT"))){
                 var forward=target.position().subtract(origin).multiply(1,0,1).normalize();var left=new Vec3(forward.z,0,-forward.x);var delta=point.subtract(origin);
                 double lateral=delta.dot(left)*(intent.equals("SIDE_LEFT")?1:-1);
@@ -64,7 +66,7 @@ final class CombatPositioning {
             var onwards=evaluator.neighbors(route.node).stream().filter(edge->!route.steps.stream().anyMatch(step->step.from().equals(edge.to()))).toList();
             score+=Math.max(0,3-onwards.size())*2;
             if(onwards.stream().noneMatch(edge->evaluator.neighbors(edge.to()).stream().anyMatch(next->!next.to().equals(route.node)&&route.steps.stream().noneMatch(step->step.from().equals(next.to())))))score+=100;
-            if(target!=null)score+=Math.abs(point.distanceTo(target.position())-desiredDistance)*(intent.equals("COUNTER")?14:intent.equals("SPACE")||intent.equals("APPROACH")?8:1.1);
+            if(target!=null)score+=Math.abs(point.distanceTo(intent.equals("APPROACH")||intent.equals("COUNTER")?intercept:target.position())-desiredDistance)*(intent.equals("COUNTER")?14:intent.equals("SPACE")||intent.equals("APPROACH")?8:1.1);
             if(target!=null&&(intent.equals("COUNTER")||intent.equals("APPROACH"))&&origin.distanceTo(target.position())>desiredDistance+.25&&point.distanceTo(target.position())>=origin.distanceTo(target.position())-.15)continue;
             if(intent.equals("RETREAT")||intent.equals("RECOVER")||intent.equals("LURE")||intent.equals("JUMP_TAP")){
                 score-=origin.distanceTo(point)*.45;
