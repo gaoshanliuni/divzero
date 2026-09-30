@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "fef568da01806ef206d428a5e04fb5b639a90d5f5aa681d001114d8e96f6ccdc",
-      "bytes": 23765
+      "sha256": "0d1e19ba5d96d38d68ca7a338cf56288c25dfeeda7ffc4f746c9968e6f9849e3",
+      "bytes": 24277
     },
     {
       "path": "agent/build.gradle",
@@ -3194,8 +3194,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "6e65d52fa471031ddd37bb132f82559bfb0a4a4a1fa32cafc7c65ef930af08a8",
-      "bytes": 47840
+      "sha256": "91659339e5b776116f30ea4e05992b11405e9afc7b49be323ee6e52523ad80cf",
+      "bytes": 48374
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -3259,8 +3259,8 @@
     },
     {
       "path": "docs/images/README.md",
-      "sha256": "41c3ba20bea810d0165cb750c94b6cd8b65d10e2604e997f63e747b8247fb086",
-      "bytes": 6962
+      "sha256": "38f54cea36eee151050813f869fe6a827b5ed0f967c8c8f7b73dde12759fcd2e",
+      "bytes": 6929
     },
     {
       "path": "docs/images/behavior-agent-profile.png",
@@ -3274,8 +3274,8 @@
     },
     {
       "path": "docs/images/native-agent-inventory.png",
-      "sha256": "d9f125003e5790e6dece00f671734c1849818b8071b6d23af180bb514051d7b4",
-      "bytes": 504602
+      "sha256": "50fc19c0d71467370a023ddc6a4d19f73dbd745ea8d3fa72943ba229ddca5566",
+      "bytes": 665528
     },
     {
       "path": "docs/images/native-agent-profile.png",
@@ -3284,8 +3284,8 @@
     },
     {
       "path": "docs/images/native-content-catalog.png",
-      "sha256": "65c7879c8b5198522e299f175e94c831c9180124dfaee7db2187cf099d143385",
-      "bytes": 663303
+      "sha256": "944a69847d84dea0fbb4c072be7df17d10c4cad671cbbf59259f45f43abb7b9f",
+      "bytes": 650631
     },
     {
       "path": "docs/images/native-furnace.png",
@@ -3319,8 +3319,8 @@
     },
     {
       "path": "docs/images/native-workspace-scale-four.png",
-      "sha256": "5b73da35e6b0bcd4ba08a22e0951ef6e1796cb79bc39aaa3405c510b101b2300",
-      "bytes": 209277
+      "sha256": "116c3c464bfb86b595a9750b407ed4b8fb572f44d5551dd416453a55007239eb",
+      "bytes": 273844
     },
     {
       "path": "docs/images/native-workspace.png",
@@ -3334,8 +3334,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "a163b3c59aeb65d6146015fa7c36cd9096a76672e69f1924c0b4fee9144430f9",
-      "bytes": 8248
+      "sha256": "9ea97c356f8071f2bcf166420fd65b0f632e9ace6b9366af1a147f6e0bb8aa26",
+      "bytes": 9009
     },
     {
       "path": "docs/releases/1.0.20.md",
@@ -4079,8 +4079,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeModulesSmokeClient.java",
-      "sha256": "70abc463428ba8ae8c0c2dd65db76fa44a844434bd7c96ca6a39c2964a101017",
-      "bytes": 27175
+      "sha256": "f01e6bb786f627a3695fdad198588d4057edfb1c6ff5f91d39a7d90068d6ade0",
+      "bytes": 27574
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePackageAgent.java",
@@ -4174,8 +4174,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
-      "sha256": "07561c67f04f080ba19dc1fcd329098fa48f897c6ec02d0c7671442b34c1e225",
-      "bytes": 7451
+      "sha256": "1b4c020dc300dfd6abdf3e8b47b182445abaf53ce8059aa7bef863a0d42c1b20",
+      "bytes": 7567
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewCapture.java",
@@ -4214,8 +4214,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
-      "sha256": "df87d1425f22d74620de5c2e01fabf25e1a639836e2f464d2523f3b6975477a5",
-      "bytes": 20108
+      "sha256": "5f25ffb213605748e398839502c758f01cd2556dd4947bbf79832caeba7ee375",
+      "bytes": 20187
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspaceSetupScreen.java",

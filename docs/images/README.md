@@ -56,12 +56,12 @@
 
 ## 1.0.23 界面修复
 
-这两张为本轮较早的回归截图；最新尺寸入口和布局见下方“包管理与紧凑界面补齐”。
+这两张已更新为 2026-09-30 最后一次会话与原生背包回归的画面。
 
 | 图片 | 实际场景 | SHA-256 |
 |---|---|---|
-| [native-agent-inventory.png](native-agent-inventory.png) | 原生背包尺寸 4 实机验收：命名头盔装备、数字键交换、右键拆分后拖拽分配物品 | `d9f125003e5790e6dece00f671734c1849818b8071b6d23af180bb514051d7b4` |
-| [native-workspace-scale-four.png](native-workspace-scale-four.png) | F2 尺寸 4 实机验收：紧凑布局、保留草稿、实际选择已归档筛选 | `5b73da35e6b0bcd4ba08a22e0951ef6e1796cb79bc39aaa3405c510b101b2300` |
+| [native-agent-inventory.png](native-agent-inventory.png) | 原生背包尺寸 4 实机验收：命名头盔装备、数字键交换、右键拆分后拖拽分配物品 | `50fc19c0d71467370a023ddc6a4d19f73dbd745ea8d3fa72943ba229ddca5566` |
+| [native-workspace-scale-four.png](native-workspace-scale-four.png) | F2 尺寸 4 实机验收：紧凑布局、保留草稿、实际选择已归档筛选 | `116c3c464bfb86b595a9750b407ed4b8fb572f44d5551dd416453a55007239eb` |
 
 ## 包管理与紧凑界面补齐
 
@@ -72,4 +72,4 @@
 | [native-settings-scale-four.png](native-settings-scale-four.png) | 尺寸 4 设置页：独立滚动区、固定保存栏及二级尺寸入口 | `b1db794bf722e0225a33fd4f481ff2f4d7f6cb59706f1061f18e3ebac99a6eba` |
 | [native-recovery-report.png](native-recovery-report.png) | 图形化恢复报告：状态、坐标和方块图标对比，无原始 JSON | `c6d07df70eff4ce1ea58bd06d50ebbfaa4e1799bc2987533cacbe3718ca45640` |
 | [native-selector-layout.png](native-selector-layout.png) | 创建页下拉选择框与相邻按钮分开布局，标识垂直居中 | `fd0d40507046a16228da7c58cb02c42504044d736c58dddc12296efafd1756bb` |
-| [native-content-catalog.png](native-content-catalog.png) | 已打开包管理后创建内容，目录自动出现物品、生物和原版修改 | `65c7879c8b5198522e299f175e94c831c9180124dfaee7db2187cf099d143385` |
+| [native-content-catalog.png](native-content-catalog.png) | 已打开包管理后创建内容，目录自动出现物品、生物和原版修改 | `944a69847d84dea0fbb4c072be7df17d10c4cad671cbbf59259f45f43abb7b9f` |

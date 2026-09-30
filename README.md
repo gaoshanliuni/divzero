@@ -175,6 +175,13 @@ Through natural language interaction, world awareness, persistent memory, and dy
 
 The public source is now the **1.0.23 candidate**, covering native inventory interaction, dropdowns, GUI scale 4, display-name commands, recoverable building errors and group-combat acceptance. Requirements: **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**, **protocol 11**. Keep clients and servers on the same mod version. Published builds remain on [Releases](https://github.com/gaoshanliuni/divzero/releases); candidate pushes do not publish a release. [Implementation and acceptance](docs/COUNTERATTACK_UI_FUNCTIONS.md).
 
+Package management now refreshes live and includes items, creature definitions and persistent vanilla changes. Compact settings keep a scrollable body and visible actions; GUI scale is under Settings. Recovery reports show readable states, positions and native block comparisons. [Workspace integration and game evidence](docs/native-workspace-integration.md).
+
+![Compact settings at GUI scale 4](docs/images/native-settings-scale-four.png)
+
+![Readable recovery report](docs/images/native-recovery-report.png)
+
+
 ## Native LDLib2 workspace and persistent skills
 
 **1.0.20** uses LDLib2 with the MC theme. DivZero builds the built-in F2 workspace directly, without requiring KubeJS. KubeJS builds AI-created interfaces with live updates, rollback on invalid structure changes and retained input. Passive HUDs leave game input available. HTML/CSS/DOM packages require explicit migration.

@@ -280,6 +280,9 @@ This player-facing guide covers the current public `main`, with conversation exa
 
 Native AI inventory uses ordinary container click, Shift, number-key, split-stack and drag handling, including actual armor and held items. Dropdown layering/focus and fixed labels are repaired; GUI scale 2/3/4 keeps drafts. Native give/tp accepts unique AI display names without changing identity. New worlds use one participation choice. Known no-effect building rejections return actionable tool results so correction can continue; uncertain writes still require inspection. See [acceptance coverage](COUNTERATTACK_UI_FUNCTIONS.md) for native group combat and UI tests.
 
+Package management additionally lists standalone creatures, native entity definitions, behavior/appearance rules, interaction rules and this player's block textures. Search includes names of contained item definitions. New content appears while the manager remains open. Normal details and recovery reports use readable cards; source code stays in explicit advanced editing. Settings uses a separate scrolling area and fixed action row, with scale controls under Settings. See [workspace evidence](native-workspace-integration.md).
+
+
 ## Your model makes a major difference
 
 **The final results depend heavily on the capabilities of your chosen model.** Complex construction, creature design, multi-step planning, and tool use can vary substantially between models. For better results, consider newer, more capable models from the Claude, Grok, or GPT families through an API compatible with the mod. Compatibility, pricing, and actual performance depend on the service you choose.

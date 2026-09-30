@@ -43,8 +43,8 @@ public final class NativeUiTheme {
         if(root instanceof Button button)NativeButtonFeedback.install(button);
         if(!root.hasClass("divzero-control-style")){
             root.addClass("divzero-control-style");
-            if(root instanceof TextField field){field.textFieldStyle(s->s.textColor(0xffffffff));if((field.getTextFieldStyle().placeholder().getString().equals("Empty")||field.getTextFieldStyle().placeholder().equals(Component.translatable("text_field.empty"))))field.textFieldStyle(s->s.placeholder(Component.empty()));}
-            else if(root instanceof TextArea area)area.textAreaStyle(s->s.textColor(0xffffffff).placeholder(Component.empty()));
+            if(root instanceof TextField field){field.textFieldStyle(s->s.textColor(0xffffffff));if(field.getTextFieldStyle().getValueImmediate(PropertyRegistry.PLACEHOLDER).equals(Component.translatable("text_field.empty")))field.textFieldStyle(s->s.placeholder(Component.empty()));}
+            else if(root instanceof TextArea area){area.textAreaStyle(s->s.textColor(0xffffffff));if(area.getTextAreaStyle().getValueImmediate(PropertyRegistry.PLACEHOLDER).equals(Component.translatable("text_field.empty")))area.textAreaStyle(s->s.placeholder(Component.empty()));}
             else if(root instanceof ProgressBar progress)progress.bar.getStyle().backgroundTexture(new ColorRectTexture(0xff6d9b31));
         }
         for(var child:root.getChildren())controls(child);
