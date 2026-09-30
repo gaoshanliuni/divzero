@@ -949,8 +949,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "ea64845e2e975fbabcff1121fec54532919f55a2fa699e710c21524c353e1d44",
-      "bytes": 304374
+      "sha256": "d8b52b920dd17b66dd6063075b4e3d08d2f430a0a3a5086e84fcde70ab8806d1",
+      "bytes": 304449
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1464,8 +1464,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolExecutionTraits.java",
-      "sha256": "a51c55cb673a34d2e98a05544f83bb852603a53b7f8357e27ac15ad845e0452e",
-      "bytes": 1668
+      "sha256": "9c72cc2777274191068e35ea34fc306dbefb53492753cecbd9af4e86fb097bb6",
+      "bytes": 1764
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolValidation.java",
@@ -3674,8 +3674,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "e003a1afb398f499266515d70d20fc7622bb9b1b478c4d0735a08e428ce3040d",
-      "bytes": 104959
+      "sha256": "73b7f3351a30f012d221944e798a85f8e52bcc496db5de539dfe2794c3142686",
+      "bytes": 106414
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -3989,8 +3989,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeFunctionalSmokeClient.java",
-      "sha256": "8c461d95f1b21b29e78fb9a8d921d23ccbf1cc9816ff78236023726e00508a86",
-      "bytes": 20420
+      "sha256": "39e93b30d514a379b1014fca70963635e8d8f257e4e5636363e0e166734a955c",
+      "bytes": 22846
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeGenerationPanel.java",
@@ -4124,8 +4124,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
-      "sha256": "00af38385579817f45f3b4801987bf8f74f81aa339163584f60e6771c0a8be89",
-      "bytes": 6112
+      "sha256": "5f757efbf3ea1b47449b9aee53f98d1bba6dd00c1e922d1adb62d12db4adca89",
+      "bytes": 6130
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewCapture.java",
@@ -5609,8 +5609,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationWorldGeometry.java",
-      "sha256": "349c5d0dc1300fef86d2679c7cb704057d1bdd4bf3750c0b770f524384c79f02",
-      "bytes": 28742
+      "sha256": "91c487ccc4fcdef80c017508d31bb8b9ae600a4e3a1b31ea36c5d312779c02cc",
+      "bytes": 28799
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreateBlueprintReader.java",

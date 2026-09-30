@@ -14,11 +14,17 @@ import java.util.concurrent.CompletableFuture;
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class NativeFunctionalSmokeClient {
     private static net.minecraft.world.level.block.state.BlockState buildingBefore;
-    private static CompletableFuture<Map<String,Object>> result;private static UUID agent,a,b,old;
-    private static int stage,ticks,pressedAt,pagerStage,editorAt,focusChanges;private static float editorX,editorY;private static boolean pending,chatRevealed;private static final List<String> checked=new ArrayList<>();
+    private static CompletableFuture<Map<String,Object>> result;private static UUID agent,a,b,old,geometryPlan;
+    private static int stage,ticks,pressedAt,pagerStage,editorAt,focusChanges;private static float editorX,editorY;private static boolean pending,chatRevealed,uiApplySubmitted;private static final List<String> checked=new ArrayList<>();
     public static CompletableFuture<Map<String,Object>> run(UUID ai,UUID first,UUID second,UUID oldest){
         if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
-        agent=ai;a=first;b=second;old=oldest;stage=ticks=pressedAt=pagerStage=0;pending=chatRevealed=false;checked.clear();return result=new CompletableFuture<>();
+        agent=ai;a=first;b=second;old=oldest;stage=ticks=pressedAt=pagerStage=0;pending=chatRevealed=uiApplySubmitted=false;checked.clear();return result=new CompletableFuture<>();
+    }
+    public static CompletableFuture<Map<String,Object>> runBuilding(UUID ai){
+        if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");agent=ai;stage=47;ticks=0;pending=uiApplySubmitted=false;buildingBefore=null;checked.clear();result=new CompletableFuture<>();NativeWorkspaceScreen.openForAgent(ai.toString(),"建筑验收");return result;
+    }
+    public static CompletableFuture<Map<String,Object>> runGeometry(UUID ai,UUID plan){
+        if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");agent=ai;geometryPlan=plan;stage=60;ticks=0;pending=false;checked.clear();result=new CompletableFuture<>();NativeWorkspaceScreen.openForAgent(ai.toString(),"几何验收");return result;
     }
     private static Minecraft mc(){return Minecraft.getInstance();}
     private static UIElement root(){return mc().screen instanceof NativeWorkspaceScreen s?s.smokeRoot():mc().screen instanceof AgentProfileScreen s?s.smokeRoot():null;}
@@ -99,13 +105,20 @@ public final class NativeFunctionalSmokeClient {
                 case 46->{var names=mc().getConnection().getSuggestionsProvider().getOnlinePlayerNames();if(names.contains(com.mojang.brigadier.arguments.StringArgumentType.escapeIfRequired("持续技能搭档"))){checked.add("online-ai-alias-in-native-tab-completion");NativeWorkspaceScreen.openForAgent(agent.toString(),"界面验收");advance("open-building-plan-workspace");}}
                 case 47->{if(click("建筑")||click("建筑计划"))advance("open-visible-building-plans");}
                 case 48->{if(click("building-open-example"))advance("open-real-component-plan");}
-                case 49->{var button=find(root(),"building-action-undo");if(button!=null&&button.isActive()){pending=true;mc().getSingleplayerServer().submit(()->{buildingBefore=mc().getSingleplayerServer().overworld().getBlockState(new net.minecraft.core.BlockPos(12,101,12));require(!buildingBefore.isAir(),"BUILDING_UI_FIXTURE_NOT_BUILT_AT_EXPECTED_LOCATION");return true;}).whenComplete((v,e)->mc().execute(()->{pending=false;if(e!=null)result.completeExceptionally(e);else advance("capture-built-state-before-ui-undo");}));}}
+                case 49->{var apply=find(root(),"building-action-apply");if(apply!=null&&apply.isActive()){if(!uiApplySubmitted&&click("building-action-apply")){uiApplySubmitted=true;checked.add("start-construction-through-visible-control");}return;}var button=find(root(),"building-action-undo");if(button!=null&&button.isActive()){pending=true;mc().getSingleplayerServer().submit(()->{buildingBefore=mc().getSingleplayerServer().overworld().getBlockState(new net.minecraft.core.BlockPos(12,101,12));require(!buildingBefore.isAir(),"BUILDING_UI_FIXTURE_NOT_BUILT_AT_EXPECTED_LOCATION");return true;}).whenComplete((v,e)->mc().execute(()->{pending=false;if(e!=null)result.completeExceptionally(e);else advance("capture-built-state-before-ui-undo");}));}}
                 case 50->{if(click("building-action-undo"))advance("undo-through-visible-building-control");}
                 case 51->buildingState("UNDONE",true,"ui-undo-verified-in-world");
                 case 52->{if(click("building-action-redo"))advance("redo-through-visible-building-control");}
                 case 53->buildingState("UNVERIFIED",false,"ui-redo-restored-original-block");
                 case 54->{if(click("building-verify"))advance("verify-through-visible-building-control");}
                 case 55->{pending=true;WorkspacePanels.request("building.read",Map.of("kind","inspect","agentId",agent.toString(),"id","example","offset","0")).whenComplete((receipt,error)->{pending=false;if(error!=null){result.completeExceptionally(error);return;}if(WorkspacePanels.state(receipt).get("status").getAsString().equals("VERIFIED")){checked.add("ui-building-exact-revision-verified");result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}});}
+
+                case 60->{if(click("建筑计划")||click("建筑"))advance("geometry-plan-workspace");}
+                case 61->{if(click("geometry-apply-"+geometryPlan))advance("apply-real-geometry-through-visible-control");}
+                case 62->{pending=true;WorkspacePanels.request("building.read",Map.of("kind","geometryInspect","agentId",agent.toString(),"planId",geometryPlan.toString(),"offset","0")).whenComplete((receipt,error)->{
+                    if(error!=null){pending=false;result.completeExceptionally(error);return;}var data=WorkspacePanels.state(receipt);String state=data.get("status").getAsString();if(Set.of("REJECTED","PARTIAL").contains(state)){pending=false;result.completeExceptionally(new IllegalStateException("GEOMETRY_UI_EFFECT_FAILED_"+data));return;}if(!state.equals("APPLIED")){pending=false;return;}
+                    mc().getSingleplayerServer().submit(()->{require(mc().getSingleplayerServer().overworld().getBlockState(new net.minecraft.core.BlockPos(20,106,20)).is(net.minecraft.world.level.block.Blocks.STONE),"GEOMETRY_UI_NO_NATIVE_WORLD_CHANGE");return true;}).whenComplete((v,e)->mc().execute(()->{pending=false;if(e!=null)result.completeExceptionally(e);else{checked.add("geometry-ui-native-block-readback");result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}}));
+                });}
 
             }
         }catch(Throwable error){result.completeExceptionally(error);}
