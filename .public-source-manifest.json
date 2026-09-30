@@ -5434,8 +5434,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
-      "sha256": "a847c92e6a9fe7acee1cb95791e468d4545808c841b72a61fd584ed2be2e4b26",
-      "bytes": 10286
+      "sha256": "33b78ae9e9041c85aa77379a6a07d0d57b6ad1fd012b21b0a06a13f3553a2d63",
+      "bytes": 11656
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
@@ -6864,8 +6864,8 @@
     },
     {
       "path": "scripts/local-policy/finetune.py",
-      "sha256": "22d3831c7868e494652d21412999dc7e134d4611dc8ab1e19805656eec661718",
-      "bytes": 6081
+      "sha256": "b08bab95de2d6ca3a5040f30e5d8133e359dd72a6ea4366319c3746965fd8072",
+      "bytes": 6119
     },
     {
       "path": "scripts/local-policy/pretrain.py",

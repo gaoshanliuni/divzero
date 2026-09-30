@@ -24,7 +24,8 @@ for run in args.run:
     if "mineagent.skillSmokeMode=policy_train" not in (run / "jvm.args").read_text():
         raise ValueError("Only explicit isolated native policy_train runs may be used")
     for file in sorted((run / "game/mineagent-runtime-data/policies").glob("*/*.json")):
-        checkpoint = json.loads(file.read_text())
+        snapshot = file.read_bytes()
+        checkpoint = json.loads(snapshot)
         records = checkpoint.get("replay", []) if checkpoint.get("outcomeSchema") == 2 else []
         if not records:
             continue
@@ -33,7 +34,7 @@ for run in args.run:
         if x.shape[1:] != (16,) or not np.isfinite(y).all() or (y < 0).any() or (y > 1).any():
             raise ValueError("Invalid native training sample")
         actors.append((np.clip(np.nan_to_num(x, nan=0, posinf=0, neginf=0), -2, 2), y))
-        evidence.append({"run": run.name, "actor": file.stem, "sha256": hashlib.sha256(file.read_bytes()).hexdigest(), "samples": len(y)})
+        evidence.append({"run": run.name, "actor": file.stem, "sha256": hashlib.sha256(snapshot).hexdigest(), "samples": len(y)})
 if len(actors) < 5:
     raise ValueError("Need at least five independent native actor trajectories")
 order = rng.permutation(len(actors))
@@ -93,6 +94,6 @@ model = {**initial, "version": initial["version"] + 1, "hidden": w.tolist(), "bi
 args.output.parent.mkdir(parents=True, exist_ok=True)
 raw = (json.dumps(model, separators=(",", ":")) + "\n").encode()
 args.output.write_bytes(raw)
-report = {"seed": args.seed, "actorTrajectories": len(actors), "trainingSamplesWithRotations": len(train_y), "heldOutSamples": len(valid_y), "heldOutActors": sorted(held), "iterations": best_step, "lossBefore": before, "lossAfter": best_loss, "referenceDrift": float(np.mean((predict(best, anchors) - anchor_y) ** 2)), "sha256": hashlib.sha256(raw).hexdigest(), "sources": evidence, "battleAcceptance": "NOT_YET_RUN", "limitations": "Cost fitting is not proof of nine wins in ten bouts. Run the frozen-weight native evaluation separately."}
+report = {"seed": args.seed, "actorTrajectories": len(actors), "trainingSamplesWithRotations": len(train_y), "heldOutSamples": len(valid_y), "heldOutActors": [int(i) for i in sorted(held)], "iterations": best_step, "lossBefore": before, "lossAfter": best_loss, "referenceDrift": float(np.mean((predict(best, anchors) - anchor_y) ** 2)), "sha256": hashlib.sha256(raw).hexdigest(), "sources": evidence, "battleAcceptance": "NOT_YET_RUN", "limitations": "Cost fitting is not proof of nine wins in ten bouts. Run the frozen-weight native evaluation separately."}
 args.output.with_suffix(".report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 print(json.dumps({k: v for k, v in report.items() if k != "sources"}))

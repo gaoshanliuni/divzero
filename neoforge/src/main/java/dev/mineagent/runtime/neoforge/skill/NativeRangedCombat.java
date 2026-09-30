@@ -14,7 +14,7 @@ import java.util.*;
 
 /** Native charge/use differences are explicit; a camera aim or submitted release is never a hit receipt. */
 final class NativeRangedCombat {
-    static final class State {String adapter="";Vec3 aim,origin,target;int planned=-10000,shootStage;UUID release,issuedOperation;int issuedAt=-10000;boolean deferred;}
+    static final class State {String adapter="";Vec3 aim,origin,target;int planned=-10000,shootStage,dodgeUntil=-10000,dodgeSide;UUID release,issuedOperation;int issuedAt=-10000;boolean deferred;}
     private record Vanilla(String id,Item item,Use use,double speed,double gravity,double range,double pitchOffset,double areaRadius) implements RangedWeaponAdapter {
         public boolean matches(ItemStack stack){return stack.is(item);}
         public boolean ammunition(net.minecraft.server.level.ServerPlayer p,ItemStack stack){
@@ -25,8 +25,8 @@ final class NativeRangedCombat {
         }
         public boolean ready(net.minecraft.server.level.ServerPlayer p,ItemStack stack){
             if(stack.is(Items.CROSSBOW))return CrossbowItem.isCharged(stack);
-            if(stack.is(Items.BOW))return p.isUsingItem()&&BowItem.getPowerForTime(p.getTicksUsingItem())>=.99f;
-            if(stack.is(Items.TRIDENT))return p.isUsingItem()&&p.getTicksUsingItem()>=TridentItem.THROW_THRESHOLD_TIME;
+            if(stack.is(Items.BOW))return p.isUsingItem()&&p.getUsedItemHand()==InteractionHand.MAIN_HAND&&p.getUseItem().is(Items.BOW)&&BowItem.getPowerForTime(p.getTicksUsingItem())>=.99f;
+            if(stack.is(Items.TRIDENT))return p.isUsingItem()&&p.getUsedItemHand()==InteractionHand.MAIN_HAND&&p.getUseItem().is(Items.TRIDENT)&&p.getTicksUsingItem()>=TridentItem.THROW_THRESHOLD_TIME;
             return true;
         }
         public BallisticIntercept.Physics physics(net.minecraft.server.level.ServerPlayer p,ItemStack stack){return new BallisticIntercept.Physics(speed,gravity,.99,60);}
@@ -49,23 +49,29 @@ final class NativeRangedCombat {
     }
     static boolean tick(SkillWork w,LivingEntity target){
         var p=w.player();var strategy=w.session.spec().combat().strategy();double distance=p.distanceTo(target);
-        if(strategy!=CombatPolicy.Strategy.AUTO&&strategy!=CombatPolicy.Strategy.RANGED_KITE)return false;
+        if(strategy!=CombatPolicy.Strategy.AUTO&&strategy!=CombatPolicy.Strategy.RANGED_KITE&&strategy!=CombatPolicy.Strategy.HOLD_POSITION)return false;
         boolean melee=false;for(int i=0;i<36;i++)if(p.getInventory().getItem(i).is(net.minecraft.tags.ItemTags.SWORDS)||p.getInventory().getItem(i).is(net.minecraft.tags.ItemTags.AXES)){melee=true;break;}
         if(melee&&distance<4||strategy==CombatPolicy.Strategy.AUTO&&melee&&distance<6)return false;
         var selected=select(w);if(selected==null)return false;var adapter=selected.adapter;var state=w.ranged;
         if(!adapter.id().equals(state.adapter)){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;state.shootStage=0;state.adapter=adapter.id();state.planned=-10000;}
         if(!adapter.matches(p.getMainHandItem())){if(p.isUsingItem())w.actor.stop(w.token());w.actor.select(w.token(),selected.slot);return true;}
+        if(w.combatStage==0){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.combatStage=1;w.combatAmmo=w.count(Items.ARROW);w.shotLogged=false;state.shootStage=0;state.release=null;w.session.add("rangedAttempts_"+adapter.id(),1);}
+        if(w.combatStage==1&&adapter.use()!=RangedWeaponAdapter.Use.CLICK&&!adapter.ready(p,p.getMainHandItem())){w.actor.aim(w.token(),target.getEyePosition());w.actor.useHand(w.token(),w.combatOperation,InteractionHand.MAIN_HAND);}
         double desired=Math.clamp(adapter.range()*.55,3,12);w.actor.sprint(w.token(),false);
+        boolean dodge=w.combat.incoming(w)&&strategy!=CombatPolicy.Strategy.HOLD_POSITION;
+        if(dodge&&state.dodgeUntil<w.tick()){int side=w.footwork.choose(w.tick(),w.positioning.sideRisk(w,1),w.positioning.sideRisk(w,-1));if(side!=0){state.dodgeSide=side;state.dodgeUntil=w.tick()+10;w.session.add("rangedProjectileEvasions",1);}}
         if(distance<Math.min(4,desired-.6)||distance>adapter.range()*.9||!p.hasLineOfSight(target)){
+            if(strategy==CombatPolicy.Strategy.HOLD_POSITION){w.actor.haltMotion(w.token());w.session.phase("RANGED_HOLD_RANGE");return true;}
             var point=w.positioning.choose(w,distance<desired?"RETREAT":"RANGED",desired);
             if(point==null){if(!w.positioning.pending()){w.actor.stop(w.token());w.actor.recover(w.token(),target.position());}return true;}
             w.actor.moveTactically(w.token(),w.positioning.route());
+        }else if(state.dodgeUntil>=w.tick()){
+            var point=w.positioning.choose(w,state.dodgeSide>0?"SIDE_LEFT":"SIDE_RIGHT",Math.max(4,distance));if(point!=null)w.actor.moveTactically(w.token(),w.positioning.route());else w.actor.haltMotion(w.token());
         }else w.actor.haltMotion(w.token());
         Vec3 aim=plan(w,target,adapter,w.combatStage>=2);
-        if(aim==null&&state.deferred){w.session.phase("RANGED_PLANNING");return true;}
+        if(aim==null&&state.deferred){if((w.combatStage==1||p.isUsingItem())&&adapter.use()!=RangedWeaponAdapter.Use.CLICK)w.actor.useHand(w.token(),w.combatOperation,InteractionHand.MAIN_HAND);w.session.phase("RANGED_PLANNING");return true;}
         if(aim==null){w.session.phase("RANGED_LINE_CHECK");if(p.isUsingItem())w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;return true;}
         w.actor.aim(w.token(),aim);
-        if(w.combatStage==0){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.combatStage=1;w.combatAmmo=w.count(Items.ARROW);w.shotLogged=false;state.shootStage=0;state.release=null;w.session.add("rangedAttempts_"+adapter.id(),1);}
         if(w.tick()-w.combatAt>120){w.actor.stop(w.token());w.combatOperation=null;w.combatStage=0;state.planned=-10000;w.session.add("rangedAttemptsExpired",1);return true;}
         if(w.combatStage==1){
             w.session.phase("RANGED_CHARGING");
