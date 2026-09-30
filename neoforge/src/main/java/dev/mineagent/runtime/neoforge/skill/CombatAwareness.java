@@ -36,6 +36,8 @@ final class CombatAwareness {
         var p=w.player();var rule=w.session.spec().combat();if(anchor==null||!w.combatInterrupted)anchor=p.position();if(rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(p.getX(),p.getY(),p.getZ())))anchor=new Vec3((rule.area().min().x()+rule.area().max().x()+1)/2,p.getY(),(rule.area().min().z()+rule.area().max().z()+1)/2);
         protectedEntity=rule.protect().isBlank()?null:rule.protect().equals("$owner")?w.runtime.server.getPlayerList().getPlayer(w.session.owner()):p.level().getEntity(UUID.fromString(rule.protect())) instanceof LivingEntity e?e:null;
         if(protectedEntity!=null&&protectedEntity.level()!=p.level())protectedEntity=null;
+        // Released attacks move every tick; their observation does not wait for the broader target-selection scan.
+        projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001&&!(e instanceof dev.mineagent.runtime.neoforge.mixin.CombatArrowStateAccess arrow&&arrow.divzero$inGround())));
         if(w.tick()<nextScan)return;nextScan=w.tick()+4+Math.floorMod(w.token().hashCode(),3);scans++;
         var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());
         var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(owner!=null&&owner!=p&&owner.level()==p.level()&&owner.distanceTo(p)<=rule.awareness()*2&&owner.getLastHurtByMob()!=null&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100)bounds=bounds.minmax(owner.getBoundingBox());if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
@@ -72,7 +74,6 @@ final class CombatAwareness {
             if(eligible&&rule.engagement()==CombatPolicy.Engagement.CLEAR_AREA){var previous=lastSeen.put(e.getUUID(),new Seen(e,e.position(),w.tick()));if(previous!=null&&w.tick()-previous.tick>20)w.session.add("threatReacquisitions",1);}
         }
         threats=List.copyOf(rows);
-        projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001&&!(e instanceof dev.mineagent.runtime.neoforge.mixin.CombatArrowStateAccess arrow&&arrow.divzero$inGround())));
         if(rows.stream().anyMatch(t->t.eligible||t.urgent)||projectiles.stream().anyMatch(s->projectileRisk(s,p.position())>1))lastThreatTick=w.tick();
         var best=rows.stream().filter(Threat::eligible).max(Comparator.comparingDouble(Threat::score)).orElse(null);
         if(best!=null){if(selected!=best.entity){selected=best.entity;selectedAt=w.tick();w.session.add("targetChanges",1);}}else if(selected==null||!selected.isAlive()||selected.position().distanceTo(center(w))>rule.leash()||w.tick()-lastThreatTick>40)selected=null;

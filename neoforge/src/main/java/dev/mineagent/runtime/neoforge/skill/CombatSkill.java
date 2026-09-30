@@ -183,7 +183,7 @@ final class CombatSkill {
         if(!inReach){
             phase(w,"MELEE_APPROACH");
             if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);return;}
-            w.sprintApproach=true;if(!move(w,w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2)),target,false)&&!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;
+            w.sprintApproach=true;var approach=w.positioning.approachStep(w,target,Math.max(1,reach-.2));if(approach==null)approach=w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2));if(!move(w,approach,target,false)&&!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;
         }
         if(!ready){phase(w,"COOLDOWN_GUARD");shield(w,target);return;}
         Vec3 exit=w.positioning.attackExit(w,target);if(exit==null)exit=w.positioning.choose(w,"RETREAT",withdrawal);

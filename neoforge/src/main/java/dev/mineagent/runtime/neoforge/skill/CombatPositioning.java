@@ -14,6 +14,25 @@ final class CombatPositioning {
     private Vec3 waypoint,heading,targetAtWaypoint;private Node waypointNode;private int waypointAt;private double waypointRisk;private String waypointPurpose="";
     private List<PathStep> chosenRoute=List.of();private final Map<Node,Integer> exposure=new HashMap<>();
     private PathStep attackExit;private int attackExitAt=-10000;private Object attackExitLevel;private java.util.UUID attackExitTarget;
+    /** Progress toward a visible target using one checked local step; a distant archer must not freeze pursuit in a region search. */
+    Vec3 approachStep(SkillWork work,net.minecraft.world.entity.LivingEntity target,double desiredDistance){
+        var player=work.player();if(!player.onGround()||!player.hasLineOfSight(target)||player.distanceTo(target)<=desiredDistance)return null;
+        var check=new NativeTraversalEvaluator(player);check.beginSlice();var current=check.closest(player.position());if(current==null)return null;
+        var intercept=work.prediction.intercept(work,target,Math.min(8,player.distanceTo(target)/.3));
+        double initial=player.position().distanceTo(intercept),initialRisk=work.combat.risk(work,player.position(),target),best=Double.POSITIVE_INFINITY;PathStep chosen=null;double[] features=null;var model=LocalPolicyRuntime.snapshot(player);
+        for(var edge:check.neighbors(current)){
+            if(!Set.of(Action.WALK,Action.STEP_UP,Action.JUMP,Action.CROUCH,Action.DROP).contains(edge.action())||edge.from().y()-edge.to().y()>1.25||edgeExposure(work,edge.to(),check)>0)continue;
+            var point=NativeTraversalEvaluator.point(edge.to());double progress=initial-point.distanceTo(intercept);if(progress<.15)continue;
+            var rule=work.session.spec().combat();boolean assigned=rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(point.x,point.y,point.z));
+            if(!dev.mineagent.runtime.core.task.CombatBounds.canAdvance(assigned,point.distanceTo(work.combat.center(work)),player.position().distanceTo(work.combat.center(work)),rule.leash()))continue;
+            var middle=player.position().lerp(point,.5);double risk=work.combat.risk(work,point,target),future=Math.max(work.combat.collisionRisk(work,point,4,target),work.combat.collisionRisk(work,middle,2,target));if(risk>initialRisk+8||work.combat.spells.risk(work,point,6)>0||work.combat.spells.risk(work,middle,3)>0)continue;
+            var delta=point.subtract(player.position());var candidate=LocalPolicyRuntime.features(player,player.distanceTo(target),progress,risk+future,1,delta,0,player.getAttackStrengthScale(.5f)>=.95,work.session.spec().kind().ordinal(),0);
+            double score=risk+future*.6-progress*8+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*.8)+(model==null?0:model.cost(candidate)*8);
+            if(score<best){best=score;chosen=edge;features=candidate;}
+        }
+        if(chosen==null)return null;var point=NativeTraversalEvaluator.point(chosen.to());chosenRoute=List.of(chosen);selectedDistance=player.position().distanceTo(point);heading=point.subtract(player.position()).multiply(1,0,1).normalize();
+        if(features!=null)LocalPolicyRuntime.chose(work,features,point);work.session.add("checkedImmediateApproaches",1);return point;
+    }
     /** Constant-size native escape check for an immediate strike; a full region search must not stall a ready attack. */
     Vec3 attackExit(SkillWork work,net.minecraft.world.entity.LivingEntity target){
         var player=work.player();double enemyReach=work.combat.threats.stream().filter(t->t.entity()==target).flatMap(t->t.state().attacks().stream()).filter(a->a.kind().equals("MELEE")).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);if(enemyReach>player.getAttackRangeWith(player.getMainHandItem()).effectiveMaxRange(player)+.25)return null;var owner=work.runtime.server.getPlayerList().getPlayer(work.session.owner());var check=new NativeTraversalEvaluator(player);check.beginSlice();var current=check.closest(player.position());
