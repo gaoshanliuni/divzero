@@ -9,6 +9,15 @@ class WorkerAgentModelTest {
    for(String capability:List.of("SEMANTIC","PLANNING","CODING")){var p=new LinkedHashMap<String,Object>(Map.of("capability",capability,"prompt","question","worldId",w,"agentId",a));p.put("agentModel",Map.of("world",w,"agent",a,"model","special","baseUrl",url,"revision",1));var result=handler.handleStreaming(new WorkerEnvelope(1,UUID.randomUUID(),"model.stream",p),d->{});assertEquals("special",result.payload().get("requestedModel"),result.toString());}
    var normal=handler.handleStreaming(new WorkerEnvelope(1,UUID.randomUUID(),"model.stream",Map.of("capability","SEMANTIC","prompt","other Agent")),d->{});assertEquals("global",normal.payload().get("requestedModel"));
    var p=new LinkedHashMap<String,Object>(Map.of("capability","SEMANTIC","prompt","stale","worldId",w,"agentId",a));p.put("agentModel",Map.of("world",w,"agent",a,"model","wrong","baseUrl",url+"other/","revision",1));assertEquals("error",handler.handleStreaming(new WorkerEnvelope(1,UUID.randomUUID(),"model.stream",p),d->{}).type());assertEquals(List.of("special","special","special","global"),seen);
+   var settings=new LinkedHashMap<String,String>();settings.put("provider.openai.baseUrl",url);for(String role:dev.mineagent.runtime.core.config.ExplicitModelRoles.ROLES)settings.put("provider.openai.role."+role,"fixture-"+role);
+   assertTrue(config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(config.revision(),settings),true).accepted());
+   for(String role:dev.mineagent.runtime.core.config.ExplicitModelRoles.ROLES){
+    var source=dev.mineagent.runtime.core.config.AgentModelSettings.context(new WorkerEnvelope(1,UUID.randomUUID(),"model.stream",Map.of("capability","SEMANTIC","prompt","explicit role")),UUID.fromString(w),UUID.fromString(a));
+    var bound=dev.mineagent.runtime.core.config.AgentModelSettings.bind(config,dev.mineagent.runtime.core.config.ExplicitModelRoles.mark(source,role));
+    var reply=handler.handleStreaming(bound,d->{});assertEquals("fixture-"+role,reply.payload().get("requestedModel"));assertEquals("fixture-"+role,seen.getLast());
+   }
+   var inherited=handler.handleStreaming(new WorkerEnvelope(1,UUID.randomUUID(),"model.stream",Map.of("capability","SEMANTIC","prompt","default remains")),d->{});assertEquals("global",inherited.payload().get("requestedModel"));
+
   }finally{http.stop(0);}
  }
 }

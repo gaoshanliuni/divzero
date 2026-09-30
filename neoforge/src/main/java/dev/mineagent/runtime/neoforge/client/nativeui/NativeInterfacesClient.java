@@ -116,8 +116,8 @@ public final class NativeInterfacesClient {
     public record ManagedView(UUID agent,String id,String title,long revision,String surface,boolean visible,boolean interactive,String error){}
     public static List<ManagedView> managedViews(){return VIEWS.values().stream().filter(slot->slot.session.definition()!=null).map(slot->new ManagedView(slot.key.agent,slot.key.id,slot.session.definition().title(),slot.wireRevision,slot.session.definition().surface().name(),slot.session.visible(),slot.session.interactive(),slot.error)).toList();}
     private static Map<String,Object> snapshot(Slot slot){var out=new LinkedHashMap<String,Object>();out.put("id",slot.key.id);out.put("revision",slot.wireRevision);out.put("activationToken",slot.activationToken);out.put("dataRevision",slot.session.dataRevision());out.put("visible",slot.session.visible());out.put("interactive",slot.session.interactive());out.put("data",slot.session.definition().observableData(slot.session.data()));out.put("events",List.copyOf(slot.events));out.put("error",slot.error);out.put("sourceErrors",slot.sourceErrors);out.put("attachment",NativeAttachedLayers.observation(slot.session));return out;}
-    static com.lowdragmc.lowdraglib2.gui.ui.UIElement smokeWidget(String id,String node){
-        if(!Boolean.getBoolean("mineagent.nativeUiSmoke")&&!Boolean.getBoolean("mineagent.nativeMigrationModelSmoke")&&!Boolean.getBoolean("mineagent.nativeTenSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
+    public static com.lowdragmc.lowdraglib2.gui.ui.UIElement smokeWidget(String id,String node){
+        if(!Boolean.getBoolean("mineagent.skillSmoke")&&!Boolean.getBoolean("mineagent.nativeUiSmoke")&&!Boolean.getBoolean("mineagent.nativeMigrationModelSmoke")&&!Boolean.getBoolean("mineagent.nativeTenSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
         var slot=VIEWS.values().stream().filter(s->s.key.id.equals(id)).findFirst().orElseThrow();
         return slot.screen!=null&&Minecraft.getInstance().screen==slot.screen?slot.screen.rendered.node(node):slot.session.rendered().node(node);
     }
