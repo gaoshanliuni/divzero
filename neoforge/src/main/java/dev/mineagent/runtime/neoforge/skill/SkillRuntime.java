@@ -53,7 +53,7 @@ public final class SkillRuntime {
     public static void bodyDied(MineAgentPlayer body){var r=ALL.get(body.level().getServer());if(r==null)return;for(var w:List.copyOf(r.work.values()))if(w.session.agent().equals(body.agentId())&&w.session.spec().actor().equals("ai")&&!w.session.terminal()){
         r.savePolicy(w.session.owner(),w.session.agent(),"ai",w.session.spec().combat());
         if(!w.session.runnable()&&!w.session.reason().equals("BODY_OR_DIMENSION_CHANGED"))continue;
-        var receipt=new LinkedHashMap<>(w.session.receipt());receipt.put("state","BODY_DIED_REOBSERVE");receipt.put("combatState","BODY_DIED_CANCELLED");receipt.put("previousActionMayHaveApplied",Boolean.toString(w.executed));w.session.receipt(receipt);w.session.waitForRespawn();w.release();r.persist(w);
+        var receipt=new LinkedHashMap<>(w.session.receipt());receipt.put("interruptedState",receipt.getOrDefault("state",""));receipt.put("state",w.executed&&receipt.getOrDefault("state","").equals("PREPARED")?"PREPARED":"BODY_DIED_REOBSERVE");receipt.put("combatState","BODY_DIED_CANCELLED");receipt.put("previousActionMayHaveApplied",Boolean.toString(w.executed));w.session.receipt(receipt);w.session.waitForRespawn();w.release();r.persist(w);
     }}
     public static void bodyRespawned(MineAgentPlayer body){var r=get(body.level().getServer());r.loaded.thenRunAsync(()->r.resumeRespawn(body),r.server::execute);}
     private void resumeRespawn(MineAgentPlayer body){
@@ -62,7 +62,7 @@ public final class SkillRuntime {
             var owner=server.getPlayerList().getPlayer(old.session.owner());if(owner==null||!owner.isAlive()||!ServerTaskStart.allowed(owner,body.agentId())||!old.externalAuthority.getAsBoolean())continue;
             var link=old.session.snapshot();if(link.task()!=null){var task=MineAgentRuntimeServices.tasks(server).get(link.task()).orElse(null);if(task==null||task.intentRevision()!=link.taskIntent()||!Set.of("RUNNING","COMPLETED").contains(task.status().name()))continue;}
             try{
-                var spec=old.session.spec();boolean follow=spec.kind()==SkillSpec.Kind.FOLLOW&&(spec.target().equals("$owner")||spec.target().equals(owner.getUUID().toString()));
+                if(old.session.needsReconciliation()){old.session.transition(State.PAUSED,"RESPAWN_REQUIRES_RECONCILIATION");persist(old);continue;}var spec=old.session.spec();boolean follow=spec.kind()==SkillSpec.Kind.FOLLOW&&(spec.target().equals("$owner")||spec.target().equals(owner.getUUID().toString()));
                 if(follow){
                     if(spec.combat().area()!=null&&owner.level()!=body.level()){old.session.transition(State.PAUSED,"RESPAWN_REGION_REQUIRES_RECHECK");persist(old);continue;}
                     var position=respawnNear(body,owner);if(position==null)continue;

@@ -24,7 +24,7 @@ public final class NativeStreamingChat {
     }
     private record Part(UUID operation,UUID agent,String key,Component content){}
     private static Part part(Component value){
-        if(value.getContents() instanceof TranslatableContents t&&t.getKey().equals(dev.mineagent.runtime.neoforge.chat.AiPlayerChat.STREAM_PART)&&t.getArgs().length==4&&t.getArgs()[0] instanceof Component c)try{return new Part(UUID.fromString(t.getArgs()[1].toString()),UUID.fromString(t.getArgs()[2].toString()),t.getArgs()[3].toString(),c);}catch(IllegalArgumentException ignored){}
+        if(value.getContents() instanceof TranslatableContents t&&t.getKey().equals(dev.mineagent.runtime.neoforge.chat.AiPlayerChat.STREAM_PART)&&t.getArgs().length==4)try{return new Part(UUID.fromString(t.getArgs()[1].toString()),UUID.fromString(t.getArgs()[2].toString()),t.getArgs()[3].toString(),t.getArgs()[0] instanceof Component c?c:Component.literal(t.getArgs()[0].toString()));}catch(IllegalArgumentException ignored){}
         if(value.getContents() instanceof TranslatableContents t)for(var arg:t.getArgs())if(arg instanceof Component c){var result=part(c);if(result!=null)return result;}
         for(var sibling:value.getSiblings()){var result=part(sibling);if(result!=null)return result;}return null;
     }

@@ -19,6 +19,8 @@ public final class MineAgentConnection extends Connection {
     private final EmbeddedChannel channel = new EmbeddedChannel();
     private volatile PacketListener listener;
     private volatile boolean connected = true;
+    private boolean disconnectionHandled;
+    private net.minecraft.network.DisconnectionDetails disconnection;
     @FunctionalInterface public interface PreparedPlayerFactory {
         net.minecraft.server.level.ServerPlayer create(net.minecraft.server.MinecraftServer server,
                 net.minecraft.server.level.ServerLevel level,com.mojang.authlib.GameProfile profile,
@@ -57,10 +59,17 @@ public final class MineAgentConnection extends Connection {
     @Override
     public void send(Packet<?> packet, @Nullable ChannelFutureListener listener, boolean flush) {
         // The AI body has no remote client. Real observers receive tracking packets from the server.
+        if(listener!=null)try{listener.operationComplete(channel.newSucceededFuture());}catch(Exception failure){throw new IllegalStateException("AI_PACKET_COMPLETION_FAILED",failure);}
     }
 
     @Override
     public void disconnect(Component reason) {
+        disconnect(new net.minecraft.network.DisconnectionDetails(reason));
+    }
+
+    @Override
+    public void disconnect(net.minecraft.network.DisconnectionDetails details) {
+        disconnection=details;
         connected = false;
         channel.close();
     }
@@ -101,5 +110,8 @@ public final class MineAgentConnection extends Connection {
 
     @Override
     public void handleDisconnection() {
+        if(connected||disconnectionHandled)return;
+        disconnectionHandled=true;
+        if(listener!=null)listener.onDisconnect(disconnection==null?new net.minecraft.network.DisconnectionDetails(Component.translatable("multiplayer.disconnect.generic")):disconnection);
     }
 }

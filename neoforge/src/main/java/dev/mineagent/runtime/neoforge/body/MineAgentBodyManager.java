@@ -576,6 +576,9 @@ public final class MineAgentBodyManager implements AutoCloseable {
             }finally{pending.preparation().close();}
         }
         for (MineAgentPlayer body : List.copyOf(bodies.values())) {
+            if(!body.connection.getConnection().isConnected()){
+                body.connection.getConnection().handleDisconnection();body.prepareForServerStop();bodies.remove(body.agentId());pendingRespawns.remove(body.agentId());applyTicketDelta(ticketLedger.remove(body.agentId()));continue;
+            }
             body.ensureTicked(serverTick);
         }
         for (PendingRespawn pending : List.copyOf(pendingRespawns.values())) {
@@ -637,6 +640,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
     }
 
     private void prepareRestoredBody(AgentDefinition definition){
+        if(server.getPlayerList().getBans().isBanned(new net.minecraft.server.players.NameAndId(definition.agentId(),definition.profileName()))){identityProblems.put(definition.agentId(),"BANNED");return;}
         try{requirePlayerName(definition.displayName(),definition.agentId());}catch(IllegalArgumentException invalid){identityProblems.put(definition.agentId(),"NAME_REQUIRES_RENAME");return;}
         var previous=persistentAgents.previousProfileName(definition.agentId()).orElseGet(()->server.services().nameToIdCache().get(definition.agentId()).map(net.minecraft.server.players.NameAndId::name).orElse("MA_"+definition.agentId().toString().replace("-","").substring(0,12)));
         moveScoreIdentity(previous,definition.displayName());

@@ -81,6 +81,7 @@ public final class PlayerFeedbackSmoke {
         step("disabled-remains-dead",()->server(p->{if(ticks-started<50)return false;check(body(p).getId()==deathId&&!body(p).isAlive(),"DISABLED_AUTO_RESPAWN_IGNORED");return true;}));
         action("manual-respawn",()->server(p->MineAgentRuntimeServices.bodies(p.level().getServer()).respawnNow(agent)));
         step("manual-respawn-completed",()->server(p->body(p).getId()!=deathId&&body(p).isAlive()));
+        action("native-kick-command-cleans-player-list",()->server(p->{try{SkillRuntime.get(p.level().getServer()).stopAll(p,agent);var s=p.level().getServer();check(s.getCommands().getDispatcher().execute("kick 伙伴二号",p.createCommandSourceStack())>0,"KICK_FAILED");check(s.getPlayerList().getPlayer(agent)==null,"KICK_LEFT_AI_IN_PLAYER_LIST");return true;}catch(Exception e){throw new CompletionException(e);}}));
         action("close-ui",()->{mc().screen.onClose();return yes();});return result;
     }
     @net.neoforged.bus.api.SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event){

@@ -29,6 +29,7 @@ public final class SkillSession {
     public void phase(String phase){this.phase=phase;}
     public void transition(State state,String reason){if(terminal()&&this.state!=state)throw new IllegalStateException("SKILL_TERMINAL");this.state=state;this.reason=Objects.requireNonNullElse(reason,"");}
     private boolean uncertain(){return receipt.getOrDefault("state","").equals("PREPARED")||receipt.getOrDefault("combatState","").equals("PREPARED");}
+    public boolean needsReconciliation(){return uncertain();}
     public void control(long expected,String action){if(expected!=revision)throw new IllegalStateException("SKILL_STALE_REVISION");if(terminal())throw new IllegalStateException("SKILL_TERMINAL");switch(action){case "pause"->transition(State.PAUSED,"USER_PAUSED");case "resume"->{if(uncertain())throw new IllegalStateException("SKILL_RECONCILIATION_REQUIRED");transition(State.RUNNING,"");}case "stop"->transition(State.CANCELLED,"USER_CANCELLED");default->throw new IllegalArgumentException("SKILL_ACTION");}revision++;}
     public void cursor(long cursor){this.cursor=cursor;}public void waypoint(int index){waypoint=index;}public int direction(){return direction;}public void direction(int direction){this.direction=direction;}public void add(String counter,long amount){counters.merge(counter,amount,Long::sum);}public long count(String counter){return counters.getOrDefault(counter,0L);}
     public void receipt(Map<String,String> receipt){this.receipt=Map.copyOf(receipt);}
