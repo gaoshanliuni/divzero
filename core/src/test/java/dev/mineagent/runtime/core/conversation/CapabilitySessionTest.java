@@ -3,6 +3,12 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class CapabilitySessionTest {
+    @Test void packageActivationIsOnDemandAndDimensionBound(){
+        var scope=new CapabilitySession();assertFalse(scope.tools().contains("activate_package_version"));
+        scope.load("content");assertTrue(scope.tools().contains("activate_package_version"));
+        assertFalse(ToolExecutionTraits.of("activate_package_version").dimensionIndependent());
+        assertFalse(ToolExecutionTraits.of("activate_package_version").readOnly());
+    }
     @Test void ordinaryChatHasOnlyResidentsAndNeverAllSchemas(){
         var scope=new CapabilitySession();scope.preload("你好，今天心情怎么样？",List.of("building"));
         assertEquals(CapabilityCatalog.RESIDENT,scope.tools());assertTrue(scope.definitions().size()<ConversationTools.ALL.size()/4);

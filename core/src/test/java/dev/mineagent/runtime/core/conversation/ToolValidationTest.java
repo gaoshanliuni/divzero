@@ -2,6 +2,12 @@ package dev.mineagent.runtime.core.conversation;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class ToolValidationTest {
+    @Test void packageActivationRejectsIncompleteLocationAndMissingVersionBeforeExecution(){
+        var result=ToolValidation.check("activate_package_version",ToolArguments.parse("activate_package_version","{\"package_id\":\"00000000-0000-0000-0000-000000000001\",\"position\":[0,64]}"));
+        assertTrue(result.issues().stream().anyMatch(i->i.field().equals("position")));
+        assertTrue(result.issues().stream().anyMatch(i->i.field().equals("revision")));
+        assertEquals("NOT_STARTED",result.rejection().get("executionState"));
+    }
     @Test void reportsRouteCoordinatePathWithoutExecutingOrInventingTheMissingCoordinate(){
         var args=ToolArguments.parse("patrol_route","{\"id\":\"patrol\",\"actor\":\"ai\",\"dimension\":\"minecraft:overworld\",\"expected_revision\":0,\"route\":[[0,64,0],[1,64,0],[2,64]]}");
         var result=ToolValidation.check("patrol_route",args);

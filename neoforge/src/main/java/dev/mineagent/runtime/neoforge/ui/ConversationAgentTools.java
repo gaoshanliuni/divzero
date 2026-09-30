@@ -229,6 +229,7 @@ public final class ConversationAgentTools {
             case "run_game_command"->{keys(a,"command");return command(p,text(a,"command",2048),permit);}
             case "generate_content_package"->{keys(a,"prompt");return generateContent(p,agent,operation,text(a,"prompt",4096),null,permit);}
             case "control_package_edit"->{return CompletableFuture.completedFuture(ServerPackageRuntime.get(p.level().getServer()).controlPackageEdit(p,agent,a));}
+            case "activate_package_version"->{return CompletableFuture.completedFuture(ServerPackageRuntime.get(p.level().getServer()).activatePackageVersion(p,agent,operation,a));}
             case "edit_package_sources"->{return ServerPackageRuntime.get(p.level().getServer()).editPackageSources(p,agent,operation,a,permit);}
             case "repair_content_package"->{keys(a,"source_operation_id","job_revision","raw_sha256","edits");return generateContent(p,agent,operation,"局部修复候选",a,permit);}
             case "set_actor_enhancements"->{return CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.skill.ActorEnhancements.update(p,agent,a));}

@@ -1369,13 +1369,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CandidateTools.java",
-      "sha256": "c74ef1480606ef42de19dcf0e19ac9bddc2e15abcde4b7ad718656be274ac041",
-      "bytes": 10099
+      "sha256": "bb7c6eea17ac855436d073c163f13dcaa8a7f7060cf9d049dccea3d47c21523d",
+      "bytes": 10363
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilityCatalog.java",
-      "sha256": "d1174dbd9e0d7e0f2b2d2ae7d378869a86d1f0cd1b69ae83e7081012c4c014d8",
-      "bytes": 17229
+      "sha256": "1adf530e065e21988f219f65aca53344f540f2e700752dc0f8c97fa541ae25b1",
+      "bytes": 17254
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
@@ -1434,8 +1434,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "9f8713f0fb8b70d50f3eaf56f679da246de61bc2b73970ef29b610cc77696b00",
-      "bytes": 66987
+      "sha256": "2c609be130c276676bc31c5b9012dc1b5a91a4a91b2d9a00cc16bbf1b8a5310c",
+      "bytes": 67050
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
@@ -2889,8 +2889,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/CapabilitySessionTest.java",
-      "sha256": "4580d2bf530d7740d0fb7011e2283a279a158d90912eac335c9270f70c2ac821",
-      "bytes": 2114
+      "sha256": "d3127451617b86e14405a38132152da27fce04367d717288603c5d956b44b99b",
+      "bytes": 2564
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationNativeSnapshotTest.java",
@@ -2959,8 +2959,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolValidationTest.java",
-      "sha256": "2c2333119352c591429d53bfab09420fda8ea0f60c10e453f8a9a420256e0b4e",
-      "bytes": 2555
+      "sha256": "6184803c3f863e0ae7ea717d35ff3c6d03bf5e9cfbe168f724c6006638fa657c",
+      "bytes": 3105
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureAnimationTest.java",
@@ -3279,8 +3279,8 @@
     },
     {
       "path": "docs/ADAPTIVE_AGENT_UPGRADE.md",
-      "sha256": "620e76943440435a3d89475166619cdbd95068f11360eecbb7bafb4d8302f416",
-      "bytes": 11998
+      "sha256": "f9e2aa8d6fbf19d23e00d16ee29453eb631f255ba89fbcdebfcca17dfcabdecf",
+      "bytes": 13252
     },
     {
       "path": "docs/BUILD_JAR.md",
@@ -3854,8 +3854,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "a34a772b5c0e76a53ed86fa3719a1b71ef2cdd3a78c431840aacee48f64ac2f2",
-      "bytes": 163096
+      "sha256": "0cc686a35b7ddb04737f1044b47762c8ffbc698326a292aa15045643f75768d6",
+      "bytes": 164354
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5754,8 +5754,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "147d985daa67615826711e41b21baedd086c89bd59d892223142e1906fb73bea",
-      "bytes": 71926
+      "sha256": "de06964c61060cfeeb3a1257f166674c09a837bf2ed504c4e6c4d4ebe2a2bad6",
+      "bytes": 72108
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -6229,8 +6229,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "sha256": "f1fa922bf3bc2a926b0379a7de5ed4950b6775830b42d67412fbb1a6c745418f",
-      "bytes": 70740
+      "sha256": "882325e3c39ebd397f7c83d2c571feb77b0c791928b8c859d1644225ad3a663c",
+      "bytes": 72925
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",

@@ -126,6 +126,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         String diagnostic=job==null?"":worldPatches.diagnostic(viewer.getUUID(),operation);if(offset<0||offset>1048576)throw new IllegalArgumentException("PACKAGE_SOURCE_OFFSET");
         return java.util.concurrent.CompletableFuture.supplyAsync(()->{try{
             var value=new LinkedHashMap<String,Object>();value.put("package_id",packageId);value.put("revision",revision);value.put("base_hash",base.canonicalSha256());value.put("activationMode",base.activationMode());
+            value.put("definitions",base.definitions().values().stream().sorted(java.util.Comparator.comparing(d->d.definitionId().toString())).map(d->Map.of("id",d.definitionId(),"name",d.name(),"kind",d.kind())).toList());
             if(job!=null){value.put("operation_id",job.operationId());value.put("job_revision",job.revision());value.put("raw_sha256",job.rawOutputSha256());value.put("candidateState",job.state());value.put("candidate_hash",job.candidate()==null?"":job.candidate().canonicalSha256());value.put("diagnostic",diagnostic);}
             if(path.isEmpty()){var files=base.resources().values().stream().sorted(Comparator.comparing(dev.mineagent.runtime.api.packages.RuntimeResourceRef::path)).toList();value.put("files",files.stream().skip(offset).limit(32).toList());value.put("nextOffset",offset+32<files.size()?offset+32:-1);return value;}
             String source=null;
@@ -162,6 +163,19 @@ public final class ServerPackageRuntime implements AutoCloseable {
                 if(!finished.state().equals("READY"))response.put("error",finished.errorCode());else response.put("candidate_hash",finished.candidate().canonicalSha256());response.put("nextStep","Inspect the candidate and apply it through the existing package lifecycle controls. No running source was replaced by preparing this candidate.");return response;
             }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}finally{worldPatchPermits.remove(job.taskId(),permit);}
         }));
+    }
+    public Map<String,Object> activatePackageVersion(ServerPlayer viewer,UUID agent,UUID operation,com.fasterxml.jackson.databind.JsonNode args)throws Exception{
+        requireServerThread();if(!mayWorldPatch(viewer.getUUID(),agent))throw new SecurityException("PACKAGE_SOURCE_PERMISSION");
+        UUID packageId=UUID.fromString(args.path("package_id").asText());long revision=args.path("revision").asLong();
+        var pack=ownedPackage(viewer.getUUID(),packageId,revision).orElseThrow(()->new SecurityException("PACKAGE_NOT_OWNED"));
+        if(pack.revision()!=revision||!pack.canonicalSha256().equals(args.path("canonical_sha256").asText()))throw new IllegalStateException("STALE_PACKAGE");
+        if(pack.activationMode()!=dev.mineagent.runtime.api.packages.ActivationMode.HOT_RUNTIME)throw new IllegalStateException("ACTIVATION_REQUIRES_LIFECYCLE");
+        var position=args.path("position");var location=new dev.mineagent.runtime.api.packages.RuntimeInstanceLocation(args.path("dimension").asText(),position.path(0).asDouble(),position.path(1).asDouble(),position.path(2).asDouble(),0,0);
+        var runtime=dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(server);
+        var activation=runtime.activate(viewer,operation,packageId,revision,UUID.fromString(args.path("definition_id").asText()),location,true);
+        boolean active=activation.state().equals("ACTIVE");var result=new LinkedHashMap<String,Object>();result.put("status",active?"ACTIVE":"OUTCOME_REQUIRES_INSPECTION");result.put("activation",activation);result.put("operation_id",operation);result.put("instance_id",activation.instanceId());result.put("executionState",active?"EXECUTED":"OUTCOME_UNKNOWN");
+        result.put("oldInstancesMigrated",false);if(!active){result.put("error",activation.error());result.put("nextStep","Inspect this activation and actual world effects before retrying; do not replay an uncertain activation.");}
+        return result;
     }
     public Map<String,Object> controlPackageEdit(ServerPlayer viewer,UUID agent,com.fasterxml.jackson.databind.JsonNode args)throws Exception{
         requireServerThread();UUID operation=UUID.fromString(args.path("operation_id").asText());var job=worldPatches.get(viewer.getUUID(),operation);
