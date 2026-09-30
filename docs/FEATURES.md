@@ -8,7 +8,25 @@
 
 DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，通过自然语言、世界感知、长期记忆和动态创造，让 AI 角色真正参与游戏世界。
 
-本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**1.0.22 / 协议11**，客户端与服务端一起更新；旧版1.0.20为协议10。管理操作需要开启作弊／真实管理权限，首次在聊天中选择启用即可立即使用。
+本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**公开源码 1.0.23 候选 / 协议11**，客户端与服务端一起更新；旧版1.0.20为协议10。管理操作需要开启作弊／真实管理权限，首次在聊天中选择启用即可立即使用。
+
+## 1.0.23 候选补齐
+
+- F2 与专属面板的背包打开原生容器：真实盔甲、副手、主手与库存，支持普通点击、Shift、数字键、右键拆分、拖拽和物品组件。
+- 保留下拉框，修复弹层层级和按下时失焦；固定筛选标签中文化。尺寸按钮设为 2／3／4，保留草稿并稳定输入区域。
+- 原生 give／tp 接受唯一 AI 显示名称与中文名称，保持原 UUID 和身体；真实玩家名称优先，重名不猜测。
+- 新世界自动建立独立数据作用域；一次聊天启用／禁用即可使用，不默认进入多身份向导。
+- 建筑已开始、错误恢复操作等已知未写入错误返回工具结果，允许模型继续修正；未验证版本不能冒称完成，未知写入仍需先核对。
+- 普通难度的混合五敌与十僵尸已分别验证 AI 身体与真人托管；指定装备、场景和结果见 [验收说明](COUNTERATTACK_UI_FUNCTIONS.md)。
+
+### 界面入口与内容管理
+
+- 包管理自动显示新创建内容，涵盖内容包及其物品、独立生物、原生生物模板、实体和方块交互修改、当前玩家的方块贴图；支持按物品或定义名称搜索。
+- F2 内置页直接使用 LDLib2，默认 MC 主题。下拉框保留并修正重叠，设置内容与底部操作栏分开布局；尺寸入口位于“设置 → 界面尺寸”。
+- 恢复／校验结果使用中文状态、坐标与方块图标，保留实际差异与冲突信息；普通详情不展示原始 JSON。需要代码时，通过明确的高级源码编辑入口进入。
+- 记忆页面使用 AI 实际召回的存储；媒体、Mod 索引和诊断连接真实服务。建筑规划可直接提交给 AI，再在列表检查和施工。
+
+[详细验收范围与截图](native-workspace-integration.md)。这些修复不代表其他研发计划已经完成，也不会自动创建 Release。
 
 ## 模型选择会显著影响效果
 
@@ -256,7 +274,11 @@ DivZero 使用 [Apache License 2.0](https://github.com/gaoshanliuni/divzero/blob
 
 DivZero AI Runtime is an intelligent AI framework for Minecraft. Natural language interaction, world awareness, persistent memory, and dynamic creation let AI characters actively participate in the game world.
 
-This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **1.0.22 / protocol 11:** update clients and servers together. The older 1.0.20 release uses protocol 10. Administrative actions require cheats or real administrator permissions. Click Enable in the first-entry chat prompt for immediate activation.
+This player-facing guide covers the current public `main`, with conversation examples, commands, and native/F2 entry points. **This is a development/test release; provider, mod, platform, and scenario coverage is described below.** Requirements: Minecraft 26.1.2, NeoForge 26.1.2.106, Java 25. **Public source 1.0.23 candidate / protocol 11:** update clients and servers together. The older 1.0.20 release uses protocol 10. Administrative actions require cheats or real administrator permissions. Click Enable in the first-entry chat prompt for immediate activation.
+
+## 1.0.23 candidate additions
+
+Native AI inventory uses ordinary container click, Shift, number-key, split-stack and drag handling, including actual armor and held items. Dropdown layering/focus and fixed labels are repaired; GUI scale 2/3/4 keeps drafts. Native give/tp accepts unique AI display names without changing identity. New worlds use one participation choice. Known no-effect building rejections return actionable tool results so correction can continue; uncertain writes still require inspection. See [acceptance coverage](COUNTERATTACK_UI_FUNCTIONS.md) for native group combat and UI tests.
 
 ## Your model makes a major difference
 

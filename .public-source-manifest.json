@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "fe9c2886e6a04e9fe269f64993baefbfcab3a80d1afe2dc0c7186ff66188db3f",
-      "bytes": 22503
+      "sha256": "fef568da01806ef206d428a5e04fb5b639a90d5f5aa681d001114d8e96f6ccdc",
+      "bytes": 23765
     },
     {
       "path": "agent/build.gradle",
@@ -3189,13 +3189,13 @@
     },
     {
       "path": "docs/COUNTERATTACK_UI_FUNCTIONS.md",
-      "sha256": "49ae19576751304f44f10429129d60291839758a9711f5b0d89ec179ceb79059",
-      "bytes": 1772
+      "sha256": "a30409cbf097b6687b0c09479b76392d465ec8033004bdd4da69b2b4cb6929b1",
+      "bytes": 14296
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "583f02c580c25ca249856b50ca1eced152a5926cb3c3f7b5b9d579ebca51a773",
-      "bytes": 45283
+      "sha256": "6e65d52fa471031ddd37bb132f82559bfb0a4a4a1fa32cafc7c65ef930af08a8",
+      "bytes": 47840
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -3259,8 +3259,8 @@
     },
     {
       "path": "docs/images/README.md",
-      "sha256": "fa0c7f6ee3f491a99b942ce04018ed30429ee913dd14e359c31a5ad4df7f89b2",
-      "bytes": 5295
+      "sha256": "41c3ba20bea810d0165cb750c94b6cd8b65d10e2604e997f63e747b8247fb086",
+      "bytes": 6962
     },
     {
       "path": "docs/images/behavior-agent-profile.png",
@@ -3273,9 +3273,19 @@
       "bytes": 350065
     },
     {
+      "path": "docs/images/native-agent-inventory.png",
+      "sha256": "d9f125003e5790e6dece00f671734c1849818b8071b6d23af180bb514051d7b4",
+      "bytes": 504602
+    },
+    {
       "path": "docs/images/native-agent-profile.png",
       "sha256": "e1938ac01828dccd032f7b588405eea6a5d06e1d3ea7aaf7aef71d8af3a839d9",
       "bytes": 524350
+    },
+    {
+      "path": "docs/images/native-content-catalog.png",
+      "sha256": "65c7879c8b5198522e299f175e94c831c9180124dfaee7db2187cf099d143385",
+      "bytes": 663303
     },
     {
       "path": "docs/images/native-furnace.png",
@@ -3288,9 +3298,29 @@
       "bytes": 221630
     },
     {
+      "path": "docs/images/native-recovery-report.png",
+      "sha256": "c6d07df70eff4ce1ea58bd06d50ebbfaa4e1799bc2987533cacbe3718ca45640",
+      "bytes": 254611
+    },
+    {
+      "path": "docs/images/native-selector-layout.png",
+      "sha256": "fd0d40507046a16228da7c58cb02c42504044d736c58dddc12296efafd1756bb",
+      "bytes": 251214
+    },
+    {
+      "path": "docs/images/native-settings-scale-four.png",
+      "sha256": "b1db794bf722e0225a33fd4f481ff2f4d7f6cb59706f1061f18e3ebac99a6eba",
+      "bytes": 251341
+    },
+    {
       "path": "docs/images/native-shop.png",
       "sha256": "54c146df8c3ca540db8a33432079cf0c0f7063c43c90b2d30f242f70e37d2d8a",
       "bytes": 689450
+    },
+    {
+      "path": "docs/images/native-workspace-scale-four.png",
+      "sha256": "5b73da35e6b0bcd4ba08a22e0951ef6e1796cb79bc39aaa3405c510b101b2300",
+      "bytes": 209277
     },
     {
       "path": "docs/images/native-workspace.png",
@@ -3304,8 +3334,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "42cbddaae6816510184908d4acb0366763c3f08a5bd59f603a61bc7e91666f95",
-      "bytes": 7559
+      "sha256": "a163b3c59aeb65d6146015fa7c36cd9096a76672e69f1924c0b4fee9144430f9",
+      "bytes": 8248
     },
     {
       "path": "docs/releases/1.0.20.md",
@@ -3324,8 +3354,8 @@
     },
     {
       "path": "docs/releases/1.0.23.md",
-      "sha256": "97dd77e6ae2e1eb360f21066ad31a2665c2774ccfcac7a65ce2ed23357d5e4fc",
-      "bytes": 789
+      "sha256": "6741c7524c3e3c1b9844e7cb729dd0cc09e527787f486d715ec0d041a5910e63",
+      "bytes": 3668
     },
     {
       "path": "gradle.properties",
@@ -3969,8 +3999,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeContentCatalogPanel.java",
-      "sha256": "ec4baacef59cd3c8b79543d561ba4710fe52ae3463ffe6a2f5f0009703f370c4",
-      "bytes": 13013
+      "sha256": "4dfe3b5f14a4f51f90c533b2439effc57385967f302810b882b0e64ff296e86e",
+      "bytes": 13869
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeConversationExtras.java",
@@ -4004,8 +4034,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeFunctionalSmokeClient.java",
-      "sha256": "d2ecdf99a1f18497855d2a86cd1e781f741870cc834f1bd15c29f12426a8b48d",
-      "bytes": 23093
+      "sha256": "9c4aa17bc31a3f3c3510982df3fc7adfd66d85883db584846e31ac20b185967f",
+      "bytes": 23893
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeGenerationPanel.java",
@@ -5939,8 +5969,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
-      "sha256": "5fc24217532519a0ecb15aea0249d98a33ffa03664c3324f5f242c36a660b2a5",
-      "bytes": 8236
+      "sha256": "744cfd3eb183e778e58834bc6e5dd838e872b182903dc9863d1edf391cedbe29",
+      "bytes": 8583
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEntityInterop.java",

@@ -57,7 +57,7 @@ final class ServerCreatedContents {
         else throw new IllegalArgumentException("CONTENT_TYPE");
         return ServerWorkspaceModules.page(rows.stream().filter(r->(r.get("name")+" "+r.get("id")+" "+r.get("target")).toLowerCase(Locale.ROOT).contains(query)).sorted(Comparator.comparing(r->r.get("id").toString())).toList(),offset);
     }
-    private static Map<String,Object> rule(UUID id,long revision,String source,String kind)throws Exception{var definition=JSON.readTree(source);var selector=definition.has("selector")?definition.path("selector"):definition;return Map.of("id",id,"revision",revision,"name",definition.path("name").asText(id.toString()),"ruleKind",kind,"target",selector.toString().substring(0,Math.min(200,selector.toString().length())),"state","ACTIVE");}
+    private static Map<String,Object> rule(UUID id,long revision,String source,String kind)throws Exception{var definition=JSON.readTree(source);var selector=definition.has("selector")?definition.path("selector"):definition;String target=selector.path("entity_type").asText(selector.path("type").asText(selector.path("entity_id").asText(selector.path("entity").asText())));if(selector.path("position").isArray()&&selector.path("position").size()==3){var pos=selector.path("position");target="X "+pos.get(0).asText()+"  Y "+pos.get(1).asText()+"  Z "+pos.get(2).asText();}return Map.of("id",id,"revision",revision,"name",definition.path("name").asText(id.toString()),"ruleKind",kind,"target",target,"dimension",selector.path("dimension").asText("minecraft:overworld"),"state","ACTIVE");}
     private static String source(ServerPlayer p,String type,UUID id,long revision)throws Exception{
         String source;long current;
         switch(type){

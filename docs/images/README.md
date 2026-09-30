@@ -53,3 +53,23 @@
 | [multi-ai-terrain.png](multi-ai-terrain.png) | 独立寻路、复杂地形和低净空潜行 | `8c93e962ca496a2df86c050ac76b6aa3587b0ef8fa524e6fd271a996dbd101aa` |
 
 画面来自1.0.6 Native场景；1.0.7并发持久化修复另有新世界复验。实体数不等于同时运行的模型请求数，完整范围见[多 AI 并行说明](../MULTI_AI_PARALLEL.md)。
+
+## 1.0.23 界面修复
+
+这两张为本轮较早的回归截图；最新尺寸入口和布局见下方“包管理与紧凑界面补齐”。
+
+| 图片 | 实际场景 | SHA-256 |
+|---|---|---|
+| [native-agent-inventory.png](native-agent-inventory.png) | 原生背包尺寸 4 实机验收：命名头盔装备、数字键交换、右键拆分后拖拽分配物品 | `d9f125003e5790e6dece00f671734c1849818b8071b6d23af180bb514051d7b4` |
+| [native-workspace-scale-four.png](native-workspace-scale-four.png) | F2 尺寸 4 实机验收：紧凑布局、保留草稿、实际选择已归档筛选 | `5b73da35e6b0bcd4ba08a22e0951ef6e1796cb79bc39aaa3405c510b101b2300` |
+
+## 包管理与紧凑界面补齐
+
+以下为隔离验收世界的真实截图，未编辑画面内容。
+
+| 图片 | 实际场景 | SHA-256 |
+|---|---|---|
+| [native-settings-scale-four.png](native-settings-scale-four.png) | 尺寸 4 设置页：独立滚动区、固定保存栏及二级尺寸入口 | `b1db794bf722e0225a33fd4f481ff2f4d7f6cb59706f1061f18e3ebac99a6eba` |
+| [native-recovery-report.png](native-recovery-report.png) | 图形化恢复报告：状态、坐标和方块图标对比，无原始 JSON | `c6d07df70eff4ce1ea58bd06d50ebbfaa4e1799bc2987533cacbe3718ca45640` |
+| [native-selector-layout.png](native-selector-layout.png) | 创建页下拉选择框与相邻按钮分开布局，标识垂直居中 | `fd0d40507046a16228da7c58cb02c42504044d736c58dddc12296efafd1756bb` |
+| [native-content-catalog.png](native-content-catalog.png) | 已打开包管理后创建内容，目录自动出现物品、生物和原版修改 | `65c7879c8b5198522e299f175e94c831c9180124dfaee7db2187cf099d143385` |

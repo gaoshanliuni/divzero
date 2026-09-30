@@ -14,7 +14,13 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 
 
 **[下载 JAR](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](docs/FEATURES.md) · [安装说明](docs/BUILD_JAR.md) · [问题反馈](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-当前为 **1.0.22 开发测试版**，包含托管相机平滑与原生视角切换修复。支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**，网络协议仍为 **11**。客户端与服务端请同步更新；旧版 1.0.20 使用协议 10。建议使用已备份的测试存档。[下载 1.0.22](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.22)。
+公开源码已更新到 **1.0.23 候选**：原生背包、下拉框和尺寸 4、中文名称命令、建筑错误继续与多敌人战斗验收。支持 **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**，网络协议 **11**；客户端与服务端使用同版主模组。已发布版本仍见 [Releases](https://github.com/gaoshanliuni/divzero/releases)，候选改动不会自动发版。[本轮实现与验收](docs/COUNTERATTACK_UI_FUNCTIONS.md)。
+
+包管理现已统一显示物品、生物与原版修改，并自动刷新。设置和下拉框适配尺寸 4，恢复报告显示可读的状态与方块对比；建筑、记忆、媒体和 Mod 知识入口接通实际数据。[工作区接线与实机证据](docs/native-workspace-integration.md)。
+
+![尺寸 4 的设置页](docs/images/native-settings-scale-four.png)
+
+![图形化恢复报告](docs/images/native-recovery-report.png)
 
 ## LDLib2 原生工作区与持续技能
 
@@ -27,6 +33,10 @@ DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，让 AI 
 ![AI 动态原生商店，改版后保留搜索输入](docs/images/native-shop.png)
 
 AI 与真人托管共用跟随、巡逻、警戒、漫步、战斗、农务和钓鱼技能。常规工作由本地循环执行，支持防御打断、重新核对后恢复，以及多 AI 工作点预约。
+
+![尺寸 4 的 F2 工作区](docs/images/native-workspace-scale-four.png)
+
+F2 的尺寸按钮直接切换 2／3／4 并保留草稿。下拉选择已修复；右键 AI 或 F2 中的背包入口使用真实原生容器，支持拖拽、快移与装备操作。新世界用一次启用／禁用选择即可开始。
 
 ![1.0.22 托管面板：暂停、退出、追加命令、切换视角](docs/images/player-takeover.png)
 
@@ -163,7 +173,7 @@ Through natural language interaction, world awareness, persistent memory, and dy
 
 **[Download JARs](https://github.com/gaoshanliuni/divzero/releases) · [All features](docs/FEATURES.md#english) · [Installation](docs/BUILD_JAR.md) · [Report an issue](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
-**1.0.22 is a development/test release** with smooth takeover camera rendering and native perspective controls. Requirements remain **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**, using **protocol 11**. The older 1.0.20 release uses protocol 10. Keep the main mod version in sync on clients and servers. Back up your world before testing. [Download 1.0.22](https://github.com/gaoshanliuni/divzero/releases/tag/1.0.22).
+The public source is now the **1.0.23 candidate**, covering native inventory interaction, dropdowns, GUI scale 4, display-name commands, recoverable building errors and group-combat acceptance. Requirements: **Minecraft 26.1.2 · NeoForge 26.1.2.106 · Java 25**, **protocol 11**. Keep clients and servers on the same mod version. Published builds remain on [Releases](https://github.com/gaoshanliuni/divzero/releases); candidate pushes do not publish a release. [Implementation and acceptance](docs/COUNTERATTACK_UI_FUNCTIONS.md).
 
 ## Native LDLib2 workspace and persistent skills
 
@@ -176,6 +186,10 @@ Ask for a shop, add a search field, then change its style while keeping input. T
 ![AI-created native shop with retained search input](docs/images/native-shop.png)
 
 AI bodies and player takeover share follow, patrol, guard, wander, combat, farming and fishing skills. Local loops handle routine work, defense interruptions, verified recovery and work reservations between AIs.
+
+![F2 workspace at GUI scale 4](docs/images/native-workspace-scale-four.png)
+
+Switch GUI scale to 2, 3 or 4 without losing drafts. Dropdown selection is repaired. The AI inventory opens a native container with drag distribution, quick transfer and equipment slots. A new world uses a single Enable / Disable choice.
 
 ![1.0.22 takeover controls: Pause, Exit, Add command and Perspective](docs/images/player-takeover.png)
 

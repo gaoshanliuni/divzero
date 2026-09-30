@@ -33,24 +33,24 @@ final class NativeContentCatalogPanel {
     }
     private void select(String source){type=source;offset=0;types.setValue(new Choice(source,label(source)),false);signature="";load();}
     private void entry(String source,JsonObject item){
-        var card=WorkspacePanels.card(list,text(item,"name").isBlank()?text(item,"id"):text(item,"name"));String id=text(item,source.equals("packages")?"packageId":"id");card.setId("content-"+source+"-"+id);card.addChild(WorkspacePanels.text(label(source)+" · "+t("版本")+" "+text(item,"revision")));
+        var card=WorkspacePanels.card(list,displayName(source,item));String id=text(item,source.equals("packages")?"packageId":"id");card.setId("content-"+source+"-"+id);card.addChild(WorkspacePanels.text(label(source)+" · "+t("版本")+" "+text(item,"revision")));
         if(source.equals("packages")){
             if(item.has("definitions"))for(var raw:item.getAsJsonArray("definitions")){var definition=raw.getAsJsonObject();card.addChild(WorkspacePanels.text(text(definition,"name")+" · "+NativeUiTheme.option(text(definition,"kind"))));}
             if(item.has("revision"))card.addChild(button("查看详情",()->WorkspacePanels.packageDetail(host,item)));else card.addChild(WorkspacePanels.text(text(item,"reason")));return;
         }
-        if(item.has("target"))card.addChild(WorkspacePanels.text(text(item,"target")));var actions=WorkspacePanels.row();actions.getLayout().height(25);card.addChild(actions);actions.addChild(button("查看详情",()->details(source,item)));
+        if(item.has("dimension")){String dimension=text(item,"dimension");card.addChild(WorkspacePanels.text(t("维度")+" · "+t(switch(dimension){case "minecraft:overworld"->"主世界";case "minecraft:the_nether"->"下界";case "minecraft:the_end"->"末地";default->dimension;})));}if(item.has("target")){String target=text(item,"target");var key=net.minecraft.resources.Identifier.tryParse(target);if(key!=null&&net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.containsKey(key))target=net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(key).getDescription().getString();card.addChild(WorkspacePanels.text(target));}var actions=WorkspacePanels.row();actions.getLayout().height(25);card.addChild(actions);actions.addChild(button("查看详情",()->details(source,item)));
         if(source.equals("creatures"))actions.addChild(button("预览",()->change(source,item,"preview",Map.of(),notice,()->{})));
         if(Set.of("entity_rules","interaction_rules").contains(source))actions.addChild(button("删除规则",()->Dialog.showCheckBox(t("删除规则"),t("删除后停止此规则的后续影响，已发生的世界变化不会被回放。"),yes->{if(yes)change(source,item,"delete",Map.of(),notice,()->{signature="";poll=0;});}).show(window.body)));
     }
     private Map<String,String> target(String source,JsonObject item,String kind){return Map.of("module","contents","kind",kind,"type",source,"id",text(item,"id"),"revision",text(item,"revision"));}
     private void details(String source,JsonObject item){
-        var panel=host.window("content-detail-"+source+text(item,"id"),text(item,"name"),500,365);panel.body.clearAllChildren();var notice=WorkspacePanels.text(t("正在读取…"));panel.body.addChild(notice);var list=WorkspacePanels.scroller(panel.body);list.getLayout().minHeight(0);
-        source(source,item,0,new StringBuilder()).whenComplete((value,error)->{if(panel.closed()||!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}var definition=JsonParser.parseString(value).getAsJsonObject();var summary=new JsonObject();summary.add("name",definition.get("name"));summary.add("revision",item.get("revision"));
+        var panel=host.window("content-detail-"+source+text(item,"id"),displayName(source,item),500,365);panel.body.clearAllChildren();var notice=WorkspacePanels.text(t("正在读取…"));panel.body.addChild(notice);var list=WorkspacePanels.scroller(panel.body);list.getLayout().minHeight(0);
+        source(source,item,0,new StringBuilder()).whenComplete((value,error)->{if(panel.closed()||!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}var definition=JsonParser.parseString(value).getAsJsonObject();var summary=new JsonObject();summary.addProperty("name",displayName(source,item));summary.add("revision",item.get("revision"));
             for(var entry:definition.entrySet()){if(entry.getKey().equals("name"))continue;if(Set.of("model","mesh","geometry","parts","animations","root","replacements").contains(entry.getKey())){summary.addProperty(t(entry.getKey().equals("animations")?"动画数据":"模型与外观数据"),t("已保存，可通过预览或高级编辑查看。"));}else summary.add(entry.getKey(),entry.getValue());}
             NativeEvidenceView.add(host,list,summary);notice.setText(Component.literal(label(source)));
         });
         var actions=WorkspacePanels.row();actions.getLayout().heightAuto().minHeight(25).flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);panel.body.addChild(actions);
-        actions.addChild(button("重命名",()->Dialog.stringEditorDialog(t("重命名"),text(item,"name"),value->!value.isBlank()&&value.length()<=(source.equals("creatures")?48:80),name->change(source,item,"rename",Map.of("name",name),notice,()->{panel.close();signature="";poll=0;})).show(panel.body)));
+        if(!source.equals("entity_rules")||!text(item,"ruleKind").equals("visual"))actions.addChild(button("重命名",()->Dialog.stringEditorDialog(t("重命名"),text(item,"name"),value->!value.isBlank()&&value.length()<=(source.equals("creatures")?48:80),name->change(source,item,"rename",Map.of("name",name),notice,()->{panel.close();signature="";poll=0;})).show(panel.body)));
         if(source.equals("creatures"))actions.addChild(button("预览",()->change(source,item,"preview",Map.of(),notice,()->{})));
         actions.addChild(button("高级源码编辑",()->editor(source,item)));
     }
@@ -67,6 +67,7 @@ final class NativeContentCatalogPanel {
         if(overview&&data.get("total").getAsInt()>2)list.addScrollViewChild(button("查看全部",()->select("block_textures")));
     }
     static void tick(){OPEN.removeIf(p->!p.live());if(!NativeWorkspaceScreen.visible())return;long now=System.currentTimeMillis();for(var p:List.copyOf(OPEN))if(p.window.visible()&&now>=p.poll)p.load();}
+    private static String displayName(String type,JsonObject item){String name=text(item,"name"),id=text(item,"id");return name.isBlank()||name.equals(id)?label(type)+(id.isBlank()?"":" · "+id.substring(0,Math.min(8,id.length()))):name;}
     private static String text(JsonObject item,String key){return item.has(key)&&!item.get(key).isJsonNull()?item.get(key).getAsString():"";}
     private static String label(String type){return t(switch(type){case "all"->"所有内容";case "packages"->"内容包与物品";case "creatures"->"自定义生物";case "native_entities"->"原生生物定义";case "entity_rules"->"实体行为与外观修改";case "interaction_rules"->"方块与交互修改";case "block_textures"->"方块贴图";default->type;});}
     private static String t(String value){return ClientLanguage.t(value);}
