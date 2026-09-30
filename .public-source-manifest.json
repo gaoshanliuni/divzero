@@ -4434,8 +4434,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PlayerFeedbackSmoke.java",
-      "sha256": "af74b9f37bdc98038b1b5fcbc9a285ffe90932e7bf5c7c6ed5df74b2f849acf0",
-      "bytes": 17987
+      "sha256": "99347a18eae62d5c9fbd1722e513217fa9ed901bff1cfc7f18efd06ab1b3e046",
+      "bytes": 19460
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
