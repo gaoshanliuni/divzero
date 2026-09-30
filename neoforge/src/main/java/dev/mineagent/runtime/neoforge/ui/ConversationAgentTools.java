@@ -50,7 +50,12 @@ public final class ConversationAgentTools {
         try{if(arguments==null||arguments.length()>(Set.of("plan_building","set_native_ui","repair_content_package").contains(tool)?196608:16384))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
         catch(IllegalArgumentException invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid),"category","VALIDATION","executionState","NOT_STARTED","worldModified",false,"suggestedAction","Provide one complete JSON object matching this tool's parameter definition. No operation was executed."));}
         if(!checked.issues().isEmpty())return CompletableFuture.completedFuture(checked.rejection());
+        if(!p.level().getServer().isSameThread()||!current(p,permit)||ConversationTools.mutation(tool)&&!personalTool(tool)&&!tool.equals("stop_actions")&&!ServerTaskStart.allowed(p,agent))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_PERMISSION","executionState","NOT_STARTED"));
+        var invocation=new ToolLifecycleEvents.Invocation(MineAgentRuntimeServices.worldId(p.level().getServer()),p.getUUID(),agent,operation,tool,checked.arguments().toString());
+        var veto=ToolLifecycleEvents.before(invocation);if(veto.isPresent())return CompletableFuture.completedFuture(veto.orElseThrow());
+        // executeChecked repeats live authority and all domain admission after extension validation.
         var action=executeChecked(p,agent,operation,tool,checked.arguments().toString(),permit,conversation);
+        action=action.thenApply(value->{var server=p.level().getServer();server.execute(()->ToolLifecycleEvents.after(invocation,value));return value;});
         if(!checked.normalized().isEmpty())action=action.thenApply(value->{var copy=new LinkedHashMap<String,Object>(value);copy.put("normalizedFields",checked.normalized());return copy;});
         action=action.thenApply(ToolErrors::explain);
         if(ConversationTools.mutation(tool))return action;
@@ -69,6 +74,7 @@ public final class ConversationAgentTools {
             if(tool.equals("read_execution_record")){keys(args,"record_id","offset","length");var scope=new ExecutionRecords.Scope(MineAgentRuntimeServices.worldId(s),p.getUUID(),agent);var record=UUID.fromString(text(args,"record_id",36));int offset=args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0,length=args.has("length")?number(args,"length",1,8192):4096;var database=s.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");return CompletableFuture.supplyAsync(()->{try{return ExecutionRecords.read(database,scope,record,offset,length);}catch(Exception e){throw new CompletionException(e);}},IO);}
 
             if(Set.of("inspect_skills","inspect_behavior").contains(tool)){keys(args,"history","offset");var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(s);return args.path("history").asBoolean(false)?runtime.history(p,agent,args.path("offset").asInt(0)):runtime.inspect(p,agent).thenApply(value->{var output=new LinkedHashMap<String,Object>(value);output.put("enhancements",dev.mineagent.runtime.neoforge.skill.ActorEnhancements.inspect(p,agent));return output;});}
+            if(tool.equals("read_guidance")){keys(args,"scope","package_id","revision","path","offset","length");return ServerGuidance.read(p,agent,args,permit);}
             if(tool.equals("inspect_content_candidate")){keys(args,"operation_id","path","offset","length");return ServerPackageRuntime.get(s).inspectFailedCandidate(p,agent,UUID.fromString(args.path("operation_id").asText()),args.path("path").asText("raw_output"),args.path("offset").asInt(0),args.path("length").asInt(4096));}
             if(tool.equals("inspect_buildings")){keys(args,"id","offset");return ServerBuildings.inspect(p,agent,args);}
             if(tool.equals("verify_building")){keys(args,"id","revision");return ServerBuildings.verify(p,agent,args,permit);}

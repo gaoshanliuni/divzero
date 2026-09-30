@@ -11,6 +11,7 @@ import java.util.*;
 
 /** One short native edit/movement, then normal routing rechecks the original goal. Shared by both bodies. */
 public final class NativeTerrainRecovery {
+    private static final Map<ServerPlayer,NativeTerrainRecovery> ACTIVE=new IdentityHashMap<>();
     public interface Actions {
         boolean current();boolean select(int slot);void aim(Vec3 point);void jump(UUID operation);
         void mine(UUID operation,BlockPos at);void place(UUID operation,BlockHitResult hit);
@@ -27,18 +28,19 @@ public final class NativeTerrainRecovery {
     private UUID operation;
     private final Set<String> rejected=new HashSet<>();
     private String state="IDLE",reason="";
-    private int started,at,settled,changes,expanded,attempts;
+    private int started,at,settled,changes,expanded,attempts,broken,placed,consumed,nativeConsumed;private boolean nativeBroken;private BlockPos placementAnchor;
     private boolean sent,jumped;private double[] decisionFeatures;private float healthBefore;
     private String before="";
+    public void resetStatistics(){cancel();attempts=changes=broken=placed=consumed=0;}
     public boolean active(){return search!=null||planned!=null;}
     public String state(){return state;}
-    public Map<String,Object> evidence(){return Map.of("state",state,"reason",reason,"changes",changes,"attempts",attempts,"expanded",expanded,"operation",operation==null?"":operation.toString(),"sourcePolicy","UNKNOWN_NATURAL_MATERIALS_IN_LOCAL_AUTHORIZED_CORRIDOR");}
-    public void cancel(){if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;operation=null;edit=null;actions=null;state="IDLE";}
+    public Map<String,Object> evidence(){return Map.of("state",state,"reason",reason,"changes",changes,"attempts",attempts,"expanded",expanded,"operation",operation==null?"":operation.toString(),"sourcePolicy","UNKNOWN_NATURAL_MATERIALS_IN_LOCAL_AUTHORIZED_CORRIDOR","blocksBroken",broken,"blocksPlaced",placed,"materialsConsumed",consumed);}
+    public void cancel(){ACTIVE.remove(player,this);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;operation=null;edit=null;actions=null;state="IDLE";}
     public boolean request(ServerPlayer p,Vec3 target,String cause){
         if(active())return true;
         if(!NativeTerrainPolicy.allowed(p)||!p.onGround()||Math.abs(p.getY()-Math.rint(p.getY()))>.06)return false;
-        if(player!=p||level!=p.level()||goal==null||goal.distanceToSqr(target)>4){rejected.clear();attempts=changes=0;}
-        player=p;level=p.level();goal=target;origin=p.position();started=at=p.level().getServer().getTickCount();reason=cause;state="SEARCHING_ESCAPE";
+        if(player!=p||level!=p.level()||goal==null||goal.distanceToSqr(target)>4){rejected.clear();attempts=changes=broken=placed=consumed=0;}
+        player=p;ACTIVE.put(p,this);level=p.level();goal=target;origin=p.position();started=at=p.level().getServer().getTickCount();reason=cause;state="SEARCHING_ESCAPE";
         var originCell=cell(BlockPos.containing(origin));
         var nearby=p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,p.getBoundingBox().inflate(12),e->e!=p&&e.isAlive()&&(e instanceof net.minecraft.world.entity.monster.Enemy||e==p.getLastHurtByMob()));
         var risks=new HashMap<TerrainPathSearch.Cell,Double>();
@@ -82,8 +84,8 @@ public final class NativeTerrainRecovery {
             var budget=NativeNavigationBudget.get(player.level().getServer());int allowed=budget.claim(player.getUUID(),now);if(allowed==0)return new Tick(true,null,false);
             var found=search.advance(Math.min(allowed,96),budget::timeAvailable);expanded=found.expanded();
             if(found.state().equals("SEARCHING"))return new Tick(true,null,false);
-            search=null;if(!found.state().equals("FOUND")){state=found.state();return new Tick(false,null,false);}
-            planned=found.steps().getFirst();healthBefore=player.getHealth();var displacement=new Vec3(planned.to().x()-planned.from().x(),planned.to().y()-planned.from().y(),planned.to().z()-planned.from().z());decisionFeatures=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.features(player,origin.distanceTo(goal),displacement.length(),0,1,displacement,0,false,7,planned.edits().stream().filter(e->e.kind()==TerrainPathSearch.Kind.PLACE).count());edit=planned.edits().isEmpty()?null:planned.edits().getFirst();operation=UUID.randomUUID();at=now;sent=jumped=false;settled=0;attempts++;
+            search=null;if(!found.state().equals("FOUND")){state=found.state();ACTIVE.remove(player,this);return new Tick(false,null,false);}
+            planned=found.steps().getFirst();healthBefore=player.getHealth();var displacement=new Vec3(planned.to().x()-planned.from().x(),planned.to().y()-planned.from().y(),planned.to().z()-planned.from().z());decisionFeatures=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.features(player,origin.distanceTo(goal),displacement.length(),0,1,displacement,0,false,7,planned.edits().stream().filter(e->e.kind()==TerrainPathSearch.Kind.PLACE).count());edit=planned.edits().isEmpty()?null:planned.edits().getFirst();operation=UUID.randomUUID();at=now;sent=jumped=false;settled=0;nativeConsumed=0;nativeBroken=false;placementAnchor=null;attempts++;
             state=edit==null?"ESCAPE_WALK":edit.kind()==TerrainPathSearch.Kind.BREAK?"ESCAPE_MINE":"ESCAPE_PLACE";
             if(edit!=null)before=signature(pos(edit.cell()));
         }
@@ -103,7 +105,8 @@ public final class NativeTerrainRecovery {
                 if(!player.onGround()||Math.abs(player.getY()-(target.getY()+1))>.12){if(now-at>35){fail("SUPPORT_STANDING_NOT_CONFIRMED");return new Tick(false,null,false);}return new Tick(true,null,false);}
                 if(++settled<2)return new Tick(true,null,false);
             }
-            changes++;return complete(true);
+            if(sent){changes++;if(edit.kind()==TerrainPathSearch.Kind.BREAK&&nativeBroken)broken++;else if(edit.kind()==TerrainPathSearch.Kind.PLACE&&nativeConsumed>0){placed++;consumed+=nativeConsumed;}}
+            return complete(true);
         }
         if(edit.kind()==TerrainPathSearch.Kind.BREAK){
             if(!NativeTerrainPolicy.mayBreak(player,target)){fail("TERRAIN_BREAK_REVOKED");return new Tick(false,null,false);}
@@ -124,12 +127,15 @@ public final class NativeTerrainRecovery {
                 controls.jump(operation);jumped=true;at=now;return new Tick(true,null,false);}
             if(player.getY()<target.getY()+1.02){if(now-at>15){fail("JUMP_PLACE_WINDOW_MISSED");return new Tick(false,null,false);}return new Tick(true,null,false);}
         }
-        if(!sent){var hit=placementHit(player,target);if(hit==null){fail("SUPPORT_FACE_NOT_REACHABLE");return new Tick(false,null,false);}controls.aim(hit.getLocation());controls.place(operation,hit);sent=true;at=now;}
+        if(!sent){var hit=placementHit(player,target);if(hit==null){fail("SUPPORT_FACE_NOT_REACHABLE");return new Tick(false,null,false);}controls.aim(hit.getLocation());placementAnchor=hit.getBlockPos();controls.place(operation,hit);sent=true;at=now;}
         if(now-at>25){fail("PLACEMENT_NOT_CONFIRMED_CHECK_WORLD");return new Tick(false,null,false);}return new Tick(true,null,false);
     }
-    private Tick complete(boolean edited){learn(false);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="RECHECK_ORIGINAL_ROUTE";return new Tick(false,null,true);}
-    private void fail(String why){learn(true);if(edit!=null)rejected.add(signature(pos(edit.cell())));if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="BLOCKED";reason=why;}
+    private Tick complete(boolean edited){ACTIVE.remove(player,this);learn(false);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="RECHECK_ORIGINAL_ROUTE";return new Tick(false,null,true);}
+    private void fail(String why){ACTIVE.remove(player,this);learn(true);if(edit!=null)rejected.add(signature(pos(edit.cell())));if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="BLOCKED";reason=why;}
     private void learn(boolean failed){if(decisionFeatures==null||player==null)return;double cost=(player.level().getServer().getTickCount()-at)/120d+Math.max(0,healthBefore-player.getHealth())/Math.max(1,player.getMaxHealth())+(failed?.6:0);dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.outcome(player,decisionFeatures,cost);decisionFeatures=null;}
+    public static void nativeBreak(ServerPlayer p,BlockPos at,boolean removed){var recovery=ACTIVE.get(p);if(removed&&recovery!=null&&recovery.edit!=null&&recovery.edit.kind()==TerrainPathSearch.Kind.BREAK&&pos(recovery.edit.cell()).equals(at))recovery.nativeBroken=true;}
+    public static boolean observingUse(ServerPlayer p,BlockPos at){var recovery=ACTIVE.get(p);return recovery!=null&&recovery.edit!=null&&recovery.edit.kind()==TerrainPathSearch.Kind.PLACE&&at.equals(recovery.placementAnchor);}
+    public static void nativeUse(ServerPlayer p,BlockPos at,net.minecraft.world.item.ItemStack before,net.minecraft.world.item.ItemStack after,boolean accepted){var recovery=ACTIVE.get(p);if(recovery!=null&&accepted&&recovery.edit!=null&&recovery.edit.kind()==TerrainPathSearch.Kind.PLACE&&at.equals(recovery.placementAnchor))recovery.nativeConsumed=Math.max(0,before.getCount()-after.getCount());}
     public static Vec3 visibleMiningPoint(ServerPlayer p,BlockPos target){
         for(double y:new double[]{.5,.05,.95})for(double x:new double[]{.5,.05,.95})for(double z:new double[]{.5,.05,.95}){
             var at=new Vec3(target.getX()+x,target.getY()+y,target.getZ()+z);

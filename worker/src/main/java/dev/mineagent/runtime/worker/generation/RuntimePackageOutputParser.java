@@ -156,7 +156,7 @@ public final class RuntimePackageOutputParser {
                 var inspected = path.startsWith("ui/") ? browserPreflight.inspect(new String(content, StandardCharsets.UTF_8))
                         : preflight.inspect(new String(content, StandardCharsets.UTF_8));
                 if (!inspected.accepted()) {
-                    throw invalid("PREFLIGHT_REJECTED", path+": "+inspected.diagnostics());
+                    throw invalid("PREFLIGHT_REJECTED", inspected.diagnostics().stream().map(d->path+":"+d.line()+": "+d.code()+" — "+d.message()).collect(java.util.stream.Collectors.joining("\n")));
                 }
             }
             files.add(new GeneratedFile(path, side, mediaType, actualHash, content));

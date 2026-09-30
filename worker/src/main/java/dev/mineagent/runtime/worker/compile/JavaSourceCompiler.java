@@ -90,7 +90,7 @@ public final class JavaSourceCompiler {
             List<CompilationDiagnostic> converted = diagnostics.getDiagnostics().stream()
                     .map(diagnostic -> new CompilationDiagnostic(
                             diagnostic.getKind().name(), diagnostic.getLineNumber(), diagnostic.getColumnNumber(),
-                            (workspace&&diagnostic.getSource()!=null?diagnostic.getSource().getName()+": ":"")+diagnostic.getMessage(Locale.SIMPLIFIED_CHINESE)))
+                            (diagnostic.getSource()!=null?diagnostic.getSource().getName()+": ":"")+diagnostic.getMessage(Locale.SIMPLIFIED_CHINESE)))
                     .toList();
             if (!success) {
                 Files.deleteIfExists(absoluteJar);

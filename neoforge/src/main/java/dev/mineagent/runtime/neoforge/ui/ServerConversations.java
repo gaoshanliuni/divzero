@@ -281,7 +281,7 @@ public final class ServerConversations implements AutoCloseable {
         if("true".equals(args.get("nativeChoiceReply")))nativeReplies.put(operation,new NativeReply(viewer,agent,id,turn.assistantMessageId(),definition.displayName()));
         var local=dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).localReply(operation);
         if(local!=null){
-            var flight=new Flight(operation,viewer,agent);flight.conversation=id;flights.put(operation,flight);
+            var flight=new Flight(operation,viewer,agent);flight.conversation=id;flights.put(operation,flight);ToolLifecycleEvents.session(viewer.getUUID(),agent,operation,"STARTED","");
             local.whenComplete((reply,error)->server.execute(()->{try{if(!live(flight)||!store.pending(operation)){retire(flight);return;}store.finish(operation,error==null?"COMPLETE":"FAILED",error==null?reply:null,error==null?"":"SKILL_LOCAL_COMMAND_FAILED");changed(flight);if(error==null&&!String.valueOf(dev.mineagent.runtime.core.config.WebSettingsCatalog.routing(snapshot).get("textProvider")).isBlank())ServerConversationTitles.completed(server,store,viewer,agent,id,original,reply,()->changed(flight));retire(flight);}catch(Exception failed){failGeneration(flight,"CONVERSATION_STORE_WRITE_FAILED");}}));
             return Map.of("state",json.writeValueAsString(store.get(viewer.getUUID(),agent,id)),"operationId",operation.toString(),"duplicate","false");
         }
@@ -289,7 +289,7 @@ public final class ServerConversations implements AutoCloseable {
 
             if(String.valueOf(dev.mineagent.runtime.core.config.WebSettingsCatalog.routing(snapshot).get("textProvider")).isBlank())throw new IllegalStateException("PROVIDER_NOT_CONFIGURED");
             int budget=Math.max(1024,policy.contextTokenBudget()-12288);
-            var preferences=MineAgentRuntimeServices.preferences(server).snapshot(viewer.getUUID(),MineAgentRuntimeServices.worldId(server),agent,"CONVERSATION");var plan=ConversationContext.build(store,viewer.getUUID(),definition,id,turn,persona,original,budget,null,preferences.section());var flight=new Flight(operation,viewer,agent);flight.conversation=id;flight.preferences=preferences;flights.put(operation,flight);
+            var preferences=MineAgentRuntimeServices.preferences(server).snapshot(viewer.getUUID(),MineAgentRuntimeServices.worldId(server),agent,"CONVERSATION");var plan=ConversationContext.build(store,viewer.getUUID(),definition,id,turn,persona,original,budget,null,preferences.section());var flight=new Flight(operation,viewer,agent);flight.conversation=id;flight.preferences=preferences;flights.put(operation,flight);ToolLifecycleEvents.session(viewer.getUUID(),agent,operation,"STARTED","");
             store.recordContext(operation,plan);
             MineAgentRuntimeServices.audit(server).record(viewer.getUUID().toString(),"CONVERSATION_GENERATION_ACCEPTED",operation.toString(),json.writeValueAsString(Map.of("conversationId",id,"agentId",agent,"personaRevision",persona.revision(),"estimatedTokens",plan.estimatedTokens(),"estimateMode",plan.estimateMode(),"omittedThrough",plan.omittedThrough(),"summaryStatus",plan.summaryStatus(),"budget",policy,"inputSource",input.source(),"speechOperation",speech==null?"":speech)));
             var generation=new Generation(viewer.getUUID(),definition,id,turn,persona,original,policy,plan,preferences,"");
@@ -387,8 +387,8 @@ public final class ServerConversations implements AutoCloseable {
         }));
     }
     private static String summaryError(Throwable error){String code=error.getMessage();return code!=null&&code.matches("SUMMARY_[A-Z_]{1,60}")?code:"SUMMARY_GENERATION_FAILED";}
-    private void retire(Flight f){f.permit.set(false);flights.remove(f.op,f);}
-    private void failGeneration(Flight f,String code){synchronized(f.buffer){f.permit.set(false);}try{flush(f);store.finish(f.op,"FAILED",null,code);}catch(Exception ignored){}retire(f);}
+    private void retire(Flight f){ToolLifecycleEvents.session(f.viewer.getUUID(),f.agent,f.op,"RETIRED","");f.permit.set(false);flights.remove(f.op,f);}
+    private void failGeneration(Flight f,String code){ToolLifecycleEvents.session(f.viewer.getUUID(),f.agent,f.op,"FAILED",code);synchronized(f.buffer){f.permit.set(false);}try{flush(f);store.finish(f.op,"FAILED",null,code);}catch(Exception ignored){}retire(f);}
     private boolean live(Flight f){return !closed&&f.permit.get()&&ServerChatAccess.canContinue(f.viewer,f.agent)&&server.getPlayerList().getPlayer(f.viewer.getUUID())==f.viewer&&(f.preferences==null||MineAgentRuntimeServices.preferences(server).current(f.preferences));}
     private void startReply(Flight f,Generation g,ConversationContext.Plan plan)throws Exception{
         if(!live(f)||!store.pending(f.op)){failGeneration(f,"CONVERSATION_CONTEXT_CHANGED");return;}
