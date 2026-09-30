@@ -10,7 +10,7 @@ import java.util.*;
 
 /** Sparse, exact edits for an installed package or its retained failed candidate. No activation here. */
 public final class WorldSourceEdits {
-    private static final ObjectMapper JSON=new ObjectMapper();
+    private static final ObjectMapper JSON=new ObjectMapper(com.fasterxml.jackson.core.JsonFactory.builder().enable(com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION).build()).enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     public static String apply(RuntimePackage base,ContentAddressedStore content,String previous,List<FailedCandidatePatch.Change> edits)throws Exception{
         if(edits.isEmpty()||edits.size()>32)throw new IllegalArgumentException("WORLD_PATCH_EDIT_COUNT");
         var files=new LinkedHashMap<String,ObjectNode>();var root=JSON.createObjectNode();

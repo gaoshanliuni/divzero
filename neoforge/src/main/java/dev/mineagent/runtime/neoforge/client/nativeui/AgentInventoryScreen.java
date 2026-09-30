@@ -10,16 +10,22 @@ import net.minecraft.world.entity.player.Inventory;
 
 /** Native container mouse/keyboard handling, with the familiar player inventory texture. */
 public final class AgentInventoryScreen extends AbstractContainerScreen<AgentInventoryMenu> {
-    private boolean embedded;
-    void setEmbedded(){embedded=true;}
-    void embedAt(int x,int y,int width,int height){this.width=width;this.height=height;leftPos=x;topPos=y;}
-    void embeddedTooltip(GuiGraphicsExtractor graphics,int x,int y){if(x>=0)extractTooltip(graphics,x,y);}
+    private boolean detached;
+    private void detach(){
+        if(detached)return;detached=true;
+        if(minecraft.player!=null&&minecraft.getConnection()!=null&&minecraft.player.containerMenu==menu){
+            net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new dev.mineagent.runtime.neoforge.network.MineAgentPayloads.InventoryDetach(menu.containerId,menu.viewToken));
+            minecraft.player.containerMenu=minecraft.player.inventoryMenu;
+        }
+    }
+    @Override public void onClose(){detach();if(minecraft.player!=null)minecraft.player.clientSideCloseContainer();else minecraft.setScreen(null);}
+    @Override public void removed(){detach();super.removed();}
     private static final Identifier TEXTURE=Identifier.withDefaultNamespace("textures/gui/container/inventory.png");
     public AgentInventoryScreen(AgentInventoryMenu menu,Inventory inventory,Component title){super(menu,inventory,title,176,269);inventoryLabelY=175;}
     @Override public boolean isPauseScreen(){return false;}
     int smokeHoveredSlot(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return hoveredSlot==null?-1:menu.slots.indexOf(hoveredSlot);}
     @Override public void extractBackground(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partial){
-        if(!embedded)super.extractBackground(graphics,mouseX,mouseY,partial);
+        super.extractBackground(graphics,mouseX,mouseY,partial);
         int x=leftPos,y=topPos;
         // Stretch only neutral panel/border pixels. Copying whole inventory bands would
         // leave a second, non-interactive set of slots behind the real container slots.

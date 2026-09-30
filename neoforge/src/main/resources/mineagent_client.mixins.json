@@ -32,7 +32,7 @@
     "client.NativeButtonMixin",
     "client.NativeSelectorMixin",
     "client.ContainerScreenGeometry",
-    "client.EmbeddedInventoryCloseMixin",
+    "client.AgentInventoryCloseMixin",
     "client.SpritePixelsAccess",
     "client.AttachedWidgetReleaseAccess"
   ],

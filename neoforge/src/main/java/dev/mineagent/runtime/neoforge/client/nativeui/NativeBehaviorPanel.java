@@ -26,7 +26,7 @@ public final class NativeBehaviorPanel {
         status=NativeUiTheme.text(t("读取行为状态…"),NativeUiTheme.ACCENT,10);body.addChild(status);targetStatus=NativeUiTheme.text("",NativeUiTheme.MUTED,9);body.addChild(targetStatus);progress=NativeUiTheme.text("",NativeUiTheme.MUTED,9);body.addChild(progress);
         actor=selector(body,"执行身体",new String[][]{{"ai","AI 自己"},{"player","接管我的身体"}});actor.setOnValueChanged(value->{active=null;initialized=false;actorPending=true;next=0;});
         var enhancementRow=WorkspacePanels.row();enhancementRow.getLayout().height(25);body.addChild(enhancementRow);
-        boost=NativeUiTheme.button(t("Boost：关闭"),()->toggleEnhancement("boost"));learning=NativeUiTheme.button(t("权重学习模式：关闭"),()->toggleEnhancement("learning"));
+        boost=NativeUiTheme.button(t("Boost：关闭"),()->toggleEnhancement("boost"));learning=NativeUiTheme.button(t("权重学习模式：开启"),()->toggleEnhancement("learning"));
         boost.getLayout().flex(1);learning.getLayout().flex(1);enhancementRow.addChild(boost);enhancementRow.addChild(learning);
         var supportRow=WorkspacePanels.row();supportRow.getLayout().height(25);body.addChild(supportRow);
         neural=NativeUiTheme.button(t("神经策略：开启"),()->toggleEnhancement("neural"));recovery=NativeUiTheme.button(t("自主脱困：开启"),()->toggleEnhancement("recovery"));
