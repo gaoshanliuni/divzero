@@ -6229,8 +6229,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "sha256": "882325e3c39ebd397f7c83d2c571feb77b0c791928b8c859d1644225ad3a663c",
-      "bytes": 72925
+      "sha256": "a8118ac1fe8493cb2707c68e6e92c4e311bbc70873b25586dc4c695dfa024c7d",
+      "bytes": 72897
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",

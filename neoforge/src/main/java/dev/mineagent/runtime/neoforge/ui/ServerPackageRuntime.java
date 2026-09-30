@@ -173,7 +173,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         var position=args.path("position");var location=new dev.mineagent.runtime.api.packages.RuntimeInstanceLocation(args.path("dimension").asText(),position.path(0).asDouble(),position.path(1).asDouble(),position.path(2).asDouble(),0,0);
         var runtime=dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(server);
         var activation=runtime.activate(viewer,operation,packageId,revision,UUID.fromString(args.path("definition_id").asText()),location,true);
-        boolean active=activation.state().equals("ACTIVE");var result=new LinkedHashMap<String,Object>();result.put("status",active?"ACTIVE":"OUTCOME_REQUIRES_INSPECTION");result.put("activation",activation);result.put("operation_id",operation);result.put("instance_id",activation.instanceId());result.put("executionState",active?"EXECUTED":"OUTCOME_UNKNOWN");
+        boolean active=activation.state().equals("ACTIVE");var result=new LinkedHashMap<String,Object>();result.put("status",active?"ACTIVE":"UNKNOWN");result.put("activation",activation);result.put("operation_id",operation);result.put("instance_id",activation.instanceId());result.put("executionState",active?"EXECUTED":"UNKNOWN");
         result.put("oldInstancesMigrated",false);if(!active){result.put("error",activation.error());result.put("nextStep","Inspect this activation and actual world effects before retrying; do not replay an uncertain activation.");}
         return result;
     }
