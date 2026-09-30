@@ -25,6 +25,7 @@ public final class NativeWorkspaceConnection {
     private record Pending(Request request,String channel,CompletableFuture<Receipt> future,long deadline){}
     private static final Map<UUID,Pending> PENDING=new HashMap<>();
     private static Session session;private static UUID opening;private static Object connection,level;private static long deadline,nextPoll;private static boolean rendered,polling;
+    static Map<String,Object> diagnostic(){return Map.of("enabled",dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled(),"ready",ready(),"rendered",rendered,"opening",opening!=null,"awaiting",AWAITING.size(),"pending",PENDING.size());}
     public static Session current(){return ready()?session:null;}
     public static boolean ready(){return rendered&&session!=null&&connection==Minecraft.getInstance().getConnection()&&level==Minecraft.getInstance().level;}
     public static void open(){

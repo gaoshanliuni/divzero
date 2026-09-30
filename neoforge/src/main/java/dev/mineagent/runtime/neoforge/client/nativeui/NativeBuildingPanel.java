@@ -16,18 +16,34 @@ final class NativeBuildingPanel {
     private NativeBuildingPanel(NativeWorkspaceScreen host,String agent){
         this.host=host;this.agent=agent;window=host.window("buildings-"+agent,t("建筑计划"),530,390);OPEN.add(this);
         var tools=WorkspacePanels.row();tools.getLayout().height(25);window.body.addChild(tools);
-        tools.addChild(NativeUiTheme.button(t("建筑列表"),()->{id="";offset=0;read();}));tools.addChild(NativeUiTheme.button(t("刷新"),this::read));tools.addChild(NativeUiTheme.button(t("对话"),()->host.conversationWith(agent)));window.body.addChild(notice);content=WorkspacePanels.scroller(window.body);read();
+        tools.addChild(NativeUiTheme.button(t("让 AI 设计"),this::requestDesign));tools.addChild(NativeUiTheme.button(t("建筑列表"),()->{id="";offset=0;read();}));tools.addChild(NativeUiTheme.button(t("刷新"),this::read));tools.addChild(NativeUiTheme.button(t("对话"),()->host.conversationWith(agent)));window.body.addChild(notice);content=WorkspacePanels.scroller(window.body);read();
+    }
+    private void requestDesign(){
+        String key="building-request-"+agent;if(host.revealWindow(key))return;var dialog=host.window(key,t("让 AI 设计建筑"),470,310);
+        dialog.body.addChild(WorkspacePanels.text(t("描述建筑、材料和用途。AI 会保存构件计划；你可检查后再开始施工。")));
+        var prompt=new TextArea();prompt.getLayout().widthPercent(100).flex(1);dialog.body.addChild(prompt);var status=WorkspacePanels.text(t("提交后会调用所选 AI 的模型。"));dialog.body.addChild(status);UUID[] pending={null};String[] conversationId={""};
+        dialog.body.addChild(NativeUiTheme.button(t("提交规划需求"),()->{
+            if(pending[0]!=null||!live())return;String goal=String.join("\n",prompt.getValue()).strip();if(goal.isEmpty()||goal.length()>7000){status.setText(Component.literal(t("请填写建筑需求，最多 7000 个字符。")));return;}
+            pending[0]=UUID.randomUUID();String request="为以下需求创建可继续修改的建筑构件计划。先勘测玩家当前所在区域，使用 plan_building 保存带稳定构件 ID 与实际验证检查的计划。本次只规划，不调用 apply_building；玩家会在建筑计划中检查并选择开始施工。需求：\n"+goal;
+            WorkspacePanels.request("conversation.write",Map.of("kind","create","agentId",agent,"title",t("建筑规划"),"autoTitle","true"),pending[0]).thenCompose(created->{
+                var conversation=WorkspacePanels.state(created);conversationId[0]=conversation.get("conversationId").getAsString();return WorkspacePanels.request("conversation.write",Map.of("kind","send","agentId",agent,"conversationId",conversation.get("conversationId").getAsString(),"expectedRevision",conversation.get("revision").getAsString(),"text",request),UUID.randomUUID()).thenApply(sent->conversation);
+            }).whenComplete((conversation,error)->{
+                if(!live()||dialog.closed())return;if(error!=null){WorkspacePanels.failure(status,error);return;}
+                dialog.close();NativeWorkspaceScreen.openConversation(agent,"AI",conversation.get("conversationId").getAsString());nextPoll=0;
+            });
+        }));
+        dialog.body.addChild(NativeUiTheme.button(t("查看规划对话"),()->{if(!conversationId[0].isBlank())NativeWorkspaceScreen.openConversation(agent,"AI",conversationId[0]);}));
     }
     private boolean live(){return host.activeContext()&&!window.closed();}
     private Map<String,String> args(String kind){var values=new LinkedHashMap<String,String>();values.put("kind",kind);values.put("agentId",agent);values.put("offset",Integer.toString(offset));if(!id.isBlank())values.put("id",id);return values;}
-    private void read(){if(!live()||busy)return;busy=true;long ticket=++epoch;WorkspacePanels.request("building.read",args("inspect")).whenComplete((receipt,error)->{
+    private void read(){if(!live()||busy)return;busy=true;nextPoll=System.currentTimeMillis()+2000;long ticket=++epoch;WorkspacePanels.request("building.read",args("inspect")).whenComplete((receipt,error)->{
         busy=false;if(!live()||ticket!=epoch)return;if(error!=null){WorkspacePanels.failure(notice,error);return;}state=WorkspacePanels.state(receipt);draw();nextPoll=System.currentTimeMillis()+1000;
     });}
     private void draw(){
         content.clearAllScrollViewChildren();notice.setText(Component.literal(""));
         if(id.isBlank()){
             if(state.getAsJsonArray("buildings").isEmpty())content.addScrollViewChild(WorkspacePanels.text(t("在对话中描述建筑需求，AI 会创建可继续修改的构件计划。")));
-            for(var row:state.getAsJsonArray("buildings")){var item=row.getAsJsonObject();var card=WorkspacePanels.card(content,item.get("name").getAsString());card.addChild(WorkspacePanels.text(NativeUiTheme.state(item.get("status").getAsString())+" · r"+item.get("revision").getAsString()));card.addChild(NativeUiTheme.button(t("查看构件"),()->{id=item.get("id").getAsString();offset=0;read();}));}
+            for(var row:state.getAsJsonArray("buildings")){var item=row.getAsJsonObject();var card=WorkspacePanels.card(content,item.get("name").getAsString());card.addChild(WorkspacePanels.text(NativeUiTheme.state(item.get("status").getAsString())+" · r"+item.get("revision").getAsString()));var open=NativeUiTheme.button(t("查看构件"),()->{id=item.get("id").getAsString();offset=0;read();});open.setId("building-open-"+item.get("id").getAsString());card.addChild(open);}
             var pages=WorkspacePanels.row();pages.getLayout().height(25);var previous=NativeUiTheme.button(t("上一页"),()->{offset=Math.max(0,offset-16);read();});previous.setActive(offset>0);pages.addChild(previous);var next=NativeUiTheme.button(t("下一页"),()->{offset=state.get("nextOffset").getAsInt();read();});next.setActive(state.has("more")&&state.get("more").getAsBoolean());pages.addChild(next);content.addScrollViewChild(pages);return;
         }
         if(!state.has("design")){content.addScrollViewChild(WorkspacePanels.text(t("没有找到建筑计划")));return;}
@@ -35,7 +51,7 @@ final class NativeBuildingPanel {
         var actions=WorkspacePanels.row();actions.getLayout().height(25);header.addChild(actions);
         action(actions,"开始施工","apply",status.equals("PLANNED"));action(actions,"暂停","pause",Set.of("PREPARING","APPLYING").contains(status));action(actions,"继续","resume",status.equals("PAUSED"));action(actions,"核对中断","recover",Set.of("UNKNOWN","PARTIAL").contains(status));
         var history=WorkspacePanels.row();history.getLayout().height(25);header.addChild(history);action(history,"撤销上步","undo",Set.of("VERIFIED","UNVERIFIED","PARTIAL","CONFLICT").contains(status));action(history,"重做","redo",Set.of("UNDONE","CONFLICT").contains(status));
-        var verify=NativeUiTheme.button(t("实地验证"),this::verify);verify.setActive(Set.of("VERIFIED","UNVERIFIED").contains(status));history.addChild(verify);
+        var verify=NativeUiTheme.button(t("实地验证"),this::verify);verify.setId("building-verify");verify.setActive(Set.of("VERIFIED","UNVERIFIED").contains(status));history.addChild(verify);
         var edit=NativeUiTheme.button(t("编辑计划"),this::edit);edit.setActive(Set.of("PLANNED","VERIFIED","UNVERIFIED","UNDONE","CONFLICT","REJECTED").contains(status));history.addChild(edit);
         if(state.has("reportAvailable")&&state.get("reportAvailable").getAsBoolean())header.addChild(NativeUiTheme.button(t("完整校验报告"),()->showDocument("report")));
         header.addChild(NativeUiTheme.button(t("本页修改详情"),()->showDocument("history")));
@@ -48,7 +64,7 @@ final class NativeBuildingPanel {
         for(var item:state.getAsJsonArray("history")){var entry=item.getAsJsonObject();var card=WorkspacePanels.card(content,t(entry.get("mode").getAsString())+" · r"+entry.get("revision").getAsString());card.addChild(WorkspacePanels.text(NativeUiTheme.state(entry.get("status").getAsString())));if(!entry.get("detail").getAsString().isBlank()&&!entry.get("detail").getAsString().startsWith("{"))card.addChild(WorkspacePanels.text(entry.get("detail").getAsString()));}
     }
     private String componentName(String id){for(var raw:state.getAsJsonObject("design").getAsJsonArray("components")){var component=raw.getAsJsonObject();if(component.get("id").getAsString().equals(id)&&component.has("name"))return component.get("name").getAsString();}return id;}
-    private void action(com.lowdragmc.lowdraglib2.gui.ui.UIElement row,String label,String action,boolean allowed){var button=NativeUiTheme.button(t(label),()->write(action,null));button.setActive(allowed);row.addChild(button);}
+    private void action(com.lowdragmc.lowdraglib2.gui.ui.UIElement row,String label,String action,boolean allowed){var button=NativeUiTheme.button(t(label),()->write(action,null));button.setId("building-action-"+action);button.setActive(allowed);row.addChild(button);}
     private void write(String kind,String source){write(kind,source,state.get("revision").getAsString());}
     private void write(String kind,String source,String revision){if(busy||!live())return;busy=true;var args=args(kind);args.remove("offset");args.put("revision",revision);if(source!=null){args.remove("id");args.put("source",source);}WorkspacePanels.request("building.write",args).whenComplete((receipt,error)->{busy=false;if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}notice.setText(Component.literal(t("已受理，正在读取实际进度。")));read();});}
     private void verify(){if(busy)return;busy=true;var args=args("verify");args.remove("offset");args.put("revision",state.get("revision").getAsString());WorkspacePanels.request("building.read",args).whenComplete((receipt,error)->{busy=false;if(!live())return;if(error!=null)WorkspacePanels.failure(notice,error);else read();});}
@@ -101,6 +117,6 @@ final class NativeBuildingPanel {
         }));return result;
     }
     static void changed(JsonObject event){for(var panel:List.copyOf(OPEN))if(panel.live()&&(!event.has("agentId")||event.get("agentId").getAsString().equals(panel.agent))){if(event.has("errorCode"))panel.notice.setText(Component.literal(event.get("errorCode").getAsString()));else panel.read();}}
-    static void tick(){OPEN.removeIf(p->!p.live());if(!NativeWorkspaceScreen.visible())return;for(var panel:OPEN)if(!panel.id.isBlank()&&panel.state!=null&&Set.of("PREPARING","APPLYING","PAUSED").contains(panel.state.get("status").getAsString())&&System.currentTimeMillis()>=panel.nextPoll)panel.read();}
+    static void tick(){OPEN.removeIf(p->!p.live());if(!NativeWorkspaceScreen.visible())return;for(var panel:OPEN)if(panel.window.visible()&&System.currentTimeMillis()>=panel.nextPoll)panel.read();}
     private static String t(String value){return ClientLanguage.t(value);}
 }

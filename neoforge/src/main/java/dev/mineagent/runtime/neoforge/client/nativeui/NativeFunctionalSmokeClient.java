@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 /** Executes the visible LDLib2 buttons, then checks server state; no model or UI callback shortcuts. */
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class NativeFunctionalSmokeClient {
+    private static net.minecraft.world.level.block.state.BlockState buildingBefore;
     private static CompletableFuture<Map<String,Object>> result;private static UUID agent,a,b,old;
     private static int stage,ticks,pressedAt,pagerStage,editorAt,focusChanges;private static float editorX,editorY;private static boolean pending,chatRevealed;private static final List<String> checked=new ArrayList<>();
     public static CompletableFuture<Map<String,Object>> run(UUID ai,UUID first,UUID second,UUID oldest){
@@ -46,7 +47,7 @@ public final class NativeFunctionalSmokeClient {
     private static com.google.gson.JsonObject slot(com.google.gson.JsonObject state,String side,int id){for(var v:state.getAsJsonArray(side+"Slots"))if(v.getAsJsonObject().get("slot").getAsInt()==id)return v.getAsJsonObject();throw new IllegalArgumentException();}
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
         if(result==null||result.isDone())return;try{
-            if(++ticks>700)throw new IllegalStateException("FUNCTIONAL_UI_TIMEOUT_STAGE_"+stage+" checked="+checked);
+            if(++ticks>1400)throw new IllegalStateException("FUNCTIONAL_UI_TIMEOUT_STAGE_"+stage+" checked="+checked+" connection="+NativeWorkspaceConnection.diagnostic()+" ui="+(mc().screen instanceof NativeWorkspaceScreen screen?screen.smokeState():mc().screen==null?"NONE":mc().screen.getClass().getName()));
             if(pending||ticks%6!=0)return;if(!mc().isWindowActive()){org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return;}
             switch(stage){
                 case 0->{NativeWorkspaceScreen.openConversation(agent.toString(),"界面验收",a.toString());advance("open-first-conversation");}
@@ -95,9 +96,25 @@ public final class NativeFunctionalSmokeClient {
                 case 43->{if(mc().screen instanceof AgentProfileScreen&&click("对话"))advance("profile-scale-four-chat");}
                 case 44->{if(mc().screen instanceof AgentProfileScreen&&click("背包"))advance("profile-scale-four-inventory");}
                 case 45->{if(mc().screen instanceof AgentInventoryScreen){mc().player.closeContainer();mc().setScreen(new net.minecraft.client.gui.screens.ChatScreen("/give ",false));advance("open-native-command-completion");}}
-                case 46->{var names=mc().getConnection().getSuggestionsProvider().getOnlinePlayerNames();if(names.contains(com.mojang.brigadier.arguments.StringArgumentType.escapeIfRequired("持续技能搭档"))){checked.add("online-ai-alias-in-native-tab-completion");mc().setScreen(null);result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}}
+                case 46->{var names=mc().getConnection().getSuggestionsProvider().getOnlinePlayerNames();if(names.contains(com.mojang.brigadier.arguments.StringArgumentType.escapeIfRequired("持续技能搭档"))){checked.add("online-ai-alias-in-native-tab-completion");NativeWorkspaceScreen.openForAgent(agent.toString(),"界面验收");advance("open-building-plan-workspace");}}
+                case 47->{if(click("建筑")||click("建筑计划"))advance("open-visible-building-plans");}
+                case 48->{if(click("building-open-example"))advance("open-real-component-plan");}
+                case 49->{var button=find(root(),"building-action-undo");if(button!=null&&button.isActive()){pending=true;mc().getSingleplayerServer().submit(()->{buildingBefore=mc().getSingleplayerServer().overworld().getBlockState(new net.minecraft.core.BlockPos(12,101,12));require(!buildingBefore.isAir(),"BUILDING_UI_FIXTURE_NOT_BUILT_AT_EXPECTED_LOCATION");return true;}).whenComplete((v,e)->mc().execute(()->{pending=false;if(e!=null)result.completeExceptionally(e);else advance("capture-built-state-before-ui-undo");}));}}
+                case 50->{if(click("building-action-undo"))advance("undo-through-visible-building-control");}
+                case 51->buildingState("UNDONE",true,"ui-undo-verified-in-world");
+                case 52->{if(click("building-action-redo"))advance("redo-through-visible-building-control");}
+                case 53->buildingState("UNVERIFIED",false,"ui-redo-restored-original-block");
+                case 54->{if(click("building-verify"))advance("verify-through-visible-building-control");}
+                case 55->{pending=true;WorkspacePanels.request("building.read",Map.of("kind","inspect","agentId",agent.toString(),"id","example","offset","0")).whenComplete((receipt,error)->{pending=false;if(error!=null){result.completeExceptionally(error);return;}if(WorkspacePanels.state(receipt).get("status").getAsString().equals("VERIFIED")){checked.add("ui-building-exact-revision-verified");result.complete(Map.of("status","PASS","checks",List.copyOf(checked),"modelCalls",0));}});}
+
             }
         }catch(Throwable error){result.completeExceptionally(error);}
+    }
+    private static void buildingState(String expected,boolean air,String label){
+        pending=true;WorkspacePanels.request("building.read",Map.of("kind","inspect","agentId",agent.toString(),"id","example","offset","0")).whenComplete((receipt,error)->{
+            if(error!=null){pending=false;result.completeExceptionally(error);return;}var state=WorkspacePanels.state(receipt);if(!state.get("status").getAsString().equals(expected)){pending=false;return;}
+            mc().getSingleplayerServer().submit(()->{var actual=mc().getSingleplayerServer().overworld().getBlockState(new net.minecraft.core.BlockPos(12,101,12));require(air?actual.isAir():actual.equals(buildingBefore),"UI_BUILDING_WORLD_EFFECT_MISSING_"+expected);return true;}).whenComplete((v,e)->mc().execute(()->{pending=false;if(e!=null)result.completeExceptionally(e);else advance(label);}));
+        });
     }
     private NativeFunctionalSmokeClient(){}
 }

@@ -23,6 +23,18 @@ public final class WaterClutchRuntime {
     private record Landing(BlockPos support,BlockPos source,Vec3 aim,double drop){}
     private static final Map<MinecraftServer,Map<UUID,Clutch>> ACTIVE=new IdentityHashMap<>();
     private static final Map<MinecraftServer,Map<UUID,Map<String,Object>>> RESULTS=new IdentityHashMap<>();
+    private record Motion(ServerPlayer body,Object level,Vec3 position,int movedAt,Vec3 velocity){}
+    private static final Map<MinecraftServer,Map<UUID,Motion>> MOTION=new IdentityHashMap<>();
+    private static Vec3 velocity(ServerPlayer p){
+        var observed=MOTION.getOrDefault(p.level().getServer(),Map.of()).get(p.getUUID());
+        if(!(p instanceof MineAgentPlayer)&&observed!=null&&observed.body==p&&observed.level==p.level()&&p.level().getServer().getTickCount()-observed.movedAt<=4&&observed.velocity.y<-.01)return observed.velocity;
+        return p.getDeltaMovement();
+    }
+    private static void sample(ServerPlayer p,Map<UUID,Motion> samples,int tick){
+        var old=samples.get(p.getUUID());var position=p.position();
+        if(old==null||old.body!=p||old.level!=p.level()||position.distanceToSqr(old.position)>36){samples.put(p.getUUID(),new Motion(p,p.level(),position,tick,Vec3.ZERO));return;}
+        if(position.distanceToSqr(old.position)>1.0E-8)samples.put(p.getUUID(),new Motion(p,p.level(),position,tick,position.subtract(old.position).scale(1.0/Math.max(1,tick-old.movedAt))));
+    }
     private static final Map<MinecraftServer,Map<UUID,Integer>> RETRY=new IdentityHashMap<>();
     private WaterClutchRuntime(){}
     public static Map<String,Object> snapshot(ServerPlayer p){return RESULTS.getOrDefault(p.level().getServer(),Map.of()).getOrDefault(p.getUUID(),Map.of("state","IDLE"));}
@@ -40,8 +52,8 @@ public final class WaterClutchRuntime {
     private static int slot(ServerPlayer p,Item item){for(int i=0;i<36;i++)if(p.getInventory().getItem(i).is(item))return i;return -1;}
     private static boolean hasWater(ServerPlayer p){return p.getOffhandItem().is(Items.WATER_BUCKET)||slot(p,Items.WATER_BUCKET)>=0;}
     private static Landing predict(ServerPlayer p){
-        if(p.onGround()||p.isInWater()||p.isFallFlying()||p.getAbilities().flying||p.isIgnoringFallDamageFromCurrentImpulse()||p.getDeltaMovement().y>=-.12)return null;
-        var position=p.position();var velocity=p.getDeltaMovement();
+        if(p.onGround()||p.isInWater()||p.isFallFlying()||p.getAbilities().flying||p.isIgnoringFallDamageFromCurrentImpulse()||velocity(p).y>=-.12)return null;
+        var position=p.position();var velocity=velocity(p);
         for(int tick=0;tick<18;tick++){
             var next=position.add(velocity);if(!p.level().hasChunkAt(BlockPos.containing(next)))return null;
             var hit=p.level().clip(new ClipContext(position.add(0,.02,0),next,ClipContext.Block.COLLIDER,ClipContext.Fluid.ANY,p));
@@ -89,7 +101,7 @@ public final class WaterClutchRuntime {
                 outcome="SOURCE_CHANGED_NO_RECOVERY";return true;
             }
             // Let native water contact reset the fall. Do not remove the source while still descending.
-            if(now-placedAt<3||player.fallDistance>0||player.getDeltaMovement().y<-.06||!(player.onGround()||player.isInWater()))return false;
+            if(now-placedAt<3||player.fallDistance>0||velocity(player).y<-.06||!(player.onGround()||player.isInWater()))return false;
             if(player.level().getBlockState(landing.support).getCollisionShape(player.level(),landing.support).isEmpty()){outcome="SUPPORT_CHANGED_NO_RECOVERY";return true;}
             if(settledAt<0)settledAt=now;if(now-settledAt<3)return false;
             if(player.getEyePosition().distanceTo(Vec3.atCenterOf(landing.source))>player.blockInteractionRange()-.1){outcome="SOURCE_OUT_OF_REACH";return true;}
@@ -109,9 +121,9 @@ public final class WaterClutchRuntime {
         void finish(){try{if(actor!=null&&actor.controls().owns(token,BodyDomain.INVENTORY)){actor.stop(token);actor.controls().release(token);}}finally{record();}}
     }
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
-        var server=event.getServer();if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server))return;var active=ACTIVE.computeIfAbsent(server,s->new HashMap<>());var retry=RETRY.computeIfAbsent(server,s->new HashMap<>());
+        var server=event.getServer();if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server))return;var active=ACTIVE.computeIfAbsent(server,s->new HashMap<>());var retry=RETRY.computeIfAbsent(server,s->new HashMap<>());var samples=MOTION.computeIfAbsent(server,s->new HashMap<>());for(var p:server.getPlayerList().getPlayers())sample(p,samples,server.getTickCount());samples.entrySet().removeIf(e->server.getPlayerList().getPlayer(e.getKey())!=e.getValue().body);
         for(var p:server.getPlayerList().getPlayers())if(!active.containsKey(p.getUUID())&&server.getTickCount()>=retry.getOrDefault(p.getUUID(),0)&&allowed(p)&&hasWater(p)){var landing=predict(p);if(landing!=null)active.put(p.getUUID(),new Clutch(p,landing));}
         for(var entry:List.copyOf(active.entrySet())){var clutch=entry.getValue();boolean done;try{done=clutch.tick();}catch(Exception failure){clutch.outcome="NATIVE_USE_REJECTED";done=true;}if(done){if(!clutch.completing&&clutch.current()&&clutch.actor.controls().owns(clutch.token,BodyDomain.INVENTORY)&&!clutch.restored()){clutch.completing=true;clutch.restoreAt=server.getTickCount();clutch.restoreSelection();continue;}clutch.finish();active.remove(entry.getKey());retry.put(entry.getKey(),server.getTickCount()+10);}}
     }
-    @SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppingEvent event){var active=ACTIVE.remove(event.getServer());if(active!=null)for(var clutch:active.values())clutch.finish();RESULTS.remove(event.getServer());RETRY.remove(event.getServer());}
+    @SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppingEvent event){var active=ACTIVE.remove(event.getServer());if(active!=null)for(var clutch:active.values())clutch.finish();RESULTS.remove(event.getServer());RETRY.remove(event.getServer());MOTION.remove(event.getServer());}
 }

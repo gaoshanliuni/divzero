@@ -3210,5 +3210,12 @@
   "世界或玩家已变化，操作尚未发送。": "The world or player changed. The operation was not sent.",
   "工作区连接超时，操作尚未发送。": "Workspace connection timed out. The operation was not sent.",
   "工作区连接失败，操作尚未发送。": "Workspace connection failed. The operation was not sent.",
-  "请先在聊天中启用此世界的 DivZero。": "Enable DivZero for this world in chat first."
+  "请先在聊天中启用此世界的 DivZero。": "Enable DivZero for this world in chat first.",
+  "让 AI 设计": "Design with AI",
+  "让 AI 设计建筑": "Design a building with AI",
+  "描述建筑、材料和用途。AI 会保存构件计划；你可检查后再开始施工。": "Describe the building, materials and purpose. The AI saves a component plan for you to review before construction.",
+  "提交规划需求": "Submit design request",
+  "请填写建筑需求，最多 7000 个字符。": "Enter a building request of up to 7,000 characters.",
+  "建筑规划": "Building design",
+  "查看规划对话": "View design conversation"
 }
