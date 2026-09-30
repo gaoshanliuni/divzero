@@ -14,6 +14,7 @@ public final class ConversationTools {
         CandidateTools.definition("read_guidance"),
         CandidateTools.definition("inspect_package_source"),
         CandidateTools.definition("edit_package_sources"),
+        CandidateTools.definition("control_package_edit"),
         CandidateTools.definition("inspect_content_candidate"),
         CandidateTools.definition("repair_content_package"),
         CandidateTools.definition("edit_native_ui"),

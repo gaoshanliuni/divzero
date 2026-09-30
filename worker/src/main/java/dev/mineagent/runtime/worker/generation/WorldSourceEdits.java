@@ -13,6 +13,10 @@ public final class WorldSourceEdits {
     private static final ObjectMapper JSON=new ObjectMapper(com.fasterxml.jackson.core.JsonFactory.builder().enable(com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION).build()).enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     public static String apply(RuntimePackage base,ContentAddressedStore content,String previous,List<FailedCandidatePatch.Change> edits)throws Exception{
         if(edits.isEmpty()||edits.size()>32)throw new IllegalArgumentException("WORLD_PATCH_EDIT_COUNT");
+        if(edits.size()==1&&edits.getFirst().path().equals("raw_output")){
+            if(previous==null||previous.isBlank())throw new IllegalArgumentException("WORLD_PATCH_RAW_CANDIDATE_REQUIRED");var edit=edits.getFirst();var patched=OpenCodeRuntime.edit(previous,edit.oldText(),edit.newText(),edit.replaceAll());
+            if(!patched.accepted())throw new PackageOutputException("WORLD_PATCH_EDIT_REJECTED","raw_output edits[0].old_text: "+patched.error());return patched.source();
+        }
         var files=new LinkedHashMap<String,ObjectNode>();var root=JSON.createObjectNode();
         if(previous!=null&&!previous.isBlank()){
             if(previous.length()>4*1024*1024)throw new IllegalArgumentException("WORLD_PATCH_OUTPUT_LIMIT");

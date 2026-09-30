@@ -121,12 +121,12 @@ public final class ServerPackageRuntime implements AutoCloseable {
     private boolean worldPatchCurrent(PackageUiPatchJob j){var t=MineAgentRuntimeServices.tasks(server).get(j.taskId()).orElse(null);return !closed&&t!=null&&t.intentRevision()==j.taskIntentRevision()&&t.status()==dev.mineagent.runtime.api.task.TaskStatus.RUNNING&&mayWorldPatch(j.ownerPlayerId(),j.agentId())&&library.get(j.base().packageId()).filter(p->p.revision()==j.base().revision()&&p.canonicalSha256().equals(j.base().canonicalSha256())).isPresent();}
     public java.util.concurrent.CompletableFuture<Map<String,Object>> inspectPackageSource(ServerPlayer viewer,UUID agent,UUID packageId,long revision,String path,int offset,UUID operation,java.util.function.BooleanSupplier current)throws Exception{
         requireServerThread();if(!mayWorldPatch(viewer.getUUID(),agent)||!current.getAsBoolean())throw new SecurityException("PACKAGE_SOURCE_PERMISSION");
-        var base=ownedPackage(viewer.getUUID(),packageId,revision).orElseThrow(()->new SecurityException("PACKAGE_NOT_OWNED"));if(base.revision()!=revision)throw new IllegalStateException("STALE_PACKAGE");
-        var job=operation==null?null:worldPatches.get(viewer.getUUID(),operation);if(job!=null&&(!job.agentId().equals(agent)||!job.base().canonicalSha256().equals(base.canonicalSha256())))throw new IllegalStateException("STALE_PACKAGE_SOURCE");
+        var job=operation==null?null:worldPatches.get(viewer.getUUID(),operation);
+        var base=job==null?ownedPackage(viewer.getUUID(),packageId,revision).orElseThrow(()->new SecurityException("PACKAGE_NOT_OWNED")):job.base();if(base.revision()!=revision||!base.packageId().equals(packageId)||job!=null&&!job.agentId().equals(agent))throw new IllegalStateException("STALE_PACKAGE_SOURCE");
         String diagnostic=job==null?"":worldPatches.diagnostic(viewer.getUUID(),operation);if(offset<0||offset>1048576)throw new IllegalArgumentException("PACKAGE_SOURCE_OFFSET");
         return java.util.concurrent.CompletableFuture.supplyAsync(()->{try{
             var value=new LinkedHashMap<String,Object>();value.put("package_id",packageId);value.put("revision",revision);value.put("base_hash",base.canonicalSha256());value.put("activationMode",base.activationMode());
-            if(job!=null){value.put("operation_id",job.operationId());value.put("job_revision",job.revision());value.put("raw_sha256",job.rawOutputSha256());value.put("candidateState",job.state());value.put("diagnostic",diagnostic);}
+            if(job!=null){value.put("operation_id",job.operationId());value.put("job_revision",job.revision());value.put("raw_sha256",job.rawOutputSha256());value.put("candidateState",job.state());value.put("candidate_hash",job.candidate()==null?"":job.candidate().canonicalSha256());value.put("diagnostic",diagnostic);}
             if(path.isEmpty()){var files=base.resources().values().stream().sorted(Comparator.comparing(dev.mineagent.runtime.api.packages.RuntimeResourceRef::path)).toList();value.put("files",files.stream().skip(offset).limit(32).toList());value.put("nextOffset",offset+32<files.size()?offset+32:-1);return value;}
             String source=null;
             if(job!=null&&!job.rawOutputSha256().isEmpty()){
@@ -145,7 +145,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         String sourceHash="";
         if(args.has("source_operation_id")){
             var source=worldPatches.get(viewer.getUUID(),UUID.fromString(args.get("source_operation_id").asText()));
-            if(!source.agentId().equals(agent)||!source.base().canonicalSha256().equals(base.canonicalSha256())||!source.state().equals("FAILED")||source.revision()!=args.path("job_revision").asLong()||!source.rawOutputSha256().equals(args.path("raw_sha256").asText())||source.rawOutputSha256().isEmpty())throw new IllegalStateException("STALE_PACKAGE_CANDIDATE");sourceHash=source.rawOutputSha256();
+            if(!source.agentId().equals(agent)||!source.base().canonicalSha256().equals(base.canonicalSha256())||!Set.of("FAILED","CANCELLED").contains(source.state())||source.revision()!=args.path("job_revision").asLong()||!source.rawOutputSha256().equals(args.path("raw_sha256").asText())||source.rawOutputSha256().isEmpty())throw new IllegalStateException("STALE_PACKAGE_CANDIDATE");sourceHash=source.rawOutputSha256();
         }
         var edits=new ArrayList<dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change>();for(var edit:args.path("edits"))edits.add(new dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change(edit.path("path").asText(),edit.path("old_text").asText(),edit.path("new_text").asText(),edit.path("replace_all").asBoolean()));
         var submitted=worldPatches.submit(viewer.getUUID(),agent,operation,base,"Local source edit "+RuntimePackageCanonicalizer.sha256(args.toString()),true,budgetParent(operation,"PATCH"));var job=submitted.job();
@@ -162,6 +162,14 @@ public final class ServerPackageRuntime implements AutoCloseable {
                 if(!finished.state().equals("READY"))response.put("error",finished.errorCode());else response.put("candidate_hash",finished.candidate().canonicalSha256());response.put("nextStep","Inspect the candidate and apply it through the existing package lifecycle controls. No running source was replaced by preparing this candidate.");return response;
             }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}finally{worldPatchPermits.remove(job.taskId(),permit);}
         }));
+    }
+    public Map<String,Object> controlPackageEdit(ServerPlayer viewer,UUID agent,com.fasterxml.jackson.databind.JsonNode args)throws Exception{
+        requireServerThread();UUID operation=UUID.fromString(args.path("operation_id").asText());var job=worldPatches.get(viewer.getUUID(),operation);
+        if(!job.agentId().equals(agent)||job.revision()!=args.path("job_revision").asLong())throw new IllegalStateException("STALE_PACKAGE_CANDIDATE");
+        String action=args.path("action").asText();
+        if(!action.equals("cancel")){var target=action.equals("apply")?job.candidate():job.base();if(target==null||!target.canonicalSha256().equals(args.path("target_hash").asText()))return Map.of("status","REJECTED","error","PACKAGE_CANDIDATE_HASH_CHANGED","category","STALE_TARGET","executionState","NOT_STARTED","suggestedAction","Read inspect_package_source for this operation and provide candidate_hash for apply or base_hash for rollback.");}
+        var result=worldPatchAction(viewer.getUUID(),operation,action,!action.equals("cancel"),args.path("target_hash").asText());
+        return Map.of("status",result.state().equals("CANCELLED")?"CANCELLED":Set.of("APPLIED","ROLLED_BACK").contains(result.state())?"VERSION_SAVED_LIFECYCLE_REQUIRED":result.state(),"operation_id",operation,"job_revision",result.revision(),"package_id",result.base().packageId(),"head_revision",result.headRevision(),"activationMode",result.base().activationMode(),"nativeExecuted",false,"nextStep","The package version was saved or the candidate cancelled. Activate/restore through this package's existing lifecycle and verify actual effects; do not claim running instances were migrated.");
     }
     public PackageUiPatchService.Submission worldPatch(ServerPlayer viewer,UUID agent,UUID operation,UUID packageId,long revision,String prompt)throws Exception{
         requireServerThread();if(!mayWorldPatch(viewer.getUUID(),agent))throw new SecurityException("PERMISSION_DENIED");

@@ -34,7 +34,7 @@ public final class CapabilityCatalog {
             "inspect_player inspect_registry inspect_effects modify_effect modify_item give_item drop_item pickup_item open_preview"),
         group("content","内容包、包说明、建模、脚本和复合世界任务",
             "建模先 inspect_modeling 和 validate_model_geometry，优先参数化几何，不用方盒堆球。生成和启用必须等待真实签名/执行/绘制回执；下载不等于执行。未知结果查 inspect_operations 和当前对象。模型、脚本和资源版本必须与对应目标绑定；不能以源码生成冒充完整功能验收。按任务组合 building、ui、entities 或 files。",
-            "read_guidance inspect_package_source edit_package_sources inspect_content_candidate repair_content_package inspect_packages inspect_operations generate_content_package start_world_task inspect_modeling validate_model_geometry open_preview"),
+            "read_guidance inspect_package_source edit_package_sources control_package_edit inspect_content_candidate repair_content_package inspect_packages inspect_operations generate_content_package start_world_task inspect_modeling validate_model_geometry open_preview"),
         group("entities","生物创建、原生派生、动画、行为与部件模型",
             "先读取实际注册类型、行为/动画/模型，再修改或派生。新原生实例保留源类能力和依赖，不等于热注册类型或任意私有代码克隆。局部部件替换跟随原生动画并保留其他实体。未知 Mod 逻辑需适配和验证，不伪造机制读取。",
             "inspect_native_entities derive_native_entity define_native_entity control_native_entity inspect_entity_model replace_entity_part inspect_entity_logic inspect_entity_rules set_entity_rule set_entity_animation delete_entity_rule inspect_entity_animation set_entity_state derive_creature_template inspect_creatures define_creature control_creature open_preview"),
