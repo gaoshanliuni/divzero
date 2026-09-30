@@ -18,6 +18,7 @@ public final class NativeFunctionalSmokeClient {
     private static int stage,ticks,pressedAt,pagerStage,editorAt,focusChanges;private static float editorX,editorY;private static boolean pending,chatRevealed,uiApplySubmitted;private static final List<String> checked=new ArrayList<>();
     public static CompletableFuture<Map<String,Object>> run(UUID ai,UUID first,UUID second,UUID oldest){
         if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");
+        org.lwjgl.glfw.GLFW.glfwFocusWindow(Minecraft.getInstance().getWindow().handle());
         agent=ai;a=first;b=second;old=oldest;stage=ticks=pressedAt=pagerStage=0;pending=chatRevealed=uiApplySubmitted=false;checked.clear();return result=new CompletableFuture<>();
     }
     public static CompletableFuture<Map<String,Object>> runBuilding(UUID ai){
@@ -88,8 +89,8 @@ public final class NativeFunctionalSmokeClient {
                 case 29->{net.minecraft.client.Screenshot.takeScreenshot(mc().getMainRenderTarget(),image->{try(image){image.writeToFile(mc().gameDirectory.toPath().resolve("persistent-skill-smoke/gui-scale-four.png"));}catch(Exception e){result.completeExceptionally(e);}});NativeInventoryPanel.open((NativeWorkspaceScreen)mc().screen,agent.toString());advance("open-native-advanced-inputs");}
                 case 30->{if(slotClick(33,0,org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT))advance("native-shift-click");}
                 case 31->readInventory(s->slot(s,"player",8).get("count").getAsInt()==16&&slot(s,"agent",1).get("empty").getAsBoolean(),"shift-transfer-confirmed");
-                case 32->{if(mc().screen instanceof AgentInventoryScreen screen){var mouse=slotEvent(screen,32);org.lwjgl.glfw.GLFW.glfwSetCursorPos(mc().getWindow().handle(),mouse.x()*mc().getWindow().getGuiScale(),mouse.y()*mc().getWindow().getGuiScale());advance("hover-native-hotbar-slot");}}
-                case 33->{if(mc().screen instanceof AgentInventoryScreen screen){screen.keyPressed(new net.minecraft.client.input.KeyEvent(org.lwjgl.glfw.GLFW.GLFW_KEY_9,0,0));advance("native-number-key-swap");}}
+                case 32->{if(mc().screen instanceof AgentInventoryScreen screen){var mouse=slotEvent(screen,32);org.lwjgl.glfw.GLFW.glfwSetCursorPos(mc().getWindow().handle(),mouse.x()*mc().getWindow().getGuiScale(),mouse.y()*mc().getWindow().getGuiScale());pressedAt=ticks;advance("hover-native-hotbar-slot");}}
+                case 33->{if(mc().screen instanceof AgentInventoryScreen screen&&mc().isWindowActive()&&ticks-pressedAt>=3&&screen.smokeHoveredSlot()==32){screen.keyPressed(new net.minecraft.client.input.KeyEvent(org.lwjgl.glfw.GLFW.GLFW_KEY_9,0,0));advance("native-number-key-swap");}}
                 case 34->readInventory(s->slot(s,"agent",0).get("item").getAsString().equals("minecraft:diamond")&&slot(s,"player",8).get("item").getAsString().equals("minecraft:bread"),"number-key-swap-confirmed");
                 case 35->{if(slotClick(32,1,0))advance("native-right-click-half-stack");}
                 case 36->{if(mc().screen instanceof AgentInventoryScreen screen){require(screen.getMenu().getCarried().getCount()==8,"NATIVE_SPLIT_COUNT");screen.mouseClicked(slotEvent(screen,34),false);screen.mouseDragged(slotEvent(screen,34),0,0);screen.mouseDragged(slotEvent(screen,35),18,0);screen.mouseReleased(slotEvent(screen,35));advance("native-drag-distribute");}}

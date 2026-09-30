@@ -3874,8 +3874,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentInventoryScreen.java",
-      "sha256": "3a7078f10e009a302473e031cfb54d7227cd88a9e2c6ea8070fe373b9e63aee8",
-      "bytes": 2684
+      "sha256": "cfd2f083c2cf2c763d1e47ccb6b1c944e7ee708b7b0b936aaedf72893baaabe5",
+      "bytes": 2870
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentModelPanel.java",
@@ -4004,8 +4004,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeFunctionalSmokeClient.java",
-      "sha256": "d2dd4dfa13c1cee649781f91d6ab09797ea431324caa18baaef4729027320fda",
-      "bytes": 22912
+      "sha256": "d2ecdf99a1f18497855d2a86cd1e781f741870cc834f1bd15c29f12426a8b48d",
+      "bytes": 23093
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeGenerationPanel.java",

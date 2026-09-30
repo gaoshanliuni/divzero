@@ -13,6 +13,7 @@ public final class AgentInventoryScreen extends AbstractContainerScreen<AgentInv
     private static final Identifier TEXTURE=Identifier.withDefaultNamespace("textures/gui/container/inventory.png");
     public AgentInventoryScreen(AgentInventoryMenu menu,Inventory inventory,Component title){super(menu,inventory,title,176,269);inventoryLabelY=175;}
     @Override public boolean isPauseScreen(){return false;}
+    int smokeHoveredSlot(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return hoveredSlot==null?-1:menu.slots.indexOf(hoveredSlot);}
     @Override public void extractBackground(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partial){
         super.extractBackground(graphics,mouseX,mouseY,partial);
         int x=leftPos,y=topPos;
