@@ -49,6 +49,8 @@ edit_runtime = edit_runtime.replace(': string', '').replace('(text: string)', '(
 # Rhino shares loop-local const bindings; no asynchronous closures are retained by these matchers.
 edit_runtime = edit_runtime.replace('const ', 'var ')
 edit_runtime = edit_runtime.replace('content.replaceAll(search, newString)', 'content.split(search).join(newString)')
+edit_runtime = edit_runtime.replace('Math.min(\n      ...nonEmptyLines.map', 'Math.min.apply(null,\n      nonEmptyLines.map')
+edit_runtime = re.sub(r',(?=\s*\))', '', edit_runtime)
 runtime = '\n\n'.join([
     '/* Portions copyright (c) 2025 opencode, MIT. See LICENSE and provenance.json. */',
     'var OpenCodeCompat = (function () {',

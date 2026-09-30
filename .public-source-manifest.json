@@ -3774,8 +3774,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "sha256": "3b86fe053ce69af90e7cce3dd3801b4000600b2f8f1f06debcd2f45e17ab49d0",
-      "bytes": 11378
+      "sha256": "2a87b27b68aa0715b6ef248feedd971c7a18865bb12595c9b10fe043a417deec",
+      "bytes": 11914
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
@@ -5224,7 +5224,7 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/network/MineAgentNetwork.java",
-      "sha256": "f8a73d9da14948f97e3b45bfa85724a9cd5b13641851f785821dbd5c5e98b516",
+      "sha256": "56cbd3f1915ac43a76939911e3b54de413372498fbcaf3f4cbe40e1113680aad",
       "bytes": 170949
     },
     {
@@ -5374,8 +5374,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "fd3d942b366613ce814670b0f35b9beb360253fa6b41ae855f1e5a39142af702",
-      "bytes": 13070
+      "sha256": "13bc26d5b5e544dc092164f86b08215309407cc8efeb3daebf8a4059fb434ce3",
+      "bytes": 13158
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
@@ -6719,18 +6719,18 @@
     },
     {
       "path": "scripting/src/main/resources/dev/mineagent/runtime/opencode/provenance.json",
-      "sha256": "adc6a93c7beca93e2587ccb3e15563f3f27d4050206cfb3d95d686f8af05a3d2",
-      "bytes": 2403
+      "sha256": "c6f61269a739761c6b23a437d87dd02f0e4690d1e58bfb0d2510d6e7defa4d6d",
+      "bytes": 2573
     },
     {
       "path": "scripting/src/main/resources/dev/mineagent/runtime/opencode/rebuild.py",
-      "sha256": "e9fae015268d9d5acb52243a7c44ab766efd999d1b0ccdff86fee57a587de939",
-      "bytes": 4330
+      "sha256": "148f57c7d4a549b465fa27d9422ee865199e7277372657c5fc0aecc0106d82b9",
+      "bytes": 4511
     },
     {
       "path": "scripting/src/main/resources/dev/mineagent/runtime/opencode/runtime.js",
-      "sha256": "79b6c8dbc554b44db8cf33a0e070f05cda97655ba68d8f7d7dd5e7b1956dad40",
-      "bytes": 9222
+      "sha256": "e80ac2d1e99c872f316bda2c50bf2fe58d6633b73dbe5be32d454659975dba18",
+      "bytes": 9226
     },
     {
       "path": "scripting/src/main/resources/dev/mineagent/runtime/opencode/upstream/compaction.ts",

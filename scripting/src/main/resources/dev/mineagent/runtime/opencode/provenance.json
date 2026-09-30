@@ -28,7 +28,7 @@
       "sha256": "f84d9d242137e1f18ce912188efb7a97b71bf4f255e0a69f16a1fe9d1ff236d4"
     }
   },
-  "runtimeSha256": "79b6c8dbc554b44db8cf33a0e070f05cda97655ba68d8f7d7dd5e7b1956dad40",
+  "runtimeSha256": "e80ac2d1e99c872f316bda2c50bf2fe58d6633b73dbe5be32d454659975dba18",
   "adaptations": [
     "Removed TypeScript annotations and module imports from selected pure functions.",
     "selectRendered accepts already-rendered atomic protocol groups; tool-call/result groups are never split.",
@@ -37,6 +37,7 @@
     "DivZero preserves operation IDs, UNKNOWN and unverified receipts outside generated summaries.",
     "Only these pure functions run; no OpenCode agent, subagent, shell or permission-ask runtime is enabled.",
     "Lower the select loop-local const next to var for Rhino block-binding semantics; the pinned algorithm and comparisons are unchanged.",
-    "Reuse upstream exact, line-trimmed, indentation-flexible and boundary-trimmed replacements, uniqueness checks and disproportionate-span rejection. Disable fuzzy/escape matching; normalize line endings at the Java boundary. Use split/join for literal replaceAll semantics and var loop locals for Rhino. No upstream filesystem or LSP service is enabled."
+    "Reuse upstream exact, line-trimmed, indentation-flexible and boundary-trimmed replacements, uniqueness checks and disproportionate-span rejection. Disable fuzzy/escape matching; normalize line endings at the Java boundary. Use split/join for literal replaceAll semantics and var loop locals for Rhino. No upstream filesystem or LSP service is enabled.",
+    "Lower Math.min argument spread to Function.apply and remove trailing call-argument commas for the shipped Rhino parser; matching comparisons remain upstream code."
   ]
 }

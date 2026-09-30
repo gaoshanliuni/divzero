@@ -151,11 +151,11 @@ var IndentationFlexibleReplacer = function* (content, find) {
     var nonEmptyLines = lines.filter((line) => line.trim().length > 0)
     if (nonEmptyLines.length === 0) return text
 
-    var minIndent = Math.min(
-      ...nonEmptyLines.map((line) => {
+    var minIndent = Math.min.apply(null,
+      nonEmptyLines.map((line) => {
         var match = line.match(/^(\s*)/)
         return match ? match[1].length : 0
-      }),
+      })
     )
 
     return lines.map((line) => (line.trim().length === 0 ? line : line.slice(minIndent))).join("\n")
@@ -205,7 +205,7 @@ function replace(content, oldString, newString, replaceAll = false) {
   }
   if (oldString === "") {
     throw new Error(
-      "oldString cannot be empty when editing an existing file. Provide the exact text to replace, or use write for an intentional full-file replacement.",
+      "oldString cannot be empty when editing an existing file. Provide the exact text to replace, or use write for an intentional full-file replacement."
     )
   }
 
@@ -223,7 +223,7 @@ function replace(content, oldString, newString, replaceAll = false) {
       notFound = false
       if (isDisproportionateMatch(search, oldString)) {
         throw new Error(
-          "Refusing replacement because the matched span is much larger than oldString. Re-read the file and provide the full exact oldString for the intended replacement.",
+          "Refusing replacement because the matched span is much larger than oldString. Re-read the file and provide the full exact oldString for the intended replacement."
         )
       }
       if (replaceAll) {
@@ -237,7 +237,7 @@ function replace(content, oldString, newString, replaceAll = false) {
 
   if (notFound) {
     throw new Error(
-      "Could not find oldString in the file. It must match exactly, including whitespace, indentation, and line endings.",
+      "Could not find oldString in the file. It must match exactly, including whitespace, indentation, and line endings."
     )
   }
   throw new Error("Found multiple matches for oldString. Provide more surrounding context to make the match unique.")
