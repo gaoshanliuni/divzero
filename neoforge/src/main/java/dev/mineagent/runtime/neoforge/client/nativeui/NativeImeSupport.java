@@ -11,10 +11,11 @@ import java.util.function.Supplier;
 
 /** Register the actual focused native editor with Minecraft's OS text input manager. */
 final class NativeImeSupport {
-    private final Screen screen;private final Supplier<ModularUI> ui;
+    private final Screen screen;private final Supplier<ModularUI> ui;private final Supplier<String> clipboardRead;private final java.util.function.Consumer<String> clipboardWrite;
     private int focusChanges,areaChanges;
     private UIElement editor;private IMEPreeditOverlay overlay;private boolean composing,changingFocus;private int x,y,lastX=Integer.MIN_VALUE,lastY,lastHeight;private double lastScale;private long ended;
-    NativeImeSupport(Screen screen,Supplier<ModularUI> ui){this.screen=screen;this.ui=ui;}
+    NativeImeSupport(Screen screen,Supplier<ModularUI> ui){this(screen,ui,()->Minecraft.getInstance().keyboardHandler.getClipboard(),value->Minecraft.getInstance().keyboardHandler.setClipboard(value));}
+    NativeImeSupport(Screen screen,Supplier<ModularUI> ui,Supplier<String> read,java.util.function.Consumer<String> write){this.screen=screen;this.ui=ui;this.clipboardRead=read;this.clipboardWrite=write;}
     void update(){
         if(changingFocus)return;var mc=Minecraft.getInstance();UIElement next=null;
         if(mc.screen==screen&&mc.isWindowActive()&&ui.get()!=null){var focus=ui.get().getFocusedElement();for(var p=focus;p!=null;p=p.getParent()){if(!p.isDisplayed()||!p.isActive()){next=null;break;}if((p instanceof TextField||p instanceof TextArea))next=p;}}
@@ -43,16 +44,18 @@ final class NativeImeSupport {
         boolean paste=primary&&key==org.lwjgl.glfw.GLFW.GLFW_KEY_V||(mods&org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT)!=0&&key==org.lwjgl.glfw.GLFW.GLFW_KEY_INSERT;
         boolean copy=primary&&(key==org.lwjgl.glfw.GLFW.GLFW_KEY_C||key==org.lwjgl.glfw.GLFW.GLFW_KEY_INSERT),cut=primary&&key==org.lwjgl.glfw.GLFW.GLFW_KEY_X,all=primary&&key==org.lwjgl.glfw.GLFW.GLFW_KEY_A;
         if(!paste&&!copy&&!cut&&!all)return false;
-        var keyboard=Minecraft.getInstance().keyboardHandler;
+        String pasted=paste?clipboardRead.get():"";
+        // An empty/unavailable OS clipboard must not erase the user's selected text.
+        if(paste&&pasted.isEmpty())return true;
         if(editor instanceof TextArea area&&area instanceof dev.mineagent.runtime.neoforge.mixin.client.LdTextAreaEditAccess access){
-            if(all)access.divzero$selectAll();else if(paste&&area.isEditable())access.divzero$insert(keyboard.getClipboard().replace("\r\n","\n").replace('\r','\n'));
-            else if(copy||cut){keyboard.setClipboard(access.divzero$selection());if(cut&&area.isEditable())access.divzero$insert("");}
+            if(all)access.divzero$selectAll();else if(paste&&area.isEditable())access.divzero$insert(pasted.replace("\r\n","\n").replace('\r','\n'));
+            else if(copy||cut){String selection=access.divzero$selection();clipboardWrite.accept(selection);if(cut&&area.isEditable()&&selection.equals(clipboardRead.get()))access.divzero$insert("");}
             return true;
         }
         if(editor instanceof TextField field&&field instanceof dev.mineagent.runtime.neoforge.mixin.client.LdTextFieldEditAccess access){
             if(all){field.setCursor(field.getValue().length());field.setSelection(0,field.getValue().length());}
-            else if(paste&&field.isEditable())field.insertText(keyboard.getClipboard());
-            else if(copy||cut){keyboard.setClipboard(access.divzero$selection());if(cut&&field.isEditable())field.insertText("");}
+            else if(paste&&field.isEditable())field.insertText(pasted);
+            else if(copy||cut){String selection=access.divzero$selection();clipboardWrite.accept(selection);if(cut&&field.isEditable()&&selection.equals(clipboardRead.get()))field.insertText("");}
             return true;
         }
         return false;
