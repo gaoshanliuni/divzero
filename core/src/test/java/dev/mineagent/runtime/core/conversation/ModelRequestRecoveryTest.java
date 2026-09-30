@@ -7,8 +7,9 @@ class ModelRequestRecoveryTest {
     private Map<String,Object> rejection(int status,int deltas){return Map.of("httpStatus",status,"deltaCount",deltas,"providerRejected",true);}
     @Test void retriesOnlyKnownBusyRejectionsBeforeAnyOutput(){
         assertEquals(ModelRequestRecovery.Action.WAIT,ModelRequestRecovery.decide(rejection(429,0),0,0).action());
+        for(int status:List.of(408,425,500,502,504))assertEquals(ModelRequestRecovery.Action.WAIT,ModelRequestRecovery.decide(rejection(status,0),0,0).action());
         assertEquals(4000,ModelRequestRecovery.decide(rejection(503,0),2,0).delayMillis());
-        for(int status:List.of(0,400,401,403,500))assertEquals(ModelRequestRecovery.Action.FAIL,ModelRequestRecovery.decide(rejection(status,0),0,0).action());
+        for(int status:List.of(0,400,401,403))assertEquals(ModelRequestRecovery.Action.FAIL,ModelRequestRecovery.decide(rejection(status,0),0,0).action());
         assertEquals(ModelRequestRecovery.Action.FAIL,ModelRequestRecovery.decide(rejection(503,1),0,0).action());
         assertEquals(ModelRequestRecovery.Action.FAIL,ModelRequestRecovery.decide(Map.of(),0,0).action());
         assertEquals(ModelRequestRecovery.Action.FAIL,ModelRequestRecovery.decide(rejection(503,0),3,0).action());

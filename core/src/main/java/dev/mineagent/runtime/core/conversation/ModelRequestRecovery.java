@@ -10,7 +10,7 @@ public final class ModelRequestRecovery {
         if(!Boolean.TRUE.equals(receipt.get("providerRejected"))||number(receipt,"deltaCount",-1)!=0)return new Decision(Action.FAIL,0);
         if(Boolean.TRUE.equals(receipt.get("contextTooLarge")))return new Decision(contextRepairs<2?Action.SHRINK:Action.FAIL,0);
         long status=number(receipt,"httpStatus",0),retryAfter=number(receipt,"retryAfterMillis",0);
-        if((status!=429&&status!=503)||busyRetries>=3||retryAfter>120_000)return new Decision(Action.FAIL,0);
+        if(!java.util.Set.of(408L,425L,429L,500L,502L,503L,504L).contains(status)||busyRetries>=3||retryAfter>120_000)return new Decision(Action.FAIL,0);
         return new Decision(Action.WAIT,Math.max(retryAfter,1000L<<busyRetries));
     }
     private static long number(Map<String,Object> values,String key,long fallback){return values.get(key) instanceof Number n?n.longValue():fallback;}

@@ -6,11 +6,19 @@ import java.util.*;
 /** OpenCode repeated-call predicate plus DivZero outcome/context checks; never a total-round budget. */
 public final class ExecutionProgress {
     private static final ObjectMapper JSON=new ObjectMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS,true);
-    private static final Set<String> VOLATILE=Set.of("observedAt","observedGameTick","gameTime","timestamp","elapsedMs","record_id","fetchedAt","retrievedAt");
-    private static final class Repeat{String outcome="";int count;final List<Map<String,Object>> parts=new ArrayList<>();}
+    private static final Set<String> VOLATILE=Set.of("observedAt","observedGameTick","gameTime","timestamp","elapsedMs","record_id","operation_id","fetchedAt","retrievedAt");
+    private static final class Repeat{String outcome="";int count;Map<String,Object> result=Map.of();final List<Map<String,Object>> parts=new ArrayList<>();}
     private final LinkedHashMap<String,Repeat> observations=new LinkedHashMap<>(128,.75f,true);
     public record Decision(boolean warn,boolean blocked,int repetitions){}
+    /** Suppress another identical failed write, while leaving the assistant and all other tools running. */
+    public synchronized Optional<Map<String,Object>> suppressedWrite(String name,String raw,String context){
+        try{JsonNode args;try{args=JSON.readTree(raw);}catch(Exception malformed){args=JSON.getNodeFactory().textNode(raw);}var repeat=observations.get(hash(List.of(name,hash(canonical(args)),context)));
+            if(repeat==null||repeat.count<4)return Optional.empty();
+            return Optional.of(Map.of("status","REJECTED","error","UNCHANGED_CALL_RESULT","executionState","NOT_STARTED","repeatSuppressed",true,"repetitions",repeat.count,"diagnostic","The same tool arguments and observed context repeatedly produced the same failure. This duplicate call was not executed.","previousResult",repeat.result));
+        }catch(Exception invalid){return Optional.empty();}
+    }
     public synchronized Decision observe(String name,String raw,Map<String,Object> result,String context,boolean readOnly){
+        if(Boolean.TRUE.equals(result.get("repeatSuppressed")))return new Decision(true,true,4);
         String status=Objects.toString(result.get("status"),"");
         boolean candidate=readOnly||result.containsKey("error")||Set.of("WAITING","NO_CHANGE","REJECTED","READ_FAILED","BLOCKED").contains(status);
         if(!candidate){observations.clear();return new Decision(false,false,0);}
@@ -20,7 +28,7 @@ public final class ExecutionProgress {
             String key=hash(List.of(name,parameters,context)),outcome=hash(canonical(JSON.valueToTree(result)));
             var repeat=observations.computeIfAbsent(key,k->new Repeat());while(observations.size()>128)observations.remove(observations.keySet().iterator().next());
             if(!outcome.equals(repeat.outcome)){repeat.outcome=outcome;repeat.count=0;repeat.parts.clear();}
-            repeat.count++;repeat.parts.add(Map.of("type","tool","tool",name,"state",Map.of("status","completed","input",input)));
+            repeat.result=Collections.unmodifiableMap(new LinkedHashMap<>(result));repeat.count++;repeat.parts.add(Map.of("type","tool","tool",name,"state",Map.of("status","completed","input",input)));
             if(repeat.parts.size()>3)repeat.parts.removeFirst();
             boolean repeated=repeat.count>=3&&OpenCodeRuntime.repeatedCalls(repeat.parts,name,input);
             return new Decision(repeated,repeated&&repeat.count>=4,repeat.count);

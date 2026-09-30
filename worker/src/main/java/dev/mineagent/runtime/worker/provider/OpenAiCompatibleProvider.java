@@ -164,7 +164,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
             dev.mineagent.runtime.worker.WorkerCancellation.watch(response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 try (var rejected = response.body()) {
-                    throw ProviderRequestException.rejected(response.statusCode(),response.headers().firstValue("Retry-After").orElse(""),rejected.readNBytes(8192));
+                    throw ProviderRequestException.rejected(response.statusCode(),response.headers().firstValue("Retry-After").orElse(""),rejected.readNBytes(8192)).withoutSecret(apiKey);
                 }
             }
             var result = new StringBuilder();var reasoning=new StringBuilder();var streamedTools=new StreamingToolCalls();

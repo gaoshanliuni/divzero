@@ -1,4 +1,5 @@
 package dev.mineagent.runtime.neoforge.ui;
+import dev.mineagent.runtime.core.conversation.ToolFailure;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -48,24 +49,17 @@ public final class ConversationAgentTools {
         if(!ConversationTools.NAMES.contains(tool))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_UNKNOWN","category","CAPABILITY","executionState","NOT_STARTED","suggestedAction","Use inspect_capabilities and skill to find the correct tool name."));
         final ToolValidation.Checked checked;
         try{if(arguments==null||arguments.length()>ConversationTools.maxArgumentCharacters(tool))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
-        catch(IllegalArgumentException invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid),"category","VALIDATION","executionState","NOT_STARTED","worldModified",false,"suggestedAction","Provide one complete JSON object matching this tool's parameter definition. No operation was executed."));}
+        catch(IllegalArgumentException invalid){return CompletableFuture.completedFuture(ToolFailure.result(tool,operation,invalid,ToolFailure.Phase.VALIDATION));}
         if(!checked.issues().isEmpty())return CompletableFuture.completedFuture(checked.rejection());
         if(!p.level().getServer().isSameThread()||!current(p,permit)||ConversationTools.mutation(tool)&&!personalTool(tool)&&!tool.equals("stop_actions")&&!ServerTaskStart.allowed(p,agent))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_PERMISSION","executionState","NOT_STARTED"));
         var invocation=new ToolLifecycleEvents.Invocation(MineAgentRuntimeServices.worldId(p.level().getServer()),p.getUUID(),agent,operation,tool,checked.arguments().toString());
         var veto=ToolLifecycleEvents.before(invocation);if(veto.isPresent()){ToolLifecycleEvents.after(invocation,veto.orElseThrow());return CompletableFuture.completedFuture(veto.orElseThrow());}
         // executeChecked repeats live authority and all domain admission after extension validation.
         var action=executeChecked(p,agent,operation,tool,checked.arguments().toString(),permit,conversation);
-        action=action.whenComplete((value,failure)->{
-            var receipt=value!=null?value:Map.<String,Object>of("status",ConversationTools.mutation(tool)?"UNKNOWN":"READ_FAILED","error",ConversationTools.mutation(tool)?"AGENT_TOOL_OUTCOME_UNKNOWN":failure==null?"AGENT_TOOL_EMPTY_RECEIPT":code(failure),"executionState",ConversationTools.mutation(tool)?"UNKNOWN":"READ_FAILED");
-            p.level().getServer().execute(()->ToolLifecycleEvents.after(invocation,receipt));
-        });
+        action=action.handle((value,failure)->value!=null?value:ToolFailure.result(tool,operation,failure,ConversationTools.mutation(tool)?ToolFailure.Phase.DISPATCH:ToolFailure.Phase.READ));
+        action=action.thenApply(value->{p.level().getServer().execute(()->ToolLifecycleEvents.after(invocation,value));return value;});
         if(!checked.normalized().isEmpty())action=action.thenApply(value->{var copy=new LinkedHashMap<String,Object>(value);copy.put("normalizedFields",checked.normalized());return copy;});
-        action=action.thenApply(ToolErrors::explain);
-        if(ConversationTools.mutation(tool))return action;
-        return action.handle((value,error)->{
-            if(error==null)return value;Throwable cause=error;while(cause instanceof CompletionException||cause instanceof ExecutionException){if(cause.getCause()==null)break;cause=cause.getCause();}
-            return Map.<String,Object>of("status","READ_FAILED","error",code(cause),"worldMutationRequested",false,"retryGuidance","Inspect current state and correct the read/verification arguments. A failed read is not proof of success or permission to replay a previous world write.");
-        });
+        return action.thenApply(ToolErrors::explain);
     }
     private static CompletableFuture<Map<String,Object>> executeChecked(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         var s=p.level().getServer();try{
@@ -115,20 +109,20 @@ public final class ConversationAgentTools {
             var world=MineAgentRuntimeServices.worldId(s);var level=p.level();var permissionAction=personalTool(tool)?dev.mineagent.runtime.api.permission.PermissionAction.CHAT:dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE;long permission=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),permissionAction);
             var db=s.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");var result=new CompletableFuture<Map<String,Object>>();String intent=JSON.writeValueAsString(Map.of("state","DISPATCHING","owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args));
             CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,0,intent);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((v,error)->s.execute(()->{
-                if(error!=null){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));return;}
+                if(error!=null){result.complete(ToolFailure.result(tool,operation,error,ToolFailure.Phase.INTENT_STORAGE));return;}
                 CompletableFuture<Map<String,Object>> action;
                 try{if(!current(p,permit)||!ToolExecutionTraits.of(tool).dimensionIndependent()&&p.level()!=level||(!personalTool(tool)&&!ServerTaskStart.allowed(p,agent))||permission!=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),permissionAction))throw new IllegalStateException("AGENT_TOOL_CONTEXT_CHANGED");if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");action=mutate(p,agent,operation,tool,args,permit,conversation);}
-                catch(Exception rejected){action=CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(rejected)));}
+                catch(Exception rejected){action=CompletableFuture.completedFuture(ToolFailure.result(tool,operation,rejected,ToolFailure.Phase.DISPATCH));}
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     if(failure!=null)dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Conversation tool failed: {}",tool,failure);
-                    var value=failure==null?receipt:Map.<String,Object>of("status","UNKNOWN","error","AGENT_TOOL_OUTCOME_UNKNOWN");
+                    var value=failure==null&&receipt!=null?receipt:ToolFailure.result(tool,operation,failure,ToolFailure.Phase.DISPATCH);
                     FeedbackNineSmokeServer.observe(tool,args,value);MediaToolsSmokeServer.observe(tool,value);BuildingImportSmokeServer.observe(tool,args,value);WorldGeometrySmokeServer.observe(tool,args,value);PythonHostSmokeServer.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
                     ConversationRuntimeItemSmokeServer.observe(tool,value);ConversationHostSmokeServer.observe(tool,args,value);ConversationFeedbackSmokeServer.observe(tool,value);ConversationCreatureSmokeServer.observe(tool,args,value);ConversationWatchSmokeServer.observe(tool,value);
-                    try{String encoded=JSON.writeValueAsString(Map.of("owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args,"receipt",value));CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,1,encoded);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((written,writeError)->s.execute(()->{if(writeError!=null||failure!=null)result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));else result.complete(value);}));}
-                    catch(Exception writeError){result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN"));}
+                    try{String encoded=JSON.writeValueAsString(Map.of("owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args,"receipt",value));CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,1,encoded);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((written,writeError)->s.execute(()->{if(writeError!=null){var diagnostic=new LinkedHashMap<>(ToolFailure.result(tool,operation,writeError,ToolFailure.Phase.RECEIPT_STORAGE));diagnostic.put("observedResult",value);result.complete(diagnostic);}else result.complete(value);}));}
+                    catch(Exception writeError){var diagnostic=new LinkedHashMap<>(ToolFailure.result(tool,operation,writeError,ToolFailure.Phase.RECEIPT_STORAGE));diagnostic.put("observedResult",value);result.complete(diagnostic);}
                 }));
             }));return result;
-        }catch(Exception invalid){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error",code(invalid)));}
+        }catch(Exception invalid){return CompletableFuture.completedFuture(ToolFailure.result(tool,operation,invalid,ToolFailure.Phase.VALIDATION));}
     }
     private static CompletableFuture<Map<String,Object>> read(ServerPlayer p,String tool,JsonNode args,BooleanSupplier permit)throws Exception{
         if(tool.equals("read_host_output")){keys(args,"operation_id","stream","offset");return dev.mineagent.runtime.neoforge.host.LocalHostCommands.output(p,UUID.fromString(text(args,"operation_id",36)),text(args,"stream",6),args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0);}

@@ -5,6 +5,9 @@ public final class ProviderRequestException extends RuntimeException {
     private final int statusCode;
     private final long retryAfterMillis;
     private final boolean contextTooLarge;
+    private java.util.Map<String,Object> diagnostics=java.util.Map.of();
+    public java.util.Map<String,Object> diagnostics(){return diagnostics;}
+    public ProviderRequestException withoutSecret(String secret){if(secret!=null&&!secret.isEmpty()){var safe=new java.util.LinkedHashMap<String,Object>();diagnostics.forEach((k,v)->safe.put(k,v instanceof String s?s.replace(secret,"[REDACTED]"):v));diagnostics=java.util.Map.copyOf(safe);}return this;}
     public ProviderRequestException(int statusCode,String message){this(statusCode,message,0,false);}
     private ProviderRequestException(int statusCode,String message,long retryAfterMillis,boolean contextTooLarge){
         super(message);this.statusCode=statusCode;this.retryAfterMillis=retryAfterMillis;this.contextTooLarge=contextTooLarge;
@@ -15,16 +18,20 @@ public final class ProviderRequestException extends RuntimeException {
     public boolean contextTooLarge(){return contextTooLarge;}
     public static ProviderRequestException rejected(int status,String retryAfter,byte[] body){
         boolean context=status==413;
-        if(status==400)try{
-            var error=new com.fasterxml.jackson.databind.ObjectMapper().readTree(body).path("error");
+        var details=new java.util.LinkedHashMap<String,Object>();
+        try{
+            var root=new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);var error=root.has("error")?root.path("error"):root;
+            for(String key:java.util.List.of("message","code","type","param"))if(error.path(key).isValueNode()&&!error.path(key).isNull())details.put(key.equals("message")?"diagnostic":key.equals("param")?"field":"provider"+Character.toUpperCase(key.charAt(0))+key.substring(1),dev.mineagent.runtime.core.conversation.ToolFailure.safe(error.path(key).asText()));
+            if(error.isTextual())details.put("diagnostic",dev.mineagent.runtime.core.conversation.ToolFailure.safe(error.asText()));
             String code=error.path("code").asText(error.path("type").asText());
-            context=java.util.Set.of("context_length_exceeded","context_window_exceeded","max_context_length_exceeded","input_too_long").contains(code);
+            context|=java.util.Set.of("context_length_exceeded","context_window_exceeded","max_context_length_exceeded","input_too_long").contains(code);
         }catch(Exception ignored){}
         long delay=0;
         try{delay=Math.multiplyExact(Long.parseLong(retryAfter.trim()),1000L);}catch(Exception number){
             try{delay=java.time.Duration.between(java.time.Instant.now(),java.time.ZonedDateTime.parse(retryAfter,java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()).toMillis();}catch(Exception ignored){}
         }
         // Very long provider delays remain visible failures instead of being retried before Retry-After.
-        return new ProviderRequestException(status,context?"PROVIDER_CONTEXT_TOO_LARGE":"PROVIDER_HTTP_REJECTED",Math.max(0,delay),context);
+        var result=new ProviderRequestException(status,context?"PROVIDER_CONTEXT_TOO_LARGE":"PROVIDER_HTTP_REJECTED",Math.max(0,delay),context);
+        details.putIfAbsent("diagnostic","Provider rejected the model request with HTTP "+status);result.diagnostics=java.util.Map.copyOf(details);return result;
     }
 }

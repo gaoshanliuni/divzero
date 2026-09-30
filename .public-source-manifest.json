@@ -1459,8 +1459,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ModelRequestRecovery.java",
-      "sha256": "a99a7243cfb3891dba4b1977b11cd6d79c53f31132a7f2104cf793f0fcb17c6b",
-      "bytes": 1185
+      "sha256": "5b223fd75232010dfe8bb571c6d08ef981f38ecdd0b1ca138f5a1c1da9239f72",
+      "bytes": 1229
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/NativeChatSegments.java",
@@ -1498,9 +1498,19 @@
       "bytes": 2016
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolFailure.java",
+      "sha256": "49ed80b7c77aef8f5e3fb9dc2ae15473428e40922a3392951d90dd7fcdd16710",
+      "bytes": 2563
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolValidation.java",
       "sha256": "288e81939fdf7c66e191347ab5e26b53a823f3b64c9807e54c33c5bba906ea29",
       "bytes": 6463
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/UncertainToolCalls.java",
+      "sha256": "040d76f086eb38c91d022e980daef2cb77dfd28e2c1cabe760089fba60c69e3a",
+      "bytes": 1962
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureAnimation.java",
@@ -2989,8 +2999,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ModelRequestRecoveryTest.java",
-      "sha256": "c3067a82806610f8d285bacf7ae51889514295790b60636e06b44563808afcd9",
-      "bytes": 2645
+      "sha256": "a0e705cd65783f2caeac65a909b80de4d3ba54d0318cd061f7530c25e9aed968",
+      "bytes": 2803
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ScopedGuidanceTest.java",
@@ -3001,6 +3011,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolArgumentsTest.java",
       "sha256": "2c84801de727c33f1448c7fd971763a951af57abc69a0f044484dc02b573a96e",
       "bytes": 1189
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolFailureTest.java",
+      "sha256": "70998db261318db0f3e31bc76685f78d422af03dc0a8ea689baffbd02275e31e",
+      "bytes": 2729
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolValidationTest.java",
@@ -5914,8 +5929,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "5929c4bc708c834733f8ed9de376f97d67c2f95f98839c5c4073806b08c3ac61",
-      "bytes": 72458
+      "sha256": "73429ef2157909712658e7cc8e5e622f286115c1bdcd040e1340c136a9478e31",
+      "bytes": 71806
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -6324,8 +6339,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "5dfbb1a0d440cf1a836e902b88feb27f42d851198a01b4263d2941295759e4d3",
-      "bytes": 92484
+      "sha256": "a7b23aa60fa6062f9145dcd371c0407798eededb4356014c3fac2a60c3ac1f28",
+      "bytes": 93090
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -6904,8 +6919,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/opencode/ExecutionProgress.java",
-      "sha256": "88db6cce367485f91841979960cbc5fa021f6175ebd940a3a0e7c141d3ef4747",
-      "bytes": 3062
+      "sha256": "6e40bbb0238a6336cc33416ea1ca88de4317b92aab7c00536c8f5b7a26885fec",
+      "bytes": 4179
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/opencode/OpenCodeRuntime.java",
@@ -7114,8 +7129,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/WorkerRequestHandler.java",
-      "sha256": "3cd3cd0255c134f3ffcd334551dfcc6aaa81948556b06ca23cd5bce562b93c80",
-      "bytes": 108575
+      "sha256": "bf17f73eb8ebc114d17e33ab77430858b5671048f4724c47096ea2e1afe98ca0",
+      "bytes": 108876
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/BootDependencyClasspath.java",
@@ -7484,8 +7499,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/OpenAiCompatibleProvider.java",
-      "sha256": "cf15002dff640167eee84013e17642bdc0b58c07d562fee671e9eee207f33222",
-      "bytes": 17110
+      "sha256": "bbb5177ee218de5626e512c300b4e97cb2f605bf23380bc19812694867a41aef",
+      "bytes": 17132
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/OpenAiSpeechTranscriber.java",
@@ -7509,8 +7524,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/ProviderRequestException.java",
-      "sha256": "dc89abb277c7f60f446877435dcf835e023c9eff10b9b183a86236a97c75de05",
-      "bytes": 2142
+      "sha256": "a630dc4e90fbd8ecb0e1e30161d8e3e330946335f39baab4dce26203d7e76c91",
+      "bytes": 3345
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/RealProviderSmokeAudit.java",
@@ -7534,8 +7549,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/StreamingToolCalls.java",
-      "sha256": "40ed78ca61bb2df84321fab2c741c0663dfa1250c1fa94008700762e585f363e",
-      "bytes": 2150
+      "sha256": "502ebc24597142719b5a116b3d1ba59dc42fcb022f0055e4664b44bcc1c3735f",
+      "bytes": 2137
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/ToolCall.java",
@@ -7791,6 +7806,11 @@
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/HttpModelProviderTest.java",
       "sha256": "f7841548e2cb93eaca05d274d9ae698535763cc6012eb9eb791bb9d49a278e44",
       "bytes": 13762
+    },
+    {
+      "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/ProviderFailureDiagnosticTest.java",
+      "sha256": "223b9411e4af367415c44a546b8564332d9070badd1722ba4661913a0b9b3e07",
+      "bytes": 1171
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/ProviderModelCatalogTest.java",

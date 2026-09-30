@@ -204,8 +204,9 @@ public final class WorkerRequestHandler implements AutoCloseable {
         } catch (RuntimeException failure) {
             var payload=new java.util.LinkedHashMap<String,Object>();payload.put("code","MODEL_STREAM_FAILED");payload.put("message",java.util.Objects.toString(failure.getMessage(),"MODEL_STREAM_FAILED"));payload.put("deltaCount",sequence.get());
             if(failure instanceof dev.mineagent.runtime.worker.provider.ProviderRequestException rejected){
-                payload.put("httpStatus",rejected.statusCode());payload.put("providerRejected",rejected.statusCode()>0);payload.put("retryAfterMillis",rejected.retryAfterMillis());payload.put("contextTooLarge",rejected.contextTooLarge());
+                payload.put("httpStatus",rejected.statusCode());payload.put("providerRejected",rejected.statusCode()>0);payload.put("retryAfterMillis",rejected.retryAfterMillis());payload.put("contextTooLarge",rejected.contextTooLarge());payload.putAll(rejected.diagnostics());
             }
+            if(!payload.containsKey("diagnostic"))payload.put("diagnostic",dev.mineagent.runtime.core.conversation.ToolFailure.result("model_request",request.requestId(),failure,dev.mineagent.runtime.core.conversation.ToolFailure.Phase.READ).get("diagnostic"));
             return new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"error",payload);
         }
     }
