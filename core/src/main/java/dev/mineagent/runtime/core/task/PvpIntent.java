@@ -7,12 +7,13 @@ public final class PvpIntent {
     private PvpIntent(){}
     public static boolean namesTarget(String input,Collection<String> names,boolean self){
         String text=input.toLowerCase(Locale.ROOT);
-        if(Pattern.compile("不要|不许|别打|禁止|停止|不攻击|解释|举例|假如|如果|don't|do not|stop|explain|example|what if").matcher(text).find())return false;
+        if(Pattern.compile("不要|不许|别打|禁止|停止|不攻击|解释|举例|假如|如果|don't|do not|stop|explain|example|what if|刚刚|打了我|攻击了我|正在攻击|attacked me|hit me").matcher(text).find())return false;
         if(!Pattern.compile("1v1|pvp|对打|决斗|切磋|攻击|打败|迎战|duel|spar|attack|fight").matcher(text).find())return false;
-        if(self&&Pattern.compile("(和我|跟我|与我|攻击我|打败我|向我|fight me|attack me|duel me|spar with me)").matcher(text).find())return true;
+        if(self&&Pattern.compile("(?:^|[，。!！\\s])(?:现在|请你|请|你|可以|允许你|来)?(?:和我|跟我|与我|攻击我|打败我|向我|fight me|attack me|duel me|spar with me)").matcher(text).find())return true;
         for(String name:names)if(name!=null&&!name.isBlank()){
             String lowered=name.toLowerCase(Locale.ROOT);
-            if(Pattern.compile("(?<![a-z0-9_])"+Pattern.quote(lowered)+"(?![a-z0-9_])").matcher(text).find())return true;
+            String named="(?<![a-z0-9_])"+Pattern.quote(lowered)+"(?![a-z0-9_])";
+            if(Pattern.compile("(?:攻击|打败|迎战|attack|fight|duel)\\s*"+named+"|(?:和|跟|与|向|with)\\s*"+named+".{0,16}(?:1v1|pvp|对打|决斗|切磋|duel|spar|fight)").matcher(text).find())return true;
         }return false;
     }
 }

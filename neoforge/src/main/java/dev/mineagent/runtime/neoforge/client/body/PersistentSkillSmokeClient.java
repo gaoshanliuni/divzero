@@ -20,6 +20,56 @@ public final class PersistentSkillSmokeClient {
     private static String uiSkillId="";
     private static UUID raceOperation,localConversation,localOperation;
     private static UUID uiConversationA,uiConversationB,uiConversationOld;
+    private static void waterClutch(){
+        boolean offhand=System.getProperty("mineagent.skillSmokeMode").equals("water_offhand"),without=System.getProperty("mineagent.skillSmokeMode").equals("water_none");
+        action("water-clutch-original-loadout",()->server(p->{var actor=controlled(p);actor.getInventory().clearContent();actor.setItemSlot(EquipmentSlot.OFFHAND,ItemStack.EMPTY);for(var slot:List.of(EquipmentSlot.HEAD,EquipmentSlot.CHEST,EquipmentSlot.LEGS,EquipmentSlot.FEET))actor.setItemSlot(slot,ItemStack.EMPTY);actor.getInventory().setItem(0,new ItemStack(Items.STICK));if(!without){if(offhand)actor.setItemSlot(EquipmentSlot.OFFHAND,new ItemStack(Items.WATER_BUCKET));else actor.getInventory().setItem(12,new ItemStack(Items.WATER_BUCKET));}actor.getInventory().setSelectedSlot(0);actor.inventoryMenu.broadcastChanges();return Map.of("waterPresent",!without,"offhand",offhand,"actualHealth",actor.getHealth());}));
+        if(playerActor()){
+            action("authorized-player-standby-before-fall",()->tool("set_behavior_mode",start("water_standby","player").put("kind","IDLE")));
+            waitFor("native-client-input-ready-before-fall",300,()->server(p->dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.emergencySession(p)!=null));
+        }
+        action("real-twelve-block-fall",()->server(p->{var actor=controlled(p);actor.teleportTo(p.level(),5.5,113,6.5,Set.of(),0,0,true);return Map.of("fromY",113,"floorY",100,"nativeFall",true,"health",actor.getHealth());}));
+        waitFor(without?"no-water-real-fall-damage":"native-water-placement-and-recovery",300,()->server(p->{var actor=controlled(p);var proof=dev.mineagent.runtime.neoforge.skill.WaterClutchRuntime.snapshot(actor);lastObservation=JSON.valueToTree(Map.of("water",proof,"position",actor.position().toString(),"health",actor.getHealth(),"fallDistance",actor.fallDistance));
+            if(without){if(!actor.onGround())return false;require(actor.getHealth()<20,"NO_WATER_FALL_DAMAGE_WAS_SUPPRESSED");EVIDENCE.add(lastObservation);return true;}
+            if(!proof.getOrDefault("state","").equals("RECOVERED")){if(actor.onGround()&&actor.getHealth()<20)throw new IllegalStateException("WATER_CLUTCH_MISSED_"+lastObservation);return false;}
+            require(actor.getHealth()==20,"WATER_CLUTCH_FALL_DAMAGE_"+lastObservation);require(actor.getInventory().countItem(Items.WATER_BUCKET)==1,"WATER_BUCKET_NOT_RECOVERED");require(actor.getInventory().getSelectedSlot()==0,"WATER_SELECTED_SLOT_NOT_RESTORED");EVIDENCE.add(lastObservation);return true;
+        }));
+    }
+    private static void retaliation(){
+        action("first-monster-hit-no-model-or-work-request",()->server(p->{var b=body(p);var mob=EntityType.ZOMBIE.create(p.level(),EntitySpawnReason.COMMAND);mob.setPos(b.getX()+1.6,b.getY(),b.getZ());mob.setTarget(b);mob.setPersistenceRequired();mob.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.IRON_HELMET));p.level().addFreshEntity(mob);zombie=mob.getUUID();return Map.of("attacker",zombie,"noSkillSubmitted",true);}));
+        waitFor("native-auto-retaliation-damaged-attacker",600,()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(value->server(p->{lastObservation=value;var target=p.level().getEntity(zombie);boolean struck=value.path("skills").findValues("verifiedHits").stream().anyMatch(n->n.asLong()>0);if(struck){require(!(target instanceof LivingEntity living)||living.getHealth()<20,"RETALIATION_NO_REAL_DAMAGE");EVIDENCE.add(value);return true;}return false;})));
+        action("explicit-stop-remains-stopped-after-monster-hit",()->server(p->{var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());runtime.stopAll(p,agent);var target=p.level().getEntity(zombie);if(target!=null)target.discard();var mob=EntityType.ZOMBIE.create(p.level(),EntitySpawnReason.COMMAND);mob.setPos(body(p).getX()+1.5,body(p).getY(),body(p).getZ());mob.setTarget(body(p));mob.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.IRON_HELMET));p.level().addFreshEntity(mob);zombie=mob.getUUID();baseline=ticks;return null;}));
+        waitFor("stop-not-undone-by-self-defense",90,()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(value->server(p->{require(value.path("skills").findValues("state").stream().noneMatch(n->Set.of("RUNNING","WAITING","SUSPENDED").contains(n.asText())),"STOP_RESTARTED_BY_DAMAGE");if(ticks-baseline<35)return false;var mob=p.level().getEntity(zombie);if(mob!=null)mob.discard();EVIDENCE.add(value);return true;})));
+    }
+    private record Duel(int group,MineAgentPlayer a,MineAgentPlayer b,UUID aId,UUID bId){}
+    private static final List<Duel> duels=new ArrayList<>();private static final Set<Integer> duelFinished=new HashSet<>();private static long duelDeadline,duelStarted;
+    private static void duelFive(){
+        action("five-isolated-native-duel-arenas-and-ten-bodies",()->server(p->{
+            var server=p.level().getServer();p.level().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.SPAWN_MOBS,false,server);p.level().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.PVP,true,server);server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"difficulty normal");server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"time set midnight");body(p).setGameMode(GameType.CREATIVE);
+            for(int group=0;group<5;group++){int cx=(group%3-1)*42,cz=(group/3)*44-20;
+                for(int x=cx-17;x<=cx+17;x++)for(int z=cz-17;z<=cz+17;z++){p.level().getChunk(x>>4,z>>4);for(int y=98;y<=105;y++){boolean wall=x==cx-17||x==cx+17||z==cz-17||z==cz+17;p.level().setBlock(new BlockPos(x,y,z),y<=100||wall?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),2);}}
+                var a=MineAgentRuntimeServices.bodies(server).createPersistentAt("对打"+(group+1)+"甲",p.getUUID(),p.level(),new Vec3(cx-4.5,101,cz+.5)).agentId();var b=MineAgentRuntimeServices.bodies(server).createPersistentAt("对打"+(group+1)+"乙",p.getUUID(),p.level(),new Vec3(cx+4.5,101,cz+.5)).agentId();
+                var left=MineAgentRuntimeServices.bodies(server).body(a).orElseThrow();var right=MineAgentRuntimeServices.bodies(server).body(b).orElseThrow();
+                for(var body:List.of(left,right)){body.setGameMode(GameType.SURVIVAL);body.getInventory().clearContent();body.getInventory().setItem(0,new ItemStack(group==2&&body==left?Items.IRON_AXE:Items.IRON_SWORD));body.getInventory().setItem(1,new ItemStack(Items.COOKED_BEEF,4));body.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.IRON_HELMET));body.setItemSlot(EquipmentSlot.CHEST,new ItemStack(Items.IRON_CHESTPLATE));body.setItemSlot(EquipmentSlot.LEGS,new ItemStack(Items.IRON_LEGGINGS));body.setItemSlot(EquipmentSlot.FEET,new ItemStack(Items.IRON_BOOTS));if(group!=1)body.setItemSlot(EquipmentSlot.OFFHAND,new ItemStack(Items.SHIELD));body.inventoryMenu.broadcastChanges();}
+                if(group==3){right.getInventory().setItem(2,new ItemStack(Items.BOW));right.getInventory().setItem(3,new ItemStack(Items.ARROW,48));}
+                if(group==4)for(int x:List.of(cx-1,cx+1))for(int y=101;y<=103;y++)p.level().setBlock(new BlockPos(x,y,cz+4),Blocks.STONE.defaultBlockState(),2);
+                duels.add(new Duel(group,left,right,a,b));
+            }return Map.of("pairs",5,"bodies",10,"maxSeconds",600,"world","isolated","nativeAttributes",true,"noHealingCommands",true);
+        }));
+        action("start-five-pairs-concurrently",()->server(p->{var pending=new ArrayList<CompletableFuture<?>>();var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());duelStarted=System.nanoTime();duelDeadline=duelStarted+java.time.Duration.ofMinutes(10).toNanos();
+            for(var duel:duels)for(boolean first:List.of(true,false)){
+                UUID ai=first?duel.aId:duel.bId;var target=first?duel.b:duel.a;
+                dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(p.level().getServer()).accepted(p,ai,UUID.randomUUID(),"现在与 "+target.getName().getString()+" 进行 1v1 对打");
+                var n=start("duel_"+duel.group+(first?"_a":"_b"),"ai").put("target",target.getUUID().toString());n.putObject("combat").put("engagement","SPECIFIED").put("target",target.getUUID().toString()).put("strategy",first?"HIT_AND_RUN":duel.group==3?"RANGED_KITE":"MELEE_COMBO").put("leash",32).put("awareness",32);
+                pending.add(runtime.start(p,ai,UUID.randomUUID(),null,n,dev.mineagent.runtime.core.task.SkillSpec.Kind.COMBAT,()->true));
+            }return CompletableFuture.allOf(pending.toArray(CompletableFuture[]::new));
+        }).thenCompose(Function.identity()));
+        waitFor("record-both-sides-until-defeat-or-ten-minute-deadline",12500,()->server(p->{var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());var samples=new ArrayList<Object>();boolean time=System.nanoTime()>=duelDeadline;
+            for(var duel:duels){if(duelFinished.contains(duel.group))continue;var a=runtime.snapshot(p,duel.aId);var b=runtime.snapshot(p,duel.bId);var row=new LinkedHashMap<String,Object>();row.put("group",duel.group+1);row.put("elapsedSeconds",(System.nanoTime()-duelStarted)/1_000_000_000D);row.put("aHealth",duel.a.getHealth());row.put("bHealth",duel.b.getHealth());row.put("aPosition",duel.a.position().toString());row.put("bPosition",duel.b.position().toString());row.put("a",a);row.put("b",b);samples.add(row);
+                if(time||!duel.a.isAlive()||!duel.b.isAlive()){row.put("outcome",time?"TIME_LIMIT":!duel.a.isAlive()?"B_WON":"A_WON");EVIDENCE.add(row);duelFinished.add(duel.group);runtime.stopAll(p,duel.aId);runtime.stopAll(p,duel.bId);}
+            }
+            lastObservation=JSON.valueToTree(Map.of("matches",samples,"finished",duelFinished.size()));return duelFinished.size()==5;
+        }));
+    }
     private static void counterCombat(){
         boolean crossbow=System.getProperty("mineagent.skillSmokeMode").equals("counter_crossbow"),ranged=!System.getProperty("mineagent.skillSmokeMode").equals("counter_reach");
         action("native-enemy-and-melee-only-loadout",()->server(p->{
@@ -205,6 +255,7 @@ public final class PersistentSkillSmokeClient {
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(playerActor()){waitFor("signed-player-control-activation",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});action("real-player-equipment-and-input",()->{org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return server(p->{var b=body(p);p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();for(int i=0;i<36;i++)p.getInventory().setItem(i,b.getInventory().getItem(i).copy());p.inventoryMenu.broadcastChanges();b.teleportTo(p.level(),27.5,101,25.5,Set.of(),0,0,true);return null;});});}
+        if(mode.startsWith("water_")){waterClutch();return;}if(mode.equals("retaliation")){retaliation();return;}if(mode.equals("duel_five")){duelFive();return;}
         if(mode.equals("crowd5")||mode.equals("crowd10")||mode.equals("crowd_mixed5")||mode.equals("crowd_footwork")){crowdCombat(mode.equals("crowd10")?10:5);return;}if(mode.equals("counter_ranged")||mode.equals("counter_reach")||mode.equals("counter_crossbow")){counterCombat();return;}if(mode.equals("ui_functional")){uiFunctional();return;}if(mode.equals("camera")){camera();return;}if(mode.equals("combo")){combo();return;}if(mode.equals("contact_escape")){contactEscape();return;}if(mode.equals("tactical_policy")){tacticalPolicy();return;}if(mode.equals("tactical_loot")){tacticalLoot();return;}if(mode.equals("tactical_survival")){tacticalSurvival();return;}if(mode.equals("tactical_rules")){tacticalRules();return;}if(mode.equals("tactical_ui")){tacticalUi();return;}if(mode.equals("tactical")){tactical();return;}if(mode.equals("navigation")){navigation();return;}if(mode.equals("fishing")||mode.equals("fishing_defense")){fishing();return;}if(mode.equals("combat")){combat();return;}if(mode.equals("player")){player();return;}if(mode.equals("cooperation")){cooperation();return;}if(mode.equals("patrol")){patrol();return;}if(mode.equals("performance")){performance();return;}if(mode.equals("lifecycle")){lifecycle();return;}if(mode.equals("uncertain")){uncertain();return;}if(mode.equals("crops")){cropAdapters();return;}work();
     }
     private static void tacticalUi(){

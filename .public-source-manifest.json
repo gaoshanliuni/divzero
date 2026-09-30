@@ -2504,8 +2504,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/PvpIntent.java",
-      "sha256": "d6f2be5838def3ea136c48f2bb58f3b188c21534cb3625b5f1c1b2a669925807",
-      "bytes": 1133
+      "sha256": "e24ac6a1e9df8aeebbcc004c67414cbf4cbca02a7b4930471379f4c808d6c252",
+      "bytes": 1442
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/ReusablePathPlan.java",
@@ -3094,8 +3094,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/PvpIntentTest.java",
-      "sha256": "f464cd60d471c93ecb74f56456515638acde3d3546ba1c2689787e217bc80bf8",
-      "bytes": 784
+      "sha256": "338b79442a49b7b53ee0bdcbe3125726660558f37afc82609363e74e1d533b0a",
+      "bytes": 950
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/ReusablePathPlanTest.java",
@@ -3659,8 +3659,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "8305aea2ba5f12386ccd546a5798d23bfdae8ff08113a699c6016469998b8831",
-      "bytes": 92094
+      "sha256": "2be736dfb684a392effcb64500559d6088084966723d20249264d0e19e7af547",
+      "bytes": 102125
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
