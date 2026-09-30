@@ -30,11 +30,11 @@ final class CombatSkill {
         LivingEntity target=w.combat.selected;
         if(spec.kind()==SkillSpec.Kind.COMBAT&&!rule.target().isBlank()){
             var requested=w.player().level().getEntity(UUID.fromString(rule.target()));
-            if(requested instanceof LivingEntity e&&!e.isAlive()||requested==null&&w.lastCombatTarget!=null&&!w.lastCombatTarget.isAlive()){
+            if((requested instanceof LivingEntity e&&!e.isAlive()||requested==null&&w.lastCombatTarget!=null&&!w.lastCombatTarget.isAlive())&&!w.combat.incoming(w)){
                 w.completed("TARGET_CONFIRMED_DEAD");return true;
             }
         }
-        boolean projectileDanger=w.combat.projectiles.stream().anyMatch(e->e.distanceTo(w.player())<10);
+        boolean projectileDanger=w.combat.incoming(w);
         boolean cooling=w.combatInterrupted&&w.tick()-w.combat.lastThreatTick<40;
         boolean closeThreat=w.combat.threats.stream().anyMatch(t->t.urgent()&&t.entity().distanceTo(w.player())<8);
         if(target==null&&!projectileDanger&&!cooling&&!closeThreat&&!w.contactEscape){
@@ -103,9 +103,13 @@ final class CombatSkill {
         if(target!=null&&(!SkillRuntime.attackAllowed(w,target))){w.combat.selected=null;return;}
         if(w.actor.recovering()&&target!=null){w.actor.recover(w.token(),target.position());phase(w,"TERRAIN_ESCAPE");return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
-        if(target!=null&&w.combat.spells.risk(w,p.position(),8)>0&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION
-                &&sideStep(w,target,p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p)+1)){
-            w.session.add("nativeSpellEvasions",1);return;
+        if(w.combat.attacks.standingRisk(w,p.position(),12)>0&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
+            var escape=w.positioning.evadeStep(w);
+            if(escape!=null){phase(w,"DAMAGE_EVASION");w.session.add("damageTimelineEvasions",1);move(w,escape,target,true);return;}
+            // No safe dodge is not an invented escape: retain real shielding/pressure/recovery choices.
+            w.session.add("noSafeDamageDodgeTicks",1);
+        }else if(w.tactic.equals("DAMAGE_EVASION")){
+            w.positioning.reset();phase(w,"COUNTER_REASSESS");w.session.add("postEvasionReassessments",1);
         }
         if(target!=null&&!target.onGround()&&target.distanceTo(p)<8&&w.prediction.risk(w,p.position(),6,null)>=18
                 &&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){

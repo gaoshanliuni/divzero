@@ -16,6 +16,37 @@ final class CombatPositioning {
     private PathStep attackExit;private int attackExitAt=-10000;private Object attackExitLevel;private java.util.UUID attackExitTarget;
     private boolean quickRetreat;
     boolean quickRetreat(){return quickRetreat;}
+    /** Replan a short, physically traversable dodge against every concurrent damage channel. */
+    Vec3 evadeStep(SkillWork work){
+        var actor=work.player();if(!actor.onGround())return null;
+        var check=new NativeTraversalEvaluator(actor);check.beginSlice();var current=check.closest(actor.position());if(current==null)return null;
+        double speed=Math.max(.08,actor.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.2);
+        double standing=work.combat.attacks.standingRisk(work,actor.position(),12);if(standing<=0)return null;
+        double best=Double.POSITIVE_INFINITY;List<PathStep> route=null;Vec3 chosen=null;
+        var owner=work.combat.protectedEntity;
+        for(var first:check.neighbors(current)){
+            if(!Set.of(Action.WALK,Action.STEP_UP,Action.CROUCH,Action.DROP).contains(first.action())||Math.abs(first.to().y()-current.y())>1.25||edgeExposure(work,first.to(),check)>0)continue;
+            var paths=new ArrayList<List<PathStep>>();paths.add(List.of(first));
+            for(var second:check.neighbors(first.to()))if(!second.to().equals(current)&&Set.of(Action.WALK,Action.CROUCH,Action.STEP_UP).contains(second.action())&&Math.abs(second.to().y()-current.y())<=1.25&&edgeExposure(work,second.to(),check)==0)paths.add(List.of(first,second));
+            for(var path:paths){
+                var end=NativeTraversalEvaluator.point(path.getLast().to());
+                if(owner!=null&&owner!=actor&&owner!=work.combat.selected&&end.distanceTo(owner.position())<actor.distanceTo(owner)-.5)continue;
+                if(check.neighbors(path.getLast().to()).stream().noneMatch(next->!next.to().equals(path.getLast().from())&&Math.abs(next.to().y()-path.getLast().to().y())<=1.25))continue;
+                int elapsed=0;double worst=0,total=0;Vec3 previous=actor.position();
+                for(var edge:path){var start=previous;var destination=NativeTraversalEvaluator.point(edge.to());int duration=Math.max(1,(int)Math.ceil(start.distanceTo(destination)/speed));
+                    for(int t=1;t<=duration&&elapsed+t<=NativeAttackTimeline.HORIZON;t++){var at=start.lerp(destination,t/(double)duration);double damage=work.combat.attacks.risk(work,previous,at,elapsed+t);worst=Math.max(worst,damage);total+=damage;previous=at;}
+                    elapsed+=duration;
+                }
+                for(int t=elapsed+1;t<=Math.min(NativeAttackTimeline.HORIZON,elapsed+5);t++){double damage=work.combat.attacks.risk(work,end,end,t);worst=Math.max(worst,damage);total+=damage;}
+                if(worst>=standing||elapsed>NativeAttackTimeline.HORIZON)continue;
+                double danger=work.combat.collisionRisk(work,end,Math.min(18,elapsed));var direction=end.subtract(actor.position()).multiply(1,0,1).normalize();
+                double score=worst*4+total+danger*1.5+elapsed*.4+(heading==null?0:(1-heading.dot(direction))*2);
+                if(score<best){best=score;route=path;chosen=end;}
+            }
+        }
+        if(chosen==null)return null;chosenRoute=route;selectedDistance=actor.position().distanceTo(chosen);quickRetreat=true;heading=chosen.subtract(actor.position()).multiply(1,0,1).normalize();
+        work.session.add("checkedDamageEvasionRoutes",1);return chosen;
+    }
     /** A short verified exit can run immediately while the wider retreat search is deferred. */
     Vec3 retreatStep(SkillWork work){
         quickRetreat=false;var p=work.player();if(!p.onGround())return null;var live=work.combat.threats.stream().filter(t->t.entity().isAlive()).toList();if(live.isEmpty())return null;
@@ -29,7 +60,7 @@ final class CombatPositioning {
             if(check.neighbors(edge.to()).stream().filter(next->!next.to().equals(current)&&Math.abs(next.to().y()-edge.to().y())<=1.25&&NativeTraversalEvaluator.point(next.to()).distanceTo(dangerCenter)>=point.distanceTo(dangerCenter)-.25).count()<2)continue;
             if(protectedEntity!=null&&protectedEntity!=p&&protectedEntity!=work.combat.selected&&protectedEntity.level()==p.level()&&!(protectedEntity instanceof net.minecraft.world.entity.player.Player other&&(other.isCreative()||other.isSpectator()))&&point.distanceTo(protectedEntity.position())<p.distanceTo(protectedEntity)-.25)continue;
             var middle=p.position().lerp(point,.5);double risk=work.combat.risk(work,point),future=Math.max(work.combat.collisionRisk(work,middle,2),work.combat.collisionRisk(work,point,4));
-            if(work.combat.spells.risk(work,point,8)>0)continue;
+            if(work.combat.attacks.routeRisk(work,point,4,4)>0)continue;
             double separation=point.distanceTo(center)-p.position().distanceTo(center);var delta=point.subtract(p.position());
             var candidate=LocalPolicyRuntime.features(p,p.position().distanceTo(center),-separation,risk+future,1,delta,0,false,work.session.spec().kind().ordinal(),0);
             double score=risk*2+future-separation*5+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*1.5)+(model==null?0:model.cost(candidate)*8);
@@ -50,7 +81,7 @@ final class CombatPositioning {
             var point=NativeTraversalEvaluator.point(edge.to());double progress=initial-point.distanceTo(intercept);if(progress<.15)continue;
             var rule=work.session.spec().combat();boolean assigned=rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(point.x,point.y,point.z));
             if(!dev.mineagent.runtime.core.task.CombatBounds.canAdvance(assigned,point.distanceTo(work.combat.center(work)),player.position().distanceTo(work.combat.center(work)),rule.leash()))continue;
-            var middle=player.position().lerp(point,.5);double risk=work.combat.risk(work,point,target),future=Math.max(work.combat.collisionRisk(work,point,4,target),work.combat.collisionRisk(work,middle,2,target));if(risk>initialRisk+8||work.combat.spells.risk(work,point,6)>0||work.combat.spells.risk(work,middle,3)>0)continue;
+            var middle=player.position().lerp(point,.5);double risk=work.combat.risk(work,point,target),future=Math.max(work.combat.collisionRisk(work,point,4,target),work.combat.collisionRisk(work,middle,2,target));if(risk>initialRisk+8||work.combat.attacks.routeRisk(work,point,4,2)>0)continue;
             var delta=point.subtract(player.position());var candidate=LocalPolicyRuntime.features(player,player.distanceTo(target),progress,risk+future,1,delta,0,player.getAttackStrengthScale(.5f)>=.95,work.session.spec().kind().ordinal(),0);
             double score=risk+future*.6-progress*8+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*.8)+(model==null?0:model.cost(candidate)*8);
             if(score<best){best=score;chosen=edge;features=candidate;}
@@ -67,7 +98,7 @@ final class CombatPositioning {
                 &&Math.abs(player.getY()-attackExit.from().y())<1.6&&check.transition(attackExit.from(),attackExit.to())!=null
                 &&NativeTraversalEvaluator.point(attackExit.to()).subtract(target.position()).horizontalDistanceSqr()>player.position().subtract(target.position()).horizontalDistanceSqr()+.1
                 &&(owner==null||owner==player||owner==target||owner.level()!=player.level()||owner.isCreative()||owner.isSpectator()||NativeTraversalEvaluator.point(attackExit.to()).distanceTo(owner.position())>=player.distanceTo(owner)-.5)
-                &&edgeExposure(work,attackExit.to(),check)==0&&work.combat.risk(work,NativeTraversalEvaluator.point(attackExit.to()))<=work.combat.risk(work,player.position())+2){
+                &&work.combat.attacks.routeRisk(work,NativeTraversalEvaluator.point(attackExit.to()),5,3)==0&&edgeExposure(work,attackExit.to(),check)==0&&work.combat.risk(work,NativeTraversalEvaluator.point(attackExit.to()))<=work.combat.risk(work,player.position())+2){
             chosenRoute=List.of(attackExit);selectedDistance=player.position().distanceTo(NativeTraversalEvaluator.point(attackExit.to()));return NativeTraversalEvaluator.point(attackExit.to());
         }
         if(!player.onGround()||current==null)return null;
@@ -77,7 +108,7 @@ final class CombatPositioning {
             var point=NativeTraversalEvaluator.point(edge.to());if(point.distanceTo(target.position())<initial+.15)continue;
             if(check.neighbors(edge.to()).stream().noneMatch(next->!next.to().equals(current)&&Math.abs(next.to().y()-edge.to().y())<=1.25))continue;
             if(owner!=null&&owner!=player&&owner!=target&&owner.level()==player.level()&&!owner.isCreative()&&!owner.isSpectator()&&point.distanceTo(owner.position())<player.distanceTo(owner)-.5)continue;
-            double risk=work.combat.risk(work,point);if(risk>initialRisk+2)continue;double future=0;
+            double risk=work.combat.risk(work,point);if(risk>initialRisk+2||work.combat.attacks.routeRisk(work,point,5,3)>0)continue;double future=0;
             for(var threat:work.combat.threats)if(threat.entity().isAlive()&&NativeCombatStates.meleeAtAfter(threat.entity(),player,point,4))future+=threat.entity()==target?6:18;
             var delta=point.subtract(player.position());var features=LocalPolicyRuntime.features(player,initial,initial-point.distanceTo(target.position()),risk+future,1,delta,0,true,work.session.spec().kind().ordinal(),0);
             double score=risk*2+future-(point.distanceTo(target.position())-initial)*2+(model==null?0:model.cost(features)*8);

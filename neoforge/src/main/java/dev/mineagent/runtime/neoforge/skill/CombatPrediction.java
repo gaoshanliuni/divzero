@@ -61,7 +61,7 @@ final class CombatPrediction {
     double routeRisk(SkillWork work,List<PathStep> route,LivingEntity opportunity){
         Vec3 at=work.player().position();double speed=Math.max(.08,work.player().getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.2),worst=0;int elapsed=0;
         for(var edge:route){var end=NativeTraversalEvaluator.point(edge.to());int duration=Math.max(1,(int)Math.ceil(at.distanceTo(end)/speed));
-            for(int t=1;t<=duration&&elapsed+t<=18;t++){var sample=at.lerp(end,t/(double)duration);worst=Math.max(worst,risk(work,sample,elapsed+t,opportunity)+work.combat.spells.risk(work,sample,elapsed+t));}
+            for(int t=1;t<=duration&&elapsed+t<=18;t++){var previous=at.lerp(end,(t-1)/(double)duration);var sample=at.lerp(end,t/(double)duration);worst=Math.max(worst,risk(work,sample,elapsed+t,opportunity)+work.combat.attacks.risk(work,previous,sample,elapsed+t));}
             elapsed+=duration;if(elapsed>=18)break;at=end;
         }return worst;
     }

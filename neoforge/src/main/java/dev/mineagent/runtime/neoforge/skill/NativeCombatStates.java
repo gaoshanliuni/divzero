@@ -66,8 +66,16 @@ public final class NativeCombatStates {
         if(enemy instanceof net.minecraft.world.entity.player.Player player){
             var range=player.getAttackRangeWith(player.getMainHandItem());double interval=20/Math.max(.001,player.getAttributeValue(Attributes.ATTACK_SPEED));
             int remaining=(int)Math.ceil((1-player.getAttackStrengthScale(0))*interval);
-            attacks.add(new Attack("Player.nativeAttackStrength","MELEE",remaining,range.effectiveMinRange(player),range.effectiveMaxRange(player),true));
-            if(player.getMainHandItem().getItem() instanceof net.minecraft.world.item.BowItem||player.getMainHandItem().getItem() instanceof net.minecraft.world.item.CrossbowItem)attacks.add(new Attack("Player.nativeRangedItem","RANGED",-1,0,32,player.isUsingItem()));
+            // Attack strength scales damage; it does not prohibit a human from making a weak early attack.
+            attacks.add(new Attack("Player.nativeAttackStrength","FULL_STRENGTH",remaining,range.effectiveMinRange(player),range.effectiveMaxRange(player),false));
+            attacks.add(new Attack("Player.availablePartialAttack","MELEE",0,range.effectiveMinRange(player),range.effectiveMaxRange(player),true));
+            for(var hand:net.minecraft.world.InteractionHand.values()){
+                var stack=player.getItemInHand(hand);var item=stack.getItem();
+                boolean ranged=item instanceof net.minecraft.world.item.ProjectileWeaponItem||item instanceof net.minecraft.world.item.TridentItem
+                        ||item instanceof net.minecraft.world.item.ThrowablePotionItem||stack.is(net.minecraft.world.item.Items.SNOWBALL)||stack.is(net.minecraft.world.item.Items.EGG);
+                if(ranged)attacks.add(new Attack("Player."+hand+".nativeRangedItem","RANGED",player.getCooldowns().isOnCooldown(stack)?-1:0,0,32,true));
+                if(stack.has(DataComponents.KINETIC_WEAPON))attacks.add(new Attack("Player."+hand+".kineticContact","MELEE",kineticDelay(player,observer),range.effectiveMinRange(player),range.effectiveMaxRange(player),player.isUsingItem()&&player.getUsedItemHand()==hand));
+            }
             knowledge="NATIVE_PLAYER_NO_GENERAL_STUN";
         }
         if(enemy instanceof Ravager ravager){knowledge="NATIVE_RAVAGER";restrictions.add(new Restriction("Ravager.stunnedTick",ravager.getStunnedTick(),true,true,false));restrictions.add(new Restriction("Ravager.roarTick",ravager.getRoarTick(),true,true,false));attacks.add(new Attack("Ravager.roarTick","AREA",ravager.getRoarTick()>10?ravager.getRoarTick()-10:0,0,4,ravager.getRoarTick()>0));}

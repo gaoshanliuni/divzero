@@ -30,9 +30,9 @@ final class CombatAwareness {
     private boolean sight(SkillWork w,LivingEntity entity){geometry(w);return sightCache.computeIfAbsent(entity.getUUID(),id->w.player().hasLineOfSight(entity));}
     private boolean reverseSight(SkillWork w,LivingEntity entity){geometry(w);return reverseSightCache.computeIfAbsent(entity.getUUID(),id->entity.hasLineOfSight(w.player()));}
     LivingEntity selected;int selectedAt;double lastDamageVelocity;
-    final NativeSpellThreats spells=new NativeSpellThreats();
+    final NativeAttackTimeline attacks=new NativeAttackTimeline();
     void scan(SkillWork w){
-        spells.observe(w);
+        attacks.observe(w);
         var p=w.player();var rule=w.session.spec().combat();if(anchor==null||!w.combatInterrupted)anchor=p.position();if(rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(p.getX(),p.getY(),p.getZ())))anchor=new Vec3((rule.area().min().x()+rule.area().max().x()+1)/2,p.getY(),(rule.area().min().z()+rule.area().max().z()+1)/2);
         protectedEntity=rule.protect().isBlank()?null:rule.protect().equals("$owner")?w.runtime.server.getPlayerList().getPlayer(w.session.owner()):p.level().getEntity(UUID.fromString(rule.protect())) instanceof LivingEntity e?e:null;
         if(protectedEntity!=null&&protectedEntity.level()!=p.level())protectedEntity=null;
@@ -74,7 +74,7 @@ final class CombatAwareness {
             if(eligible&&rule.engagement()==CombatPolicy.Engagement.CLEAR_AREA){var previous=lastSeen.put(e.getUUID(),new Seen(e,e.position(),w.tick()));if(previous!=null&&w.tick()-previous.tick>20)w.session.add("threatReacquisitions",1);}
         }
         threats=List.copyOf(rows);
-        if(rows.stream().anyMatch(t->t.eligible||t.urgent)||projectiles.stream().anyMatch(s->projectileRisk(s,p.position())>1))lastThreatTick=w.tick();
+        if(rows.stream().anyMatch(t->t.eligible||t.urgent)||attacks.standingRisk(w,p.position(),8)>0)lastThreatTick=w.tick();
         var best=rows.stream().filter(Threat::eligible).max(Comparator.comparingDouble(Threat::score)).orElse(null);
         if(best!=null){if(selected!=best.entity){selected=best.entity;selectedAt=w.tick();w.session.add("targetChanges",1);}}else if(selected==null||!selected.isAlive()||selected.position().distanceTo(center(w))>rule.leash()||w.tick()-lastThreatTick>40)selected=null;
     }
@@ -91,7 +91,7 @@ final class CombatAwareness {
             double areaRange=threat.state.attacks().stream().filter(a->a.kind().equals("AREA")&&a.running()).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
             if(areaRange>0&&d<areaRange+1)risk+=30+Math.max(0,areaRange-d)*5;if(threat.state.ranged()&&reverseSight(w,e))risk+=Math.max(0,8-d);
         }
-        for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;risk+=spells.risk(w,point,8);
+        risk+=attacks.standingRisk(w,point,8);
         return risk;
     }
     double collisionRisk(SkillWork w,Vec3 point,int ticks){return collisionRisk(w,point,ticks,null);}
@@ -101,9 +101,8 @@ final class CombatAwareness {
             if(NativeCombatStates.meleeAtAfter(threat.entity,w.player(),point,ticks))risk+=threat.state.openingTicks(w.player().level().getGameTime())>ticks+2?2:threat.entity==attackOpportunity?4:18;
             if(threat.state.areaAttack()&&threat.entity.position().distanceTo(point)<8)risk+=30;
         }}else risk=w.prediction.risk(w,point,ticks,attackOpportunity);
-        for(var shot:projectiles)risk+=projectileRisk(shot,point)*20;return risk+spells.risk(w,point,ticks);
+        return risk+attacks.risk(w,point,point,Math.max(1,ticks));
     }
-    private double projectileRisk(Projectile shot,Vec3 point){var v=shot.getDeltaMovement();var delta=point.add(0,1,0).subtract(shot.position());double t=Math.max(0,Math.min(12,delta.dot(v)/Math.max(.0001,v.lengthSqr())));double miss=shot.position().add(v.scale(t)).distanceTo(point.add(0,1,0));return Math.max(0,2-miss);}
-    boolean incoming(SkillWork w){return spells.risk(w,w.player().position(),8)>0||projectiles.stream().anyMatch(shot->projectileRisk(shot,w.player().position())>.6);}
-    Map<String,Object> view(){return Map.of("targetName",selected==null?"":selected.getName().getString(),"observations",scans,"target",selected==null?"":selected.getUUID().toString(),"threats",threats.stream().map(t->Map.of("actual",t.state,"eligible",t.eligible,"urgent",t.urgent,"selectionScore",t.score)).toList(),"projectileThreats",projectiles.size(),"lastThreatTick",lastThreatTick,"spellThreats",spells.view());}
+    boolean incoming(SkillWork w){return attacks.standingRisk(w,w.player().position(),8)>0;}
+    Map<String,Object> view(){return Map.of("targetName",selected==null?"":selected.getName().getString(),"observations",scans,"target",selected==null?"":selected.getUUID().toString(),"threats",threats.stream().map(t->Map.of("actual",t.state,"eligible",t.eligible,"urgent",t.urgent,"selectionScore",t.score)).toList(),"projectileThreats",projectiles.size(),"lastThreatTick",lastThreatTick,"attackTimeline",attacks.view());}
 }
