@@ -5,6 +5,17 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CombatPolicyTest {
+    @Test void recoveryDoesNotWaitForeverAfterFoodRunsOutOrHealingIsPrevented(){
+        var recovery=new CombatRecoveryWindow();
+        assertTrue(recovery.shouldRecover(100,5,20,false,100));
+        assertFalse(recovery.shouldRecover(161,5,20,false,100));
+        assertTrue(recovery.shouldRecover(162,5,20,true,100));
+        assertFalse(recovery.shouldRecover(323,5,20,true,100));
+        assertTrue(recovery.shouldRecover(324,5.5f,20,true,100));
+        assertTrue(recovery.shouldRecover(500,4,20,false,499));
+        assertFalse(recovery.shouldRecover(561,4,20,false,499));
+        assertFalse(recovery.shouldRecover(562,8,20,true,499));
+    }
     private final ObjectMapper json=new ObjectMapper();
     private SkillSpec farm()throws Exception{return SkillSpec.parse(json.readTree("""
         {"id":"farm","kind":"FARM","dimension":"minecraft:overworld","min":[0,64,0],"max":[4,65,4]}

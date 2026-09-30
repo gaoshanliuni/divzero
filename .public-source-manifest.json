@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "0d1e19ba5d96d38d68ca7a338cf56288c25dfeeda7ffc4f746c9968e6f9849e3",
-      "bytes": 24277
+      "sha256": "6e4cf4b1f336e5c6540e13caa84d896a39e65e46c07698dba27d100ef8cc8790",
+      "bytes": 25346
     },
     {
       "path": "agent/build.gradle",
@@ -2483,6 +2483,11 @@
       "bytes": 3710
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/CombatRecoveryWindow.java",
+      "sha256": "02d60aaa7e0fc624cc00007d46802a05a37b7fec240c97a19d2b628713f70437",
+      "bytes": 888
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/CraftingInventoryProof.java",
       "sha256": "6b018ebf49532a0115a8c8841211df05fa0103036e5a2c9ae6d31beae0d135fd",
       "bytes": 809
@@ -3169,8 +3174,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatPolicyTest.java",
-      "sha256": "e8878b8a1a2633fbf736ad136dc01ee9aa6888cc2a306ea0464eb0aa17c624d4",
-      "bytes": 3817
+      "sha256": "3586c54c5acd452305f3151c429ed00d66d2132940a09e36b172ee7991030778",
+      "bytes": 4468
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/KnownPortalRoutesTest.java",
@@ -3274,8 +3279,8 @@
     },
     {
       "path": "docs/ADAPTIVE_AGENT_UPGRADE.md",
-      "sha256": "23bdfd231785f94abcbfc574a5fd064b9fc3b2e6c79828b4021d08e0fd2b2018",
-      "bytes": 10696
+      "sha256": "620e76943440435a3d89475166619cdbd95068f11360eecbb7bafb4d8302f416",
+      "bytes": 11998
     },
     {
       "path": "docs/BUILD_JAR.md",
@@ -5404,8 +5409,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "39e82a83d74ee33402576bbf2059b432741b23c6c547013e5cc0dbab9c689dde",
-      "bytes": 31501
+      "sha256": "97e890fe69b4bcf8d97d8167145b9e080f97d61c8e02232b0b587f5f91c237a7",
+      "bytes": 32011
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -5494,8 +5499,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "sha256": "4a80e86df9b10295ca27782a106e6ca0d8f391508f26d8fd755fc5f4b454f366",
-      "bytes": 11166
+      "sha256": "f53a00dbcaa2d16e63a40fcb2b03535ab51fd7c06a080dd61d0c8b5a2580d66b",
+      "bytes": 11240
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",

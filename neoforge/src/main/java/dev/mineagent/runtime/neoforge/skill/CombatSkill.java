@@ -116,11 +116,15 @@ final class CombatSkill {
             if(eat(w))return;
         }
         double withdrawal=Math.max(4,p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p)+1+contacts*.65);
-        boolean retreat=rule.strategy()==CombatPolicy.Strategy.DISENGAGE||health<.3||flanked||contacts>1;
+        boolean recoveryOpportunity=p.hasEffect(net.minecraft.world.effect.MobEffects.REGENERATION)
+                ||p.level().getGameRules().get(net.minecraft.world.level.gamerules.GameRules.NATURAL_HEALTH_REGENERATION)
+                &&(p.getFoodData().getFoodLevel()>=18||java.util.stream.IntStream.range(0,36).anyMatch(i->food(w,p.getInventory().getItem(i))));
+        boolean recovering=w.recoveryWindow.shouldRecover(w.tick(),p.getHealth(),p.getMaxHealth(),recoveryOpportunity,w.lastContactDamage);
+        boolean retreat=rule.strategy()==CombatPolicy.Strategy.DISENGAGE||recovering||flanked||contacts>1;
         if(retreat||target==null){
-            phase(w,health<.3?"RECOVER":flanked||contacts>1?"LURE":"RETREAT");
+            phase(w,recovering?"RECOVER":flanked||contacts>1?"LURE":"RETREAT");
             var facing=target==null?w.combat.threats.stream().map(CombatAwareness.Threat::entity).min(Comparator.comparingDouble(p::distanceToSqr)).orElse(null):target;
-            move(w,w.positioning.choose(w,w.tactic,health<.3?14:withdrawal+2),facing,true);
+            move(w,w.positioning.choose(w,w.tactic,recovering?14:withdrawal+2),facing,true);
             if(!w.positioning.longRetreat())shield(w,facing);return;
         }
         if(CombatEquipmentAdapter.execute(w,target)){phase(w,"ADAPTED_WEAPON");return;}

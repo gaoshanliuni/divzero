@@ -36,7 +36,9 @@ AI 与真人托管共用跟随、巡逻、警戒、漫步、战斗、农务和�
 
 ![尺寸 4 的 F2 工作区](docs/images/native-workspace-scale-four.png)
 
-F2 的尺寸按钮直接切换 2／3／4 并保留草稿。下拉选择已修复；右键 AI 或 F2 中的背包入口使用真实原生容器，支持拖拽、快移与装备操作。新世界用一次启用／禁用选择即可开始。
+F2 设置二级菜单的尺寸按钮可切换 2／3／4 并保留草稿。下拉选择已修复；右键 AI 或 F2 中的背包入口恢复独立原生容器界面，战斗中可操作真实槽位，支持拖拽、快移与盔甲、左右手装备。新世界用一次启用／禁用选择即可开始。
+
+局内权重学习现在默认开启，已保存的手动关闭偏好仍然有效。内置小型神经网络使用原生对战结果微调，辅助选择已经通过 Java 权限、地形和身体能力检查的动作；训练在后台进行，候选权重通过留出样本与基准偏移检查后替换。十场同装备旧规则 AI 的完整评测和适用边界见 [自主执行与学习升级](docs/ADAPTIVE_AGENT_UPGRADE.md)。
 
 ![1.0.22 托管面板：暂停、退出、追加命令、切换视角](docs/images/player-takeover.png)
 
@@ -196,7 +198,9 @@ AI bodies and player takeover share follow, patrol, guard, wander, combat, farmi
 
 ![F2 workspace at GUI scale 4](docs/images/native-workspace-scale-four.png)
 
-Switch GUI scale to 2, 3 or 4 without losing drafts. Dropdown selection is repaired. The AI inventory opens a native container with drag distribution, quick transfer and equipment slots. A new world uses a single Enable / Disable choice.
+Switch GUI scale to 2, 3 or 4 from the F2 settings submenu without losing drafts. Dropdown selection is repaired. AI inventory entries open a standalone native container, including during combat, with drag distribution, quick transfer, armor and both-hand slots. A new world uses a single Enable / Disable choice.
+
+In-world weight learning defaults to ON; an explicitly saved OFF preference is preserved. The bundled small neural network was fine-tuned with native duel outcomes and ranks actions already admitted by Java permission, terrain and body checks. Background updates must pass held-out samples and a reference-drift check. See [adaptive execution and learning](docs/ADAPTIVE_AGENT_UPGRADE.md) for complete ten-bout evaluations against the frozen equal-equipment rule controller and their limits.
 
 ![1.0.22 takeover controls: Pause, Exit, Add command and Perspective](docs/images/player-takeover.png)
 
