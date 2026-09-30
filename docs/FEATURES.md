@@ -155,6 +155,7 @@ F2 → 设置 → Provider 管理 API URL、保密 Key 与模型。真实模型�
 - **接管本人**：玩家明确提出后直接启动，无逐轮二次确认。持续观察和重新规划，左侧 HUD 显示公开决策摘要与下一路点。
 - 玩家明确要求接管本人后，AI 使用原生客户端输入持续执行。进入托管释放鼠标；**T、F2、切换电脑窗口及最小化均不中断**。MC 面板提供“暂停 / 继续、退出、追加命令”，按钮松开时触发；聊天栏 / F2 的 Esc 只处理界面；**回到游戏画面后双击 Esc 结束托管**。退出恢复原失焦暂停设置，死亡、断线、世界或权限变化仍释放控制。
 - **1.0.22**：托管观察相机按渲染帧平滑。原生 F5（含改绑）或面板视角按钮切换第一人称、第三人称背后/正面，保持 AI 实际瞄准、导航和动作不变。[实机结果](TAKEOVER_CAMERA.md)。
+- **自由观战**：托管时右键拖动旋转，松开保持独立观察方向；AI 继续使用自己的瞄准方向。点击“AI 真实视角”或按 F8 返回 AI 第一人称，F8 可改绑。鼠标保持释放，聊天、F2 和切窗不中断工作。
 - 持续技能支持跟随、巡逻、警戒、漫步、原生战斗、农务和钓鱼；同一运行时使用 AI 身体与真人输入两个适配器。常规工作不逐株请求模型。
 - 共享通行判定支持已加载区域的门、低通道、台阶、梯子与水域。
 
@@ -409,6 +410,7 @@ Creature definitions can be updated and persisted. Keyframe animations include i
 - **Take over your player:** starts when you explicitly request it, without reconfirming every planning round. The AI observes and replans continuously. A left-side HUD shows a public action summary and the next waypoint.
 - Explicitly requested player takeover uses native client input and releases the mouse cursor. **T, F2, switching windows and minimizing do not interrupt it.** The MC panel provides Pause/Continue, Exit and Add command, triggered on release. **Double-tap Esc in the game surface to exit; Esc in chat/F2 only handles the open UI.** Exiting restores your original focus-pause setting; death, disconnects, world and permission changes still release control.
 - **1.0.22** interpolates the observation camera per render frame. Vanilla F5, including remapped bindings, and the panel cycle first person, third-person back and front without changing AI aim, navigation or actions. [In-game results](TAKEOVER_CAMERA.md).
+- **Free observation**: right-drag during takeover to rotate independently; release to keep that heading while the AI continues aiming and acting. Click **AI view** or press **F8** to return to its first-person view; F8 can be rebound. The cursor stays free, and chat, F2 and focus changes keep work running.
 - Persistent follow, patrol, guard, wander, combat, farming and fishing share one runtime with separate AI-body and real-player input adapters. Routine work runs locally.
 - Shared traversal handles doors, low passages, steps, ladders and water in loaded areas.
 

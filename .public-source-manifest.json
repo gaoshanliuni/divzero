@@ -3194,8 +3194,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "91659339e5b776116f30ea4e05992b11405e9afc7b49be323ee6e52523ad80cf",
-      "bytes": 48374
+      "sha256": "d8bf166bb7f4691fe6b6887a7206431fdab7ce21ad2470d14579748ae6aceea2",
+      "bytes": 48944
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -3709,8 +3709,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "94e81d0806f1bb7df4a37d5d8adf9135b6c813f8ade312f98313bbe81533aa9d",
-      "bytes": 114884
+      "sha256": "531c166a942dbbf6b95c685ad7833ab1b62095853a4dbe6d094e628f39ff0447",
+      "bytes": 115359
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",

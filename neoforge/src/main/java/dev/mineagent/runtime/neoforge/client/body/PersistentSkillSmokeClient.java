@@ -219,7 +219,7 @@ public final class PersistentSkillSmokeClient {
         waitFor("free-orbit-returns-to-native-distance",150,()->{double distance=mc().gameRenderer.getMainCamera().position().distanceTo(mc().player.getEyePosition(1));if(distance<3.8)return CompletableFuture.completedFuture(false);EVIDENCE.add(Map.of("freeOrbitOpenDistance",distance));return CompletableFuture.completedFuture(true);});
         action("restore-follow-and-running-state",()->{TakeoverCameraClient.followAi();AutonomousBodyClient.togglePause();return CompletableFuture.completedFuture(null);});
         action("real-frame-smoothing-evidence",()->{var proof=TakeoverCameraSmokeClient.report();require(((Number)proof.get("subTickAngleChanges")).intValue()>=3&&((Number)proof.get("interpolatedFrames")).intValue()>=10&&((List<?>)proof.get("views")).size()==3&&proof.get("error").equals(""),"CAMERA_RENDER_PROOF_"+proof);EVIDENCE.add(proof);return server(p->{dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).stopAll(p,agent);return null;});});
-        action("return-to-front-observation-for-work",()->{mc().options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);TakeoverCameraSmokeClient.drag(true);return CompletableFuture.completedFuture(null);});
+        action("return-to-front-observation-for-work",()->{mc().options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);return CompletableFuture.completedFuture(null);});
         // Work and lifecycle regression also runs with an independent observation heading.
         player();
     }
@@ -481,6 +481,10 @@ public final class PersistentSkillSmokeClient {
         action("player-farm-setup",()->server(p->{body(p).teleportTo(p.level(),5.5,101,16.5,Set.of(),0,0,true);p.setGameMode(GameType.SURVIVAL);p.teleportTo(p.level(),.5,101,6.5,Set.of(),-90,0,true);p.getInventory().clearContent();p.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));p.getInventory().setItem(12,new ItemStack(Items.WHEAT_SEEDS,12));p.inventoryMenu.broadcastChanges();crops(p,3,3,6);return null;}));
         action("focus-only-test-game",()->{mc().options.pauseOnLostFocus=true;org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return CompletableFuture.completedFuture(null);});
         action("start-real-player-farm",()->tool("farm_area",area("player_farm","player",3,101,6,3,101,6).put("crop","minecraft:wheat")));
+        if(System.getProperty("mineagent.skillSmokeMode","").equals("camera")){
+            waitFor("new-farm-session-before-observer-drag",200,()->CompletableFuture.completedFuture(AutonomousBodyClient.active()&&mc().isWindowActive()&&Boolean.TRUE.equals(dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.observation().get("visible"))));
+            action("farm-with-independent-observer",()->{TakeoverCameraSmokeClient.drag(true);return CompletableFuture.completedFuture(null);});
+        }
         waitFor("native-player-input-harvest-replant",1800,()->state("player_farm",s->s.path("counters").path("planted").asInt()>=1));
         action("released-cursor-and-append-button",()->{require(!mc().mouseHandler.isMouseGrabbed(),"AUTONOMY_CURSOR_NOT_RELEASED");require(!mc().options.pauseOnLostFocus,"AUTONOMY_DID_NOT_OVERRIDE_FOCUS_PAUSE");dev.mineagent.runtime.neoforge.client.nativeui.AutonomyControlPanel.smokeClick("append");require(mc().screen instanceof net.minecraft.client.gui.screens.ChatScreen,"APPEND_DID_NOT_OPEN_CHAT");return CompletableFuture.completedFuture(null);});
         action("grow-while-chat-open",()->server(p->{crops(p,3,3,6);return null;}));
