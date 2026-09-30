@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 /** Client implementation is installed only on Dist.CLIENT. Dedicated/LAN peers cannot acquire it. */
 public final class LocalHostCommands {
-    public interface Endpoint {boolean matches(MinecraftServer server,UUID owner);Map<String,Object> inspect();CompletableFuture<Map<String,Object>> request(MinecraftServer server,UUID owner,HostCommandRequest request);void cancel(UUID operation);CompletableFuture<Map<String,Object>> output(MinecraftServer server,UUID owner,UUID operation,String stream,int offset);}
+    public interface Endpoint {boolean matches(MinecraftServer server,UUID owner);Map<String,Object> inspect();CompletableFuture<Map<String,Object>> request(MinecraftServer server,UUID owner,HostCommandRequest request);void cancel(UUID operation);default void cancel(UUID operation,String reason){cancel(operation);}CompletableFuture<Map<String,Object>> output(MinecraftServer server,UUID owner,UUID operation,String stream,int offset);}
     private static volatile Endpoint endpoint;
     private LocalHostCommands(){}
     public static void install(Endpoint value){if(endpoint!=null&&endpoint!=value)throw new IllegalStateException("HOST_ENDPOINT_EXISTS");endpoint=value;}
@@ -15,4 +15,5 @@ public final class LocalHostCommands {
     public static CompletableFuture<Map<String,Object>> request(ServerPlayer p,HostCommandRequest request){try{return local(p).request(p.level().getServer(),p.getUUID(),request);}catch(SecurityException e){return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","HOST_LOCAL_OWNER_REQUIRED"));}}
     public static CompletableFuture<Map<String,Object>> output(ServerPlayer p,UUID operation,String stream,int offset){return local(p).output(p.level().getServer(),p.getUUID(),operation,stream,offset);}
     public static void cancel(UUID operation){var e=endpoint;if(e!=null)e.cancel(operation);}
+    public static void cancel(UUID operation,String reason){var e=endpoint;if(e!=null)e.cancel(operation,reason);}
 }

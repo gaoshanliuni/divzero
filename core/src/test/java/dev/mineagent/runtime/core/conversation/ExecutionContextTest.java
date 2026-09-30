@@ -23,4 +23,10 @@ class ExecutionContextTest {
         assertFalse(ToolExecutionTraits.of("apply_building").dimensionIndependent());assertFalse(ToolExecutionTraits.of("quick_move_container").parallelRead());
         assertTrue(ToolExecutionTraits.of("combat_entity").body());assertTrue(ToolExecutionTraits.of("stop_actions").dimensionIndependent());
     }
+    @Test void localPythonIsDimensionIndependentButStillASerialAuthorizedWrite(){
+        for(String tool:List.of("python_execute","python_install_packages")){
+            var traits=ToolExecutionTraits.of(tool);assertTrue(traits.dimensionIndependent());assertFalse(traits.readOnly());assertFalse(traits.parallelRead());assertFalse(traits.dependencies().contains("dimension"));assertTrue(traits.dependencies().contains("permissions"));
+        }
+        assertFalse(ToolExecutionTraits.of("run_game_command").dimensionIndependent());
+    }
 }

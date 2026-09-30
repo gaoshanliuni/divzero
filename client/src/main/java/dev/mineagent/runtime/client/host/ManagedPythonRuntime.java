@@ -27,15 +27,16 @@ public final class ManagedPythonRuntime {
  void prepareRoot()throws IOException{Files.createDirectories(root);if(Files.isSymbolicLink(root)||!root.toRealPath().equals(root))throw new IOException("PYTHON_RUNTIME_PATH_CHANGED");}
  public static boolean supported(){String os=System.getProperty("os.name","").toLowerCase(Locale.ROOT),arch=System.getProperty("os.arch","").toLowerCase(Locale.ROOT);return os.startsWith("windows")&&Set.of("amd64","x86_64").contains(arch);}
  public Map<String,Object> inspect(){return Map.of("supported",supported(),"pythonVersion",VERSION,"distribution","python-build-standalone install_only_stripped","release",RELEASE,"archiveSha256",SHA256,"downloadBytes",ARCHIVE_BYTES,"prepared",Files.isRegularFile(root.resolve("environment.json"),LinkOption.NOFOLLOW_LINKS),"systemPythonUsed",false,"packageIndex","https://pypi.org/simple");}
- private static void current(BooleanSupplier live)throws IOException{if(!live.getAsBoolean()||Thread.currentThread().isInterrupted())throw new IOException("HOST_CONTEXT_CHANGED");}
- public Path ensure(BooleanSupplier live)throws Exception{
+ private static void current(BooleanSupplier live)throws IOException{if(!live.getAsBoolean())throw new IOException("HOST_CONTEXT_CHANGED");if(Thread.currentThread().isInterrupted())throw new IOException("HOST_EXECUTION_INTERRUPTED");}
+ public Path ensure(BooleanSupplier live)throws Exception{return ensure(live,phase->{});}
+ public Path ensure(BooleanSupplier live,java.util.function.Consumer<String> progress)throws Exception{
   if(!supported())throw new IOException("PYTHON_PLATFORM_UNSUPPORTED");synchronized(LOCKS.computeIfAbsent(root,k->new Object())){
    current(live);prepareRoot();
    Path runtime=root.resolve("runtime-"+VERSION+"-"+RELEASE),proof=runtime.resolve("installed.json");
    if(!Files.exists(runtime,LinkOption.NOFOLLOW_LINKS)){
     Path cache=safe(root,"cache");Files.createDirectories(cache);Path archive=cache.resolve(SHA256+".tar.gz");
-    if(!Files.exists(archive,LinkOption.NOFOLLOW_LINKS)){if(archiveSource!=null){verifyArchive(archiveSource);Files.copy(archiveSource,archive);}else download(archive,live);}
-    verifyArchive(archive);current(live);Path stage=Files.createTempDirectory(root,"python-extract-");var hashes=extract(archive,stage,live);
+    if(!Files.exists(archive,LinkOption.NOFOLLOW_LINKS)){progress.accept("DOWNLOADING_RUNTIME");if(archiveSource!=null){verifyArchive(archiveSource);Files.copy(archiveSource,archive);}else download(archive,live);}
+    progress.accept("VERIFYING_ARCHIVE");verifyArchive(archive);current(live);progress.accept("EXTRACTING_RUNTIME");Path stage=Files.createTempDirectory(root,"python-extract-");var hashes=extract(archive,stage,live);
     if(!indexHash(hashes).equals(CONTENT_INDEX_SHA256))throw new IOException("PYTHON_DISTRIBUTION_CONTENT_CHANGED");
     if(!hashes.containsKey("python/python.exe")||!hashes.containsKey("python/pythonw.exe"))throw new IOException("PYTHON_DISTRIBUTION_LAYOUT");
     Files.writeString(stage.resolve("installed.json"),JSON.writeValueAsString(Map.of("archiveSha256",SHA256,"version",VERSION,"files",hashes)),StandardCharsets.UTF_8,StandardOpenOption.CREATE_NEW);current(live);Files.move(stage,runtime,StandardCopyOption.ATOMIC_MOVE);
@@ -43,12 +44,12 @@ public final class ManagedPythonRuntime {
    if(!Files.isRegularFile(proof,LinkOption.NOFOLLOW_LINKS)||Files.size(proof)>4*1024*1024)throw new IOException("PYTHON_RUNTIME_INCOMPLETE");var state=JSON.readTree(Files.readString(proof));
    if(!SHA256.equals(state.path("archiveSha256").asText())||!VERSION.equals(state.path("version").asText())||!state.path("files").isObject()||state.path("files").size()<100)throw new IOException("PYTHON_RUNTIME_PROOF_INVALID");
    var contentIndex=new TreeMap<String,String>();for(var entry:state.path("files").properties())contentIndex.put(entry.getKey(),entry.getValue().asText());if(!indexHash(contentIndex).equals(CONTENT_INDEX_SHA256))throw new IOException("PYTHON_RUNTIME_PROOF_INVALID");
-   for(var entry:state.path("files").properties()){current(live);Path file=safe(runtime,entry.getKey());if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)||!hash(file).equals(entry.getValue().asText()))throw new IOException("PYTHON_RUNTIME_INTEGRITY_FAILED");}
+   progress.accept("VERIFYING_RUNTIME");for(var entry:state.path("files").properties()){current(live);Path file=safe(runtime,entry.getKey());if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)||!hash(file).equals(entry.getValue().asText()))throw new IOException("PYTHON_RUNTIME_INTEGRITY_FAILED");}
    Path base=runtime.resolve("python/python.exe"),pointer=root.resolve("environment.json"),env;
    if(Files.exists(pointer,LinkOption.NOFOLLOW_LINKS)){
     if(!Files.isRegularFile(pointer,LinkOption.NOFOLLOW_LINKS)||Files.size(pointer)>8192)throw new IOException("PYTHON_ENV_PROOF_INVALID");var n=JSON.readTree(Files.readString(pointer));String directory=n.path("directory").asText();if(!directory.matches("environment-[a-f0-9-]{36}")||!SHA256.equals(n.path("archiveSha256").asText()))throw new IOException("PYTHON_ENV_PROOF_INVALID");env=root.resolve(directory);
    }else{
-    env=root.resolve("environment-"+UUID.randomUUID());bootstrap(List.of(base.toString(),"-I","-B","-X","utf8","-m","venv","--copies",env.toString()),live);
+    progress.accept("CREATING_ENVIRONMENT");env=root.resolve("environment-"+UUID.randomUUID());bootstrap(List.of(base.toString(),"-I","-B","-X","utf8","-m","venv","--copies",env.toString()),live);
     current(live);Files.writeString(pointer,JSON.writeValueAsString(Map.of("directory",env.getFileName().toString(),"archiveSha256",SHA256)),StandardCharsets.UTF_8,StandardOpenOption.CREATE_NEW);
    }
    Path exe=safe(env,"Scripts/python.exe"),cfg=safe(env,"pyvenv.cfg");if(!Files.isRegularFile(exe,LinkOption.NOFOLLOW_LINKS)||!Files.isRegularFile(cfg,LinkOption.NOFOLLOW_LINKS))throw new IOException("PYTHON_ENV_INCOMPLETE");
