@@ -9,6 +9,7 @@ public final class ExplicitModelRoles {
     public static String role(WorkerEnvelope request){
         var payload=request.payload();String explicit=Objects.toString(payload.getOrDefault("modelRole",""),"");if(ROLES.contains(explicit))return explicit;
         if(Objects.toString(payload.get("capability"),"").equals("CODING")||request.type().startsWith("runtime_package.")||request.type().contains("patch.generate"))return "code";
+        if(Objects.toString(payload.get("capability"),"").equals("PLANNING"))return "review";
         if(payload.get("toolHistory") instanceof List<?> history)for(int index=history.size()-1;index>=0;index--){
             if(!(history.get(index) instanceof Map<?,?> message)||!(message.get("tool_calls") instanceof List<?> calls))continue;
             for(var call:calls)if(call instanceof Map<?,?> entry&&entry.get("function") instanceof Map<?,?> function){String name=Objects.toString(function.get("name"),"");if(name.startsWith("verify_")||name.startsWith("validate_"))return "review";if(Set.of("web_search","read_web_page","search_images").contains(name))return "research";}

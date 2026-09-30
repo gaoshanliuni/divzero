@@ -49,7 +49,7 @@ public final class NativeNavigationIntent {
         if(index>=steps.size()&&search==null&&retry.ready(tick)){
             evaluator=new NativeTraversalEvaluator(p);Node start=evaluator.closest(p.position());Vec3 routeTarget=target;boolean segment=target.distanceToSqr(p.position())>16*16;if(segment)routeTarget=p.position().add(target.subtract(p.position()).normalize().scale(16));Node goal=evaluator.closest(routeTarget);plans++;plannedTarget=target;
             if(segment&&goal==null){for(int radius=1;radius<=3&&goal==null;radius++)for(int dx=-radius;dx<=radius&&goal==null;dx++)for(int dz=-radius;dz<=radius;dz++){var candidate=evaluator.closest(routeTarget.add(dx,0,dz));if(candidate!=null&&NativeTraversalEvaluator.point(candidate).distanceToSqr(p.position())>4){goal=candidate;break;}}}
-            if(start==null||goal==null){reason=evaluator.encounteredUnloaded()?"WAITING_CHUNKS":"INVALID_TARGET";retry.failed(tick);return null;}
+            if(start==null||goal==null){reason=evaluator.encounteredUnloaded()?"WAITING_CHUNKS":"INVALID_TARGET";if(evaluator.encounteredUnloaded())retry.waitUntil(tick+20);else retry.failed(tick);return null;}
             if(goal.x()==(int)Math.floor(target.x)&&goal.z()==(int)Math.floor(target.z))target=new Vec3(target.x,goal.y(),target.z);
             search=new SurfacePathfinder.Search(start,goal,evaluator);searchStarted=tick;
         }
@@ -57,7 +57,7 @@ public final class NativeNavigationIntent {
             if(!evaluator.current()){search=null;retry.waitUntil(tick+1);reason="SEARCH_STALE";return null;}
             var budget=NativeNavigationBudget.get(p.level().getServer());int count=budget.claim(budgetId,tick);if(count==0){reason="BUDGET_EXHAUSTED";return null;}evaluator.beginSlice();var result=search.advance(count,budget::timeAvailable);expanded=result.expanded();reason=result.status().name();
             if(result.status()==Status.FOUND){steps=result.steps();index=0;search=null;retry.succeeded(tick);if(steps.isEmpty()){var here=evaluator.closest(p.position());if(here!=null){boolean wet=evaluator.water(here),crouch=!wet&&NativeSurfaceNavigation.requiresSneaking(p,target);steps=List.of(new PathStep(here,here,wet?Action.SWIM:crouch?Action.CROUCH:Action.WALK,wet?Posture.SWIMMING:crouch?Posture.CROUCHING:Posture.STANDING,1));}else return null;}}
-            else if(result.status()!=Status.BUDGET_EXHAUSTED){search=null;retry.failed(tick);if(result.status()==Status.NO_PATH&&recovery.request(p,target,"NO_ORDINARY_PATH")){status="RECOVERING";}else if(result.status()==Status.NO_PATH&&retry.failures()>=3)stop("UNREACHABLE");return null;}
+            else if(result.status()!=Status.BUDGET_EXHAUSTED){search=null;if(evaluator.encounteredUnloaded()){reason="WAITING_CHUNKS";retry.waitUntil(tick+20);return null;}retry.failed(tick);if(result.status()==Status.NO_PATH&&recovery.request(p,target,"NO_ORDINARY_PATH")){status="RECOVERING";}else if(result.status()==Status.NO_PATH&&retry.failures()>=3)stop("UNREACHABLE");return null;}
             else return null;
         }
         if(index>=steps.size())return null;var step=steps.get(index);var check=new NativeTraversalEvaluator(p);

@@ -185,9 +185,9 @@ public final class WorkerRequestHandler implements AutoCloseable {
             var selected=new ModelRouter(orderedProviders()).select(modelRequest);
             if(Boolean.TRUE.equals(request.payload().get("conversationTools"))&&!(selected instanceof OpenAiCompatibleProvider))return error(request,"CONVERSATION_TOOLS_UNAVAILABLE","当前 Provider 未接通流式工具调用");
             if (selected instanceof OpenAiCompatibleProvider openAi) {
-                if(Boolean.TRUE.equals(request.payload().get("conversationTools"))){
+                if(Boolean.TRUE.equals(request.payload().get("conversationTools"))||request.payload().get("conversationMessages") instanceof java.util.List<?> structured&&!structured.isEmpty()){
                     var conversationProvider=openAi.withTimeout(Duration.ofMinutes(4));
-                    var definitions=dev.mineagent.runtime.worker.provider.ProgressiveDeclarations.tools(request.payload().get("toolNames"));
+                    java.util.List<dev.mineagent.runtime.worker.provider.ToolDefinition> definitions=Boolean.TRUE.equals(request.payload().get("conversationTools"))?dev.mineagent.runtime.worker.provider.ProgressiveDeclarations.tools(request.payload().get("toolNames")):java.util.List.of();
                     var history=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(request.payload().getOrDefault("toolHistory",java.util.List.of()),new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String,Object>>>(){});
                     var base=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(request.payload().getOrDefault("conversationMessages",java.util.List.of()),new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String,Object>>>(){});
                     var messages=dev.mineagent.runtime.worker.provider.ProgressiveDeclarations.messages(base,request.payload().get("loadedSkills"),modelRequest.prompt());

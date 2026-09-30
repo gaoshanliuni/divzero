@@ -1289,8 +1289,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ExplicitModelRoles.java",
-      "sha256": "4d24445d5e8f45203158bb272626aa4ade9057c29aa1be532e54d3d310adc2f7",
-      "bytes": 1754
+      "sha256": "b990115e42550cbfcefcfda57ed4041c2d29c5cbeeb91e622abfcc642784363f",
+      "bytes": 1848
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/NativeSecretPayload.java",
@@ -3649,8 +3649,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeNavigationIntent.java",
-      "sha256": "fd7ed558c0808789ceb0ca6c1f81a3e5507fc76273b1afb15ec4990cf9199e4f",
-      "bytes": 8850
+      "sha256": "628dd3df7962d9a514074768d6693cc2a42b8c327f09432f52269fc320471cf7",
+      "bytes": 9013
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeSurfaceNavigation.java",
@@ -5504,8 +5504,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/AutonomousPlayerAgent.java",
-      "sha256": "1203e632ad9d1718f5f1c2d1b7c4c8c5329282ccfb91389d7e455fd031e23ca4",
-      "bytes": 26700
+      "sha256": "6c938a384eb3ea9ce577cbfe0e1cc7cd551aae010621126c98e7ad0987100e59",
+      "bytes": 27416
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/CraftingUseSmokeServer.java",
@@ -6394,8 +6394,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/worker/MineAgentWorkerSupervisor.java",
-      "sha256": "84c1f72528c0744cab817c1053891f08b1326133ed915639403f6aabcb2c140a",
-      "bytes": 70021
+      "sha256": "cb51827196c805d8efb21437a40ee37d841e6c57661b5f99302565e8eec026d1",
+      "bytes": 70117
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/blockstates/automation_console.json",
@@ -6924,8 +6924,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/WorkerRequestHandler.java",
-      "sha256": "2c8cfc4a6705d24acbbfe702fbb672ec0530af870d0a1987054e1a0ad31ea796",
-      "bytes": 108316
+      "sha256": "3cd3cd0255c134f3ffcd334551dfcc6aaa81948556b06ca23cd5bce562b93c80",
+      "bytes": 108575
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/BootDependencyClasspath.java",
