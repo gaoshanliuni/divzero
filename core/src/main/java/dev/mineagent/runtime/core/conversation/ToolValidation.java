@@ -10,7 +10,7 @@ public final class ToolValidation {
     public record Issue(String field,String problem,String expected){}
     public record Checked(ObjectNode arguments,List<String> normalized,List<Issue> issues){
         public Checked{normalized=List.copyOf(normalized);issues=List.copyOf(issues);}
-        public Map<String,Object> rejection(){return Map.of("status","REJECTED","error","AGENT_TOOL_ARGUMENTS","category","VALIDATION","executionState","NOT_STARTED","worldModified",false,"issues",issues,"suggestedAction","Correct the listed fields and submit a new call; no action was executed.");}
+        public Map<String,Object> rejection(){return Map.of("status","REJECTED","error","AGENT_TOOL_ARGUMENTS","category","VALIDATION","executionState","NOT_STARTED","worldModified",false,"issues",issues);}
     }
     private ToolValidation(){}
     public static Checked check(String tool,ObjectNode input){

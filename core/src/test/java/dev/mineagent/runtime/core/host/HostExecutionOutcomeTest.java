@@ -21,6 +21,6 @@ class HostExecutionOutcomeTest {
     }
     @Test void cancellationGuidanceDoesNotTellTheModelToReplayOrChangeParameters(){
         var v=dev.mineagent.runtime.core.conversation.ToolErrors.explain(HostExecutionOutcome.describe(UUID.randomUUID(),Map.of("status","REJECTED","error","HOST_CONTEXT_CHANGED"),false,"DOWNLOADING_RUNTIME","HOST_CONVERSATION_CANCELLED"));
-        assertEquals("CANCELLED_CONTEXT",v.get("category"));assertTrue(v.get("suggestedAction").toString().contains("Do not replay"));
+        assertEquals("CANCELLED_CONTEXT",v.get("category"));assertFalse(v.containsKey("suggestedAction"));assertEquals("HOST_CONVERSATION_CANCELLED",v.get("cancellationReason"));
     }
 }

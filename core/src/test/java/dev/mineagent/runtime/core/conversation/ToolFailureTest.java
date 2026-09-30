@@ -5,6 +5,10 @@ import java.util.*;
 import java.util.concurrent.CompletionException;
 import static org.junit.jupiter.api.Assertions.*;
 class ToolFailureTest {
+    @Test void invalidToolResultBecomesAReceiptInsteadOfFailingTheChat(){
+        var response=ToolFailure.received("read_file",UUID.randomUUID(),Map.of("text","x".repeat(ConversationTools.MAX_TOOL_TRANSPORT_BYTES+1)),null);
+        assertEquals("READ_FAILED",response.get("executionState"));assertFalse(response.toString().contains("xxxx"));assertTrue(response.containsKey("diagnostic"));
+    }
     @Test void wrappedAsyncFailureKeepsRootReasonAndOperation(){
         var id=UUID.randomUUID();var r=ToolFailure.result("apply_building",id,new CompletionException(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN",new IllegalArgumentException("component roof: unsupported axis q"))),ToolFailure.Phase.DISPATCH);
         assertEquals("UNKNOWN",r.get("executionState"));assertEquals(id.toString(),r.get("operation_id"));assertEquals("component roof: unsupported axis q",r.get("diagnostic"));assertEquals(false,r.get("replayAllowed"));

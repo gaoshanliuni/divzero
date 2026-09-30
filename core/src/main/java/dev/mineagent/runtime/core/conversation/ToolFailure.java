@@ -6,7 +6,13 @@ import java.util.*;
 
 /** Failure is an observation for the same tool call, not a new player instruction. */
 public final class ToolFailure {
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON=new com.fasterxml.jackson.databind.ObjectMapper();
     public enum Phase { VALIDATION, INTENT_STORAGE, DISPATCH, RECEIPT_STORAGE, READ }
+    public static Map<String,Object> received(String tool,UUID operation,Map<String,Object> value,Throwable error){
+        boolean write=ConversationTools.mutation(tool);if(error!=null||value==null)return result(tool,operation,error,write?Phase.DISPATCH:Phase.READ);
+        try{ConversationTools.requireTransportSize(JSON.writeValueAsBytes(value).length);return value;}
+        catch(Exception invalid){return result(tool,operation,invalid,write?Phase.RECEIPT_STORAGE:Phase.READ);}
+    }
     public static Map<String,Object> result(String tool,UUID operation,Throwable failure,Phase phase){
         var causes=new ArrayList<Map<String,Object>>();var seen=Collections.newSetFromMap(new IdentityHashMap<Throwable,Boolean>());
         String code="",detail="";int line=-1,column=-1;
