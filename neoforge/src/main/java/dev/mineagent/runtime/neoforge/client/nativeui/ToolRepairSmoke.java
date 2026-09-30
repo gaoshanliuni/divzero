@@ -48,7 +48,7 @@ public final class ToolRepairSmoke {
         if(tool!=null){event(exchange,Map.of("reasoning_content","受控协议字段，不代表真实模型推理"));event(exchange,Map.of("tool_calls",List.of(tool)));}
         else event(exchange,Map.of("content","已收到具体错误，未重放未知写入。验证结束。"));
         exchange.getResponseBody().write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
-    }catch(Throwable error){failure=error;}finally{exchange.close();}}
+    }catch(Throwable error){failure=error;try{Files.writeString(mc().gameDirectory.toPath().resolve("tool-repair-provider-failure.txt"),error.toString());}catch(Exception ignored){}}finally{exchange.close();}}
     public static CompletableFuture<Map<String,Object>> run(UUID id){
         if(!Boolean.getBoolean("mineagent.skillSmoke")||!System.getProperty("mineagent.skillSmokeMode","").equals("tool_repair")||result!=null)throw new IllegalStateException("SMOKE_DISABLED");
         result=new CompletableFuture<>();agent=id;operation=UUID.randomUUID();
@@ -61,9 +61,9 @@ public final class ToolRepairSmoke {
         }catch(Exception e){throw new CompletionException(e);}}).whenComplete((v,e)->{if(e!=null)failure=e;});return result;
     }
     @net.neoforged.bus.api.SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event){
-        if(result==null||result.isDone())return;ticks++;if(failure!=null||ticks>1600){http.stop(0);result.completeExceptionally(new IllegalStateException("TOOL_REPAIR_"+rounds,failure));return;}if(busy||conversation==null||ticks%10!=0)return;busy=true;
+        if(result==null||result.isDone())return;ticks++;if(failure!=null||ticks>1600){http.stop(0);result.completeExceptionally(new IllegalStateException("TOOL_REPAIR_"+rounds+": "+Objects.toString(failure,"timeout"),failure));return;}if(busy||conversation==null||ticks%10!=0)return;busy=true;
         server(p->{try{var store=ServerConversations.get(p.level().getServer()).store();var usage=store.context(p.getUUID(),agent,conversation,null).orElseThrow();require(!Set.of("FAILED","CANCELLED","INTERRUPTED").contains(usage.requestState()),"CONVERSATION_INTERRUPTED_"+usage.errorCode());if(!usage.requestState().equals("COMPLETE"))return false;
-            var snapshot=store.nativeSnapshot(p.getUUID(),agent,conversation,usage.assistantMessageId(),0,0);String text=JSON.valueToTree(snapshot).toString();require(text.contains("开始验证，已有输出保留。")&&text.contains("验证结束。")&&text.contains("连接中断前的内容。"),"STREAM_OUTPUT_WAS_REPLACED");require(p.level().getBlockState(new net.minecraft.core.BlockPos(3,101,3)).is(net.minecraft.world.level.block.Blocks.GOLD_BLOCK),"CORRECTED_WORLD_RESULT_MISSING");require(rounds==9,"MODEL_ROUND_COUNT");evidence.add(Map.of("requestState",usage.requestState(),"sameOperation",usage.operationId().equals(operation),"correctedWorldWrite",true,"streamPrefixAndSuffixRetained",true));return true;
+            var snapshot=store.nativeSnapshot(p.getUUID(),agent,conversation,usage.assistantMessageId(),0,0);String text=snapshot.body().text();require(text.contains("开始验证，已有输出保留。")&&text.contains("验证结束。")&&text.contains("连接中断前的内容。"),"STREAM_OUTPUT_WAS_REPLACED");require(p.level().getBlockState(new net.minecraft.core.BlockPos(3,101,3)).is(net.minecraft.world.level.block.Blocks.GOLD_BLOCK),"CORRECTED_WORLD_RESULT_MISSING_"+p.level().getBlockState(new net.minecraft.core.BlockPos(3,101,3)));require(rounds==9,"MODEL_ROUND_COUNT_"+rounds);evidence.add(Map.of("requestState",usage.requestState(),"sameOperation",usage.operationId().equals(operation),"correctedWorldWrite",true,"streamPrefixAndSuffixRetained",true));return true;
         }catch(Exception e){throw new CompletionException(e);}}).whenComplete((complete,error)->{busy=false;if(error!=null){failure=error;return;}if(complete){http.stop(0);result.complete(Map.of("status","PASS","provider","CONTROLLED_LOCAL_HTTP_NOT_MODEL","paidModelCalls",0,"streamRequests",rounds,"extraUserPrompts",0,"providerFailureObservations",1,"evidence",evidence));}});
     }
     private ToolRepairSmoke(){}

@@ -4454,8 +4454,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
-      "sha256": "749b437e48caecbf5e4f4cd4c6593a4820a6a86e30388216d7d39d1a2b55d893",
-      "bytes": 11149
+      "sha256": "9b9bd6bc084887c700e6f4128814c394e30719ea9aaa371e6b470feb9e4ee4e5",
+      "bytes": 11389
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
