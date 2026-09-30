@@ -77,7 +77,8 @@ public final class NativeAttackTimeline {
                     int due=Math.max(1,fuse.divzero$maxSwell()-fuse.divzero$swell());double range=fuse.divzero$explosionRadius()*2*(creeper.isPowered()?2:1);
                     radial(values,living,"EXPLOSION",due,range,living.position(),"NATIVE_FUSE_MOVING_SOURCE",false);
                 }
-                if(living instanceof Ravager ravager&&ravager.getRoarTick()>10)radial(values,living,"ROAR",ravager.getRoarTick()-10,4,living.position(),"NATIVE_ROAR_TIMER",false);
+                if(living instanceof Ravager ravager&&ravager.getRoarTick()>10){var bounds=ravager.getBoundingBox().inflate(4);
+                    values.add(new Attack(ravager.getUUID()+"/roar",ravager.getUUID(),ravager.getUUID(),"ROAR","NATIVE_ROAR_BOX_TIMER",false,48,List.of(Slice.box(ravager.getRoarTick()-10,bounds,bounds))));}
                 if(living instanceof Guardian guardian&&guardian.getTarget()==actor)for(var goal:guardian.goalSelector.getAvailableGoals())if(goal.isRunning()&&goal.getGoal() instanceof CombatGuardianGoalAccess timer){
                     int due=Math.max(1,guardian.getAttackDuration()-timer.divzero$attackTime());if(due<=HORIZON){var volume=guardian.getBoundingBox().inflate(radius*2);
                         values.add(new Attack(guardian.getUUID()+"/beam",guardian.getUUID(),guardian.getUUID(),"TARGET_LOCK","NATIVE_TIMER_REQUIRES_BREAKING_SIGHT",false,42,List.of(new Slice(due,volume,volume,Shape.TARGET_LOCK,guardian.getEyePosition(),0))));}
@@ -120,12 +121,11 @@ public final class NativeAttackTimeline {
             boolean water=shot.level().getFluidState(BlockPos.containing(at)).is(net.minecraft.tags.FluidTags.WATER);
             if(thrown)velocity=velocity.add(0,-shot.getGravity(),0).scale(water?.8:.99);
             else if(fireball){var fire=(AbstractHurtingProjectile)shot;double inertia=water?.8:shot instanceof WitherSkull skull&&skull.isDangerous()?.73:.95;velocity=velocity.add(velocity.normalize().scale(fire.accelerationPower)).scale(inertia);}
-            else if(arrow&&water)velocity=velocity.scale(.6);
             var end=at.add(velocity);if(!shot.level().hasChunkAt(BlockPos.containing(end)))break;
             var clip=shot.level().clip(new ClipContext(at,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,shot));
-            boolean blocked=clip.getType()!=HitResult.Type.MISS;if(blocked)end=clip.getLocation();
+            boolean blocked=known&&clip.getType()!=HitResult.Type.MISS;if(blocked)end=clip.getLocation();
             double blast=shot instanceof CombatFireballAccess fire?fire.divzero$explosionPower()*2:shot instanceof WitherSkull?2:0;
-            boolean potion=shot instanceof net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
+            boolean potion=shot instanceof net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
             if(potion){var contents=((net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion)shot).getItem().getOrDefault(DataComponents.POTION_CONTENTS,PotionContents.EMPTY);for(var effect:contents.getAllEffects())if(!effect.getEffect().value().isBeneficial()){blast=4;break;}}
             if(blast>0){
                 // Impact can occur on an entity as well as a wall. Other bodies are current observations, not future input.
@@ -141,7 +141,7 @@ public final class NativeAttackTimeline {
             var fromBox=AABB.ofSize(at,2*(margin+uncertainty),2*(margin+uncertainty),2*(margin+uncertainty));
             slices.add(Slice.box(tick,fromBox,fromBox.move(end.subtract(at))));
             if(blocked)break;
-            at=end;if(arrow)velocity=velocity.scale(.99).add(0,-shot.getGravity(),0);
+            at=end;if(arrow)velocity=velocity.scale(water&&shot instanceof CombatArrowStateAccess arrowState?arrowState.divzero$waterInertia():.99).add(0,-shot.getGravity(),0);
         }
         values.add(new Attack(shot.getUUID()+"/flight",shot.getUUID(),shot.getOwner()==null?null:shot.getOwner().getUUID(),"PROJECTILE",known?"NATIVE_SWEEP_BALLISTIC_FORECAST":"UNKNOWN_MOTION_CONSERVATIVE_SWEEP",true,36,slices));
         if(!impacts.isEmpty())values.add(new Attack(shot.getUUID()+"/impact",shot.getUUID(),shot.getOwner()==null?null:shot.getOwner().getUUID(),"IMPACT_AREA","NATIVE_RADIUS_FORECAST_IMPACT",true,48,impacts));

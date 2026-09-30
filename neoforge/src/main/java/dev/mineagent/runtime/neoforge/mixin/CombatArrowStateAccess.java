@@ -7,4 +7,5 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(AbstractArrow.class)
 public interface CombatArrowStateAccess {
     @Invoker("isInGround") boolean divzero$inGround();
+    @Invoker("getWaterInertia") float divzero$waterInertia();
 }

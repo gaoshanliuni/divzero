@@ -4989,8 +4989,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/CombatArrowStateAccess.java",
-      "sha256": "bebda0499bf57644039aef4f00dc111edc445df5fcae2a338f5c34eaa8c73473",
-      "bytes": 331
+      "sha256": "87348a6581ea17f01bedff244f369989b0e3cf376442f1149670ab696745b943",
+      "bytes": 393
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/CombatBowGoalAccess.java",
@@ -5529,18 +5529,18 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeAttackTimeline.java",
-      "sha256": "33df29b4a9c4fc86e83ffe1687de15811d13b9e2e4d83f77997a603ccbffd702",
-      "bytes": 15801
+      "sha256": "1d4d4b05985dc210a5c4a0a380c2b7fc224076c47644bdf60c50a18aa438d1e2",
+      "bytes": 15990
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeAttackTimelineChecks.java",
-      "sha256": "2b4de552dadd3d39e7859c87eca3393c02d35dd6cefbe0c9e55bb7abd9f1e84c",
-      "bytes": 4991
+      "sha256": "49da19196321fb55515277da8db72159ba61be2efec4ab85eadf8ab5d16d1102",
+      "bytes": 6601
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeCombatStates.java",
-      "sha256": "ba9a936166b34cf843a0d7feaa123fd6ed825091ea637af40e9614cee566b6ee",
-      "bytes": 13970
+      "sha256": "45fd0b473f02b7309a1869ecbebdc4860d13b8d75796d5051c73963e91243aa7",
+      "bytes": 13971
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
