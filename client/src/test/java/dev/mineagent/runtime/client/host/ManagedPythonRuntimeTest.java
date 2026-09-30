@@ -5,4 +5,12 @@ class ManagedPythonRuntimeTest {
  @Test void pathsAndArchiveIntegrityRejectBeforeExecution()throws Exception{for(String value:java.util.List.of("../outside","/absolute","python/../../outside","python/a:b","python/CON","python/a\\b"))assertThrows(java.io.IOException.class,()->ManagedPythonRuntime.safe(root,value));var f=root.resolve("wrong.gz");Files.writeString(f,"not Python");assertThrows(java.io.IOException.class,()->ManagedPythonRuntime.verifyArchive(f));}
  @Test void preparationRequiresLiveContext()throws Exception{org.junit.jupiter.api.Assumptions.assumeTrue(ManagedPythonRuntime.supported());assertThrows(java.io.IOException.class,()->new ManagedPythonRuntime(root).ensure(()->false));assertFalse(Files.exists(root.resolve("mineagent-host/environment.json")));}
  @Test void environmentSeesNoInterpreterOrCredentialOverrides(){var p=ManagedPythonRuntime.process(java.util.List.of("not-launched"),root);assertFalse(p.environment().containsKey("PYTHONPATH"));assertFalse(p.environment().containsKey("PYTHONHOME"));assertFalse(p.environment().containsKey("PIP_INDEX_URL"));assertEquals("1",p.environment().get("PYTHONUTF8"));}
+ @Test void windowsProcessPathsSupportLongDirectoriesWithoutChangingSystemSettings(){
+  org.junit.jupiter.api.Assumptions.assumeTrue(ManagedPythonRuntime.supported());
+  var path=root;for(int i=0;i<12;i++)path=path.resolve("directory with spaces");path=path.resolve("Scripts/python.exe");
+  String extended=ManagedPythonRuntime.commandPath(path);assertTrue(extended.startsWith("\\\\?\\"));assertTrue(extended.length()>260);
+  assertEquals(extended,ManagedPythonRuntime.commandPath(Path.of(extended)));
+  assertEquals(extended,ManagedPythonRuntime.process(java.util.List.of(path.toString(),"-I"),root).command().getFirst());
+  assertEquals("\\\\?\\UNC\\server\\share\\python.exe",ManagedPythonRuntime.commandPath(Path.of("\\\\server\\share\\python.exe")));
+ }
 }

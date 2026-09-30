@@ -3448,5 +3448,6 @@
   "你已拒绝本次执行。": "You declined this operation.",
   "本次确认已过期，请重新发起请求。": "This approval expired. Start a new request.",
   "请查看本次操作的错误详情。": "See the error details for this operation.",
-  "请求的脚本或安装命令尚未启动。": "The requested script or install command has not started."
+  "请求的脚本或安装命令尚未启动。": "The requested script or install command has not started.",
+  "正在初始化 Python 安装工具，尚未执行请求。": "Initializing Python package tools; the requested command has not started."
 }
