@@ -14,4 +14,13 @@ class ExecutionProgressTest {
         assertFalse(progress.observe("read_file","{}",Map.of("status","READ_FAILED","error","MISSING"),"new world",true).warn());
         for(int i=0;i<10;i++)assertFalse(progress.observe("attack","{}",Map.of("status","APPLIED"),"world",false).warn());
     }
+    @Test void alternatingUnchangedReadsCannotHideAStall(){
+        var guard=new ExecutionProgress();
+        for(int i=0;i<3;i++){
+            var result=guard.observe("web_search","{}",Map.of("status","READ_FAILED","error","CAPTCHA","fetchedAt",i),"same world",true);
+            assertEquals(i==2,result.warn());guard.observe("inspect_registry","{}",Map.of("status","OBSERVED","version",1),"same world",true);
+        }
+        assertTrue(guard.observe("web_search","{}",Map.of("status","READ_FAILED","error","CAPTCHA","fetchedAt",99),"same world",true).blocked());
+        assertFalse(guard.observe("web_search","{}",Map.of("status","OBSERVED","results",List.of("new source")),"same world",true).warn());
+    }
 }
