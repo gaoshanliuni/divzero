@@ -25,6 +25,7 @@ public final class MineAgentMovementController {
     public void movePreciselyTo(Vec3 target){start(target,.2);}
     public boolean followCheckedRoute(MineAgentPlayer player,List<dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep> route){if(!intent.followCheckedRoute(player,route))return false;commandRevision++;return true;}
     public void tacticalJump(MineAgentPlayer player,UUID owner){pendingJumpRevision=commandRevision;pendingJumpOwner=owner;pendingJumpExpires=player.level().getServer().getTickCount()+4;}
+    public boolean recovering(){return intent.recovery().active();}
     public boolean recover(MineAgentPlayer p,Vec3 target){if(intent.recovery().active())return true;if(intent.target().isEmpty())start(target,.2);return intent.recovery().request(p,target,"TACTICAL_ROUTE_EXHAUSTED");}
     public void moveTo(Vec3 target){start(target,.8);}
     private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=0;traversedFloors.clear();}

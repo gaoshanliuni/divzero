@@ -80,7 +80,7 @@ final class CombatSkill {
     }
     private static boolean move(SkillWork w,Vec3 next,LivingEntity target,boolean escape){
         if(next==null){
-            if(!w.positioning.pending()&&target!=null&&w.actor.recover(w.token(),target.position())){phase(w,"TERRAIN_ESCAPE");return true;}
+            if(!w.positioning.pending()&&target!=null){if(!w.actor.recovering()){w.actor.stop(w.token());w.combatOperation=w.shieldOperation=w.healingOperation=null;w.combatStage=0;}if(w.actor.recover(w.token(),target.position())){phase(w,"TERRAIN_ESCAPE");return true;}}
             w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return false;
         }
         boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.contactEscape);
@@ -99,6 +99,7 @@ final class CombatSkill {
     private static void fight(SkillWork w,LivingEntity target){
         var p=w.player();var rule=w.session.spec().combat();w.sprintApproach=false;
         if(target!=null&&(!SkillRuntime.attackAllowed(w,target))){w.combat.selected=null;return;}
+        if(w.actor.recovering()&&target!=null){w.actor.recover(w.token(),target.position());phase(w,"TERRAIN_ESCAPE");return;}
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
         if(target!=null&&!target.onGround()&&target.distanceTo(p)<8&&w.prediction.risk(w,p.position(),6,null)>=18
                 &&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
@@ -291,7 +292,7 @@ final class CombatSkill {
         for(int i=0;i<=20;i++){double t=i/20.0;var sample=new Vec3(start.x+(aim.x-start.x)*t,start.y+slope*r*t-.025*duration*duration*t*t,start.z+(aim.z-start.z)*t);for(var ally:allies)if(ally.getBoundingBox().inflate(.5).contains(sample))return true;}return false;
     }
     private static boolean shield(SkillWork w,LivingEntity target){
-        var p=w.player();if(target==null)return false;
+        var p=w.player();if(target==null||w.actor.recovering())return false;
         if(!p.getOffhandItem().is(Items.SHIELD))for(int i=0;i<36;i++)if(p.getInventory().getItem(i).is(Items.SHIELD)){w.actor.equipOffhand(w.token(),i);return true;}
         if(!p.getOffhandItem().is(Items.SHIELD)||p.getCooldowns().isOnCooldown(p.getOffhandItem()))return false;
         if(w.combatStage!=0){observeRelease(w);w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;}

@@ -38,6 +38,7 @@ public final class PlayerSkillActor implements SkillActor {
         });
         if(result.changed())navigation.recheckAfterTerrain();return result.move();
     }
+    public boolean recovering(){return navigation.recovery().active();}
     public boolean recover(UUID session,Vec3 target){
         if(!inputReady())return false;if(!navigation.recovery().active()&&!navigation.recovery().request(player,target,"TACTICAL_ROUTE_EXHAUSTED"))return false;
         var step=terrain(session,null);if(step!=null)send(session,"MOVE",navOperation,NativeTraversalEvaluator.point(step.to()),0,-1,step.action().name());return true;

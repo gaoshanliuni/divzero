@@ -25,7 +25,7 @@ public final class BallisticIntercept {
             var position=start;var velocity=candidate.direction.scale(physics.speed);
             for(int tick=1;tick<=Math.min(physics.maxTicks,Math.ceil(candidate.time)+2);tick++){
                 if(!budget.getAsBoolean())return Optional.empty();var next=position.add(velocity);
-                var relative=position.subtract(target.apply(tick-1)),relativeNext=next.subtract(target.apply(tick));var motion=relativeNext.subtract(relative);double square=dot(motion,motion);
+                var relative=position.subtract(target.apply(tick-1));var relativeNext=next.subtract(target.apply(tick));var motion=relativeNext.subtract(relative);double square=dot(motion,motion);
                 double fraction=square<1e-12?0:Math.clamp(-dot(relative,motion)/square,0,1);double miss=relative.add(motion.scale(fraction)).length();
                 var end=miss<=radius?position.add(next.subtract(position).scale(fraction)):next;
                 if(!corridor.clear(position,end,tick-1+fraction))break;

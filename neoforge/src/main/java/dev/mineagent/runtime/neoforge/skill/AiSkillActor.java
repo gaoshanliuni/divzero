@@ -21,6 +21,7 @@ public final class AiSkillActor implements SkillActor {
     public boolean inputReady(){return current()&&body.containerMenu==body.inventoryMenu;}
     private void require(UUID session,dev.mineagent.runtime.api.agent.BodyDomain domain){if(!inputReady()||!controls().owns(session,domain))throw new IllegalStateException("SKILL_CONTROL_CHANGED");owner=session;}
     public String move(UUID session,Vec3 target){if(checkedRoute!=null){checkedRoute=null;navigation=-1;}require(session,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT);var c=body.movementController();if(navigation<0||c.commandRevision()!=navigation){c.movePreciselyTo(target);navigation=c.commandRevision();destination=target;}else if(destination==null||destination.distanceToSqr(target)>.09){c.updateTarget(navigation,target);destination=target;}return c.outcome();}
+    public boolean recovering(){return body.movementController().recovering();}
     public boolean recover(UUID session,Vec3 target){require(session,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT);return body.movementController().recover(body,target);}
     public void aim(UUID session,Vec3 target){require(session,dev.mineagent.runtime.api.agent.BodyDomain.LOOK);body.aim(session,target,8);}
     public void aimImmediately(UUID session,Vec3 target){aim(session,target);body.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,target);}
