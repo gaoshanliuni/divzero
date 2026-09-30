@@ -54,9 +54,12 @@ public final class AgentInventoryMenu extends AbstractContainerMenu {
     @Override public void broadcastChanges(){if(body!=null)selectedHotbar.set(body.getInventory().getSelectedSlot());super.broadcastChanges();}
     @Override public boolean stillValid(Player player){
         if(player!=viewer)return false;if(player.level().isClientSide())return true;
-        try{return ServerAgentInventory.body((net.minecraft.server.level.ServerPlayer)player,java.util.Map.of("agentId",agentId.toString()))==body&&body.containerMenu==body.inventoryMenu;}catch(RuntimeException invalid){return false;}
+        try{return ServerAgentInventory.body((net.minecraft.server.level.ServerPlayer)player,java.util.Map.of("agentId",agentId.toString()))==body;}catch(RuntimeException invalid){return false;}
     }
-    @Override public void clicked(int slot,int button,ContainerInput input,Player player){if(stillValid(player))super.clicked(slot,button,input,player);}
+    @Override public void clicked(int slot,int button,ContainerInput input,Player player){if(stillValid(player)){
+        if(body!=null&&body.isUsingItem())dev.mineagent.runtime.neoforge.skill.SkillRuntime.inventoryEdited(body);
+        super.clicked(slot,button,input,player);
+    }}
     @Override public ItemStack quickMoveStack(Player player,int index){
         if(!stillValid(player)||index<0||index>=slots.size())return ItemStack.EMPTY;
         Slot source=slots.get(index);if(!source.hasItem()||!source.mayPickup(player))return ItemStack.EMPTY;

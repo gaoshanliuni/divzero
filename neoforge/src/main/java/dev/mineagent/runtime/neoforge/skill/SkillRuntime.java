@@ -27,12 +27,14 @@ public final class SkillRuntime {
     final MinecraftServer server;final WorkReservations<String> reservations=new WorkReservations<>();private final Map<UUID,SkillWork> work=new LinkedHashMap<>();private final CompletableFuture<Void> loaded=new CompletableFuture<>();private int scanBudget;private long deadline;
     private final LinkedHashMap<UUID,SkillWork> history=new LinkedHashMap<>();
     private final Map<UUID,LinkedHashSet<SkillWork>> byEntity=new HashMap<>();private final Map<UUID,UUID> indexedActor=new HashMap<>();
+    private final Map<UUID,LinkedHashSet<SkillWork>> byOwner=new HashMap<>();
     private final Map<UUID,SkillWork> byOperation=new HashMap<>();private final Map<UUID,Set<UUID>> indexedOperations=new HashMap<>();
     private void cacheHistory(SkillWork w){history.put(w.token(),w);while(history.size()>128)history.remove(history.keySet().iterator().next());}
     void index(SkillWork w){
         UUID prior=indexedActor.remove(w.token());if(prior!=null){var values=byEntity.get(prior);if(values!=null){values.remove(w);if(values.isEmpty())byEntity.remove(prior);}}
         for(UUID operation:indexedOperations.getOrDefault(w.token(),Set.of()))byOperation.remove(operation,w);indexedOperations.remove(w.token());
-        if(w.session.terminal()){work.remove(w.token(),w);cacheHistory(w);return;}
+        if(w.session.terminal()){var owned=byOwner.get(w.session.owner());if(owned!=null){owned.remove(w);if(owned.isEmpty())byOwner.remove(w.session.owner());}work.remove(w.token(),w);cacheHistory(w);return;}
+        byOwner.computeIfAbsent(w.session.owner(),id->new LinkedHashSet<>()).add(w);
         work.put(w.token(),w);
         if(w.actor!=null){UUID id=w.actor.player().getUUID();byEntity.computeIfAbsent(id,k->new LinkedHashSet<>()).add(w);indexedActor.put(w.token(),id);}
         var operations=new HashSet<UUID>();operations.add(w.token());if(w.operation!=null)operations.add(w.operation);if(w.combatOperation!=null)operations.add(w.combatOperation);
@@ -66,6 +68,14 @@ public final class SkillRuntime {
 
             }catch(Exception failure){defensePending.remove(body.agentId());}
         }));
+    }
+    /** A player's inventory edit may end a use animation, but never discards the combat/work intent. */
+    public static void inventoryEdited(MineAgentPlayer body){
+        body.stopUsingItem();var runtime=ALL.get(body.level().getServer());if(runtime==null)return;
+        for(var w:runtime.forEntity(body))if(w.actor!=null&&w.session.runnable()){
+            w.actor.stop(w.token());w.combatOperation=w.shieldOperation=w.healingOperation=w.extensionOperation=null;
+            w.combatStage=0;w.healingWasUsing=false;w.combat.nextScan=0;w.nextTick=runtime.server.getTickCount();
+        }
     }
     public static boolean taskActive(MinecraftServer server,UUID task){var r=ALL.get(server);return r!=null&&r.work.values().stream().anyMatch(w->task.equals(w.session.snapshot().task())&&!w.session.terminal());}
     public static boolean following(MinecraftServer server,UUID agent){var r=ALL.get(server);return r!=null&&r.work.values().stream().anyMatch(w->w.session.agent().equals(agent)&&w.session.spec().actor().equals("ai")&&w.session.spec().kind()==SkillSpec.Kind.FOLLOW&&w.session.runnable());}
@@ -197,6 +207,8 @@ public final class SkillRuntime {
     public void attachScriptAuthority(UUID operation,BooleanSupplier authority){var w=work.get(operation);if(w!=null)w.externalAuthority=authority;}
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST) public static void projectile(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event){if(event.isCanceled()||event.loadedFromDisk()||!(event.getEntity() instanceof net.minecraft.world.entity.projectile.Projectile shot)||!(shot.getOwner() instanceof ServerPlayer player))return;var r=ALL.get(player.level().getServer());if(r==null)return;for(var w:r.forEntity(player))if(w.actor!=null&&w.actor.player()==player&&w.combatOperation!=null&&w.combatStage==2&&w.actor.controls().owns(w.token(),BodyDomain.MAIN_HAND)){shot.getPersistentData().putString("mineagent_skill_session",w.token().toString());shot.getPersistentData().putString("mineagent_skill_operation",w.combatOperation.toString());}}
     @SubscribeEvent public static void damage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event){
+        if(event.getHealthDamage()>0&&event.getEntity() instanceof ServerPlayer owner){var runtime=ALL.get(owner.level().getServer());if(runtime!=null)for(var active:List.copyOf(runtime.byOwner.getOrDefault(owner.getUUID(),new LinkedHashSet<>())))if(active.session.runnable()&&active.actor!=null&&active.actor.current()){active.combat.nextScan=0;active.lastCombatTick=-1;}}
+
         if(event.getHealthDamage()>0&&event.getEntity() instanceof MineAgentPlayer body&&event.getSource().getEntity() instanceof net.minecraft.world.entity.LivingEntity attacker&&!(attacker instanceof net.minecraft.world.entity.player.Player))get(body.level().getServer()).retaliate(body,attacker);
         if(event.getHealthDamage()>0&&event.getEntity() instanceof ServerPlayer defender&&event.getSource().getEntity() instanceof net.minecraft.world.entity.LivingEntity attacker){var runtime=ALL.get(defender.level().getServer());if(runtime!=null)for(var active:runtime.forEntity(defender))if(active.actor!=null&&active.actor.player()==defender&&active.actor.current()&&active.session.runnable()){active.lastContactDamage=runtime.server.getTickCount();active.session.add("nativeDamageEvents",1);active.session.add("nativeDamageTakenMilli",(long)(event.getHealthDamage()*1000));}}if(!(event.getSource().getEntity() instanceof ServerPlayer player)||event.getHealthDamage()<=0)return;var r=ALL.get(player.level().getServer());if(r==null)return;var direct=event.getSource().getDirectEntity();boolean shot=direct instanceof net.minecraft.world.entity.projectile.Projectile;String session=shot?direct.getPersistentData().getStringOr("mineagent_skill_session",""):"";for(var w:r.forEntity(player))if(w.actor!=null&&w.actor.player()==player&&w.fighting!=null&&w.fighting.equals(event.getEntity().getUUID())&&(shot?w.token().toString().equals(session):w.session.runnable()&&w.actor.controls().owns(w.token(),BodyDomain.MAIN_HAND))){if(!shot){int now=r.server.getTickCount();w.comboStreak=event.getEntity().getUUID().equals(w.lastMeleeHitTarget)&&now-w.lastMeleeHitTick<=40?w.comboStreak+1:1;w.lastMeleeHitTarget=event.getEntity().getUUID();w.lastMeleeHitTick=now;w.session.add("maxMeleeCombo",Math.max(0,w.comboStreak-w.session.count("maxMeleeCombo")));if(player.isSprinting())w.session.add("nativeSprintMeleeHits",1);}w.lastHitAt=r.server.getTickCount();w.session.add("verifiedHits",1);w.session.add("damageMilliHearts",(long)(event.getHealthDamage()*1000));if(shot&&!direct.isNoGravity())w.session.add("nativeGravityHits",1);if(w.session.terminal())r.persist(w);}}
     @SubscribeEvent public static void pickedUp(net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Post event){

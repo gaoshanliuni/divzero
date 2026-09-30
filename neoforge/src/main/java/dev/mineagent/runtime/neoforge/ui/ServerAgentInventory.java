@@ -22,7 +22,7 @@ public final class ServerAgentInventory {
     }
 
     public static Map<String,Object> open(ServerPlayer viewer,Map<String,String> args){
-        var body=body(viewer,args);if(body.containerMenu!=body.inventoryMenu)throw new IllegalStateException("INVENTORY_CONTAINER_BUSY");
+        var body=body(viewer,args);
         var opened=viewer.openMenu(new net.minecraft.world.SimpleMenuProvider((id,inventory,player)->new AgentInventoryMenu(id,inventory,body),body.getName()),data->data.writeUUID(body.agentId()));
         if(opened.isEmpty())throw new IllegalStateException("INVENTORY_OPEN_REJECTED");return Map.of("status","OPENED","containerId",opened.getAsInt(),"agentId",body.agentId());
     }

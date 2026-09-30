@@ -39,8 +39,13 @@ final class CombatAwareness {
         var hostilePositions=new dev.mineagent.runtime.core.task.SpatialNeighbors<LivingEntity>(entities.stream().filter(e->e instanceof Enemy).toList(),4,e->new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()));
         for(var e:entities){
             boolean forbidden=!SkillRuntime.attackAllowed(w,e);
+            var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());
+            boolean helpOwner=owner!=null&&owner!=p&&owner.level()==p.level()&&owner.isAlive()
+                    &&Set.of(dev.mineagent.runtime.core.task.SkillSpec.Kind.FOLLOW,dev.mineagent.runtime.core.task.SkillSpec.Kind.PATROL,dev.mineagent.runtime.core.task.SkillSpec.Kind.WANDER,dev.mineagent.runtime.core.task.SkillSpec.Kind.COMBAT).contains(w.session.spec().kind())
+                    &&owner.getLastHurtByMob()==e&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100
+                    &&owner.distanceTo(p)<=rule.awareness()*2&&e.distanceTo(owner)<=rule.leash();
             boolean self=e instanceof Mob mob&&mob.getTarget()==p;
-            boolean protect=protectedEntity!=null&&e instanceof Mob mob&&mob.getTarget()==protectedEntity;
+            boolean protect=helpOwner||protectedEntity!=null&&e instanceof Mob mob&&mob.getTarget()==protectedEntity;
             boolean attacked=p.getLastHurtByMob()==e&&p.tickCount-p.getLastHurtByMobTimestamp()<100;
             if(forbidden&&!self&&!protect&&!attacked)continue;
             boolean specified=e.getUUID().toString().equals(rule.target());
@@ -49,17 +54,17 @@ final class CombatAwareness {
             boolean approaching=e.getDeltaMovement().dot(p.position().subtract(e.position()))>0;
             boolean imminent=sight&&e instanceof Enemy&&e instanceof Mob nativeMob&&!nativeMob.isNoAi()&&(approaching&&d<6||nativeMob.getTarget()==null&&d<3);
             boolean eligible=switch(rule.engagement()){
-                case NONE->false;case SELF_DEFENSE->self||attacked||imminent;
+                case NONE->false;case SELF_DEFENSE->self||attacked||imminent||helpOwner;
                 case PROTECT->self||attacked||imminent||protect||protectedEntity!=null&&e instanceof Enemy&&e.distanceTo(protectedEntity)<6&&e.hasLineOfSight(protectedEntity);
-                case CLEAR_AREA->self||attacked||imminent||rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(e.getX(),e.getY(),e.getZ()));
-                case SPECIFIED->specified;
+                case CLEAR_AREA->self||attacked||imminent||helpOwner||rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(e.getX(),e.getY(),e.getZ()));
+                case SPECIFIED->specified||helpOwner;
             };
             Vec3 center=protectedEntity!=null?protectedEntity.position():anchor;
             boolean assigned=rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(e.getX(),e.getY(),e.getZ()));
             if(forbidden||e.position().distanceTo(center)>rule.leash()&&!assigned&&!(self||protect||attacked||imminent))eligible=false;
             var actual=NativeCombatStates.read(e,p);
             long neighbors=hostilePositions.count(new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()),4,e);
-            double score=(self?8:0)+(protect?18+(NativeCombatStates.meleeAt(e,protectedEntity,protectedEntity.position())?30:0):0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);
+            double score=(self?8:0)+(protect?18+(NativeCombatStates.meleeAt(e,helpOwner?owner:protectedEntity,(helpOwner?owner:protectedEntity).position())?30:0):0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);
             rows.add(new Threat(e,actual,eligible,protect,self||protect||attacked||imminent,score));
             if(eligible&&rule.engagement()==CombatPolicy.Engagement.CLEAR_AREA){var previous=lastSeen.put(e.getUUID(),new Seen(e,e.position(),w.tick()));if(previous!=null&&w.tick()-previous.tick>20)w.session.add("threatReacquisitions",1);}
         }
