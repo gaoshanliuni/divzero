@@ -34,10 +34,15 @@ public final class DialogueMemoryStore implements AutoCloseable {
         return remember(kind,topic,value,ttlSeconds,"player_or_tool_context",List.of());
     }
     public Entry remember(String kind,String topic,String value,long ttlSeconds,String source,List<String> aliases)throws Exception{
+        return remember(kind,topic,value,ttlSeconds,source,aliases,null);
+    }
+    /** Optional human/editor CAS; model topic replacement retains the existing API. */
+    public Entry remember(String kind,String topic,String value,long ttlSeconds,String source,List<String> aliases,Long expectedRevision)throws Exception{
         if(source==null||source.isBlank()||source.length()>512||aliases==null||aliases.size()>16||aliases.stream().anyMatch(a->a==null||a.length()<2||a.length()>64))throw new IllegalArgumentException("MEMORY_SOURCE_OR_ALIASES");
         if(kind.equals("OBSERVATION")&&ttlSeconds==0)throw new IllegalArgumentException("MEMORY_OBSERVATION_EXPIRY_REQUIRED");
         if(!Set.of("FACT","PREFERENCE","OBSERVATION").contains(kind)||topic==null||topic.isBlank()||topic.length()>128||value==null||value.isBlank()||value.length()>4096||ttlSeconds<0||ttlSeconds>31536000)throw new IllegalArgumentException("MEMORY_VALUE");
         topic=topic.strip().toLowerCase(Locale.ROOT);UUID id=UUID.nameUUIDFromBytes((kind+"|"+topic).getBytes(java.nio.charset.StandardCharsets.UTF_8));var old=db.get(world,namespace,id.toString());long rev=old.map(r->r.revision()).orElse(0L),now=clock.millis();
+        if(expectedRevision!=null&&expectedRevision!=rev)throw new IllegalStateException("MEMORY_REVISION_CHANGED");
         var entry=new Entry(id,kind,topic,value.strip(),rev+1,now,ttlSeconds==0?0:Math.addExact(now,Math.multiplyExact(ttlSeconds,1000)),false,source,kind.equals("OBSERVATION")?now:0,aliases);save(entry,rev);return entry;
     }
     public Entry forget(UUID id,long expected)throws Exception{

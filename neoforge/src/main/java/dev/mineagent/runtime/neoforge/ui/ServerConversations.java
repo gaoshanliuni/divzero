@@ -348,7 +348,7 @@ public final class ServerConversations implements AutoCloseable {
         var path=server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");var world=MineAgentRuntimeServices.worldId(server);
         java.util.concurrent.CompletableFuture.supplyAsync(()->{
             try(var memory=new dev.mineagent.runtime.core.memory.DialogueMemoryStore(path,world,g.viewer(),g.agent().agentId(),java.time.Clock.systemUTC())){
-                if(!flight.permit.get())throw new IllegalStateException("CONVERSATION_CANCELLED");return memory.context(g.original(),Math.min(8000,Math.max(256,g.budget()/4)));
+                if(!flight.permit.get())throw new IllegalStateException("CONVERSATION_CANCELLED");return memory.context(g.original(),Math.min(8000,Math.max(256,g.budget()/4)))+MineAgentRuntimeServices.memories(server).context(g.viewer(),g.original(),2000);
             }catch(Exception error){throw new java.util.concurrent.CompletionException(error);}
         },STREAM_IO).whenComplete((memories,error)->server.execute(()->{
             if(!live(flight)){if(!closed)failGeneration(flight,"CONVERSATION_CONTEXT_CHANGED");return;}

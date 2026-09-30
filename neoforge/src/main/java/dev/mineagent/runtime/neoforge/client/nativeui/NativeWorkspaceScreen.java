@@ -99,7 +99,19 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
     private static TextElement label(String text){var label=new TextElement().setText(Component.literal(text));label.addClass("divzero-flow-text");label.getLayout().widthPercent(100);label.textStyle(s->s.adaptiveWidth(false).adaptiveHeight(true).textWrap(TextWrap.WRAP).textColor(0xffeef2f7));return label;}
     private static UIElement row(){return WorkspacePanels.row();}
     private static Button button(String text,Runnable action){return NativeUiTheme.button(text,action);}
-    private void panel(PanelSection section){switch(section){case AGENTS->WorkspacePanels.agents(this);case PACKAGES->WorkspacePanels.packages(this);case PERMISSIONS->WorkspacePanels.permissions(this);default->WorkspacePanels.settings(this);}}
+    private void panel(PanelSection section){switch(section){
+        case OVERVIEW,CONVERSATIONS->showChat();
+        case AGENTS->WorkspacePanels.agents(this);
+        case TASKS->NativeTasksPanel.open(this);
+        case CREATOR->NativeGenerationPanel.open(this);
+        case CODE_STUDIO->NativeStudioPanel.open(this);
+        case PACKAGES->WorkspacePanels.packages(this);
+        case APPEARANCE->{if(model.agent.isBlank())WorkspacePanels.agents(this);else NativeAppearancePanel.open(this,model.agent);}
+        case SCOREBOARDS->NativeViewsPanel.open(this);
+        case MEMORY,MEDIA,MOD_KNOWLEDGE,BACKUPS,DIAGNOSTICS->NativeWorkspaceModules.open(this,section);
+        case PROVIDERS->WorkspacePanels.settings(this);
+        case PERMISSIONS->WorkspacePanels.permissions(this);
+    }}
     private void drawAgents(){
         String signature=model.agents+"|"+model.agent;if(signature.equals(agentSignature))return;agentSignature=signature;
         var choices=new ArrayList<Choice>();for(var raw:model.agents){var value=raw.getAsJsonObject();String id=value.get("id").getAsString(),name=value.get("name").getAsString();knownAgents.put(id,name);choices.add(new Choice(id,name));}

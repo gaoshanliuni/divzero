@@ -69,7 +69,7 @@ public final class NativeWorkspaceConnection {
         ClientPacketDistributor.sendToServer(new UiPayloads.Command(operation,channel,JSON.toJson(request)));return future;
     }
     public static void tick(){
-        NativeInventoryPanel.tick();NativeBehaviorPanel.tick();NativeDeliveryPanel.tick();NativeGenerationPanel.tick();NativeBuildingPanel.tick();NativeLifecyclePanel.tick();NativeCoderPanel.tick();NativeTasksPanel.tick();NativeDecisionPanel.tick();
+        NativeInventoryPanel.tick();NativeBehaviorPanel.tick();NativeDeliveryPanel.tick();NativeGenerationPanel.tick();NativeBuildingPanel.tick();NativeWorkspaceModules.tick();NativeLifecyclePanel.tick();NativeCoderPanel.tick();NativeTasksPanel.tick();NativeDecisionPanel.tick();
         var mc=Minecraft.getInstance();long now=System.currentTimeMillis();flushAwaiting();
         if(connection!=null&&(connection!=mc.getConnection()||level!=mc.level)){reset();return;}
         for(var entry:List.copyOf(PENDING.entrySet()))if(now>=entry.getValue().deadline){PENDING.remove(entry.getKey());entry.getValue().future.completeExceptionally(new IllegalStateException("UI_OPERATION_TIMEOUT_OUTCOME_UNKNOWN"));}

@@ -33,6 +33,7 @@ public final class ServerUiRuntime {
     private static final Map<MinecraftServer, ServerUiRuntime> RUNTIMES = new IdentityHashMap<>();
     private final MinecraftServer server;
     private final BuildingUiDocuments buildingDocuments=new BuildingUiDocuments();
+    private final ServerWorkspaceModules workspaceModules;
     private final ObjectMapper json = new ObjectMapper();
     private final UiSessionService sessions;
     private final ServerContainerRuntime containers;
@@ -47,6 +48,7 @@ public final class ServerUiRuntime {
     public static synchronized ServerUiRuntime get(MinecraftServer server) { return RUNTIMES.computeIfAbsent(server, ServerUiRuntime::new); }
     private ServerUiRuntime(MinecraftServer server) {
         this.server = server;
+        workspaceModules=new ServerWorkspaceModules(server);
         desktopPlans=new DesktopWindowPlans(server);
         sessions = new UiSessionService(MineAgentRuntimeServices.worldId(server), Clock.systemUTC(), this::authorize, 128, 4096);
         containers=new ServerContainerRuntime(server);
@@ -180,6 +182,7 @@ public final class ServerUiRuntime {
                 send(viewer, packet.requestId(), "session", sessions.interrupt(viewer.getUUID(), request.sessionId())); return;
             }
             if (!packet.channel().equals("command")) throw new IllegalArgumentException("UI_CHANNEL");
+            if(Set.of("workspace.read","workspace.write").contains(request.action())){workspaceModule(viewer,packet.requestId(),request);return;}
             if(Set.of("interface.read","interface.control").contains(request.action())){nativeInterfaces(viewer,packet.requestId(),request);return;}
             if(Set.of("behavior.read","behavior.write").contains(request.action())){behavior(viewer,packet.requestId(),request);return;}
             if(Set.of("building.read","building.write").contains(request.action())){buildings(viewer,packet.requestId(),request);return;}
@@ -377,6 +380,25 @@ public final class ServerUiRuntime {
             }));
         }catch(Exception failure){send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,Map.of("errorCode",Objects.toString(failure.getMessage(),"BUILDING_FAILED"))):new Receipt(request.operationId(),Code.FAILED,Map.of("errorCode",Objects.toString(failure.getMessage(),"BUILDING_FAILED"))));}
     }
+    private void workspaceModule(ServerPlayer viewer,UUID packet,Request request){
+        boolean write=request.action().equals("workspace.write"),begun=false;
+        try{
+            restoreScope(viewer,request);
+            var code=sessions.checkRead(viewer.getUUID(),request,"shell.read");if(code!=Code.OK){send(viewer,packet,"receipt",Receipt.of(request.operationId(),code));return;}
+            if(write){var receipt=sessions.begin(viewer.getUUID(),request,"shell.read",true);if(receipt.code()!=Code.ACCEPTED){send(viewer,packet,"receipt",receipt);return;}begun=true;}
+            java.util.function.BooleanSupplier permit=()->{try{restoreScope(viewer,request);return sessions.checkRead(viewer.getUUID(),request,"shell.read")==Code.OK;}catch(Exception failure){return false;}};
+            workspaceModules.handle(viewer,request.operationId(),request.arguments(),write,permit).whenComplete((value,error)->server.execute(()->{
+                try{
+                    if(error!=null)throw new java.util.concurrent.CompletionException(error);
+                    var result=new LinkedHashMap<String,Object>(value);if("mods".equals(request.arguments().get("module")))result.put("indexState",workspaceModules.indexState());
+                    String encoded=json.writeValueAsString(result);if(encoded.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>24000)throw new IllegalStateException("WORKSPACE_RESPONSE_LIMIT");
+                    var values=Map.of("state",encoded);var receipt=write?sessions.complete(request,Code.APPLIED,values):new Receipt(request.operationId(),Code.OBSERVED,values);
+                    if(permit.getAsBoolean())send(viewer,packet,"receipt",receipt);
+                }catch(Exception failure){var values=Map.of("errorCode",workspaceError(failure));send(viewer,packet,"receipt",write?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}
+            }));
+        }catch(Exception failure){var values=Map.of("errorCode",workspaceError(failure));send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}
+    }
+    private static String workspaceError(Throwable failure){while(failure.getCause()!=null)failure=failure.getCause();String message=Objects.toString(failure.getMessage(),"");return message.matches("[A-Z][A-Z0-9_]{1,100}")?message:"WORKSPACE_OPERATION_FAILED";}
     private Map<String, String> execute(ServerPlayer viewer, Request request) throws Exception {
         if(Set.of("desktop.start","desktop.read","desktop.cancel").contains(request.action())){
             restoreScope(viewer,request);
@@ -951,6 +973,6 @@ public final class ServerUiRuntime {
             dev.mineagent.runtime.neoforge.compile.NativeLiveClassAccess.clear(player.getUUID());
             ServerPackageRuntime.disconnect(player.level().getServer(), player.getUUID());
     }
-    @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){ServerUiRuntime runtime;synchronized(ServerUiRuntime.class){runtime=RUNTIMES.get(event.getServer());}if(runtime!=null){runtime.desktopPlans.tick();runtime.deliveries.tick();runtime.worldUi.expire();runtime.containers.tick();runtime.candidateViews.expire();runtime.uiAgents.tick();if(event.getServer().getTickCount()%20==0)try{MineAgentNetwork.reconcileAppearanceDecisions(event.getServer());}catch(RuntimeException failure){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Appearance decision reconciliation failed: {}",failure.getClass().getSimpleName());}}}
-    @SubscribeEvent public static synchronized void stopped(ServerStoppedEvent event) {var r=RUNTIMES.remove(event.getServer());if(r!=null){r.desktopPlans.close();r.deliveries.close();r.worldUi.close();r.containers.close();r.candidateViews.clear();r.takeovers.clear();r.uiAgents.close();}}
+    @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){ServerUiRuntime runtime;synchronized(ServerUiRuntime.class){runtime=RUNTIMES.get(event.getServer());}if(runtime!=null){runtime.workspaceModules.tick();runtime.desktopPlans.tick();runtime.deliveries.tick();runtime.worldUi.expire();runtime.containers.tick();runtime.candidateViews.expire();runtime.uiAgents.tick();if(event.getServer().getTickCount()%20==0)try{MineAgentNetwork.reconcileAppearanceDecisions(event.getServer());}catch(RuntimeException failure){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Appearance decision reconciliation failed: {}",failure.getClass().getSimpleName());}}}
+    @SubscribeEvent public static synchronized void stopped(ServerStoppedEvent event) {var r=RUNTIMES.remove(event.getServer());if(r!=null){r.workspaceModules.close();r.desktopPlans.close();r.deliveries.close();r.worldUi.close();r.containers.close();r.candidateViews.clear();r.takeovers.clear();r.uiAgents.close();}}
 }

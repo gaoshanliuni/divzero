@@ -1,0 +1,90 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+
+import com.google.gson.*;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
+import dev.mineagent.runtime.api.config.PanelSection;
+import dev.mineagent.runtime.neoforge.client.language.ClientLanguage;
+import net.minecraft.network.chat.Component;
+import java.util.*;
+
+/** Remaining workspace pages share paging/receipts, while each page retains its real domain controls. */
+final class NativeWorkspaceModules {
+    private record Choice(String id,String name){@Override public String toString(){return name;}}
+    private static final Set<NativeWorkspaceModules> OPEN=new LinkedHashSet<>();
+    private final NativeWorkspaceScreen host;private final WorkspaceWindow window;private final String module;
+    private final ScrollerView list;private final TextElement notice=WorkspacePanels.text("");private final TextField search=new TextField();
+    private final Selector<Choice> agents=new Selector<>();private String scope="dialogue",backupKind="list";private int offset,next=-1;private boolean busy,indexing;private long poll;
+    private UUID operation;private String operationKind="";
+    static void open(NativeWorkspaceScreen host,PanelSection section){if(!host.revealWindow("module-"+section.name()))new NativeWorkspaceModules(host,section);}
+    private NativeWorkspaceModules(NativeWorkspaceScreen host,PanelSection section){
+        this.host=host;module=switch(section){case MEMORY->"memory";case MEDIA->"media";case BACKUPS->"backups";case MOD_KNOWLEDGE->"mods";case DIAGNOSTICS->"diagnostics";default->throw new IllegalArgumentException();};
+        window=host.window("module-"+section.name(),t(section.displayName()),560,400);OPEN.add(this);
+        var tools=row();window.body.addChild(tools);
+        switch(module){
+            case "memory"->{tools.addChild(button("AI 事实与偏好",()->{scope="dialogue";offset=0;load();}));tools.addChild(button("共享事实与旧笔记",()->{scope="legacy";offset=0;load();}));tools.addChild(button("长期偏好",()->NativePreferencesPanel.open(host)));tools.addChild(button("新增记忆",()->memoryEditor(new JsonObject())));}
+            case "media"->tools.addChild(button("添加媒体",this::mediaEditor));
+            case "backups"->{tools.addChild(button("局部快照",()->{backupKind="list";offset=0;load();}));tools.addChild(button("修改历史",()->{backupKind="history";offset=0;load();}));tools.addChild(button("创建快照",this::snapshotEditor));}
+            case "mods"->{tools.addChild(button("重新索引",()->mutate(Map.of("kind","index"),()->{indexing=true;poll=0;})));tools.addChild(button("原生 API",()->NativeApiPanel.open(host)));}
+            default->{}
+        }
+        tools.addChild(button("刷新",this::load));
+        if(module.equals("memory")){
+            agents.getLayout().height(25).widthPercent(100);window.body.addChild(agents);agents.setOnValueChanged(choice->{offset=0;load();});
+            WorkspacePanels.request("shell.read",Map.of()).whenComplete((reply,error)->{if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}var choices=new ArrayList<Choice>();for(var raw:JsonParser.parseString(reply.values().get("agents")).getAsJsonArray()){var value=raw.getAsJsonObject();choices.add(new Choice(text(value,"id"),text(value,"name")));}agents.setCandidates(choices);choices.stream().filter(c->c.id.equals(host.selectedAgentId())).findFirst().or(()->choices.stream().findFirst()).ifPresent(c->agents.setValue(c,false));load();});
+            window.body.addChild(WorkspacePanels.text(t("事实与偏好按玩家、AI 和世界隔离，AI 对话会按相关性召回。动态观察必须设置有效期。")));
+        }
+        if(Set.of("memory","media","mods").contains(module)){var query=row();search.textFieldStyle(style->style.placeholder(Component.literal(t("搜索"))));search.getLayout().height(24).flex(1);query.addChild(search);query.addChild(button("搜索",()->{offset=0;load();}));window.body.addChild(query);}
+        window.body.addChild(notice);list=WorkspacePanels.scroller(window.body);var nav=row();window.body.addChild(nav);nav.addChild(button("上一页",()->{offset=Math.max(0,offset-8);load();}));nav.addChild(button("下一页",()->{if(next>=0){offset=next;load();}}));load();
+    }
+    private boolean live(){return host.activeContext()&&!window.closed();}
+    private Map<String,String> args(){var args=new LinkedHashMap<String,String>();args.put("module",module);args.put("offset",Integer.toString(offset));if(Set.of("memory","media","mods").contains(module))args.put("query",search.getValue());if(module.equals("memory")){args.put("scope",scope);if(scope.equals("dialogue"))args.put("agentId",agents.getValue().id);}if(module.equals("backups"))args.put("kind",backupKind);return args;}
+    private void load(){
+        if(!live()||busy||module.equals("memory")&&scope.equals("dialogue")&&agents.getValue()==null)return;
+        busy=true;var requested=args();WorkspacePanels.request("workspace.read",requested).whenComplete((reply,error)->{
+            busy=false;if(!live())return;if(error!=null){WorkspacePanels.failure(notice,error);return;}if(!requested.equals(args())){load();return;}var value=WorkspacePanels.state(reply);list.clearAllScrollViewChildren();
+            if(module.equals("diagnostics")){var card=WorkspacePanels.card(list,t("运行状态"));card.addChild(WorkspacePanels.text(t("内存")+" · "+value.get("usedMemoryBytes").getAsLong()/1048576+" MiB / "+value.get("maxMemoryBytes").getAsLong()/1048576+" MiB"));card.addChild(WorkspacePanels.text(t("线程")+" · "+text(value,"threads")));value=value.getAsJsonObject("events");}
+            if(module.equals("mods")&&value.has("indexState")){String state=text(value.getAsJsonObject("indexState"),"status");indexing=state.equals("INDEXING");if(state.equals("FAILED"))notice.setText(Component.literal(t("索引失败，请查看服务端日志。")));}
+            next=value.has("nextOffset")?value.get("nextOffset").getAsInt():-1;var items=value.has("entries")?value.getAsJsonArray("entries"):value.getAsJsonArray("items");
+            for(var raw:items){var entry=raw.getAsJsonObject();switch(module){case "memory"->memoryCard(entry);case "media"->mediaCard(entry);case "backups"->backupCard(entry);case "mods"->modCard(entry);case "diagnostics"->diagnosticCard(entry);}}
+            if(items.isEmpty())list.addScrollViewChild(WorkspacePanels.text(t("暂无记录")));if(operation==null)notice.setText(Component.literal((indexing?t("正在索引…"):t("记录"))+" · "+text(value,"total")));poll=System.currentTimeMillis()+1000;
+        });
+    }
+    private void memoryCard(JsonObject entry){
+        boolean legacy=scope.equals("legacy");String title=text(entry,legacy?"key":"topic");var card=WorkspacePanels.card(list,title);card.addChild(WorkspacePanels.text(kindName(text(entry,"kind"))+" · "+t("版本")+" "+text(entry,"revision")));card.addChild(WorkspacePanels.text(text(entry,"value")));
+        if(!legacy){card.addChild(WorkspacePanels.text(t("来源")+" · "+text(entry,"source")));if(entry.get("expiresAt").getAsLong()>0)card.addChild(WorkspacePanels.text(t("有效期至")+" · "+new java.util.Date(entry.get("expiresAt").getAsLong())));}
+        if(legacy&&text(entry,"kind").equals("SKILL"))card.addChild(WorkspacePanels.text(t("旧技能笔记仅供参考，不代表步骤已经验证。")));
+        var actions=row();card.addChild(actions);actions.addChild(button("编辑",()->memoryEditor(entry)));actions.addChild(button("遗忘",()->Dialog.showCheckBox(t("遗忘"),title,yes->{if(yes){var args=memoryScope();args.put("kind","forget");args.put("id",text(entry,legacy?"memoryId":"id"));args.put("revision",text(entry,"revision"));mutate(args,this::load);}}).show(window.body)));
+    }
+    private LinkedHashMap<String,String> memoryScope(){var result=new LinkedHashMap<String,String>();result.put("scope",scope);if(scope.equals("dialogue")){if(agents.getValue()==null)throw new IllegalStateException("MEMORY_AGENT_UNAVAILABLE");result.put("agentId",agents.getValue().id);}return result;}
+    private void memoryEditor(JsonObject entry){
+        if(scope.equals("dialogue")&&agents.getValue()==null)return;boolean legacy=scope.equals("legacy"),existing=entry.has("revision");var fixedScope=memoryScope();
+        var editor=host.window("memory-edit",t("编辑记忆"),460,355);editor.body.clearAllChildren();var error=WorkspacePanels.text("");editor.body.addChild(error);
+        var choices=new ArrayList<Choice>();for(String type:legacy?List.of("WORLD_FACT","PLAYER_PREFERENCE","SKILL"):List.of("FACT","PREFERENCE","OBSERVATION"))choices.add(new Choice(type,kindName(type)));
+        var type=new Selector<Choice>();type.setCandidates(choices);type.setValue(choices.stream().filter(c->c.id.equals(text(entry,"kind"))).findFirst().orElse(choices.getFirst()),false);type.setActive(!existing);type.getLayout().height(25).widthPercent(100);editor.body.addChild(type);
+        var topic=field(editor.body,t("主题"),text(entry,legacy?"key":"topic"));topic.setActive(!existing);var value=new TextArea();value.getLayout().flex(1).widthPercent(100);value.setValue(text(entry,"value").split("\n",-1),false);editor.body.addChild(value);
+        var ttl=field(editor.body,t("有效秒数，0 为长期"),entry.has("expiresAt")&&entry.get("expiresAt").getAsLong()>0?Long.toString(Math.max(1,(entry.get("expiresAt").getAsLong()-System.currentTimeMillis())/1000)):"0");ttl.setDisplay(!legacy);
+        editor.body.addChild(button("保存",()->{var args=new LinkedHashMap<>(fixedScope);args.put("kind","save");args.put("type",type.getValue().id);args.put("topic",topic.getValue());args.put("value",String.join("\n",value.getValue()));args.put("revision",existing?text(entry,"revision"):"0");if(legacy)args.put("id",text(entry,"memoryId"));else args.put("ttlSeconds",ttl.getValue());editor.body.setActive(false);send(args).whenComplete((reply,failure)->{editor.body.setActive(true);if(failure!=null)WorkspacePanels.failure(error,failure);else{editor.close();load();}});}));
+    }
+    private void mediaCard(JsonObject entry){var card=WorkspacePanels.card(list,text(entry,"title"));card.addChild(WorkspacePanels.text(kindName(text(entry,"kind"))+" · "+(entry.get("playing").getAsBoolean()?t("播放中"):t("已暂停"))));card.addChild(WorkspacePanels.text(text(entry,"sourceUrl")));card.addChild(WorkspacePanels.text(text(entry,"screenBinding").isBlank()?t("尚未绑定世界位置"):text(entry,"screenBinding")));var controls=row();card.addChild(controls);
+        controls.addChild(button("绑定到当前位置",()->mediaAction(entry,"bind_here",text(entry,"positionMillis"))));controls.addChild(button(entry.get("playing").getAsBoolean()?"暂停":"播放",()->mediaAction(entry,entry.get("playing").getAsBoolean()?"pause":"play",text(entry,"positionMillis"))));controls.addChild(button("从头播放",()->mediaAction(entry,"play","0")));
+    }
+    private void mediaAction(JsonObject entry,String action,String position){mutate(Map.of("kind",action,"id",text(entry,"mediaId"),"revision",text(entry,"revision"),"positionMillis",position),this::load);}
+    private void mediaEditor(){var editor=host.window("media-create",t("添加媒体"),450,290);editor.body.clearAllChildren();var error=WorkspacePanels.text("");editor.body.addChild(error);var title=field(editor.body,t("标题"),"");var url=field(editor.body,t("媒体地址"),"");var type=new Selector<Choice>();var choices=List.of(new Choice("IMAGE",t("图片")),new Choice("VIDEO",t("视频")),new Choice("AUDIO",t("音频")),new Choice("URL",t("自动识别")));type.setCandidates(choices);type.setValue(choices.getFirst(),false);type.getLayout().height(25).widthPercent(100);editor.body.addChild(type);editor.body.addChild(button("添加",()->{editor.body.setActive(false);send(Map.of("kind","create","type",type.getValue().id,"title",title.getValue(),"url",url.getValue())).whenComplete((r,e)->{editor.body.setActive(true);if(e!=null)WorkspacePanels.failure(error,e);else{editor.close();load();}});}));}
+    private void backupCard(JsonObject entry){boolean history=backupKind.equals("history");var card=WorkspacePanels.card(list,history?kindName(text(entry,"action")):text(entry,"label"));card.addChild(WorkspacePanels.text(t("方块数量")+" · "+text(entry,"blocks")));var controls=row();card.addChild(controls);if(history){boolean undo=!entry.get("reverted").getAsBoolean();controls.addChild(button(undo?"撤销":"重做",()->backupStart(undo?"undo":"redo",Map.of("id",text(entry,"id"),"revision",text(entry,"revision")))));}else controls.addChild(button("预览恢复差异",()->backupStart("preview",Map.of("id",text(entry,"id"),"revision",text(entry,"revision")))));}
+    private void snapshotEditor(){var editor=host.window("snapshot-create",t("创建局部快照"),370,230);editor.body.clearAllChildren();var label=field(editor.body,t("快照名称"),t("局部快照"));var radius=new Selector<Integer>();radius.setCandidates(java.util.stream.IntStream.rangeClosed(1,16).boxed().toList());radius.setValue(4,false);radius.getLayout().height(25).widthPercent(100);editor.body.addChild(WorkspacePanels.text(t("以玩家当前位置为中心的方块半径")));editor.body.addChild(radius);editor.body.addChild(button("创建快照",()->{backupStart("create",Map.of("label",label.getValue(),"radius",radius.getValue().toString()));editor.close();}));}
+    private void backupStart(String kind,Map<String,String> extra){if(operation!=null||busy)return;var args=new LinkedHashMap<>(extra);args.put("module","backups");args.put("kind",kind);operation=UUID.randomUUID();operationKind=kind;busy=true;WorkspacePanels.request("workspace.write",args,operation).whenComplete((r,e)->{busy=false;if(e!=null){WorkspacePanels.failure(notice,e);operation=null;}else poll=0;});}
+    private void pollJob(){if(busy||operation==null)return;busy=true;UUID requested=operation;WorkspacePanels.request("workspace.read",Map.of("module","backups","kind","job","operationId",requested.toString())).whenComplete((r,e)->{busy=false;poll=System.currentTimeMillis()+500;if(!live())return;if(e!=null){WorkspacePanels.failure(notice,e);return;}var state=WorkspacePanels.state(r);String status=text(state,"status");notice.setText(Component.literal(kindName(status)+" · "+text(state,"processed")+" / "+text(state,"total")));if(Set.of("RUNNING","SAVING").contains(status))return;operation=null;var result=state.getAsJsonObject("result");if(status.equals("PREVIEWED"))restorePreview(result);else{var detail=host.window("backup-result",t("恢复操作结果"),460,300);detail.body.clearAllChildren();detail.body.addChild(WorkspacePanels.text(kindName(status)+" · "+t("实际写入")+" "+text(state,"written")));if(!text(state,"error").isBlank())detail.body.addChild(WorkspacePanels.text(text(state,"error")));for(var raw:state.getAsJsonArray("conflicts"))detail.body.addChild(WorkspacePanels.text(t("冲突位置")+" · "+raw));detail.body.addChild(WorkspacePanels.text(t("冲突或未知结果不会自动重放。请检查当前世界后重新预览。")));}load();});}
+    private void restorePreview(JsonObject result){var dialog=host.window("backup-preview",t("恢复差异"),470,330);dialog.body.clearAllChildren();dialog.body.addChild(WorkspacePanels.text(t("将修改方块")+" · "+text(result,"changedBlocks")+"   "+t("含方块实体")+" · "+text(result,"blockEntities")));var samples=WorkspacePanels.scroller(dialog.body);for(var raw:result.getAsJsonArray("examples")){var item=raw.getAsJsonObject();samples.addScrollViewChild(WorkspacePanels.text(item.get("position")+"  "+text(item,"before")+" → "+text(item,"after")));}dialog.body.addChild(WorkspacePanels.text(t("仅在当前方块仍与预览一致时恢复；新变化会报告冲突。预览两分钟后过期。")));dialog.body.addChild(button("按此预览恢复",()->{backupStart("restore",Map.of("previewId",text(result,"previewId")));dialog.close();}));}
+    private void modCard(JsonObject entry){var card=WorkspacePanels.card(list,text(entry,"displayName"));card.addChild(WorkspacePanels.text(text(entry,"modId")+" · "+text(entry,"version")));card.addChild(WorkspacePanels.text(t("已索引类")+" "+text(entry,"classCount")+" · "+t("源码")+" "+text(entry,"sourceCount")));card.addChild(button("检查原生 API",()->NativeApiPanel.open(host)));}
+    private void diagnosticCard(JsonObject entry){var card=WorkspacePanels.card(list,text(entry,"action"));card.addChild(WorkspacePanels.text(text(entry,"actor")+" · "+text(entry,"target")));card.addChild(WorkspacePanels.text(text(entry,"payload")));}
+    private java.util.concurrent.CompletableFuture<dev.mineagent.runtime.api.ui.UiProtocol.Receipt> send(Map<String,String> extra){var args=new LinkedHashMap<>(extra);args.put("module",module);return WorkspacePanels.request("workspace.write",args);}
+    private void mutate(Map<String,String> extra,Runnable after){if(busy)return;busy=true;send(extra).whenComplete((r,e)->{busy=false;if(!live())return;if(e!=null)WorkspacePanels.failure(notice,e);else after.run();});}
+    static void tick(){OPEN.removeIf(p->!p.live());if(!NativeWorkspaceScreen.visible())return;long now=System.currentTimeMillis();for(var panel:List.copyOf(OPEN))if(panel.window.visible()&&now>=panel.poll){if(panel.operation!=null)panel.pollJob();else if(panel.indexing)panel.load();}}
+    private static UIElement row(){var row=WorkspacePanels.row();row.getLayout().minHeight(25).heightAuto().flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);return row;}
+    private static TextField field(UIElement parent,String label,String value){parent.addChild(WorkspacePanels.text(label));var field=new TextField().setText(value,false);field.getLayout().height(25).widthPercent(100);parent.addChild(field);return field;}
+    private static String text(JsonObject item,String key){return item.has(key)&&!item.get(key).isJsonNull()?item.get(key).getAsString():"";}
+    private static String kindName(String value){return t(switch(value){case "FACT","WORLD_FACT"->"事实";case "PREFERENCE","PLAYER_PREFERENCE"->"偏好";case "OBSERVATION"->"动态观察";case "SKILL"->"技能笔记";case "IMAGE"->"图片";case "VIDEO"->"视频";case "AUDIO"->"音频";case "URL"->"自动识别";case "RUNNING","SAVING"->"处理中";case "APPLIED"->"已完成";case "CONFLICT"->"发现冲突，未执行";case "PARTIAL"->"部分执行";case "UNKNOWN"->"结果未知";case "REJECTED"->"未执行";case "RESTORE_SNAPSHOT"->"恢复快照";default->value;});}
+    private static String t(String value){return ClientLanguage.t(value);}
+    private static Button button(String value,Runnable action){return NativeUiTheme.button(t(value),action);}
+}

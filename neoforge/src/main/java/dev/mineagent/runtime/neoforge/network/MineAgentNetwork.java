@@ -1520,13 +1520,8 @@ public final class MineAgentNetwork {
                 return;
             }
             if ("restore".equals(payload.action())) {
-                java.util.UUID snapshotId = requiredUuid(payload.values(), "snapshotId");
-                var plan = MineAgentRuntimeServices.snapshots(server).restorePlan(snapshotId);
-                var changes = captureChanges(server, plan);
-                restoreBlocks(server, plan);
-                MineAgentRuntimeServices.changeJournal(server).record(
-                        player.getUUID(), "RESTORE_SNAPSHOT", changes);
-                sendBackupState(player, "");
+                // Old clients cannot bypass the preview-bound, conflict-checked workspace restoration.
+                sendBackupState(player, "BACKUP_PREVIEW_REQUIRED");
                 return;
             }
             if ("undo_change".equals(payload.action())||"redo_change".equals(payload.action())) {

@@ -8,6 +8,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DialogueRecallTest {
     @TempDir Path dir;
+    @Test void editorRejectsConcurrentAiTopicUpdate()throws Exception{
+        try(var store=new DialogueMemoryStore(dir.resolve("editor.db"),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),Clock.systemUTC())){
+            var first=store.remember("FACT","家","旧地址",0,"player:workspace",List.of(),0L);
+            var latest=store.remember("FACT","家","新地址",0);
+            assertThrows(IllegalStateException.class,()->store.remember("FACT","家","过时编辑",0,"player:workspace",List.of(),first.revision()));
+            assertTrue(store.context("回家",8000).contains("新地址"));
+            store.remember("FACT","家","确认的新地址",0,"player:workspace",List.of(),latest.revision());
+            assertTrue(store.context("回家",8000).contains("确认的新地址"));
+        }
+    }
+    @Test void legacyRecallDoesNotExposeOtherPlayersPrivateNotes()throws Exception{
+        var a=UUID.randomUUID();var b=UUID.randomUUID();
+        try(var store=MemoryService.open(dir.resolve("legacy.db"),UUID.randomUUID(),Clock.systemUTC())){
+            store.create(a,dev.mineagent.runtime.api.memory.MemoryKind.WORLD_FACT,"家","共享的家在 x=12");
+            store.create(b,dev.mineagent.runtime.api.memory.MemoryKind.PLAYER_PREFERENCE,"家","私人地址 x=900");
+            assertTrue(store.context(a,"回家",8000).contains("x=12"));assertFalse(store.context(a,"回家",8000).contains("x=900"));
+            assertTrue(store.context(b,"回家",8000).contains("x=900"));assertEquals("",store.context(a,"给我装备",8000));
+        }
+    }
     @Test void homeAndEquipmentAreRecalledAcrossTurnsWithoutCrossingIdentity()throws Exception{
         var file=dir.resolve("memory.db");var world=UUID.randomUUID();var player=UUID.randomUUID();var ai=UUID.randomUUID();var clock=Clock.fixed(Instant.parse("2026-09-29T00:00:00Z"),ZoneOffset.UTC);
         try(var store=new DialogueMemoryStore(file,world,player,ai,clock)){
@@ -16,7 +35,7 @@ class DialogueRecallTest {
             store.remember("FACT","临时目标","过期目标",1);
         }
         try(var store=new DialogueMemoryStore(file,world,player,ai,Clock.offset(clock,Duration.ofSeconds(2)))){
-            assertTrue(store.context("我要回家",8000).contains("x=125"));assertTrue(store.context("给我喜欢的装备",8000).contains("diamond_chestplate"));assertFalse(store.context("临时目标",8000).contains("过期目标"));
+            assertTrue(store.context("我要回家",8000).contains("x=125"));assertTrue(store.context("go home",8000).contains("x=125"));assertEquals("",store.context("help with homework",8000));assertTrue(store.context("给我喜欢的装备",8000).contains("diamond_chestplate"));assertFalse(store.context("临时目标",8000).contains("过期目标"));
             var changed=store.remember("FACT","家","minecraft:overworld x=200 y=80 z=300",0);assertFalse(store.context("回家",8000).contains("x=125"));assertTrue(store.context("回家",8000).contains("x=200"));store.forget(changed.id(),changed.revision());assertFalse(store.context("回家",8000).contains("x=200"));
         }
         try(var store=new DialogueMemoryStore(file,world,UUID.randomUUID(),ai,clock)){assertEquals("",store.context("装备",8000));}

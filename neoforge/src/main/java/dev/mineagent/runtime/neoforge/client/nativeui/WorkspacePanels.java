@@ -33,14 +33,16 @@ final class WorkspacePanels {
         if(host.revealWindow("settings"))return;
         var window=host.window("settings",t("设置"),470,380);var body=window.body;body.clearAllChildren();
         body.addChild(NativeUiTheme.button(t("此世界启用设置"),()->{Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);}));
-        var local=row();local.getLayout().height(25);body.addChild(local);
+        var local=row();local.getLayout().minHeight(25).heightAuto().flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);body.addChild(local);
         local.addChild(NativeUiTheme.button(t("本机资源包"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.RESOURCE)));
         local.addChild(NativeUiTheme.button(t("本机客户端代码"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.CLIENT)));
         local.addChild(NativeUiTheme.button(t("启动扩展"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.BOOT)));
         local.addChild(NativeUiTheme.button(t("代码工作区"),()->NativeStudioPanel.open(host)));
         local.addChild(NativeUiTheme.button(t("原生 API"),()->NativeApiPanel.open(host)));
-        var history=row();history.getLayout().height(25);body.addChild(history);history.addChild(NativeUiTheme.button(t("任务、调度与事件"),()->NativeTasksPanel.open(host)));history.addChild(NativeUiTheme.button(t("内容与反馈"),()->NativeDeliveryPanel.open(host)));history.addChild(NativeUiTheme.button(t("界面与 HUD"),()->NativeViewsPanel.open(host)));history.addChild(NativeUiTheme.button(t("长期偏好"),()->NativePreferencesPanel.open(host)));
-        var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);var footer=row();footer.getLayout().height(25);body.addChild(footer);
+        var history=row();history.getLayout().minHeight(25).heightAuto().flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);body.addChild(history);history.addChild(NativeUiTheme.button(t("任务、调度与事件"),()->NativeTasksPanel.open(host)));history.addChild(NativeUiTheme.button(t("内容与反馈"),()->NativeDeliveryPanel.open(host)));history.addChild(NativeUiTheme.button(t("界面与 HUD"),()->NativeViewsPanel.open(host)));history.addChild(NativeUiTheme.button(t("长期偏好"),()->NativePreferencesPanel.open(host)));
+        var modules=row();modules.getLayout().minHeight(25).heightAuto().flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);body.addChild(modules);
+        for(var section:List.of(dev.mineagent.runtime.api.config.PanelSection.MEMORY,dev.mineagent.runtime.api.config.PanelSection.MEDIA,dev.mineagent.runtime.api.config.PanelSection.MOD_KNOWLEDGE,dev.mineagent.runtime.api.config.PanelSection.BACKUPS,dev.mineagent.runtime.api.config.PanelSection.DIAGNOSTICS))modules.addChild(NativeUiTheme.button(t(section.displayName()),()->NativeWorkspaceModules.open(host,section)));
+        var tabs=row();tabs.getLayout().height(25);body.addChild(tabs);var notice=text(t("读取配置…"));body.addChild(notice);var fields=scroller(body);var footer=row();footer.getLayout().minHeight(25).heightAuto().flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);body.addChild(footer);
         var values=new LinkedHashMap<String,String>();final JsonObject[] snapshot={null};final String[] group={"Provider"};final boolean[] busy={false};
         Runnable[] draw={null},load={null};
         draw[0]=()->{
