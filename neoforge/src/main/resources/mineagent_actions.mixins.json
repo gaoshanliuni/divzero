@@ -38,7 +38,9 @@
     "CombatArrowStateAccess",
     "CombatMobRangeAccess",
     "CombatJumpAccess",
-    "SkillItemUseOutcomeMixin"
+    "SkillItemUseOutcomeMixin",
+    "ObservedPortalRouteMixin",
+    "WaterBucketReceiptMixin"
   ],
   "injectors": {
     "defaultRequire": 1

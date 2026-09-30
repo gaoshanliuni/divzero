@@ -26,6 +26,9 @@ public final class WaterClutchRuntime {
     private static final Map<MinecraftServer,Map<UUID,Integer>> RETRY=new IdentityHashMap<>();
     private WaterClutchRuntime(){}
     public static Map<String,Object> snapshot(ServerPlayer p){return RESULTS.getOrDefault(p.level().getServer(),Map.of()).getOrDefault(p.getUUID(),Map.of("state","IDLE"));}
+    public record PlacementObservation(ServerPlayer player,UUID token,BlockPos source){}
+    public static PlacementObservation beforePlacement(ServerPlayer player){var clutch=ACTIVE.getOrDefault(player.level().getServer(),Map.of()).get(player.getUUID());return clutch!=null&&clutch.player==player&&clutch.action!=null&&!clutch.placed&&clutch.current()&&player.level().getBlockState(clutch.landing.source).isAir()?new PlacementObservation(player,clutch.token,clutch.landing.source):null;}
+    public static void placed(PlacementObservation receipt){var player=receipt.player;var clutch=ACTIVE.getOrDefault(player.level().getServer(),Map.of()).get(player.getUUID());if(clutch==null||clutch.player!=player||!clutch.token.equals(receipt.token)||!clutch.current()||!player.level().getBlockState(receipt.source).is(Blocks.WATER)||!player.level().getFluidState(receipt.source).isSource())return;clutch.placed=true;clutch.placedAt=player.level().getServer().getTickCount();clutch.outcome="NATIVE_SOURCE_PLACED";clutch.record();}
     private static boolean allowed(ServerPlayer p){
         if(!p.isAlive()||p.isSpectator()||p.isCreative()||p.isPassenger())return false;
         if(p instanceof MineAgentPlayer ai){
@@ -67,7 +70,7 @@ public final class WaterClutchRuntime {
                 if(action!=null&&(player.getMainHandItem().is(Items.BUCKET)||player.getOffhandItem().is(Items.BUCKET))&&player.level().getBlockState(landing.source).is(Blocks.WATER)&&player.level().getFluidState(landing.source).isSource()){
                     placed=true;placedAt=now;outcome="NATIVE_SOURCE_PLACED";record();return false;
                 }
-                if(player.onGround()||player.isInWater()){outcome="LANDING_WITHOUT_OWN_SOURCE";return true;}
+                if(player.onGround()||player.isInWater()){if(action!=null&&now-lastUse<10)return false;outcome="LANDING_WITHOUT_OWN_SOURCE";return true;}
                 var predicted=predict(player);if(predicted==null)return false;
                 if(action!=null&&!predicted.source.equals(landing.source)){outcome="PLACEMENT_TARGET_CHANGED";return true;}
                 landing=predicted;offhand=player.getOffhandItem().is(Items.WATER_BUCKET);
@@ -91,7 +94,7 @@ public final class WaterClutchRuntime {
             if(settledAt<0)settledAt=now;if(now-settledAt<3)return false;
             if(player.getEyePosition().distanceTo(Vec3.atCenterOf(landing.source))>player.blockInteractionRange()-.1){outcome="SOURCE_OUT_OF_REACH";return true;}
             offhand=player.getOffhandItem().is(Items.BUCKET);
-            if(!offhand&&!player.getMainHandItem().is(Items.BUCKET)){int slot=slot(player,Items.BUCKET);if(slot<0){outcome="EMPTY_BUCKET_UNAVAILABLE";return true;}actor.select(token,slot);return false;}
+            if(!offhand&&!player.getMainHandItem().is(Items.BUCKET)){int slot=slot(player,Items.BUCKET);if(slot<0){if(now-placedAt<12)return false;outcome="EMPTY_BUCKET_UNAVAILABLE";return true;}actor.select(token,slot);return false;}
             actor.aimImmediately(token,Vec3.atCenterOf(landing.source));
             var hit=player.level().clip(new ClipContext(player.getEyePosition(),player.getEyePosition().add(player.getLookAngle().scale(player.blockInteractionRange())),ClipContext.Block.OUTLINE,ClipContext.Fluid.SOURCE_ONLY,player));
             if(hit.getType()==HitResult.Type.BLOCK&&hit.getBlockPos().equals(landing.source)&&now>lastUse+2){action=UUID.randomUUID();lastUse=now;outcome="RECOVERY_SENT";actor.useOnce(token,action,offhand?InteractionHand.OFF_HAND:InteractionHand.MAIN_HAND);}

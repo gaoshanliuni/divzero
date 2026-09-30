@@ -2468,6 +2468,11 @@
       "bytes": 533
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/KnownPortalRoutes.java",
+      "sha256": "141ef06783931ac19e04bdb10bcc52803814cd08ac8bf9f37a88607010b05478",
+      "bytes": 4758
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/NavigationRetry.java",
       "sha256": "6d63bece1b8250239e2f5b4f2e65ef9757287684657770fc26bf20b1ad68ea21",
       "bytes": 608
@@ -3086,6 +3091,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatPolicyTest.java",
       "sha256": "e8878b8a1a2633fbf736ad136dc01ee9aa6888cc2a306ea0464eb0aa17c624d4",
       "bytes": 3817
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/KnownPortalRoutesTest.java",
+      "sha256": "e69b604cffbb64ff33d487914af495fa556fa6ec93f057d41d5c94c8dca37506",
+      "bytes": 2324
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/NavigationSearchTest.java",
@@ -4833,6 +4843,11 @@
       "bytes": 640
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/ObservedPortalRouteMixin.java",
+      "sha256": "c767f649ed70d0ac30c8d235d9a2c96598b36ed33a939b3ed5836fc7056246dc",
+      "bytes": 1042
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/PotionBrewingAccess.java",
       "sha256": "3651bc64645c0e6bbbff438deb1d8015ed36dc7b444d29e3e4b881d224446f8e",
       "bytes": 410
@@ -4866,6 +4881,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/TwilightNagaSegmentAttackMixin.java",
       "sha256": "4c8f413374ccd17722e299ba9f24839d5d705228f329eecccb36ff0600a948a6",
       "bytes": 683
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/WaterBucketReceiptMixin.java",
+      "sha256": "653473ce3bfe44f5836bcb42db4175dc1fce97085d7efba93cae39ae14719526",
+      "bytes": 1780
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/AgentCommandSuggestionsMixin.java",
@@ -5193,6 +5213,11 @@
       "bytes": 10619
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
+      "sha256": "9f585dfe2c92a2dcacaeb0fa430b32346db1bae42afd32474886bdd231cb9d33",
+      "bytes": 3021
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpConsent.java",
       "sha256": "e8a01669aa7637b924f7b3742d8f9899103cb8a634651db0a289788dbe343461",
       "bytes": 2729
@@ -5224,8 +5249,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",
-      "sha256": "911cb5437df325dca7006f49561f724b1be3ef0fe9f9bbde00a7c4e3cb7529ad",
-      "bytes": 12381
+      "sha256": "3a3f82fa596063c6f4c5d33281c0ffedfe6e1cf57e2849377e5930b38fd5c99e",
+      "bytes": 13480
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/AgentTaskExecutor.java",
@@ -6314,8 +6339,8 @@
     },
     {
       "path": "neoforge/src/main/resources/mineagent_actions.mixins.json",
-      "sha256": "23dc3dd211d26bcc559ebbc1f15e8297a676249b350822dbfb163d6950a1cd3e",
-      "bytes": 1257
+      "sha256": "71c2a770a63b2b112eb63af06887d498cf5f5c028b5ea25fc5b8d3f5825da8b9",
+      "bytes": 1320
     },
     {
       "path": "neoforge/src/main/resources/mineagent_client.mixins.json",
