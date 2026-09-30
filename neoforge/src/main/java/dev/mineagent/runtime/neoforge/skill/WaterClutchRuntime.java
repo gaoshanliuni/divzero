@@ -45,7 +45,7 @@ public final class WaterClutchRuntime {
             if(hit.getType()==HitResult.Type.BLOCK){
                 if(hit.getDirection()!=Direction.UP)return null;var support=hit.getBlockPos();if(!p.level().getFluidState(support).isEmpty())return null;var source=support.above();
                 double drop=p.fallDistance+Math.max(0,p.getY()-hit.getLocation().y);
-                if(p.getType().is(net.minecraft.tags.EntityTypeTags.FALL_DAMAGE_IMMUNE)||Math.floor((drop+1.0E-6-p.getAttributeValue(Attributes.SAFE_FALL_DISTANCE))*p.getAttributeValue(Attributes.FALL_DAMAGE_MULTIPLIER))<=0||!p.level().getBlockState(source).isAir()||!p.level().getFluidState(source).isEmpty())return null;
+                if(p.is(net.minecraft.tags.EntityTypeTags.FALL_DAMAGE_IMMUNE)||Math.floor((drop+1.0E-6-p.getAttributeValue(Attributes.SAFE_FALL_DISTANCE))*p.getAttributeValue(Attributes.FALL_DAMAGE_MULTIPLIER))<=0||!p.level().getBlockState(source).isAir()||!p.level().getFluidState(source).isEmpty())return null;
                 if(p.level().environmentAttributes().getValue(net.minecraft.world.attribute.EnvironmentAttributes.WATER_EVAPORATES,source)||!p.level().mayInteract(p,support))return null;
                 return new Landing(support,source,new Vec3(source.getX()+.5,hit.getLocation().y,source.getZ()+.5),drop);
             }
@@ -53,9 +53,9 @@ public final class WaterClutchRuntime {
         }return null;
     }
     private static final class Clutch {
-        final ServerPlayer player;final SkillActor actor;final UUID token=UUID.randomUUID();final Object level;final int originalSlot,started;final float healthBefore;final ItemStack originalMain;
+        final ServerPlayer player;final SkillActor actor;final UUID token=UUID.randomUUID();final Object level;final int originalSlot,started;final String dimension;final float healthBefore;final ItemStack originalMain;
         Landing landing;boolean placed,offhand,completing;int restoreAt;int placedAt,settledAt=-1,lastUse=-100,tries;String outcome="PREDICTED";UUID action;
-        Clutch(ServerPlayer player,Landing landing){this.player=player;this.level=player.level();this.landing=landing;originalSlot=player.getInventory().getSelectedSlot();started=player.level().getServer().getTickCount();healthBefore=player.getHealth();originalMain=player.getMainHandItem().copy();actor=player instanceof MineAgentPlayer ai?new AiSkillActor(ai):PlayerSkillActor.emergency(player);}
+        Clutch(ServerPlayer player,Landing landing){this.player=player;this.level=player.level();this.dimension=player.level().dimension().identifier().toString();this.landing=landing;originalSlot=player.getInventory().getSelectedSlot();started=player.level().getServer().getTickCount();healthBefore=player.getHealth();originalMain=player.getMainHandItem().copy();actor=player instanceof MineAgentPlayer ai?new AiSkillActor(ai):PlayerSkillActor.emergency(player);}
         boolean current(){return player.level()==level&&allowed(player)&&actor!=null&&actor.current();}
         boolean tick(){
             int now=player.level().getServer().getTickCount();if(!current()||now-started>100){outcome=placed?"RECOVERY_DEFERRED":"CANCELLED";return true;}
@@ -102,8 +102,8 @@ public final class WaterClutchRuntime {
             if(!originalMain.isEmpty()&&!ItemStack.isSameItemSameComponents(player.getMainHandItem(),originalMain))for(int i=0;i<36;i++)if(ItemStack.isSameItemSameComponents(player.getInventory().getItem(i),originalMain)){actor.select(token,i);return;}
             actor.select(token,originalSlot);
         }
-        void record(){var data=new LinkedHashMap<String,Object>();data.put("state",outcome);data.put("operation",token.toString());data.put("source",List.of(landing.source.getX(),landing.source.getY(),landing.source.getZ()));data.put("predictedFallDistance",landing.drop);data.put("placed",placed);data.put("healthBefore",healthBefore);data.put("healthAfter",player.getHealth());data.put("placementAttempts",tries);data.put("tick",player.level().getServer().getTickCount());RESULTS.computeIfAbsent(player.level().getServer(),s->new HashMap<>()).put(player.getUUID(),Map.copyOf(data));}
-        void finish(){try{if(actor!=null){actor.stop(token);actor.controls().release(token);}}finally{record();}}
+        void record(){var data=new LinkedHashMap<String,Object>();data.put("state",outcome);data.put("operation",token.toString());data.put("source",List.of(landing.source.getX(),landing.source.getY(),landing.source.getZ()));data.put("predictedFallDistance",landing.drop);data.put("placed",placed);data.put("dimension",dimension);data.put("equipmentRestored",restored());data.put("healthBefore",healthBefore);data.put("healthAfter",player.getHealth());data.put("placementAttempts",tries);data.put("tick",player.level().getServer().getTickCount());RESULTS.computeIfAbsent(player.level().getServer(),s->new HashMap<>()).put(player.getUUID(),Map.copyOf(data));}
+        void finish(){try{if(actor!=null&&actor.controls().owns(token,BodyDomain.INVENTORY)){actor.stop(token);actor.controls().release(token);}}finally{record();}}
     }
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
         var server=event.getServer();if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server))return;var active=ACTIVE.computeIfAbsent(server,s->new HashMap<>());var retry=RETRY.computeIfAbsent(server,s->new HashMap<>());
