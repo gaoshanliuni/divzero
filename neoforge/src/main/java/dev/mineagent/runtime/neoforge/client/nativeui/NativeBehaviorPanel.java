@@ -107,6 +107,7 @@ public final class NativeBehaviorPanel {
 
     private static NativeBehaviorPanel smoke(String agent){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return OPEN.stream().filter(p->p.agent.equals(agent)&&p.current.getAsBoolean()&&p.hostScreen==net.minecraft.client.Minecraft.getInstance().screen).reduce((a,b)->b).orElseThrow();}
     public static boolean smokeAssist(String agent){return smoke(agent).assistCreator;}
+    public static boolean smokeRevealAssist(String agent){var b=smoke(agent).assist;float y=b.getPositionY()+b.getSizeHeight()/2;for(var parent=b.getParent();parent!=null;parent=parent.getParent())if(parent instanceof ScrollerView scroll){float low=scroll.viewPort.getContentY(),high=low+scroll.viewPort.getContentHeight(),range=scroll.getContainerHeight()-scroll.viewPort.getContentHeight();if(range>0&&(y-b.getSizeHeight()/2<low||y+b.getSizeHeight()/2>high)){scroll.verticalScroller.setNormalizedValue(Math.clamp(scroll.verticalScroller.getNormalizedValue()+(y-(low+high)/2)/range,0,1));return false;}}return b.getSizeHeight()>0;}
     public static void smokeRadius(String agent,int value){smoke(agent).radius.setValue(value,true);}
     public static Map<String,Object> smokeRegion(String agent){var p=smoke(agent);return Map.of("source",p.region.getValue().id,"radius",p.radius.getValue(),"revision",p.regionRevision);}
     public static boolean smokeReady(String agent){return smoke(agent).state!=null&&!smoke(agent).loading&&!smoke(agent).saving&&!smoke(agent).actorPending;}

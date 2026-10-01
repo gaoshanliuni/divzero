@@ -4154,8 +4154,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "d552e18b4b313d970450b06636b4c3d9f76e48e0a6d0470a5f034fb554aa6613",
-      "bytes": 224598
+      "sha256": "5f311adf18b4747c5b21eb2d9ccf00e52ce2b6fc35cac0e353a1912fdd887f92",
+      "bytes": 225161
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -4424,8 +4424,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBehaviorPanel.java",
-      "sha256": "9e1473b0dad16c73737385e05830030c9effe9e4a02334ce5eb9202c909e6fa0",
-      "bytes": 30339
+      "sha256": "52b4a62f65d2835ca5a6c394e3c7ee88233c65fb4c125a8fcfd3c12cc5c55e41",
+      "bytes": 30972
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",
