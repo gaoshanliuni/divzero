@@ -79,9 +79,9 @@ public final class PvpMapClient {
             content=new UIElement();content.getLayout().flex(1).minHeight(0).widthPercent(100);card.addChild(content);home();
         }
         private void home(){
-            content.clearAllChildren();var scroll=WorkspacePanels.scroller(content);var columns=WorkspacePanels.row();columns.getLayout().alignItems(AlignItems.FLEX_START);scroll.addScrollViewChild(columns);
-            for(String actor:List.of("human","ai")){var column=new UIElement();column.getLayout().flex(1).minWidth(0).gapAll(4);columns.addChild(column);column.addChild(NativeUiTheme.text(t(actor.equals("human")?"我的装备":"AI 的装备"),NativeUiTheme.ACCENT,10));
-                for(String slot:List.of("head","chest","legs","feet","mainhand","offhand")){String id=data.getAsJsonObject("profile").getAsJsonObject(actor).get(slot).getAsString();var button=NativeUiTheme.button(slotName(slot)+" · "+itemName(id),()->pick(actor,slot));button.setId("pvp-"+actor+"-"+slot);button.getLayout().widthPercent(100).minHeight(24).height(24).marginAll(0).paddingHorizontal(3);column.addChild(button);}
+            content.clearAllChildren();boolean compact=Minecraft.getInstance().getWindow().getGuiScaledHeight()<280;var scroll=WorkspacePanels.scroller(content);var columns=WorkspacePanels.row();columns.getLayout().alignItems(AlignItems.FLEX_START);scroll.addScrollViewChild(columns);
+            for(String actor:List.of("human","ai")){var column=new UIElement();column.getLayout().flex(1).minWidth(0).gapAll(compact?2:4);columns.addChild(column);column.addChild(NativeUiTheme.text(t(actor.equals("human")?"我的装备":"AI 的装备"),NativeUiTheme.ACCENT,10));
+                for(String slot:List.of("head","chest","legs","feet","mainhand","offhand")){String id=data.getAsJsonObject("profile").getAsJsonObject(actor).get(slot).getAsString();var button=NativeUiTheme.button(slotName(slot)+" · "+itemName(id),()->pick(actor,slot));button.setId("pvp-"+actor+"-"+slot);button.getLayout().widthPercent(100).minHeight(compact?20:24).height(compact?20:24).marginAll(0).paddingHorizontal(3);column.addChild(button);}
             }
             content.addChild(NativeUiTheme.text(t("双方独立选装，弓和弩自动配发箭矢。"),NativeUiTheme.MUTED,8));
             var buttons=WorkspacePanels.row();buttons.getLayout().height(25).flexShrink(0);content.addChild(buttons);

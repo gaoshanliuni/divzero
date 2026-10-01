@@ -70,8 +70,8 @@ public final class NativeHumanDuel {
                 player.level().getGameRules().set(GameRules.SPAWN_MOBS,false,server);
                 player.level().getGameRules().set(GameRules.PVP,true,server);
                 player.level().getGameRules().set(GameRules.KEEP_INVENTORY,true,server);
-                server.getCommands().performPrefixedCommand(player.createCommandSourceStack(),"difficulty normal");
-                server.getCommands().performPrefixedCommand(player.createCommandSourceStack(),"time set day");
+                server.getCommands().performPrefixedCommand(player.createCommandSourceStack().withSuppressedOutput(),"difficulty normal");
+                server.getCommands().performPrefixedCommand(player.createCommandSourceStack().withSuppressedOutput(),"time set day");
                 run=new Run(player);RUNS.put(server,run);
             }
             if(run.saved.isCompletedExceptionally())throw new IllegalStateException("数据保存失败，已停止对练");
@@ -163,7 +163,7 @@ public final class NativeHumanDuel {
         result.put("samples",LocalPolicyRuntime.endRecording(run.ai));result.put("initialModelHash",run.modelHash);result.put("finalModelHash",hash(LocalPolicyRuntime.snapshot(run.ai).json()));result.put("frames",List.copyOf(run.frames));result.put("damageEvents",List.copyOf(run.damage));
         if(PvpMapSupport.enabled()){var profile=PvpMapSupport.profile(run.player);result.put("loadout",Map.of("human",profile.human(),"ai",profile.ai()));PvpMapSupport.save(run.player,profile.finish(run.finishReason,Math.min(180,run.series.elapsed(run.endNanos))));archiveRound(run,result);run.matches.clear();}
         run.matches.add(result);run.series.finish();String text=switch(run.finishReason){case "HUMAN_WON"->"你获胜";case "AI_WON"->"AI 获胜";default->"平局";};run.finishReason="";
-        retire(run);persist(run);tell(run.player,"第 "+run.series.completed()+" 场结束："+text+"。你的伤害 "+String.format(Locale.ROOT,"%.1f",run.humanDamage)+"，AI 伤害 "+String.format(Locale.ROOT,"%.1f",run.aiDamage)+"。");menu(run.player,run);
+        retire(run);persist(run);run.player.sendSystemMessage(Component.empty(),true);tell(run.player,"第 "+run.series.completed()+" 场结束："+text+"。你的伤害 "+String.format(Locale.ROOT,"%.1f",run.humanDamage)+"，AI 伤害 "+String.format(Locale.ROOT,"%.1f",run.aiDamage)+"。");menu(run.player,run);
     }
     private static void retire(Run run){if(run.ai!=null){IsolatedCombatArena.retire(run.player,run.ai);run.ai=null;}}
     private static void abort(Run run,String reason){
@@ -208,8 +208,8 @@ public final class NativeHumanDuel {
     private static void decorate(ServerPlayer p){
         for(int x=-16;x<=16;x++)for(int z=784;z<=816;z++)p.level().setBlock(new net.minecraft.core.BlockPos(x,100,z),(Math.abs(x)==16||z==784||z==816?net.minecraft.world.level.block.Blocks.CHISELED_STONE_BRICKS:(x+z)%2==0?net.minecraft.world.level.block.Blocks.SMOOTH_STONE:net.minecraft.world.level.block.Blocks.POLISHED_ANDESITE).defaultBlockState(),2);
         for(int x=-17;x<=17;x++)for(int z=783;z<=817;z++)if(Math.abs(x)==17||z==783||z==817)for(int y=101;y<=105;y++)p.level().setBlock(new net.minecraft.core.BlockPos(x,y,z),(y==105?net.minecraft.world.level.block.Blocks.SEA_LANTERN:y>=103?net.minecraft.world.level.block.Blocks.GLASS:net.minecraft.world.level.block.Blocks.STONE_BRICKS).defaultBlockState(),2);
-        p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack(),"spawnpoint @s -5 101 800 -90");
-        p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack(),"setworldspawn -5 101 800 -90");
+        p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withSuppressedOutput(),"spawnpoint @s -5 101 800 -90");
+        p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withSuppressedOutput(),"setworldspawn -5 101 800 -90");
     }
     @SubscribeEvent public static void protectArena(net.neoforged.neoforge.event.level.block.BreakBlockEvent event){if(PvpMapSupport.enabled()&&event.getLevel() instanceof net.minecraft.server.level.ServerLevel level&&level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)&&ARENA.space().contains(Vec3.atCenterOf(event.getPos()))){event.setCanceled(true);event.setNotifyClient(true);}}
     private static void fixtureTick(MinecraftServer server){
