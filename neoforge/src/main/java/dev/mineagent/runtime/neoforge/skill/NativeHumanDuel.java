@@ -24,6 +24,7 @@ import java.util.concurrent.*;
 @EventBusSubscriber(modid="mineagent_runtime")
 public final class NativeHumanDuel {
     private static final ObjectMapper JSON=new ObjectMapper();
+    private static final boolean ENABLED=Boolean.getBoolean("mineagent.humanDuel")&&Files.isRegularFile(Path.of("human-duel-instance.json"));
     private static final Map<MinecraftServer,Run> RUNS=new IdentityHashMap<>();
     private static final Set<MinecraftServer> OFFERED=Collections.newSetFromMap(new IdentityHashMap<>());
     private static final ExecutorService IO=Executors.newSingleThreadExecutor(Thread.ofPlatform().daemon().name("divzero-human-duel-data").factory());
@@ -36,10 +37,10 @@ public final class NativeHumanDuel {
         final Path directory;MineAgentPlayer ai;ServerPlayer player;UUID match;CompletableFuture<?> start;
         CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);String error="",finishReason="";
         long startNanos,endNanos;int startTick,lastCountdown=-1;double humanDamage,aiDamage;int humanHits,aiHits;
-        int fixtureStage;
+        int fixtureStage;List<LocalActionPolicy.Sample> partialSamples=List.of();
         Run(ServerPlayer player){this.player=player;owner=player.getUUID();server=player.level().getServer();level=player.level();directory=server.getServerDirectory().resolve("human-duel").resolve(id.toString());}
     }
-    public static boolean enabled(){return Boolean.getBoolean("mineagent.humanDuel");}
+    public static boolean enabled(){return ENABLED;}
     static boolean participant(MineAgentPlayer body){var run=RUNS.get(body.level().getServer());return enabled()&&run!=null&&run.ai==body;}
     public static void register(com.mojang.brigadier.CommandDispatcher<net.minecraft.commands.CommandSourceStack> dispatcher){
         dispatcher.register(Commands.literal("ai").then(Commands.literal("duel").requires(s->enabled()&&s.getPlayer()!=null)
@@ -110,7 +111,7 @@ public final class NativeHumanDuel {
             if(run.saved.isCompletedExceptionally()){abort(run,"DATA_WRITE_FAILED");return;}
             long now=System.nanoTime();
             if(run.series.phase()==HumanDuelSeries.Phase.COUNTDOWN){
-                int seconds=(int)run.series.remainingSeconds(now);if(seconds!=run.lastCountdown){run.lastCountdown=seconds;online.displayClientMessage(Component.literal("对练倒计时："+seconds),true);}
+                int seconds=(int)run.series.remainingSeconds(now);if(seconds!=run.lastCountdown){run.lastCountdown=seconds;online.sendSystemMessage(Component.literal("对练倒计时："+seconds),true);}
                 if(run.series.countdownComplete(now)){
                     placeHuman(online);IsolatedCombatArena.place(online,run.ai,ARENA,1,new Vec3(5.5,101,800.5));
                     PvpConsent.grantFromPanel(online,run.ai.agentId(),online);
@@ -128,7 +129,7 @@ public final class NativeHumanDuel {
                 if(!result.isEmpty()){endCombat(run,result);return;}
                 if(!ARENA.contains(online.position())||!ARENA.contains(run.ai.position())||run.ai.level()!=run.level){abort(run,"LEFT_ARENA");return;}
                 if(server.getTickCount()%4==0)run.frames.add(Map.of("tick",server.getTickCount()-run.startTick,"seconds",run.series.elapsed(now),"human",observe(online),"ai",observe(run.ai)));
-                if(server.getTickCount()%20==0)online.displayClientMessage(Component.literal("第 "+run.series.round()+" / 5 场 · 剩余 "+run.series.remainingSeconds(now)+" 秒 · /ai duel stop 停止"),true);
+                if(server.getTickCount()%20==0)online.sendSystemMessage(Component.literal("第 "+run.series.round()+" / 5 场 · 剩余 "+run.series.remainingSeconds(now)+" 秒 · /ai duel stop 停止"),true);
                 if(server.getTickCount()%100==0)persist(run);
             }
         }catch(Throwable failure){abort(run,Objects.toString(failure.getMessage(),failure.getClass().getSimpleName()));}
@@ -162,12 +163,12 @@ public final class NativeHumanDuel {
     private static void abort(Run run,String reason){
         if(run.series.phase()==HumanDuelSeries.Phase.STOPPED||run.series.phase()==HumanDuelSeries.Phase.COMPLETE)return;
         run.error=reason;run.series.stop();run.finishReason="";
-        if(run.ai!=null){PvpConsent.revoke(run.player,run.ai.agentId());run.ai.controls().cancel();run.ai.movementController().stop();LocalPolicyRuntime.endRecording(run.ai);try{retire(run);}catch(Exception e){run.ai.discard();run.ai=null;}}
+        if(run.ai!=null){PvpConsent.revoke(run.player,run.ai.agentId());run.ai.controls().cancel();run.ai.movementController().stop();run.partialSamples=LocalPolicyRuntime.endRecording(run.ai);try{retire(run);}catch(Exception e){run.ai.discard();run.ai=null;}}
         run.player.setInvulnerable(true);persist(run);tell(run.player,"对练已停止，完成 "+run.series.completed()+" / 5 场。原因："+reason);
     }
     private static Map<String,Object> snapshot(Run run){
         var data=new LinkedHashMap<String,Object>();data.put("schema",1);data.put("source",Boolean.getBoolean("mineagent.humanDuelFixture")?"FIXTURE_ONLY":"HUMAN_DUEL");data.put("series",run.id.toString());data.put("status",run.series.phase().name());data.put("error",run.error);data.put("roundLimitSeconds",180);data.put("requiredRounds",5);data.put("completedRounds",run.series.completed());data.put("human",run.owner.toString());data.put("model",run.model);data.put("initialModelHash",run.modelHash);data.put("boost",false);data.put("onlineUpdates",false);data.put("equipment",List.of("minecraft:diamond_sword","minecraft:iron_helmet","minecraft:iron_chestplate","minecraft:iron_leggings","minecraft:iron_boots"));data.put("matches",List.copyOf(run.matches));
-        if(run.series.phase()==HumanDuelSeries.Phase.FIGHTING)data.put("partial",Map.of("match",run.match.toString(),"frames",List.copyOf(run.frames),"damageEvents",List.copyOf(run.damage)));
+        if(run.match!=null&&(run.series.phase()==HumanDuelSeries.Phase.FIGHTING||run.series.phase()==HumanDuelSeries.Phase.STOPPED))data.put("partial",Map.of("match",run.match.toString(),"frames",List.copyOf(run.frames),"damageEvents",List.copyOf(run.damage),"samples",run.partialSamples));
         return data;
     }
     private static void persist(Run run){
@@ -197,7 +198,7 @@ public final class NativeHumanDuel {
             }
             if(run.series.phase()==HumanDuelSeries.Phase.STOPPED){
                 if(run.fixtureStage!=1||run.ai!=null||run.series.completed()!=1||run.series.ready(System.nanoTime()))throw new IllegalStateException("HUMAN_FIXTURE_STOP_FAILED_"+run.error);
-                run.fixtureStage=2;fixtureResult(server,"PASS",Map.of("completedFixtureRounds",1,"aiNativeHits",run.aiHits,"frozenSamples",true,"deathImmediateStop",true,"secondCountdownCancelled",true,"source","FIXTURE_ONLY"));
+                run.fixtureStage=2;fixtureResult(server,"PASS",Map.of("completedFixtureRounds",1,"aiNativeHits",JSON.valueToTree(run.matches.getFirst()).path("ai").path("hits").asInt(),"frozenSamples",true,"deathImmediateStop",true,"secondCountdownCancelled",true,"source","FIXTURE_ONLY"));
             }
             if(server.getTickCount()>1800)throw new IllegalStateException("HUMAN_FIXTURE_TIMEOUT");
         }catch(Throwable error){if(run!=null){run.fixtureStage=2;abort(run,error.toString());}fixtureResult(server,"FAILED",Map.of("error",error.toString(),"source","FIXTURE_ONLY"));}

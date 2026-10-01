@@ -5719,8 +5719,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "9ba632edb6d0d26e4a279370d075979e32a4545f7743541d79462fdda9eac6ef",
-      "bytes": 22409
+      "sha256": "0a1f8f781210057f71a8da217b17fc18e02b3c1ef9a7138a8f5f93d9fd07b9e8",
+      "bytes": 22747
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
