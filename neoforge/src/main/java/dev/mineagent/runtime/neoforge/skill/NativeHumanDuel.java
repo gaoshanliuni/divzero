@@ -67,7 +67,7 @@ public final class NativeHumanDuel {
                 player.level().getGameRules().set(GameRules.KEEP_INVENTORY,true,server);
                 server.getCommands().performPrefixedCommand(player.createCommandSourceStack(),"difficulty normal");
                 server.getCommands().performPrefixedCommand(player.createCommandSourceStack(),"time set day");
-                run=new Run(player);RUNS.put(server,run);persist(run);
+                run=new Run(player);RUNS.put(server,run);
             }
             if(run.saved.isCompletedExceptionally())throw new IllegalStateException("数据保存失败，已停止对练");
             if(!run.saved.isDone()||run.ai!=null){tell(player,"正在保存上一场数据，请稍候再准备。");return 0;}
@@ -115,7 +115,7 @@ public final class NativeHumanDuel {
                 if(run.series.countdownComplete(now)){
                     placeHuman(online);IsolatedCombatArena.place(online,run.ai,ARENA,1,new Vec3(5.5,101,800.5));
                     PvpConsent.grantFromPanel(online,run.ai.agentId(),online);
-                    LocalPolicyRuntime.beginRecording(run.ai);run.series.starting();
+                    run.series.starting();
                     var args=JSON.createObjectNode().put("id","human_duel_"+run.series.round()).put("actor","ai").put("expected_revision",0).put("target",online.getUUID().toString()).put("dimension",online.level().dimension().identifier().toString());
                     args.putObject("combat").put("engagement","SPECIFIED").put("target",online.getUUID().toString()).put("strategy","AUTO").put("awareness",40).put("leash",48);
                     run.start=SkillRuntime.get(server).start(online,run.ai.agentId(),UUID.randomUUID(),null,args,SkillSpec.Kind.COMBAT,()->run.finishReason.isEmpty()&&(run.series.phase()==HumanDuelSeries.Phase.STARTING||run.series.phase()==HumanDuelSeries.Phase.FIGHTING));
@@ -123,7 +123,7 @@ public final class NativeHumanDuel {
                 }
             }else if(run.series.phase()==HumanDuelSeries.Phase.STARTING){
                 if(now-run.startNanos>20_000_000_000L)throw new IllegalStateException("启动战斗超时");
-                if(run.start.isDone()){var receipt=run.start.join();if(!(receipt instanceof Map<?,?> m)||!Objects.equals(m.get("status"),"STARTED"))throw new IllegalStateException("战斗未启动");run.series.started(now);online.setInvulnerable(false);run.ai.setInvulnerable(false);run.startTick=server.getTickCount();tell(online,"开始！第 "+run.series.round()+" / 5 场，最长 3 分钟。");persist(run);}
+                if(run.start.isDone()){var receipt=run.start.join();if(!(receipt instanceof Map<?,?> m)||!Objects.equals(m.get("status"),"STARTED"))throw new IllegalStateException("战斗未启动");run.series.started(now);LocalPolicyRuntime.beginRecording(run.ai);online.setInvulnerable(false);run.ai.setInvulnerable(false);run.startTick=server.getTickCount();tell(online,"开始！第 "+run.series.round()+" / 5 场，最长 3 分钟。");persist(run);}
             }else if(run.series.phase()==HumanDuelSeries.Phase.FIGHTING){
                 String result=run.series.outcome(now,online.isAlive(),run.ai.isAlive());
                 if(!result.isEmpty()){endCombat(run,result);return;}
