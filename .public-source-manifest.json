@@ -4454,8 +4454,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
-      "sha256": "3c0a3cb44990a5c5f2d0b0cd68fd897aa619dcb52aeab577ce7f310ffc1b7582",
-      "bytes": 11889
+      "sha256": "11894d0ee094380923f045edebe811222379a62c5fa79a0011064ebd6e7d7484",
+      "bytes": 12206
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
@@ -5934,8 +5934,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "bd7376945cea2acf5f2909ce0a50c14b02840c58546553f217afa32f35d19a3c",
-      "bytes": 71848
+      "sha256": "43636dc5bce57b007077c9bb1c359fef7bb04cefb8604a427c0f8e8403d655ac",
+      "bytes": 73245
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
