@@ -100,7 +100,7 @@ if ($selected.Count -ne $publishNames.Count) { throw 'RELEASE_RUNTIME_LIST_MISSI
 $files=@(Select-RuntimeFiles $info $files $manifest)
 $notes+="`n`n### 运行 JAR 的 SHA-256`n`n| 文件 | SHA-256 |`n|---|---|`n"
 foreach ($file in $files) { $notes+='| '+$file.Name+' | `'+$manifest[$file.Name]+'` |'+"`n" }
-$notes+="`nRelease 只上传上表运行 JAR。源码、许可证和构建审计使用正文链接或 JAR 内副本；完整提供对应来源信息。`n"
+$notes+="`n主模组和依赖以独立运行 JAR 提供，可选地图另附独立存档 ZIP。源码、许可证和构建审计使用正文链接或 JAR 内副本；完整提供对应来源信息。`n"
 if ($DryRun) { Write-Output "RELEASE_DRY_RUN_TAG=$tag"; Write-Output "RELEASE_TITLE=$title"; Write-Output $notes; Write-Output "VERIFIED_FILES=$verifiedCount"; Write-Output "PUBLISHED_JARS=$($files.Count)"; foreach ($file in $files) { Write-Output "PUBLISH_JAR=$($file.Name)" }; return }
 if (-not $env:GH_TOKEN) { throw 'RELEASE_TOKEN_MISSING' }
 $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28';'User-Agent'='DivZero automatic development releases'}

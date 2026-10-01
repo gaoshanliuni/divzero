@@ -64,7 +64,7 @@ final class CombatPositioning {
             if(protectedEntity!=null&&protectedEntity!=p&&protectedEntity!=work.combat.selected&&protectedEntity.level()==p.level()&&!(protectedEntity instanceof net.minecraft.world.entity.player.Player other&&(other.isCreative()||other.isSpectator()))&&point.distanceTo(protectedEntity.position())<p.distanceTo(protectedEntity)-.25)continue;
             var middle=p.position().lerp(point,.5);double risk=work.combat.risk(work,point),future=Math.max(work.combat.collisionRisk(work,middle,2),work.combat.collisionRisk(work,point,4));
             if(work.combat.attacks.routeRisk(work,point,4,4)>0)continue;
-            double separation=point.distanceTo(center)-p.position().distanceTo(center);var delta=point.subtract(p.position());
+            double separation=point.distanceTo(center)-p.position().distanceTo(center);if(separation<.15)continue;var delta=point.subtract(p.position());
             var candidate=LocalPolicyRuntime.features(p,p.position().distanceTo(center),-separation,risk+future,1,delta,0,false,work.session.spec().kind().ordinal(),0);
             double score=risk*2+future-separation*5+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*1.5)+(model==null?0:model.cost(candidate)*8);
             if(score<best){best=score;selected=edge;features=candidate;}

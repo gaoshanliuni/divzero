@@ -5674,8 +5674,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "1970e766c61bf52547d2e5b28001e9e128e0521bb26dfa07157031140e648b6e",
-      "bytes": 31845
+      "sha256": "b1b30c2fcc7059a8018daf7606dae71af67f6bd3ac16695fc5a562fe179dd90b",
+      "bytes": 31872
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",
@@ -5684,8 +5684,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "5f04d36069ce61200cd96e679c77286037a4a879db8eb41d6012ed078e7dab3c",
-      "bytes": 41866
+      "sha256": "c9ba782a71986f509053301e534cf7c5e45eb76860dbbe61f851cdd99aac1e2f",
+      "bytes": 41910
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -7249,8 +7249,8 @@
     },
     {
       "path": "scripts/publish-ci-release.ps1",
-      "sha256": "113fffef6d70663a678a8b822e4ce14769f34e47ad79fd5c1a6cf8d8f1f6423e",
-      "bytes": 13554
+      "sha256": "8d5a2b2a9c6bb1dd83df2f741e33100beaa1bfc80c0253bae722315ee767a18c",
+      "bytes": 13602
     },
     {
       "path": "scripts/record-feature-video.py",

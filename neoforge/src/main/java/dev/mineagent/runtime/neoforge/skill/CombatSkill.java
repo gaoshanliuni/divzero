@@ -263,11 +263,16 @@ final class CombatSkill {
         if(target==null||w.session.spec().combat().strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.ranged.contact.reset();return false;}
         boolean was=w.ranged.contact.active();boolean active=w.ranged.contact.update(w.tick(),w.player().distanceTo(target),contacts>0,NativeRangedCombat.rangedOnly(w),CombatEquipmentAdapter.hasMeleeWeapon(w),NativeRangedCombat.loadedShot(w));
         if(!active){if(was){w.positioning.reset();w.session.add("rangedContactResumptions",1);}return false;}
-        if(!was){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=w.shieldOperation=w.healingOperation=null;w.ranged.planned=-10000;w.ranged.release=null;w.positioning.reset();w.ranged.escapePosition=null;w.ranged.escapeStalled=0;w.ranged.lateralUntil=0;w.session.add("rangedContactEscapes",1);}
+        if(!was){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=w.shieldOperation=w.healingOperation=null;w.ranged.planned=-10000;w.ranged.release=null;w.positioning.reset();w.ranged.escapePosition=w.player().position();w.ranged.escapeStalled=w.tick();w.ranged.lateralUntil=0;w.session.add("rangedContactEscapes",1);}
         phase(w,"RANGED_CONTACT_ESCAPE");
-        if(w.ranged.escapeStalled>=8){w.ranged.escapeStalled=0;w.ranged.lateralSide=w.footwork.choose(w.tick(),w.positioning.sideRisk(w,1),w.positioning.sideRisk(w,-1));if(w.ranged.lateralSide==0)w.ranged.lateralSide=1;w.ranged.lateralUntil=w.tick()+30;w.positioning.reset();w.session.add("rangedBlockedRouteChanges",1);}
+        if(w.tick()-w.ranged.escapeStalled>=12){
+            if(w.ranged.escapePosition!=null&&w.ranged.escapePosition.distanceToSqr(w.player().position())<.0625&&!w.positioning.pending()){
+                w.ranged.lateralSide=w.footwork.choose(w.tick(),w.positioning.sideRisk(w,1),w.positioning.sideRisk(w,-1));if(w.ranged.lateralSide==0)w.ranged.lateralSide=1;w.ranged.lateralUntil=w.tick()+30;w.positioning.reset();w.session.add("rangedBlockedRouteChanges",1);
+            }
+            w.ranged.escapePosition=w.player().position();w.ranged.escapeStalled=w.tick();
+        }
         var exit=w.ranged.lateralUntil>w.tick()?w.positioning.choose(w,w.ranged.lateralSide>0?"SIDE_LEFT":"SIDE_RIGHT",10):w.positioning.retreatStep(w);if(exit==null&&!w.positioning.pending())exit=w.positioning.choose(w,"RETREAT",10);
-        if(exit!=null&&w.player().onGround()&&w.ranged.escapePosition!=null&&w.ranged.escapePosition.distanceToSqr(w.player().position())<.0025)w.ranged.escapeStalled++;else w.ranged.escapeStalled=0;w.ranged.escapePosition=w.player().position();move(w,exit,target,true);
+        move(w,exit,target,true);
         if(w.player().isSprinting())w.session.add("rangedEscapeSprintTicks",1);
         if(exit==null&&!w.positioning.pending()&&NativeAttackReadiness.ready(w.player())&&w.tick()-w.lastAttackAt>=4&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(w.player(),target).isPresent()){
             w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(w.player(),target).orElse(target.getEyePosition()));w.actor.attack(w.token(),UUID.randomUUID(),target);w.lastAttackAt=w.tick();w.session.add("rangedBlockedBreakthroughs",1);
