@@ -5589,8 +5589,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "7d92baa39689affcf42160a35be97113649adb1d97c50e85c5f39a5472d192f5",
-      "bytes": 31199
+      "sha256": "cff29feb0d1d01b53c3478a20ecde24783964eb35314a599c4b15055a663b8ec",
+      "bytes": 31792
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",

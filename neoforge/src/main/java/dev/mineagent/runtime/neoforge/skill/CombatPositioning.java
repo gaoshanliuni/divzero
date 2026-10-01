@@ -22,7 +22,7 @@ final class CombatPositioning {
         var check=new NativeTraversalEvaluator(actor);check.beginSlice();var current=check.closest(actor.position());if(current==null)return null;
         double speed=Math.max(.08,actor.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*2.2);
         double standing=work.combat.attacks.standingRisk(work,actor.position(),12);if(standing<=0)return null;
-        double best=Double.POSITIVE_INFINITY;List<PathStep> route=null;Vec3 chosen=null;
+        double best=Double.POSITIVE_INFINITY;List<PathStep> route=null;Vec3 chosen=null;double[] features=null;var model=LocalPolicyRuntime.snapshot(actor);
         var owner=work.combat.protectedEntity;
         for(var first:check.neighbors(current)){
             if(!Set.of(Action.WALK,Action.STEP_UP,Action.CROUCH,Action.DROP).contains(first.action())||Math.abs(first.to().y()-current.y())>1.25||edgeExposure(work,first.to(),check)>0)continue;
@@ -40,11 +40,14 @@ final class CombatPositioning {
                 for(int t=elapsed+1;t<=Math.min(NativeAttackTimeline.HORIZON,elapsed+5);t++){double damage=work.combat.attacks.risk(work,end,end,t);worst=Math.max(worst,damage);total+=damage;}
                 if(worst>=standing||elapsed>NativeAttackTimeline.HORIZON)continue;
                 double danger=work.combat.collisionRisk(work,end,Math.min(18,elapsed));var direction=end.subtract(actor.position()).multiply(1,0,1).normalize();
-                double score=worst*4+total+danger*1.5+elapsed*.4+(heading==null?0:(1-heading.dot(direction))*2);
-                if(score<best){best=score;route=path;chosen=end;}
+                var target=work.combat.selected;double distance=target==null?0:actor.distanceTo(target),progress=target==null?0:distance-end.distanceTo(target.position());
+                var candidate=LocalPolicyRuntime.features(actor,distance,progress,total+danger,path.size(),end.subtract(actor.position()),0,actor.getAttackStrengthScale(.5f)>=.95,work.session.spec().kind().ordinal(),0);
+                double score=worst*4+total+danger*1.5+elapsed*.4+(heading==null?0:(1-heading.dot(direction))*2)+(model==null?0:model.cost(candidate)*8);
+                if(score<best){best=score;route=path;chosen=end;features=candidate;}
             }
         }
         if(chosen==null)return null;chosenRoute=route;selectedDistance=actor.position().distanceTo(chosen);quickRetreat=true;heading=chosen.subtract(actor.position()).multiply(1,0,1).normalize();
+        if(features!=null)LocalPolicyRuntime.chose(work,features,chosen);
         work.session.add("checkedDamageEvasionRoutes",1);return chosen;
     }
     /** A short verified exit can run immediately while the wider retreat search is deferred. */
