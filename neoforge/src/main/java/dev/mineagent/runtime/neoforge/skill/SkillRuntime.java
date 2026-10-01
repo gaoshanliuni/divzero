@@ -227,6 +227,7 @@ public final class SkillRuntime {
                 var link=w.session.snapshot();if(link.task()!=null){var task=MineAgentRuntimeServices.tasks(server).get(link.task()).orElse(null);if(task==null||task.intentRevision()!=link.taskIntent()||Set.of("CANCELLED","FAILED").contains(task.status().name())){w.session.control(w.session.revision(),"stop");w.release();persist(w);continue;}if(!Set.of("RUNNING","COMPLETED").contains(task.status().name())){w.waitFor("PARENT_TASK_PAUSED",10);continue;}}
                 if(w.actor==null){if(!w.saved.isDone())continue;w.bind(owner);if(w.actor==null)continue;}if(!w.actor.current()||!w.actor.player().level().dimension().identifier().toString().equals(w.session.spec().dimension())){if(w.actor instanceof PlayerSkillActor){w.session.control(w.session.revision(),"stop");w.release();persist(w);}else w.pause("BODY_OR_DIMENSION_CHANGED");continue;}
                 w.actor.controls().validate();if(!w.actor.inputReady()){w.release();w.session.transition(State.WAITING,"INPUT_OR_MENU_PAUSED");continue;}
+                if(w.actor instanceof PlayerSkillActor&&NativeEquipmentSupport.protectionSlot(w.player())>=0&&w.acquire()&&NativeEquipmentSupport.maintainControlled(w))continue;
                 if(CombatSkill.interruptOrContinue(w))continue;
                 if(!w.saved.isDone()||server.getTickCount()<w.nextTick)continue;
                 if(!w.acquire())continue;w.step();

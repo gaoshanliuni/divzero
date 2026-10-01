@@ -58,6 +58,7 @@ public final class OctoberFeedbackSmoke {
         step("complete-body-single-entry",()->{if(tick-started<5)return CompletableFuture.completedFuture(false);assertChat(true);return yes();});
         act("rich-copy-option",()->server(p->dev.mineagent.runtime.neoforge.chat.AiPlayerChat.send(p,agent,Component.literal("回归复制按钮").withStyle(s->s.withClickEvent(new ClickEvent.CopyToClipboard("回归内容"))))));
         step("copy-option-preserved",()->{var entries=((ChatHistoryAccess)mc().gui.getChat()).mineagent$messages();for(var m:entries)if(m.content().getString().contains("回归复制按钮")){var found=new boolean[1];m.content().visit((s,t)->{if(s.getClickEvent() instanceof ClickEvent.CopyToClipboard c&&c.value().equals("回归内容"))found[0]=true;return Optional.empty();},Style.EMPTY);require(found[0],"COPY_OPTION_LOST");return yes();}return CompletableFuture.completedFuture(false);});
+        step("enable-local-workspace",()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return yes();dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});
         act("open-f2",()->{NativeWorkspaceScreen.open();return yes();});step("workspace-ready",()->CompletableFuture.completedFuture(NativeWorkspaceConnection.ready()&&mc().screen instanceof NativeWorkspaceScreen));
         act("open-behavior-panel",()->{NativeBehaviorPanel.open((NativeWorkspaceScreen)mc().screen,agent.toString(),"持续技能搭档");return yes();});step("behavior-read-ready",()->CompletableFuture.completedFuture(NativeBehaviorPanel.smokeReady(agent.toString())));
         clickText("Boost：关闭");step("boost-saved-on",()->server(p->ActorEnhancements.read(p,agent).boost()));clickText("Boost：开启");step("boost-saved-off",()->server(p->!ActorEnhancements.read(p,agent).boost()));
@@ -75,7 +76,7 @@ public final class OctoberFeedbackSmoke {
         act("close-panel",()->{mc().screen.onClose();return yes();});return result;
     }
     @net.neoforged.bus.api.SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post e){
-        if(result==null||result.isDone())return;tick++;if(steps.isEmpty()){result.complete(Map.of("status","PASS","paidModelCalls",0,"evidence",evidence));return;}
+        if(result==null||result.isDone())return;tick++;if(tick%20==0)try{java.nio.file.Files.writeString(mc().gameDirectory.toPath().resolve("october-feedback-progress.json"),new Gson().toJson(Map.of("stage",steps.isEmpty()?"DONE":steps.getFirst().name,"evidence",evidence)));}catch(Exception ignored){}if(steps.isEmpty()){result.complete(Map.of("status","PASS","paidModelCalls",0,"evidence",evidence));return;}
         if(tick-started>500){result.completeExceptionally(new IllegalStateException("FEEDBACK_UI_TIMEOUT_"+steps.getFirst().name));return;}
         if(busy||tick%4!=0)return;busy=true;var next=steps.getFirst();try{next.run.get().whenComplete((ok,error)->mc().execute(()->{busy=false;if(error!=null){result.completeExceptionally(new IllegalStateException(next.name+": "+error,error));return;}if(ok){evidence.add(Map.of("completed",next.name,"tick",tick));steps.removeFirst();started=tick;}}));}catch(Exception error){busy=false;result.completeExceptionally(error);}
     }

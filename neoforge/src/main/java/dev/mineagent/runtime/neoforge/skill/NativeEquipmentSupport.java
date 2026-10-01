@@ -20,7 +20,8 @@ public final class NativeEquipmentSupport {
         player.setItemInHand(InteractionHand.OFF_HAND,carried);player.getInventory().setItem(slot,previous);player.inventoryMenu.broadcastChanges();
     }
     static boolean maintainControlled(SkillWork work){
-        int slot=protectionSlot(work.player());if(slot<0||work.player().isUsingItem())return false;
+        int slot=protectionSlot(work.player());if(slot<0||work.player().isUsingItem()&&work.player().getUsedItemHand()==InteractionHand.MAIN_HAND)return false;
+        if(work.player().isUsingItem())work.actor.stop(work.token());
         work.actor.equipOffhand(work.token(),slot);work.session.add("nativeProtectionEquipRequests",1);return true;
     }
     private NativeEquipmentSupport(){}

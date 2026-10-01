@@ -234,7 +234,7 @@ final class CombatSkill {
     private static boolean strikeInReach(SkillWork w,LivingEntity target,int contacts){
         var p=w.player();if(!NativeAttackReadiness.ready(p)||!dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(p,target)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||w.tick()-w.lastAttackAt<2)return false;
         if(!CombatEquipmentAdapter.melee(w,target)||!NativeAttackReadiness.ready(p)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(p,target).isEmpty())return false;
-        if(contacts==0&&p.getHealth()>p.getMaxHealth()*.75&&!w.combat.incoming(w)&&!ActorEnhancements.boost(p)&&!NativeAttackReadiness.fallingSmash(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return true;}
+        if(contacts==0&&p.hasLineOfSight(target)&&p.getHealth()>p.getMaxHealth()*.75&&!w.combat.incoming(w)&&!ActorEnhancements.boost(p)&&!NativeAttackReadiness.fallingSmash(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return true;}
         if(p.isUsingItem())p.stopUsingItem();w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).orElse(target.getEyePosition()));
         if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);w.session.add("inRangeStrikeAttempts",1);}
         if(target.isBlocking()&&p.getMainHandItem().is(ItemTags.AXES)){w.shieldCounterTarget=target;w.shieldCounterAt=w.tick();w.shieldCounterItem=target.getUseItem().copy();w.session.add("shieldCounterAttempts",1);}

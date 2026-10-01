@@ -76,6 +76,49 @@ public final class PersistentSkillSmokeClient {
     }
     private record Duel(int group,MineAgentPlayer a,MineAgentPlayer b,UUID aId,UUID bId){}
     private static final List<Duel> duels=new ArrayList<>();private static final Set<Integer> duelFinished=new HashSet<>();private static long duelDeadline,duelStarted,duelGlobalDeadline;private static final Map<Integer,Integer> duelTerminalTicks=new HashMap<>();
+    private static net.minecraft.server.level.ServerPlayer feedbackActor;private static LivingEntity feedbackTarget;private static float feedbackDamage;private static double feedbackFall;private static String feedbackWeapon;private static final List<Float> maceDamage=new ArrayList<>();
+    @SubscribeEvent public static void feedbackDamage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event){
+        if(!Boolean.getBoolean("mineagent.skillSmoke")||!System.getProperty("mineagent.skillSmokeMode","").equals("combat_october")||event.getEntity()!=feedbackTarget||event.getSource().getEntity()!=feedbackActor)return;
+        feedbackDamage+=event.getHealthDamage();feedbackFall=feedbackActor.fallDistance;feedbackWeapon=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(feedbackActor.getMainHandItem().getItem()).toString();
+    }
+    private static void combatOctober(){
+        action("native-body-equipment-test-arena",()->server(p->{
+            var s=p.level().getServer();p.level().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.SPAWN_MOBS,false,s);s.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"time set night");
+            if(playerActor())body(p).setGameMode(GameType.CREATIVE);var actor=controlled(p);actor.setGameMode(GameType.SURVIVAL);actor.getInventory().clearContent();actor.removeAllEffects();actor.setHealth(20);actor.getFoodData().setFoodLevel(20);actor.teleportTo(p.level(),.5,101,6.5,Set.of(),0,0,true);feedbackActor=actor;
+            return Map.of("nativeClass",actor.getClass().getName(),"samePlayerPipeline",actor instanceof ServerPlayer);
+        }));
+        action("standby-with-native-input",()->tool("set_behavior_mode",start("equipment_standby","ai").put("kind","IDLE")));
+        for(boolean custom:List.of(false,true)){
+            action(custom?"component-defined-protection-in-backpack":"vanilla-totem-in-backpack",()->server(p->{var actor=controlled(p);actor.removeAllEffects();actor.setHealth(20);actor.invulnerableTime=0;actor.getInventory().clearContent();actor.setItemSlot(EquipmentSlot.OFFHAND,new ItemStack(Items.SHIELD));var stack=new ItemStack(custom?Items.PAPER:Items.TOTEM_OF_UNDYING);if(custom)stack.set(net.minecraft.core.component.DataComponents.DEATH_PROTECTION,net.minecraft.world.item.component.DeathProtection.TOTEM_OF_UNDYING);actor.getInventory().setItem(12,stack);actor.inventoryMenu.broadcastFullState();return Map.of("customComponent",custom,"sourceSlot",12);}));
+            waitFor("real-offhand-equipped-"+custom,250,()->server(p->{var a=controlled(p);return a.getOffhandItem().is(custom?Items.PAPER:Items.TOTEM_OF_UNDYING)&&a.getOffhandItem().has(net.minecraft.core.component.DataComponents.DEATH_PROTECTION)&&a.getInventory().getItem(12).is(Items.SHIELD);}));
+            action("native-lethal-damage-consumes-equipped-item-"+custom,()->server(p->{var a=controlled(p);a.invulnerableTime=0;boolean hit=a.hurtServer(p.level(),a.damageSources().generic(),100);require(hit&&a.isAlive()&&a.getHealth()>0,"NATIVE_DEATH_PROTECTION_FAILED");require(a.getOffhandItem().isEmpty()&&a.hasEffect(net.minecraft.world.effect.MobEffects.REGENERATION)&&a.hasEffect(net.minecraft.world.effect.MobEffects.ABSORPTION),"NATIVE_COMPONENT_EFFECTS_OR_CONSUMPTION_FAILED");require(!(a instanceof MineAgentPlayer ai)||!ai.deathAccepted(),"PROTECTED_BODY_WAS_REPLACED");return Map.of("health",a.getHealth(),"nativeEffects",true,"customComponent",custom,"sameBody",a==feedbackActor);}));
+        }
+        action("stop-equipment-standby",()->stop("equipment_standby"));
+        action("enclosed-target-with-visible-feet",()->server(p->{var a=controlled(p);a.removeAllEffects();a.setHealth(20);a.getInventory().clearContent();a.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));a.getInventory().setSelectedSlot(0);a.teleportTo(p.level(),6.5,101,3.5,Set.of(),0,0,true);
+            for(int x=5;x<=7;x++)for(int z=5;z<=7;z++)for(int y=101;y<=103;y++)p.level().setBlock(new BlockPos(x,y,z),y==103||y==102&&(x==5||x==7||z==5||z==7)?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),3);
+            var mob=EntityType.ZOMBIE.create(p.level(),EntitySpawnReason.COMMAND);mob.setPos(6.5,101,6.5);mob.setPersistenceRequired();p.level().addFreshEntity(mob);feedbackTarget=mob;feedbackDamage=0;require(!a.hasLineOfSight(mob),"FIXTURE_HEAD_NOT_OCCLUDED");require(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(a,mob).isPresent(),"EXPOSED_FEET_NOT_FOUND");return Map.of("headBlocked",true,"feetVisible",true);
+        }));
+        action("attack-actual-low-opening",()->{var n=start("gap_attack","ai").put("target",feedbackTarget.getUUID().toString());n.putObject("combat").put("engagement","SPECIFIED").put("strategy","HOLD_POSITION");return tool("combat_entity",n);});
+        waitFor("native-hit-and-kill-through-open-bottom",800,()->server(p->{require(controlled(p).isAlive(),"GAP_ACTOR_DIED");if(feedbackTarget.isAlive())return false;require(feedbackDamage>0&&feedbackTarget.getKillCredit()==controlled(p),"GAP_NO_ACTUAL_ACTOR_HIT");EVIDENCE.add(Map.of("damage",feedbackDamage,"nativeKillCredit",true));return true;}));
+        action("close-all-openings",()->server(p->{var a=controlled(p);for(int x=5;x<=7;x++)p.level().setBlock(new BlockPos(x,101,5),Blocks.STONE.defaultBlockState(),3);var mob=EntityType.ZOMBIE.create(p.level(),EntitySpawnReason.COMMAND);mob.setPos(6.5,101,6.5);p.level().addFreshEntity(mob);feedbackTarget=mob;feedbackDamage=0;require(!dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(a,mob),"SOLID_WALL_WAS_SEEN_THROUGH");return true;}));
+        action("closed-target-hold-position",()->{var n=start("closed_attack","ai").put("target",feedbackTarget.getUUID().toString());n.putObject("combat").put("engagement","SPECIFIED").put("strategy","HOLD_POSITION");return tool("combat_entity",n);});
+        waitFor("solid-wall-never-receives-hit",130,()->server(p->{require(feedbackDamage==0,"HIT_THROUGH_SOLID_WALL");return ticks-stageAt>=70;}));
+        action("stop-closed-target",()->stop("closed_attack"));
+        action("clear-combat-fixtures",()->server(p->{feedbackTarget.discard();for(int x=5;x<=7;x++)for(int z=5;z<=7;z++)for(int y=101;y<=103;y++)p.level().setBlock(new BlockPos(x,y,z),Blocks.AIR.defaultBlockState(),3);return true;}));
+        for(int height:List.of(4,9)){
+            action("prepare-real-mace-fall-"+height,()->server(p->{var a=controlled(p);a.removeAllEffects();a.setHealth(20);a.invulnerableTime=0;a.getInventory().clearContent();a.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));a.getInventory().setItem(12,new ItemStack(Items.MACE));a.getInventory().setSelectedSlot(0);a.teleportTo(p.level(),18.5,101+height,12.5,Set.of(),0,70,true);a.setDeltaMovement(Vec3.ZERO);var mob=EntityType.IRON_GOLEM.create(p.level(),EntitySpawnReason.COMMAND);mob.setPos(18.5,101,12.5);p.level().addFreshEntity(mob);feedbackTarget=mob;feedbackDamage=0;feedbackFall=0;feedbackWeapon="";a.inventoryMenu.broadcastFullState();return Map.of("realDropHeight",height,"noSyntheticFallDistance",true);}));
+            action("mace-native-falling-strike-"+height,()->{var n=start("mace_"+height,"ai").put("target",feedbackTarget.getUUID().toString());n.putObject("combat").put("engagement","SPECIFIED").put("strategy","HOLD_POSITION");return tool("combat_entity",n);});
+            waitFor("observe-native-smash-"+height,500,()->server(p->{if(feedbackDamage<=0)return false;require(feedbackWeapon.equals("minecraft:mace")&&feedbackFall>1.5,"NO_REAL_MACE_SMASH_"+feedbackWeapon+"_"+feedbackFall);maceDamage.add(feedbackDamage);EVIDENCE.add(Map.of("height",height,"fallDistance",feedbackFall,"nativeDamage",feedbackDamage,"nativeWeapon",feedbackWeapon));feedbackTarget.discard();return true;}));
+            action("stop-mace-case-"+height,()->stop("mace_"+height));
+            waitFor("native-mace-landing-"+height,120,()->server(p->controlled(p).onGround()));
+        }
+        action("height-scales-native-mace-damage",()->{require(maceDamage.size()==2&&maceDamage.get(1)>maceDamage.get(0),"MACE_HEIGHT_DID_NOT_INCREASE_DAMAGE_"+maceDamage);return CompletableFuture.completedFuture(Map.of("damageByHeight",List.copyOf(maceDamage)));});
+        if(!playerActor())action("save-native-mode-that-differs-from-creation",()->server(p->{try{var manager=MineAgentRuntimeServices.bodies(p.level().getServer());manager.setMode(agent,p.getUUID(),true,dev.mineagent.runtime.api.agent.AgentMode.CREATOR);body(p).setGameMode(GameType.ADVENTURE);Files.writeString(mc().gameDirectory.toPath().resolve("feedback-mode-identity.json"),JSON.writeValueAsString(Map.of("agent",agent,"expected","ADVENTURE")));return Map.of("creation","CREATOR","native","ADVENTURE");}catch(Exception e){throw new CompletionException(e);}}));
+    }
+    private static void restoreOctoberMode(){
+        action("read-mode-restart-identity",()->{try{agent=UUID.fromString(JSON.readTree(Files.readString(mc().gameDirectory.toPath().resolve("feedback-mode-identity.json"))).path("agent").asText());return CompletableFuture.completedFuture(agent);}catch(Exception e){return CompletableFuture.failedFuture(e);}});
+        waitFor("native-game-mode-survives-real-reopen",400,()->server(p->{var body=MineAgentRuntimeServices.bodies(p.level().getServer()).body(agent).orElse(null);if(body==null)return false;require(body.loadedNativeState(),"NATIVE_PLAYER_NBT_NOT_LOADED");require(body.gameMode.getGameModeForPlayer()==GameType.ADVENTURE,"NATIVE_GAME_MODE_RESET_ON_REOPEN_"+body.gameMode.getGameModeForPlayer());EVIDENCE.add(Map.of("agent",agent,"mode",body.gameMode.getGameModeForPlayer().name(),"loadedNativePlayerData",true));return true;}));
+    }
     private static int selfPlayViewTick=-1;private static boolean selfPlayCaptured;
     private static void neuralMobs(){
         boolean training=System.getProperty("mineagent.skillSmokeMode","").equals("mob_train");
@@ -675,7 +718,7 @@ public final class PersistentSkillSmokeClient {
     private static CompletableFuture<JsonNode> stop(String id){return tool("control_skill",JSON.createObjectNode().put("id",id).put("expected_revision",1).put("action","stop"));}
     private static void screen(String name){try{net.minecraft.client.Screenshot.takeScreenshot(mc().getMainRenderTarget(),image->{try(image){image.writeToFile(root().resolve(name+".png"));}catch(Exception failure){fail(failure);}});}catch(Exception e){fail(e);}}
     private static void prepare(){
-        if(Boolean.getBoolean("mineagent.skillSmokeResume")){if(System.getProperty("mineagent.skillSmokeMode","").equals("policy_checkpoint"))policyCheckpoint(true);else restoreLifecycle();return;}
+        if(Boolean.getBoolean("mineagent.skillSmokeResume")){if(System.getProperty("mineagent.skillSmokeMode","").equals("combat_october"))restoreOctoberMode();else if(System.getProperty("mineagent.skillSmokeMode","").equals("policy_checkpoint"))policyCheckpoint(true);else restoreLifecycle();return;}
         action("world-and-real-survival-bodies",()->server(p->{
             var s=p.level().getServer();s.getPlayerList().op(p.nameAndId());p.setGameMode(GameType.CREATIVE);WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);p.teleportTo(p.level(),.5,101,-3.5,Set.of(),0,0,true);
             for(int x=-12;x<=31;x++)for(int z=-7;z<=26;z++)for(int y=98;y<=109;y++)p.level().setBlock(new BlockPos(x,y,z),y<=100?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),2);
@@ -689,6 +732,7 @@ public final class PersistentSkillSmokeClient {
         if(mode.equals("multi_attack")){multiAttack();return;}
         if(mode.equals("conversation_focus")){conversationFocus();return;}
         if(mode.equals("host_context")){hostContext();return;}
+        if(mode.equals("combat_october")){combatOctober();return;}
         if(mode.equals("feedback_october")){action("feedback-ui-streaming-and-controls",()->dev.mineagent.runtime.neoforge.client.nativeui.OctoberFeedbackSmoke.run(agent));return;}
         if(mode.equals("mention_display")){action("mention-display-live",()->dev.mineagent.runtime.neoforge.client.nativeui.MentionDisplaySmoke.run(agent));return;}
         if(mode.equals("tool_repair")){action("tool-repair-live",()->dev.mineagent.runtime.neoforge.client.nativeui.ToolRepairSmoke.run(agent));return;}
