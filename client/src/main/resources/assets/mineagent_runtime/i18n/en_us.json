@@ -3509,5 +3509,7 @@
   "区域所属维度已变化，请重新选择区域来源": "The region belongs to another dimension; choose its source again.",
   "已采用更新": "Applied updates",
   "模型版本": "Model version",
-  "战斗使用版本": "Combat model version"
+  "战斗使用版本": "Combat model version",
+  "自动加入战斗并辅助：开启": "Automatically join combat and assist: On",
+  "自动加入战斗并辅助：关闭": "Automatically join combat and assist: Off"
 }

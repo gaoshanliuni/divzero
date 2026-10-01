@@ -5,6 +5,25 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CombatPolicyTest {
+    @Test void creatorAssistanceDefaultsAndExplicitOptOutSurvivePersistence()throws Exception{
+        var defaults=CombatPolicy.defaults(SkillSpec.Kind.FOLLOW,true,"");assertTrue(defaults.assistCreator());
+        var legacy=(com.fasterxml.jackson.databind.node.ObjectNode)json.valueToTree(defaults);legacy.remove("assistCreator");
+        assertTrue(json.treeToValue(legacy,CombatPolicy.class).assistCreator());
+        var disabled=CombatPolicy.parse(json.readTree("{\"assistCreator\":false}"),defaults);
+        assertFalse(json.readValue(json.writeValueAsString(disabled),CombatPolicy.class).assistCreator());
+        assertFalse(CombatPolicy.parse(json.readTree("{\"strategy\":\"MELEE_COMBO\"}"),disabled).withArea(null).assistCreator());
+        assertThrows(IllegalArgumentException.class,()->CombatPolicy.parse(json.readTree("{\"assistCreator\":\"false\"}"),defaults));
+    }
+    @Test void creatorAssistanceRespectsModesAndNeverOverridesNoAttack()throws Exception{
+        var policy=CombatPolicy.defaults(SkillSpec.Kind.FOLLOW,true,"");
+        for(var kind:List.of(SkillSpec.Kind.FOLLOW,SkillSpec.Kind.WANDER,SkillSpec.Kind.COMBAT)){
+            assertTrue(policy.assists(kind,true,false,false));assertTrue(policy.assists(kind,false,true,false));assertTrue(policy.assists(kind,false,false,true));assertFalse(policy.assists(kind,false,false,false));
+            assertFalse(CombatPolicy.parse(json.readTree("{\"assistCreator\":false}"),policy).assists(kind,true,true,true));
+            assertFalse(CombatPolicy.parse(json.readTree("{\"engagement\":\"NONE\"}"),policy).assists(kind,true,true,true));
+        }
+        for(var kind:List.of(SkillSpec.Kind.IDLE,SkillSpec.Kind.FARM,SkillSpec.Kind.FISH))assertFalse(policy.assists(kind,true,true,true));
+        assertTrue(policy.assists(SkillSpec.Kind.PATROL,false,true,false));assertFalse(policy.assists(SkillSpec.Kind.PATROL,true,false,true));
+    }
     @Test void recoveryDoesNotWaitForeverAfterFoodRunsOutOrHealingIsPrevented(){
         var recovery=new CombatRecoveryWindow();
         assertTrue(recovery.shouldRecover(100,5,20,false,100));

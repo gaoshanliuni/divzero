@@ -127,6 +127,22 @@ public final class SkillRuntime {
             else if(e instanceof net.minecraft.world.entity.OwnableEntity own&&own.getOwnerReference()!=null||e.isAlliedTo(p))throw new SecurityException("COMBAT_FRIENDLY_TARGET");}
         if(policy.engagement()==CombatPolicy.Engagement.PROTECT&&!policy.protect().equals("$owner")&&!(p.level().getEntity(UUID.fromString(policy.protect())) instanceof net.minecraft.world.entity.LivingEntity))throw new IllegalArgumentException("COMBAT_PROTECTED_TARGET_NOT_OBSERVED");
     }
+    private record CreatorAttack(net.minecraft.world.entity.LivingEntity target,int tick){}
+    private final Map<UUID,CreatorAttack> creatorAttacks=new HashMap<>();
+    ServerPlayer creator(SkillWork w){
+        UUID id=w.player() instanceof MineAgentPlayer ai?ai.ownerPlayerId():w.session.owner();
+        return server.getPlayerList().getPlayer(id);
+    }
+    boolean creatorAttacked(ServerPlayer creator,net.minecraft.world.entity.LivingEntity target){
+        var recent=creatorAttacks.get(creator.getUUID());
+        if(recent!=null&&(server.getTickCount()-recent.tick()>100||!recent.target().isAlive()||recent.target().level()!=creator.level())){creatorAttacks.remove(creator.getUUID());recent=null;}
+        return recent!=null&&recent.target()==target||creator.getLastHurtMob()==target&&creator.tickCount-creator.getLastHurtMobTimestamp()<100;
+    }
+    private void observeCreatorCombat(ServerPlayer creator,net.minecraft.world.entity.LivingEntity target){
+        creatorAttacks.entrySet().removeIf(e->server.getTickCount()-e.getValue().tick()>100);
+        if(target!=null)creatorAttacks.put(creator.getUUID(),new CreatorAttack(target,server.getTickCount()));
+        for(var w:byOwner.getOrDefault(creator.getUUID(),new LinkedHashSet<>()))if(w.session.runnable()&&w.actor!=null&&w.actor.current()&&creator(w)==creator){w.combat.nextScan=0;w.lastCombatTick=-1;}
+    }
     static boolean attackAllowed(SkillWork w,net.minecraft.world.entity.LivingEntity entity){
         if(!entity.isAlive()||entity.level()!=w.player().level())return false;var rule=w.session.spec().combat();if(rule.excluded().contains(entity.getUUID()))return false;
         if(entity instanceof ServerPlayer target){var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());return owner!=null&&PvpConsent.allowed(owner,w.session.agent(),w.player(),target,rule);}
@@ -200,7 +216,7 @@ public final class SkillRuntime {
                 }
             }
             var effective=spec;
-            if(inherited!=null){var prior=arguments.has("defend")||spec.kind()==SkillSpec.Kind.COMBAT&&!spec.target().isBlank()?new CombatPolicy(inherited.strategy(),spec.combat().engagement(),spec.combat().protect(),inherited.excluded(),inherited.leash(),inherited.awareness(),spec.combat().target(),spec.combat().area()):inherited;effective=spec.withCombat(CombatPolicy.parse(arguments.get("combat"),prior));}
+            if(inherited!=null){var prior=arguments.has("defend")||spec.kind()==SkillSpec.Kind.COMBAT&&!spec.target().isBlank()?new CombatPolicy(inherited.strategy(),spec.combat().engagement(),spec.combat().protect(),inherited.excluded(),inherited.leash(),inherited.awareness(),spec.combat().target(),spec.combat().area(),inherited.assistCreator()):inherited;effective=spec.withCombat(CombatPolicy.parse(arguments.get("combat"),prior));}
             validateCombat(p,agent,effective.combat(),effective.actor());savePolicy(p.getUUID(),agent,effective.actor(),effective.combat());var linked=task==null?null:MineAgentRuntimeServices.tasks(server).get(task).orElseThrow();var session=new SkillSession(operation,p.getUUID(),agent,MineAgentRuntimeServices.worldId(server),task,linked==null?0:linked.intentRevision(),effective);if(previous!=null)session.previous(previous.token());var w=new SkillWork(this,session,0);w.starting=true;work.put(operation,w);persist(w);
             var result=new CompletableFuture<Map<String,Object>>();w.saved.whenComplete((written,error)->server.execute(()->{try{if(error!=null)throw new CompletionException(error);if(session.terminal()){result.complete(Map.of("status",session.state().name(),"skill",w.view(),"goalComplete",false));return;}authorize(p,agent);if(!permit.getAsBoolean()){session.transition(State.PAUSED,"START_CONTEXT_CHANGED");persist(w);}else {if(session.spec().actor().equals("ai"))setStopped(agent,false);w.bind(p);}result.complete(Map.of("status",session.runnable()?"STARTED":session.state().name(),"skill",w.view(),"goalComplete",false));}catch(Exception failure){if(!session.terminal()){session.transition(State.PAUSED,"START_FAILED");persist(w);}result.completeExceptionally(failure);}finally{w.starting=false;}}));return result;
         }catch(Exception failure){return CompletableFuture.failedFuture(failure);}},server::execute);
@@ -282,7 +298,10 @@ public final class SkillRuntime {
         for(var w:runtime.forEntity(player))if(w.session.runnable()){w.observedCriticalTick=runtime.server.getTickCount();w.observedCriticalTarget=event.getTarget().getUUID();w.session.add(ActorEnhancements.boost(player)?"boostCriticalAttempts":"nativeCriticalAttempts",1);if(ActorEnhancements.boost(player)&&BoostRuntime.microHopObserved(player))w.session.add("boostMicroHopHeightObserved",1);}
     }
     @SubscribeEvent public static void damage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event){
-        if(event.getHealthDamage()>0&&event.getEntity() instanceof ServerPlayer owner){var runtime=ALL.get(owner.level().getServer());if(runtime!=null)for(var active:List.copyOf(runtime.byOwner.getOrDefault(owner.getUUID(),new LinkedHashSet<>())))if(active.session.runnable()&&active.actor!=null&&active.actor.current()){active.combat.nextScan=0;active.lastCombatTick=-1;}}
+        if(event.getHealthDamage()>0){
+            if(event.getEntity() instanceof ServerPlayer owner){var runtime=ALL.get(owner.level().getServer());if(runtime!=null)runtime.observeCreatorCombat(owner,null);}
+            if(event.getSource().getEntity() instanceof ServerPlayer creator){var runtime=ALL.get(creator.level().getServer());if(runtime!=null)runtime.observeCreatorCombat(creator,event.getEntity());}
+        }
 
         if(event.getHealthDamage()>0&&event.getEntity() instanceof MineAgentPlayer body&&event.getSource().getEntity() instanceof net.minecraft.world.entity.LivingEntity attacker&&!(attacker instanceof net.minecraft.world.entity.player.Player))get(body.level().getServer()).retaliate(body,attacker,true);
         if(event.getHealthDamage()>0&&event.getEntity() instanceof ServerPlayer defender&&event.getSource().getEntity() instanceof net.minecraft.world.entity.LivingEntity attacker){var runtime=ALL.get(defender.level().getServer());if(runtime!=null)for(var active:runtime.forEntity(defender))if(active.actor!=null&&active.actor.player()==defender&&active.session.runnable()){active.lastContactDamage=runtime.server.getTickCount();active.session.add("nativeDamageEvents",1);active.session.add("nativeDamageTakenMilli",(long)(event.getHealthDamage()*1000));}}if(!(event.getSource().getEntity() instanceof ServerPlayer player)||event.getHealthDamage()<=0)return;var r=ALL.get(player.level().getServer());if(r==null)return;var direct=event.getSource().getDirectEntity();boolean shot=direct instanceof net.minecraft.world.entity.projectile.Projectile;String session=shot?direct.getPersistentData().getStringOr("mineagent_skill_session",""):"";for(var w:r.forEntity(player))if(w.actor!=null&&w.actor.player()==player&&w.fighting!=null&&w.fighting.equals(event.getEntity().getUUID())&&(shot?w.token().toString().equals(session):w.session.runnable()&&w.actor.controls().owns(w.token(),BodyDomain.MAIN_HAND))){if(!shot){int now=r.server.getTickCount();w.comboStreak=event.getEntity().getUUID().equals(w.lastMeleeHitTarget)&&now-w.lastMeleeHitTick<=40?w.comboStreak+1:1;w.lastMeleeHitTarget=event.getEntity().getUUID();w.lastMeleeHitTick=now;w.session.add("maxMeleeCombo",Math.max(0,w.comboStreak-w.session.count("maxMeleeCombo")));if(player.isSprinting())w.session.add("nativeSprintMeleeHits",1);}w.lastHitAt=r.server.getTickCount();w.session.add("verifiedHits",1);if(w.observedCriticalTick==r.server.getTickCount()&&event.getEntity().getUUID().equals(w.observedCriticalTarget))w.session.add(ActorEnhancements.boost(player)?"verifiedBoostCriticalHits":"verifiedNativeCriticalHits",1);w.session.add("damageMilliHearts",(long)(event.getHealthDamage()*1000));if(shot&&!direct.isNoGravity())w.session.add("nativeGravityHits",1);if(w.session.terminal())r.persist(w);}}

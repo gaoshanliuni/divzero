@@ -49,18 +49,18 @@ final class CombatAwareness {
         // Released attacks move every tick; their observation does not wait for the broader target-selection scan.
         projectiles=List.copyOf(p.level().getEntitiesOfClass(Projectile.class,p.getBoundingBox().inflate(rule.awareness()),e->e.isAlive()&&e.getOwner()!=p&&!(e.getOwner()!=null&&e.getOwner().isAlliedTo(p))&&e.getDeltaMovement().lengthSqr()>.001&&!(e instanceof dev.mineagent.runtime.neoforge.mixin.CombatArrowStateAccess arrow&&arrow.divzero$inGround())));
         if(w.tick()<nextScan)return;nextScan=w.tick()+4+Math.floorMod(w.token().hashCode(),3);scans++;
-        var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());
-        var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(owner!=null&&owner!=p&&owner.level()==p.level()&&owner.distanceTo(p)<=rule.awareness()*2&&owner.getLastHurtByMob()!=null&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100)bounds=bounds.minmax(owner.getBoundingBox());if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
+        var owner=w.runtime.creator(w);
+        boolean nearbyCreator=owner!=null&&owner!=p&&owner.isAlive()&&owner.level()==p.level()&&owner.distanceTo(p)<=rule.awareness()*2;
+        var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(nearbyCreator&&rule.assistCreator())bounds=bounds.minmax(owner.getBoundingBox());if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
         w.prediction.observe(w,entities);
         var hostilePositions=new dev.mineagent.runtime.core.task.SpatialNeighbors<LivingEntity>(entities.stream().filter(e->e instanceof Enemy||e instanceof net.minecraft.world.entity.player.Player&&SkillRuntime.attackAllowed(w,e)).toList(),4,e->new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()));
         var dependents=new HashMap<UUID,Integer>();
         for(var entity:entities)if(entity instanceof net.minecraft.world.entity.monster.Vex vex&&vex.getOwner()!=null&&sight(w,vex))dependents.merge(vex.getOwner().getUUID(),1,Integer::sum);
         for(var e:entities){
             boolean forbidden=!SkillRuntime.attackAllowed(w,e);
-            boolean helpOwner=owner!=null&&owner!=p&&owner.level()==p.level()&&owner.isAlive()
-                    &&Set.of(dev.mineagent.runtime.core.task.SkillSpec.Kind.FOLLOW,dev.mineagent.runtime.core.task.SkillSpec.Kind.PATROL,dev.mineagent.runtime.core.task.SkillSpec.Kind.WANDER,dev.mineagent.runtime.core.task.SkillSpec.Kind.COMBAT).contains(w.session.spec().kind())
-                    &&owner.getLastHurtByMob()==e&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100
-                    &&owner.distanceTo(p)<=rule.awareness()*2&&e.distanceTo(owner)<=rule.leash();
+            boolean helpOwner=nearbyCreator&&e.distanceTo(owner)<=rule.leash()&&rule.assists(w.session.spec().kind(),
+                    w.runtime.creatorAttacked(owner,e),owner.getLastHurtByMob()==e&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100,
+                    e instanceof Mob mob&&!mob.isNoAi()&&mob.getTarget()==owner);
             boolean self=e instanceof Mob mob&&mob.getTarget()==p;
             boolean protect=helpOwner||protectedEntity!=null&&e instanceof Mob mob&&mob.getTarget()==protectedEntity;
             boolean attacked=p.getLastHurtByMob()==e&&p.tickCount-p.getLastHurtByMobTimestamp()<100;
@@ -96,7 +96,7 @@ final class CombatAwareness {
         if(selected!=null&&deferred(w,selected))selected=null;
         if(rows.stream().anyMatch(t->(t.eligible||t.urgent)&&!deferred(w,t.entity))||attacks.standingRisk(w,p.position(),8)>0)lastThreatTick=w.tick();
         var best=rows.stream().filter(Threat::eligible).max(Comparator.comparingDouble(Threat::score)).orElse(null);
-        if(best!=null){if(selected!=best.entity){selected=best.entity;selectedAt=w.tick();w.session.add("targetChanges",1);}}else if(selected==null||!selected.isAlive()||selected.position().distanceTo(center(w))>rule.leash()||w.tick()-lastThreatTick>40)selected=null;
+        if(best!=null){if(selected!=best.entity){selected=best.entity;selectedAt=w.tick();w.session.add("targetChanges",1);}}else selected=null;
     }
     Vec3 center(SkillWork w){return protectedEntity!=null?protectedEntity.position():anchor==null?w.player().position():anchor;}
     int contacts(SkillWork w){return (int)threats.stream().filter(t->t.entity.isAlive()&&NativeCombatStates.meleeAt(t.entity,w.player(),w.player().position())&&NativeCombatStates.meleeVisibleAt(t.entity,w.player(),w.player().position(),Vec3.ZERO)).count();}
