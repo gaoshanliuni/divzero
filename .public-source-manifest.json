@@ -3574,8 +3574,8 @@
     },
     {
       "path": "docs/WORLD_BOOTSTRAP.md",
-      "sha256": "075108de183de0dd9324af3f2ff66ca0e36bd4027ebf27c306d9b219f8e13e1f",
-      "bytes": 2710
+      "sha256": "4a93c372d90245a8c6b713b4aff826e68b58a5c3bafa78c9b607ccaa4ba3363f",
+      "bytes": 4986
     },
     {
       "path": "docs/images/README.md",
@@ -3744,8 +3744,8 @@
     },
     {
       "path": "docs/releases/1.0.29.md",
-      "sha256": "03cd8148dbc075cc3e040c7666443657777caf7035e9623485c5aaada94cc354",
-      "bytes": 678
+      "sha256": "2c8ff6b4b0de2cf676f2c32cad6fe2aadef4a29443c861a87d8137b07ca0d899",
+      "bytes": 877
     },
     {
       "path": "gradle.properties",
