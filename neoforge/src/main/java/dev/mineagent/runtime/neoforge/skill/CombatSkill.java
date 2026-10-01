@@ -107,7 +107,7 @@ final class CombatSkill {
         if(target!=null){
             var normalEye=p.position().add(0,p.getDimensions(net.minecraft.world.entity.Pose.STANDING).eyeHeight(),0);
             boolean low=dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.pointFrom(p,normalEye,target.getHitbox()).isEmpty()&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.crouchedPoint(p,target).isPresent();
-            if(low){w.gapCrouching=true;w.actor.crouch(w.token(),true);if(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty()){w.actor.haltMotion(w.token());phase(w,"LOW_OPENING_AIM");return;}}
+            if(low){w.gapCrouching=true;if(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty())w.actor.haltMotion(w.token());w.actor.crouch(w.token(),true);if(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty()){phase(w,"LOW_OPENING_AIM");return;}}
             else if(w.gapCrouching){w.actor.crouch(w.token(),false);w.gapCrouching=false;}
             if(p.fallDistance>1.5)CombatEquipmentAdapter.melee(w,target);
         }

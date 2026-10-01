@@ -3408,6 +3408,11 @@
       "bytes": 5306
     },
     {
+      "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
+      "sha256": "dbdc1c5f6a7e2ad05ff1ae32825758fcc162f5e0e9e3e587a6a8310ddcf12f6e",
+      "bytes": 3296
+    },
+    {
       "path": "docs/CINEMATIC_FILMS.md",
       "sha256": "c7a0f10dbc76e1ff9d4b1e97b5ca029c4ac725f5a4e4c96cbdf57ccb90af2a26",
       "bytes": 7152
@@ -3989,7 +3994,7 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "sha256": "03fea15fc14ad261929632f4874f219cc8430f3b9514001aa3e5fa5246210f2d",
+      "sha256": "18424072e4d29ad5499aeab50af587ca3db51a3bb69f95a611e22ed9e6bd39ed",
       "bytes": 12188
     },
     {
@@ -5624,8 +5629,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "9070f0b293c425cd9cf8ee71acbe74a8d98059d07f83687ab6c183b651725579",
-      "bytes": 38716
+      "sha256": "405bd858c0b93ee7fc5c5dc8981df492290fd52f90756aae9834cfdf2fe4507f",
+      "bytes": 38802
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
