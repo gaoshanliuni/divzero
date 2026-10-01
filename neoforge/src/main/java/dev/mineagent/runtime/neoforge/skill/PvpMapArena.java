@@ -27,7 +27,7 @@ public final class PvpMapArena {
             var at=new BlockPos(x,y,z);if(!level.getBlockState(at).is(block))level.setBlock(at,block.defaultBlockState(),2);
         }
         for(int x=-2;x<=2;x++)for(int z=782;z<=783;z++)level.setBlock(new BlockPos(x,100,z),Blocks.SMOOTH_QUARTZ.defaultBlockState(),2);
-        var source=p.createCommandSourceStack().withSuppressedOutput();p.level().getServer().getCommands().performPrefixedCommand(source,"setworldspawn 0 101 766 0");p.level().getServer().getCommands().performPrefixedCommand(source,"spawnpoint @s 0 101 766 0");
+        var source=p.level().getServer().createCommandSourceStack().withEntity(p).withLevel(p.level()).withSuppressedOutput();p.level().getServer().getCommands().performPrefixedCommand(source,"setworldspawn 0 101 766 0");p.level().getServer().getCommands().performPrefixedCommand(source,"spawnpoint @s 0 101 766 0");
     }
     public static void returnToLobby(ServerPlayer p){if(!p.isAlive())return;p.teleportTo(p.level(),.5,101,766.5,Set.of(),0,0,true);p.setDeltaMovement(Vec3.ZERO);p.fallDistance=0;p.setInvulnerable(true);}
     private PvpMapArena(){}

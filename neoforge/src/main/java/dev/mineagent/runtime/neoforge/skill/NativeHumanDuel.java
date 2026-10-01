@@ -65,14 +65,13 @@ public final class NativeHumanDuel {
             if(!player.isAlive()){tell(player,"请先重生，再准备下一场。");return 0;}
             if(run==null){
                 // This bootstrap is restricted to an explicitly launched disposable single-player arena.
-                server.getPlayerList().op(player.nameAndId());
                 if(WorldActivationRuntime.decide(player.createCommandSourceStack(),true,null)!=1)throw new IllegalStateException("世界尚未启用");
                 IsolatedCombatArena.prepare(player,List.of(ARENA));if(PvpMapSupport.enabled())decorate(player);
                 player.level().getGameRules().set(GameRules.SPAWN_MOBS,false,server);
                 player.level().getGameRules().set(GameRules.PVP,true,server);
                 player.level().getGameRules().set(GameRules.KEEP_INVENTORY,true,server);
-                server.getCommands().performPrefixedCommand(player.createCommandSourceStack().withSuppressedOutput(),"difficulty normal");
-                server.getCommands().performPrefixedCommand(player.createCommandSourceStack().withSuppressedOutput(),"time set day");
+                server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withEntity(player).withLevel(player.level()).withSuppressedOutput(),"difficulty normal");
+                server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withEntity(player).withLevel(player.level()).withSuppressedOutput(),"time set day");
                 run=new Run(player);RUNS.put(server,run);
             }
             if(run.saved.isCompletedExceptionally())throw new IllegalStateException("数据保存失败，已停止对练");
@@ -106,7 +105,7 @@ public final class NativeHumanDuel {
         var server=event.getServer();if(!enabled()||!server.isSingleplayer())return;
         if(Boolean.getBoolean("mineagent.humanDuelFixture"))fixtureTick(server);
         var run=RUNS.get(server);
-        if(run==null){if(server.getTickCount()>100&&!OFFERED.contains(server))for(var p:server.getPlayerList().getPlayers())if(!(p instanceof MineAgentPlayer)&&server.isSingleplayerOwner(p.nameAndId())){OFFERED.add(server);if(PvpMapSupport.enabled()){server.getPlayerList().op(p.nameAndId());PvpMapArena.lobby(p);PvpMapArena.returnToLobby(p);}menu(p,null);if(PvpMapSupport.enabled())PvpMapSupport.push(p,"READY",180,true);break;}return;}
+        if(run==null){if(server.getTickCount()>100&&!OFFERED.contains(server))for(var p:server.getPlayerList().getPlayers())if(!(p instanceof MineAgentPlayer)&&server.isSingleplayerOwner(p.nameAndId())){OFFERED.add(server);if(PvpMapSupport.enabled()){PvpMapArena.lobby(p);PvpMapArena.returnToLobby(p);}menu(p,null);if(PvpMapSupport.enabled())PvpMapSupport.push(p,"READY",180,true);break;}return;}
         try{
             var online=server.getPlayerList().getPlayer(run.owner);
             if(online==null){abort(run,"DISCONNECTED");return;}

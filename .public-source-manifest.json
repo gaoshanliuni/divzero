@@ -5754,8 +5754,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "310c379f0daab13c64f37374c24be0b446abcebb7e2ccddbb7b8528ce23689a9",
-      "bytes": 36834
+      "sha256": "5b208f30d8835eb9e4fccf5e9491bcc89dc795064a3275b5fb303f544d1248ae",
+      "bytes": 36820
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
@@ -5794,8 +5794,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapArena.java",
-      "sha256": "f18e809780fb252075312b69021fffbb47ead7a653ea8571f8017952f35cfff7",
-      "bytes": 3086
+      "sha256": "1585f153fe1e92b43eec2370a765c9311ebc777a8fd1055a1fedbe7623270a0c",
+      "bytes": 3141
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapSupport.java",
