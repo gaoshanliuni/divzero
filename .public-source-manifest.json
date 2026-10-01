@@ -3474,8 +3474,8 @@
     },
     {
       "path": "docs/HUD_WIKI_LEARNING.md",
-      "sha256": "e253ea8e8fc5063f43942b7c80bdeb204c92cc2a23bcdbc35436fe2036604f70",
-      "bytes": 3276
+      "sha256": "fda1523fd6fc1c4092e11c5352bc7a7f2e27f94dd8b25a79de8652627c93ed3c",
+      "bytes": 7032
     },
     {
       "path": "docs/HUMAN_DUEL_TRAINING.md",
@@ -3709,8 +3709,8 @@
     },
     {
       "path": "docs/releases/1.0.27.md",
-      "sha256": "d8d3fdbdbb2f0768a54e48abc3e277f8cd67442f0aec1a6ed358d0dee7d2128a",
-      "bytes": 541
+      "sha256": "34f4d35f393ffc818093ca024e3c512d2e93fbebfbaf636edb560cf1e3183151",
+      "bytes": 889
     },
     {
       "path": "gradle.properties",
