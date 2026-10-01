@@ -3529,8 +3529,8 @@
     },
     {
       "path": "docs/WORLD_ACTIVATION_CHAT.md",
-      "sha256": "dd4338fa891dc0dc7f89d8ef0e72a7b42f60ec347d1f889a805e782490af6b12",
-      "bytes": 5170
+      "sha256": "ca431d8242bec3fb9c8fff646d7711f69d765e1903a62c7b5d8693df7bafa9d9",
+      "bytes": 6280
     },
     {
       "path": "docs/images/README.md",
@@ -3684,8 +3684,8 @@
     },
     {
       "path": "docs/releases/1.0.26.md",
-      "sha256": "8f27e1cf986c5c2d9f383d8950c793e1288f771ef8888664adae55313776b999",
-      "bytes": 640
+      "sha256": "78c10e6185bfa16fb25f2f3061e29535833b81750bdf9a385372bfef7a7f9582",
+      "bytes": 919
     },
     {
       "path": "gradle.properties",
