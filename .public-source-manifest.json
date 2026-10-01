@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "files": [
     {
       "path": ".gitattributes",
@@ -3678,8 +3678,13 @@
       "bytes": 796
     },
     {
+      "path": "docs/releases/1.0.25.md",
+      "sha256": "b8155b239218401358316bbb58e44125c49d43187a33b8845336becad110aa84",
+      "bytes": 658
+    },
+    {
       "path": "gradle.properties",
-      "sha256": "fb53def44b8f48037c79c96eac5cef7e76bb7abaa3fdbadffa298339bb20e4b5",
+      "sha256": "2fb3936e9f4064638de5b509371290ef278874e6367ca89e5145933ef1efb6e6",
       "bytes": 496
     },
     {
@@ -4283,6 +4288,11 @@
       "bytes": 7235
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ClipboardSmokeClient.java",
+      "sha256": "cefbdac24ad2170bb944e1c5aec48f8711314b63de41065051b1ae2e67d44164",
+      "bytes": 7863
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/KubeInterfaceRenderer.java",
       "sha256": "f32bc80ff59c3fd78b6cdadb36e0a3e20770eeade6d7d482ae8fe9ae2937d668",
       "bytes": 2449
@@ -4299,8 +4309,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/LdPanelScreen.java",
-      "sha256": "8b426813be4799f7cbe3090cd2aa104e3f58bd391c2376efa81cbf48efafb528",
-      "bytes": 8278
+      "sha256": "dc0d66691bd6ff181a33c6d2ad3e8101aea71626bd6cb45d69780c4ae1257073",
+      "bytes": 8562
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/MentionDisplaySmoke.java",
@@ -4324,8 +4334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeAttachedLayers.java",
-      "sha256": "8a4f2fd3b511cbd51493c5923c41c5c4085f4c4d0934b394df173119caf79526",
-      "bytes": 16153
+      "sha256": "bccd28200f4a34a87c9b76e04872e6dc089db3f3269d0335ed1df0a7e375f01e",
+      "bytes": 16190
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBehaviorPanel.java",

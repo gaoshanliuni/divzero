@@ -93,8 +93,9 @@ public abstract class LdPanelScreen extends Screen implements NativeComposition 
     @Override public void tick(){mount();sync();super.tick();ime.update();}
     @Override public boolean preeditUpdated(net.minecraft.client.input.PreeditEvent event){return ime.preedit(event);}
     @Override public boolean nativeComposing(){return ime.composing();}
-    @Override public boolean keyPressed(KeyEvent event){return ime.consume(event)||super.keyPressed(event);}
+    @Override public boolean keyPressed(KeyEvent event){mount();sync();return ime.consume(event)||ime.shortcut(event)||super.keyPressed(event);}
     @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mouseX,int mouseY,float partialTick){mount();sync();super.extractRenderState(graphics,mouseX,mouseY,partialTick);ime.render(graphics,mouseX,mouseY,partialTick);}
     @Override public boolean isPauseScreen(){return false;}
-    @Override public void removed(){ime.release();super.removed();for(var secret:secrets)secret.setValue("");if(ui!=null&&!ui.isRemoved())ui.onRemoved();}
+    @Override public void removed(){ime.release();super.removed();for(var secret:secrets){secret.setValue("");if(elements.get(secret) instanceof TextField field)field.setText("",false);}if(ui!=null&&!ui.isRemoved())ui.onRemoved();}
+    ModularUI clipboardFixtureUi(){if(!Boolean.getBoolean("mineagent.clipboardSmoke"))throw new IllegalStateException("CLIPBOARD_FIXTURE_ONLY");mount();sync();return ui;}
 }
