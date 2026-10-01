@@ -33,7 +33,7 @@ public final class NativeSelfPlayLab {
         final List<Object> results=new ArrayList<>();final List<Match> matches=new ArrayList<>();
         final List<CompletableFuture<?>> starts=new ArrayList<>();String phase="SETUP",error="";int wave;long globalDeadline,roundDeadline,roundStarted;boolean done;
         Run(ServerPlayer owner,boolean training,int waves,int baseWave,List<Model> models){this.owner=owner;level=owner.level();this.training=training;this.waves=waves;this.baseWave=baseWave;this.models=models;}
-        Map<String,Object> summary(){return Map.of("status",done?(error.isEmpty()?"COMPLETE":"FAILED"):phase,"error",error,"training",training,"completed",done,"wave",wave,"waves",waves,"models",models.stream().map(m->Map.of("id",m.id,"sha256",m.sha256)).toList(),"matches",results,"controllers","NEURAL_VS_NEURAL");}
+        Map<String,Object> summary(){return Map.of("status",done?(error.isEmpty()?"COMPLETE":"FAILED"):phase,"error",error,"training",training,"completed",done,"wave",wave,"waves",waves,"models",models.stream().map(m->Map.of("id",m.id,"sha256",m.sha256)).toList(),"matches",results,"controllers","NEURAL_VS_NEURAL","identicalWeightsControl",Boolean.getBoolean("mineagent.selfPlayIdenticalControl"));}
     }
     public static CompletableFuture<Map<String,Object>> begin(ServerPlayer owner,boolean training,int waves,int generation){
         if(!IsolatedCombatArena.enabled()||!System.getProperty("mineagent.skillSmokeMode","").startsWith("selfplay_")||waves<1||waves>2||generation<0)throw new SecurityException("ISOLATED_SELF_PLAY_BATCH");
@@ -42,7 +42,7 @@ public final class NativeSelfPlayLab {
                 if(raw.length>1048576||!dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(raw).equals(expected))throw new IllegalArgumentException("SELF_PLAY_POOL_HASH");
                 var data=JSON.readTree(raw);var models=new ArrayList<Model>();var distinct=new HashSet<String>();
                 for(var entry:data.path("models")){String source=entry.path("source").asText(),hash=entry.path("sha256").asText();if(source.length()>131072||!dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(source).equals(hash))throw new IllegalArgumentException("SELF_PLAY_WEIGHT_HASH");var policy=JSON.readTree(LocalActionPolicy.parse(source).json());((com.fasterxml.jackson.databind.node.ObjectNode)policy).remove(List.of("schema","version","provenance"));models.add(new Model(entry.path("id").asText(),source,hash));distinct.add(policy.toString());}
-                if(models.size()<2||models.size()>8||distinct.size()<2)throw new IllegalArgumentException("SELF_PLAY_DISTINCT_MODELS_REQUIRED");return List.copyOf(models);
+                if(models.size()<2||models.size()>8||distinct.size()<2&&(training||!Boolean.getBoolean("mineagent.selfPlayIdenticalControl")))throw new IllegalArgumentException("SELF_PLAY_DISTINCT_MODELS_REQUIRED");return List.copyOf(models);
             }catch(Exception failure){throw new CompletionException(failure);}
         }).thenCompose(models->server.submit(()->{if(server.getPlayerList().getPlayer(owner.getUUID())!=owner||RUNS.containsKey(server))throw new IllegalStateException("SELF_PLAY_CONTEXT_CHANGED");var run=new Run(owner,training,waves,generation*2,models);RUNS.put(server,run);return run.summary();}));
     }

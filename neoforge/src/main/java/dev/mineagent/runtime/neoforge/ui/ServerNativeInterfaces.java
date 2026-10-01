@@ -62,7 +62,7 @@ public final class ServerNativeInterfaces {
             if(readError!=null){result.completeExceptionally(readError);return;}
             try{
                 require(current(p,agent,level,guard),"NATIVE_UI_CONTEXT_CHANGED");require((old==null?0:old.revision())==expected,"NATIVE_UI_STALE_REVISION");
-                String source=tool.equals("set_native_ui")?args.path("source").asText():old==null?"":old.source();var definition=InterfaceDefinition.parse(source);require(definition.id().equals(id),"NATIVE_UI_ID_MISMATCH");
+                String source=tool.equals("set_native_ui")?args.path("source").asText():old==null?"":old.source();var definition=InterfaceDefinition.parse(source);if(tool.equals("set_native_ui"))definition.requireHudHeight();require(definition.id().equals(id),"NATIVE_UI_ID_MISMATCH");
                 require(source.length()<=65536,"NATIVE_UI_SOURCE_SIZE");
                 var values=new LinkedHashMap<String,JsonNode>(tool.equals("set_native_ui")?definition.data():old.data());
                 if(tool.equals("patch_native_ui_data")){require(args.path("data").isObject(),"NATIVE_UI_DATA");args.get("data").properties().forEach(e->values.put(e.getKey(),e.getValue().deepCopy()));}

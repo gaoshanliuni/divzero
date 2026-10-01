@@ -25,6 +25,7 @@ public final class CapabilitySession {
         if(continues&&continuation!=null)for(String group:continuation)load(group);
         boolean act=matches(text,"创建|生成|建造|搭建|制作|修改|更改|添加|增加|删除|设置|替换|帮我|请你|我要|给我|打开|检查|查看|查询|读取|导入|修复|设计|扩大|缩小|预览|create|build|make|modify|change|add|remove|set |open |inspect|import|fix|show|preview");
         var chosen=new LinkedHashSet<String>();
+        if(matches(text,"ldlib|kubejs|ui wiki|界面文档|HUD文档"))chosen.add("ui");
         if(matches(text,"记住|记忆|我喜欢|偏好|喜欢的|回家|remember|preference|my home|go home"))chosen.add("memory");
         if(matches(text,"跟着|跟随|巡逻|漫步|接管|托管|回家|follow|patrol|take over|autopilot"))chosen.add("movement");
         if(matches(text,"种田|种地|收割|补种|钓鱼|耕田|farm|fishing|harvest|replant"))chosen.add("farming");

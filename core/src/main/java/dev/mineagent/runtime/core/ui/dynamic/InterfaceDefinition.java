@@ -21,6 +21,7 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
         ENTITY_HUD renders one passive copy of the root above each visible tracked living entity. attachment:{"range":64,"through_walls":false}; range1..256, hidden/behind-camera/out-of-range entities are skipped. Read-only data.entity has id/name/health/maxHealth/distance. Use get(data.entity,"health") and division by maxHealth for bars; no events/handlers are allowed. It does not grab mouse input.
         window is an arbitrary child-control container with draggable title, resize border, minimize/restore task button, maximize and close. It can be combined with panels, launchers and styles for a desktop. The default theme is MC; an explicit desktop request may style its local tree.
         Optional order is an integer -10000..10000 for ordering independent HUD panels. HUD coordinates use GUI-scaled screen units; root LSS left/top/right/bottom can position the panel.
+        HUD MUST declare a positive explicit root.style height, e.g. "width: 160; height: 54; flex-grow: 0;". Missing height can stretch the panel to the full screen. Use GUI units, size children to fit, and verify at UI scales 2/3/4; do not use height:100% for an ordinary status panel. Read read_ui_wiki(topic="divzero/hud") for examples and the official documentation directory.
         Optional sources binds data keys to live server data, without AI polling or reload:
         "sources":{"balance":{"kind":"score","objective":"coins","holder":"$viewer"},"health":{"kind":"agent","field":"health"}}.
         score holder may be $viewer (the viewing player's score name), $agent, or an exact scoreboard holder. A missing score is 0; an unavailable source is reported separately.
@@ -101,6 +102,13 @@ public record InterfaceDefinition(String id, String title, Surface surface, Json
     private static boolean path(JsonNode node,String id,List<JsonNode> path){path.add(node);if(node.path("id").asText().equals(id))return true;for(var child:node.path("children"))if(path(child,id,path))return true;path.removeLast();return false;}
     public static boolean boundBoolean(JsonNode node,String key,Map<String,JsonNode> values){return node.path("bindings").has(key)?InterfaceExpression.truth(InterfaceExpression.evaluate(node.get("bindings").get(key),values)):node.path(key).asBoolean(true);}
     public static void walk(JsonNode n,java.util.function.Consumer<JsonNode> visitor){visitor.accept(n);for(var child:n.path("children"))walk(child,visitor);}
+    /** Applied to new HUD candidates; old stored definitions can still be read, repaired and hidden. */
+    public void requireHudHeight(){
+        if(surface!=Surface.HUD)return;
+        String style=root.path("style").asText().replaceAll("(?s)/\\*.*?\\*/","");
+        var matcher=java.util.regex.Pattern.compile("(?:^|;)\\s*height\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)(?:px|%)?\\s*(?:;|$)",java.util.regex.Pattern.CASE_INSENSITIVE).matcher(style);
+        if(!matcher.find()||Double.parseDouble(matcher.group(1))<=0)throw error("$.root.style.height","HUD_EXPLICIT_HEIGHT_REQUIRED: set a positive height in root.style, for example width: 160; height: 54; flex-grow: 0; (GUI units); old UI remains active");
+    }
     private static void validateNode(JsonNode n,String path,int depth,Set<String> ids){
         if(depth>MAX_DEPTH)throw error(path,"TREE_DEPTH");fields(n,NODE_FIELDS,path);
         String nodeId=id(n.path("id"),path+".id");if(!ids.add(nodeId))throw error(path+".id","DUPLICATE_ID");if(ids.size()>MAX_NODES)throw error(path,"NODE_COUNT");

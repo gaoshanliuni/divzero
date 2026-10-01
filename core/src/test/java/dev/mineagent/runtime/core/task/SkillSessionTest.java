@@ -1,6 +1,16 @@
 package dev.mineagent.runtime.core.task;
 import com.fasterxml.jackson.databind.ObjectMapper;import org.junit.jupiter.api.Test;import java.util.*;import static org.junit.jupiter.api.Assertions.*;
 class SkillSessionTest {
+    @Test void restartResumesAiIntentButNotExplicitPausesOrUnknownWrites()throws Exception{
+        var s=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,spec());
+        s.cursor(41);s.add("verifiedHits",7);s.receipt(Map.of("combatState","NATIVE_ATTACK_OBSERVED"));s.checkpointShutdown();
+        var restored=SkillSession.restore(s.snapshot());assertTrue(restored.automaticResumeCandidate());assertEquals(41,restored.cursor());assertEquals(7,restored.count("verifiedHits"));
+        restored.control(restored.revision(),"pause");restored.checkpointShutdown();assertEquals("USER_PAUSED",SkillSession.restore(restored.snapshot()).reason());assertFalse(SkillSession.restore(restored.snapshot()).automaticResumeCandidate());
+        s.receipt(Map.of("combatState","PREPARED"));assertFalse(SkillSession.restore(s.snapshot()).automaticResumeCandidate());
+        s.transition(SkillSession.State.PAUSED,"TEMPORARY_WORK");s.checkpointShutdown();assertEquals("TEMPORARY_WORK",SkillSession.restore(s.snapshot()).reason());
+        var playerSpec=SkillSpec.parse(new ObjectMapper().readTree("{\"id\":\"idle\",\"kind\":\"IDLE\",\"actor\":\"player\",\"dimension\":\"minecraft:overworld\"}"),null);
+        var player=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,playerSpec);player.checkpointShutdown();assertFalse(SkillSession.restore(player.snapshot()).automaticResumeCandidate());
+    }
     @Test void respawnPreservesPolicyProgressAndExplicitStopWins()throws Exception{
         var policy=CombatPolicy.parse(new ObjectMapper().readTree("{\"engagement\":\"PROTECT\",\"protect\":\"$owner\",\"strategy\":\"HIT_AND_RUN\"}"),CombatPolicy.defaults(SkillSpec.Kind.FARM,true,""));
         var s=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,spec().withCombat(policy));
