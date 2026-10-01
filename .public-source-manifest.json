@@ -5644,8 +5644,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/AiSkillActor.java",
-      "sha256": "a9ed7396c8e37ee2fea182805e1b5ece4293ce07f98b75410768d77b704648d9",
-      "bytes": 8164
+      "sha256": "74014575e791e28bb706ea930565e558a30377c6bf5877f90672d6aa5f386d0b",
+      "bytes": 8180
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
@@ -5684,8 +5684,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "1df59b0bd7f4a77c9f86f2545ee75e9f6c9b09721f7954fb6bc67bf81b1e9dc1",
-      "bytes": 41079
+      "sha256": "5f04d36069ce61200cd96e679c77286037a4a879db8eb41d6012ed078e7dab3c",
+      "bytes": 41866
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -5754,8 +5754,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "7774e491b5ff423ba466df121d1917d0f17dffd392677f113c6a27968afdf074",
-      "bytes": 36565
+      "sha256": "310c379f0daab13c64f37374c24be0b446abcebb7e2ccddbb7b8528ce23689a9",
+      "bytes": 36834
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
@@ -5764,8 +5764,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
-      "sha256": "dd6de31dc3eb89696d3fa6bceef8ce60c1433f9d0346be7056dc4f0ccab69f8f",
-      "bytes": 12411
+      "sha256": "124f08e16ad8049aca22f7b62decebf03a502326924b2e31d195c626a43459f8",
+      "bytes": 12474
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeSelfPlayLab.java",
@@ -5779,8 +5779,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "1a3c4ac0adf178375328e80e113ecad0ce68014942b0eb951c474afcfd39fc55",
-      "bytes": 14620
+      "sha256": "f8547ffbb2b694232e4c9d09d24678342d07d8120702089f9ce351b65927d8d4",
+      "bytes": 14636
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
@@ -5794,8 +5794,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapArena.java",
-      "sha256": "88d260478950f27b5137be8abd96ae8e9cc7a771e5a9b83f5f8e3c7eff8df34c",
-      "bytes": 2980
+      "sha256": "f18e809780fb252075312b69021fffbb47ead7a653ea8571f8017952f35cfff7",
+      "bytes": 3086
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapSupport.java",

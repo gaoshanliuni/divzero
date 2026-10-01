@@ -8,10 +8,11 @@ import java.util.Set;
 
 /** Permanent lobby and tightly scoped, wool-only round cleanup for the marked map. */
 public final class PvpMapArena {
-    public static boolean field(BlockPos p){return p.getX()>=-16&&p.getX()<=16&&p.getZ()>=784&&p.getZ()<=816&&p.getY()>=101&&p.getY()<=122;}
-    public static boolean protectedArea(BlockPos p){return p.getX()>=-18&&p.getX()<=18&&p.getZ()>=754&&p.getZ()<=818&&p.getY()>=97&&p.getY()<=124;}
+    public static boolean field(BlockPos p){return p.getX()>=-16&&p.getX()<=16&&p.getZ()>=784&&p.getZ()<=816&&p.getY()>=101&&p.getY()<=319;}
+    public static boolean inside(Vec3 p){return p.x> -17&&p.x<18&&p.z>783&&p.z<818&&p.y>=97;}
+    public static boolean protectedArea(BlockPos p){return p.getX()>=-18&&p.getX()<=18&&p.getZ()>=754&&p.getZ()<=818&&p.getY()>=97&&p.getY()<=319;}
     public static int clearWool(ServerPlayer player){
-        var level=player.level();int count=0;for(int x=-16;x<=16;x++)for(int z=784;z<=816;z++)for(int y=101;y<=122;y++){var at=new BlockPos(x,y,z);if(level.getBlockState(at).is(net.minecraft.tags.BlockTags.WOOL)){level.setBlock(at,Blocks.AIR.defaultBlockState(),3);count++;}}
+        var level=player.level();int count=0;for(int x=-16;x<=16;x++)for(int z=784;z<=816;z++)for(int y=101;y<=level.getMaxY();y++){var at=new BlockPos(x,y,z);if(level.getBlockState(at).is(net.minecraft.tags.BlockTags.WOOL)){level.setBlock(at,Blocks.AIR.defaultBlockState(),3);count++;}}
         for(var drop:level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(-17,100,783,18,125,818),e->e.getItem().is(net.minecraft.tags.ItemTags.WOOL)))drop.discard();return count;
     }
     public static void lobby(ServerPlayer p){

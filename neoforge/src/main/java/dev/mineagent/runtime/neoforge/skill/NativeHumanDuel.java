@@ -38,7 +38,7 @@ public final class NativeHumanDuel {
         final Path directory;MineAgentPlayer ai;ServerPlayer player;UUID match;CompletableFuture<?> start;
         CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);String error="",finishReason="";
         long startNanos,endNanos;int startTick,lastCountdown=-1;double humanDamage,aiDamage;int humanHits,aiHits;
-        boolean woolFixtureDone;int rangedFixtureStage;double rangedSeparation;long rangedSprint;int rangedAmmo=256;
+        boolean woolFixtureDone;int rangedFixtureStage;double rangedSeparation,rangedCycleSeparation;long rangedSprint;int rangedAmmo=256;
         int fixtureStage;List<LocalActionPolicy.Sample> partialSamples=List.of();
         Run(ServerPlayer player){series=PvpMapSupport.enabled()?new HumanDuelSeries(0,PvpMapSupport.profile(player).rounds()):new HumanDuelSeries();this.player=player;owner=player.getUUID();server=player.level().getServer();level=player.level();directory=server.getServerDirectory().resolve("human-duel").resolve(id.toString());}
     }
@@ -133,7 +133,7 @@ public final class NativeHumanDuel {
             }else if(run.series.phase()==HumanDuelSeries.Phase.FIGHTING){
                 String result=run.series.outcome(now,online.isAlive(),run.ai.isAlive());
                 if(!result.isEmpty()){endCombat(run,result);return;}
-                if(!ARENA.contains(online.position())||!ARENA.contains(run.ai.position())||run.ai.level()!=run.level){abort(run,"LEFT_ARENA");return;}
+                if(!(PvpMapSupport.enabled()?PvpMapArena.inside(online.position())&&PvpMapArena.inside(run.ai.position()):ARENA.contains(online.position())&&ARENA.contains(run.ai.position()))||run.ai.level()!=run.level){abort(run,"LEFT_ARENA");return;}
                 if(server.getTickCount()%4==0)run.frames.add(Map.of("tick",server.getTickCount()-run.startTick,"seconds",run.series.elapsed(now),"human",observe(online),"ai",observe(run.ai)));
                 if(server.getTickCount()%20==0)online.sendSystemMessage(Component.literal("第 "+run.series.round()+(PvpMapSupport.enabled()?" 场 · 剩余 ":" / 5 场 · 剩余 ")+run.series.remainingSeconds(now)+" 秒 · /ai duel stop 停止"),true);
                 if(server.getTickCount()%100==0)persist(run);
@@ -257,9 +257,9 @@ public final class NativeHumanDuel {
     private static void checkRangedContact(Run run){
         if(run.rangedFixtureStage>=4)return;var p=run.player;var ai=run.ai;var snapshot=JSON.valueToTree(SkillRuntime.get(run.server).snapshot(p,ai.agentId()));
         for(var skill:snapshot.path("skills"))run.rangedSprint=Math.max(run.rangedSprint,skill.path("session").path("counters").path("rangedEscapeSprintTicks").asLong());
-        run.rangedSeparation=Math.max(run.rangedSeparation,p.distanceTo(ai));
-        if(run.rangedFixtureStage%2==0){double x=Math.clamp(ai.getX()-1.4,-14,14),z=Math.clamp(ai.getZ(),786,814);p.teleportTo(p.level(),x,101,z,Set.of(),-90,0,true);p.resetAttackStrengthTicker();run.rangedAmmo=java.util.stream.IntStream.range(0,36).map(i->ai.getInventory().getItem(i).is(Items.ARROW)?ai.getInventory().getItem(i).getCount():0).sum();run.rangedFixtureStage++;}
-        else{int arrows=java.util.stream.IntStream.range(0,36).map(i->ai.getInventory().getItem(i).is(Items.ARROW)?ai.getInventory().getItem(i).getCount():0).sum();if(arrows<run.rangedAmmo&&run.rangedSeparation>=7&&run.rangedSprint>0)run.rangedFixtureStage++;}
+        if(run.rangedFixtureStage%2==1){run.rangedSeparation=Math.max(run.rangedSeparation,p.distanceTo(ai));run.rangedCycleSeparation=Math.max(run.rangedCycleSeparation,p.distanceTo(ai));}
+        if(run.rangedFixtureStage%2==0){double x=Math.clamp(ai.getX()-1.4,-14,14),z=Math.clamp(ai.getZ(),786,814);p.teleportTo(p.level(),x,101,z,Set.of(),-90,0,true);p.resetAttackStrengthTicker();run.rangedAmmo=java.util.stream.IntStream.range(0,36).map(i->ai.getInventory().getItem(i).is(Items.ARROW)?ai.getInventory().getItem(i).getCount():0).sum();run.rangedCycleSeparation=0;run.rangedFixtureStage++;}
+        else{int arrows=java.util.stream.IntStream.range(0,36).map(i->ai.getInventory().getItem(i).is(Items.ARROW)?ai.getInventory().getItem(i).getCount():0).sum();if(arrows<run.rangedAmmo&&run.rangedCycleSeparation>=7&&run.rangedSprint>0)run.rangedFixtureStage++;}
         if(run.server.getTickCount()%40==0){var evidence=Map.of("stage",run.rangedFixtureStage,"separation",run.rangedSeparation,"sprintTicks",run.rangedSprint,"skills",snapshot);IO.execute(()->{try{Files.writeString(run.directory.getParent().getParent().resolve("ranged-contact-progress.json"),JSON.writeValueAsString(evidence));}catch(Exception ignored){}});}
         if(run.server.getTickCount()-run.startTick>1400)throw new IllegalStateException("RANGED_CONTACT_DID_NOT_RESUME_FIRE_"+run.rangedFixtureStage+"_"+run.rangedSeparation+"_"+run.rangedSprint);
     }

@@ -14,7 +14,7 @@ import java.util.*;
 
 /** Native charge/use differences are explicit; a camera aim or submitted release is never a hit receipt. */
 final class NativeRangedCombat {
-    static final class State {final RangedContactEscape contact=new RangedContactEscape();String adapter="";Vec3 aim,origin,target;int planned=-10000,shootStage,dodgeUntil=-10000,dodgeSide;UUID release,issuedOperation;int issuedAt=-10000;boolean deferred;}
+    static final class State {final RangedContactEscape contact=new RangedContactEscape();Vec3 escapePosition;int escapeStalled,lateralUntil,lateralSide;String adapter="";Vec3 aim,origin,target;int planned=-10000,shootStage,dodgeUntil=-10000,dodgeSide;UUID release,issuedOperation;int issuedAt=-10000;boolean deferred;}
     private record Vanilla(String id,Item item,Use use,double speed,double gravity,double range,double pitchOffset,double areaRadius) implements RangedWeaponAdapter {
         public boolean matches(ItemStack stack){return stack.is(item);}
         public boolean ammunition(net.minecraft.server.level.ServerPlayer p,ItemStack stack){
