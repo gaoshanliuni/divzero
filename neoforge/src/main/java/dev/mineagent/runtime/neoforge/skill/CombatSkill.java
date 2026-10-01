@@ -171,7 +171,8 @@ final class CombatSkill {
         if(!inReach&&visible&&(counter||advanceBetweenShots)&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
             if(!w.tactic.equals("COUNTER_APPROACH")){w.session.add("counterOpenings",1);if(actual.meleeRestricted())w.session.add("counterStunOpenings",1);else w.session.add("counterCooldownOpenings",1);}
             phase(w,"COUNTER_APPROACH");w.sprintApproach=true;
-            if(!move(w,w.positioning.choose(w,"COUNTER",Math.max(1,reach-.2)),target,false)){if(!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;}
+            var counterStep=w.positioning.approachStep(w,target,Math.max(1,reach-.2));if(counterStep==null)counterStep=w.positioning.choose(w,"COUNTER",Math.max(1,reach-.2));
+            if(!move(w,counterStep,target,false)){if(!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;}
             if(counter&&distance>reach+1&&opening>closing+8&&w.tick()-w.lastTacticalJump>=20&&w.positioning.jumpSafe(w)&&p.isSprinting()){
                 w.jumpKind="COUNTER";w.tacticalJumpY=p.getY();w.actor.jump(w.token());w.lastTacticalJump=w.tick();w.session.add("counterJumpAttempts",1);
             }

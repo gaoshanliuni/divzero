@@ -127,6 +127,7 @@ public final class NativeMobCombatLab {
                 mob.getRandom().setSeed(m.spec.seed()+i);mob.setPos(m.bounds.x()+.5+spawn.x(),101,m.bounds.z()+.5+spawn.z());
                 mob.finalizeSpawn(run.owner.level(),run.owner.level().getCurrentDifficultyAt(mob.blockPosition()),EntitySpawnReason.COMMAND,null);
                 if(!run.owner.level().noCollision(mob,mob.getBoundingBox())||run.owner.level().noCollision(mob,mob.getBoundingBox().move(0,-.08,0)))throw new IllegalStateException("MOB_ARENA_SPAWN_NOT_SUPPORTED");
+                if(kind.equals("evoker")&&NativeCombatStates.meleeAt(mob,m.actor,mob.position()))throw new IllegalStateException("CASTER_PHANTOM_MELEE_RANGE");
                 mob.setPersistenceRequired();mob.setTarget(m.actor);if(!run.owner.level().addFreshEntity(mob))throw new IllegalStateException("MOB_ARENA_ADD");m.enemies.add(mob);
                 m.spawnChecks.add(Map.of("id",mob.getUUID(),"type",kind,"position",mob.position().toString(),"clear",true,"supported",true));
             }

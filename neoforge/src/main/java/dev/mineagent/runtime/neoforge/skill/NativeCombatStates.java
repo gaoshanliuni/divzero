@@ -96,7 +96,13 @@ public final class NativeCombatStates {
         return Math.max(startup,contact);
     }
     /** Evaluate the actual mob attack hitbox at a possible observer position, without moving either entity. */
+    /** These vanilla bodies use spells, projectiles or explosions, never Mob's inherited melee box. Unknown mods remain conservative. */
+    public static boolean contactCapable(LivingEntity enemy){
+        if(!enemy.getClass().getName().startsWith("net.minecraft."))return true;
+        return !Set.of("minecraft:evoker","minecraft:witch","minecraft:guardian","minecraft:elder_guardian","minecraft:ghast","minecraft:creeper").contains(BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString());
+    }
     public static boolean meleeAt(LivingEntity enemy,LivingEntity actor,Vec3 position){
+        if(!contactCapable(enemy))return false;
         if(enemy instanceof net.minecraft.world.entity.monster.Vex vex)return vex.isCharging()&&vex.getBoundingBox().intersects(actor.getBoundingBox().move(position.subtract(actor.position())));
         if(enemy instanceof net.minecraft.world.entity.player.Player player)return player.isWithinAttackRange(player.getMainHandItem(),actor.getHitbox().move(position.subtract(actor.position())),0);
         if(enemy instanceof Mob unknown&&!enemy.getClass().getName().startsWith("net.minecraft.")){return unknown.isWithinMeleeAttackRange(actor)||position.distanceToSqr(enemy.position())<=actor.distanceToSqr(enemy);}

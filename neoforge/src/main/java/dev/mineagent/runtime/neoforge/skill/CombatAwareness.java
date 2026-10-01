@@ -99,7 +99,7 @@ final class CombatAwareness {
     Vec3 center(SkillWork w){return protectedEntity!=null?protectedEntity.position():anchor==null?w.player().position():anchor;}
     int contacts(SkillWork w){return (int)threats.stream().filter(t->t.entity.isAlive()&&NativeCombatStates.meleeAt(t.entity,w.player(),w.player().position())&&NativeCombatStates.meleeVisibleAt(t.entity,w.player(),w.player().position(),Vec3.ZERO)).count();}
     boolean flanked(SkillWork w){geometry(w);if(cachedFlanked!=null)return cachedFlanked;var p=w.player();var angles=new ArrayList<Double>();
-        for(var threat:threats){var e=threat.entity;if(e.isAlive()&&!deferred(w,e)&&e.distanceToSqr(p)<36&&Math.abs(e.getY()-p.getY())<3&&NativeCombatStates.meleeVisibleAt(e,p,p.position(),Vec3.ZERO)){var delta=e.position().subtract(p.position());if(delta.horizontalDistanceSqr()>.001)angles.add(Math.atan2(delta.z,delta.x));}}
+        for(var threat:threats){var e=threat.entity;if(e.isAlive()&&NativeCombatStates.contactCapable(e)&&!deferred(w,e)&&e.distanceToSqr(p)<36&&Math.abs(e.getY()-p.getY())<3&&NativeCombatStates.meleeVisibleAt(e,p,p.position(),Vec3.ZERO)){var delta=e.position().subtract(p.position());if(delta.horizontalDistanceSqr()>.001)angles.add(Math.atan2(delta.z,delta.x));}}
         return cachedFlanked=dev.mineagent.runtime.core.task.SpatialNeighbors.opposing(angles,Math.acos(-.2));
     }
     double risk(SkillWork w,Vec3 point){return risk(w,point,null);}

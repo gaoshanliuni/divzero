@@ -5584,8 +5584,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatAwareness.java",
-      "sha256": "4e58712875cc1aa9078b4fb8dbbcf261973c8696d42816761cc3f4518e11eebc",
-      "bytes": 15309
+      "sha256": "e5970cd8ce04bac74c2c248d3779322b2794c497145dc4482063282fa4831f13",
+      "bytes": 15347
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatCriticalTiming.java",
@@ -5609,8 +5609,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "67c0b8255ec2e4eb8d4948b1b04520ad3e6d82036aecc578c00c3598cee082be",
-      "bytes": 36646
+      "sha256": "cbeb7df78e126d58085c95b9095ec57f57f3ade730a7eac377cbecfc4e716fed",
+      "bytes": 36778
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -5664,13 +5664,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeCombatStates.java",
-      "sha256": "2eef4beed607377c095966aa697cfe939ef1dd211fcd0386f8037b9846b8f6ba",
-      "bytes": 14693
+      "sha256": "9ba4c55aeac19801591a857c02daa9fa24f5fa9b2da40d4d2d31f098de24c194",
+      "bytes": 15251
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
-      "sha256": "60ace84af91f4c79e9d43490c2ad1880012b399450985aea79ff3a29555fb0f4",
-      "bytes": 15878
+      "sha256": "1d711832dd521bf808fa1d5787c493806aeb1d0db9d90282fd538d6a08b16481",
+      "bytes": 16038
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
