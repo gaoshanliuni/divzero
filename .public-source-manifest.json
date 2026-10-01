@@ -4039,8 +4039,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/IdentityBootstrapSmokeClient.java",
-      "sha256": "65bd29f01b61499de52c0037676c39b2b7fff8a8547cd6b6f02086d975557fc5",
-      "bytes": 8132
+      "sha256": "51ccfb7efd16bbeef4ffa77c137c3fdc43930770c4ec4dbcdc040c5856c67faa",
+      "bytes": 8776
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientMod.java",
