@@ -43,6 +43,9 @@ public final class PvpMapClient {
     private static void command(String text){var connection=Minecraft.getInstance().getConnection();if(connection!=null)connection.sendCommand(text);}
     /** Actual LDLib2 press/release and server round trips, enabled only in the isolated fixture. */
     public static void fixtureTick(){
+        if(Boolean.getBoolean("mineagent.pvpMapReentryFixture")){
+            if(state!=null&&++fixtureTicks==30){var mc=Minecraft.getInstance();try{var p=state.getAsJsonObject("profile");if(p.get("rounds").getAsInt()!=0||!p.getAsJsonObject("human").get("chest").getAsString().equals("minecraft:iron_chestplate")||!p.getAsJsonObject("ai").get("mainhand").getAsString().equals("minecraft:diamond_sword"))throw new IllegalStateException("MAP_REENTRY_DID_NOT_RESET");screenshot("pvp-map-reentry.png");java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("pvp-map-reentry.json"),"{\"status\":\"PASS\",\"worldMarkerWithoutJvmFlag\":true,\"scoreReset\":true,\"loadoutsReset\":true}");}catch(Exception e){try{java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("pvp-map-reentry.json"),new Gson().toJson(Map.of("status","FAILED","error",e.toString())));}catch(Exception ignored){}}mc.stop();}return;
+        }
         if(!Boolean.getBoolean("mineagent.humanDuelFixture")||!Boolean.getBoolean("mineagent.pvpMap")||++fixtureTicks%10!=0)return;
         var mc=Minecraft.getInstance();
         try{

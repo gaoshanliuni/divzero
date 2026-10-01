@@ -4554,8 +4554,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PvpMapClient.java",
-      "sha256": "5c2a10ba572a705fd1d24ea5416884615ca108d5e16650eb35641e8e420ec07f",
-      "bytes": 12030
+      "sha256": "bf197e3ab401222ef14dfd7f14cde888938d0a93d878ba33755b15c18896b059",
+      "bytes": 12959
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
@@ -5734,8 +5734,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "65e0ae58c817e40dfe127864daa45e91c0dc3e5e0137ad213f24c5ec2a93e666",
-      "bytes": 29642
+      "sha256": "284766a9777ffa9d06294cf79eba03de33d3a36dc31e1291ee3a0455060c8e97",
+      "bytes": 29854
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",

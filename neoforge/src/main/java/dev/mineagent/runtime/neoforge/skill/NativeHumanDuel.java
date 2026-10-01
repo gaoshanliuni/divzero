@@ -54,7 +54,7 @@ public final class NativeHumanDuel {
             .then(Commands.literal("status").executes(c->command(c.getSource().getPlayerOrException(),"status")))));
     }
     public static int command(ServerPlayer player,String action){
-        if(!enabled()||player instanceof MineAgentPlayer||!player.level().getServer().isSingleplayer())return 0;
+        if(!enabled()||player instanceof MineAgentPlayer||!player.level().getServer().isSingleplayer()||!player.level().getServer().isSingleplayerOwner(player.nameAndId()))return 0;
         var server=player.level().getServer();var run=RUNS.get(server);
         if(run!=null&&!run.owner.equals(player.getUUID()))return 0;
         try{
@@ -211,7 +211,7 @@ public final class NativeHumanDuel {
         p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack(),"spawnpoint @s -5 101 800 -90");
         p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack(),"setworldspawn -5 101 800 -90");
     }
-    @SubscribeEvent public static void protectArena(net.neoforged.neoforge.event.level.block.BreakBlockEvent event){if(PvpMapSupport.enabled()&&ARENA.space().contains(Vec3.atCenterOf(event.getPos()))){event.setCanceled(true);event.setNotifyClient(true);}}
+    @SubscribeEvent public static void protectArena(net.neoforged.neoforge.event.level.block.BreakBlockEvent event){if(PvpMapSupport.enabled()&&event.getLevel() instanceof net.minecraft.server.level.ServerLevel level&&level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)&&ARENA.space().contains(Vec3.atCenterOf(event.getPos()))){event.setCanceled(true);event.setNotifyClient(true);}}
     private static void fixtureTick(MinecraftServer server){
         if(!Boolean.getBoolean("mineagent.humanDuelFixture")||server.getTickCount()<160)return;
         var run=RUNS.get(server);
