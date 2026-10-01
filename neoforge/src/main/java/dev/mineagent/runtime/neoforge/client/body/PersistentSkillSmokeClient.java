@@ -77,6 +77,16 @@ public final class PersistentSkillSmokeClient {
     private record Duel(int group,MineAgentPlayer a,MineAgentPlayer b,UUID aId,UUID bId){}
     private static final List<Duel> duels=new ArrayList<>();private static final Set<Integer> duelFinished=new HashSet<>();private static long duelDeadline,duelStarted,duelGlobalDeadline;private static final Map<Integer,Integer> duelTerminalTicks=new HashMap<>();
     private static int selfPlayViewTick=-1;private static boolean selfPlayCaptured;
+    private static void neuralMobs(){
+        boolean training=System.getProperty("mineagent.skillSmokeMode","").equals("mob_train");
+        action("one-neural-actor-versus-native-hostile-mobs",()->server(p->dev.mineagent.runtime.neoforge.skill.NativeMobCombatLab.begin(p,training)));
+        waitFor("ten-native-pve-bouts-with-summons-and-damage-receipts",12500,()->server(p->dev.mineagent.runtime.neoforge.skill.NativeMobCombatLab.inspect(p)).thenApply(value->{
+            lastObservation=JSON.valueToTree(value);
+            if(value.get("status").equals("FIGHTING")&&!selfPlayCaptured){if(selfPlayViewTick<0){selfPlayViewTick=ticks;mc().gui.getChat().clearMessages(false);}if(ticks-selfPlayViewTick>=80){screen("one-v-five-native-mobs");selfPlayCaptured=true;}}
+            if(!Boolean.TRUE.equals(value.get("completed")))return false;
+            require(value.get("status").equals("COMPLETE"),"MOB_ARENA_FAILED_"+value.get("error"));EVIDENCE.add(value);return true;
+        }));
+    }
     private static void neuralSelfPlay(){
         boolean training=System.getProperty("mineagent.skillSmokeMode","").equals("selfplay_train");int generation=Integer.getInteger("mineagent.selfPlayGeneration",0);
         action("load-verified-neural-model-pool",()->server(p->dev.mineagent.runtime.neoforge.skill.NativeSelfPlayLab.begin(p,training,2,generation)).thenCompose(Function.identity()));
@@ -668,6 +678,7 @@ public final class PersistentSkillSmokeClient {
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(mode.startsWith("selfplay_")){neuralSelfPlay();return;}
+        if(mode.startsWith("mob_")){neuralMobs();return;}
         if(playerActor()){waitFor("signed-player-control-activation",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});action("real-player-equipment-and-input",()->{org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return server(p->{var b=body(p);p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();for(int i=0;i<36;i++)p.getInventory().setItem(i,b.getInventory().getItem(i).copy());p.inventoryMenu.broadcastChanges();b.teleportTo(p.level(),27.5,101,25.5,Set.of(),0,0,true);return null;});});}
         if(mode.equals("evoker_timeline")){evokerTimeline();return;}
         if(mode.equals("multi_attack")){multiAttack();return;}

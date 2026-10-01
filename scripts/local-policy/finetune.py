@@ -25,15 +25,16 @@ rng = np.random.default_rng(args.seed)
 actors, evidence, groups = [], [], []
 for run in args.run:
     arguments = (run / "jvm.args").read_text()
-    selfplay = "mineagent.skillSmokeMode=selfplay_train" in arguments
+    mob_training = "mineagent.skillSmokeMode=mob_train" in arguments
+    selfplay = "mineagent.skillSmokeMode=selfplay_train" in arguments or mob_training
     if not selfplay and "mineagent.skillSmokeMode=policy_train" not in arguments:
         raise ValueError("Only explicit isolated native training runs may be used")
     membership = {}
     if selfplay:
         result = json.loads((run / "game/persistent-skill-smoke/result.json").read_text())
-        if result.get("status") != "PASS" or result.get("mode") != "selfplay_train":
+        if result.get("status") != "PASS" or result.get("mode") != ("mob_train" if mob_training else "selfplay_train"):
             raise ValueError("Self-play setup and lifecycle checks must pass before using its samples")
-        matrix = next(e for e in result["evidence"] if e.get("controllers") == "NEURAL_VS_NEURAL")
+        matrix = next(e for e in result["evidence"] if e.get("controllers") == ("NEURAL_VS_NATIVE_MOBS" if mob_training else "NEURAL_VS_NEURAL"))
         if matrix.get("status") != "COMPLETE":
             raise ValueError("Incomplete self-play matrix")
         for match in matrix["matches"]:
@@ -131,11 +132,11 @@ for step in range(1, args.steps + 1):
 if best_step == 0:
     raise ValueError("Candidate did not improve held-out native cost loss within the reference drift bound")
 w, b, v, c = best
-provenance = "NATIVE_SELF_PLAY_OUTCOME_FINE_TUNING_V3" if all(e["scenario"] != "HISTORICAL_RULE_DUEL" for e in evidence) else "NATIVE_OUTCOME_FINE_TUNING_V3"
+provenance = "NATIVE_MOB_OUTCOME_FINE_TUNING_V3" if any(e["scenario"] == "ONE_V_NATIVE_MOBS" for e in evidence) else "NATIVE_SELF_PLAY_OUTCOME_FINE_TUNING_V3" if all(e["scenario"] != "HISTORICAL_RULE_DUEL" for e in evidence) else "NATIVE_OUTCOME_FINE_TUNING_V3"
 model = {**initial, "version": initial["version"] + 1, "hidden": w.tolist(), "bias": b.tolist(), "output": v.tolist(), "outputBias": float(c), "provenance": provenance}
 args.output.parent.mkdir(parents=True, exist_ok=True)
 raw = (json.dumps(model, separators=(",", ":")) + "\n").encode()
 args.output.write_bytes(raw)
-report = {"seed": args.seed, "actorTrajectories": len(actors), "independentMatches": len(unique_groups), "trainingSamplesWithRotations": len(train_y), "heldOutSamples": len(valid_y), "heldOutActors": [int(i) for i in sorted(held)], "heldOutMatches": sorted(held_groups), "iterations": best_step, "attemptedIterations": args.steps, "lossBefore": before, "lossAfter": best_loss, "referenceDrift": float(np.mean((predict(best, anchors) - anchor_y) ** 2)), "sha256": hashlib.sha256(raw).hexdigest(), "sources": evidence, "battleAcceptance": "NOT_YET_RUN", "limitations": "Cost fitting is not a competitive win rate. Evaluate frozen neural opponents separately across the mirrored scenarios."}
+report = {"seed": args.seed, "actorTrajectories": len(actors), "independentMatches": len(unique_groups), "trainingSamplesWithRotations": len(train_y), "heldOutSamples": len(valid_y), "heldOutActors": [int(i) for i in sorted(held)], "heldOutMatches": sorted(held_groups), "iterations": best_step, "attemptedIterations": args.steps, "lossBefore": before, "lossAfter": best_loss, "referenceDrift": float(np.mean((predict(best, anchors) - anchor_y) ** 2)), "sha256": hashlib.sha256(raw).hexdigest(), "sources": evidence, "battleAcceptance": "NOT_YET_RUN", "limitations": "Cost fitting is not a competitive win rate. Evaluate frozen candidates separately against native mobs and neural opponents; never reuse evaluation runs as training data."}
 args.output.with_suffix(".report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 print(json.dumps({k: v for k, v in report.items() if k != "sources"}))

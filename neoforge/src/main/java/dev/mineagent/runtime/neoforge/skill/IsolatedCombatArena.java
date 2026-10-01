@@ -20,7 +20,7 @@ public final class IsolatedCombatArena {
     private record Participant(ServerPlayer owner,MineAgentPlayer body,Bounds arena,int team){}
     private static final Map<ServerPlayer,Participant> PARTICIPANTS=new WeakHashMap<>();
     private static final Set<ServerPlayer> ARMED=Collections.newSetFromMap(new IdentityHashMap<>());
-    public static boolean enabled(){String mode=System.getProperty("mineagent.skillSmokeMode","");return Boolean.getBoolean("mineagent.skillSmoke")&&(mode.startsWith("selfplay_")||mode.startsWith("policy_")||mode.equals("evoker_timeline")||mode.equals("multi_attack"));}
+    public static boolean enabled(){String mode=System.getProperty("mineagent.skillSmokeMode","");return Boolean.getBoolean("mineagent.skillSmoke")&&(mode.startsWith("mob_")||mode.startsWith("selfplay_")||mode.startsWith("policy_")||mode.equals("evoker_timeline")||mode.equals("multi_attack"));}
     private static void require(ServerPlayer owner){if(!enabled()||!owner.level().getServer().isSameThread())throw new SecurityException("ISOLATED_TRAINING_ONLY");}
     public static void prepare(ServerPlayer owner,List<Bounds> arenas){
         require(owner);ServerLevel level=owner.level();

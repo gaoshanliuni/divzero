@@ -2553,6 +2553,11 @@
       "bytes": 5713
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/MobArenaSchedule.java",
+      "sha256": "899d22bac5fe253abede3e8afd48336070837fdd4eda87a502b6fe9a872dd15b",
+      "bytes": 1264
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/MotionForecast.java",
       "sha256": "bca4ee73ec10cc062c8fec71a7eb71ceaf6a63660571b49d6e43f9806d9f9916",
       "bytes": 2927
@@ -3273,6 +3278,11 @@
       "bytes": 1812
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/MobArenaScheduleTest.java",
+      "sha256": "769e4f3214f8b701b6a9f743f57e690c397c3d0c5e9baef85cf2af0a8f404aff",
+      "bytes": 1224
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/MotionForecastTest.java",
       "sha256": "90231a8143e83c380c9cfd5cd4be2e1eeee8c331c7e283b01638dc61aa4eb899",
       "bytes": 2086
@@ -3964,8 +3974,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "c72eb4a14bd26ace9d29eb07738f66b1b83b3cc11ac277b69450e44f927bcd46",
-      "bytes": 190392
+      "sha256": "c40ec054e637bd324bd980c34bf52960c539bc718a466472aa1faf1d2f29a638",
+      "bytes": 191443
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5614,8 +5624,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/IsolatedCombatArena.java",
-      "sha256": "6a365de6a6019344a163fe0bd4fe10a190bbec3cd5d0c96e19c60c3ef3a9867a",
-      "bytes": 7389
+      "sha256": "5ab77e3d4afe5d4348649974e1a5e2a7796b08cb500ac9a17c330436bea541f1",
+      "bytes": 7414
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/LegacyCombatBaseline.java",
@@ -5646,6 +5656,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeCombatStates.java",
       "sha256": "2eef4beed607377c095966aa697cfe939ef1dd211fcd0386f8037b9846b8f6ba",
       "bytes": 14693
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
+      "sha256": "60ace84af91f4c79e9d43490c2ad1880012b399450985aea79ff3a29555fb0f4",
+      "bytes": 15878
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
@@ -7094,8 +7109,8 @@
     },
     {
       "path": "scripts/local-policy/finetune.py",
-      "sha256": "b5fc3e9e8bedc50227568c51e51593dd821665fb30971ab6d5415dbc170bb860",
-      "bytes": 9010
+      "sha256": "c3c27349b836ff824209a9813f4da18bb71cdb39f23788a02d86f50d4c0f2468",
+      "bytes": 9332
     },
     {
       "path": "scripts/local-policy/model_pool.py",
