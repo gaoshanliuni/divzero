@@ -4094,8 +4094,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/WorldStartupSmokeClient.java",
-      "sha256": "16846f9b9ed416011a3d421fb7710014799a44fd73d0361e6799700a36ef4590",
-      "bytes": 4210
+      "sha256": "acb97a2d1df46f8203e7eba755e60924c6992f9e9f91cf28417930ed965e691e",
+      "bytes": 4517
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/AiNameHover.java",
