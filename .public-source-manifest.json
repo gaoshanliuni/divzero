@@ -3959,8 +3959,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "2cc2771aaa55457fbddd41cc4ac65bd6d9ecdd71fa8105688ec5da612686a128",
-      "bytes": 190186
+      "sha256": "c72eb4a14bd26ace9d29eb07738f66b1b83b3cc11ac277b69450e44f927bcd46",
+      "bytes": 190392
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -4191,6 +4191,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/LdPanelScreen.java",
       "sha256": "8b426813be4799f7cbe3090cd2aa104e3f58bd391c2376efa81cbf48efafb528",
       "bytes": 8278
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/MentionDisplaySmoke.java",
+      "sha256": "235a5d8d0e02021b8acdc788a12309bfd5e25736fca024faa7a8057c8b2c09f1",
+      "bytes": 16864
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeApiPanel.java",
@@ -4474,8 +4479,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
-      "sha256": "9859b55d12ee5d8a1366620d426f37310717b38f7765fd6244e03eefdd554f32",
-      "bytes": 21028
+      "sha256": "15531c403c96239500e14c89ec038bfdc1f0e1ab1408dcadc202859919dbc427",
+      "bytes": 21144
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspaceSetupScreen.java",
