@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "files": [
     {
       "path": ".gitattributes",
@@ -2239,8 +2239,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/WorldSaveIdentity.java",
-      "sha256": "edd8ba319c6158ad249a0eaec18c9f3738bed390202eddd1ef04969319b6b90a",
-      "bytes": 20453
+      "sha256": "596d14e32f217ff9d2c012f70f66a5f6b0494c983c2d355e03a6a12cd05265c4",
+      "bytes": 20890
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/recovery/ChangeJournalService.java",
@@ -3209,8 +3209,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/NewWorldIdentityTest.java",
-      "sha256": "909b3e7ffe3b99af7e0ac267ffd8b73896fff6ed04a0fe14e96fa85959871814",
-      "bytes": 2147
+      "sha256": "7f1b3cb722abe46da08ce736a2be1f326013f5ab951080581f7c78d022eafa8b",
+      "bytes": 4541
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/SqliteConcurrentJournalTest.java",
@@ -3673,8 +3673,13 @@
       "bytes": 4951
     },
     {
+      "path": "docs/releases/1.0.24.md",
+      "sha256": "ad8317cfbe3bfe7bc2a9b4c9add7ed65a16afa1758e01cfcf7ceba1fd8ea51e5",
+      "bytes": 796
+    },
+    {
       "path": "gradle.properties",
-      "sha256": "ebde9eeadddfd788357953de13f7c22011818d401536660afadca67a964b0c7d",
+      "sha256": "fb53def44b8f48037c79c96eac5cef7e76bb7abaa3fdbadffa298339bb20e4b5",
       "bytes": 496
     },
     {
@@ -3779,8 +3784,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
-      "sha256": "19ac6fd7f338042b27881c6af6056ab20acb6289f77d29c927d749a78da6360b",
-      "bytes": 55873
+      "sha256": "c20b482b2329b099d4e70ea3802460a41e9ac314e4728055402ec0f25c56d052",
+      "bytes": 55963
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
@@ -3794,8 +3799,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/WorldIdentityRuntime.java",
-      "sha256": "9e5bd43f41044e98b96d781059e9d33288c61f1cfb14fc6f40e47e0e87a0fe24",
-      "bytes": 7873
+      "sha256": "725e71d9fb9ed9c477f3de17f430eb12e62854a55f34ebf3e3eeb4a1b8b65635",
+      "bytes": 8463
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/basketball/BasketballEntity.java",
@@ -3874,8 +3879,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainPolicy.java",
-      "sha256": "c87fcb1fcbda60fe551b277d4637933854810f2e9714aa087bc38a341f5d3292",
-      "bytes": 5181
+      "sha256": "1356008140b66f9371247af1a3a810e715b4bea0d08100b4e9c98673693bc004",
+      "bytes": 5293
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainRecovery.java",
@@ -3889,8 +3894,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/TerrainProvenance.java",
-      "sha256": "9ac5cc3758d78e3644652ef8d83112f4d640c0603a55b7016cde5bf9a1f06ae5",
-      "bytes": 4087
+      "sha256": "8b56434cd7b665c570b553e589681d4d1e55ef1e3ddaedcdbf714444493c7a0b",
+      "bytes": 5012
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/BootDependencySmokeServer.java",
@@ -4086,6 +4091,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/TakeoverCameraSmokeClient.java",
       "sha256": "eb58bce9aab0e7f988a8c0fa4fcccee8efe6f040bcdfd58541946025a6ad948b",
       "bytes": 6719
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/WorldStartupSmokeClient.java",
+      "sha256": "16846f9b9ed416011a3d421fb7710014799a44fd73d0361e6799700a36ef4590",
+      "bytes": 4210
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/AiNameHover.java",
@@ -5759,8 +5769,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "5b208f30d8835eb9e4fccf5e9491bcc89dc795064a3275b5fb303f544d1248ae",
-      "bytes": 36820
+      "sha256": "99cdd5eca1251b03ec5221b67ef0ac4aecf83d9d08ba1c0078bfc76bd100ae8a",
+      "bytes": 36906
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",

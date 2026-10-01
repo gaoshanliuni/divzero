@@ -16,9 +16,16 @@ public final class WorldIdentityRuntime {
     private static Entry open(MinecraftServer server){
         var entry=new Entry();
         try{var legacy=UUID.nameUUIDFromBytes((server.getServerDirectory().toAbsolutePath().normalize()+"|"+server.getWorldData().getLevelName()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            entry.store=WorldSaveIdentity.open(server.getServerDirectory().resolve("mineagent-runtime-data"),server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT),legacy);
+            var save=server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
+            entry.store=WorldSaveIdentity.open(server.getServerDirectory().resolve("mineagent-runtime-data"),save,legacy,knownTemplate(save));
         }catch(Exception failure){String message=Objects.toString(failure.getMessage(),"");entry.error=message.matches("WORLD_[A-Z0-9_]{1,70}")?message:"WORLD_IDENTITY_UNAVAILABLE";}
         return entry;
+    }
+    private static boolean knownTemplate(java.nio.file.Path save){
+        var marker=save.resolve("data/divzero-pvp-map.json");
+        try{if(!java.nio.file.Files.isRegularFile(marker,java.nio.file.LinkOption.NOFOLLOW_LINKS)||java.nio.file.Files.size(marker)>1024)return false;
+            var data=new com.fasterxml.jackson.databind.ObjectMapper().readTree(java.nio.file.Files.readString(marker));return data.path("schema").asInt()==1&&data.path("map").asText().equals("divzero_pvp");
+        }catch(Exception invalid){return false;}
     }
     private static synchronized Entry entry(MinecraftServer server){return ENTRIES.computeIfAbsent(server,WorldIdentityRuntime::open);}
     public static boolean boot(MinecraftServer server){var e=entry(server);synchronized(e){e.examined=true;e.allowed=!e.reopen&&e.store!=null&&e.store.ready();return e.allowed;}}

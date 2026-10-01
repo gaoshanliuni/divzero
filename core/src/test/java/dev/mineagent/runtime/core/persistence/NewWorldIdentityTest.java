@@ -9,6 +9,23 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NewWorldIdentityTest {
     @TempDir Path directory;
+    @Test void reimportedTemplateGetsNewScopeWithoutDeletingOrAdoptingOldRows()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var save=Files.createDirectory(directory.resolve("map"));UUID original;
+        try(var id=WorldSaveIdentity.open(home,save,UUID.randomUUID())){original=id.scopeId();}
+        try(var db=DriverManager.getConnection("jdbc:sqlite:"+home.resolve("runtime.db"));var s=db.createStatement()){s.execute("CREATE TABLE mineagent_fixture(world TEXT,value TEXT)");s.execute("INSERT INTO mineagent_fixture VALUES('"+original+"','keep original')");}
+        Files.delete(save.resolve(WorldSaveIdentity.ANCHOR_FILE));
+        try(var id=WorldSaveIdentity.open(home,save,UUID.randomUUID())){assertFalse(id.ready());assertEquals("ANCHOR_MISSING",id.status().state());}
+        UUID imported;
+        try(var id=WorldSaveIdentity.open(home,save,UUID.randomUUID(),true)){assertTrue(id.ready());imported=id.scopeId();assertNotEquals(original,imported);}
+        try(var id=WorldSaveIdentity.open(home,save,UUID.randomUUID(),true)){assertEquals(imported,id.scopeId());}
+        try(var db=DriverManager.getConnection("jdbc:sqlite:"+home.resolve("runtime.db"));var s=db.createStatement();var r=s.executeQuery("SELECT world,value FROM mineagent_fixture")){assertTrue(r.next());assertEquals(original.toString(),r.getString(1));assertEquals("keep original",r.getString(2));assertFalse(r.next());}
+        try(var db=DriverManager.getConnection("jdbc:sqlite:"+home.resolve("world-identities.db"));var s=db.createStatement();var r=s.executeQuery("SELECT state,save_path FROM identity_bindings_v1 WHERE scope_id='"+original+"'")){assertTrue(r.next());assertEquals("DETACHED",r.getString(1));assertNull(r.getString(2));}
+    }
+    @Test void templateFlagDoesNotSilentlyReplaceInvalidOrCopiedAnchors()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var save=Files.createDirectory(directory.resolve("map"));
+        byte[] invalid="not a valid anchor".getBytes(java.nio.charset.StandardCharsets.UTF_8);Files.write(save.resolve(WorldSaveIdentity.ANCHOR_FILE),invalid);
+        try(var id=WorldSaveIdentity.open(home,save,UUID.randomUUID(),true)){assertFalse(id.ready());assertEquals("ANCHOR_INVALID",id.status().state());assertArrayEquals(invalid,Files.readAllBytes(save.resolve(WorldSaveIdentity.ANCHOR_FILE)));}
+    }
     @Test void secondNewSaveStartsImmediatelyWithoutAdoptingOldWorldRows()throws Exception{
         Path home=Files.createDirectory(directory.resolve("runtime")),first=Files.createDirectory(directory.resolve("first")),second=Files.createDirectory(directory.resolve("second"));
         UUID firstScope;

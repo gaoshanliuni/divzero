@@ -103,6 +103,7 @@ public final class NativeHumanDuel {
     }
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
         var server=event.getServer();if(!enabled()||!server.isSingleplayer())return;
+        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server))return;
         if(Boolean.getBoolean("mineagent.humanDuelFixture"))fixtureTick(server);
         var run=RUNS.get(server);
         if(run==null){if(server.getTickCount()>100&&!OFFERED.contains(server))for(var p:server.getPlayerList().getPlayers())if(!(p instanceof MineAgentPlayer)&&server.isSingleplayerOwner(p.nameAndId())){OFFERED.add(server);if(PvpMapSupport.enabled()){PvpMapArena.lobby(p);PvpMapArena.returnToLobby(p);}menu(p,null);if(PvpMapSupport.enabled())PvpMapSupport.push(p,"READY",180,true);break;}return;}

@@ -19,6 +19,10 @@ public final class WorldSaveIdentity implements AutoCloseable {
     private WorldSaveIdentity(Path home,Path save,UUID legacyHint,Connection db,Lease pathLease){this.home=home;this.save=save;this.legacyHint=legacyHint;this.db=db;this.pathLease=pathLease;anchorPath=save.resolve(ANCHOR_FILE);runtimeDb=home.resolve("runtime.db");}
 
     public static WorldSaveIdentity open(Path runtimeDirectory,Path saveDirectory,UUID legacyHint)throws Exception{
+        return open(runtimeDirectory,saveDirectory,legacyHint,false);
+    }
+    /** A known disposable map import may replace a missing anchor; old scopes stay detached and retained. */
+    public static WorldSaveIdentity open(Path runtimeDirectory,Path saveDirectory,UUID legacyHint,boolean freshTemplateImport)throws Exception{
         Files.createDirectories(runtimeDirectory);Path home=runtimeDirectory.toRealPath(),save=saveDirectory.toRealPath();
         if(!Files.isDirectory(save))throw new IllegalStateException("WORLD_SAVE_DIRECTORY_UNAVAILABLE");
         for(Path database:List.of(home.resolve("runtime.db"),home.resolve("world-identities.db")))if(!Files.notExists(database)&&(!Files.isRegularFile(database,LinkOption.NOFOLLOW_LINKS)||Files.isSymbolicLink(database)))throw new IllegalStateException("WORLD_IDENTITY_DATABASE_LINK_UNSUPPORTED");
@@ -30,7 +34,7 @@ public final class WorldSaveIdentity implements AutoCloseable {
             var status=service.status();
             // A genuinely unbound new save gets its own scope even when other worlds share
             // this runtime directory. No old scope is adopted or modified by this default.
-            if(status.state().equals("UNANCHORED"))service.bind("FRESH",null,status.challenge(),true,"SYSTEM_NEW_SAVE");
+            if(status.state().equals("UNANCHORED")||freshTemplateImport&&status.state().equals("ANCHOR_MISSING"))service.bind("FRESH",null,status.challenge(),true,freshTemplateImport?"SYSTEM_TEMPLATE_IMPORT":"SYSTEM_NEW_SAVE");
             var current=service.status();if(current.state().equals("READY"))service.scopeLease=lease(home.resolve("identity-scope-locks"),current.scopeId().toString());
             return service;
         }catch(Exception failure){if(db!=null)try{db.close();}catch(Exception ignored){}pathLease.close();throw failure;}

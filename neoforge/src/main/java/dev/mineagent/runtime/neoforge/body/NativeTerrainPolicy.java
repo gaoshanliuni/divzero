@@ -14,6 +14,7 @@ public final class NativeTerrainPolicy {
     private static final Set<Block> TERRAIN=Set.of(Blocks.DIRT,Blocks.GRASS_BLOCK,Blocks.COARSE_DIRT,Blocks.ROOTED_DIRT,Blocks.PODZOL,Blocks.MYCELIUM,
             Blocks.STONE,Blocks.ANDESITE,Blocks.DIORITE,Blocks.GRANITE,Blocks.DEEPSLATE,Blocks.TUFF,Blocks.NETHERRACK,Blocks.END_STONE,Blocks.CLAY,Blocks.MUD);
     public static boolean allowed(ServerPlayer player){
+        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(player.level().getServer()))return false;
         if(!dev.mineagent.runtime.neoforge.skill.ActorEnhancements.forBody(player).recovery()||!player.isAlive()||player.isSpectator()||player.isPassenger())return false;
         var server=player.level().getServer();if(!MineAgentRuntimeServices.config(server).flag("autonomy.terrainRecovery.enabled",true))return false;
         if(player instanceof MineAgentPlayer body){var owner=server.getPlayerList().getPlayer(body.ownerPlayerId());return owner!=null&&body.canAct()&&body.taskControlOwned()&&ServerTaskStart.allowed(owner,body.agentId());}

@@ -232,6 +232,7 @@ public final class MineAgentRuntimeMod {
     public void serverStarted(ServerStartedEvent event) {
         if(!WorldIdentityRuntime.boot(event.getServer())){LOGGER.warn("MineAgent world identity unresolved; no world services started. Use /ai identity.");return;}
         try {
+            dev.mineagent.runtime.neoforge.body.TerrainProvenance.get(event.getServer());
             MineAgentRuntimeServices.config(event.getServer());
             String workerStatus = MineAgentRuntimeServices.worker(event.getServer())
                     .start(event.getServer().getServerDirectory());
