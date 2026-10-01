@@ -117,7 +117,7 @@ public final class NativeHumanDuel {
                     PvpConsent.grantFromPanel(online,run.ai.agentId(),online);
                     run.series.starting();
                     var args=JSON.createObjectNode().put("id","human_duel_"+run.series.round()).put("actor","ai").put("expected_revision",0).put("target",online.getUUID().toString()).put("dimension",online.level().dimension().identifier().toString());
-                    args.putObject("combat").put("engagement","SPECIFIED").put("target",online.getUUID().toString()).put("strategy","AUTO").put("awareness",40).put("leash",48);
+                    args.putObject("combat").put("engagement","SPECIFIED").put("target",online.getUUID().toString()).put("strategy","AUTO").put("awareness",32).put("leash",48);
                     run.start=SkillRuntime.get(server).start(online,run.ai.agentId(),UUID.randomUUID(),null,args,SkillSpec.Kind.COMBAT,()->run.finishReason.isEmpty()&&(run.series.phase()==HumanDuelSeries.Phase.STARTING||run.series.phase()==HumanDuelSeries.Phase.FIGHTING));
                     run.startNanos=now;
                 }
