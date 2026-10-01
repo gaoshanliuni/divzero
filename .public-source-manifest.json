@@ -3444,8 +3444,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "9c0dc5cad527ebe9179e5f6f30b2af70cc4afe280b8c920516ac8dbfbaa6fc28",
-      "bytes": 49415
+      "sha256": "b11c07995412e409a0b44fd72b0749266385a348f044eebe89bff641bb370d3e",
+      "bytes": 49798
     },
     {
       "path": "docs/HUMAN_DUEL_TRAINING.md",
@@ -3494,8 +3494,8 @@
     },
     {
       "path": "docs/PVP_TRAINING_MAP.md",
-      "sha256": "b72d5d454c9851938543050fa00f1e5a76de5153c6693451ab34fb5d420ab047",
-      "bytes": 2885
+      "sha256": "107f10fd9125234737270dd61c1b586a08c94b8667f1504e10e38d38a7322cc2",
+      "bytes": 3348
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3586,6 +3586,11 @@
       "path": "docs/images/native-preview.png",
       "sha256": "058360c4bcef3896702d88b4c10c464137c04946df123b5e7e22f191d1ddc44b",
       "bytes": 221630
+    },
+    {
+      "path": "docs/images/native-pvp-loadouts.png",
+      "sha256": "a559dbe1fc15105657e5ae07af9aaa1d10942460964dab0dd2f4cb013fba7585",
+      "bytes": 176774
     },
     {
       "path": "docs/images/native-recovery-report.png",
