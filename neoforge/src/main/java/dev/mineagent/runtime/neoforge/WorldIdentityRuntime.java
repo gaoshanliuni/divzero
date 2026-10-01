@@ -44,8 +44,10 @@ public final class WorldIdentityRuntime {
         if(enabled&&!config.snapshot().values().containsKey(key)||value.equals(config.snapshot().values().get(key)))return;
         var result=config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(config.revision(),Map.of(key,value)),true);if(!result.accepted())throw new IllegalStateException(result.errorCode());
     }
-    public static void sendPendingChoice(ServerPlayer player){
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(WorldActivationRuntime.challenge(player),"worldActivationPending",pendingDisabled(player)?"{\"disabled\":true}":"{\"disabled\":false}"));
+    public static void sendPendingChoice(ServerPlayer player){sendPendingChoice(player,false);}
+    public static void showPendingChoice(ServerPlayer player){sendPendingChoice(player,true);}
+    private static void sendPendingChoice(ServerPlayer player,boolean force){
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(WorldActivationRuntime.challenge(player),force?"worldActivationPrompt":"worldActivationPending",pendingDisabled(player)?"{\"disabled\":true}":"{\"disabled\":false}"));
     }
     public static boolean notifyIfPending(ServerPlayer player){
         var server=player.level().getServer();if(ready(server))return true;var e=entry(server);if(e.initializing)return false;

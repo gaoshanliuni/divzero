@@ -72,11 +72,12 @@ public final class MineAgentCommands {
     private static int interrupt(CommandSourceStack source,java.util.UUID agent,String message){
         try{return dev.mineagent.runtime.neoforge.ui.ServerConversations.get(source.getServer()).interruptNative(source.getPlayerOrException(),agent,message);}catch(Exception e){source.sendFailure(Component.literal("无法打断："+e.getMessage()));return 0;}
     }
+    private static boolean worldReady(CommandSourceStack source){if(dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return true;if(source.getPlayer()!=null)dev.mineagent.runtime.neoforge.WorldIdentityRuntime.showPendingChoice(source.getPlayer());return false;}
     private static int accept(CommandSourceStack source){
         return dev.mineagent.runtime.neoforge.WorldActivationRuntime.enable(source,null);
     }
     private static int openPanel(CommandSourceStack source) {
-        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);
+        if(!worldReady(source))return 0;
         try {
             net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
                     source.getPlayerOrException(),
@@ -89,7 +90,7 @@ public final class MineAgentCommands {
     }
 
     private static int openAgentPanel(CommandSourceStack source,String name){
-        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);
+        if(!worldReady(source))return 0;
         try{
             var player=source.getPlayerOrException();
             if(!MineAgentRuntimeServices.permissions(source.getServer()).allowed(player.getUUID(),source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),PermissionAction.CHAT))throw new SecurityException("CHAT_FORBIDDEN");
@@ -101,7 +102,7 @@ public final class MineAgentCommands {
     }
 
     private static int create(CommandSourceStack source, String name) {
-        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);
+        if(!worldReady(source))return 0;
         try {
             var definition = MineAgentRuntimeServices.bodies(source.getServer())
                     .create(name, source.getPlayerOrException());
@@ -119,7 +120,7 @@ public final class MineAgentCommands {
     }
 
     private static int list(CommandSourceStack source) {
-        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);
+        if(!worldReady(source))return 0;
         var agents = MineAgentRuntimeServices.bodies(source.getServer()).definitions();
         if (agents.isEmpty()) {
             source.sendSuccess(() -> Component.literal("当前没有 AI 玩家"), false);
@@ -131,7 +132,7 @@ public final class MineAgentCommands {
     }
 
     private static int debugSpawn(CommandSourceStack source, String name) {
-        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);
+        if(!worldReady(source))return 0;
         try {
             var definition = MineAgentRuntimeServices.bodies(source.getServer()).createAt(
                     name,

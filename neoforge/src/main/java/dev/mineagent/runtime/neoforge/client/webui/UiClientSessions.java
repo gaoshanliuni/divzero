@@ -20,7 +20,7 @@ public final class UiClientSessions {
     @SubscribeEvent public static void register(RegisterClientPayloadHandlersEvent event){
         event.register(UiPayloads.Event.TYPE,(packet,context)->{var source=context.connection();context.enqueueWork(()->{
             var mc=Minecraft.getInstance();if(mc.getConnection()==null||mc.getConnection().getConnection()!=source)return;
-            if(packet.channel().equals("worldActivationPending")){dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.onBootstrap(packet.requestId(),packet.json().equals("{\"disabled\":true}"));return;}
+            if(packet.channel().equals("worldActivationPending")||packet.channel().equals("worldActivationPrompt")){dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.onBootstrap(packet.requestId(),packet.json().equals("{\"disabled\":true}"),packet.channel().equals("worldActivationPrompt"));return;}
             if(packet.channel().equals("nativeInterfaceEvent")){NativeInterfacesClient.eventReply(packet);return;}
             if(packet.channel().equals("nativeInterfaceReady")){NativeInterfacesClient.restoreAcknowledged(packet.requestId());return;}
             if(NativeWorkspaceConnection.accept(packet)||StatePushClient.accept(packet)||ContentDeliveryClient.accept(packet)||WorldUiClient.accept(packet,source)||HudPersistenceClient.accept(packet,source))return;

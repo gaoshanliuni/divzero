@@ -25,14 +25,14 @@ public final class MineAgentClientTrustPrompt {
         boolean current() {var mc=Minecraft.getInstance();return connection==mc.getConnection()&&level==mc.level&&mc.player!=null&&player.equals(mc.player.getUUID());}
     }
     private record Bootstrap(UUID token,Object connection,Object level,UUID player) {boolean current(){var mc=Minecraft.getInstance();return connection==mc.getConnection()&&level==mc.level&&mc.player!=null&&player.equals(mc.player.getUUID());}}
-    private static Bootstrap bootstrap;private static UUID deferredBootstrap;private static Object deferredConnection;private static boolean bootstrapDisabled,bootstrapShown;
+    private static Bootstrap bootstrap;private static UUID deferredBootstrap;private static Object deferredConnection;private static boolean bootstrapDisabled,bootstrapShown,deferredForce;
     private static AcceptIntent acceptIntent;
-    public static void onBootstrap(UUID token,boolean disabled){
+    public static void onBootstrap(UUID token,boolean disabled,boolean force){
         var mc=Minecraft.getInstance();if(enabled()||mc.getConnection()==null)return;
-        if(mc.player==null||mc.level==null){deferredBootstrap=token;deferredConnection=mc.getConnection();bootstrapDisabled=disabled;return;}
+        if(mc.player==null||mc.level==null){deferredBootstrap=token;deferredConnection=mc.getConnection();bootstrapDisabled=disabled;deferredForce=force;return;}
         if(bootstrap==null||!bootstrap.current()||!bootstrap.token.equals(token))bootstrapShown=false;
         bootstrap=new Bootstrap(token,mc.getConnection(),mc.level,mc.player.getUUID());bootstrapDisabled=disabled;
-        if(!disabled&&acceptIntent==null)showBootstrap(false);
+        if(force)showBootstrap(true);else if(!disabled&&acceptIntent==null)showBootstrap(false);
     }
     private static void showBootstrap(boolean force){
         if(bootstrap==null||!bootstrap.current()||!force&&(bootstrapShown||bootstrapDisabled))return;bootstrapShown=true;
@@ -145,7 +145,7 @@ public final class MineAgentClientTrustPrompt {
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc=Minecraft.getInstance();if(connection!=null&&connection!=mc.getConnection())clear();
         if(bootstrap!=null&&!bootstrap.current()){bootstrap=null;bootstrapDisabled=bootstrapShown=false;}
-        if(deferredBootstrap!=null){if(deferredConnection!=mc.getConnection()){deferredBootstrap=null;deferredConnection=null;}else if(mc.player!=null&&mc.level!=null){var token=deferredBootstrap;deferredBootstrap=null;deferredConnection=null;onBootstrap(token,bootstrapDisabled);}}
+        if(deferredBootstrap!=null){if(deferredConnection!=mc.getConnection()){deferredBootstrap=null;deferredConnection=null;}else if(mc.player!=null&&mc.level!=null){var token=deferredBootstrap;deferredBootstrap=null;deferredConnection=null;onBootstrap(token,bootstrapDisabled,deferredForce);}}
         if(acceptIntent!=null){if(!acceptIntent.current())acceptIntent=null;else if(System.currentTimeMillis()>=acceptIntent.deadline){acceptIntent=null;message("启用状态读取超时，请重试 /ai accept；无需退出世界。","");}}
         if(mc.player!=null&&mc.getConnection()!=null&&connection==null&&!bootstrapDisabled&&System.currentTimeMillis()>=retryAt){retryAt=System.currentTimeMillis()+2000;ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest());}
     }

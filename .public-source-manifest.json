@@ -3869,8 +3869,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/WorldIdentityRuntime.java",
-      "sha256": "24643999e145c1627ee02ace621117baccdcf5915b870d8818df70db4952349e",
-      "bytes": 14555
+      "sha256": "b85c6864774870d7929f363ee82d9474410d85aba97bf33109fb4fd582a579b1",
+      "bytes": 14791
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/basketball/BasketballEntity.java",
@@ -4059,8 +4059,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientTrustPrompt.java",
-      "sha256": "13d7015ae329b6d9ffd075564e8a3b021628ca0aab74b665983a4e3e79d77254",
-      "bytes": 14913
+      "sha256": "b33730bf666a09776091a43b388a71c0243d79cc1e745893cfa6584fbbec7cd6",
+      "bytes": 15009
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/OneClickActivationSmokeClient.java",
@@ -4944,8 +4944,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/UiClientSessions.java",
-      "sha256": "fc97cff7b4abb4a0e041f4eb66df66220adb427498c8091a16ee6933ab00d18f",
-      "bytes": 7206
+      "sha256": "6f26bda170fd65c8310c66565c1014118d324e3d33abc395a9045a1a3b2ce808",
+      "bytes": 7305
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/UiPresentationClient.java",
@@ -5024,8 +5024,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/command/MineAgentCommands.java",
-      "sha256": "fcf0a84a768edeb0e1cf2719946fd78896fb3e77cb77b51b09a9d1b7785d10db",
-      "bytes": 13982
+      "sha256": "0f3629446c97a35cbac8d5b9e1fc13939b934503a6aae0628b418f0af5cb4076",
+      "bytes": 13653
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeApiCatalog.java",
