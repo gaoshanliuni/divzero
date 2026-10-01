@@ -3529,8 +3529,8 @@
     },
     {
       "path": "docs/ONLINE_LEARNING_PANELS.md",
-      "sha256": "2a279c1ef160c6c27b3076b176971b6d9d49b3b5b5c1011864995ac694fb0bda",
-      "bytes": 1954
+      "sha256": "00bc8c1ae4f2ec5a8c48413690062fa84b46531667aec2faca33a0a571eabf0d",
+      "bytes": 6506
     },
     {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
@@ -3734,8 +3734,8 @@
     },
     {
       "path": "docs/releases/1.0.28.md",
-      "sha256": "35248f72644486a5f74855498e95f1ef780e27ec76ac5a0498f7d1afb6674bf6",
-      "bytes": 491
+      "sha256": "44d928667b511b9d77491b0e426f060572dddb8725695e0cce15ed42088e0c8c",
+      "bytes": 866
     },
     {
       "path": "gradle.properties",
