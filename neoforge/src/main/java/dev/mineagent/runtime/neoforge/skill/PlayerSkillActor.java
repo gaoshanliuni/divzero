@@ -48,7 +48,12 @@ public final class PlayerSkillActor implements SkillActor {
     public void sprint(UUID session,boolean enabled){sprinting=enabled;}
     public void jump(UUID session){if(motion==null&&inputReady()){send(session,"JUMP",navOperation,player.position(),0,-1,"");return;}if(motion!=null&&inputReady()){navigation.tacticalJump(player);motion.put("jump",true);AutonomousPlayerAgent.localSkillFrame(player,skill,motion.deepCopy(),"短跳调整走位");}}
     public void haltMotion(UUID session){checkedRoute=null;motion=null;sprinting=crouching=false;navigation.stop("HOLD_POSITION");destination=null;send(session,"HALT_MOTION",navOperation,aim==null?player.getEyePosition().add(player.getLookAngle()):aim,0,-1,"");}
-    public boolean select(UUID session,int slot){if(!inputReady())return false;if(selectionOperation==null||selectionSlot!=slot){selectionSlot=slot;selectionWanted=player.getInventory().getItem(slot).getItem();selectionOperation=UUID.randomUUID();}send(session,"HOTBAR",selectionOperation,player.position(),slot,-1,"");return slot<9&&player.getInventory().getSelectedSlot()==slot;}
+    public boolean select(UUID session,int slot){if(!inputReady()||slot<0||slot>=36)return false;
+        if(selectionOperation!=null&&selectionSlot==slot&&player.getMainHandItem().is(selectionWanted)&&(slot>=9||player.getInventory().getSelectedSlot()==slot)){selectionOperation=null;return true;}
+        if(slot<9&&player.getInventory().getSelectedSlot()==slot)return true;
+        if(selectionOperation==null||selectionSlot!=slot){selectionSlot=slot;selectionWanted=player.getInventory().getItem(slot).getItem();selectionOperation=UUID.randomUUID();}
+        send(session,"HOTBAR",selectionOperation,player.position(),slot,-1,"");return false;
+    }
     public boolean equipOffhand(UUID session,int slot){if(!inputReady())return false;if(offhandOperation==null||offhandSlot!=slot||!net.minecraft.world.item.ItemStack.isSameItemSameComponents(player.getInventory().getItem(slot),offhandWanted)){offhandOperation=UUID.randomUUID();offhandSlot=slot;offhandWanted=player.getInventory().getItem(slot).copy();}send(session,"OFFHAND",offhandOperation,player.position(),slot,-1,"");boolean applied=net.minecraft.world.item.ItemStack.isSameItemSameComponents(player.getOffhandItem(),offhandWanted);if(applied)offhandOperation=null;return applied;}
     public void useHand(UUID session,UUID op,net.minecraft.world.InteractionHand value){if(player.isUsingItem()&&player.getUsedItemHand()!=value)player.stopUsingItem();hand=value.name();try{useItem(session,op,true);}finally{hand="";}}
     public void aimImmediately(UUID session,Vec3 target){aim=target;send(session,"LOOK",navOperation,target,0,-1,"");}

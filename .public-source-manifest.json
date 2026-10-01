@@ -4004,8 +4004,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "0341261b28e96821f6d35348eeae304e30f2e13b28ec6ef57c9799959844133f",
-      "bytes": 202794
+      "sha256": "e48318ef7cbc82ff0ef444557040883f03f514eb22813ed8e4d2c35a9328a645",
+      "bytes": 203541
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5614,8 +5614,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatEquipmentAdapter.java",
-      "sha256": "6f22026f70a2183550ad0e683ae4354e10f9e8e03748ee5c5007e46dcb1fc882",
-      "bytes": 4963
+      "sha256": "6fc98876afb4e5176bb6876cacc01df0b60969e02877910615caf72a0ded521c",
+      "bytes": 5865
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
@@ -5629,8 +5629,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "405bd858c0b93ee7fc5c5dc8981df492290fd52f90756aae9834cfdf2fe4507f",
-      "bytes": 38802
+      "sha256": "4cfa6d0510ae6f2f1385187b0de6638f692cde4004f6edc9e168db3a9bc77795",
+      "bytes": 38878
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -5719,8 +5719,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "c2d0b8fb564559e5059681f9367c73b40d9ec405be5a1764771ab31ae60aab64",
-      "bytes": 14349
+      "sha256": "1a3c4ac0adf178375328e80e113ecad0ce68014942b0eb951c474afcfd39fc55",
+      "bytes": 14620
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
@@ -5759,8 +5759,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "sha256": "eb119135528ef9f9534d9b3da2dd03027d96aafda88cd1865fd410b5db6b8351",
-      "bytes": 11447
+      "sha256": "c3b332f24de3893c928f7c5e02fa6e6be714e7a8145787bf28321875e98c7438",
+      "bytes": 11513
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",

@@ -18,6 +18,11 @@ public interface CombatEquipmentAdapter {
     static void register(CombatEquipmentAdapter adapter){Objects.requireNonNull(adapter);if(REGISTRY.stream().anyMatch(a->a.id().equals(adapter.id())))throw new IllegalArgumentException("COMBAT_ADAPTER_DUPLICATE");REGISTRY.add(adapter);}
     static boolean melee(SkillWork w,LivingEntity target){
         var player=w.player();boolean blocking=target!=null&&target.isBlocking()&&target.getLookAngle().dot(player.position().subtract(target.position()).normalize())>.15;
+        if(w.weaponPendingSlot>=0){
+            if(ItemStack.isSameItemSameComponents(player.getMainHandItem(),w.weaponPendingStack)){w.weaponPendingSlot=-1;w.weaponPendingStack=ItemStack.EMPTY;}
+            else if(ItemStack.isSameItemSameComponents(player.getInventory().getItem(w.weaponPendingSlot),w.weaponPendingStack))return finishSelection(w);
+            else{w.weaponPendingSlot=-1;w.weaponPendingStack=ItemStack.EMPTY;w.weaponDecisionTick=-10000;}
+        }
         boolean falling=net.minecraft.world.item.MaceItem.canSmashAttack(player)||target!=null&&player.getDeltaMovement().y<-.05&&player.getY()-target.getY()>2;
         if(w.weaponDecisionTick>w.tick()-8&&w.weaponBlocking==blocking&&w.weaponFalling==falling)return true;
         w.weaponFalling=falling;
@@ -42,10 +47,15 @@ public interface CombatEquipmentAdapter {
             if(score>best){best=score;selected=slot;}
         }
         if(selected<0||selected==player.getInventory().getSelectedSlot())return true;
-        if(NativeEquipmentSupport.protects(player.getMainHandItem())&&!NativeEquipmentSupport.protects(player.getOffhandItem())){if(!w.actor.equipOffhand(w.token(),player.getInventory().getSelectedSlot()))return false;}
+        w.weaponPendingSlot=selected;w.weaponPendingStack=player.getInventory().getItem(selected).copy();
+        w.session.add(blocking?"shieldCounterWeaponSelections":"meleeWeaponSelections",1);return finishSelection(w);
+    }
+    private static boolean finishSelection(SkillWork w){
+        var player=w.player();
+        if(NativeEquipmentSupport.protects(player.getMainHandItem())&&!NativeEquipmentSupport.protects(player.getOffhandItem())&&!w.actor.equipOffhand(w.token(),player.getInventory().getSelectedSlot()))return false;
         if(player.isUsingItem()){w.actor.stop(w.token());w.shieldOperation=null;w.healingOperation=null;}
-        w.session.add(blocking?"shieldCounterWeaponSelections":"meleeWeaponSelections",1);
-        return w.actor.select(w.token(),selected);
+        boolean selected=w.actor.select(w.token(),w.weaponPendingSlot);
+        if(selected&&ItemStack.isSameItemSameComponents(player.getMainHandItem(),w.weaponPendingStack)){w.weaponPendingSlot=-1;w.weaponPendingStack=ItemStack.EMPTY;return true;}return false;
     }
     static boolean execute(SkillWork w,LivingEntity target){
         CombatEquipmentAdapter best=null;int score=0,slot=-1;

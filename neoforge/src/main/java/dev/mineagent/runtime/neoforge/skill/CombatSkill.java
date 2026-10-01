@@ -109,7 +109,7 @@ final class CombatSkill {
             boolean low=dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.pointFrom(p,normalEye,target.getHitbox()).isEmpty()&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.crouchedPoint(p,target).isPresent();
             if(low){w.gapCrouching=true;if(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty())w.actor.haltMotion(w.token());w.actor.crouch(w.token(),true);if(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty()){phase(w,"LOW_OPENING_AIM");return;}}
             else if(w.gapCrouching){w.actor.crouch(w.token(),false);w.gapCrouching=false;}
-            if(p.fallDistance>1.5)CombatEquipmentAdapter.melee(w,target);
+            if((p.fallDistance>1.5||p.getDeltaMovement().y<-.05&&p.getY()-target.getY()>2)&&!CombatEquipmentAdapter.melee(w,target))return;
         }
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
         if(w.combat.attacks.standingRisk(w,p.position(),12)>0&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
@@ -121,6 +121,7 @@ final class CombatSkill {
             w.positioning.reset();phase(w,"COUNTER_REASSESS");w.session.add("postEvasionReassessments",1);
         }
         if(target!=null&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE&&strikeInReach(w,target,contacts))return;
+        if(w.weaponPendingSlot>=0)return;
         if(target!=null&&!dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(p,target)&&contacts==0&&!w.combat.incoming(w)&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){
             if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.haltMotion(w.token());phase(w,"TARGET_OBSCURED");return;}
             // Use real navigation around the obstacle, while the ready-hit check still runs every local tick.
@@ -166,7 +167,7 @@ final class CombatSkill {
         double enemyReach=actual.attacks().stream().filter(a->a.kind().equals("MELEE")).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
         withdrawal=Math.max(withdrawal,enemyReach+p.getBbWidth()/2+target.getBbWidth()/2+1);
         if(w.combatStage!=0){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;}
-        if(!CombatEquipmentAdapter.melee(w,target)){w.actor.haltMotion(w.token());return;}
+        if(!CombatEquipmentAdapter.melee(w,target))return;
         double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);
         boolean ready=p.getAttackStrengthScale(.5f)>=.95f;
         boolean inReach=p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)&&visible&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(p,target).isPresent();

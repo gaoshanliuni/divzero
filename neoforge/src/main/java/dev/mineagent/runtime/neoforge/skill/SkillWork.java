@@ -31,7 +31,7 @@ final class SkillWork {
     String tactic="OBSERVE";int tacticAt,lastAttackAt=-10000,lastHitAt=-10000,lastDefenseTick,healSlot=-1;UUID healingOperation;boolean combatInterrupted;
     int lastCombatTick=-1,foodBefore;boolean lastCombatResult,healingWasUsing;
     int contactSince=-1,lastContactDamage=-10000,contactClearSince=-1;boolean contactEscape,contactRunAndHit,sprintApproach;Vec3 contactEscapeOrigin,contactEscapeLastPosition;UUID lastMeleeHitTarget;int lastMeleeHitTick=-10000,comboStreak;
-    int weaponDecisionTick=-10000,shieldCounterAt=-10000;boolean weaponBlocking,weaponFalling,gapCrouching;LivingEntity shieldCounterTarget;ItemStack shieldCounterItem=ItemStack.EMPTY;
+    int weaponDecisionTick=-10000,shieldCounterAt=-10000,weaponPendingSlot=-1;ItemStack weaponPendingStack=ItemStack.EMPTY;boolean weaponBlocking,weaponFalling,gapCrouching;LivingEntity shieldCounterTarget;ItemStack shieldCounterItem=ItemStack.EMPTY;
     int criticalStarted=-10000,lastCriticalJump=-10000,observedCriticalTick=-1;UUID criticalTarget,observedCriticalTarget;
     UUID extensionOperation,shieldOperation;boolean wasBlocking;FishingTackleAdapter tackle=FishingTackleAdapter.VANILLA;
     int lastTacticalJump=-10000,observedTacticalJump=-10000;double tacticalJumpY;
