@@ -527,3 +527,5 @@ DivZero is open source under the [Apache License 2.0](https://github.com/gaoshan
 ### PvP 训练地图
 
 [地图说明与装备面板](PVP_TRAINING_MAP.md)：不限局数、每局最多三分钟，玩家与 AI 独立选择武器、护甲和副手，LDLib2 HUD 显示总局数、玩家胜率、平均击杀与被击杀时间。每次进入地图重置装备和统计；同次游玩的下一局与重生保留。地图标记自动识别，无需额外 JVM 参数。
+
+PvP 地图追加：副手下方可分别选择每局领取 64 个羊毛；场内支持原生搭建/拆除羊毛并在开局清理，永久场地与新增候战大厅受保护。地图使用普通 DivZero，不需要专版 JAR。

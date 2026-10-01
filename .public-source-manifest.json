@@ -3454,8 +3454,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "b11c07995412e409a0b44fd72b0749266385a348f044eebe89bff641bb370d3e",
-      "bytes": 49798
+      "sha256": "4249aa9635cad97d65bd84dcbd23cdb1dc5625f220f45c9bef2a885ee36519a6",
+      "bytes": 50028
     },
     {
       "path": "docs/HUMAN_DUEL_TRAINING.md",
@@ -3504,8 +3504,8 @@
     },
     {
       "path": "docs/PVP_TRAINING_MAP.md",
-      "sha256": "3eba44db1835191d41e349bdab95abe00eb575ee49aa050e772f79e262db704a",
-      "bytes": 3925
+      "sha256": "23b7e1f6f4aa623e9a93bb2581b11262aefe9011b3fe4345af31bb64fde1873d",
+      "bytes": 4300
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3599,8 +3599,13 @@
     },
     {
       "path": "docs/images/native-pvp-loadouts.png",
-      "sha256": "a559dbe1fc15105657e5ae07af9aaa1d10942460964dab0dd2f4cb013fba7585",
-      "bytes": 176774
+      "sha256": "9eb374c6fa25c0fa5c39abf4ef0f1a48e2bd15a0a7f15952cc30016fded97190",
+      "bytes": 213882
+    },
+    {
+      "path": "docs/images/native-pvp-lobby.png",
+      "sha256": "ea33b0eab9c10e72d1509711cfaf930c897ca618dcbfde91010305de13fe889b",
+      "bytes": 898268
     },
     {
       "path": "docs/images/native-recovery-report.png",
@@ -3664,8 +3669,8 @@
     },
     {
       "path": "docs/releases/1.0.23.md",
-      "sha256": "333531e8f5d61ad2d3341f53060cf5e087af0c2c05b13133dc10226f7f578882",
-      "bytes": 4741
+      "sha256": "30075c9d2c484da6603e809820726f036dac64a8d5edbeed45ba95e59737bdb7",
+      "bytes": 4951
     },
     {
       "path": "gradle.properties",
