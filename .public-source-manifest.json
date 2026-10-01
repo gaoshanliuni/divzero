@@ -3649,8 +3649,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "ed909365aacbc0795d89439961bf158df3cae8862443115f0c3386e0da9cee35",
-      "bytes": 29296
+      "sha256": "2fa6431e5775ecb80a30bd04b0872b9fb7ca86b703b312024a13ad53b624a133",
+      "bytes": 30951
     },
     {
       "path": "docs/releases/1.0.20.md",
@@ -3679,8 +3679,8 @@
     },
     {
       "path": "docs/releases/1.0.25.md",
-      "sha256": "b8155b239218401358316bbb58e44125c49d43187a33b8845336becad110aa84",
-      "bytes": 658
+      "sha256": "5228abab7ab8f0b5e6e730caa6bae56e5de87fbf9fa865a2c7d298708417a5d7",
+      "bytes": 938
     },
     {
       "path": "gradle.properties",
