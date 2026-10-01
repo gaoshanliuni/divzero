@@ -19,8 +19,8 @@ public final class ServerConversations implements AutoCloseable {
     private static final ThreadLocal<UUID> STOP_REPLY=new ThreadLocal<>();
     private final Map<UUID,List<String>> capabilityReuse=new HashMap<>();
     private final Map<UUID,Flight> flights=new LinkedHashMap<>();
-    private static final class NativeReply{final ServerPlayer viewer;final UUID agent,conversation,assistant;final String name;int offset,thinkingOffset,nativeParts;boolean emitted;String deliveryState="",failureDetail="";long lastSent,thinkingLastSent;NativeReply(ServerPlayer viewer,UUID agent,UUID conversation,UUID assistant,String name){this.viewer=viewer;this.agent=agent;this.conversation=conversation;this.assistant=assistant;this.name=name;}}
-    private record PendingNative(ServerPlayer viewer,UUID agent,UUID conversation,String text,long expires,boolean automatic,long accessRevision,long order){PendingNative(ServerPlayer v,UUID a,UUID c,String t,long e,boolean automatic,long revision){this(v,a,c,t,e,automatic,revision,System.nanoTime());}}
+    private static final class NativeReply{final ServerPlayer viewer;final UUID agent,conversation,assistant;final String name;final List<ServerPlayer> observers;int offset,thinkingOffset,nativeParts;boolean emitted;String deliveryState="",failureDetail="";long lastSent,thinkingLastSent;NativeReply(ServerPlayer viewer,UUID agent,UUID conversation,UUID assistant,String name){this(viewer,agent,conversation,assistant,name,false);}NativeReply(ServerPlayer viewer,UUID agent,UUID conversation,UUID assistant,String name,boolean shared){this.viewer=viewer;this.agent=agent;this.conversation=conversation;this.assistant=assistant;this.name=name;this.observers=shared?viewer.level().getServer().getPlayerList().getPlayers().stream().filter(p->p!=viewer&&!(p instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)).toList():List.of();}}
+    private record PendingNative(ServerPlayer viewer,UUID agent,UUID conversation,String text,long expires,boolean automatic,long accessRevision,boolean shared,long order){PendingNative(ServerPlayer v,UUID a,UUID c,String t,long e,boolean automatic,long revision){this(v,a,c,t,e,automatic,revision,false,System.nanoTime());}PendingNative(ServerPlayer v,UUID a,UUID c,String t,long e,boolean automatic,long revision,boolean shared){this(v,a,c,t,e,automatic,revision,shared,System.nanoTime());}}
     private record PendingWeb(ServerPlayer viewer,UUID agent,UUID conversation,Map<String,String> args,long order){}
     private final Map<UUID,PendingWeb> pendingWeb=new LinkedHashMap<>();
     private final Map<UUID,PendingNative> pendingNative=new LinkedHashMap<>();
@@ -52,34 +52,37 @@ public final class ServerConversations implements AutoCloseable {
     public void submitNative(ServerPlayer viewer,UUID agent,String text,boolean explicitMention)throws Exception{
         submitNative(viewer,agent,text,explicitMention,UUID.randomUUID());
     }
-    public void submitNative(ServerPlayer viewer,UUID agent,String text,boolean explicitMention,UUID op)throws Exception{
-        thread();if(!ServerChatAccess.admitOrAsk(viewer,agent,text,()->submitNative(viewer,agent,text,explicitMention,op)))return;
+    public void submitNative(ServerPlayer viewer,UUID agent,String text,boolean explicitMention,UUID op)throws Exception{submitNative(viewer,agent,text,explicitMention,op,false);}
+    public void submitMention(ServerPlayer viewer,UUID agent,String text,boolean shared)throws Exception{submitNative(viewer,agent,text,true,UUID.randomUUID(),shared);}
+    private void submitNative(ServerPlayer viewer,UUID agent,String text,boolean explicitMention,UUID op,boolean shared)throws Exception{
+        thread();if(!ServerChatAccess.admitOrAsk(viewer,agent,text,()->submitNative(viewer,agent,text,explicitMention,op,shared)))return;
         if(!MineAgentRuntimeServices.permissions(server).allowed(viewer.getUUID(),viewer.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER),dev.mineagent.runtime.api.permission.PermissionAction.CHAT))throw new SecurityException("CONVERSATION_FORBIDDEN");
         dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(server).accepted(viewer,agent,op,text);
         var definition=requireAgent(agent);var selected=focused(viewer).filter(f->f.nativeInput()&&f.agentId().equals(agent));ConversationStore.Conversation c;
         c=selected.isPresent()?store.get(viewer.getUUID(),agent,selected.orElseThrow().conversationId()):null;
         if(c==null||!c.state().equals("ACTIVE")){if(!explicitMention)throw new IllegalStateException("CONVERSATION_SELECTION_REQUIRED");c=store.nativeConversation(viewer.getUUID(),agent);}
-        submitNativeTo(viewer,agent,text,c,op);
+        submitNativeTo(viewer,agent,text,c,op,false,shared);
     }
     private void submitNativeTo(ServerPlayer viewer,UUID agent,String text,ConversationStore.Conversation c,UUID op)throws Exception{submitNativeTo(viewer,agent,text,c,op,false);}
-    private void submitNativeTo(ServerPlayer viewer,UUID agent,String text,ConversationStore.Conversation c,UUID op,boolean fromQueue)throws Exception{
+    private void submitNativeTo(ServerPlayer viewer,UUID agent,String text,ConversationStore.Conversation c,UUID op,boolean fromQueue)throws Exception{submitNativeTo(viewer,agent,text,c,op,fromQueue,false);}
+    private void submitNativeTo(ServerPlayer viewer,UUID agent,String text,ConversationStore.Conversation c,UUID op,boolean fromQueue,boolean shared)throws Exception{
         thread();var definition=requireAgent(agent);if(!c.state().equals("ACTIVE"))throw new IllegalStateException("CONVERSATION_READ_ONLY");
         if(!c.activeOperation().isEmpty()||!fromQueue&&pendingWeb.values().stream().anyMatch(q->q.conversation().equals(c.conversationId()))){
-            pendingNative.entrySet().removeIf(e->e.getValue().expires()<System.currentTimeMillis());UUID pending=op;pendingNative.put(pending,new PendingNative(viewer,agent,c.conversationId(),text,Long.MAX_VALUE,true,ServerChatAccess.policy(server,agent).revision()));
+            pendingNative.entrySet().removeIf(e->e.getValue().expires()<System.currentTimeMillis());UUID pending=op;pendingNative.put(pending,new PendingNative(viewer,agent,c.conversationId(),text,Long.MAX_VALUE,true,ServerChatAccess.policy(server,agent).revision(),shared));
             var button=net.minecraft.network.chat.Component.literal("[打断并发送这条消息]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai interrupt "+agent+" pending:"+pending)));
             viewer.sendSystemMessage(dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(definition.displayName()," 正在处理上一条消息，等待处理。 ").append(button).append(net.minecraft.network.chat.Component.literal(" [取消发送这条消息]").withStyle(style->style.withColor(net.minecraft.ChatFormatting.GRAY).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai cancel_send "+pending)))));return;
         }
 
         var accepted=write(viewer,op,Map.of("kind","send","agentId",agent.toString(),"conversationId",c.conversationId().toString(),"expectedRevision",Long.toString(c.revision()),"text",text),true);if("true".equals(accepted.get("duplicate")))return;
         var context=store.context(viewer.getUUID(),agent,c.conversationId(),null).orElseThrow();if(!context.operationId().equals(op))throw new IllegalStateException("CONVERSATION_CONTEXT_CHANGED");
-        nativeReplies.put(op,new NativeReply(viewer,agent,c.conversationId(),context.assistantMessageId(),definition.displayName()));
-        viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("[你 → "+definition.displayName()+"] "+text));
-        // The initial native stream entry contains its own request-scoped interrupt button.
-        pollNativeReplies();
+        nativeReplies.put(op,new NativeReply(viewer,agent,c.conversationId(),context.assistantMessageId(),definition.displayName(),shared));
+        if(!shared)viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("[你 → "+definition.displayName()+"] "+text));
+        // Public questions use the original vanilla chat event; its delivery precedes the next stream tick.
+        if(!shared)pollNativeReplies();
     }
     public int interruptNative(ServerPlayer viewer,UUID agent,String next)throws Exception{
         if(next!=null&&next.startsWith("choice:")){var parts=next.substring(7).split(":",-1);if(parts.length!=3)throw new IllegalArgumentException("CONVERSATION_BUTTON_ACTION");confirmRich(viewer,agent,UUID.fromString(parts[0]),UUID.fromString(parts[1]),Integer.parseInt(parts[2]),true);return 1;}
-        thread();requireAgent(agent);UUID queuedConversation=null,nextOperation=UUID.randomUUID();boolean alreadySent=false;boolean requestButton=next!=null&&(next.startsWith("active:")||next.startsWith("pending:"));
+        thread();requireAgent(agent);UUID queuedConversation=null,nextOperation=UUID.randomUUID();boolean alreadySent=false,queuedShared=false;boolean requestButton=next!=null&&(next.startsWith("active:")||next.startsWith("pending:"));
         if(next!=null&&next.startsWith("active:")){
             UUID target=UUID.fromString(next.substring(7));var bound=store.operationConversation(viewer.getUUID(),agent,target);
             if(bound.isEmpty())throw new IllegalStateException("CONVERSATION_BUTTON_EXPIRED");
@@ -95,7 +98,7 @@ public final class ServerConversations implements AutoCloseable {
             }else{
                 if(item.viewer()!=viewer||!item.agent().equals(agent))throw new IllegalStateException("CONVERSATION_PENDING_EXPIRED");
                 if(item.expires()<System.currentTimeMillis()){pendingNative.remove(pending);throw new IllegalStateException("CONVERSATION_PENDING_EXPIRED");}
-                queuedConversation=item.conversation();next=item.text();nextOperation=pending;pendingNative.remove(pending);
+                queuedConversation=item.conversation();next=item.text();nextOperation=pending;queuedShared=item.shared();pendingNative.remove(pending);
             }
         }
         var selected=focused(viewer).filter(f->f.agentId().equals(agent));var targets=queuedConversation!=null?List.of(store.get(viewer.getUUID(),agent,queuedConversation)):selected.isPresent()?List.of(store.get(viewer.getUUID(),agent,selected.get().conversationId())):store.list(viewer.getUUID(),agent,"ACTIVE","",0,20).conversations();
@@ -106,7 +109,7 @@ public final class ServerConversations implements AutoCloseable {
             if(requestButton&&!nativeReplies.containsKey(target)){var context=store.context(viewer.getUUID(),agent,c.conversationId(),null).orElseThrow();if(context.operationId().equals(target))nativeReplies.put(target,new NativeReply(viewer,agent,c.conversationId(),context.assistantMessageId(),requireAgent(agent).displayName()));}
         }
         pollNativeReplies();viewer.sendSystemMessage(dev.mineagent.runtime.neoforge.chat.AiChatMessages.name(requireAgent(agent).displayName()).append(net.minecraft.network.chat.Component.translatableWithFallback(alreadySent?"mineagent.chat.queue_interrupted":"mineagent.chat.interrupted",alreadySent?" 这条排队消息已开始处理，现已打断；未重复发送。":" 已打断；已发生的游戏/电脑操作不会回滚。")));
-        if(next!=null&&!next.isBlank()){if(queuedConversation!=null)submitNativeTo(viewer,agent,next,store.get(viewer.getUUID(),agent,queuedConversation),nextOperation);else submitNative(viewer,agent,next,true,nextOperation);}return 1;
+        if(next!=null&&!next.isBlank()){if(queuedConversation!=null)submitNativeTo(viewer,agent,next,store.get(viewer.getUUID(),agent,queuedConversation),nextOperation,false,queuedShared);else submitNative(viewer,agent,next,true,nextOperation);}return 1;
     }
     public Map<String,Object> richMessage(ServerPlayer viewer, UUID agent, UUID conversation, UUID operation, com.fasterxml.jackson.databind.JsonNode a) throws Exception {
         thread();
@@ -131,6 +134,7 @@ public final class ServerConversations implements AutoCloseable {
             message.append(net.minecraft.network.chat.Component.literal(" [" + b.label() + "]").withStyle(style -> style.withUnderlined(true).withClickEvent(click)));
         }
         boolean sent=dev.mineagent.runtime.neoforge.chat.AiPlayerChat.send(viewer,agent,message);
+        var activeConversation=store.get(viewer.getUUID(),agent,boundConversation);var publicReply=activeConversation.activeOperation().isBlank()?null:nativeReplies.get(UUID.fromString(activeConversation.activeOperation()));if(publicReply!=null&&publicReply.viewer==viewer){var plain=net.minecraft.network.chat.Component.literal(message.getString());for(var recipient:publicReply.observers)if(server.getPlayerList().getPlayer(recipient.getUUID())==recipient)dev.mineagent.runtime.neoforge.chat.AiPlayerChat.send(recipient,agent,plain);}
         return Map.of("status",sent?"SENT":"STORED_NOT_DELIVERED","buttons",options.size(),"conversationId",boundConversation,"messageId",saved.messageId());
     }
     private Map<String,Object> richView(ServerPlayer viewer, UUID agent, UUID conversation, UUID message) throws Exception {
@@ -167,7 +171,7 @@ public final class ServerConversations implements AutoCloseable {
     public static void accessChanged(MinecraftServer server,UUID agent){var runtime=LIVE.get(server);if(runtime==null)return;for(var flight:List.copyOf(runtime.flights.values()))if(flight.agent.equals(agent)&&!ServerChatAccess.canContinue(flight.viewer,agent))runtime.failGeneration(flight,"CONVERSATION_RESPONSE_PERMISSION_REVOKED");runtime.pendingNative.values().removeIf(p->p.agent().equals(agent)&&!ServerChatAccess.canContinue(p.viewer(),agent));}
     private void pollWebQueued(){for(var entry:List.copyOf(pendingWeb.entrySet())){var q=entry.getValue();if(pendingNative.values().stream().anyMatch(n->q.conversation().equals(n.conversation())&&n.order()<q.order()))continue;try{if(server.getPlayerList().getPlayer(q.viewer().getUUID())!=q.viewer()){pendingWeb.remove(entry.getKey());continue;}var c=store.get(q.viewer().getUUID(),q.agent(),q.conversation());if(!c.state().equals("ACTIVE")){pendingWeb.remove(entry.getKey());continue;}if(!c.activeOperation().isEmpty())continue;pendingWeb.remove(entry.getKey());var args=new LinkedHashMap<>(q.args());args.put("expectedRevision",Long.toString(c.revision()));write(q.viewer(),entry.getKey(),args,false,true);}catch(Exception e){pendingWeb.remove(entry.getKey());q.viewer().sendSystemMessage(net.minecraft.network.chat.Component.literal("排队消息未发送："+nativeError(e)));}}}
     public int cancelQueued(ServerPlayer viewer,UUID id){thread();var item=pendingNative.get(id);if(item==null||item.viewer()!=viewer||!item.automatic())return 0;pendingNative.remove(id);viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("已取消发送这条消息。"));return 1;}
-    private void pollQueued(){for(var entry:List.copyOf(pendingNative.entrySet())){var item=entry.getValue();if(!item.automatic())continue;if(pendingWeb.values().stream().anyMatch(q->q.conversation().equals(item.conversation())&&q.order()<item.order()))continue;if(server.getPlayerList().getPlayer(item.viewer().getUUID())!=item.viewer()){pendingNative.remove(entry.getKey());continue;}try{var c=store.get(item.viewer().getUUID(),item.agent(),item.conversation());if(!c.state().equals("ACTIVE")){pendingNative.remove(entry.getKey());continue;}if(!c.activeOperation().isEmpty()||nativeReplies.values().stream().anyMatch(n->n.conversation.equals(c.conversationId())))continue;pendingNative.remove(entry.getKey());if(!ServerChatAccess.canContinue(item.viewer(),item.agent()))throw new IllegalStateException("CONVERSATION_RESPONSE_PERMISSION_CHANGED");ServerChatAccess.accepted(item.viewer(),item.agent(),item.text(),()->submitNativeTo(item.viewer(),item.agent(),item.text(),c,entry.getKey(),true));}catch(Exception error){pendingNative.remove(entry.getKey());item.viewer().sendSystemMessage(net.minecraft.network.chat.Component.literal("排队消息未发送："+nativeError(error)));}}}
+    private void pollQueued(){for(var entry:List.copyOf(pendingNative.entrySet())){var item=entry.getValue();if(!item.automatic())continue;if(pendingWeb.values().stream().anyMatch(q->q.conversation().equals(item.conversation())&&q.order()<item.order()))continue;if(server.getPlayerList().getPlayer(item.viewer().getUUID())!=item.viewer()){pendingNative.remove(entry.getKey());continue;}try{var c=store.get(item.viewer().getUUID(),item.agent(),item.conversation());if(!c.state().equals("ACTIVE")){pendingNative.remove(entry.getKey());continue;}if(!c.activeOperation().isEmpty()||nativeReplies.values().stream().anyMatch(n->n.conversation.equals(c.conversationId())))continue;pendingNative.remove(entry.getKey());if(!ServerChatAccess.canContinue(item.viewer(),item.agent()))throw new IllegalStateException("CONVERSATION_RESPONSE_PERMISSION_CHANGED");ServerChatAccess.accepted(item.viewer(),item.agent(),item.text(),()->submitNativeTo(item.viewer(),item.agent(),item.text(),c,entry.getKey(),true,item.shared()));}catch(Exception error){pendingNative.remove(entry.getKey());item.viewer().sendSystemMessage(net.minecraft.network.chat.Component.literal("排队消息未发送："+nativeError(error)));}}}
     public int deleteNative(ServerPlayer viewer)throws Exception{UUID agent=ServerChatSettings.select(viewer,"");var c=focused(viewer).filter(f->f.agentId().equals(agent)).map(f->{try{return store.get(viewer.getUUID(),agent,f.conversationId());}catch(Exception e){throw new IllegalStateException(e);}}).orElseGet(()->{try{return store.nativeConversation(viewer.getUUID(),agent);}catch(Exception e){throw new IllegalStateException(e);}});write(viewer,UUID.randomUUID(),Map.of("kind","delete","agentId",agent.toString(),"conversationId",c.conversationId().toString(),"expectedRevision",Long.toString(c.revision())),true);viewer.sendSystemMessage(net.minecraft.network.chat.Component.literal("对话已删除；后续对话不会携带此会话上下文。"));return 1;}
     private net.minecraft.network.chat.Component colored(UUID agent,String text){return colored(agent,net.minecraft.network.chat.Component.literal(text));}
     private net.minecraft.network.chat.Component colored(UUID agent,net.minecraft.network.chat.MutableComponent message){String color=MineAgentRuntimeServices.config(server).snapshot().values().getOrDefault("agent."+agent+".chatColor","#FFFFFF");return message.withStyle(style->style.withColor(color.matches("#[A-Fa-f0-9]{6}")?Integer.parseInt(color.substring(1),16):0xFFFFFF));}
@@ -184,10 +188,11 @@ public final class ServerConversations implements AutoCloseable {
                     if(!n.emitted||!body.isEmpty()){
                         var visible=net.minecraft.network.chat.Component.literal(body.isEmpty()?"…":body);
                         if(color.matches("#[A-Fa-f0-9]{6}"))visible.withStyle(style->style.withColor(Integer.parseInt(color.substring(1),16)));
-                        nativeAllowed=dev.mineagent.runtime.neoforge.chat.AiPlayerChat.stream(n.viewer,n.agent,entry.getKey(),body.isEmpty()?"typing":"body:"+n.offset,visible);if(nativeAllowed)n.nativeParts++;
+                        nativeAllowed=dev.mineagent.runtime.neoforge.chat.AiPlayerChat.streamAudience(n.viewer,n.observers,n.agent,entry.getKey(),body.isEmpty()?"typing":"body:"+n.offset,visible);if(nativeAllowed)n.nativeParts++;
                     }
                     var data=new LinkedHashMap<String,Object>();data.put("agent",n.agent.toString());data.put("name",requireAgent(n.agent).displayName());data.put("bodyOffset",n.offset);data.put("body",body);data.put("thinkingOffset",n.thinkingOffset);data.put("thinking",thought);data.put("done",done);data.put("state",usage.requestState());data.put("color",color);data.put("nativeParts",n.nativeParts);data.put("nativeAllowed",nativeAllowed);
                     net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(n.viewer,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(entry.getKey(),"nativeChatStream",json.writeValueAsString(data)));
+                    if(!n.observers.isEmpty()){var publicData=dev.mineagent.runtime.core.conversation.PublicMentionUpdate.of(data);for(var recipient:n.observers)if(server.getPlayerList().getPlayer(recipient.getUUID())==recipient)net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(recipient,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(entry.getKey(),"nativeChatStream",json.writeValueAsString(publicData)));}
                     n.offset+=body.length();n.thinkingOffset+=thought.length();n.deliveryState=usage.requestState();n.emitted=true;
                 }
                 if(done&&n.offset>=message.textLength()){nativeReplies.remove(entry.getKey());if(!usage.requestState().equals("COMPLETE"))n.viewer.sendSystemMessage(dev.mineagent.runtime.neoforge.chat.AiChatMessages.line(n.name," 本次未完成："+(n.failureDetail.isBlank()?usage.errorCode():n.failureDetail)));}

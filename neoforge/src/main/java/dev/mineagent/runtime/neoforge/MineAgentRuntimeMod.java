@@ -577,16 +577,17 @@ public final class MineAgentRuntimeMod {
         if(player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)return; // AI output is native chat, never fresh model input.
         var server = player.level().getServer();
         if(!WorldIdentityRuntime.ready(server))return;
-        if(!MineAgentRuntimeServices.permissions(server).allowed(player.getUUID(),false,dev.mineagent.runtime.api.permission.PermissionAction.CHAT))return;
         var agents = MineAgentRuntimeServices.bodies(server).definitions();
         var mentions=dev.mineagent.runtime.core.interaction.AgentMention.resolve(event.getRawText(),agents.stream().map(dev.mineagent.runtime.api.agent.AgentDefinition::displayName).toList());
+        if(!MineAgentRuntimeServices.permissions(server).allowed(player.getUUID(),false,dev.mineagent.runtime.api.permission.PermissionAction.CHAT)){if(!mentions.isEmpty())event.setCanceled(true);return;}
         if(event.getRawText().stripLeading().startsWith("@")||!mentions.isEmpty()){
             event.setCanceled(true);
             var targets=agents.stream().filter(a->mentions.stream().anyMatch(m->m.name().equals(a.displayName()))).toList();
             if(mentions.size()!=1||targets.size()!=1){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI] 未找到唯一 AI；输入 @ 后按 Tab 选择名字。每条消息只联系一个 AI。"));return;}
             var target=targets.getFirst();String message=mentions.getFirst().message();
             if(message.isBlank()){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI] 已选择 "+target.displayName()+"；请在名字后输入消息。"));return;}
-            if(!dev.mineagent.runtime.neoforge.ui.ServerChatAccess.admitOrAsk(player,target.agentId(),message,()->dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).submitNative(player,target.agentId(),message,true)))return;
+            boolean shared=dev.mineagent.runtime.neoforge.ui.ServerMentionDisplay.shared(server,target.agentId());event.setCanceled(!shared);
+            if(!dev.mineagent.runtime.neoforge.ui.ServerChatAccess.admitOrAsk(player,target.agentId(),message,()->dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).submitMention(player,target.agentId(),message,shared)))return;
             if(message.matches("^(?:接管|控制身体)[ ：:].*")){
                 try{dev.mineagent.runtime.neoforge.task.AutonomousPlayerAgent.submit(player,target.agentId(),java.util.UUID.randomUUID(),message.replaceFirst("^(?:接管|控制身体)[ ：:]+", ""));}
                 catch(Exception failure){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI 接管] 请求未开始；请检查当前权限、是否已有计划或正在乘坐载具。"));}return;
@@ -596,7 +597,7 @@ public final class MineAgentRuntimeMod {
                 catch(Exception failure){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI 指令] 请求未开始："+java.util.Objects.toString(failure.getMessage(),"PLAYER_COMMAND_FAILED")));}return;
             }
             if(dev.mineagent.runtime.neoforge.network.MineAgentNetwork.submitChatDecision(player,target.agentId(),message))return;
-            try{dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).submitNative(player,target.agentId(),message,true);}
+            try{dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).submitMention(player,target.agentId(),message,shared);}
             catch(Exception failure){player.sendSystemMessage(net.minecraft.network.chat.Component.literal("[AI] "+dev.mineagent.runtime.neoforge.ui.ServerConversations.nativeError(failure)));}return;
         }
         if (agents.isEmpty()) {

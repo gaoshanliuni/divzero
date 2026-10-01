@@ -3471,5 +3471,11 @@
   "名称需要修改": "Rename required",
   "已被服务器封禁": "Banned by the server",
   "名称需改为原版兼容名称": "Rename to a vanilla-compatible name",
-  "等待重生": "Waiting to respawn"
+  "等待重生": "Waiting to respawn",
+  "聊天展示": "Chat display",
+  "群聊": "Public",
+  "私聊": "Private",
+  "聊天展示已变化，请刷新后重试": "Chat display changed; refresh and try again",
+  "聊天展示保存失败": "Could not save chat display",
+  "右键 AI 可打开专属面板。聊天展示仅影响 @ 对话。": "Right-click an AI for its panel. Chat display only affects @ conversations."
 }

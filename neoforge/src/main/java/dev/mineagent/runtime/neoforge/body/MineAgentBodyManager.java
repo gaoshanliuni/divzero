@@ -99,6 +99,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
         try {
             var stored = persistentAgents.create(name, owner.getUUID(), mode);
             registry.restore(stored.definition());
+            dev.mineagent.runtime.neoforge.ui.ServerMentionDisplay.created(server,stored.definition().agentId());
             spawnBody(stored.definition(), owner.level(), owner.position().add(2, 0, 2));
             return stored.definition();
         } catch (Exception failure) {
@@ -127,6 +128,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
         synchronizeCreationLimits();
         requirePlayerName(name,null);
         AgentDefinition definition = registry.create(name, ownerPlayerId, mode);
+        dev.mineagent.runtime.neoforge.ui.ServerMentionDisplay.created(server,definition.agentId());
         spawnBody(definition, level, position);
         return definition;
     }
@@ -142,6 +144,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
         try {
             requirePlayerName(name,null);var stored = persistentAgents.create(name, ownerPlayerId, AgentMode.CREATOR);
             registry.restore(stored.definition());
+            dev.mineagent.runtime.neoforge.ui.ServerMentionDisplay.created(server,stored.definition().agentId());
             spawnBody(stored.definition(), level, position);
             return stored.definition();
         } catch (Exception failure) {
@@ -624,7 +627,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
         var same=registry.all().stream().filter(a->a.displayName().equalsIgnoreCase(name.strip())&&a.ownerPlayerId().equals(owner.getUUID())).findFirst();requirePlayerName(name,same.map(AgentDefinition::agentId).orElse(null));
         var stored=persistentAgents.createIdempotent(operation,name,owner.getUUID(),mode);
         if(registry.get(stored.definition().agentId()).isEmpty()){
-            registry.restore(stored.definition());spawnBody(stored.definition(),owner.level(),owner.position().add(2,0,2));
+            registry.restore(stored.definition());dev.mineagent.runtime.neoforge.ui.ServerMentionDisplay.created(server,stored.definition().agentId());spawnBody(stored.definition(),owner.level(),owner.position().add(2,0,2));
         }
         return registry.get(stored.definition().agentId()).orElseThrow();
     }

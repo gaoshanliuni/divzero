@@ -949,8 +949,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "06cdb134e93b2ddf8a7e596fd8dfeb5c8bee87663f098aee82e85ceb2a8c9342",
-      "bytes": 317760
+      "sha256": "befb29bdc585efe5c1b2f891eaa7d3463a92045486eac39302bfda36a28d5b8b",
+      "bytes": 318147
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1273,6 +1273,11 @@
       "bytes": 6195
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/config/AgentMentionDisplay.java",
+      "sha256": "ecca7a8646ebe1e080b9ab8805d3bf7d78610b046c3d6326929f69e914812d1b",
+      "bytes": 1725
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/AgentModelSettings.java",
       "sha256": "fd80f87dc6badfaa991537c45d86ae7a4da9c61a885e191ad0025a699545c7b3",
       "bytes": 4832
@@ -1466,6 +1471,11 @@
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/NativeChatSegments.java",
       "sha256": "09179976cd27078976d577f919f3ae03bdb68cfa19cbee4134cc44e8dc482aeb",
       "bytes": 652
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/PublicMentionUpdate.java",
+      "sha256": "dd7cd1ac916fcc47168947054bbff4c8da9f4bcb85f48cae6d765ea89683e006",
+      "bytes": 619
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ScopedGuidance.java",
@@ -2893,6 +2903,11 @@
       "bytes": 5631
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/config/AgentMentionDisplayTest.java",
+      "sha256": "b3447420144761fb90657b5d062d8ff2d5556c46a6c152ac0ed62537144985b5",
+      "bytes": 2309
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/AgentModelSettingsTest.java",
       "sha256": "2c9d9b94ca9da0fe65bcfe44247fe7187d0849fe6dadd5c3931db57eaf276bff",
       "bytes": 2802
@@ -3674,8 +3689,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
-      "sha256": "9dee8ec3ab0276f799a3b7924351b3c3f1473f6525e86490f4fe6f4e563f7d3d",
-      "bytes": 55676
+      "sha256": "19ac6fd7f338042b27881c6af6056ab20acb6289f77d29c927d749a78da6360b",
+      "bytes": 55873
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
@@ -3724,8 +3739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
-      "sha256": "002a70c652dcb797305744eca664ee0b61c20926eb8b6ec8eb7882b713c909f1",
-      "bytes": 40819
+      "sha256": "9b80aafbe19e184d4967ac3f66f5dffd27035c85957e91a6e617d0e34f293be4",
+      "bytes": 41249
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentConnection.java",
@@ -3819,8 +3834,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/chat/AiPlayerChat.java",
-      "sha256": "fe6e3cae25e6aefd017423b9caef2737118b24a1b4c813afa089272a7ec45d60",
-      "bytes": 1882
+      "sha256": "e23394c00c3e1cdb53b3062888bf5e16343be514b9d25072403a9b0691434961",
+      "bytes": 2867
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/AgentPngSkinClient.java",
@@ -4089,8 +4104,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/NativeStreamingChat.java",
-      "sha256": "34ad5a94c7122b4512a46643852aef5498d815e08885fab1536586b302e7b109",
-      "bytes": 10786
+      "sha256": "f985dfc4e014c25d6866fbdbb53a2ab92a2045ca9ad26ab075ce4d83f4aa9882",
+      "bytes": 11004
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/chat/PythonHostSmokeClient.java",
@@ -4459,8 +4474,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
-      "sha256": "a145ffd1d3284aedb6e86ba9637407675bc299eb61406b4fb0889d4eed2dddf7",
-      "bytes": 20222
+      "sha256": "9859b55d12ee5d8a1366620d426f37310717b38f7765fd6244e03eefdd554f32",
+      "bytes": 21028
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspaceSetupScreen.java",
@@ -5454,7 +5469,7 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/network/MineAgentNetwork.java",
-      "sha256": "1c68c24ea95303f650c69e886247084b4c2a5c6bed7ee58d17eea39f192563e4",
+      "sha256": "8dafea37cfdb0ee7ac894780e2d7ecd9afc814e1c96b706ef1afadbb8b22d2b8",
       "bytes": 171127
     },
     {
@@ -6269,8 +6284,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerAgentManagement.java",
-      "sha256": "aaf7bd552ee70188bbda799b12d518571a1fcd0c57d1b255d4e5caf5f1dc2359",
-      "bytes": 8943
+      "sha256": "dd9e3bcfa2d1bd0735615f2fc0ad5890af498ed24266b081906e4c56d7328763",
+      "bytes": 9102
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerAgentModels.java",
@@ -6344,8 +6359,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "921233921861aef36ddf7b7651941446d8684d80aa0db0bdfb77f38e165815e8",
-      "bytes": 94350
+      "sha256": "701034ebaa98cbbdc1fb8cc1b39a72e1a7607b0de1ba335c254ef78c19106a74",
+      "bytes": 96659
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -6381,6 +6396,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerJavaStudio.java",
       "sha256": "69b9864f50fadbe19dd14fb52a6503d2696af0d0b6886d4d9d6e1ec4bd5dc148",
       "bytes": 42748
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerMentionDisplay.java",
+      "sha256": "966eb1cfc54baee8578b6287b3b6a9bc10d357e2cdc342d6994a9560a2ff19bd",
+      "bytes": 1989
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerNativeInterfaceRestore.java",

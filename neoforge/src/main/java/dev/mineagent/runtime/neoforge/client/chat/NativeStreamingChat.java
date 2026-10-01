@@ -19,7 +19,7 @@ public final class NativeStreamingChat {
     private static final Map<UUID,Stream> STREAMS=new LinkedHashMap<>();private static Object connection;
     private static final class Stream {
         String name;final UUID agent;final StringBuilder body=new StringBuilder(),thinking=new StringBuilder();final Set<String> parts=new HashSet<>();final MutableComponent approved=Component.empty();
-        GuiMessage message;Component template;boolean done,suppressed,passthrough,lastAllowed=true;int expectedParts;String state="",color="#FFFFFF";
+        GuiMessage message;Component template;boolean done,suppressed,passthrough,observer,lastAllowed=true;int expectedParts;String state="",color="#FFFFFF";
         Stream(String name,UUID agent){this.name=name;this.agent=agent;}
     }
     private record Part(UUID operation,UUID agent,String key,Component content){}
@@ -40,13 +40,13 @@ public final class NativeStreamingChat {
     /** Called after native/mod chat filtering has actually accepted or rejected this player's packet. */
     public static void nativeMessage(PlayerChatMessage message,com.mojang.authlib.GameProfile profile,boolean accepted){
         if(!connected())return;var part=part(message.decoratedContent());if(part==null||!part.agent.equals(message.sender()))return;
-        var stream=STREAMS.computeIfAbsent(part.operation,id->new Stream(profile.name(),part.agent));stream.name=profile.name();stream.lastAllowed=accepted;
+        var stream=STREAMS.computeIfAbsent(part.operation,id->new Stream(profile.name(),part.agent));stream.name=profile.name();stream.lastAllowed=accepted;if(part.key.startsWith("observer:"))stream.observer=true;
         boolean fresh=stream.parts.add(part.key);if(!accepted){paint(part.operation,stream);return;}
         var mc=Minecraft.getInstance();var all=((ChatHistoryAccess)mc.gui.getChat()).mineagent$messages();if(all.isEmpty())return;var added=all.getFirst();
         if(added.source()!=net.minecraft.client.multiplayer.chat.GuiMessageSource.PLAYER)return;
         var actual=part(added.content());if(actual==null||!actual.operation.equals(part.operation)){stream.passthrough=true;return;}
         if(stream.suppressed||!fresh){((ChatDisplayAccess)mc.gui.getChat()).mineagent$removeMessage(added);return;}
-        stream.template=added.content();if(part.key.startsWith("body:"))stream.approved.append(actual.content.copy());
+        stream.template=added.content();if(part.key.startsWith("body:")||part.key.startsWith("observer:body:"))stream.approved.append(actual.content.copy());
         if(stream.message==null)stream.message=added;else ((ChatDisplayAccess)mc.gui.getChat()).mineagent$removeMessage(added);
         paint(part.operation,stream);
     }
@@ -55,7 +55,7 @@ public final class NativeStreamingChat {
         try{
             var a=JsonParser.parseString(packet.json()).getAsJsonObject();UUID agent=UUID.fromString(a.get("agent").getAsString());String name=a.get("name").getAsString();if(name.length()>128)throw new IllegalArgumentException("CHAT_STREAM_NAME");
             var retained=Collections.newSetFromMap(new IdentityHashMap<GuiMessage,Boolean>());retained.addAll(((ChatHistoryAccess)Minecraft.getInstance().gui.getChat()).mineagent$messages());STREAMS.values().removeIf(s->s.done&&s.parts.size()>=s.expectedParts&&!retained.contains(s.message));
-            var stream=STREAMS.computeIfAbsent(packet.requestId(),id->new Stream(name,agent));if(stream.done)return;if(!stream.agent.equals(agent))throw new IllegalArgumentException("CHAT_STREAM_SCOPE");stream.name=name;
+            var stream=STREAMS.computeIfAbsent(packet.requestId(),id->new Stream(name,agent));if(stream.done)return;if(!stream.agent.equals(agent))throw new IllegalArgumentException("CHAT_STREAM_SCOPE");stream.name=name;if(a.has("observer")&&a.get("observer").getAsBoolean())stream.observer=true;
             append(stream.body,a.get("bodyOffset").getAsInt(),a.get("body").getAsString());append(stream.thinking,a.get("thinkingOffset").getAsInt(),a.get("thinking").getAsString());
             stream.done=a.get("done").getAsBoolean();stream.state=a.get("state").getAsString();stream.color=a.get("color").getAsString();stream.expectedParts=a.get("nativeParts").getAsInt();if(!a.get("nativeAllowed").getAsBoolean())stream.lastAllowed=false;
             paint(packet.requestId(),stream);
@@ -64,9 +64,9 @@ public final class NativeStreamingChat {
     private static void paint(UUID operation,Stream stream){
         var mc=Minecraft.getInstance();if(stream.suppressed||stream.passthrough||!stream.lastAllowed||stream.message==null||stream.template==null||mc.player==null||mc.isBlocked(stream.agent)||mc.options.onlyShowSecureChat().get()||!mc.player.chatAbilities().canReceivePlayerMessages())return;
         var text=stream.approved.copy();if(text.getString().isEmpty())text.append(Component.literal(stream.done?"":"…"));if(stream.done&&!stream.state.equals("COMPLETE")&&text.getString().isEmpty())text.append(Component.translatableWithFallback("mineagent.chat.stream.stopped","（已停止）"));
-        if(!stream.done)text.append(Component.literal(" [打断]").withStyle(s->s.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new ClickEvent.RunCommand("/ai interrupt "+stream.agent+" active:"+operation))));
+        if(!stream.done&&!stream.observer)text.append(Component.literal(" [打断]").withStyle(s->s.withColor(net.minecraft.ChatFormatting.YELLOW).withClickEvent(new ClickEvent.RunCommand("/ai interrupt "+stream.agent+" active:"+operation))));
         var answer=replacePart(stream.template,operation,text);
-        var reasoning=Component.translatableWithFallback(NativeChatPreferencesClient.THINKING_KEY,"%s[思考]%s",AiChatMessages.name(stream.name),stream.thinking.toString()).withStyle(net.minecraft.ChatFormatting.GRAY);
+        var reasoning=Component.translatableWithFallback(NativeChatPreferencesClient.THINKING_KEY,"%s[思考]%s",AiChatMessages.name(stream.name),stream.observer?"":stream.thinking.toString()).withStyle(net.minecraft.ChatFormatting.GRAY);
         var content=Component.translatableWithFallback(KEY,"%s",answer,reasoning);var before=stream.message;var next=new GuiMessage(mc.gui.getGuiTicks(),content,before.signature(),before.source(),before.tag());
         ((ChatMessageClock)(Object)next).mineagent$receivedAt(((ChatMessageClock)(Object)before).mineagent$receivedAt());if(((ChatDisplayAccess)mc.gui.getChat()).mineagent$replaceMessage(before,next))stream.message=next;else stream.suppressed=true;
         if(stream.done&&stream.parts.size()>=stream.expectedParts){stream.body.setLength(0);stream.thinking.setLength(0);stream.body.trimToSize();stream.thinking.trimToSize();}
