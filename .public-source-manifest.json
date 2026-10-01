@@ -3508,6 +3508,11 @@
       "bytes": 183809
     },
     {
+      "path": "docs/images/native-mention-display.png",
+      "sha256": "22ff9b9e519c6c88c89129b76700cf517058d864da42e61511b9d338dbdd66e8",
+      "bytes": 328813
+    },
+    {
       "path": "docs/images/native-neural-selfplay-arena.png",
       "sha256": "fc2349e2a0f389a7377856d032f3c0d401aad930fddbcc5be53114e7ad437d2e",
       "bytes": 2226828
@@ -3559,8 +3564,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "5ed8d6a903a70d62a5f3a993ba167302572a4f38e074fface7fcebe152963413",
-      "bytes": 26058
+      "sha256": "8f52b16e0c4e4be7315d6c362a43fb6b9b9750b4962bb5445c83eb56183d1e7c",
+      "bytes": 28551
     },
     {
       "path": "docs/releases/1.0.20.md",
