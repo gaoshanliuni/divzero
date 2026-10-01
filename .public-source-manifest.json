@@ -3439,8 +3439,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/dynamic/NativeUiWikiTest.java",
-      "sha256": "80a8a85e58833e65007f2de28217a0f7bdc4207080f6bfc8ab52a5201b686194",
-      "bytes": 1811
+      "sha256": "58b5a5322b4fd3c3f950f5362e491c38e46f1a4d82d43aedb24600c35744ea41",
+      "bytes": 1829
     },
     {
       "path": "docs/ADAPTIVE_AGENT_UPGRADE.md",

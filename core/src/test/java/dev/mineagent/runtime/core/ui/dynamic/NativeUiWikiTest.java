@@ -12,7 +12,7 @@ class NativeUiWikiTest {
         assertThrows(IllegalArgumentException.class,()->NativeUiWiki.read("../../secret","",0,4096));
     }
     @Test void candidateHudRequiresPositiveExplicitHeightButLegacyRemainsReadable(){
-        String source="{\"id\":\"hud\",\"surface\":\"HUD\",\"root\":{\"id\":\"root\",\"type\":\"column\"}}";
+        String source="{\"id\":\"hud\",\"title\":\"HUD\",\"surface\":\"HUD\",\"root\":{\"id\":\"root\",\"type\":\"column\"}}";
         var legacy=InterfaceDefinition.parse(source);assertThrows(IllegalArgumentException.class,legacy::requireHudHeight);
         for(String style:java.util.List.of("height: 0;","min-height: 54;","/*height:54;*/width:160;"))assertThrows(IllegalArgumentException.class,()->InterfaceDefinition.parse(source.replace("\"type\":\"column\"","\"type\":\"column\",\"style\":\""+style+"\"")).requireHudHeight());
         assertDoesNotThrow(()->InterfaceDefinition.parse(source.replace("\"type\":\"column\"","\"type\":\"column\",\"style\":\"width: 160; height: 54; flex-grow: 0;\"")).requireHudHeight());
