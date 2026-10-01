@@ -3544,8 +3544,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "0a58d7a1bf1f249e3ee501859492bfe80867e90acdff6fa1a9dedf516ceb08ed",
-      "bytes": 21558
+      "sha256": "f5e38fc1255a7f01a6c455e6030d1b4606ed437a51f5e54798982cc9ff19add2",
+      "bytes": 24306
     },
     {
       "path": "docs/releases/1.0.20.md",
@@ -6344,8 +6344,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "6a9b3d5cfd33af2522229ddfd41f49226ba9d599e3335277ab53e18d0bcd394d",
-      "bytes": 94302
+      "sha256": "921233921861aef36ddf7b7651941446d8684d80aa0db0bdfb77f38e165815e8",
+      "bytes": 94350
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
