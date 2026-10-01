@@ -19,21 +19,8 @@ public final class ServerBehaviorPanel {
             context.put("entities",player.level().getEntitiesOfClass(LivingEntity.class,player.getBoundingBox().inflate(32),e->e!=player&&e.isAlive()).stream().map(e->Map.of("id",e.getUUID().toString(),"name",e.getName().getString())).toList());result.put("context",context);var runtime=SkillRuntime.get(player.level().getServer());result.put("defaults",Map.of("ai",runtime.savedPolicy(player.getUUID(),agent,"ai"),"player",runtime.savedPolicy(player.getUUID(),agent,"player")));result.put("enhancements",ActorEnhancements.inspect(player,agent));return result;
         });
     }
-    /** Native panels need current controls, not unbounded attack timelines and old task observations. */
-    static Map<String,Object> panelProjection(Map<String,Object> data){
-        var mapper=new ObjectMapper();var source=mapper.valueToTree(data);var byActor=new LinkedHashMap<String,Object>();
-        for(var row:source.path("skills")){var session=row.path("session");if(Set.of("COMPLETED","FAILED","CANCELLED").contains(session.path("state").asText()))continue;
-            var visible=((com.fasterxml.jackson.databind.node.ObjectNode)session).deepCopy();var counters=mapper.createObjectNode();
-            for(String key:List.of("verifiedHits","damageMilliHearts","nativeDamageTakenMilli","harvested","planted","fishingCatches"))counters.put(key,session.path("counters").path(key).asLong());visible.set("counters",counters);
-            byActor.put(session.path("spec").path("actor").asText(),Map.of("session",visible,"combat",Map.of("targetName",row.path("combat").path("targetName").asText()),"tactic",row.path("tactic").asText()));
-        }
-        var result=new LinkedHashMap<String,Object>();result.put("status","OBSERVED");result.put("skills",List.copyOf(byActor.values()));return result;
-    }
-    static Map<String,Object> panelReceipt(Map<String,Object> value){
-        var result=new LinkedHashMap<String,Object>();
-        for(String key:List.of("status","error","errorCode","executionState","reason","mode","dimension","position","settings","workPreserved"))if(value.containsKey(key))result.put(key,value.get(key));
-        result.putIfAbsent("status","APPLIED");return result;
-    }
+    static Map<String,Object> panelProjection(Map<String,Object> data){return dev.mineagent.runtime.core.ui.BehaviorPanelProjection.snapshot(data);}
+    static Map<String,Object> panelReceipt(Map<String,Object> data){return dev.mineagent.runtime.core.ui.BehaviorPanelProjection.receipt(data);}
     public static CompletableFuture<Map<String,Object>> write(ServerPlayer player,UUID agent,UUID operation,String tool,String source,BooleanSupplier current)throws Exception{
         if(!ServerTaskStart.allowed(player,agent)||!current.getAsBoolean())throw new SecurityException("BEHAVIOR_PERMISSION");
         if(tool.equals("set_respawn_policy")){var n=new ObjectMapper().readTree(source);if(n.size()!=2||!n.path("enabled").isBoolean()||!n.path("expected_revision").isIntegralNumber())throw new IllegalArgumentException("RESPAWN_POLICY_ARGUMENTS");return CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.bodies(player.level().getServer()).setAutoRespawn(agent,n.path("expected_revision").asLong(),n.path("enabled").asBoolean()));}

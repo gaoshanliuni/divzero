@@ -689,6 +689,7 @@ public final class PersistentSkillSmokeClient {
         if(mode.equals("multi_attack")){multiAttack();return;}
         if(mode.equals("conversation_focus")){conversationFocus();return;}
         if(mode.equals("host_context")){hostContext();return;}
+        if(mode.equals("feedback_october")){action("feedback-ui-streaming-and-controls",()->dev.mineagent.runtime.neoforge.client.nativeui.OctoberFeedbackSmoke.run(agent));return;}
         if(mode.equals("mention_display")){action("mention-display-live",()->dev.mineagent.runtime.neoforge.client.nativeui.MentionDisplaySmoke.run(agent));return;}
         if(mode.equals("tool_repair")){action("tool-repair-live",()->dev.mineagent.runtime.neoforge.client.nativeui.ToolRepairSmoke.run(agent));return;}
         if(mode.equals("combat_feedback")){combatFeedback();return;}

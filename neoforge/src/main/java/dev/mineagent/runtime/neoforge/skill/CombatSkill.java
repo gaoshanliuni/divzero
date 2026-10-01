@@ -65,6 +65,7 @@ final class CombatSkill {
     private static boolean idleCombat(SkillWork w,String reason){w.waitFor(reason,10);return true;}
     private static void finishDefense(SkillWork w){
         if(!w.combatInterrupted)return;
+        if(w.gapCrouching){w.actor.crouch(w.token(),false);w.gapCrouching=false;}
         w.actor.stop(w.token());w.actor.controls().release(w.token());w.combatInterrupted=false;w.fighting=null;w.combatOperation=null;w.combatStage=0;w.healingOperation=null;w.contactEscape=false;w.contactRunAndHit=false;w.contactSince=w.contactClearSince=-1;
         w.session.phase(w.suspendedPhase==null?"SCAN":w.suspendedPhase);w.stand=null;w.search=null;w.positioning.reset();w.footwork.reset();w.jumpTapUntil=w.sideStepUntil=-1;
         w.session.transition(State.RUNNING,"DEFENSE_FINISHED_RECHECK_WORK");w.session.add("workResumptions",1);w.nextTick=w.tick();w.runtime.persist(w);if(w.session.spec().kind()!=SkillSpec.Kind.COMBAT)w.notice("resumed","威胁已解除，重新检查并继续原工作。");
@@ -232,7 +233,7 @@ final class CombatSkill {
     }
     private static boolean strikeInReach(SkillWork w,LivingEntity target,int contacts){
         var p=w.player();if(!NativeAttackReadiness.ready(p)||!dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(p,target)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||w.tick()-w.lastAttackAt<2)return false;
-        if(!CombatEquipmentAdapter.melee(w,target)||!NativeAttackReadiness.ready(p)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty())return false;
+        if(!CombatEquipmentAdapter.melee(w,target)||!NativeAttackReadiness.ready(p)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(p,target).isEmpty())return false;
         if(contacts==0&&p.getHealth()>p.getMaxHealth()*.75&&!w.combat.incoming(w)&&!ActorEnhancements.boost(p)&&!NativeAttackReadiness.fallingSmash(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return true;}
         if(p.isUsingItem())p.stopUsingItem();w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).orElse(target.getEyePosition()));
         if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);w.session.add("inRangeStrikeAttempts",1);}

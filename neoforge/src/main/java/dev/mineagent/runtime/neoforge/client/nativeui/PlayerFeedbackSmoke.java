@@ -55,15 +55,15 @@ public final class PlayerFeedbackSmoke {
             }catch(Exception e){throw new CompletionException(e);}
         }));
         step("renamed-profile-received-by-client",()->CompletableFuture.completedFuture(mc().getConnection().getPlayerInfo(agent)!=null&&mc().getConnection().getPlayerInfo(agent).getProfile().name().equals("伙伴二号")));
-        action("native-player-chat-stream-packets",()->server(p->{
+        action("named-system-chat-stream-packets",()->server(p->{
             String[] parts={"反馈原生聊天一","二"};int offset=0;for(int i=0;i<parts.length;i++){
                 var text=Component.literal(parts[i]);if(i==1)text.withStyle(style->style.withClickEvent(new ClickEvent.CopyToClipboard("反馈按钮")));
-                check(AiPlayerChat.stream(p,agent,chat,"body:"+offset,text),"NATIVE_CHAT_REJECTED");var payload=new JsonObject();payload.addProperty("agent",agent.toString());payload.addProperty("name","伙伴二号");payload.addProperty("bodyOffset",offset);payload.addProperty("body",parts[i]);payload.addProperty("thinkingOffset",0);payload.addProperty("thinking","");payload.addProperty("done",i==1);payload.addProperty("state",i==1?"COMPLETE":"RUNNING");payload.addProperty("color","#FFFFFF");payload.addProperty("nativeParts",i+1);payload.addProperty("nativeAllowed",true);net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,new UiPayloads.Event(chat,"nativeChatStream",payload.toString()));offset+=parts[i].length();
+                var payload=new JsonObject();payload.addProperty("agent",agent.toString());payload.addProperty("name","伙伴二号");payload.addProperty("bodyOffset",offset);payload.addProperty("body",parts[i]);payload.addProperty("thinkingOffset",0);payload.addProperty("thinking","");payload.addProperty("done",i==1);payload.addProperty("state",i==1?"COMPLETE":"RUNNING");payload.addProperty("color","#FFFFFF");payload.addProperty("nativeParts",i+1);payload.addProperty("nativeAllowed",true);net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,new UiPayloads.Event(chat,"nativeChatStream",payload.toString()));offset+=parts[i].length();
             }return true;
         }));
-        step("one-real-player-stream-with-click-event",()->{
+        step("one-named-system-stream",()->{
             var messages=((ChatHistoryAccess)mc().gui.getChat()).mineagent$messages().stream().filter(m->m.content().getString().contains("反馈原生聊天一二")).toList();if(messages.isEmpty())return CompletableFuture.completedFuture(false);
-            check(messages.size()==1&&messages.getFirst().source()==GuiMessageSource.PLAYER,"NOT_SINGLE_NATIVE_PLAYER_MESSAGE");var seen=new boolean[1];messages.getFirst().content().visit((style,text)->{if(style.getClickEvent() instanceof ClickEvent.CopyToClipboard)seen[0]=true;return Optional.empty();},Style.EMPTY);check(seen[0],"PLAYER_CHAT_LOST_CLICK_ACTION");return yes();
+            check(messages.size()==1&&messages.getFirst().source()!=GuiMessageSource.PLAYER&&messages.getFirst().content().getString().startsWith("[伙伴二号]"),"NOT_SINGLE_NAMED_SYSTEM_MESSAGE");return yes();
         });
         step("enable-local-workspace",()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return yes();dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});
         action("open-live-f2-editor",()->{NativeWorkspaceScreen.open();org.lwjgl.glfw.GLFW.glfwFocusWindow(mc().getWindow().handle());return yes();});
