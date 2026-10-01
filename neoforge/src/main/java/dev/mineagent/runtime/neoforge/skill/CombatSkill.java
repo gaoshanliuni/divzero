@@ -90,7 +90,7 @@ final class CombatSkill {
         var heading=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());var look=w.player().getLookAngle();boolean sprintClosing=w.sprintApproach&&!escape&&w.tick()-w.lastAttackAt>=2&&heading.lengthSqr()>.001&&new Vec3(look.x,0,look.z).normalize().dot(heading.normalize())>.75;
         if((sprintEscape||sprintClosing)&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
         w.actor.sprint(w.token(),sprintEscape||sprintClosing);
-        if(target!=null&&!sprintEscape)w.actor.aim(w.token(),target.getEyePosition());
+        if(target!=null&&!sprintEscape)w.actor.aim(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(w.player(),target).orElse(target.getEyePosition()));
         else {var direction=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());if(direction.lengthSqr()>.001)w.actor.aim(w.token(),w.player().getEyePosition().add(direction.normalize().scale(4)));}
         if(w.actor.moveTactically(w.token(),w.positioning.route()).equals("ROUTE_CHANGED")){w.actor.haltMotion(w.token());w.positioning.reset();return false;}return true;
     }
@@ -169,7 +169,7 @@ final class CombatSkill {
         if(!CombatEquipmentAdapter.melee(w,target)){w.actor.haltMotion(w.token());return;}
         double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);
         boolean ready=p.getAttackStrengthScale(.5f)>=.95f;
-        boolean inReach=p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)&&visible;
+        boolean inReach=p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)&&visible&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(p,target).isPresent();
         int opening=actual.openingTicks(p.level().getGameTime());
         double speed=p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)*(p.getFoodData().getFoodLevel()>6?2.8:2.1);
         int closing=CombatOpening.closingTicks(distance,reach,speed);
@@ -197,7 +197,7 @@ final class CombatSkill {
             double spacing=reach+.2;
             if(knockedAway&&distance>reach-.3&&!actual.inNativeMeleeRange()){phase(w,"COMBO_PRESSURE");w.sprintApproach=true;move(w,w.positioning.choose(w,"APPROACH",Math.max(1.5,reach-.4)),target,false);}
             else if(w.tick()-w.lastAttackAt<3||distance<spacing){phase(w,"STAP_SPACE");move(w,w.positioning.choose(w,"SPACE",spacing+.2),target,false);}
-            else {phase(w,"COMBO_SPACING");w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);}
+            else {phase(w,"COMBO_SPACING");w.actor.aim(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(w.player(),target).orElse(target.getEyePosition()));w.actor.haltMotion(w.token());shield(w,target);}
             return;
         }
         boolean attackedRecently=w.tick()-w.lastAttackAt<(combo?3:8)||!ready;
@@ -210,7 +210,7 @@ final class CombatSkill {
         }
         if(!inReach){
             phase(w,"MELEE_APPROACH");
-            if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.aim(w.token(),target.getEyePosition());w.actor.haltMotion(w.token());shield(w,target);return;}
+            if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.aim(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(w.player(),target).orElse(target.getEyePosition()));w.actor.haltMotion(w.token());shield(w,target);return;}
             w.sprintApproach=true;var approach=w.positioning.approachStep(w,target,Math.max(1,reach-.2));if(approach==null)approach=w.positioning.choose(w,"APPROACH",Math.max(1,reach-.2));if(!move(w,approach,target,false)&&!w.positioning.pending()&&actual.ranged())baitRanged(w,target,actual);return;
         }
         if(!ready){phase(w,"COOLDOWN_GUARD");shield(w,target);return;}
@@ -218,7 +218,7 @@ final class CombatSkill {
         // An exit improves the next movement; it is not a prerequisite for an already legal native hit.
         if(!CombatEquipmentAdapter.melee(w,target))return;
         if(p.isUsingItem())p.stopUsingItem();
-        w.actor.aim(w.token(),target.getEyePosition());
+        w.actor.aim(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(w.player(),target).orElse(target.getEyePosition()));
         if(!ActorEnhancements.boost(p)&&!NativeAttackReadiness.fallingSmash(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return;}
         if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);if(counter){w.session.add("counterOpenings",1);w.session.add("counterStrikeAttempts",1);}}
         if(target.isBlocking()&&p.getMainHandItem().is(ItemTags.AXES)){w.shieldCounterTarget=target;w.shieldCounterAt=w.tick();w.shieldCounterItem=target.getUseItem().copy();w.session.add("shieldCounterAttempts",1);}
@@ -340,7 +340,7 @@ final class CombatSkill {
         if(w.combatStage!=0){observeRelease(w);w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;}
         // A shield protects only its facing direction; do not block while turning to sprint away.
         if(p.getLookAngle().dot(target.position().subtract(p.position()).normalize())<.3)return false;
-        w.actor.aim(w.token(),target.getEyePosition());
+        w.actor.aim(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(w.player(),target).orElse(target.getEyePosition()));
         if(w.shieldOperation==null||w.wasBlocking&&!p.isUsingItem()){w.shieldOperation=UUID.randomUUID();w.wasBlocking=false;}
         w.actor.useHand(w.token(),w.shieldOperation,InteractionHand.OFF_HAND);w.wasBlocking|=p.isUsingItem()&&p.getUsedItemHand()==InteractionHand.OFF_HAND;return true;
     }

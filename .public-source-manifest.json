@@ -3999,8 +3999,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "59defc38adbaa8aa830bd891d180c2458df1cddc876755b3592f2f83381153d6",
-      "bytes": 202149
+      "sha256": "a2a4489eb60afd5b3bab05dccd9d55b4d6abf86c8ae6e56278fbc51f82570223",
+      "bytes": 202771
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -4504,8 +4504,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/OctoberFeedbackSmoke.java",
-      "sha256": "75e0ae88eb1fd3db9eb4e99a9735eaedbd654f97e820a292de2e09c1aebb1e4c",
-      "bytes": 13721
+      "sha256": "3c6b17f17eaa1e3869a397210257d6ee8808925b85be88f8c26ffd4e4bde3062",
+      "bytes": 13871
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PersonaLibraryBar.java",
@@ -5624,8 +5624,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "06744943e35c144a5b679ca0dbf2513c6c1b23941da261f4cdc7fcc3a2e61524",
-      "bytes": 38174
+      "sha256": "9070f0b293c425cd9cf8ee71acbe74a8d98059d07f83687ab6c183b651725579",
+      "bytes": 38716
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -5659,8 +5659,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/LocalPolicyRuntime.java",
-      "sha256": "eef0dd8ad90005c915a9c1533f7f01b433e0e82c79e2b1a26435439f9a147414",
-      "bytes": 14615
+      "sha256": "babaa6a8de4b408c50a01a9e31b3983b318c7dbf9c76308285d69210d7385e1b",
+      "bytes": 14742
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/MovementSkills.java",
@@ -5689,8 +5689,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeEquipmentSupport.java",
-      "sha256": "94660561b5c61d7570472e690b9e3ca75cb85036ff08c583239d4732dfb2547c",
-      "bytes": 1845
+      "sha256": "1db7f383a9a31c26022266684a17bd86e811339073be783f152be1e8da1b698a",
+      "bytes": 1883
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",

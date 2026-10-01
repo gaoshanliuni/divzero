@@ -63,8 +63,9 @@ public final class OctoberFeedbackSmoke {
         act("open-behavior-panel",()->{NativeBehaviorPanel.open((NativeWorkspaceScreen)mc().screen,agent.toString(),"持续技能搭档");return yes();});step("behavior-read-ready",()->CompletableFuture.completedFuture(NativeBehaviorPanel.smokeReady(agent.toString())));
         clickText("Boost：关闭");step("boost-saved-on",()->server(p->ActorEnhancements.read(p,agent).boost()));clickText("Boost：开启");step("boost-saved-off",()->server(p->!ActorEnhancements.read(p,agent).boost()));
         toggle("learning","权重学习模式：开启","权重学习模式：关闭");toggle("neural","神经策略：开启","神经策略：关闭");toggle("recovery","自主脱困：开启","自主脱困：关闭");
+        step("local-model-checkpoint-load-completes",()->server(p->!LocalPolicyRuntime.inspect(p,agent).get("status").equals("LOADING_CHECKPOINT")));
         act("seed-reset-only-probes",()->server(p->{var body=MineAgentRuntimeServices.bodies(p.level().getServer()).body(agent).orElseThrow();for(int i=0;i<13;i++)LocalPolicyRuntime.outcome(body,new double[16],.4);return LocalPolicyRuntime.inspect(p,agent);}));
-        clickText("恢复预训练权重");step("cancel-reset-modal",()->CompletableFuture.completedFuture(click(b->b.hasClass("__cancel-button__"))));
+        clickText("恢复预训练权重");step("cancel-reset-modal",()->CompletableFuture.completedFuture(click(b->b.hasClass("__reject-button__"))));
         act("cancel-preserves-probes",()->server(p->{require(((Number)LocalPolicyRuntime.inspect(p,agent).get("samples")).longValue()==13,"CANCEL_RESET_CHANGED_WEIGHTS");return true;}));
         clickText("恢复预训练权重");step("confirm-reset-modal",()->CompletableFuture.completedFuture(click(b->b.hasClass("__confirm-button__"))));
         step("confirmed-reset-clears-probes",()->server(p->((Number)LocalPolicyRuntime.inspect(p,agent).get("samples")).longValue()==0));

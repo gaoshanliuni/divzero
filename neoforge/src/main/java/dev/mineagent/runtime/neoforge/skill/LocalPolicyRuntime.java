@@ -36,6 +36,8 @@ public final class LocalPolicyRuntime {
         long samples,accepted,rejected,epoch;double validationLoss;boolean training,loading=true;String status="LOADING_CHECKPOINT";Pending pending;double bestDistance;
         CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);
         State(ServerPlayer p,UUID id){this.id=id;server=p.level().getServer();file=server.getServerDirectory().resolve("mineagent-runtime-data/policies/"+MineAgentRuntimeServices.worldId(server)+"/"+id+".json");
+        }
+        void load(){
             long captured=epoch;CompletableFuture.supplyAsync(()->{try{return Files.exists(file)?JSON.readTree(Files.readString(file)):null;}catch(Exception e){return null;}},IO).thenAccept(data->server.execute(()->{
                 if(captured!=epoch||ALL.get(server)==null||ALL.get(server).get(id)!=this)return;loading=false;if(data==null){status="PRETRAINED";return;}try{var restored=LocalActionPolicy.parse(data.path("model").asText());var records=new ArrayList<LocalActionPolicy.Sample>();if(data.path("outcomeSchema").asInt()==2&&data.has("replay")){if(!data.get("replay").isArray()||data.get("replay").size()>2048)throw new IllegalArgumentException("POLICY_REPLAY_INVALID");for(var sample:data.get("replay"))records.add(JSON.treeToValue(sample,LocalActionPolicy.Sample.class));}accepted=data.path("accepted").asLong();serving=accepted>0?restored:PRETRAINED;replay.addAll(records);samples=data.path("samples").asLong();validationLoss=data.path("validationLoss").asDouble();status=serving.source().equals(PRETRAINED.source())?"PRETRAINED_RESTORED":"RESTORED_CHECKPOINT";}catch(Exception invalid){status="PRETRAINED_CHECKPOINT_INVALID";}
             }));
@@ -46,7 +48,10 @@ public final class LocalPolicyRuntime {
     }
     private static UUID identity(ServerPlayer p){return p instanceof MineAgentPlayer body?body.agentId():p.getUUID();}
     private static State state(ServerPlayer p){return state(p,identity(p));}
-    private static State state(ServerPlayer context,UUID id){return ALL.computeIfAbsent(context.level().getServer(),s->new HashMap<>()).computeIfAbsent(id,key->new State(context,key));}
+    private static State state(ServerPlayer context,UUID id){
+        var states=ALL.computeIfAbsent(context.level().getServer(),s->new HashMap<>());var state=states.get(id);
+        if(state==null){state=new State(context,id);states.put(id,state);state.load();}return state;
+    }
     public static double score(ServerPlayer p,double[] features){if(!ActorEnhancements.forBody(p).neural())return 0;return state(p).serving.cost(features);}
     public static LocalActionPolicy snapshot(ServerPlayer p){return ActorEnhancements.forBody(p).neural()?state(p).serving:null;}
     public static double[] features(ServerPlayer p,double distance,double progress,double risk,int steps,Vec3 delta,int edge,boolean opportunity,int kind,double materials){

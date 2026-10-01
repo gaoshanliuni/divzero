@@ -14,7 +14,7 @@ public final class NativeEquipmentSupport {
         return -1;
     }
     public static void maintainAi(dev.mineagent.runtime.neoforge.body.MineAgentPlayer player){
-        if(!player.canAct()||player.isUsingItem()&&player.getUsedItemHand()==InteractionHand.MAIN_HAND||!player.inventoryMenu.getCarried().isEmpty())return;
+        if(!player.canAct()||!ActorEnhancements.executing(player)||player.isUsingItem()&&player.getUsedItemHand()==InteractionHand.MAIN_HAND||!player.inventoryMenu.getCarried().isEmpty())return;
         int slot=protectionSlot(player);if(slot<0)return;if(player.isUsingItem())player.stopUsingItem();
         var carried=player.getInventory().getItem(slot);var previous=player.getOffhandItem();
         player.setItemInHand(InteractionHand.OFF_HAND,carried);player.getInventory().setItem(slot,previous);player.inventoryMenu.broadcastChanges();
