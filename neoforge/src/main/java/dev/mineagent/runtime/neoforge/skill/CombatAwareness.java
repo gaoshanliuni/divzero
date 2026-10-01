@@ -53,6 +53,8 @@ final class CombatAwareness {
         var rows=new ArrayList<Threat>();var bounds=p.getBoundingBox();if(owner!=null&&owner!=p&&owner.level()==p.level()&&owner.distanceTo(p)<=rule.awareness()*2&&owner.getLastHurtByMob()!=null&&owner.tickCount-owner.getLastHurtByMobTimestamp()<100)bounds=bounds.minmax(owner.getBoundingBox());if(protectedEntity!=null&&protectedEntity.distanceTo(p)<rule.awareness()*2)bounds=bounds.minmax(protectedEntity.getBoundingBox());var entities=p.level().getEntitiesOfClass(LivingEntity.class,bounds.inflate(rule.awareness()),e->e!=p&&e.isAlive());
         w.prediction.observe(w,entities);
         var hostilePositions=new dev.mineagent.runtime.core.task.SpatialNeighbors<LivingEntity>(entities.stream().filter(e->e instanceof Enemy||e instanceof net.minecraft.world.entity.player.Player&&SkillRuntime.attackAllowed(w,e)).toList(),4,e->new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()));
+        var dependents=new HashMap<UUID,Integer>();
+        for(var entity:entities)if(entity instanceof net.minecraft.world.entity.monster.Vex vex&&vex.getOwner()!=null&&sight(w,vex))dependents.merge(vex.getOwner().getUUID(),1,Integer::sum);
         for(var e:entities){
             boolean forbidden=!SkillRuntime.attackAllowed(w,e);
             boolean helpOwner=owner!=null&&owner!=p&&owner.level()==p.level()&&owner.isAlive()
@@ -81,6 +83,9 @@ final class CombatAwareness {
             var actual=NativeCombatStates.read(e,p);
             long neighbors=hostilePositions.count(new dev.mineagent.runtime.core.task.SpatialNeighbors.Point(e.getX(),e.getY(),e.getZ()),4,e);
             double score=(self?8:0)+(protect?18+(NativeCombatStates.meleeAt(e,helpOwner?owner:protectedEntity,(helpOwner?owner:protectedEntity).position())?30:0):0)+(attacked?6:0)+(imminent?5:0)+Math.max(0,8-d)*.7-neighbors*2-(actual.areaAttack()?6:0)+(selected==e?3:0)+(sight?1:-4);
+            boolean summoning=actual.attacks().stream().anyMatch(a->a.kind().equals("SUMMON")&&a.running());
+            int nextCast=actual.attacks().stream().filter(a->a.kind().equals("SUMMON")).mapToInt(NativeCombatStates.Attack::cooldownTicks).min().orElse(Integer.MAX_VALUE);
+            if(sight)score+=dev.mineagent.runtime.core.task.CombatSourcePriority.bonus(d,dependents.getOrDefault(e.getUUID(),0),summoning,nextCast);
             rows.add(new Threat(e,actual,eligible,protect,self||protect||attacked||imminent,score));
             if(eligible&&rule.engagement()==CombatPolicy.Engagement.CLEAR_AREA){var previous=lastSeen.put(e.getUUID(),new Seen(e,e.position(),w.tick()));if(previous!=null&&w.tick()-previous.tick>20)w.session.add("threatReacquisitions",1);}
         }

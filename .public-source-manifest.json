@@ -2523,6 +2523,11 @@
       "bytes": 888
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/CombatSourcePriority.java",
+      "sha256": "8d882ece2bf981cd152da1281cb4632caccb16b3ecc7f51e0742160aeed8deb9",
+      "bytes": 747
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/CraftingInventoryProof.java",
       "sha256": "6b018ebf49532a0115a8c8841211df05fa0103036e5a2c9ae6d31beae0d135fd",
       "bytes": 809
@@ -3261,6 +3266,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatPolicyTest.java",
       "sha256": "3586c54c5acd452305f3151c429ed00d66d2132940a09e36b172ee7991030778",
       "bytes": 4468
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/CombatSourcePriorityTest.java",
+      "sha256": "674580bd3e5acbf04ae914fa993d06b4e2c934ca79cb15b9c5c019f1c4ecf9d2",
+      "bytes": 715
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/DamageSweepTest.java",
@@ -5574,8 +5584,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatAwareness.java",
-      "sha256": "a6fbba476df1113022c1496c51efa3294d0376fbe67fcff9f9bdae2cf9434cc3",
-      "bytes": 14636
+      "sha256": "4e58712875cc1aa9078b4fb8dbbcf261973c8696d42816761cc3f4518e11eebc",
+      "bytes": 15309
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatCriticalTiming.java",
