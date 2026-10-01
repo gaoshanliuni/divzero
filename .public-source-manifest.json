@@ -3409,8 +3409,8 @@
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
-      "sha256": "dbdc1c5f6a7e2ad05ff1ae32825758fcc162f5e0e9e3e587a6a8310ddcf12f6e",
-      "bytes": 3296
+      "sha256": "b158b69dd5d693602d1a543aa6da6d176a36a01ae55255afbc9b3825d3d7c2db",
+      "bytes": 6831
     },
     {
       "path": "docs/CINEMATIC_FILMS.md",
@@ -3424,8 +3424,8 @@
     },
     {
       "path": "docs/FEATURES.md",
-      "sha256": "d8bf166bb7f4691fe6b6887a7206431fdab7ce21ad2470d14579748ae6aceea2",
-      "bytes": 48944
+      "sha256": "9c0dc5cad527ebe9179e5f6f30b2af70cc4afe280b8c920516ac8dbfbaa6fc28",
+      "bytes": 49415
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -3599,8 +3599,8 @@
     },
     {
       "path": "docs/native-workspace-integration.md",
-      "sha256": "8f52b16e0c4e4be7315d6c362a43fb6b9b9750b4962bb5445c83eb56183d1e7c",
-      "bytes": 28551
+      "sha256": "ed909365aacbc0795d89439961bf158df3cae8862443115f0c3386e0da9cee35",
+      "bytes": 29296
     },
     {
       "path": "docs/releases/1.0.20.md",

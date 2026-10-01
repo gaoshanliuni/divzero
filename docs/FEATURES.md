@@ -8,7 +8,7 @@
 
 DivZero AI Runtime 是一个面向 Minecraft 的智能 AI 运行框架，通过自然语言、世界感知、长期记忆和动态创造，让 AI 角色真正参与游戏世界。
 
-本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**公开源码 1.0.23 候选 / 协议11**，客户端与服务端一起更新；旧版1.0.20为协议10。管理操作需要开启作弊／真实管理权限，首次在聊天中选择启用即可立即使用。
+本文面向玩家，汇总当前公开 `main` 的功能，提供对话示例、命令及原生／F2 操作入口。**当前为开发测试版；具体 Provider、Mod、平台及组合的验证范围见本文。** Minecraft 26.1.2、NeoForge 26.1.2.106、Java 25；**公开源码 1.0.23 候选 / 协议15**，客户端与服务端一起更新；旧版1.0.20为协议10。管理操作需要开启作弊／真实管理权限，首次在聊天中选择启用即可立即使用。
 
 ## 1.0.23 候选补齐
 
@@ -54,7 +54,7 @@ F2 与 Ctrl+M 打开同一 LDLib2 MC 工作区。右键 AI 的专属面板绑定
 |---|---|
 | 原生聊天 | `@AI名字` 选中 AI，Tab 自动补全；用自然语言提需求。 |
 | F2 对话 | 持久对话记录、新建／切换会话、查看原文、归档／恢复与上下文详情；删除会取消该会话的在途请求和未发队列，后续建立新上下文。 |
-| 流式回复 | 正文与 Provider 返回的思考分别原位流式更新，F2 保留完整历史。 |
+| 流式回复 | `[AI 名称]` 系统聊天中正文原位更新一条记录、思考默认单行尾部，悬停名字查看时间；F2 保留完整历史。 |
 | 打断与恢复 | 忙时默认排队，上一条结束后自动发送；可点“打断并发送”或“取消发送这条消息”。打断操作绑定对应请求。失败可“核对后继续”，先读真实状态，根据核对结果继续操作。 |
 | 思考显示 | 原生显示 `[AI名字][思考]…`，`/ai thinking see` 切换原生显示，F2 对话记录保留完整内容；`/ai thinking deep` 选择深度。AI 也可调用设置能力；官方 DeepSeek 的实际深度参数已验证。 |
 | Provider | DeepSeek、OpenAI 兼容 API、GLM 智谱／Z.AI、Ollama 等配置入口；GLM 凭据联验待完成。 |
@@ -519,3 +519,6 @@ DivZero is open source under the [Apache License 2.0](https://github.com/gaoshan
 **No third-party AI service keys are included.** Configure your own provider, API URL, key, and model. You are responsible for any charges from your chosen AI service. Model availability, capabilities, and pricing are determined by the provider.
 
 [Screenshot notes and original checksums](images/README.md) · [Source and technical notes](SOURCE_SNAPSHOT.md)
+
+
+2026-10-01 增补：AI 状态页可切换游戏模式和传送到你身边；游戏模式跨重进保留。行为开关和恢复权重弹窗已原生回归。死亡保护物品会从背包装备后走原版效果链路，支持实际可见脚部的空隙攻击与原版重锤下落伤害，AI 本体和真人托管均有实机记录。详见 [聊天、状态与战斗交互修复](CHAT_PLAYER_COMBAT_REPAIR.md)。
