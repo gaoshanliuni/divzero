@@ -39,6 +39,12 @@ public final class LocalActionPolicy {
         double before=previous.loss(liveHoldout),after=candidate.loss(liveHoldout),anchor=candidate.loss(reference);
         return Double.isFinite(after)&&Double.isFinite(anchor)&&after<before&&after<=.12&&anchor<=.006&&anchor<=previous.loss(reference)+.001;
     }
+    public LocalActionPolicy interpolate(LocalActionPolicy candidate,double scale){
+        if(!Double.isFinite(scale)||scale<=0||scale>1)throw new IllegalArgumentException("POLICY_UPDATE_SCALE");
+        double[][] h=new double[HIDDEN][INPUTS];double[] b=new double[HIDDEN],o=new double[HIDDEN];
+        for(int i=0;i<HIDDEN;i++){for(int j=0;j<INPUTS;j++)h[i][j]=weights.hidden[i][j]+scale*(candidate.weights.hidden[i][j]-weights.hidden[i][j]);b[i]=weights.bias[i]+scale*(candidate.weights.bias[i]-weights.bias[i]);o[i]=weights.output[i]+scale*(candidate.weights.output[i]-weights.output[i]);}
+        return new LocalActionPolicy(new Weights(SCHEMA,Math.addExact(weights.version,1),h,b,o,weights.outputBias+scale*(candidate.weights.outputBias-weights.outputBias),"LOCAL_VERIFIED_OUTCOMES"));
+    }
     public LocalActionPolicy train(List<Sample> samples,double rate){
         if(samples.isEmpty()||samples.size()>1024||rate<=0||rate>.05)throw new IllegalArgumentException("POLICY_TRAINING_INPUT");
         double[][] wh=new double[HIDDEN][];for(int i=0;i<HIDDEN;i++)wh[i]=weights.hidden[i].clone();double[] bh=weights.bias.clone(),wo=weights.output.clone();double bo=weights.outputBias;

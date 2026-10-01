@@ -3,6 +3,13 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class LocalActionPolicyTest {
+    @Test void smallerValidatedStepsCanIterateWithoutWeakeningReferenceLimits(){
+        var initial=LocalActionPolicy.pretrained();var anchors=LocalActionPolicy.referenceSamples(initial);var replay=new ArrayList<LocalActionPolicy.Sample>();
+        for(var sample:anchors)replay.add(new LocalActionPolicy.Sample(sample.features(),Math.max(0,sample.cost()-.12)));
+        var first=LocalPolicyTrainer.fit(initial,replay,anchors);assertTrue(first.accepted());assertTrue(first.scale()<1);assertTrue(first.referenceDrift()<=.001);assertNotEquals(initial.json(),first.model().json());
+        var second=LocalPolicyTrainer.fit(first.model(),replay,anchors);assertTrue(second.accepted());assertTrue(second.after()<first.after());assertEquals(first.model().version()+1,second.model().version());assertTrue(second.referenceDrift()<=.006);
+        assertEquals(0,initial.loss(anchors),1e-15);
+    }
     @Test void pretrainedModelRanksHazardHigherAndBoundsUnexpectedInputs(){
         var model=LocalActionPolicy.pretrained();double[] safe=new double[16];safe[0]=1;double[] danger=safe.clone();danger[6]=1;danger[10]=1;
         assertTrue(model.cost(danger)>model.cost(safe));danger[2]=Double.NaN;assertTrue(Double.isFinite(model.cost(danger)));

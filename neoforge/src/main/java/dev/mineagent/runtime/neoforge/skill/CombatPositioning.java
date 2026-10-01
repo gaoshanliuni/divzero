@@ -42,7 +42,7 @@ final class CombatPositioning {
                 double danger=work.combat.collisionRisk(work,end,Math.min(18,elapsed));var direction=end.subtract(actor.position()).multiply(1,0,1).normalize();
                 var target=work.combat.selected;double distance=target==null?0:actor.distanceTo(target),progress=target==null?0:distance-end.distanceTo(target.position());
                 var candidate=LocalPolicyRuntime.features(actor,distance,progress,total+danger,path.size(),end.subtract(actor.position()),0,actor.getAttackStrengthScale(.5f)>=.95,work.session.spec().kind().ordinal(),0);
-                double score=worst*4+total+danger*1.5+elapsed*.4+(heading==null?0:(1-heading.dot(direction))*2)+(model==null?0:model.cost(candidate)*8);
+                double score=worst*4+total+danger*1.5+elapsed*.4+(heading==null?0:(1-heading.dot(direction))*2)+(model==null?0:LocalPolicyRuntime.cost(actor,model,candidate)*8);
                 if(score<best){best=score;route=path;chosen=end;features=candidate;}
             }
         }
@@ -66,7 +66,7 @@ final class CombatPositioning {
             if(work.combat.attacks.routeRisk(work,point,4,4)>0)continue;
             double separation=point.distanceTo(center)-p.position().distanceTo(center);if(separation<.15)continue;var delta=point.subtract(p.position());
             var candidate=LocalPolicyRuntime.features(p,p.position().distanceTo(center),-separation,risk+future,1,delta,0,false,work.session.spec().kind().ordinal(),0);
-            double score=risk*2+future-separation*5+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*1.5)+(model==null?0:model.cost(candidate)*8);
+            double score=risk*2+future-separation*5+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*1.5)+(model==null?0:LocalPolicyRuntime.cost(p,model,candidate)*8);
             if(score<best){best=score;selected=edge;features=candidate;}
         }
         if(selected==null)return null;var point=NativeTraversalEvaluator.point(selected.to());chosenRoute=List.of(selected);selectedDistance=p.position().distanceTo(point);heading=point.subtract(p.position()).multiply(1,0,1).normalize();quickRetreat=true;
@@ -86,7 +86,7 @@ final class CombatPositioning {
             if(!dev.mineagent.runtime.core.task.CombatBounds.canAdvance(assigned,point.distanceTo(work.combat.center(work)),player.position().distanceTo(work.combat.center(work)),rule.leash()))continue;
             var middle=player.position().lerp(point,.5);double risk=work.combat.risk(work,point,target),future=Math.max(work.combat.collisionRisk(work,point,4,target),work.combat.collisionRisk(work,middle,2,target));if(risk>initialRisk+8||work.combat.attacks.routeRisk(work,point,4,2)>0)continue;
             var delta=point.subtract(player.position());var candidate=LocalPolicyRuntime.features(player,player.distanceTo(target),progress,risk+future,1,delta,0,player.getAttackStrengthScale(.5f)>=.95,work.session.spec().kind().ordinal(),0);
-            double score=risk+future*.6-progress*8+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*.8)+(model==null?0:model.cost(candidate)*8);
+            double score=risk+future*.6-progress*8+(heading==null?0:(1-heading.dot(delta.multiply(1,0,1).normalize()))*.8)+(model==null?0:LocalPolicyRuntime.cost(player,model,candidate)*8);
             if(score<best){best=score;chosen=edge;features=candidate;}
         }
         if(chosen==null)return null;var point=NativeTraversalEvaluator.point(chosen.to());chosenRoute=List.of(chosen);selectedDistance=player.position().distanceTo(point);heading=point.subtract(player.position()).multiply(1,0,1).normalize();
@@ -114,7 +114,7 @@ final class CombatPositioning {
             double risk=work.combat.risk(work,point);if(risk>initialRisk+2||work.combat.attacks.routeRisk(work,point,5,3)>0)continue;double future=0;
             for(var threat:work.combat.threats)if(threat.entity().isAlive()&&NativeCombatStates.meleeAtAfter(threat.entity(),player,point,4))future+=threat.entity()==target?6:18;
             var delta=point.subtract(player.position());var features=LocalPolicyRuntime.features(player,initial,initial-point.distanceTo(target.position()),risk+future,1,delta,0,true,work.session.spec().kind().ordinal(),0);
-            double score=risk*2+future-(point.distanceTo(target.position())-initial)*2+(model==null?0:model.cost(features)*8);
+            double score=risk*2+future-(point.distanceTo(target.position())-initial)*2+(model==null?0:LocalPolicyRuntime.cost(player,model,features)*8);
             if(score<best){best=score;selectedEdge=edge;selectedFeatures=features;}
         }
         if(selectedEdge==null)return null;attackExit=selectedEdge;attackExitAt=work.tick();attackExitLevel=player.level();attackExitTarget=target.getUUID();chosenRoute=List.of(selectedEdge);selectedDistance=player.position().distanceTo(NativeTraversalEvaluator.point(selectedEdge.to()));
@@ -191,7 +191,7 @@ final class CombatPositioning {
             if(heading!=null)score+=(1-heading.dot(direction))*.8;
             double targetDistance=target==null?0:origin.distanceTo(target.position()),progress=target==null?origin.distanceTo(point):targetDistance-point.distanceTo(target.position());
             var features=LocalPolicyRuntime.features(w.player(),targetDistance,progress,risk+routeRisk,route.steps.size(),point.subtract(origin),edgeExposure(w,route.node)+trapRisk,opportunity!=null,w.session.spec().kind().ordinal(),0);
-            if(localPolicy!=null)score+=localPolicy.cost(features)*8;
+            if(localPolicy!=null)score+=LocalPolicyRuntime.cost(w.player(),localPolicy,features)*8;
             if(score<best){selectedFeatures=features;best=score;selectedDistance=origin.distanceTo(point);selected=next;waypointNode=route.steps.getFirst().to();chosenRoute=route.steps;}
         }
         if(selected!=null){if(!legacy&&selectedFeatures!=null)LocalPolicyRuntime.chose(w,selectedFeatures,selected);waypoint=selected;waypointAt=w.tick();waypointPurpose=intent;waypointRisk=w.combat.risk(w,waypoint);targetAtWaypoint=target==null?null:target.position();heading=new Vec3(waypoint.x-w.player().getX(),0,waypoint.z-w.player().getZ()).normalize();w.session.add("tacticalWaypoints",1);}

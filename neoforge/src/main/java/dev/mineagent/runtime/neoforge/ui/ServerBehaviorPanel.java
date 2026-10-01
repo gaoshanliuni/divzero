@@ -16,7 +16,7 @@ public final class ServerBehaviorPanel {
         return SkillRuntime.get(player.level().getServer()).inspect(player,agent).thenApply(data->{
             var result=new LinkedHashMap<>(panelProjection(data));var context=new LinkedHashMap<String,Object>();context.put("ownerId",player.getUUID().toString());context.put("dimension",player.level().dimension().identifier().toString());context.put("position",List.of(player.getX(),player.getY(),player.getZ()));
             var hit=player.pick(16,0,false);context.put("look",hit.getType()==HitResult.Type.BLOCK?List.of(hit.getLocation().x,hit.getLocation().y,hit.getLocation().z):List.of());
-            context.put("entities",player.level().getEntitiesOfClass(LivingEntity.class,player.getBoundingBox().inflate(32),e->e!=player&&e.isAlive()).stream().map(e->Map.of("id",e.getUUID().toString(),"name",e.getName().getString())).toList());result.put("context",context);var runtime=SkillRuntime.get(player.level().getServer());result.put("defaults",Map.of("ai",runtime.savedPolicy(player.getUUID(),agent,"ai"),"player",runtime.savedPolicy(player.getUUID(),agent,"player")));result.put("enhancements",ActorEnhancements.inspect(player,agent));return result;
+            context.put("entities",player.level().getEntitiesOfClass(LivingEntity.class,player.getBoundingBox().inflate(32),e->e!=player&&e.isAlive()).stream().map(e->Map.of("id",e.getUUID().toString(),"name",e.getName().getString())).toList());result.put("context",context);var runtime=SkillRuntime.get(player.level().getServer());result.put("defaults",Map.of("ai",runtime.savedPolicy(player.getUUID(),agent,"ai"),"player",runtime.savedPolicy(player.getUUID(),agent,"player")));result.put("enhancements",ActorEnhancements.inspect(player,agent));result.put("regions",Map.of("ai",ServerBehaviorRegions.read(player,agent,"ai"),"player",ServerBehaviorRegions.read(player,agent,"player")));return result;
         });
     }
     static Map<String,Object> panelProjection(Map<String,Object> data){return dev.mineagent.runtime.core.ui.BehaviorPanelProjection.snapshot(data);}
@@ -44,6 +44,10 @@ public final class ServerBehaviorPanel {
             if(n.path("resetWeights").asBoolean()&&!n.path("confirmedReset").asBoolean(false))throw new IllegalArgumentException("RESET_WEIGHTS_CONFIRMATION_REQUIRED");n.remove("confirmedReset");
             return CompletableFuture.completedFuture(ActorEnhancements.update(player,agent,n));
         }
+        var raw=(com.fasterxml.jackson.databind.node.ObjectNode)new ObjectMapper().readTree(source);
+        var region=raw.has("panel_region")?ServerBehaviorRegions.prepare(player,agent,raw.remove("panel_region")):null;
+        if(region!=null&&!Set.of("set_behavior_mode","set_combat_policy").contains(tool))throw new IllegalArgumentException("REGION_TOOL");
+        source=raw.toString();
         var authority=BehaviorAuthority.get(player.level().getServer());authority.invalidate(player,agent);long revision=authority.revision(player,agent);BooleanSupplier live=()->current.getAsBoolean()&&authority.revision(player,agent)==revision;
         var runtime=SkillRuntime.get(player.level().getServer());
         if(tool.equals("stop_all")){runtime.stopAll(player,agent);return CompletableFuture.completedFuture(Map.of("status","STOPPED"));}
@@ -51,7 +55,10 @@ public final class ServerBehaviorPanel {
         String canonical=dev.mineagent.runtime.core.task.SkillTools.canonical(tool,source);
         var arguments=new ObjectMapper().readTree(canonical);var combat=arguments.path("combat");
         if(combat.path("engagement").asText().equals("SPECIFIED")&&player.level().getEntity(UUID.fromString(combat.path("target").asText())) instanceof ServerPlayer target)PvpConsent.grantFromPanel(player,agent,target);
-        return runtime.execute(player,agent,operation,null,tool,arguments,live);
+        return runtime.execute(player,agent,operation,null,tool,arguments,live).thenCompose(value->player.level().getServer().submit(()->{
+            if(region!=null&&Set.of("APPLIED","STARTED").contains(Objects.toString(value.get("status"))))try{if(!live.getAsBoolean())throw new IllegalStateException("REGION_CONTEXT_CHANGED");ServerBehaviorRegions.save(player,agent,region);}catch(Exception failed){return Map.<String,Object>of("status","PARTIAL","error",Objects.toString(failed.getMessage(),"REGION_SAVE_FAILED"),"workApplied",true);}
+            return value;
+        }));
     }
     private ServerBehaviorPanel(){}
 }

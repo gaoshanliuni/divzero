@@ -68,7 +68,7 @@ public final class AgentProfileScreen extends NativeInputScreen {
     }
     private void changeGameMode(){
         if(snapshot==null||!snapshot.get("canManage").getAsBoolean()||respawnSaving)return;
-        String currentMode=snapshot.get("mode").getAsString();var choices=List.of("SURVIVAL","CREATIVE","ADVENTURE","SPECTATOR");int next=(choices.indexOf(currentMode)+1)%choices.size();
+        String currentMode=snapshot.get("mode").getAsString();var choices=List.of("SURVIVAL","CREATIVE","ADVENTURE");int next=(choices.indexOf(currentMode)+1)%choices.size();
         var input=new JsonObject();input.addProperty("expected_mode",currentMode);input.addProperty("mode",choices.get(next));profileAction("set_game_mode",input);
     }
     private void profileAction(String tool,JsonObject source){

@@ -52,7 +52,7 @@ public final class NativeTerrainRecovery {
         var risks=new HashMap<TerrainPathSearch.Cell,Double>();
         var policy=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.snapshot(p);
         var world=new TerrainPathSearch.World(){
-            public double learnedCost(TerrainPathSearch.Step step,double risk){var delta=new Vec3(step.to().x()-step.from().x(),step.to().y()-step.from().y(),step.to().z()-step.from().z());var features=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.features(p,origin.distanceTo(target),delta.length(),risk,1,delta,0,false,7,step.edits().stream().filter(e->e.kind()==TerrainPathSearch.Kind.PLACE).count());return policy==null?0:policy.cost(features)*5;}
+            public double learnedCost(TerrainPathSearch.Step step,double risk){var delta=new Vec3(step.to().x()-step.from().x(),step.to().y()-step.from().y(),step.to().z()-step.from().z());var features=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.features(p,origin.distanceTo(target),delta.length(),risk,1,delta,0,false,7,step.edits().stream().filter(e->e.kind()==TerrainPathSearch.Kind.PLACE).count());return policy==null?0:dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.cost(p,policy,features)*5;}
 
             public TerrainPathSearch.Block block(TerrainPathSearch.Cell c){
                 var pos=pos(c);if(!NativeTerrainPolicy.loaded(p,pos))return new TerrainPathSearch.Block(false,false,false,false,0,"unloaded");

@@ -32,19 +32,19 @@ public final class LocalPolicyRuntime {
     private record Pending(ServerPlayer body,Object level,int tick,float health,Vec3 target,double distance,double[] features,long damage,LongSupplier damageNow,long kills,LongSupplier killsNow,BooleanSupplier current){}
     private static final class State {
         LocalActionPolicy serving=PRETRAINED;List<LocalActionPolicy.Sample> reference=REFERENCE;final Deque<LocalActionPolicy.Sample> replay=new ArrayDeque<>();
-        final UUID id;final MinecraftServer server;final Path file;
-        long samples,accepted,rejected,epoch;double validationLoss;boolean training,loading=true;String status="LOADING_CHECKPOINT";Pending pending;double bestDistance;
+        final UUID id;final MinecraftServer server;final Path file;final ServerPlayer context;
+        long samples,accepted,rejected,epoch,lastTrainedSamples=-32,inferenceCalls,lastUsedVersion;double validationLoss,lossBefore,referenceDrift,stepScale;String updateReason="NOT_TRAINED";boolean training,loading=true;String status="LOADING_CHECKPOINT";Pending pending;double bestDistance;
         boolean recording;final List<LocalActionPolicy.Sample> recorded=new ArrayList<>();
         CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);
-        State(ServerPlayer p,UUID id){this.id=id;server=p.level().getServer();file=server.getServerDirectory().resolve("mineagent-runtime-data/policies/"+MineAgentRuntimeServices.worldId(server)+"/"+id+".json");
+        State(ServerPlayer p,UUID id){this.id=id;context=p;server=p.level().getServer();file=server.getServerDirectory().resolve("mineagent-runtime-data/policies/"+MineAgentRuntimeServices.worldId(server)+"/"+id+".json");
         }
         void load(){
             long captured=epoch;CompletableFuture.supplyAsync(()->{try{return Files.exists(file)?JSON.readTree(Files.readString(file)):null;}catch(Exception e){return null;}},IO).thenAccept(data->server.execute(()->{
-                if(captured!=epoch||ALL.get(server)==null||ALL.get(server).get(id)!=this)return;loading=false;if(data==null){status="PRETRAINED";return;}try{var restored=LocalActionPolicy.parse(data.path("model").asText());var records=new ArrayList<LocalActionPolicy.Sample>();if(data.path("outcomeSchema").asInt()==2&&data.has("replay")){if(!data.get("replay").isArray()||data.get("replay").size()>2048)throw new IllegalArgumentException("POLICY_REPLAY_INVALID");for(var sample:data.get("replay"))records.add(JSON.treeToValue(sample,LocalActionPolicy.Sample.class));}accepted=data.path("accepted").asLong();serving=accepted>0?restored:PRETRAINED;replay.addAll(records);samples=data.path("samples").asLong();validationLoss=data.path("validationLoss").asDouble();status=serving.source().equals(PRETRAINED.source())?"PRETRAINED_RESTORED":"RESTORED_CHECKPOINT";}catch(Exception invalid){status="PRETRAINED_CHECKPOINT_INVALID";}
+                if(captured!=epoch||ALL.get(server)==null||ALL.get(server).get(id)!=this)return;loading=false;if(data==null){status="PRETRAINED";return;}try{var restored=LocalActionPolicy.parse(data.path("model").asText());var records=new ArrayList<LocalActionPolicy.Sample>();if(data.path("outcomeSchema").asInt()==2&&data.has("replay")){if(!data.get("replay").isArray()||data.get("replay").size()>2048)throw new IllegalArgumentException("POLICY_REPLAY_INVALID");for(var sample:data.get("replay"))records.add(JSON.treeToValue(sample,LocalActionPolicy.Sample.class));}accepted=data.path("accepted").asLong();serving=accepted>0?restored:PRETRAINED;replay.addAll(records);samples=data.path("samples").asLong();validationLoss=data.path("validationLoss").asDouble();rejected=data.path("rejected").asLong();lastTrainedSamples=data.path("learningAlgorithm").asInt()==2?data.path("lastTrainedSamples").asLong(-32):-32;updateReason=data.path("updateReason").asText("RESTORED");status=serving.source().equals(PRETRAINED.source())?"PRETRAINED_RESTORED":"RESTORED_CHECKPOINT";maybeTrain(this,context);}catch(Exception invalid){status="PRETRAINED_CHECKPOINT_INVALID";}
             }));
         }
-        void save(){if(loading)return;String model=serving.json();long n=samples,a=accepted;double loss=validationLoss;var records=List.copyOf(replay);
-            saved=saved.handle((v,e)->null).thenRunAsync(()->{try{Files.createDirectories(file.getParent());var temp=Files.createTempFile(file.getParent(),"policy-",".tmp");try{Files.writeString(temp,JSON.writeValueAsString(Map.of("model",model,"samples",n,"accepted",a,"validationLoss",loss,"replay",records,"outcomeSchema",2)));Files.move(temp,file,StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);}finally{Files.deleteIfExists(temp);}}catch(Exception e){throw new CompletionException(e);}},IO);
+        void save(){if(loading)return;String model=serving.json();long n=samples,a=accepted;double loss=validationLoss;var records=List.copyOf(replay);var data=new LinkedHashMap<String,Object>();data.put("model",model);data.put("samples",n);data.put("accepted",a);data.put("rejected",rejected);data.put("validationLoss",loss);data.put("replay",records);data.put("outcomeSchema",2);data.put("learningAlgorithm",2);data.put("lastTrainedSamples",lastTrainedSamples);data.put("updateReason",updateReason);data.put("referenceDrift",referenceDrift);data.put("stepScale",stepScale);
+            saved=saved.handle((v,e)->null).thenRunAsync(()->{try{Files.createDirectories(file.getParent());var temp=Files.createTempFile(file.getParent(),"policy-",".tmp");try{Files.writeString(temp,JSON.writeValueAsString(data));Files.move(temp,file,StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);}finally{Files.deleteIfExists(temp);}}catch(Exception e){throw new CompletionException(e);}},IO);
         }
     }
     private static UUID identity(ServerPlayer p){return p instanceof MineAgentPlayer body?body.agentId():p.getUUID();}
@@ -53,7 +53,8 @@ public final class LocalPolicyRuntime {
         var states=ALL.computeIfAbsent(context.level().getServer(),s->new HashMap<>());var state=states.get(id);
         if(state==null){state=new State(context,id);states.put(id,state);state.load();}return state;
     }
-    public static double score(ServerPlayer p,double[] features){if(!ActorEnhancements.forBody(p).neural())return 0;return state(p).serving.cost(features);}
+    public static double score(ServerPlayer p,double[] features){if(!ActorEnhancements.forBody(p).neural())return 0;return cost(p,state(p).serving,features);}
+    public static double cost(ServerPlayer p,LocalActionPolicy model,double[] features){if(model==null)return 0;var state=state(p);state.inferenceCalls++;state.lastUsedVersion=model.version();return model.cost(features);}
     public static LocalActionPolicy snapshot(ServerPlayer p){return ActorEnhancements.forBody(p).neural()?state(p).serving:null;}
     public static double[] features(ServerPlayer p,double distance,double progress,double risk,int steps,Vec3 delta,int edge,boolean opportunity,int kind,double materials){
         return new double[]{p.getHealth()/Math.max(1,p.getMaxHealth()),Math.clamp(distance/16,0,2),p.getDeltaMovement().horizontalDistance()/.4,ActorEnhancements.boost(p)?1:0,p.getAttackStrengthScale(.5f),Math.clamp(progress/8,-1,1),Math.clamp(risk/80,0,2),Math.clamp(steps/8d,0,2),Math.clamp(delta.x/8,-1,1),Math.clamp(delta.z/8,-1,1),Math.clamp(edge/8d,0,2),opportunity?1:0,kind/8d,p.onGround()?0:1,p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE)/10,Math.clamp(materials/8,0,2)};
@@ -67,32 +68,45 @@ public final class LocalPolicyRuntime {
         if(state.recording){state.recorded.add(new LocalActionPolicy.Sample(features,Math.clamp(cost,0,1)));return;}
         if(!ActorEnhancements.forBody(p).learning()||state.loading)return;state.samples++;state.replay.addLast(new LocalActionPolicy.Sample(features,Math.clamp(cost,0,1)));while(state.replay.size()>2048)state.replay.removeFirst();
         if(state.samples%32==0)state.save();
-        if(state.loading||state.training||state.replay.size()<128||state.samples%32!=0)return;
-        var data=new ArrayList<>(state.replay);var training=new ArrayList<LocalActionPolicy.Sample>();var validation=new ArrayList<LocalActionPolicy.Sample>();for(int i=0;i<data.size();i++)(i%5==0?validation:training).add(data.get(i));
-        if(training.size()>768)training=new ArrayList<>(training.subList(training.size()-768,training.size()));
-        var batch=List.copyOf(training);var holdout=List.copyOf(validation);var serving=state.serving;var anchors=state.reference;long epoch=state.epoch;state.training=true;state.status="TRAINING_CANDIDATE";
-        CompletableFuture.supplyAsync(()->{var candidate=serving;for(int epochIndex=0;epochIndex<3;epochIndex++)candidate=candidate.train(batch,.002);return candidate;},LEARNING).whenComplete((candidate,error)->state.server.execute(()->{
-            if(ALL.get(state.server)==null||ALL.get(state.server).get(state.id)!=state||state.epoch!=epoch)return;state.training=false;if(!ActorEnhancements.read(p,state.id).learning())return;
-            if(error!=null){state.rejected++;state.status="TRAINING_REJECTED";return;}
-            double before=serving.loss(holdout),after=candidate.loss(holdout);state.validationLoss=after;
-            if(LocalActionPolicy.acceptsUpdate(serving,candidate,holdout,anchors)){state.serving=candidate;state.accepted++;state.status="LEARNED_VALIDATED";state.save();}
+        maybeTrain(state,p);
+    }
+    private static void maybeTrain(State state,ServerPlayer context){
+        if(state.loading||state.training||state.recording||state.replay.size()<128||state.samples-state.lastTrainedSamples<32||!ActorEnhancements.read(context,state.id).learning())return;
+        var data=List.copyOf(state.replay);var serving=state.serving;var anchors=state.reference;long epoch=state.epoch;state.training=true;state.lastTrainedSamples=state.samples;state.status="TRAINING_CANDIDATE";
+        CompletableFuture.supplyAsync(()->dev.mineagent.runtime.core.task.LocalPolicyTrainer.fit(serving,data,anchors),LEARNING).whenComplete((update,error)->state.server.execute(()->{
+            if(ALL.get(state.server)==null||ALL.get(state.server).get(state.id)!=state||state.epoch!=epoch)return;state.training=false;if(!ActorEnhancements.read(context,state.id).learning())return;
+            if(error!=null){state.rejected++;state.status="TRAINING_REJECTED";state.updateReason="TRAINING_FAILED";state.save();return;}
+            state.validationLoss=update.after();state.lossBefore=update.before();state.referenceDrift=update.referenceDrift();state.stepScale=update.scale();state.updateReason=update.reason();
+            if(update.accepted()){state.serving=update.model();state.accepted++;state.status="LEARNED_VALIDATED";}
             else{state.rejected++;state.status="KEPT_PREVIOUS_WEIGHTS";}
+            state.save();maybeTrain(state,context);
         }));
     }
     public static Map<String,Object> inspect(ServerPlayer viewer,UUID id){
         var state=state(viewer,id);
-        return state==null?Map.of("status","PRETRAINED","version",PRETRAINED.version(),"samples",0,"source",PRETRAINED.source()):Map.of("status",state.status,"version",state.serving.version(),"samples",state.samples,"acceptedUpdates",state.accepted,"rejectedUpdates",state.rejected,"validationLoss",state.validationLoss,"source",state.serving.source(),"training",state.training,"replaySize",state.replay.size(),"checkpointSaved",state.saved.isDone()&&!state.saved.isCompletedExceptionally());
+        var value=new LinkedHashMap<String,Object>();value.put("status",state.status);value.put("version",state.serving.version());value.put("samples",state.samples);value.put("acceptedUpdates",state.accepted);value.put("rejectedUpdates",state.rejected);value.put("validationLoss",state.validationLoss);value.put("lossBefore",state.lossBefore);value.put("referenceDrift",state.referenceDrift);value.put("stepScale",state.stepScale);value.put("updateReason",state.updateReason);value.put("source",state.serving.source());value.put("training",state.training);value.put("replaySize",state.replay.size());value.put("checkpointSaved",state.saved.isDone()&&!state.saved.isCompletedExceptionally());value.put("inferenceCalls",state.inferenceCalls);value.put("lastUsedVersion",state.lastUsedVersion);return value;
     }
     public static void requireResetVersion(ServerPlayer viewer,UUID id,long version){var state=state(viewer,id);if(state.loading)throw new IllegalStateException("POLICY_CHECKPOINT_LOADING");if(state.serving.version()!=version)throw new IllegalStateException("POLICY_VERSION_CHANGED");}
+    public static void importReplayFixture(ServerPlayer viewer,UUID id,String source,String hash)throws Exception{
+        if(!Boolean.getBoolean("mineagent.skillSmoke")||!System.getProperty("mineagent.skillSmokeMode","").equals("online_replay")||!viewer.level().getServer().isSameThread())throw new SecurityException("ISOLATED_REPLAY_ONLY");
+        if(source.length()>2000000||!modelHash(source).equals(hash))throw new IllegalArgumentException("REPLAY_SOURCE_HASH");var data=JSON.readTree(source);
+        if(data.path("outcomeSchema").asInt()!=2||!data.path("replay").isArray()||data.path("replay").size()>2048)throw new IllegalArgumentException("REPLAY_SCHEMA");
+        var model=LocalActionPolicy.parse(data.path("model").asText());var records=new ArrayList<LocalActionPolicy.Sample>();for(var sample:data.path("replay"))records.add(JSON.treeToValue(sample,LocalActionPolicy.Sample.class));
+        var state=state(viewer,id);state.epoch++;state.loading=state.training=false;state.pending=null;state.serving=model;state.reference=REFERENCE;state.samples=data.path("samples").asLong();state.accepted=data.path("accepted").asLong();state.replay.clear();state.replay.addAll(records);state.lastTrainedSamples=-32;state.save();maybeTrain(state,viewer);
+    }
+    public static Map<String,Object> exportReplayFixture(ServerPlayer viewer,UUID id){
+        if(!Boolean.getBoolean("mineagent.skillSmoke")||!System.getProperty("mineagent.skillSmokeMode","").equals("online_replay"))throw new SecurityException("ISOLATED_REPLAY_ONLY");
+        var state=state(viewer,id);String source=state.serving.json();return Map.of("model",source,"sha256",modelHash(source),"state",inspect(viewer,id));
+    }
     /** Test arena model pools are data only, checksum pinned and isolated from ordinary saved player models. */
     public static void seedTrainingModel(dev.mineagent.runtime.neoforge.body.MineAgentPlayer body,String source,String expectedSha256){
         if(!body.level().getServer().isSameThread()||!IsolatedCombatArena.suppressRespawn(body))throw new SecurityException("ISOLATED_TRAINING_ONLY");
         if(source.length()>131072||!modelHash(source).equals(expectedSha256))throw new IllegalArgumentException("TRAINING_MODEL_HASH");
-        var policy=LocalActionPolicy.parse(source);var state=state(body);state.epoch++;state.loading=state.training=false;state.pending=null;state.serving=policy;state.reference=LocalActionPolicy.referenceSamples(policy);state.samples=state.accepted=state.rejected=0;state.replay.clear();state.status="ISOLATED_TRAINING_MODEL";state.save();
+        var policy=LocalActionPolicy.parse(source);var state=state(body);state.epoch++;state.loading=state.training=false;state.pending=null;state.serving=policy;state.reference=LocalActionPolicy.referenceSamples(policy);state.samples=state.accepted=state.rejected=0;state.lastTrainedSamples=-32;state.replay.clear();state.status="ISOLATED_TRAINING_MODEL";state.save();
     }
     public static Map<String,Object> trainingModel(dev.mineagent.runtime.neoforge.body.MineAgentPlayer body){
         if(!body.level().getServer().isSameThread()||!IsolatedCombatArena.suppressRespawn(body))throw new SecurityException("ISOLATED_TRAINING_ONLY");var state=state(body);String model=state.serving.json();
-        return Map.of("model",model,"sha256",modelHash(model),"samples",state.samples,"acceptedUpdates",state.accepted,"training",state.training,"replaySize",state.replay.size());
+        return Map.of("model",model,"sha256",modelHash(model),"samples",state.samples,"acceptedUpdates",state.accepted,"training",state.training,"replaySize",state.replay.size(),"inferenceCalls",state.inferenceCalls,"lastUsedVersion",state.lastUsedVersion);
     }
     /** Frozen human match sampling is separate from the persistent online-learning preference. */
     static void beginRecording(MineAgentPlayer body){
@@ -106,13 +120,13 @@ public final class LocalPolicyRuntime {
     }
     private static String modelHash(String source){try{return dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(source);}catch(Exception error){throw new IllegalStateException("POLICY_HASH_UNAVAILABLE",error);}}
     public static void reset(ServerPlayer owner,UUID id){
-        var state=state(owner,id);state.epoch++;state.loading=state.training=false;state.serving=PRETRAINED;state.pending=null;state.replay.clear();state.samples=state.accepted=state.rejected=0;state.validationLoss=0;state.status="PRETRAINED_RESTORED";state.save();
+        var state=state(owner,id);state.epoch++;state.loading=state.training=false;state.serving=PRETRAINED;state.pending=null;state.replay.clear();state.samples=state.accepted=state.rejected=0;state.lastTrainedSamples=-32;state.validationLoss=0;state.status="PRETRAINED_RESTORED";state.save();
     }
     public static void preferencesChanged(ServerPlayer viewer,UUID id,ActorEnhancements.Settings before,ActorEnhancements.Settings after){
         var values=ALL.get(viewer.level().getServer());var state=values==null?null:values.get(id);if(state==null)return;
         if(before.learning()!=after.learning()||before.boost()!=after.boost()||before.neural()!=after.neural()){
             state.pending=null;if(state.loading)return;state.epoch++;state.training=false;
-            state.status=state.serving.source().equals(PRETRAINED.source())&&state.serving.version()==PRETRAINED.version()?"PRETRAINED":"LEARNED_VALIDATED";
+            state.status=state.serving.source().equals(PRETRAINED.source())&&state.serving.version()==PRETRAINED.version()?"PRETRAINED":"LEARNED_VALIDATED";if(!before.learning()&&after.learning()){state.lastTrainedSamples=-32;maybeTrain(state,viewer);}
         }
     }
     static void completed(SkillWork work){if(work.actor==null)return;var values=ALL.get(work.player().level().getServer());var state=values==null?null:values.get(identity(work.player()));if(state!=null&&state.pending!=null&&state.pending.body==work.player())finishSample(state);}

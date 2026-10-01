@@ -3505,5 +3505,9 @@
   "领取羊毛 ×64": "Receive 64 wool blocks",
   "一键启用": "Enable all",
   "按 T 点击一键启用，或输入 /ai accept；确认后立即可用，无需重进。": "Press T and click Enable all, or use /ai accept. Ready immediately, no rejoin needed.",
-  "启用状态读取超时，请重试 /ai accept；无需退出世界。": "Activation status timed out. Retry /ai accept without leaving the world."
+  "启用状态读取超时，请重试 /ai accept；无需退出世界。": "Activation status timed out. Retry /ai accept without leaving the world.",
+  "区域所属维度已变化，请重新选择区域来源": "The region belongs to another dimension; choose its source again.",
+  "已采用更新": "Applied updates",
+  "模型版本": "Model version",
+  "战斗使用版本": "Combat model version"
 }
