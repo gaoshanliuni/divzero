@@ -4059,8 +4059,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientTrustPrompt.java",
-      "sha256": "f9a592eab192b78d097c6e519f2d4b23742d8a608de0aa809870a1d2a9984b28",
-      "bytes": 14902
+      "sha256": "13d7015ae329b6d9ffd075564e8a3b021628ca0aab74b665983a4e3e79d77254",
+      "bytes": 14913
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/OneClickActivationSmokeClient.java",
@@ -5024,8 +5024,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/command/MineAgentCommands.java",
-      "sha256": "cbf9538f5422194f9f8864f5e5c738c04745dc66c250ed160396dd490a971225",
-      "bytes": 13893
+      "sha256": "fcf0a84a768edeb0e1cf2719946fd78896fb3e77cb77b51b09a9d1b7785d10db",
+      "bytes": 13982
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeApiCatalog.java",

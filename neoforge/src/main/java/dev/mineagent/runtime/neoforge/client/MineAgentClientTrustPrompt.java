@@ -122,7 +122,7 @@ public final class MineAgentClientTrustPrompt {
         var mc=Minecraft.getInstance();if(mc.player==null||mc.level==null||mc.getConnection()==null)return 0;
         bootstrapDisabled=false;acceptIntent=new AcceptIntent(mc.getConnection(),mc.level,mc.player.getUUID(),System.currentTimeMillis()+120000);
         // The bootstrap command is available even before a signed world-scoped snapshot can exist.
-        mc.player.connection.sendCommand("ai accept");return 1;
+        mc.player.connection.sendCommand("ai activation accept");return 1;
     }
     private static int submit(String action,Prompt p)throws java.io.IOException{
         var mc=Minecraft.getInstance();if(p.challenge==null||p.challenge.isBlank())throw new IllegalStateException("ACTIVATION_CONTEXT_NOT_READY");
