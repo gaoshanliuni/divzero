@@ -99,7 +99,13 @@ public final class NativeCombatStates {
     /** These vanilla bodies use spells, projectiles or explosions, never Mob's inherited melee box. Unknown mods remain conservative. */
     public static boolean contactCapable(LivingEntity enemy){
         if(!enemy.getClass().getName().startsWith("net.minecraft."))return true;
-        return !Set.of("minecraft:evoker","minecraft:witch","minecraft:guardian","minecraft:elder_guardian","minecraft:ghast","minecraft:creeper").contains(BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString());
+        if(!Set.of("minecraft:evoker","minecraft:witch","minecraft:guardian","minecraft:elder_guardian","minecraft:ghast","minecraft:creeper").contains(BuiltInRegistries.ENTITY_TYPE.getKey(enemy.getType()).toString()))return true;
+        // Added melee goals/adapters may deliberately give a vanilla caster new contact attacks.
+        if(enemy instanceof Mob mob)for(var wrapped:mob.goalSelector.getAvailableGoals()){
+            var goal=wrapped.getGoal();if(goal instanceof CombatMeleeGoalAccess||goal instanceof net.minecraft.world.entity.ai.goal.SpearUseGoal<?>||!goal.getClass().getName().startsWith("net.minecraft."))return true;
+        }
+        for(var adapter:ADAPTERS)if(adapter.supports(enemy)&&adapter.attacks(enemy).stream().anyMatch(a->a.kind().equals("MELEE")))return true;
+        return false;
     }
     public static boolean meleeAt(LivingEntity enemy,LivingEntity actor,Vec3 position){
         if(!contactCapable(enemy))return false;

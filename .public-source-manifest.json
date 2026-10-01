@@ -3439,8 +3439,8 @@
     },
     {
       "path": "docs/NEURAL_SELF_PLAY.md",
-      "sha256": "02647e02ab995322aa768864996a027a3c3f1819cfba25e25385a22ab3ee0574",
-      "bytes": 14275
+      "sha256": "b0b1e2fa4c32292a49ad647adc70909a701129bc071620f444bb2638facfd6a7",
+      "bytes": 16295
     },
     {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
@@ -3984,8 +3984,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "c40ec054e637bd324bd980c34bf52960c539bc718a466472aa1faf1d2f29a638",
-      "bytes": 191443
+      "sha256": "ce72606212912128a8082d67a5a2248e4db78abc9050abca6d964edc56e5fb18",
+      "bytes": 192112
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5664,8 +5664,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeCombatStates.java",
-      "sha256": "9ba4c55aeac19801591a857c02daa9fa24f5fa9b2da40d4d2d31f098de24c194",
-      "bytes": 15251
+      "sha256": "0ee57aa24a8021d23e5766dc04beef126f39b7e0dbeffaeaabaf204cbd6c4f80",
+      "bytes": 15842
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",

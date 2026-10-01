@@ -128,6 +128,11 @@ public final class PersistentSkillSmokeClient {
             p.level().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.SPAWN_MOBS,false,p.level().getServer());p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack(),"difficulty normal");
             var actor=controlled(p);if(actor instanceof MineAgentPlayer ai)dev.mineagent.runtime.neoforge.skill.IsolatedCombatArena.place(p,ai,area,0,new Vec3(-8.5,101,6.5));else actor.teleportTo(p.level(),-8.5,101,6.5,Set.of(),-90,0,true);
             actor.setGameMode(GameType.SURVIVAL);actor.getInventory().clearContent();actor.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));actor.getInventory().setItem(1,new ItemStack(Items.COOKED_BEEF,16));actor.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.DIAMOND_HELMET));actor.setItemSlot(EquipmentSlot.CHEST,new ItemStack(Items.DIAMOND_CHESTPLATE));actor.setItemSlot(EquipmentSlot.LEGS,new ItemStack(Items.DIAMOND_LEGGINGS));actor.setItemSlot(EquipmentSlot.FEET,new ItemStack(Items.DIAMOND_BOOTS));actor.setItemSlot(EquipmentSlot.OFFHAND,new ItemStack(Items.SHIELD));actor.inventoryMenu.broadcastFullState();
+            var probe=EntityType.EVOKER.create(p.level(),EntitySpawnReason.COMMAND);
+            require(!dev.mineagent.runtime.neoforge.skill.NativeCombatStates.contactCapable(probe),"PURE_CASTER_PHANTOM_MELEE");
+            var addedMelee=new net.minecraft.world.entity.ai.goal.MeleeAttackGoal(probe,1,false);probe.goalSelector.addGoal(0,addedMelee);
+            require(dev.mineagent.runtime.neoforge.skill.NativeCombatStates.contactCapable(probe),"EXTENDED_CASTER_MELEE_WAS_IGNORED");probe.goalSelector.removeGoal(addedMelee);
+            require(!dev.mineagent.runtime.neoforge.skill.NativeCombatStates.contactCapable(probe),"REMOVED_CASTER_MELEE_STILL_PRESENT");
             var caster=EntityType.EVOKER.create(p.level(),EntitySpawnReason.COMMAND);caster.setPos(9.5,101,6.5);caster.setTarget(actor);caster.setPersistenceRequired();p.level().addFreshEntity(caster);evoker=caster.getUUID();evokerReference=caster;
             return Map.of("caster",evoker,"distance",caster.distanceTo(actor),"nativeSpellGoals",true,"boost",false,"noModelCalls",true);
         }));
