@@ -15,6 +15,7 @@ parser.add_argument("--initial", type=Path)
 parser.add_argument("--reference", type=Path)
 parser.add_argument("--steps", type=int, default=8000)
 parser.add_argument("--seed", type=int, default=20260930)
+parser.add_argument("--allow-mixed-executors", action="store_true", help="Explicit research-only opt-in to combine native mob trajectories from different executable versions")
 args = parser.parse_args()
 reference_path = Path(__file__).resolve().parents[2] / "core/src/main/resources/dev/mineagent/runtime/policy/pretrained.json"
 reference_path = args.reference or reference_path
@@ -23,10 +24,22 @@ initial = json.loads(initial_path.read_text())
 reference = json.loads(reference_path.read_text())
 rng = np.random.default_rng(args.seed)
 actors, evidence, groups = [], [], []
+executors = set()
 for run in args.run:
     arguments = (run / "jvm.args").read_text()
     mob_training = "mineagent.skillSmokeMode=mob_train" in arguments
     selfplay = "mineagent.skillSmokeMode=selfplay_train" in arguments or mob_training
+    execution = {}
+    if mob_training:
+        process = json.loads((run / "process.json").read_text(encoding="utf-8-sig"))
+        source, artifact = process.get("source", ""), process.get("artifactSha256", "").lower()
+        if len(source) != 40 or len(artifact) != 64 or any(c not in "0123456789abcdef" for c in source + artifact):
+            raise ValueError("Native mob training requires verified source and executable identity")
+        executors.add((source, artifact))
+        if len(executors) > 1 and not args.allow_mixed_executors:
+            raise ValueError("Native mob trajectories use different executors; select one tested version or explicitly pass --allow-mixed-executors for research")
+        execution = {"sourceCommit": source, "artifactSha256": artifact}
+
     if not selfplay and "mineagent.skillSmokeMode=policy_train" not in arguments:
         raise ValueError("Only explicit isolated native training runs may be used")
     membership = {}
@@ -60,7 +73,7 @@ for run in args.run:
         actors.append((np.clip(np.nan_to_num(x, nan=0, posinf=0, neginf=0), -2, 2), y))
         context = membership.get(file.stem, {"match": f"{run.name}:{file.stem}", "scenario": "HISTORICAL_RULE_DUEL"})
         groups.append(context["match"])
-        evidence.append({"run": run.name, "actor": file.stem, "sha256": hashlib.sha256(snapshot).hexdigest(), "samples": len(y), **context})
+        evidence.append({"run": run.name, "actor": file.stem, "sha256": hashlib.sha256(snapshot).hexdigest(), "samples": len(y), **context, **execution})
 if len(actors) < 5:
     raise ValueError("Need at least five independent native actor trajectories")
 unique_groups = sorted(set(groups))
@@ -137,6 +150,6 @@ model = {**initial, "version": initial["version"] + 1, "hidden": w.tolist(), "bi
 args.output.parent.mkdir(parents=True, exist_ok=True)
 raw = (json.dumps(model, separators=(",", ":")) + "\n").encode()
 args.output.write_bytes(raw)
-report = {"seed": args.seed, "actorTrajectories": len(actors), "independentMatches": len(unique_groups), "trainingSamplesWithRotations": len(train_y), "heldOutSamples": len(valid_y), "heldOutActors": [int(i) for i in sorted(held)], "heldOutMatches": sorted(held_groups), "iterations": best_step, "attemptedIterations": args.steps, "lossBefore": before, "lossAfter": best_loss, "referenceDrift": float(np.mean((predict(best, anchors) - anchor_y) ** 2)), "sha256": hashlib.sha256(raw).hexdigest(), "sources": evidence, "battleAcceptance": "NOT_YET_RUN", "limitations": "Cost fitting is not a competitive win rate. Evaluate frozen candidates separately against native mobs and neural opponents; never reuse evaluation runs as training data."}
+report = {"seed": args.seed, "actorTrajectories": len(actors), "independentMatches": len(unique_groups), "trainingSamplesWithRotations": len(train_y), "heldOutSamples": len(valid_y), "heldOutActors": [int(i) for i in sorted(held)], "heldOutMatches": sorted(held_groups), "iterations": best_step, "attemptedIterations": args.steps, "lossBefore": before, "lossAfter": best_loss, "referenceDrift": float(np.mean((predict(best, anchors) - anchor_y) ** 2)), "sha256": hashlib.sha256(raw).hexdigest(), "sources": evidence, "executors": [{"sourceCommit": s, "artifactSha256": a} for s, a in sorted(executors)], "mixedExecutorsAllowed": args.allow_mixed_executors, "battleAcceptance": "NOT_YET_RUN", "limitations": "Cost fitting is not a competitive win rate. Evaluate frozen candidates separately against native mobs and neural opponents; never reuse evaluation runs as training data."}
 args.output.with_suffix(".report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 print(json.dumps({k: v for k, v in report.items() if k != "sources"}))

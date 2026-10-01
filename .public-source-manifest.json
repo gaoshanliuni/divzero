@@ -3439,8 +3439,8 @@
     },
     {
       "path": "docs/NEURAL_SELF_PLAY.md",
-      "sha256": "b0b1e2fa4c32292a49ad647adc70909a701129bc071620f444bb2638facfd6a7",
-      "bytes": 16295
+      "sha256": "3a3f833f8093cb73d16885a85d336f70c764205865a2789756e4e4ae0fc575b1",
+      "bytes": 21310
     },
     {
       "path": "docs/PERSISTENT_PLAYER_SKILLS.md",
@@ -7119,8 +7119,8 @@
     },
     {
       "path": "scripts/local-policy/finetune.py",
-      "sha256": "c3c27349b836ff824209a9813f4da18bb71cdb39f23788a02d86f50d4c0f2468",
-      "bytes": 9332
+      "sha256": "3341e9126d5505af66e05198ac9ed43729c63206ddbe480c775f0457550e9e3a",
+      "bytes": 10462
     },
     {
       "path": "scripts/local-policy/model_pool.py",
