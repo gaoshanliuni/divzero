@@ -271,7 +271,7 @@ final class CombatSkill {
             }
             w.ranged.escapePosition=w.player().position();w.ranged.escapeStalled=w.tick();
         }
-        var exit=w.ranged.lateralUntil>w.tick()?w.positioning.choose(w,w.ranged.lateralSide>0?"SIDE_LEFT":"SIDE_RIGHT",10):w.positioning.retreatStep(w);if(exit==null&&!w.positioning.pending())exit=w.positioning.choose(w,"RETREAT",10);
+        var exit=w.ranged.lateralUntil>w.tick()?w.positioning.choose(w,w.ranged.lateralSide>0?"SIDE_LEFT":"SIDE_RIGHT",10):w.positioning.pending()?w.positioning.choose(w,"RETREAT",10):w.positioning.retreatStep(w);if(exit==null&&!w.positioning.pending())exit=w.positioning.choose(w,"RETREAT",10);
         move(w,exit,target,true);
         if(w.player().isSprinting())w.session.add("rangedEscapeSprintTicks",1);
         if(exit==null&&!w.positioning.pending()&&NativeAttackReadiness.ready(w.player())&&w.tick()-w.lastAttackAt>=4&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(w.player(),target).isPresent()){
