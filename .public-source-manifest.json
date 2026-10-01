@@ -4194,8 +4194,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/MentionDisplaySmoke.java",
-      "sha256": "235a5d8d0e02021b8acdc788a12309bfd5e25736fca024faa7a8057c8b2c09f1",
-      "bytes": 16864
+      "sha256": "235c59bd483f6dc426102ef6aa4a16ea26ab031e625082fc604f993425d2a322",
+      "bytes": 16845
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeApiPanel.java",

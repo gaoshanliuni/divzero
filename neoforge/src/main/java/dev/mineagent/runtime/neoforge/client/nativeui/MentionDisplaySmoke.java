@@ -46,7 +46,7 @@ public final class MentionDisplaySmoke {
     private static UIElement find(UIElement root,String id){if(root.getId().equals(id))return root;for(var child:root.getChildren()){var found=find(child,id);if(found!=null)return found;}return null;}
     private static NativeWorkspaceScreen host(){return (NativeWorkspaceScreen)mc().screen;}
     private static void clickDisplay(String mode){NativeBehaviorPanel.smokeClickElement(host().smokeRoot(),"聊天展示："+mode,false);NativeBehaviorPanel.smokeClickElement(host().smokeRoot(),"聊天展示："+mode,true);}
-    private static void mode(ServerPlayer p,boolean shared){var current=ServerMentionDisplay.read(p.level().getServer(),agent);ServerAgentManagement.write(p,UUID.randomUUID(),Map.of("kind","chat_display","agentId",agent.toString(),"displayRevision",Long.toString(current.revision()),"mode",shared?"PUBLIC":"PRIVATE"));}
+    private static void mode(ServerPlayer p,boolean shared){var current=ServerMentionDisplay.read(p.level().getServer(),agent);ServerMentionDisplay.write(p,Map.of("kind","chat_display","agentId",agent.toString(),"displayRevision",Long.toString(current.revision()),"mode",shared?"PUBLIC":"PRIVATE"));}
     private static void incoming(ServerPlayer p,String marker,boolean expectedPublic){
         try{witness.clear();String raw="@"+MineAgentRuntimeServices.bodies(p.level().getServer()).body(agent).orElseThrow().getGameProfile().name()+" "+marker;
             var event=new net.neoforged.neoforge.event.ServerChatEvent(p,raw,Component.literal(raw));net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);require(event.isCanceled()!=expectedPublic,"MENTION_INPUT_AUDIENCE");
