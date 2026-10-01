@@ -39,12 +39,13 @@ public final class WorldActivationRuntime {
                 return 0;
             }
             var config = MineAgentRuntimeServices.config(server);
+            boolean changed = state(player) != (enabled ? State.ENABLED : State.DISABLED);
             var patch = new LinkedHashMap<String, String>();
             patch.put(WorldActivation.key(MineAgentRuntimeServices.worldId(server), player.getUUID()), enabled ? "ENABLED" : "DISABLED");
             if (enabled) patch.put("runtime.initialized", "true");
             // This fixed internal patch only changes the caller's participation, never permission.player.*.
-            var result = config.apply(new ConfigPatch(config.snapshot().revision(), patch), true);
-            if (!result.accepted()) throw new IllegalStateException(result.errorCode());
+            if(changed){var result = config.apply(new ConfigPatch(config.snapshot().revision(), patch), true);
+                if (!result.accepted()) throw new IllegalStateException(result.errorCode());}
             CHALLENGES.put(player, UUID.randomUUID());
             refreshPermissions(player);
             if (!enabled) {
@@ -52,7 +53,7 @@ public final class WorldActivationRuntime {
                 dev.mineagent.runtime.neoforge.ui.ServerUiRuntime.disconnect(player);
                 dev.mineagent.runtime.neoforge.task.PlayerBodyAgent.stopIfPresent(player);
             }
-            dev.mineagent.runtime.neoforge.ui.ServerNativeInterfaceRestore.invalidate(player);
+            if(changed)dev.mineagent.runtime.neoforge.ui.ServerNativeInterfaceRestore.invalidate(player);
             server.getCommands().sendCommands(player);
             MineAgentNetwork.sendPanelSnapshot(player);
             if (enabled) {

@@ -83,7 +83,7 @@ public final class NativeWorkspaceConnection {
         });
     }
     public static void reset(){reset(true);}
-    public static void activationChanged(boolean enabled){if(!enabled){NativePackageViews.clear();dev.mineagent.runtime.neoforge.client.webui.PackageContentClient.clear();if(Minecraft.getInstance().screen instanceof NativeWorkspaceScreen screen)screen.onClose();}reset(false);if(enabled){dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.sessionReady(null);if(NativeWorkspaceScreen.visible())open();}}
+    public static void activationChanged(boolean enabled){if(!enabled){NativePackageViews.clear();dev.mineagent.runtime.neoforge.client.webui.PackageContentClient.clear();if(Minecraft.getInstance().screen instanceof NativeWorkspaceScreen screen)screen.onClose();}reset(false);if(enabled){dev.mineagent.runtime.neoforge.client.webui.HudPersistenceClient.sessionReady(null);open();}}
     private static void reset(boolean contextChanged){failAwaiting(text("世界或玩家已变化，操作尚未发送。"));var copy=List.copyOf(PENDING.values());PENDING.clear();session=null;opening=null;connection=level=null;rendered=polling=false;if(contextChanged)NativeWorkspaceScreen.disconnected();for(var pending:copy)pending.future.completeExceptionally(new IllegalStateException("NATIVE_WORKSPACE_CONTEXT_CHANGED"));}
     private NativeWorkspaceConnection(){}
 }

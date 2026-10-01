@@ -21,6 +21,10 @@ import static net.minecraft.commands.Commands.*;
 public final class MineAgentClientTrustPrompt {
     private record Prompt(UUID token, Object connection, UUID player, String scope, String challenge,
                           String server, String fingerprint, String publicKey) {}
+    private record AcceptIntent(Object connection, Object level, UUID player, long deadline) {
+        boolean current() {var mc=Minecraft.getInstance();return connection==mc.getConnection()&&level==mc.level&&mc.player!=null&&player.equals(mc.player.getUUID());}
+    }
+    private static AcceptIntent acceptIntent;
     private static Map<String, Object> pendingWebNotice;
     private static Prompt prompt;
     private static Object connection;
@@ -48,6 +52,9 @@ public final class MineAgentClientTrustPrompt {
             pendingWebNotice=Map.of("trust",trust.name(),"fingerprint",fingerprint,"initialized",enabled);
             if(changed){NativeWorkspaceConnection.activationChanged(enabled);NativeInterfacesClient.activationChanged();}
             if(prompt!=null&&!prompt.challenge.equals(values.get("runtime.activation.challenge")))prompt=null;
+            // Only an explicit local command may accept a freshly received identity automatically.
+            // A server snapshot by itself is never consent, including after a reconnect.
+            if(acceptIntent!=null){var intent=acceptIntent;acceptIntent=null;if(intent.current()&&System.currentTimeMillis()<intent.deadline){submit("enable",choice(values));flushWebNotice();return;}}
             if(!enabled&&!state.equals("DISABLED"))showChoice(false);
             flushWebNotice();
         } catch(Exception failure){message("无法读取世界启用状态：",failure.getMessage());}
@@ -59,14 +66,13 @@ public final class MineAgentClientTrustPrompt {
         }
         String challenge=values.getOrDefault("runtime.activation.challenge","");if(challenge.isBlank())return;
         if(!force&&prompted.equals(challenge))return;
-        prompt=new Prompt(UUID.randomUUID(),connection,mc.player.getUUID(),scope,challenge,serverId(),values.get("security.identityFingerprint"),values.get("security.identityPublicKey"));
+        prompt=choice(values);
         prompted=challenge;
         var line=Component.literal("[DivZero] "+ClientLanguage.t("是否为你在这个世界中启用 DivZero？"));
-        line.append(button("启用","enable",prompt,ChatFormatting.GREEN));
+        line.append(button("一键启用","enable",prompt,ChatFormatting.GREEN));
         line.append(button("禁用","disable",prompt,ChatFormatting.RED));
         mc.gui.getChat().addClientSystemMessage(line);
-        message("按 T 点击按钮；选择仅对你在此世界生效，可用 /divzero_setup 更改。","");
-        message("启用不改变服务器权限，电脑操作仍需单独确认。","");
+        message("按 T 点击一键启用，或输入 /ai accept；确认后立即可用，无需重进。","");
         try{if(store().status(prompt.server,prompt.fingerprint)==TrustStatus.MISMATCH)message("服务器指纹已变化，请核对后再确认。",prompt.fingerprint);}catch(Exception ignored){}
     }
     private static MutableComponent button(String label,String action,Prompt choice,ChatFormatting color) {
@@ -78,6 +84,25 @@ public final class MineAgentClientTrustPrompt {
         var root=literal("divzero_setup").executes(c->{showChoice(true);return 1;});
         for(String action:List.of("enable","disable"))root.then(literal(action).then(argument("token",StringArgumentType.word()).executes(c->decide(action,StringArgumentType.getString(c,"token")))));
         event.getDispatcher().register(root);
+        // Client commands handle the user's typed command before the server-only compatibility entry.
+        for(String alias:List.of("accept","accpet"))event.getDispatcher().register(literal("ai").then(literal(alias).executes(c->acceptAll())));
+    }
+    private static Prompt choice(Map<String,String> values){
+        var mc=Minecraft.getInstance();return new Prompt(UUID.randomUUID(),mc.getConnection(),mc.player.getUUID(),scope(values),values.get("runtime.activation.challenge"),serverId(),values.get("security.identityFingerprint"),values.get("security.identityPublicKey"));
+    }
+    public static int acceptAll(){
+        var mc=Minecraft.getInstance();if(mc.player==null||mc.level==null||mc.getConnection()==null)return 0;
+        acceptIntent=new AcceptIntent(mc.getConnection(),mc.level,mc.player.getUUID(),System.currentTimeMillis()+15000);
+        // Fetch a fresh signed snapshot even if an inbox from the previous world is still present.
+        ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest());return 1;
+    }
+    private static int submit(String action,Prompt p)throws java.io.IOException{
+        var mc=Minecraft.getInstance();if(p.challenge==null||p.challenge.isBlank())throw new IllegalStateException("ACTIVATION_CONTEXT_NOT_READY");
+        if(action.equals("enable"))store().confirm(p.server,p.fingerprint,Base64.getDecoder().decode(p.publicKey));
+        acceptIntent=null;prompt=null;prompted=p.challenge;
+        mc.player.connection.sendCommand("ai activation "+action+" "+p.challenge);
+        if(action.equals("enable")&&enabled)NativeWorkspaceConnection.open();
+        return 1;
     }
     public static int decide(String action,String token) {
         var mc=Minecraft.getInstance();var p=prompt;var values=PanelSnapshotInbox.snapshot().values();
@@ -85,18 +110,16 @@ public final class MineAgentClientTrustPrompt {
                 ||mc.player==null||!p.player.equals(mc.player.getUUID())||!p.scope.equals(scope(values))||!PanelSnapshotInbox.signatureValid()
                 ||!p.challenge.equals(values.get("runtime.activation.challenge"))) {message("此按钮已失效，请用 /divzero_setup 重新选择。","");return 0;}
         try {
-            if(action.equals("enable"))store().confirm(p.server,p.fingerprint,Base64.getDecoder().decode(p.publicKey));
-            prompt=null;
-            mc.player.connection.sendCommand("ai activation "+action+" "+p.challenge);
-            return 1;
+            return submit(action,p);
         }catch(Exception failure){message("无法保存世界选择：",failure.getMessage());return 0;}
     }
     public static boolean smokeEnable(){if(!Boolean.getBoolean("mineagent.skillSmoke")&&!Boolean.getBoolean("mineagent.skillModelSmoke"))throw new IllegalStateException("SMOKE_DISABLED");if(enabled)return true;if(prompt==null)showChoice(true);return prompt!=null&&decide("enable",prompt.token.toString())>0;}
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc=Minecraft.getInstance();if(connection!=null&&connection!=mc.getConnection())clear();
+        if(acceptIntent!=null){if(!acceptIntent.current())acceptIntent=null;else if(System.currentTimeMillis()>=acceptIntent.deadline){acceptIntent=null;message("启用状态读取超时，请重试 /ai accept；无需退出世界。","");}}
         if(mc.player!=null&&mc.getConnection()!=null&&connection==null&&System.currentTimeMillis()>=retryAt){retryAt=System.currentTimeMillis()+2000;ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest());}
     }
-    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event){clear();}
+    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event){acceptIntent=null;clear();}
     private static void clear(){prompt=null;connection=null;scope=state=prompted="";enabled=false;pendingWebNotice=null;}
     private static void message(String source,String detail){Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal("[DivZero] "+ClientLanguage.t(source)+Objects.toString(detail,"")).withStyle(ChatFormatting.GRAY));}
     public static void refreshWebNotice(){onSnapshot(new MineAgentPayloads.PanelSnapshot(PanelSnapshotInbox.snapshot().revision(),PanelSnapshotInbox.snapshot().values()));}

@@ -992,7 +992,7 @@ public final class ControlCenterScreen extends dev.mineagent.runtime.neoforge.cl
         Button trust = Button.builder(Component.literal(status == dev.mineagent.runtime.client.trust.TrustStatus.MISMATCH
                         ? dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("确认更新指纹") : dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("信任此服务器")), ignored -> {
                     try {
-                        trustStore().confirm(serverId, fingerprint, java.util.Base64.getDecoder().decode(publicKey));
+                        dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.acceptAll();
                         trustError = "";
                         if (!Boolean.parseBoolean(values.getOrDefault("runtime.initialized", "false"))) {
                             model.select(PanelSection.PROVIDERS);
