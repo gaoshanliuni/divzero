@@ -3477,5 +3477,10 @@
   "私聊": "Private",
   "聊天展示已变化，请刷新后重试": "Chat display changed; refresh and try again",
   "聊天展示保存失败": "Could not save chat display",
-  "右键 AI 可打开专属面板。聊天展示仅影响 @ 对话。": "Right-click an AI for its panel. Chat display only affects @ conversations."
+  "右键 AI 可打开专属面板。聊天展示仅影响 @ 对话。": "Right-click an AI for its panel. Chat display only affects @ conversations.",
+  "切换游戏模式": "Switch game mode",
+  "传送到我": "Teleport to me",
+  "将清除该身体已学习的权重与训练回放，恢复内置模型。当前工作不会被停止。是否继续？": "Reset this body to the bundled model and clear its learned weights and replay? Its current work will continue.",
+  "操作回执暂不可用，请刷新实际状态；不要重复提交。": "The operation receipt is unavailable. Refresh the actual state before submitting again.",
+  "读取行为状态失败，请稍后重试。": "Could not read behavior state. Try again shortly."
 }

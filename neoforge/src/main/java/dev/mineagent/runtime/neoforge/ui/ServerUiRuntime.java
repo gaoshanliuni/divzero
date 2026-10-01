@@ -329,8 +329,14 @@ public final class ServerUiRuntime {
             var args=request.arguments();if(!args.keySet().equals(write?Set.of("agentId","tool","source"):Set.of("agentId")))throw new IllegalArgumentException("BEHAVIOR_PANEL_ARGUMENTS");
             if(write){var reserved=sessions.begin(viewer.getUUID(),request,"agent.manage",true);if(reserved.code()!=Code.OK){send(viewer,packet,"receipt",reserved);return;}begun=true;}
             UUID agent=UUID.fromString(args.get("agentId"));var future=write?ServerBehaviorPanel.write(viewer,agent,request.operationId(),args.get("tool"),args.get("source"),()->sessions.checkRead(viewer.getUUID(),request,"agent.manage")==Code.OK):ServerBehaviorPanel.read(viewer,agent);
-            future.whenComplete((value,error)->server.execute(()->{try{var values=error==null?Map.of("state",json.writeValueAsString(value)):Map.of("errorCode",Objects.toString(error.getMessage(),"BEHAVIOR_FAILED"));send(viewer,packet,"receipt",write?sessions.complete(request,error==null?Code.APPLIED:Code.FAILED,values):new Receipt(request.operationId(),error==null?Code.OBSERVED:Code.FAILED,values));}catch(Exception ignored){}}));
-        }catch(Exception error){try{var values=Map.of("errorCode",Objects.toString(error.getMessage(),"BEHAVIOR_FAILED"));send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}catch(Exception ignored){}}
+            boolean begunForCallback=begun;
+            future.whenComplete((value,error)->server.execute(()->{try{var values=error==null?Map.of("state",json.writeValueAsString(write?ServerBehaviorPanel.panelReceipt(value):value)):Map.of("errorCode",Objects.toString(error.getMessage(),"BEHAVIOR_FAILED"));send(viewer,packet,"receipt",write?sessions.complete(request,error==null?Code.APPLIED:Code.FAILED,values):new Receipt(request.operationId(),error==null?Code.OBSERVED:Code.FAILED,values));}catch(Exception responseFailure){behaviorFailure(viewer,packet,request,begunForCallback,responseFailure);}}));
+        }catch(Exception error){try{var values=Map.of("errorCode",Objects.toString(error.getMessage(),"BEHAVIOR_FAILED"));send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}catch(Exception responseFailure){behaviorFailure(viewer,packet,request,begun,responseFailure);}}
+    }
+    private void behaviorFailure(ServerPlayer viewer,UUID packet,Request request,boolean begun,Exception error){
+        dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Behavior panel response could not be encoded for {}: {}",request.operationId(),error.getClass().getSimpleName());
+        var values=Map.of("errorCode",begun?"操作回执暂不可用，请刷新实际状态；不要重复提交。":"读取行为状态失败，请稍后重试。","executionState",begun?"OUTCOME_UNKNOWN":"READ_FAILED");
+        var receipt=begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values);send(viewer,packet,"receipt",receipt);
     }
     private void buildings(ServerPlayer viewer,UUID packet,Request request){
         boolean write=request.action().equals("building.write");boolean begun=false;String capability="task.manage";

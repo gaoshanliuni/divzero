@@ -75,7 +75,7 @@ final class CombatPositioning {
     /** Progress toward a visible target using one checked local step; a distant archer must not freeze pursuit in a region search. */
     Vec3 approachStep(SkillWork work,net.minecraft.world.entity.LivingEntity target,double desiredDistance){
         quickRetreat=false;
-        var player=work.player();if(!player.onGround()||!player.hasLineOfSight(target)||player.distanceTo(target)<=desiredDistance)return null;
+        var player=work.player();if(!player.onGround()||!dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(player,target)||player.distanceTo(target)<=desiredDistance)return null;
         var check=new NativeTraversalEvaluator(player);check.beginSlice();var current=check.closest(player.position());if(current==null)return null;
         var intercept=work.prediction.intercept(work,target,Math.min(8,player.distanceTo(target)/.3));
         double initial=player.position().distanceTo(intercept),initialRisk=work.combat.risk(work,player.position(),target),best=Double.POSITIVE_INFINITY;PathStep chosen=null;double[] features=null;var model=LocalPolicyRuntime.snapshot(player);

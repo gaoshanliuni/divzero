@@ -16,6 +16,7 @@ public interface SkillActor {
     default void useOnce(UUID session,UUID operation,net.minecraft.world.InteractionHand hand){if(hand==net.minecraft.world.InteractionHand.MAIN_HAND)useItem(session,operation,false);else useHand(session,operation,hand);}
     void sprint(UUID session,boolean enabled);
     void jump(UUID session);
+    void crouch(UUID session,boolean enabled);
     boolean select(UUID session,int slot);
     boolean equipOffhand(UUID session,int slot);
     void breakBlock(UUID session,UUID operation,BlockPos target);

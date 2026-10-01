@@ -659,10 +659,8 @@ public final class MineAgentBodyManager implements AutoCloseable {
     private record PendingSpawn(AgentDefinition definition,net.minecraft.server.network.config.PrepareSpawnTask preparation,MineAgentConnection connection){}
 
     private void bindSpawnedBody(AgentDefinition definition,MineAgentPlayer body){
-        // The native hardcore respawn result is persisted in player NBT. Definition mode is a
-        // requested Creator/Survival preference, not permission to undo death on every restart.
-        if(!dev.mineagent.runtime.core.agent.AgentBodyLifecycle.preserveHardcoreSpectator(
-                body.loadedNativeState(),server.isHardcore(),body.isSpectator())){
+        // Creation preferences initialize a new body. Native player NBT owns the actual mode after first save.
+        if(!body.loadedNativeState()){
             body.gameMode.changeGameModeForPlayer(definition.mode()==AgentMode.CREATOR?GameType.CREATIVE:GameType.SURVIVAL);
         }
         body.connection.markClientLoaded();

@@ -204,6 +204,7 @@ public final class MineAgentPlayer extends ServerPlayer {
         }
         super.tick();
         doTick();
+        dev.mineagent.runtime.neoforge.skill.NativeEquipmentSupport.maintainAi(this);
         if(isAlive()&&!lifecycle.deathAccepted()){movementController.tick(this);tickMining();if(lookTarget!=null&&lookUntil>=level().getServer().getTickCount()&&taskControl.owns(lookOwner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,lookTarget);}
     }
 

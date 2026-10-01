@@ -70,7 +70,11 @@ public final class NativeBehaviorPanel {
     private JsonObject combat(){var n=new JsonObject();n.addProperty("strategy",strategy.getValue().id);n.addProperty("engagement",engagement.getValue().id);switch(engagement.getValue().id){case "PROTECT"->n.addProperty("protect",target.getValue().id);case "SPECIFIED"->{if(target.getValue().id.isBlank())throw new IllegalArgumentException(t("请选择攻击目标"));n.addProperty("target",target.getValue().id.equals("$owner")?state.getAsJsonObject("context").get("ownerId").getAsString():target.getValue().id);}case "CLEAR_AREA"->area(n);}return n;}
     private JsonObject enhancements(){return state==null||!state.has("enhancements")?null:state.getAsJsonObject("enhancements").getAsJsonObject(actor.getValue().id);}
     private JsonObject model(){return state==null||!state.has("enhancements")?null:state.getAsJsonObject("enhancements").getAsJsonObject("models").getAsJsonObject(actor.getValue().id);}
-    private void resetWeights(){var model=model();var profile=enhancements();if(model==null||profile==null||actorPending)return;var input=new JsonObject();input.addProperty("actor",actor.getValue().id);input.addProperty("expected_revision",profile.get("revision").getAsLong());input.addProperty("expected_model_version",model.get("version").getAsLong());input.addProperty("resetWeights",true);send("set_actor_enhancements",input);}
+    private void resetWeights(){
+        var model=model();var profile=enhancements();if(model==null||profile==null||actorPending||saving)return;
+        String selected=actor.getValue().id;var input=new JsonObject();input.addProperty("actor",selected);input.addProperty("expected_revision",profile.get("revision").getAsLong());input.addProperty("expected_model_version",model.get("version").getAsLong());input.addProperty("resetWeights",true);input.addProperty("confirmedReset",true);
+        Dialog.showCheckBox(t("恢复预训练权重"),t("将清除该身体已学习的权重与训练回放，恢复内置模型。当前工作不会被停止。是否继续？"),yes->{if(yes&&scope()&&current.getAsBoolean()&&selected.equals(actor.getValue().id)&&!saving)send("set_actor_enhancements",input);}).show(container);
+    }
     private void updateEnhancementLabels(){var profile=enhancements();if(profile==null)return;
         boost.setText(Component.literal(t(profile.get("boost").getAsBoolean()?"Boost：开启":"Boost：关闭")));
         learning.setText(Component.literal(t(profile.get("learning").getAsBoolean()?"权重学习模式：开启":"权重学习模式：关闭")));

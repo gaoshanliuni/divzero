@@ -34,7 +34,7 @@ public final class InteractionTargetResolver {
         for(int x=-radius;x<=radius;x++)for(int z=-radius;z<=radius;z++)for(var n:evaluator.positions(base.getX()+x,base.getZ()+z,target.getY())){
             var at=NativeTraversalEvaluator.point(n);var box=p.getDimensions(p.getPose()).makeBoundingBox(at);if(box.intersects(target.getBoundingBox()))continue;
             var eye=at.add(0,p.getEyeHeight(),0);if(eye.distanceTo(target.getEyePosition())>reach+target.getBbWidth())continue;
-            if(lineOfSight(p,eye,target.getEyePosition(),null,false))nodes.add(n);
+            if(NativeTargetGeometry.pointFrom(p,eye,target.getHitbox()).filter(hit->hit.distanceTo(eye)<=reach).isPresent()||NativeTargetGeometry.pointFrom(p,at.add(0,p.getDimensions(net.minecraft.world.entity.Pose.CROUCHING).eyeHeight(),0),target.getHitbox()).isPresent())nodes.add(n);
         }
         var points=nodes.stream().map(NativeTraversalEvaluator::point).sorted(Comparator.comparingDouble(at->at.distanceToSqr(p.position()))).toList();
         return new Query(evaluator,null,points);

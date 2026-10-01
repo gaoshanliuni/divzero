@@ -18,7 +18,9 @@ public interface CombatEquipmentAdapter {
     static void register(CombatEquipmentAdapter adapter){Objects.requireNonNull(adapter);if(REGISTRY.stream().anyMatch(a->a.id().equals(adapter.id())))throw new IllegalArgumentException("COMBAT_ADAPTER_DUPLICATE");REGISTRY.add(adapter);}
     static boolean melee(SkillWork w,LivingEntity target){
         var player=w.player();boolean blocking=target!=null&&target.isBlocking()&&target.getLookAngle().dot(player.position().subtract(target.position()).normalize())>.15;
-        if(w.weaponDecisionTick>w.tick()-8&&w.weaponBlocking==blocking)return true;
+        boolean falling=net.minecraft.world.item.MaceItem.canSmashAttack(player)||target!=null&&player.getDeltaMovement().y<-.05&&player.getY()-target.getY()>2;
+        if(w.weaponDecisionTick>w.tick()-8&&w.weaponBlocking==blocking&&w.weaponFalling==falling)return true;
+        w.weaponFalling=falling;
         w.weaponDecisionTick=w.tick();w.weaponBlocking=blocking;
         double best=Double.NEGATIVE_INFINITY;int selected=-1;
         double currentSpeed=Math.max(.1,player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED));
@@ -28,16 +30,19 @@ public interface CombatEquipmentAdapter {
             var attributes=stack.getOrDefault(net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS,net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY);
             double damage=attributes.compute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE).getBaseValue(),net.minecraft.world.entity.EquipmentSlot.MAINHAND);
             double speed=Math.max(.1,attributes.compute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED).getBaseValue(),net.minecraft.world.entity.EquipmentSlot.MAINHAND));
+            if(target!=null)damage+=Math.max(0,stack.getItem().getAttackDamageBonus(target,(float)damage,player.damageSources().playerAttack(player)));
             boolean axe=stack.is(net.minecraft.tags.ItemTags.AXES);
             if(!axe&&!stack.is(net.minecraft.tags.ItemTags.SWORDS)&&damage<=2)continue;
             if(stack.isDamageableItem()&&stack.getMaxDamage()-stack.getDamageValue()<2)continue;
-            double score=damage*(.5+Math.min(3,speed)*.5)-Math.max(0,20/speed-elapsed)*.15;
+            double score=damage*(falling?1.6:.5+Math.min(3,speed)*.5)-Math.max(0,20/speed-elapsed)*.15;
+            if(falling&&stack.getItem() instanceof net.minecraft.world.item.MaceItem)score+=20;
             if(blocking)score+=axe?40:-10;
             if(slot==player.getInventory().getSelectedSlot())score+=.4;
             if(stack.isDamageableItem()&&stack.getMaxDamage()-stack.getDamageValue()<10)score-=4;
             if(score>best){best=score;selected=slot;}
         }
         if(selected<0||selected==player.getInventory().getSelectedSlot())return true;
+        if(NativeEquipmentSupport.protects(player.getMainHandItem())&&!NativeEquipmentSupport.protects(player.getOffhandItem())){if(!w.actor.equipOffhand(w.token(),player.getInventory().getSelectedSlot()))return false;}
         if(player.isUsingItem()){w.actor.stop(w.token());w.shieldOperation=null;w.healingOperation=null;}
         w.session.add(blocking?"shieldCounterWeaponSelections":"meleeWeaponSelections",1);
         return w.actor.select(w.token(),selected);

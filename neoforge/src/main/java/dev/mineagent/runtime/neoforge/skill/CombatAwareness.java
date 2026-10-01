@@ -37,7 +37,7 @@ final class CombatAwareness {
     void searchFailed(){if(searching!=null)lastSeen.remove(searching);searching=null;}
     private int geometryTick=-1;private Boolean cachedFlanked;private final Map<UUID,Boolean> sightCache=new HashMap<>();private final Map<UUID,Boolean> reverseSightCache=new HashMap<>();
     private void geometry(SkillWork w){if(geometryTick!=w.tick()){geometryTick=w.tick();cachedFlanked=null;sightCache.clear();reverseSightCache.clear();}}
-    private boolean sight(SkillWork w,LivingEntity entity){geometry(w);return sightCache.computeIfAbsent(entity.getUUID(),id->w.player().hasLineOfSight(entity));}
+    private boolean sight(SkillWork w,LivingEntity entity){geometry(w);return sightCache.computeIfAbsent(entity.getUUID(),id->dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(w.player(),entity));}
     private boolean reverseSight(SkillWork w,LivingEntity entity){geometry(w);return reverseSightCache.computeIfAbsent(entity.getUUID(),id->entity.hasLineOfSight(w.player()));}
     LivingEntity selected;int selectedAt;double lastDamageVelocity;
     final NativeAttackTimeline attacks=new NativeAttackTimeline();

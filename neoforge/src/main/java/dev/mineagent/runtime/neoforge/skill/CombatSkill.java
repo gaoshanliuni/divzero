@@ -102,6 +102,14 @@ final class CombatSkill {
         var p=w.player();var rule=w.session.spec().combat();w.sprintApproach=false;
         if(target!=null&&(!SkillRuntime.attackAllowed(w,target))){w.combat.selected=null;return;}
         if(w.actor.recovering()&&target!=null){w.actor.recover(w.token(),target.position());phase(w,"TERRAIN_ESCAPE");return;}
+        if(NativeEquipmentSupport.maintainControlled(w))return;
+        if(target!=null){
+            var normalEye=p.position().add(0,p.getDimensions(net.minecraft.world.entity.Pose.STANDING).eyeHeight(),0);
+            boolean low=dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.pointFrom(p,normalEye,target.getHitbox()).isEmpty()&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.crouchedPoint(p,target).isPresent();
+            if(low){w.gapCrouching=true;w.actor.crouch(w.token(),true);if(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty()){w.actor.haltMotion(w.token());phase(w,"LOW_OPENING_AIM");return;}}
+            else if(w.gapCrouching){w.actor.crouch(w.token(),false);w.gapCrouching=false;}
+            if(p.fallDistance>1.5)CombatEquipmentAdapter.melee(w,target);
+        }
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
         if(w.combat.attacks.standingRisk(w,p.position(),12)>0&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
             var escape=w.positioning.evadeStep(w);
@@ -112,7 +120,7 @@ final class CombatSkill {
             w.positioning.reset();phase(w,"COUNTER_REASSESS");w.session.add("postEvasionReassessments",1);
         }
         if(target!=null&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE&&strikeInReach(w,target,contacts))return;
-        if(target!=null&&!p.hasLineOfSight(target)&&contacts==0&&!w.combat.incoming(w)&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){
+        if(target!=null&&!dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(p,target)&&contacts==0&&!w.combat.incoming(w)&&rule.strategy()!=CombatPolicy.Strategy.DISENGAGE){
             if(rule.strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.actor.haltMotion(w.token());phase(w,"TARGET_OBSCURED");return;}
             // Use real navigation around the obstacle, while the ready-hit check still runs every local tick.
             if(!target.getUUID().equals(w.obscuredTarget)||w.obscuredPosition==null||w.obscuredPosition.distanceToSqr(target.position())>1||w.tick()>=w.obscuredRecheck){
@@ -152,7 +160,7 @@ final class CombatSkill {
         }
         if(CombatEquipmentAdapter.execute(w,target)){phase(w,"ADAPTED_WEAPON");return;}
         if(NativeRangedCombat.tick(w,target))return;
-        double distance=p.distanceTo(target);boolean visible=p.hasLineOfSight(target);
+        double distance=p.distanceTo(target);boolean visible=dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(p,target);
         var actual=NativeCombatStates.read(target,p);
         double enemyReach=actual.attacks().stream().filter(a->a.kind().equals("MELEE")).mapToDouble(NativeCombatStates.Attack::maxRange).max().orElse(0);
         withdrawal=Math.max(withdrawal,enemyReach+p.getBbWidth()/2+target.getBbWidth()/2+1);
@@ -210,7 +218,7 @@ final class CombatSkill {
         if(!CombatEquipmentAdapter.melee(w,target))return;
         if(p.isUsingItem())p.stopUsingItem();
         w.actor.aim(w.token(),target.getEyePosition());
-        if(!ActorEnhancements.boost(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return;}
+        if(!ActorEnhancements.boost(p)&&!NativeAttackReadiness.fallingSmash(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return;}
         if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);if(counter){w.session.add("counterOpenings",1);w.session.add("counterStrikeAttempts",1);}}
         if(target.isBlocking()&&p.getMainHandItem().is(ItemTags.AXES)){w.shieldCounterTarget=target;w.shieldCounterAt=w.tick();w.shieldCounterItem=target.getUseItem().copy();w.session.add("shieldCounterAttempts",1);}
         w.actor.attack(w.token(),w.combatOperation,target);
@@ -223,10 +231,10 @@ final class CombatSkill {
         }
     }
     private static boolean strikeInReach(SkillWork w,LivingEntity target,int contacts){
-        var p=w.player();if(p.getAttackStrengthScale(.5f)<.95f||!p.hasLineOfSight(target)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||w.tick()-w.lastAttackAt<2)return false;
-        if(!CombatEquipmentAdapter.melee(w,target)||p.getAttackStrengthScale(.5f)<.95f||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0))return false;
-        if(contacts==0&&p.getHealth()>p.getMaxHealth()*.75&&!w.combat.incoming(w)&&!ActorEnhancements.boost(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return true;}
-        if(p.isUsingItem())p.stopUsingItem();w.actor.aimImmediately(w.token(),target.getEyePosition());
+        var p=w.player();if(!NativeAttackReadiness.ready(p)||!dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(p,target)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||w.tick()-w.lastAttackAt<2)return false;
+        if(!CombatEquipmentAdapter.melee(w,target)||!NativeAttackReadiness.ready(p)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty())return false;
+        if(contacts==0&&p.getHealth()>p.getMaxHealth()*.75&&!w.combat.incoming(w)&&!ActorEnhancements.boost(p)&&!NativeAttackReadiness.fallingSmash(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return true;}
+        if(p.isUsingItem())p.stopUsingItem();w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).orElse(target.getEyePosition()));
         if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);w.session.add("inRangeStrikeAttempts",1);}
         if(target.isBlocking()&&p.getMainHandItem().is(ItemTags.AXES)){w.shieldCounterTarget=target;w.shieldCounterAt=w.tick();w.shieldCounterItem=target.getUseItem().copy();w.session.add("shieldCounterAttempts",1);}
         w.actor.attack(w.token(),w.combatOperation,target);phase(w,"STRIKE_IN_RANGE");
@@ -267,7 +275,7 @@ final class CombatSkill {
     }
     /** Actual health damage plus continuing native melee contact outranks ordinary pursuit and equipment choice. */
     private static boolean counterBeforeEscape(SkillWork w,LivingEntity target,int contacts){
-        var p=w.player();if(target==null||contacts>1||p.getHealth()<p.getMaxHealth()*.5||p.getAttackStrengthScale(.5f)<.95f||w.session.spec().combat().strategy()==CombatPolicy.Strategy.DISENGAGE)return false;
+        var p=w.player();if(target==null||contacts>1||p.getHealth()<p.getMaxHealth()*.5||!NativeAttackReadiness.ready(p)||w.session.spec().combat().strategy()==CombatPolicy.Strategy.DISENGAGE)return false;
         var actual=NativeCombatStates.read(target,p);double reach=p.getAttackRangeWith(p.getMainHandItem()).effectiveMaxRange(p);
         double speed=p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)/(p.isSprinting()?1.3:1)*(p.getFoodData().getFoodLevel()>6?2.8:2.1);
         return CombatOpening.canCounter(actual.openingTicks(p.level().getGameTime()),CombatOpening.closingTicks(p.distanceTo(target),reach,speed),0,w.combat.incoming(w));
@@ -296,7 +304,7 @@ final class CombatSkill {
         if(w.session.spec().combat().engagement()==CombatPolicy.Engagement.NONE)return;
         var p=w.player();var corridor=exit==null?p.getBoundingBox().inflate(3):p.getBoundingBox().expandTowards(exit.subtract(p.position())).inflate(.35);
         var blocker=w.combat.threats.stream().filter(t->t.eligible()&&t.entity().isAlive()&&corridor.intersects(t.entity().getBoundingBox())&&p.hasLineOfSight(t.entity())&&p.isWithinAttackRange(p.getMainHandItem(),t.entity().getHitbox(),0)).min(Comparator.comparingDouble(t->p.distanceToSqr(t.entity()))).orElse(null);
-        if(blocker==null||p.getAttackStrengthScale(.5f)<.95f||!weapon(w))return;
+        if(blocker==null||!NativeAttackReadiness.ready(p)||!weapon(w))return;
         phase(w,"BREAKTHROUGH");w.fighting=blocker.entity().getUUID();w.actor.aim(w.token(),blocker.entity().getEyePosition());
         if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("breakthroughAttempts",1);}
         w.actor.attack(w.token(),w.combatOperation,blocker.entity());
@@ -325,7 +333,7 @@ final class CombatSkill {
         for(int i=0;i<=20;i++){double t=i/20.0;var sample=new Vec3(start.x+(aim.x-start.x)*t,start.y+slope*r*t-.025*duration*duration*t*t,start.z+(aim.z-start.z)*t);for(var ally:allies)if(ally.getBoundingBox().inflate(.5).contains(sample))return true;}return false;
     }
     private static boolean shield(SkillWork w,LivingEntity target){
-        var p=w.player();if(target==null||w.actor.recovering())return false;
+        var p=w.player();if(target==null||w.actor.recovering()||NativeEquipmentSupport.protects(p.getOffhandItem()))return false;
         if(!p.getOffhandItem().is(Items.SHIELD))for(int i=0;i<36;i++)if(p.getInventory().getItem(i).is(Items.SHIELD)){w.actor.equipOffhand(w.token(),i);return true;}
         if(!p.getOffhandItem().is(Items.SHIELD)||p.getCooldowns().isOnCooldown(p.getOffhandItem()))return false;
         if(w.combatStage!=0){observeRelease(w);w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;}

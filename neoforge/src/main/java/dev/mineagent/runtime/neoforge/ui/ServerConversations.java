@@ -184,13 +184,7 @@ public final class ServerConversations implements AutoCloseable {
                 boolean done=terminal&&n.offset+body.length()>=message.textLength()&&n.thinkingOffset+thought.length()>=thinking.textLength();
                 if(!n.emitted||!body.isEmpty()||!thought.isEmpty()||!n.deliveryState.equals(usage.requestState())){
                     String color=MineAgentRuntimeServices.config(server).snapshot().values().getOrDefault("agent."+n.agent+".chatColor","#FFFFFF");
-                    boolean nativeAllowed=true;
-                    if(!n.emitted||!body.isEmpty()){
-                        var visible=net.minecraft.network.chat.Component.literal(body.isEmpty()?"…":body);
-                        if(color.matches("#[A-Fa-f0-9]{6}"))visible.withStyle(style->style.withColor(Integer.parseInt(color.substring(1),16)));
-                        nativeAllowed=dev.mineagent.runtime.neoforge.chat.AiPlayerChat.streamAudience(n.viewer,n.observers,n.agent,entry.getKey(),body.isEmpty()?"typing":"body:"+n.offset,visible);if(nativeAllowed)n.nativeParts++;
-                    }
-                    var data=new LinkedHashMap<String,Object>();data.put("agent",n.agent.toString());data.put("name",requireAgent(n.agent).displayName());data.put("bodyOffset",n.offset);data.put("body",body);data.put("thinkingOffset",n.thinkingOffset);data.put("thinking",thought);data.put("done",done);data.put("state",usage.requestState());data.put("color",color);data.put("nativeParts",n.nativeParts);data.put("nativeAllowed",nativeAllowed);
+                    var data=new LinkedHashMap<String,Object>();data.put("agent",n.agent.toString());data.put("name",requireAgent(n.agent).displayName());data.put("bodyOffset",n.offset);data.put("body",body);data.put("thinkingOffset",n.thinkingOffset);data.put("thinking",thought);data.put("done",done);data.put("state",usage.requestState());data.put("color",color);data.put("nativeParts",0);data.put("nativeAllowed",true);
                     net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(n.viewer,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(entry.getKey(),"nativeChatStream",json.writeValueAsString(data)));
                     if(!n.observers.isEmpty()){var publicData=dev.mineagent.runtime.core.conversation.PublicMentionUpdate.of(data);for(var recipient:n.observers)if(server.getPlayerList().getPlayer(recipient.getUUID())==recipient)net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(recipient,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(entry.getKey(),"nativeChatStream",json.writeValueAsString(publicData)));}
                     n.offset+=body.length();n.thinkingOffset+=thought.length();n.deliveryState=usage.requestState();n.emitted=true;
