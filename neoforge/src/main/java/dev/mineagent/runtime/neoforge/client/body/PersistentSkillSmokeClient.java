@@ -510,12 +510,13 @@ public final class PersistentSkillSmokeClient {
         }
         for(String condition:List.of("disabled","none","far","paused","stopped","excluded","idle")){
             String id="assist_no_"+condition;
-            action(id+"_setup",()->server(p->{creatorAssistSetup(p,true);return true;}));
+            action(id+"_setup",()->server(p->{creatorAssistSetup(p,true);((Mob)p.level().getEntity(zombie)).setTarget(null);return true;}));
             action(id+"_start",()->{var n=creatorAssistStart(id,condition.equals("idle")?"IDLE":"COMBAT",!condition.equals("disabled"),condition.equals("none")?"NONE":"SELF_DEFENSE");if(condition.equals("excluded"))((ObjectNode)n.get("combat")).putArray("excluded").add(zombie.toString());return tool("set_behavior_mode",n);});
             if(condition.equals("paused"))action(id+"_pause",()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(report->tool("control_behavior",JSON.createObjectNode().put("id",id).put("expected_revision",session(report,id).path("revision").asLong()).put("action","pause"))));
             action(id+"_constraints",()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(report->server(p->{var runtime=dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer());
                 if(condition.equals("far")){p.teleportTo(p.level(),-10.5,101,6.5,Set.of(),0,0,true);body(p).teleportTo(p.level(),25.5,101,6.5,Set.of(),0,0,true);}
                 if(condition.equals("stopped"))runtime.stopAll(p,agent);
+                ((Mob)p.level().getEntity(zombie)).setTarget(p);
                 baseline=session(report,id).path("counters").path("verifiedHits").asLong();return true;})));
             waitFor(id+"_no-new-attacks",180,()->tool("inspect_behavior",JSON.createObjectNode()).thenCompose(report->server(p->{lastObservation=report;require(session(report,id).path("counters").path("verifiedHits").asLong()==baseline,"ASSIST_IGNORED_"+condition);return ticks-stageAt>=90;})));
         }

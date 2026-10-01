@@ -127,7 +127,7 @@ public final class SkillRuntime {
             else if(e instanceof net.minecraft.world.entity.OwnableEntity own&&own.getOwnerReference()!=null||e.isAlliedTo(p))throw new SecurityException("COMBAT_FRIENDLY_TARGET");}
         if(policy.engagement()==CombatPolicy.Engagement.PROTECT&&!policy.protect().equals("$owner")&&!(p.level().getEntity(UUID.fromString(policy.protect())) instanceof net.minecraft.world.entity.LivingEntity))throw new IllegalArgumentException("COMBAT_PROTECTED_TARGET_NOT_OBSERVED");
     }
-    private record CreatorAttack(net.minecraft.world.entity.LivingEntity target,int tick){}
+    private record CreatorAttack(ServerPlayer creator,net.minecraft.world.entity.LivingEntity target,int tick){}
     private final Map<UUID,CreatorAttack> creatorAttacks=new HashMap<>();
     ServerPlayer creator(SkillWork w){
         UUID id=w.player() instanceof MineAgentPlayer ai?ai.ownerPlayerId():w.session.owner();
@@ -135,12 +135,12 @@ public final class SkillRuntime {
     }
     boolean creatorAttacked(ServerPlayer creator,net.minecraft.world.entity.LivingEntity target){
         var recent=creatorAttacks.get(creator.getUUID());
-        if(recent!=null&&(server.getTickCount()-recent.tick()>100||!recent.target().isAlive()||recent.target().level()!=creator.level())){creatorAttacks.remove(creator.getUUID());recent=null;}
+        if(recent!=null&&(recent.creator()!=creator||server.getTickCount()-recent.tick()>100||!recent.target().isAlive()||recent.target().level()!=creator.level())){creatorAttacks.remove(creator.getUUID());recent=null;}
         return recent!=null&&recent.target()==target||creator.getLastHurtMob()==target&&creator.tickCount-creator.getLastHurtMobTimestamp()<100;
     }
     private void observeCreatorCombat(ServerPlayer creator,net.minecraft.world.entity.LivingEntity target){
         creatorAttacks.entrySet().removeIf(e->server.getTickCount()-e.getValue().tick()>100);
-        if(target!=null)creatorAttacks.put(creator.getUUID(),new CreatorAttack(target,server.getTickCount()));
+        if(target!=null)creatorAttacks.put(creator.getUUID(),new CreatorAttack(creator,target,server.getTickCount()));
         for(var w:byOwner.getOrDefault(creator.getUUID(),new LinkedHashSet<>()))if(w.session.runnable()&&w.actor!=null&&w.actor.current()&&creator(w)==creator){w.combat.nextScan=0;w.lastCombatTick=-1;}
     }
     static boolean attackAllowed(SkillWork w,net.minecraft.world.entity.LivingEntity entity){
