@@ -67,7 +67,7 @@ final class CombatSkill {
         if(!w.combatInterrupted)return;
         if(w.gapCrouching){w.actor.crouch(w.token(),false);w.gapCrouching=false;}
         w.actor.stop(w.token());w.actor.controls().release(w.token());w.combatInterrupted=false;w.fighting=null;w.combatOperation=null;w.combatStage=0;w.healingOperation=null;w.contactEscape=false;w.contactRunAndHit=false;w.contactSince=w.contactClearSince=-1;
-        w.session.phase(w.suspendedPhase==null?"SCAN":w.suspendedPhase);w.stand=null;w.search=null;w.positioning.reset();w.footwork.reset();w.jumpTapUntil=w.sideStepUntil=-1;
+        w.session.phase(w.suspendedPhase==null?"SCAN":w.suspendedPhase);w.stand=null;w.search=null;w.positioning.reset();w.footwork.reset();w.jumpTapUntil=w.sideStepUntil=-1;w.ranged.contact.reset();
         w.session.transition(State.RUNNING,"DEFENSE_FINISHED_RECHECK_WORK");w.session.add("workResumptions",1);w.nextTick=w.tick();w.runtime.persist(w);if(w.session.spec().kind()!=SkillSpec.Kind.COMBAT)w.notice("resumed","威胁已解除，重新检查并继续原工作。");
     }
     static void combat(SkillWork w){interruptOrContinue(w);}
@@ -86,7 +86,7 @@ final class CombatSkill {
             if(!w.positioning.pending()&&target!=null){if(!w.actor.recovering()){w.actor.stop(w.token());w.combatOperation=w.shieldOperation=w.healingOperation=null;w.combatStage=0;}if(w.actor.recover(w.token(),target.position())){phase(w,"TERRAIN_ESCAPE");return true;}}
             w.actor.haltMotion(w.token());phase(w,w.positioning.pending()?"WAITING_FOR_TACTICAL_PATH":"NO_SAFE_EXIT");shield(w,target);return false;
         }
-        boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.positioning.quickRetreat()||w.contactEscape);
+        boolean sprintEscape=escape&&(w.positioning.longRetreat()||w.positioning.quickRetreat()||w.contactEscape||w.ranged.contact.active());
         var heading=new Vec3(next.x-w.player().getX(),0,next.z-w.player().getZ());var look=w.player().getLookAngle();boolean sprintClosing=w.sprintApproach&&!escape&&w.tick()-w.lastAttackAt>=2&&heading.lengthSqr()>.001&&new Vec3(look.x,0,look.z).normalize().dot(heading.normalize())>.75;
         if((sprintEscape||sprintClosing)&&w.player().isUsingItem()&&!w.player().getUseItem().getOrDefault(DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint()){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.shieldOperation=null;w.healingOperation=null;}
         w.actor.sprint(w.token(),sprintEscape||sprintClosing);
@@ -115,6 +115,7 @@ final class CombatSkill {
             }
         }
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
+        if(escapeRangedContact(w,target,contacts))return;
         if(w.combat.attacks.standingRisk(w,p.position(),12)>0&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
             var escape=w.positioning.evadeStep(w);
             if(escape!=null){phase(w,"DAMAGE_EVASION");w.session.add("damageTimelineEvasions",1);move(w,escape,target,true);return;}
@@ -236,10 +237,11 @@ final class CombatSkill {
         }
     }
     private static boolean strikeInReach(SkillWork w,LivingEntity target,int contacts){
+        if(NativeRangedCombat.rangedOnly(w))return false;
         var p=w.player();if(!NativeAttackReadiness.ready(p)||!dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.canObserve(p,target)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||w.tick()-w.lastAttackAt<2)return false;
         if(!CombatEquipmentAdapter.melee(w,target)||!NativeAttackReadiness.ready(p)||!p.isWithinAttackRange(p.getMainHandItem(),target.getHitbox(),0)||dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(p,target).isEmpty())return false;
         if(contacts==0&&p.hasLineOfSight(target)&&p.getHealth()>p.getMaxHealth()*.75&&!w.combat.incoming(w)&&!ActorEnhancements.boost(p)&&!NativeAttackReadiness.fallingSmash(p)&&CombatCriticalTiming.waitOrJump(w,target)){phase(w,"NORMAL_CRITICAL_WINDOW");return true;}
-        if(p.isUsingItem())p.stopUsingItem();w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).orElse(target.getEyePosition()));
+        if(w.combatStage!=0){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=null;w.ranged.planned=-10000;}if(p.isUsingItem())p.stopUsingItem();w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).orElse(target.getEyePosition()));
         if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("meleeAttempts",1);w.session.add("inRangeStrikeAttempts",1);}
         if(target.isBlocking()&&p.getMainHandItem().is(ItemTags.AXES)){w.shieldCounterTarget=target;w.shieldCounterAt=w.tick();w.shieldCounterItem=target.getUseItem().copy();w.session.add("shieldCounterAttempts",1);}
         w.actor.attack(w.token(),w.combatOperation,target);phase(w,"STRIKE_IN_RANGE");
@@ -256,6 +258,18 @@ final class CombatSkill {
             if(Math.abs(moved)>.006){w.session.add(moved>0?"nativeStrafeLeftTicks":"nativeStrafeRightTicks",1);w.session.add("nativeStrafeDistanceMilli",(long)(Math.abs(moved)*1000));}
             if(!NativeCombatStates.meleeAt(target,w.player(),position))w.session.add("strafeOutsideNativeAttackBoxTicks",1);
         }w.footworkPosition=position;
+    }
+    private static boolean escapeRangedContact(SkillWork w,LivingEntity target,int contacts){
+        if(target==null||w.session.spec().combat().strategy()==CombatPolicy.Strategy.HOLD_POSITION){w.ranged.contact.reset();return false;}
+        boolean was=w.ranged.contact.active();boolean active=w.ranged.contact.update(w.tick(),w.player().distanceTo(target),contacts>0,NativeRangedCombat.rangedOnly(w),CombatEquipmentAdapter.hasMeleeWeapon(w),NativeRangedCombat.loadedShot(w));
+        if(!active){if(was){w.positioning.reset();w.session.add("rangedContactResumptions",1);}return false;}
+        if(!was){w.actor.stop(w.token());w.combatStage=0;w.combatOperation=w.shieldOperation=w.healingOperation=null;w.ranged.planned=-10000;w.ranged.release=null;w.positioning.reset();w.session.add("rangedContactEscapes",1);}
+        phase(w,"RANGED_CONTACT_ESCAPE");var exit=w.positioning.retreatStep(w);if(exit==null)exit=w.positioning.choose(w,"RETREAT",10);move(w,exit,target,true);
+        if(w.player().isSprinting())w.session.add("rangedEscapeSprintTicks",1);
+        if(exit==null&&!w.positioning.pending()&&NativeAttackReadiness.ready(w.player())&&w.tick()-w.lastAttackAt>=4&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(w.player(),target).isPresent()){
+            w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(w.player(),target).orElse(target.getEyePosition()));w.actor.attack(w.token(),UUID.randomUUID(),target);w.lastAttackAt=w.tick();w.session.add("rangedBlockedBreakthroughs",1);
+        }
+        return true;
     }
     private static boolean sideStep(SkillWork w,LivingEntity target,double spacing){
         if(target==null||w.player().isInWater()||w.player().isCrouching()||w.combat.contacts(w)>1||w.contactEscape)return false;

@@ -949,8 +949,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "5e2c357466741261356a2a6fcb28c5d88435caf631db5ed5f837f3956ae30c84",
-      "bytes": 319540
+      "sha256": "2678a252e11d8edfb362177c60133e112fb979031f85a949e191a005baae798b",
+      "bytes": 319589
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -2614,8 +2614,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/PvpMapProfile.java",
-      "sha256": "a5ef80be7c80d07d80708d73aeaa030dd18fdd70aac73454fda4307b61480e58",
-      "bytes": 2580
+      "sha256": "5ed7b95a2bf24cc9a69e05215bd04233dc48947a41de6797851a363f2292cad3",
+      "bytes": 3079
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/RangedContactEscape.java",
+      "sha256": "f55b1ce283d882bb3b116b8ea5ced5f8033fdb7ffeac26c4eea1bd71d7306ae0",
+      "bytes": 756
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/ReusablePathPlan.java",
@@ -3329,8 +3334,13 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/PvpMapProfileTest.java",
-      "sha256": "75934a0b5e102c48f04ee89b8ae33c232b447e245fbc639ab62a4bcc94e47f2a",
-      "bytes": 1169
+      "sha256": "aa1a0dffbba48731c3ae9aa872a1ac878d3462c93c5ee872e393122b08dc7aea",
+      "bytes": 1430
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/RangedContactEscapeTest.java",
+      "sha256": "73af1f0f87e775d7ab2b13d26f6e152ac1e9d67cce7fee8b54a57051500d8370",
+      "bytes": 836
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/ReusablePathPlanTest.java",
@@ -3494,8 +3504,8 @@
     },
     {
       "path": "docs/PVP_TRAINING_MAP.md",
-      "sha256": "107f10fd9125234737270dd61c1b586a08c94b8667f1504e10e38d38a7322cc2",
-      "bytes": 3348
+      "sha256": "3eba44db1835191d41e349bdab95abe00eb575ee49aa050e772f79e262db704a",
+      "bytes": 3925
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3654,8 +3664,8 @@
     },
     {
       "path": "docs/releases/1.0.23.md",
-      "sha256": "6741c7524c3e3c1b9844e7cb729dd0cc09e527787f486d715ec0d041a5910e63",
-      "bytes": 3668
+      "sha256": "333531e8f5d61ad2d3341f53060cf5e087af0c2c05b13133dc10226f7f578882",
+      "bytes": 4741
     },
     {
       "path": "gradle.properties",
@@ -3859,8 +3869,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainPolicy.java",
-      "sha256": "c3420dbe53f2a8bf387e780435c970f319890cfcb63324f437369703fad49113",
-      "bytes": 4632
+      "sha256": "c87fcb1fcbda60fe551b277d4637933854810f2e9714aa087bc38a341f5d3292",
+      "bytes": 5181
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainRecovery.java",
@@ -4564,8 +4574,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PvpMapClient.java",
-      "sha256": "5b73add461e400e5615f2bab04a50363aa4dd65b1e465b7ed7a22da7df229860",
-      "bytes": 13068
+      "sha256": "eca3bc7d3a9518b6827595dcf0c3f76cc5e9e8573f356f09b5c366f0454abf28",
+      "bytes": 14079
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
@@ -5659,8 +5669,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatEquipmentAdapter.java",
-      "sha256": "d8f25b38e16b5ae943fba3184e3759d71bbece9abb39d6bd08a8395936472b87",
-      "bytes": 5780
+      "sha256": "e0b1a20b06f5fa733291bfff683038391bb8d5b9f061a16eb8c6a1e6924c95c8",
+      "bytes": 6563
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
@@ -5674,8 +5684,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "68333934c4a1cc9a980b0b0db1166bce2ceb56a11e8b31259833bc2ef07e4d85",
-      "bytes": 39207
+      "sha256": "1df59b0bd7f4a77c9f86f2545ee75e9f6c9b09721f7954fb6bc67bf81b1e9dc1",
+      "bytes": 41079
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -5744,8 +5754,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "cbefeca43efd6ba94dcd322dcac129a7144e4d97a7ab0d1e8b969f118df1191c",
-      "bytes": 30007
+      "sha256": "7774e491b5ff423ba466df121d1917d0f17dffd392677f113c6a27968afdf074",
+      "bytes": 36565
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
@@ -5754,8 +5764,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
-      "sha256": "a50c77f974d0c500510c2f2a8f24292af6d6fde014a43a708d3e005f32741dc7",
-      "bytes": 12029
+      "sha256": "dd6de31dc3eb89696d3fa6bceef8ce60c1433f9d0346be7056dc4f0ccab69f8f",
+      "bytes": 12411
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeSelfPlayLab.java",
@@ -5781,6 +5791,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpConsent.java",
       "sha256": "7b4c650bf83ade27b9b574f10dcc3d5d9c0b22cd7281ad6632b43dc13c5d1ef9",
       "bytes": 2812
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapArena.java",
+      "sha256": "88d260478950f27b5137be8abd96ae8e9cc7a771e5a9b83f5f8e3c7eff8df34c",
+      "bytes": 2980
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapSupport.java",

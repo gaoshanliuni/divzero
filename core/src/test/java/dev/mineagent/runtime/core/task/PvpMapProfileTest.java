@@ -10,6 +10,7 @@ class PvpMapProfileTest {
         assertEquals(4,p.rounds());assertEquals(50,p.winRate());assertEquals(30d,p.averageKill().doubleValue());assertEquals(30d,p.averageDeath().doubleValue());
         assertNull(PvpMapProfile.defaults().averageKill());
     }
+    @Test void woolIsIndependentAndResetsOnNewVisit(){var p=PvpMapProfile.defaults().wool(0,"human",true);assertTrue(p.humanWool());assertFalse(p.aiWool());p=p.finish("HUMAN_WON",20);assertTrue(p.humanWool());assertFalse(PvpMapProfile.defaults().humanWool());}
     @Test void mapRoundsAreUnlimitedAndResumeFromSavedTotal(){
         var s=new HumanDuelSeries(0,12);
         for(int i=0;i<50;i++){assertTrue(s.ready(0));s.starting();s.started(0);assertTrue(s.finish());assertEquals(HumanDuelSeries.Phase.BETWEEN,s.phase());}

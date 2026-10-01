@@ -16,6 +16,12 @@ public interface CombatEquipmentAdapter {
     boolean tick(Context context);
     List<CombatEquipmentAdapter> REGISTRY=new CopyOnWriteArrayList<>();
     static void register(CombatEquipmentAdapter adapter){Objects.requireNonNull(adapter);if(REGISTRY.stream().anyMatch(a->a.id().equals(adapter.id())))throw new IllegalArgumentException("COMBAT_ADAPTER_DUPLICATE");REGISTRY.add(adapter);}
+    static boolean hasMeleeWeapon(SkillWork w){
+        var p=w.player();for(int i=0;i<36;i++){var stack=p.getInventory().getItem(i);if(stack.isEmpty()||stack.isDamageableItem()&&stack.getMaxDamage()-stack.getDamageValue()<2)continue;
+            var attrs=stack.getOrDefault(net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS,net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY);
+            if(stack.is(net.minecraft.tags.ItemTags.SWORDS)||stack.is(net.minecraft.tags.ItemTags.AXES)||attrs.compute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,p.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE).getBaseValue(),net.minecraft.world.entity.EquipmentSlot.MAINHAND)>2)return true;
+        }return false;
+    }
     static boolean melee(SkillWork w,LivingEntity target){
         var player=w.player();boolean blocking=target!=null&&target.isBlocking()&&target.getLookAngle().dot(player.position().subtract(target.position()).normalize())>.15;
         if(w.weaponPendingSlot>=0){

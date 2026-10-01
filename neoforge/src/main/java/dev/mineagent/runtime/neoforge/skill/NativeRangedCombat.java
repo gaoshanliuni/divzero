@@ -14,7 +14,7 @@ import java.util.*;
 
 /** Native charge/use differences are explicit; a camera aim or submitted release is never a hit receipt. */
 final class NativeRangedCombat {
-    static final class State {String adapter="";Vec3 aim,origin,target;int planned=-10000,shootStage,dodgeUntil=-10000,dodgeSide;UUID release,issuedOperation;int issuedAt=-10000;boolean deferred;}
+    static final class State {final RangedContactEscape contact=new RangedContactEscape();String adapter="";Vec3 aim,origin,target;int planned=-10000,shootStage,dodgeUntil=-10000,dodgeSide;UUID release,issuedOperation;int issuedAt=-10000;boolean deferred;}
     private record Vanilla(String id,Item item,Use use,double speed,double gravity,double range,double pitchOffset,double areaRadius) implements RangedWeaponAdapter {
         public boolean matches(ItemStack stack){return stack.is(item);}
         public boolean ammunition(net.minecraft.server.level.ServerPlayer p,ItemStack stack){
@@ -40,6 +40,8 @@ final class NativeRangedCombat {
             new Vanilla("minecraft:egg",Items.EGG,RangedWeaponAdapter.Use.CLICK,1.5,.03,12,0,0),
             new Vanilla("minecraft:splash_potion",Items.SPLASH_POTION,RangedWeaponAdapter.Use.CLICK,.5,.05,5,-20,4));
     private record Selected(RangedWeaponAdapter adapter,int slot){}
+    static boolean rangedOnly(SkillWork w){return select(w)!=null&&!CombatEquipmentAdapter.hasMeleeWeapon(w);}
+    static boolean loadedShot(SkillWork w){var selected=select(w);return selected!=null&&selected.adapter.matches(w.player().getMainHandItem())&&selected.adapter.ready(w.player(),w.player().getMainHandItem());}
     private static Selected select(SkillWork work){
         var p=work.player();var adapters=new ArrayList<>(RangedWeaponAdapter.REGISTERED);adapters.addAll(VANILLA);
         for(var adapter:adapters)for(int slot=0;slot<36;slot++){var stack=p.getInventory().getItem(slot);if(stack.isEmpty()||stack.isDamageableItem()&&stack.getDamageValue()>=stack.getMaxDamage()-1||p.getCooldowns().isOnCooldown(stack))continue;
