@@ -8,7 +8,7 @@ public final class PanelConfigProjection {
     public static Map<String,String> global(Map<String,String> values){
         var result=new LinkedHashMap<>(values);
         result.keySet().removeIf(key->key.startsWith("chat.")||key.startsWith("ai.thinking.")
-                ||key.startsWith("interaction.rules.")||key.startsWith("enhancements.")||key.startsWith("behavior.region."));
+                ||key.startsWith("interaction.rules.")||key.startsWith("enhancements.")||key.startsWith("behavior.region.")||key.startsWith("runtime.pendingActivation."));
         return result;
     }
     private PanelConfigProjection(){}

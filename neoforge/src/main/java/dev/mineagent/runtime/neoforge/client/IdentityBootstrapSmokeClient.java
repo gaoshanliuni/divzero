@@ -21,8 +21,10 @@ public final class IdentityBootstrapSmokeClient {
     private static String mode(){return System.getProperty("mineagent.identityBootstrapSmoke","");}
     private static Path game(){return mc().gameDirectory.toPath();}
     private static void require(boolean value,String error){if(!value)throw new IllegalStateException(error);}
-    private static String acceptButton(Component c){if(c.getStyle().getClickEvent() instanceof ClickEvent.RunCommand r&&r.command().equals("/ai accept"))return r.command();for(var child:c.getSiblings()){var found=acceptButton(child);if(found!=null)return found;}return null;}
-    private static long prompts(){return ((ChatHistoryAccess)mc().gui.getChat()).mineagent$messages().stream().filter(m->acceptButton(m.content())!=null).count();}
+    private static String choiceButton(Component c,String action){if(c.getStyle().getClickEvent() instanceof ClickEvent.RunCommand r&&r.command().startsWith("/divzero_setup bootstrap_"+action+" "))return r.command();for(var child:c.getSiblings()){var found=choiceButton(child,action);if(found!=null)return found;}return null;}
+    private static String choiceButton(String action){for(var m:((ChatHistoryAccess)mc().gui.getChat()).mineagent$messages()){var c=choiceButton(m.content(),action);if(c!=null)return c;}throw new IllegalStateException("BOOTSTRAP_CHOICE_MISSING");}
+    private static void command(String text){var chat=new ChatScreen("",false);mc().setScreen(chat);chat.handleChatInput(text,false);mc().setScreen(null);}
+    private static long prompts(){return ((ChatHistoryAccess)mc().gui.getChat()).mineagent$messages().stream().filter(m->choiceButton(m.content(),"enable")!=null).count();}
     private static void finish(Throwable error){if(done)return;done=true;try{var out=game().resolve("identity-bootstrap").resolve(mode());Files.createDirectories(out);Files.writeString(out.resolve("result.json"),JSON.writeValueAsString(Map.of("status",error==null?"PASS":"FAILED","stage",stage,"error",error==null?"":error.toString(),"checks",checks,"reconnected",false,"modelCalls",0)));}catch(Exception ignored){}mc().stop();}
     private static <T> void server(java.util.concurrent.Callable<T> operation,java.util.function.Consumer<T> accept){busy=true;mc().getSingleplayerServer().submit(()->{try{return operation.call();}catch(Exception e){throw new CompletionException(e);}}).whenComplete((value,error)->mc().execute(()->{busy=false;if(error!=null)finish(error);else try{accept.accept(value);}catch(Throwable failure){finish(failure);}}));}
     @SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event){
@@ -40,8 +42,10 @@ public final class IdentityBootstrapSmokeClient {
             if(stage==1){
                 if(ticks%40==0)net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest());
                 if(ticks<after)return;require(prompts()==1,"BOOTSTRAP_PROMPT_SPAM_"+prompts());checks.add("repeated-panel-requests-one-prompt");
-                var chat=new ChatScreen("",false);mc().setScreen(chat);chat.handleChatInput("/ai accept",false);mc().setScreen(null);stage=2;return;
+                require(((ChatHistoryAccess)mc().gui.getChat()).mineagent$messages().stream().noneMatch(m->m.content().getString().contains("存档身份")||m.content().getString().contains("/ai identity")),"IDENTITY_TEXT_WAS_DISPLAYED");
+                if(mode().equals("fresh")){command(choiceButton("disable"));stage=7;after=ticks+20;}else{command(choiceButton("enable"));stage=2;}return;
             }
+            if(stage==7&&ticks>=after){server(()->{var p=server.getPlayerList().getPlayer(player);require(!WorldIdentityRuntime.ready(server)&&!MineAgentRuntimeServices.workerReady(server)&&WorldIdentityRuntime.pendingDisabled(p),"DISABLE_STARTED_SERVICES_OR_NOT_SAVED");return true;},v->{checks.add("normal-disable-choice-before-world-bootstrap");command("/ai accept");stage=2;});return;}
             if(stage==2){if(!MineAgentClientTrustPrompt.enabled()||!NativeWorkspaceConnection.ready())return;
                 server(()->{require(WorldIdentityRuntime.ready(server)&&MineAgentRuntimeServices.workerReady(server),"SERVICES_NOT_STARTED_LIVE");scope=MineAgentRuntimeServices.worldId(server);return true;},v->{checks.add("one-command-starts-services-and-trusted-workspace");if(mode().equals("fresh")){mc().player.connection.sendCommand("ai create HotIdentityProbe");}stage=3;after=ticks+15;});return;
             }

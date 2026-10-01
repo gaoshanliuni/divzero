@@ -41,7 +41,7 @@
   "mineagent.chat.thinking.full": "完整思考",
   "mineagent.activation.stale": "此启用按钮已失效，请用 /divzero_setup 重新选择。",
   "mineagent.activation.enabled": "DivZero 已在此世界为你启用，现在可按 F2 使用，无需重新进入世界。完整操作仍遵循服务器权限。",
-  "mineagent.activation.disabled": "DivZero 已在此世界为你禁用。可用 /divzero_setup 重新启用。",
+  "mineagent.activation.disabled": "DivZero 已在此世界为你禁用。可用 /ai accept 重新启用。",
   "mineagent.activation.failed": "世界选择未保存：%s",
   "mineagent.behavior.stopped": "已立即停止行动；不会自动重新开战。",
   "mineagent.behavior.follow": "已切换为跟随。",
@@ -54,11 +54,6 @@
   "mineagent.behavior.standby_failed": "任务已完成，待命需要重新设置。",
   "mineagent.behavior.contact_escape": "先拉开距离，再继续跑打。",
   "key.mineagent_runtime.follow_ai_view": "托管：返回 AI 真实视角",
-  "mineagent.activation.bootstrap.prompt": "[DivZero] 此存档尚未接入，使用 /ai accept 一键允许并立即启用。",
-  "mineagent.activation.bootstrap.owner": "[DivZero] 请房主或管理员使用 /ai accept 接入存档；完成后即可启用。",
-  "mineagent.activation.bootstrap.button": " [一键允许]",
-  "mineagent.activation.bootstrap.reason": " 当前原因：%s",
-  "mineagent.activation.bootstrap.starting": "[DivZero] 正在接入存档并启用，完成后即可使用，无需退出世界。",
-  "mineagent.activation.bootstrap.failed": "[DivZero] 未能启用：%s。处理该原因后可重试 /ai accept。",
-  "mineagent.activation.bootstrap.fresh": "[DivZero] 已为当前存档建立独立记录；原有数据和身份备份保留，未合并其他世界。"
+  "mineagent.activation.bootstrap.starting": "[DivZero] 正在启用，完成后即可使用，无需退出世界。",
+  "mineagent.activation.bootstrap.failed": "[DivZero] 未能启用：%s。处理该原因后可重试 /ai accept。"
 }

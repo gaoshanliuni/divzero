@@ -13,13 +13,13 @@ import java.util.concurrent.*;
 public final class WorldIdentityRuntime {
     private static final Map<MinecraftServer,Entry> ENTRIES=new WeakHashMap<>();
     private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
-    private static final class Entry {WorldSaveIdentity store;String error="";volatile boolean examined,allowed,reopen,initializing,servicesStarted,closed,stopping;CompletableFuture<WorldSaveIdentity.Acceptance> starting;final Map<ServerPlayer,String> notices=new WeakHashMap<>();}
+    private static final class Entry {WorldSaveIdentity store;String error="",consentKey="";volatile boolean examined,allowed,reopen,initializing,servicesStarted,closed,stopping;CompletableFuture<WorldSaveIdentity.Acceptance> starting;final Map<ServerPlayer,String> notices=new WeakHashMap<>();}
     private WorldIdentityRuntime(){}
     private static Entry open(MinecraftServer server){
-        var entry=new Entry();
+        var entry=new Entry();entry.consentKey=pendingKey(server);
         try{var legacy=UUID.nameUUIDFromBytes((server.getServerDirectory().toAbsolutePath().normalize()+"|"+server.getWorldData().getLevelName()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
             var save=server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
-            entry.store=WorldSaveIdentity.open(server.getServerDirectory().resolve("mineagent-runtime-data"),save,legacy,knownTemplate(save));
+            entry.store=WorldSaveIdentity.open(server.getServerDirectory().resolve("mineagent-runtime-data"),save,legacy,knownTemplate(save));entry.consentKey=pendingKey(server);
         }catch(Exception failure){String message=Objects.toString(failure.getMessage(),"");entry.error=message.matches("WORLD_[A-Z0-9_]{1,70}")?message:"WORLD_IDENTITY_UNAVAILABLE";}
         return entry;
     }
@@ -33,18 +33,30 @@ public final class WorldIdentityRuntime {
     public static boolean boot(MinecraftServer server){var e=entry(server);synchronized(e){e.examined=true;e.allowed=!e.reopen&&e.store!=null&&e.store.ready();return e.allowed;}}
     public static boolean ready(MinecraftServer server){var e=entry(server);return e.examined&&e.allowed&&!e.reopen&&!e.initializing&&!e.closed&&e.store!=null&&e.store.ready();}
     public static UUID scope(MinecraftServer server){var e=entry(server);if(!e.examined||!e.allowed||e.reopen||e.closed||e.store==null||!e.store.ready())throw new IllegalStateException("WORLD_IDENTITY_NOT_READY");return e.store.scopeId();}
-    public static boolean notifyIfPending(ServerPlayer player){
-        var server=player.level().getServer();if(ready(server))return true;var e=entry(server);
-        if(e.initializing)return false;
-        String reason=e.error.isEmpty()?"PENDING":e.error;
-        if(!reason.equals(e.notices.put(player,reason))){
-            var line=Component.translatable(canManage(player.createCommandSourceStack())?"mineagent.activation.bootstrap.prompt":"mineagent.activation.bootstrap.owner");
-            line.append(Component.translatable("mineagent.activation.bootstrap.button").withStyle(style->style.withColor(net.minecraft.ChatFormatting.GREEN).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai accept"))));
-            if(!e.error.isEmpty())line.append(Component.translatable("mineagent.activation.bootstrap.reason",e.error));player.sendSystemMessage(line);
-        }
-        return false;
+    private static String pendingKey(MinecraftServer server){
+        var save=server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();String path=save.toString();if(System.getProperty("os.name","").startsWith("Windows"))path=path.toLowerCase(Locale.ROOT);String marker="missing";
+        try{var anchor=save.resolve(WorldSaveIdentity.ANCHOR_FILE);if(java.nio.file.Files.exists(anchor,java.nio.file.LinkOption.NOFOLLOW_LINKS))try(var in=java.nio.file.Files.newInputStream(anchor,java.nio.file.StandardOpenOption.READ,java.nio.file.LinkOption.NOFOLLOW_LINKS)){var raw=in.readNBytes(16385);if(raw.length>16384)marker="oversized";else{try{var n=new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);marker=UUID.fromString(n.path("saveId").asText())+"/"+UUID.fromString(n.path("scopeId").asText())+"/"+UUID.fromString(n.path("token").asText());}catch(Exception invalid){marker=UUID.nameUUIDFromBytes(raw).toString();}}}}catch(Exception unreadable){marker="unreadable";}
+        return "runtime.pendingActivation."+UUID.nameUUIDFromBytes((path+"|"+marker).getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
-    public static void servicesStarted(MinecraftServer server){var e=entry(server);e.servicesStarted=true;e.initializing=false;}
+    public static boolean pendingDisabled(ServerPlayer p){return "DISABLED".equals(MineAgentRuntimeServices.config(p.level().getServer()).snapshot().values().get(entry(p.level().getServer()).consentKey+"."+p.getUUID()));}
+    public static void pendingChoice(ServerPlayer p,boolean enabled){
+        var config=MineAgentRuntimeServices.config(p.level().getServer());String key=entry(p.level().getServer()).consentKey+"."+p.getUUID();String value=enabled?"ENABLED":"DISABLED";
+        if(enabled&&!config.snapshot().values().containsKey(key)||value.equals(config.snapshot().values().get(key)))return;
+        var result=config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(config.revision(),Map.of(key,value)),true);if(!result.accepted())throw new IllegalStateException(result.errorCode());
+    }
+    public static void sendPendingChoice(ServerPlayer player){
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(WorldActivationRuntime.challenge(player),"worldActivationPending",pendingDisabled(player)?"{\"disabled\":true}":"{\"disabled\":false}"));
+    }
+    public static boolean notifyIfPending(ServerPlayer player){
+        var server=player.level().getServer();if(ready(server))return true;var e=entry(server);if(e.initializing)return false;
+        // The client renders exactly the regular enable/disable question. Never send an identity prompt.
+        if(e.notices.putIfAbsent(player,"PROMPTED")==null)sendPendingChoice(player);return false;
+    }
+    public static void servicesStarted(MinecraftServer server){
+        var e=entry(server);e.initializing=false;var config=MineAgentRuntimeServices.config(server);var patch=new LinkedHashMap<String,String>();String prefix=e.consentKey+".";
+        for(var row:config.snapshot().values().entrySet())if(row.getKey().startsWith(prefix)&&row.getValue().equals("DISABLED"))try{var player=UUID.fromString(row.getKey().substring(prefix.length()));patch.put(dev.mineagent.runtime.core.permission.WorldActivation.key(scope(server),player),"DISABLED");patch.put(row.getKey(),"TRANSFERRED");}catch(IllegalArgumentException invalid){}
+        if(!patch.isEmpty()){var result=config.apply(new dev.mineagent.runtime.api.config.ConfigPatch(config.revision(),patch),true);if(!result.accepted())throw new IllegalStateException(result.errorCode());}e.servicesStarted=true;
+    }
     public static CompletableFuture<WorldSaveIdentity.Acceptance> accept(CommandSourceStack source){
         var server=source.getServer();var e=entry(server);
         if(!server.isSameThread()||!server.isRunning()||e.closed||e.stopping)return CompletableFuture.failedFuture(new IllegalStateException("WORLD_IDENTITY_SERVER_STOPPED"));

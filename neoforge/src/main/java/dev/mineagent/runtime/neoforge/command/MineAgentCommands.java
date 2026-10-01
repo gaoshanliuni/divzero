@@ -23,6 +23,7 @@ public final class MineAgentCommands {
                 .then(Commands.literal("accpet").executes(c->accept(c.getSource())))
                 .then(Commands.literal("setup").executes(c->{dev.mineagent.runtime.neoforge.network.MineAgentNetwork.sendPanelSnapshot(c.getSource().getPlayerOrException());return 1;}))
                 .then(Commands.literal("activation")
+                    .then(Commands.literal("decline").then(Commands.argument("token", StringArgumentType.word()).executes(c->dev.mineagent.runtime.neoforge.WorldActivationRuntime.decline(c.getSource(),StringArgumentType.getString(c,"token")))))
                     .then(Commands.literal("enable").then(Commands.argument("token", StringArgumentType.word()).executes(c->dev.mineagent.runtime.neoforge.WorldActivationRuntime.enable(c.getSource(),StringArgumentType.getString(c,"token")))))
                     .then(Commands.literal("disable").then(Commands.argument("token", StringArgumentType.word()).executes(c->dev.mineagent.runtime.neoforge.WorldActivationRuntime.decide(c.getSource(),false,StringArgumentType.getString(c,"token"))))))
                 .then(Commands.literal("interrupt").then(Commands.argument("agent",net.minecraft.commands.arguments.UuidArgument.uuid())

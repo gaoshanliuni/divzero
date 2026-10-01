@@ -8,8 +8,9 @@ class PanelConfigProjectionTest {
     @Test void thousandsOfSavedBodyPreferencesDoNotGrowTheGlobalWireSnapshot(){
         var config=new LinkedHashMap<String,String>();config.put("provider.openai.model","example-model");config.put("autonomy.boost.allowed","true");
         for(int i=0;i<2000;i++)for(String field:List.of("learning","boost","neural","revision"))config.put("enhancements.world."+i+"."+field,"false");
+        config.put("runtime.pendingActivation.save.player","DISABLED");
         var projected=PanelConfigProjection.global(config);
         assertEquals(Map.of("provider.openai.model","example-model","autonomy.boost.allowed","true"),projected);
-        assertEquals(8002,config.size()); // Projection must not remove the saved preferences.
+        assertEquals(8003,config.size()); // Projection must not remove the saved preferences.
     }
 }
