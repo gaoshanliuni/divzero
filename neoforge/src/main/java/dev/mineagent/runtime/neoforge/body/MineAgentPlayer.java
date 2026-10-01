@@ -223,12 +223,13 @@ public final class MineAgentPlayer extends ServerPlayer {
     @Override protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput input){
         super.readAdditionalSaveData(input);loadedNativeState=true;
         persistedEndReturn=input.getBooleanOr("mineagent_end_return_pending",false);
-        // NeoForge's generic fake-player default discards the saved game type even during load.
-        // This complete body must retain the vanilla hardcore death result before it becomes visible.
-        if(level().getServer().isHardcore()&&input.read("playerGameType",net.minecraft.world.level.GameType.LEGACY_ID_CODEC)
-                .filter(mode->mode==net.minecraft.world.level.GameType.SPECTATOR).isPresent()){
-            ((dev.mineagent.runtime.neoforge.mixin.AgentGameModeAccess)gameMode).mineagent$restoreGameMode(net.minecraft.world.level.GameType.SPECTATOR,
-                    input.read("previousPlayerGameType",net.minecraft.world.level.GameType.LEGACY_ID_CODEC).orElse(null));
+        // Keep the automation marker for third-party permission policies, but restore this full
+        // ServerPlayer body's saved modes instead of NeoForge's blanket fake-player SURVIVAL default.
+        var savedMode=input.read("playerGameType",net.minecraft.world.level.GameType.LEGACY_ID_CODEC);
+        if(savedMode.isPresent()){
+            var forced=level().getServer().getForcedGameType();
+            var mode=level().getServer().isHardcore()&&savedMode.get()==net.minecraft.world.level.GameType.SPECTATOR?net.minecraft.world.level.GameType.SPECTATOR:forced==null?savedMode.get():forced;
+            ((dev.mineagent.runtime.neoforge.mixin.AgentGameModeAccess)gameMode).mineagent$restoreGameMode(mode,input.read("previousPlayerGameType",net.minecraft.world.level.GameType.LEGACY_ID_CODEC).orElse(null));
         }
     }
     @Override protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput output){
