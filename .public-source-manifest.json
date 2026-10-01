@@ -3999,8 +3999,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "2a012f989ae8494f33f78c6e76ca7dd1227abdd004abefed5138390bbe6d7b8d",
-      "bytes": 202161
+      "sha256": "59defc38adbaa8aa830bd891d180c2458df1cddc876755b3592f2f83381153d6",
+      "bytes": 202149
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -6364,8 +6364,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBehaviorPanel.java",
-      "sha256": "8ae42f8433b99516c19b711988447ab1aec1a746af2acf738a346e259eb2a626",
-      "bytes": 6481
+      "sha256": "bb041295dcc48e806f5da838cc335bd2d688489e604459c335d1034eeb7627b0",
+      "bytes": 6502
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBlockTextures.java",

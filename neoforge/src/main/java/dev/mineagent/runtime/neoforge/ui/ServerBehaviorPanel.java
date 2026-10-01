@@ -14,7 +14,7 @@ public final class ServerBehaviorPanel {
     public static CompletableFuture<Map<String,Object>> read(ServerPlayer player,UUID agent){
         if(!ServerTaskStart.allowed(player,agent))return CompletableFuture.failedFuture(new SecurityException("BEHAVIOR_PERMISSION"));
         return SkillRuntime.get(player.level().getServer()).inspect(player,agent).thenApply(data->{
-            var result=panelProjection(data);var context=new LinkedHashMap<String,Object>();context.put("ownerId",player.getUUID().toString());context.put("dimension",player.level().dimension().identifier().toString());context.put("position",List.of(player.getX(),player.getY(),player.getZ()));
+            var result=new LinkedHashMap<>(panelProjection(data));var context=new LinkedHashMap<String,Object>();context.put("ownerId",player.getUUID().toString());context.put("dimension",player.level().dimension().identifier().toString());context.put("position",List.of(player.getX(),player.getY(),player.getZ()));
             var hit=player.pick(16,0,false);context.put("look",hit.getType()==HitResult.Type.BLOCK?List.of(hit.getLocation().x,hit.getLocation().y,hit.getLocation().z):List.of());
             context.put("entities",player.level().getEntitiesOfClass(LivingEntity.class,player.getBoundingBox().inflate(32),e->e!=player&&e.isAlive()).stream().map(e->Map.of("id",e.getUUID().toString(),"name",e.getName().getString())).toList());result.put("context",context);var runtime=SkillRuntime.get(player.level().getServer());result.put("defaults",Map.of("ai",runtime.savedPolicy(player.getUUID(),agent,"ai"),"player",runtime.savedPolicy(player.getUUID(),agent,"player")));result.put("enhancements",ActorEnhancements.inspect(player,agent));return result;
         });
