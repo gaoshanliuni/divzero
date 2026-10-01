@@ -420,7 +420,8 @@ public final class ServerConversations implements AutoCloseable {
                 if(persistenceError!=null)throw new IllegalStateException("CONVERSATION_STORE_WRITE_FAILED");if(!store.pending(f.op)){retire(f);return;}if(!f.error.isEmpty())throw new IllegalStateException(f.error);if(!live(f))throw new IllegalStateException("CONVERSATION_CONTEXT_CHANGED");
                 if(error!=null||response==null||!response.type().equals("model.stream.result")){
                     f.modelFailure=response!=null?response.payload():ToolFailure.result("model_request",f.op,error,ToolFailure.Phase.READ);
-                    if(error==null&&response!=null&&recoverModelRequest(f,g,plan,response.payload(),f.reply.substring(replyStart),roundReasoning.toString()))return;
+                    if(error!=null){var diagnostic=new LinkedHashMap<String,Object>(f.modelFailure);boolean transport=false;for(Throwable cause=error;cause!=null;cause=cause.getCause())if(cause instanceof java.io.IOException||cause instanceof java.util.concurrent.TimeoutException)transport=true;diagnostic.put("providerTransportFailure",transport);diagnostic.put("deltaCount",f.reply.length()>replyStart||!roundReasoning.isEmpty()?1:0);diagnostic.put("source","worker_stream_failure");f.modelFailure=diagnostic;}
+                    if(recoverModelRequest(f,g,plan,f.modelFailure,f.reply.substring(replyStart),roundReasoning.toString()))return;
                     for(Throwable cause=error;cause!=null;cause=cause.getCause())if(cause instanceof java.util.concurrent.TimeoutException)throw new IllegalStateException("CONVERSATION_STREAM_TIMEOUT");
                     String reason=Objects.toString(f.modelFailure.get("message"),"");int http=f.modelFailure.get("httpStatus") instanceof Number status?status.intValue():0;
                     String code=switch(http){case 401,403->"CONVERSATION_PROVIDER_AUTH_FAILED";case 404->"CONVERSATION_PROVIDER_NOT_FOUND";case 400,422->"CONVERSATION_PROVIDER_INVALID_REQUEST";case 408,425,429,500,502,503,504->"CONVERSATION_PROVIDER_UNAVAILABLE";default->reason.matches("AGENT_MODEL_[A-Z_]{1,60}")?reason:reason.matches("(?:TOOL_STREAM|STREAM)_[A-Z_]{1,60}")?"CONVERSATION_"+reason:"CONVERSATION_MODEL_FAILED";};throw new IllegalStateException(code);
@@ -453,7 +454,7 @@ public final class ServerConversations implements AutoCloseable {
         if(decision.action()==ModelRequestRecovery.Action.WAIT||decision.action()==ModelRequestRecovery.Action.CONTINUE){
             if(decision.action()==ModelRequestRecovery.Action.CONTINUE){
                 var previous=new LinkedHashMap<String,Object>();previous.put("role","assistant");previous.put("content",partial);if(!reasoning.isBlank())previous.put("reasoning_content",reasoning);if(!partial.isBlank()||!reasoning.isBlank())f.tools.add(previous);
-                var feedback=new LinkedHashMap<String,Object>(receipt);feedback.put("source","provider_response_failure");feedback.put("executionState","NO_TOOL_CALLS_DISPATCHED");feedback.put("partialOutputRetained",true);
+                var feedback=new LinkedHashMap<String,Object>(receipt);feedback.putIfAbsent("source","provider_response_failure");feedback.put("executionState","NO_TOOL_CALLS_DISPATCHED");feedback.put("partialOutputRetained",true);
                 f.tools.add(Map.of("role","user","content",json.writeValueAsString(feedback)));
             }
             int attempt=++f.busyRetries;

@@ -4,7 +4,7 @@ import java.util.*;
 public final class ConversationTools {
     public static final int MAX_CALLS_PER_ROUND=16;
     public static final int MAX_TOOL_TRANSPORT_BYTES=4*1024*1024;
-    public static void requireTransportSize(int bytes){if(bytes<0||bytes>MAX_TOOL_TRANSPORT_BYTES)throw new IllegalArgumentException("CONVERSATION_TOOL_TRANSPORT_LIMIT");}
+    public static void requireTransportSize(int bytes){if(bytes<0||bytes>MAX_TOOL_TRANSPORT_BYTES)throw new IllegalArgumentException("CONVERSATION_TOOL_TRANSPORT_LIMIT",new IllegalArgumentException("Encoded tool payload is "+bytes+" bytes; the permitted range is 0.."+MAX_TOOL_TRANSPORT_BYTES+" bytes."));}
     public record Definition(String name,String description,String parameters){}
     private static Definition tool(String name,String description,String properties,String required){return new Definition(name,description,"{\"type\":\"object\",\"properties\":{"+properties+"},\"required\":["+required+"],\"additionalProperties\":false}");}
     private static final String OFFSET="\"offset\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100000}";
