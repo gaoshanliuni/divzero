@@ -211,7 +211,7 @@ public final class NativeHumanDuel {
         p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack(),"spawnpoint @s -5 101 800 -90");
         p.level().getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack(),"setworldspawn -5 101 800 -90");
     }
-    @SubscribeEvent public static void protectArena(net.neoforged.neoforge.event.level.BlockEvent.BreakEvent event){if(PvpMapSupport.enabled()&&ARENA.space().contains(Vec3.atCenterOf(event.getPos())))event.setCanceled(true);}
+    @SubscribeEvent public static void protectArena(net.neoforged.neoforge.event.level.block.BreakBlockEvent event){if(PvpMapSupport.enabled()&&ARENA.space().contains(Vec3.atCenterOf(event.getPos()))){event.setCanceled(true);event.setNotifyClient(true);}}
     private static void fixtureTick(MinecraftServer server){
         if(!Boolean.getBoolean("mineagent.humanDuelFixture")||server.getTickCount()<160)return;
         var run=RUNS.get(server);

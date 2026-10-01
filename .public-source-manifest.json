@@ -4554,8 +4554,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PvpMapClient.java",
-      "sha256": "3883ccc219f484bf0c32afc240f48e1d18ebbbab70b8677ce6539fb32ff5cf63",
-      "bytes": 11253
+      "sha256": "5c2a10ba572a705fd1d24ea5416884615ca108d5e16650eb35641e8e420ec07f",
+      "bytes": 12030
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
@@ -5734,8 +5734,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "2356b517538907fc22ad8cd977124da0afb0c29eb91478eae97ac6a6215d1324",
-      "bytes": 29612
+      "sha256": "65e0ae58c817e40dfe127864daa45e91c0dc3e5e0137ad213f24c5ec2a93e666",
+      "bytes": 29642
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
@@ -5774,8 +5774,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapSupport.java",
-      "sha256": "16a65aef4ba6a6eb78f7e51b74530d91331389439fb5640696349a9681ae419f",
-      "bytes": 5056
+      "sha256": "d1697d148124ca81cf9e4caf0de222df3a5dd0ed2ee62624524db42626884627",
+      "bytes": 5125
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/RangedWeaponAdapter.java",

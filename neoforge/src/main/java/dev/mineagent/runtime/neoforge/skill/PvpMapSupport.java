@@ -20,7 +20,7 @@ public final class PvpMapSupport {
     public static void save(ServerPlayer p,PvpMapProfile next){
         var before=profile(p);if(next.revision()!=before.revision()+1)throw new IllegalStateException("对练设置已变化，请重新选择");PROFILES.get(p.level().getServer()).put(p.getUUID(),next);
     }
-    @net.neoforged.bus.api.SubscribeEvent public static void login(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event){if(event.getEntity() instanceof ServerPlayer p&&enabled())PROFILES.computeIfAbsent(p.level().getServer(),s->new HashMap<>()).put(p.getUUID(),PvpMapProfile.defaults());}
+    @net.neoforged.bus.api.SubscribeEvent public static void login(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event){if(event.getEntity() instanceof ServerPlayer p&&!(p instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)&&enabled())PROFILES.computeIfAbsent(p.level().getServer(),s->new HashMap<>()).put(p.getUUID(),PvpMapProfile.defaults());}
     @net.neoforged.bus.api.SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event){PROFILES.remove(event.getServer());}
     public static List<String> choices(String slot){
         var values=new ArrayList<String>();values.add("minecraft:air");

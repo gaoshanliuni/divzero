@@ -56,14 +56,21 @@ public final class PvpMapClient {
         }catch(Exception error){try{java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("human-duel-fixture.json"),new Gson().toJson(Map.of("status","FAILED","error",error.toString())));}catch(Exception ignored){}}
     }
     private static UIElement find(UIElement node,String id){if(id.equals(node.getId()))return node;for(var child:node.getChildren()){var found=find(child,id);if(found!=null)return found;}return null;}
-    private static boolean click(Loadouts screen,String id){var node=find(screen.card,id);if(node==null||node.getSizeWidth()<=0||node.getSizeHeight()<=0)return false;float x=node.getPositionX()+node.getSizeWidth()/2,y=node.getPositionY()+node.getSizeHeight()/2;screen.modularUI.refreshHoveredElementAtScreen(x,y);var widget=ModularUIClientAccess.getWidget(screen.modularUI);var event=new net.minecraft.client.input.MouseButtonEvent(x,y,new net.minecraft.client.input.MouseButtonInfo(0,0));widget.mouseClicked(event,false);widget.mouseReleased(event);return true;}
+    private static boolean click(Loadouts screen,String id){
+        var node=find(screen.card,id);if(node==null||node.getSizeWidth()<=0||node.getSizeHeight()<=0)return false;
+        float x=node.getPositionX()+node.getSizeWidth()/2,y=node.getPositionY()+node.getSizeHeight()/2;
+        for(var parent=node.getParent();parent!=null;parent=parent.getParent())if(parent instanceof ScrollerView scroll){float low=scroll.viewPort.getContentY(),high=low+scroll.viewPort.getContentHeight(),range=scroll.getContainerHeight()-scroll.viewPort.getContentHeight();if(range>0&&(y-node.getSizeHeight()/2<low||y+node.getSizeHeight()/2>high)){scroll.verticalScroller.setNormalizedValue(Math.clamp(scroll.verticalScroller.getNormalizedValue()+(y-(low+high)/2)/range,0,1));return false;}}
+        if(x<0||y<0||x>=screen.width||y>=screen.height)return false;screen.modularUI.refreshHoveredElementAtScreen(x,y);
+        boolean hovered=false;for(var current=screen.modularUI.getLastHoveredElement();current!=null;current=current.getParent())if(current==node)hovered=true;if(!hovered)return false;
+        var widget=ModularUIClientAccess.getWidget(screen.modularUI);var event=new net.minecraft.client.input.MouseButtonEvent(x,y,new net.minecraft.client.input.MouseButtonInfo(0,0));widget.mouseClicked(event,false);widget.mouseReleased(event);return true;
+    }
     private static void screenshot(String name){var mc=Minecraft.getInstance();net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(),image->{try(image){image.writeToFile(mc.gameDirectory.toPath().resolve(name));}catch(Exception e){throw new IllegalStateException(e);}});}
     private static final class Loadouts extends NativeInputScreen {
         final JsonObject data;final UIElement card,content;final Object source;
         Loadouts(JsonObject data){this(data,new UIElement());}
         private Loadouts(JsonObject data,UIElement root){
             super(new ModularUI(NativeUiTheme.ui(root),Minecraft.getInstance().player),Component.literal(t("PvP 训练场")));this.data=data;source=Minecraft.getInstance().getConnection();
-            root.getLayout().widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(JustifyContent.CENTER);
+            root.getLayout().widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER);
             card=NativeUiTheme.card(new UIElement());card.getLayout().width(Math.min(560,Minecraft.getInstance().getWindow().getGuiScaledWidth()-12)).height(Math.min(350,Minecraft.getInstance().getWindow().getGuiScaledHeight()-12)).gapAll(5);root.addChild(card);
             card.addChild(NativeUiTheme.text(t("PvP 训练场")+" · "+t("不限局数"),NativeUiTheme.ACCENT,12));
             content=new UIElement();content.getLayout().flex(1).minHeight(0).widthPercent(100);card.addChild(content);home();
