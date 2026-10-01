@@ -5,6 +5,7 @@ class SkillSessionTest {
         var s=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,spec());
         s.cursor(41);s.add("verifiedHits",7);s.receipt(Map.of("combatState","NATIVE_ATTACK_OBSERVED"));s.checkpointShutdown();
         var restored=SkillSession.restore(s.snapshot());assertTrue(restored.automaticResumeCandidate());assertEquals(41,restored.cursor());assertEquals(7,restored.count("verifiedHits"));
+        s.add("scriptAuthorityRequired",1);assertFalse(SkillSession.restore(s.snapshot()).automaticResumeCandidate());
         restored.control(restored.revision(),"pause");restored.checkpointShutdown();assertEquals("USER_PAUSED",SkillSession.restore(restored.snapshot()).reason());assertFalse(SkillSession.restore(restored.snapshot()).automaticResumeCandidate());
         s.receipt(Map.of("combatState","PREPARED"));assertFalse(SkillSession.restore(s.snapshot()).automaticResumeCandidate());
         s.transition(SkillSession.State.PAUSED,"TEMPORARY_WORK");s.checkpointShutdown();assertEquals("TEMPORARY_WORK",SkillSession.restore(s.snapshot()).reason());

@@ -20,7 +20,7 @@ public final class SkillSession {
         }
         return s;
     }
-    public boolean automaticResumeCandidate(){return state==State.PAUSED&&spec.actor().equals("ai")&&!uncertain()&&Set.of("RESTART_REOBSERVE","SERVER_RESTART","RESTART_REQUIRES_RESUME","OWNER_OFFLINE").contains(reason);}
+    public boolean automaticResumeCandidate(){return state==State.PAUSED&&spec.actor().equals("ai")&&count("scriptAuthorityRequired")==0&&!uncertain()&&Set.of("RESTART_REOBSERVE","SERVER_RESTART","RESTART_REQUIRES_RESUME","OWNER_OFFLINE").contains(reason);}
     public void checkpointShutdown(){if(terminal()||state==State.PAUSED)return;transition(State.PAUSED,"SERVER_RESTART");}
     public Snapshot snapshot(){return new Snapshot(id,owner,agent,world,task,taskIntent,spec,revision,state,phase,reason,cursor,waypoint,direction,Map.copyOf(counters),receipt,previous);}
     public UUID previous(){return previous;}public void previous(UUID id){previous=id;}

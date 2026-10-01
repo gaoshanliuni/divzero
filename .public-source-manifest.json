@@ -2634,8 +2634,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSession.java",
-      "sha256": "225f359795ae2701ae9ff872f85e2a4b8e11a375784d270d9e9177077b11273c",
-      "bytes": 6917
+      "sha256": "e13efb264e94ba39287bf4953f978916033f23ac47a0ac11dc58cf025dba1080",
+      "bytes": 6954
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSpec.java",
@@ -3369,8 +3369,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/SkillSessionTest.java",
-      "sha256": "bbd1c7905be5efef8f97fa201cafddb14b3e28a46e4489b9b1080f840f9250b1",
-      "bytes": 5420
+      "sha256": "5d7b519aafd7143122cd739ddfdcba9617e9b988791763b28c72e6044cc24c4c",
+      "bytes": 5539
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/SneakClearanceTest.java",
@@ -5884,8 +5884,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "sha256": "399e9a2ef625f5817a7e48e1301387e287930f944df9b2819754cc5518be048e",
-      "bytes": 55095
+      "sha256": "014a9c7116a243bb35ac7bb7c9fcbd47e6e2d3207a4cbea664ceff4eedc43565",
+      "bytes": 55200
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
