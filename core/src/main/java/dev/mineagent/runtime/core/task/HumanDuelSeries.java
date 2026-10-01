@@ -10,6 +10,9 @@ public final class HumanDuelSeries {
     private Phase phase = Phase.READY;
     private int completed;
     private long deadline, started;
+    private final int limit;
+    public HumanDuelSeries(){this(ROUNDS,0);}
+    public HumanDuelSeries(int limit,int completed){if(limit<0||completed<0||limit>0&&completed>limit)throw new IllegalArgumentException("DUEL_ROUNDS");this.limit=limit;this.completed=completed;}
     public Phase phase() { return phase; }
     public int completed() { return completed; }
     public int round() { return completed + 1; }
@@ -29,7 +32,7 @@ public final class HumanDuelSeries {
     public double elapsed(long now) { return Math.max(0, (now - started) / 1e9); }
     public boolean finish() {
         if (phase != Phase.FIGHTING) return false;
-        completed++; phase = completed == ROUNDS ? Phase.COMPLETE : Phase.BETWEEN; return true;
+        completed++; phase = limit>0&&completed == limit ? Phase.COMPLETE : Phase.BETWEEN; return true;
     }
     public void stop() { if (phase != Phase.COMPLETE) phase = Phase.STOPPED; }
 }

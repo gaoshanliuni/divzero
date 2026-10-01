@@ -134,6 +134,7 @@ anchor_y = predict(baseline, anchors)
 m, q = [np.zeros_like(p) for p in params], [np.zeros_like(p) for p in params]
 before = float(np.mean((predict(params, valid_x) - valid_y) ** 2))
 best, best_loss, best_step = [p.copy() for p in params], before, 0
+lowest_loss, lowest_stable_loss = float("inf"), float("inf")
 for step in range(1, args.steps + 1):
     chosen = rng.integers(0, len(train_x), 128)
     anchor = rng.integers(0, len(anchors), 128)
@@ -150,12 +151,19 @@ for step in range(1, args.steps + 1):
         q[index] = .999 * q[index] + .001 * gradient * gradient
         p -= .0007 * (m[index] / (1 - .9 ** step)) / (np.sqrt(q[index] / (1 - .999 ** step)) + 1e-8)
         np.clip(p, -8, 8, out=p)
-    if step % 20 == 0:
+    # Human batches can be very small: the first useful update can precede step 20.
+    # Check those candidates too, without relaxing either acceptance threshold.
+    if step <= 20 or step % 20 == 0:
         loss = float(np.mean((predict(params, valid_x) - valid_y) ** 2))
         drift = float(np.mean((predict(params, anchors) - anchor_y) ** 2))
+        lowest_loss = min(lowest_loss, loss)
+        if drift <= .006:
+            lowest_stable_loss = min(lowest_stable_loss, loss)
         if loss < best_loss and drift <= .006:
             best, best_loss, best_step = [p.copy() for p in params], loss, step
 if best_step == 0:
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.with_suffix(".rejected.json").write_text(json.dumps({"status": "KEPT_BASELINE", "lossBefore": before, "lowestCandidateLoss": lowest_loss, "lowestStableCandidateLoss": lowest_stable_loss, "attemptedIterations": args.steps, "heldOutMatches": sorted(held_groups), "sources": evidence, "reason": "No candidate improved held-out outcome loss within reference drift <= 0.006; no model was installed."}, indent=2) + "\n", encoding="utf-8")
     raise ValueError("Candidate did not improve held-out native cost loss within the reference drift bound")
 w, b, v, c = best
 provenance = "HUMAN_DUEL_OUTCOME_FINE_TUNING_V1" if any(e["scenario"] == "HUMAN_V_NEURAL" for e in evidence) else "NATIVE_MOB_OUTCOME_FINE_TUNING_V3" if any(e["scenario"] == "ONE_V_NATIVE_MOBS" for e in evidence) else "NATIVE_SELF_PLAY_OUTCOME_FINE_TUNING_V3" if all(e["scenario"] != "HISTORICAL_RULE_DUEL" for e in evidence) else "NATIVE_OUTCOME_FINE_TUNING_V3"

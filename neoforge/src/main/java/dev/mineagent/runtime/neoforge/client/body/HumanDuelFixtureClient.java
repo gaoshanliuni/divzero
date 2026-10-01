@@ -5,6 +5,7 @@ package dev.mineagent.runtime.neoforge.client.body;
 public final class HumanDuelFixtureClient {
     private static int ticks;
     @net.neoforged.bus.api.SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event){
+        dev.mineagent.runtime.neoforge.client.nativeui.PvpMapClient.fixtureTick();
         if(!Boolean.getBoolean("mineagent.humanDuelFixture")||++ticks%20!=0)return;
         var mc=net.minecraft.client.Minecraft.getInstance();
         if(java.nio.file.Files.exists(mc.gameDirectory.toPath().resolve("human-duel-fixture.json")))mc.stop();
