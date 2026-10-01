@@ -5584,8 +5584,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatAwareness.java",
-      "sha256": "e5970cd8ce04bac74c2c248d3779322b2794c497145dc4482063282fa4831f13",
-      "bytes": 15347
+      "sha256": "8dc8e60b6acfd3d3e61a8d1ed62bdede90840a73e769891d15570741991e774a",
+      "bytes": 15580
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatCriticalTiming.java",

@@ -86,6 +86,8 @@ final class CombatAwareness {
             boolean summoning=actual.attacks().stream().anyMatch(a->a.kind().equals("SUMMON")&&a.running());
             int nextCast=actual.attacks().stream().filter(a->a.kind().equals("SUMMON")).mapToInt(NativeCombatStates.Attack::cooldownTicks).min().orElse(Integer.MAX_VALUE);
             if(sight)score+=dev.mineagent.runtime.core.task.CombatSourcePriority.bonus(d,dependents.getOrDefault(e.getUUID(),0),summoning,nextCast);
+            // A distant producer must not prevent a ready native hit on an already reachable attacker.
+            if(sight&&p.getAttackStrengthScale(.5f)>=.95f&&p.isWithinAttackRange(p.getMainHandItem(),e.getHitbox(),0))score+=16;
             rows.add(new Threat(e,actual,eligible,protect,self||protect||attacked||imminent,score));
             if(eligible&&rule.engagement()==CombatPolicy.Engagement.CLEAR_AREA){var previous=lastSeen.put(e.getUUID(),new Seen(e,e.position(),w.tick()));if(previous!=null&&w.tick()-previous.tick>20)w.session.add("threatReacquisitions",1);}
         }
