@@ -34,6 +34,7 @@ public final class LocalPolicyRuntime {
         LocalActionPolicy serving=PRETRAINED;List<LocalActionPolicy.Sample> reference=REFERENCE;final Deque<LocalActionPolicy.Sample> replay=new ArrayDeque<>();
         final UUID id;final MinecraftServer server;final Path file;
         long samples,accepted,rejected,epoch;double validationLoss;boolean training,loading=true;String status="LOADING_CHECKPOINT";Pending pending;double bestDistance;
+        boolean recording;final List<LocalActionPolicy.Sample> recorded=new ArrayList<>();
         CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);
         State(ServerPlayer p,UUID id){this.id=id;server=p.level().getServer();file=server.getServerDirectory().resolve("mineagent-runtime-data/policies/"+MineAgentRuntimeServices.worldId(server)+"/"+id+".json");
         }
@@ -58,11 +59,13 @@ public final class LocalPolicyRuntime {
         return new double[]{p.getHealth()/Math.max(1,p.getMaxHealth()),Math.clamp(distance/16,0,2),p.getDeltaMovement().horizontalDistance()/.4,ActorEnhancements.boost(p)?1:0,p.getAttackStrengthScale(.5f),Math.clamp(progress/8,-1,1),Math.clamp(risk/80,0,2),Math.clamp(steps/8d,0,2),Math.clamp(delta.x/8,-1,1),Math.clamp(delta.z/8,-1,1),Math.clamp(edge/8d,0,2),opportunity?1:0,kind/8d,p.onGround()?0:1,p.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE)/10,Math.clamp(materials/8,0,2)};
     }
     static void chose(SkillWork w,double[] features,Vec3 waypoint){
-        if(!ActorEnhancements.forBody(w.player()).learning())return;var state=state(w.player());if(state.pending!=null)return;
+        var state=state(w.player());if(!state.recording&&!ActorEnhancements.forBody(w.player()).learning())return;if(state.pending!=null)return;
         state.pending=new Pending(w.player(),w.player().level(),w.tick(),w.player().getHealth(),waypoint,w.player().position().distanceTo(waypoint),features.clone(),w.session.count("damageMilliHearts"),()->w.session.count("damageMilliHearts"),w.session.count("verifiedKills"),()->w.session.count("verifiedKills"),()->w.session.runnable()&&w.actor.current());state.bestDistance=state.pending.distance;
     }
     public static void outcome(ServerPlayer p,double[] features,double cost){
-        if(!Double.isFinite(cost)||!ActorEnhancements.forBody(p).learning())return;var state=state(p);if(state.loading)return;state.samples++;state.replay.addLast(new LocalActionPolicy.Sample(features,Math.clamp(cost,0,1)));while(state.replay.size()>2048)state.replay.removeFirst();
+        if(!Double.isFinite(cost))return;var state=state(p);
+        if(state.recording){state.recorded.add(new LocalActionPolicy.Sample(features,Math.clamp(cost,0,1)));return;}
+        if(!ActorEnhancements.forBody(p).learning()||state.loading)return;state.samples++;state.replay.addLast(new LocalActionPolicy.Sample(features,Math.clamp(cost,0,1)));while(state.replay.size()>2048)state.replay.removeFirst();
         if(state.samples%32==0)state.save();
         if(state.loading||state.training||state.replay.size()<128||state.samples%32!=0)return;
         var data=new ArrayList<>(state.replay);var training=new ArrayList<LocalActionPolicy.Sample>();var validation=new ArrayList<LocalActionPolicy.Sample>();for(int i=0;i<data.size();i++)(i%5==0?validation:training).add(data.get(i));
@@ -91,6 +94,16 @@ public final class LocalPolicyRuntime {
         if(!body.level().getServer().isSameThread()||!IsolatedCombatArena.suppressRespawn(body))throw new SecurityException("ISOLATED_TRAINING_ONLY");var state=state(body);String model=state.serving.json();
         return Map.of("model",model,"sha256",modelHash(model),"samples",state.samples,"acceptedUpdates",state.accepted,"training",state.training,"replaySize",state.replay.size());
     }
+    /** Frozen human match sampling is separate from the persistent online-learning preference. */
+    static void beginRecording(MineAgentPlayer body){
+        if(!NativeHumanDuel.participant(body))throw new SecurityException("HUMAN_DUEL_ONLY");
+        var state=state(body);if(state.loading||state.training)throw new IllegalStateException("POLICY_NOT_READY");
+        state.pending=null;state.recorded.clear();state.recording=true;
+    }
+    static List<LocalActionPolicy.Sample> endRecording(MineAgentPlayer body){
+        var state=state(body);finishSample(state);state.recording=false;
+        var samples=List.copyOf(state.recorded);state.recorded.clear();return samples;
+    }
     private static String modelHash(String source){try{return dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(source);}catch(Exception error){throw new IllegalStateException("POLICY_HASH_UNAVAILABLE",error);}}
     public static void reset(ServerPlayer owner,UUID id){
         var state=state(owner,id);state.epoch++;state.loading=state.training=false;state.serving=PRETRAINED;state.pending=null;state.replay.clear();state.samples=state.accepted=state.rejected=0;state.validationLoss=0;state.status="PRETRAINED_RESTORED";state.save();
@@ -113,7 +126,7 @@ public final class LocalPolicyRuntime {
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
         var states=ALL.get(event.getServer());if(states==null)return;
         for(var state:states.values()){var pending=state.pending;if(pending==null)continue;var body=pending.body;
-            if(body.level()!=pending.level||body.isRemoved()&&body.isAlive()||!ActorEnhancements.forBody(body).learning()){state.pending=null;continue;}
+            if(body.level()!=pending.level||body.isRemoved()&&body.isAlive()||!state.recording&&!ActorEnhancements.forBody(body).learning()){state.pending=null;continue;}
             if(!pending.current.getAsBoolean()&&body.isAlive()){state.pending=null;continue;}
             state.bestDistance=Math.min(state.bestDistance,body.position().distanceTo(pending.target));
             if(event.getServer().getTickCount()-pending.tick<20&&body.isAlive())continue;finishSample(state);

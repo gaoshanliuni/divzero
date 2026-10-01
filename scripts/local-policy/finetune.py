@@ -27,6 +27,19 @@ actors, evidence, groups = [], [], []
 executors = set()
 for run in args.run:
     arguments = (run / "jvm.args").read_text()
+    if "-Dmineagent.humanDuel=true" in arguments:
+        from human_data import load_series
+        model, rows = load_series(run)
+        if model != initial:
+            raise ValueError("Use the human series' frozen initial model with --initial")
+        for records, context in rows:
+            executors.add((context["sourceCommit"], context["artifactSha256"]))
+            if len(executors) > 1 and not args.allow_mixed_executors:
+                raise ValueError("Human trajectories have different executors")
+            actors.append((np.clip(np.array([r["features"] for r in records], dtype=float), -2, 2), np.array([r["cost"] for r in records], dtype=float)))
+            groups.append(context["match"])
+            evidence.append(context)
+        continue
     mob_training = "mineagent.skillSmokeMode=mob_train" in arguments
     selfplay = "mineagent.skillSmokeMode=selfplay_train" in arguments or mob_training
     execution = {}
@@ -145,7 +158,7 @@ for step in range(1, args.steps + 1):
 if best_step == 0:
     raise ValueError("Candidate did not improve held-out native cost loss within the reference drift bound")
 w, b, v, c = best
-provenance = "NATIVE_MOB_OUTCOME_FINE_TUNING_V3" if any(e["scenario"] == "ONE_V_NATIVE_MOBS" for e in evidence) else "NATIVE_SELF_PLAY_OUTCOME_FINE_TUNING_V3" if all(e["scenario"] != "HISTORICAL_RULE_DUEL" for e in evidence) else "NATIVE_OUTCOME_FINE_TUNING_V3"
+provenance = "HUMAN_DUEL_OUTCOME_FINE_TUNING_V1" if any(e["scenario"] == "HUMAN_V_NEURAL" for e in evidence) else "NATIVE_MOB_OUTCOME_FINE_TUNING_V3" if any(e["scenario"] == "ONE_V_NATIVE_MOBS" for e in evidence) else "NATIVE_SELF_PLAY_OUTCOME_FINE_TUNING_V3" if all(e["scenario"] != "HISTORICAL_RULE_DUEL" for e in evidence) else "NATIVE_OUTCOME_FINE_TUNING_V3"
 model = {**initial, "version": initial["version"] + 1, "hidden": w.tolist(), "bias": b.tolist(), "output": v.tolist(), "outputBias": float(c), "provenance": provenance}
 args.output.parent.mkdir(parents=True, exist_ok=True)
 raw = (json.dumps(model, separators=(",", ":")) + "\n").encode()

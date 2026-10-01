@@ -2543,6 +2543,11 @@
       "bytes": 2312
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/HumanDuelSeries.java",
+      "sha256": "6b5aa3e00d141bd685657fbd14668d7e1f7838211346e3466d1fad2ae1b5f70e",
+      "bytes": 2032
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/ItemUseProof.java",
       "sha256": "84afc018534c1593174b0743771d22de1a78d1b024f3107dd737a629257075cc",
       "bytes": 533
@@ -3283,6 +3288,11 @@
       "bytes": 1235
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/HumanDuelSeriesTest.java",
+      "sha256": "4eb62ad9d697ad5070615a685077e0d1f0a7b97fe95a3cba31b9c3e16c6baef9",
+      "bytes": 1386
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/KnownPortalRoutesTest.java",
       "sha256": "e69b604cffbb64ff33d487914af495fa556fa6ec93f057d41d5c94c8dca37506",
       "bytes": 2324
@@ -3426,6 +3436,11 @@
       "path": "docs/FEATURES.md",
       "sha256": "9c0dc5cad527ebe9179e5f6f30b2af70cc4afe280b8c920516ac8dbfbaa6fc28",
       "bytes": 49415
+    },
+    {
+      "path": "docs/HUMAN_DUEL_TRAINING.md",
+      "sha256": "7b3a9b857be450eecca6e5bd915c10173b63f37bfbdf4469094818f01a09e6f4",
+      "bytes": 2596
     },
     {
       "path": "docs/MCEF_OFFLINE.md",
@@ -3986,6 +4001,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomyVirtualInput.java",
       "sha256": "8e1cad2f992edd680237e896e128f14aaaa13d91487823e9d008bc63f15ef5ea",
       "bytes": 892
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/HumanDuelFixtureClient.java",
+      "sha256": "62ff0c1a4d0bd204443d4fdd6d79910ead03597bb593a8887d82636b9fd67279",
+      "bytes": 774
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeBoostInput.java",
@@ -4869,8 +4889,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/command/MineAgentCommands.java",
-      "sha256": "a49db3f6ccb13b72aaacc30ede4cae43431caf3e9a4d74ef0f035e0fb6ecdf29",
-      "bytes": 13490
+      "sha256": "82dd7bd56885e70c04e552a30cdd7e2bd3f532ddcbeb574a5af6a28309a8a72b",
+      "bytes": 13573
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeApiCatalog.java",
@@ -5654,8 +5674,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/IsolatedCombatArena.java",
-      "sha256": "5ab77e3d4afe5d4348649974e1a5e2a7796b08cb500ac9a17c330436bea541f1",
-      "bytes": 7414
+      "sha256": "50adad9150f611ae64bbc89517aaef1e6ca905d911e7a5f7c8fcfa11e2152f79",
+      "bytes": 7441
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/LegacyCombatBaseline.java",
@@ -5664,8 +5684,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/LocalPolicyRuntime.java",
-      "sha256": "babaa6a8de4b408c50a01a9e31b3983b318c7dbf9c76308285d69210d7385e1b",
-      "bytes": 14742
+      "sha256": "f589e921440a06a352e1275ecc6b95822dadca2962e22ea8bb732c212b805213",
+      "bytes": 15680
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/MovementSkills.java",
@@ -5696,6 +5716,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeEquipmentSupport.java",
       "sha256": "1db7f383a9a31c26022266684a17bd86e811339073be783f152be1e8da1b698a",
       "bytes": 1883
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
+      "sha256": "9ba632edb6d0d26e4a279370d075979e32a4545f7743541d79462fdda9eac6ef",
+      "bytes": 22409
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
@@ -7149,8 +7174,13 @@
     },
     {
       "path": "scripts/local-policy/finetune.py",
-      "sha256": "3341e9126d5505af66e05198ac9ed43729c63206ddbe480c775f0457550e9e3a",
-      "bytes": 10462
+      "sha256": "14b960677995a2bd23a61fda4c659710db99b387fee4e78c3931fcc255de5614",
+      "bytes": 11334
+    },
+    {
+      "path": "scripts/local-policy/human_data.py",
+      "sha256": "afb1464820d043fd2f96c212ab74a205910bad11a06257fa298cefdbf4cc0069",
+      "bytes": 3167
     },
     {
       "path": "scripts/local-policy/model_pool.py",
