@@ -452,7 +452,7 @@ public final class ServerConversations implements AutoCloseable {
         if(decision.action()==ModelRequestRecovery.Action.FAIL)return false;
         if(decision.action()==ModelRequestRecovery.Action.WAIT||decision.action()==ModelRequestRecovery.Action.CONTINUE){
             if(decision.action()==ModelRequestRecovery.Action.CONTINUE){
-                var previous=new LinkedHashMap<String,Object>();previous.put("role","assistant");previous.put("content",partial);if(!reasoning.isBlank())previous.put("reasoning_content",reasoning);f.tools.add(previous);
+                var previous=new LinkedHashMap<String,Object>();previous.put("role","assistant");previous.put("content",partial);if(!reasoning.isBlank())previous.put("reasoning_content",reasoning);if(!partial.isBlank()||!reasoning.isBlank())f.tools.add(previous);
                 var feedback=new LinkedHashMap<String,Object>(receipt);feedback.put("source","provider_response_failure");feedback.put("executionState","NO_TOOL_CALLS_DISPATCHED");feedback.put("partialOutputRetained",true);
                 f.tools.add(Map.of("role","user","content",json.writeValueAsString(feedback)));
             }

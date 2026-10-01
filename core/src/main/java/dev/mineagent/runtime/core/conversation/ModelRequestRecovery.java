@@ -7,6 +7,7 @@ public final class ModelRequestRecovery {
     public enum Action { FAIL, WAIT, SHRINK, CONTINUE }
     public record Decision(Action action,long delayMillis) {}
     public static Decision decide(Map<String,Object> receipt,int busyRetries,int contextRepairs){
+        if(Boolean.TRUE.equals(receipt.get("modelOutputInvalid")))return new Decision(busyRetries<3?Action.CONTINUE:Action.FAIL,1000L<<Math.min(busyRetries,3));
         if(number(receipt,"deltaCount",-1)>0&&Boolean.TRUE.equals(receipt.get("providerTransportFailure")))return new Decision(busyRetries<3?Action.CONTINUE:Action.FAIL,1000L<<Math.min(busyRetries,3));
         if(number(receipt,"deltaCount",-1)!=0)return new Decision(Action.FAIL,0);
         if(Boolean.TRUE.equals(receipt.get("providerTransportFailure")))return new Decision(busyRetries<3?Action.WAIT:Action.FAIL,1000L<<Math.min(busyRetries,3));

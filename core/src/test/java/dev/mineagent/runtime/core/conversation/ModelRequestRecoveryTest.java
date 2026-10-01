@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ModelRequestRecoveryTest {
     private Map<String,Object> rejection(int status,int deltas){return Map.of("httpStatus",status,"deltaCount",deltas,"providerRejected",true);}
     @Test void retriesOnlyKnownBusyRejectionsBeforeAnyOutput(){
+        assertEquals(ModelRequestRecovery.Action.CONTINUE,ModelRequestRecovery.decide(Map.of("deltaCount",0,"modelOutputInvalid",true),0,0).action());
         assertEquals(ModelRequestRecovery.Action.WAIT,ModelRequestRecovery.decide(Map.of("deltaCount",0,"providerTransportFailure",true),0,0).action());
         assertEquals(ModelRequestRecovery.Action.CONTINUE,ModelRequestRecovery.decide(Map.of("deltaCount",1,"providerTransportFailure",true),0,0).action());
         assertEquals(ModelRequestRecovery.Action.FAIL,ModelRequestRecovery.decide(Map.of("deltaCount",1,"providerTransportFailure",true),3,0).action());

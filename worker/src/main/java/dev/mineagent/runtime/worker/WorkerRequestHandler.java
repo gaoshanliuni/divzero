@@ -210,6 +210,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
             if("STREAM_INCOMPLETE".equals(failure.getMessage()))payload.put("diagnostic","Provider stream ended before the completion marker. Partial output was retained; no tool calls from this incomplete response were dispatched.");
             boolean transport="STREAM_INCOMPLETE".equals(failure.getMessage());for(Throwable cause=failure;cause!=null;cause=cause.getCause())if(cause instanceof java.io.IOException)transport=true;
             payload.put("providerTransportFailure",transport);
+            String outputCode=java.util.Objects.toString(failure.getMessage(),"");payload.put("modelOutputInvalid",outputCode.startsWith("TOOL_STREAM_")||outputCode.equals("STREAM_OUTPUT_LIMIT")||outputCode.equals("UNEXPECTED_TOOL_CALL"));
             return new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"error",payload);
         }
     }
