@@ -59,7 +59,7 @@ public final class WorldSaveIdentity implements AutoCloseable {
             else state=binding.state().equals("BOUND")?"READY":"WRITE_PENDING";
         }else if(raw==null&&byPath!=null){state="ANCHOR_MISSING";note="该位置已有绑定但锚点缺失，不能假定是新世界。";}
         if(byPath!=null&&(anchor==null||!byPath.anchor().saveId().equals(anchor.saveId())))note+=" 此位置原注册 scope: "+byPath.anchor().scopeId();
-        if(reopenRequired){state="REOPEN_REQUIRED";note="绑定已保存；保存并重新打开世界后才恢复 MineAgent 功能。";}
+        if(reopenRequired){state="REOPEN_REQUIRED";note="绑定已保存；使用 /ai accept 即可启用，无需重新进入世界。";}
         var discovery=discover(runtimeDb,16);
         long revision;try(var q=db.prepareStatement("SELECT revision FROM identity_meta_v1 WHERE id=1");var r=q.executeQuery()){if(!r.next())throw new SQLException("WORLD_IDENTITY_METADATA");revision=r.getLong(1);}
         String challenge=hash((pathKey(home)+"\n"+pathKey(save)+"\n"+(raw==null?"ABSENT":hash(raw))+"\n"+revision+"\n"+state).getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -69,6 +69,28 @@ public final class WorldSaveIdentity implements AutoCloseable {
     /** Native caches this readiness result; normal ticks do not enumerate SQLite or read the anchor. */
     public synchronized boolean ready(){return !closed&&!reopenRequired&&scopeLease!=null&&scopeLease.lock().isValid();}
     public synchronized void choose(String choice,UUID scope,String challenge,String actor)throws Exception{if(actor==null||!actor.matches("(?:PLAYER:[a-f0-9-]{36}|SERVER_COMMAND_SOURCE)"))throw new IllegalArgumentException("WORLD_IDENTITY_ACTOR");bind(choice,scope,challenge,false,actor);}
+    public record Acceptance(UUID scope,String decision){}
+    /** One explicit accept: retain a proved save identity, otherwise isolate the import without deleting old rows. */
+    public synchronized Acceptance acceptCurrent(String actor)throws Exception{
+        if(actor==null||!actor.matches("(?:PLAYER:[a-f0-9-]{36}|SERVER_COMMAND_SOURCE)"))throw new IllegalArgumentException("WORLD_IDENTITY_ACTOR");
+        if(ready())return new Acceptance(scopeId(),"EXISTING");
+        String choice="SELECTED";
+        if(!reopenRequired){
+            var status=status();choice="FRESH";UUID requested=null;Anchor anchor=null;
+            try{byte[] bytes=anchorBytes();if(bytes!=null)anchor=JSON.readValue(bytes,Anchor.class);}catch(com.fasterxml.jackson.core.JsonProcessingException invalid){}
+            if(anchor!=null){
+                var registered=binding("save_id",anchor.saveId().toString());
+                if(status.state().equals("PATH_CHANGED")&&registered!=null&&registered.anchor().equals(anchor)&&registered.path()!=null&&Files.notExists(Path.of(registered.path())))choice="RELOCATE";
+                else if(status.state().equals("ROOT_RESTORE_REQUIRED")&&registered!=null&&registered.anchor().equals(anchor)&&Files.notExists(Path.of(registered.home()))&&hasScope(runtimeDb,anchor.scopeId()))choice="RESTORE_ROOT";
+                else if((status.state().equals("ANCHOR_UNBOUND")||status.state().equals("SCOPE_DETACHED")&&registered!=null&&registered.anchor().equals(anchor)&&registered.home().equals(pathKey(home)))&&pathBinding()==null&&hasScope(runtimeDb,anchor.scopeId())){choice="ADOPT";requested=anchor.scopeId();}
+            }
+            bind(choice,requested,status.challenge(),false,actor);
+        }
+        // Binding has not started any world service yet; validate its durable anchor and held lease before activation.
+        if(scopeLease==null||!scopeLease.lock().isValid())throw new IllegalStateException("WORLD_IDENTITY_IN_USE");
+        reopenRequired=false;
+        try{return new Acceptance(scopeId(),choice);}catch(Exception failure){reopenRequired=true;throw failure;}
+    }
 
     private void bind(String choice,UUID requestedScope,String challenge,boolean automatic,String actor)throws Exception{
         requireOpen();if(ready()||reopenRequired)throw new IllegalStateException("WORLD_IDENTITY_ALREADY_SELECTED");
@@ -154,7 +176,7 @@ public final class WorldSaveIdentity implements AutoCloseable {
         var result=new ArrayList<String[]>();for(String table:tables)try(var q=db.prepareStatement("PRAGMA table_info("+quote(table)+")");var r=q.executeQuery()){while(r.next())if(Set.of("world","world_id").contains(r.getString("name")))result.add(new String[]{table,r.getString("name")});}return result;
     }
     private static UUID parseScope(String value){try{if(value==null||!value.matches("[a-fA-F0-9-]{36}"))return null;var id=UUID.fromString(value);return id.equals(new UUID(0,0))||id.equals(dev.mineagent.runtime.core.packages.RuntimePackageLibrary.GLOBAL_LIBRARY_ID)?null:id;}catch(IllegalArgumentException invalid){return null;}}
-    private static Lease lease(Path directory,String key)throws Exception{Files.createDirectories(directory);var channel=FileChannel.open(directory.resolve(key+".lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);try{var lock=channel.tryLock();if(lock==null)throw new IllegalStateException("WORLD_IDENTITY_IN_USE");return new Lease(channel,lock);}catch(Exception failure){channel.close();throw failure;}}
+    private static Lease lease(Path directory,String key)throws Exception{Files.createDirectories(directory);var channel=FileChannel.open(directory.resolve(key+".lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);try{var lock=channel.tryLock();if(lock==null)throw new IllegalStateException("WORLD_IDENTITY_IN_USE");return new Lease(channel,lock);}catch(Exception failure){channel.close();if(failure instanceof java.nio.channels.OverlappingFileLockException)throw new IllegalStateException("WORLD_IDENTITY_IN_USE",failure);throw failure;}}
     private static String pathKey(Path path){String value=path.toAbsolutePath().normalize().toString();return System.getProperty("os.name","").startsWith("Windows")?value.toLowerCase(Locale.ROOT):value;}
     private static String quote(String value){return "\""+value.replace("\"","\"\"")+"\"";}
     private static String hash(byte[] value)throws Exception{return dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(value);}

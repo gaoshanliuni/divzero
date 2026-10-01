@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 public final class MineAgentWorkerSupervisor implements AutoCloseable {
     private static final String RESOURCE = "/META-INF/mineagent/worker/mineagent-worker.jar";
     private volatile ManagedWorkerProcess worker;
+    private boolean closed;
     private Path contentRoot;
     private Path gameDirectory;
     private dev.mineagent.runtime.core.memory.PlayerPreferenceStore preferenceStore;
@@ -28,6 +29,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
     private final ExecutorService requests = Executors.newVirtualThreadPerTaskExecutor();
 
     public synchronized String start(Path gameDirectory) throws Exception {
+        if(closed)throw new IllegalStateException("WORKER_SUPERVISOR_CLOSED");
         this.gameDirectory = gameDirectory.toAbsolutePath().normalize();
         if (worker != null && worker.isAlive()) {
             return "READY";
@@ -709,6 +711,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
 
     @Override
     public synchronized void close() throws Exception {
+        closed=true;
         requests.shutdownNow();
         closeWorker();if(preferenceStore!=null){preferenceStore.close();preferenceStore=null;}
     }

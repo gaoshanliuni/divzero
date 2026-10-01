@@ -12,6 +12,7 @@ import java.util.*;
 /** A connection-bound choice, persisted before refreshing the live client and server. */
 public final class WorldActivationRuntime {
     private static final Map<ServerPlayer, UUID> CHALLENGES = new WeakHashMap<>();
+    private static final Map<ServerPlayer,Long> INTENTS=new WeakHashMap<>();
     public static State state(ServerPlayer player) {
         return WorldActivation.state(MineAgentRuntimeServices.config(player.level().getServer()).snapshot().values(), MineAgentRuntimeServices.worldId(player.level().getServer()), player.getUUID());
     }
@@ -27,6 +28,21 @@ public final class WorldActivationRuntime {
         values.put("runtime.activation.state", state(player).name());
         values.put("runtime.activation.challenge", CHALLENGES.computeIfAbsent(player, p -> UUID.randomUUID()).toString());
     }
+    public static int enable(CommandSourceStack source,String challenge){
+        try{
+            var player=source.getPlayerOrException();var server=source.getServer();
+            if(!server.isSameThread()||player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer||server.getPlayerList().getPlayer(player.getUUID())!=player)return 0;
+            if(challenge!=null&&!challenge.equals(Objects.toString(CHALLENGES.get(player),""))){source.sendFailure(Component.translatable("mineagent.activation.stale"));return 0;}
+            long intent=INTENTS.merge(player,1L,Long::sum);boolean wasReady=WorldIdentityRuntime.ready(server);
+            if(!wasReady)source.sendSuccess(()->Component.translatable("mineagent.activation.bootstrap.starting"),false);
+            WorldIdentityRuntime.accept(source).whenComplete((accepted,error)->server.execute(()->{
+                if(server.getPlayerList().getPlayer(player.getUUID())!=player||!Objects.equals(INTENTS.get(player),intent))return;
+                if(error!=null){Throwable cause=error;while(cause.getCause()!=null)cause=cause.getCause();source.sendFailure(Component.translatable("mineagent.activation.bootstrap.failed",Objects.toString(cause.getMessage(),"WORLD_SERVICES_START_FAILED")));return;}
+                if(!wasReady&&accepted.decision().equals("FRESH"))source.sendSuccess(()->Component.translatable("mineagent.activation.bootstrap.fresh"),false);
+                decide(source,true,null);
+            }));return 1;
+        }catch(Exception error){source.sendFailure(Component.translatable("mineagent.activation.failed",Objects.toString(error.getMessage(),"UNKNOWN")));return 0;}
+    }
     public static int decide(CommandSourceStack source, boolean enabled, String challenge) {
         try {
             var player = source.getPlayerOrException();
@@ -38,6 +54,7 @@ public final class WorldActivationRuntime {
                 source.sendFailure(Component.translatable("mineagent.activation.stale"));
                 return 0;
             }
+            INTENTS.merge(player,1L,Long::sum);
             var config = MineAgentRuntimeServices.config(server);
             boolean changed = state(player) != (enabled ? State.ENABLED : State.DISABLED);
             var patch = new LinkedHashMap<String, String>();

@@ -54,7 +54,11 @@ public final class MineAgentClientTrustPrompt {
             if(prompt!=null&&!prompt.challenge.equals(values.get("runtime.activation.challenge")))prompt=null;
             // Only an explicit local command may accept a freshly received identity automatically.
             // A server snapshot by itself is never consent, including after a reconnect.
-            if(acceptIntent!=null){var intent=acceptIntent;acceptIntent=null;if(intent.current()&&System.currentTimeMillis()<intent.deadline){submit("enable",choice(values));flushWebNotice();return;}}
+            if(acceptIntent!=null){var intent=acceptIntent;if(!intent.current()||System.currentTimeMillis()>=intent.deadline)acceptIntent=null;else if(nextState.equals("ENABLED")){
+                store().confirm(serverId(),fingerprint,Base64.getDecoder().decode(values.get("security.identityPublicKey")));acceptIntent=null;enabled=true;
+                if(!nextEnabled){NativeWorkspaceConnection.activationChanged(true);NativeInterfacesClient.activationChanged();}
+                pendingWebNotice=Map.of("trust",TrustStatus.TRUSTED.name(),"fingerprint",fingerprint,"initialized",true);NativeWorkspaceConnection.open();flushWebNotice();return;
+            }else{flushWebNotice();return;}}
             if(!enabled&&!state.equals("DISABLED"))showChoice(false);
             flushWebNotice();
         } catch(Exception failure){message("无法读取世界启用状态：",failure.getMessage());}
@@ -92,9 +96,9 @@ public final class MineAgentClientTrustPrompt {
     }
     public static int acceptAll(){
         var mc=Minecraft.getInstance();if(mc.player==null||mc.level==null||mc.getConnection()==null)return 0;
-        acceptIntent=new AcceptIntent(mc.getConnection(),mc.level,mc.player.getUUID(),System.currentTimeMillis()+15000);
-        // Fetch a fresh signed snapshot even if an inbox from the previous world is still present.
-        ClientPacketDistributor.sendToServer(new MineAgentPayloads.PanelRequest());return 1;
+        acceptIntent=new AcceptIntent(mc.getConnection(),mc.level,mc.player.getUUID(),System.currentTimeMillis()+120000);
+        // The bootstrap command is available even before a signed world-scoped snapshot can exist.
+        mc.player.connection.sendCommand("ai accept");return 1;
     }
     private static int submit(String action,Prompt p)throws java.io.IOException{
         var mc=Minecraft.getInstance();if(p.challenge==null||p.challenge.isBlank())throw new IllegalStateException("ACTIVATION_CONTEXT_NOT_READY");

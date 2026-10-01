@@ -37,5 +37,12 @@
   "mineagent.behavior.resumed": "Threats have cleared. Rechecking and resuming work.",
   "mineagent.behavior.standby_failed": "The task is complete; standby needs to be set again.",
   "mineagent.behavior.contact_escape": "Create distance, then resume hit-and-run combat.",
-  "key.mineagent_runtime.follow_ai_view": "Takeover: return to AI view"
+  "key.mineagent_runtime.follow_ai_view": "Takeover: return to AI view",
+  "mineagent.activation.bootstrap.prompt": "[DivZero] Enable this save with /ai accept. No rejoin is required.",
+  "mineagent.activation.bootstrap.owner": "[DivZero] The host or administrator can connect this save with /ai accept.",
+  "mineagent.activation.bootstrap.button": " [Accept and enable]",
+  "mineagent.activation.bootstrap.reason": " Current reason: %s",
+  "mineagent.activation.bootstrap.starting": "[DivZero] Connecting this save and starting services. Stay in the world; it will be ready shortly.",
+  "mineagent.activation.bootstrap.failed": "[DivZero] Could not enable: %s. Resolve this issue and retry /ai accept.",
+  "mineagent.activation.bootstrap.fresh": "[DivZero] Independent records were created for this save. Existing data and identity backups are retained; other worlds were not merged."
 }

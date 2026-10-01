@@ -1,6 +1,6 @@
 {
   "kind": "reviewed-source-snapshot",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "files": [
     {
       "path": ".gitattributes",
@@ -2239,8 +2239,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/WorldSaveIdentity.java",
-      "sha256": "596d14e32f217ff9d2c012f70f66a5f6b0494c983c2d355e03a6a12cd05265c4",
-      "bytes": 20890
+      "sha256": "cca34589b6152993fb534b78a8aa170f25b814f25b5e9cc1dd6828c688233f69",
+      "bytes": 23137
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/recovery/ChangeJournalService.java",
@@ -3229,8 +3229,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/NewWorldIdentityTest.java",
-      "sha256": "7f1b3cb722abe46da08ce736a2be1f326013f5ab951080581f7c78d022eafa8b",
-      "bytes": 4541
+      "sha256": "1f45c86b91201c33a688e08545855b1c76066f52c9bb3d2d85a665ba3ecc4057",
+      "bytes": 8700
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/SqliteConcurrentJournalTest.java",
@@ -3573,6 +3573,11 @@
       "bytes": 6280
     },
     {
+      "path": "docs/WORLD_BOOTSTRAP.md",
+      "sha256": "b94da1165334fe5f25a3090e80f3833df900539cdeb3ab6229b686f59e1e422b",
+      "bytes": 2452
+    },
+    {
       "path": "docs/images/README.md",
       "sha256": "fbb8fb60e3ccd564a793d91e28f6f449811fdf66470e8b607b9799834c5abb2d",
       "bytes": 8117
@@ -3738,8 +3743,13 @@
       "bytes": 866
     },
     {
+      "path": "docs/releases/1.0.29.md",
+      "sha256": "f28f6facddf20dbe69975347bc9fe1c9ecf58171e3e6765825116fd9bd22e482",
+      "bytes": 558
+    },
+    {
       "path": "gradle.properties",
-      "sha256": "284f3f0e0ab3803223915d2cac83e12181c2179620157abdfd53fbfdd429ba53",
+      "sha256": "c8d49d06b7c5ecc95fedaa897bc9f5e2fff439973b12df57ec36f84fcdb774aa",
       "bytes": 496
     },
     {
@@ -3844,8 +3854,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
-      "sha256": "c20b482b2329b099d4e70ea3802460a41e9ac314e4728055402ec0f25c56d052",
-      "bytes": 55963
+      "sha256": "79772fd2597ba5a650638782552946a55cd6b717ad1b7532980c404600c30013",
+      "bytes": 56237
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
@@ -3854,13 +3864,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/WorldActivationRuntime.java",
-      "sha256": "6ab7d83fcfb75739b104a066f8c8550b04abcda3e44083ffff249bda61592295",
-      "bytes": 4350
+      "sha256": "d666e335d10bfc63dc36cef252fff4ae8097a3592c60735da830eb816e647ccb",
+      "bytes": 6134
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/WorldIdentityRuntime.java",
-      "sha256": "725e71d9fb9ed9c477f3de17f430eb12e62854a55f34ebf3e3eeb4a1b8b65635",
-      "bytes": 8463
+      "sha256": "62f94b9bea50aee9a5eb3f4654e04c4f2fe2f8f4d7f63093d51966bff86e6af0",
+      "bytes": 11939
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/basketball/BasketballEntity.java",
@@ -4028,6 +4038,11 @@
       "bytes": 10683
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/IdentityBootstrapSmokeClient.java",
+      "sha256": "035e776c582739e6f6bba1005b80c1db118a5581de4d2a1c717e19efc81e448f",
+      "bytes": 7034
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientMod.java",
       "sha256": "42fb5a7c41f4c280a691600460678e348f540e81d00b63f498bd566f25b01e9d",
       "bytes": 29320
@@ -4044,8 +4059,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientTrustPrompt.java",
-      "sha256": "c4a3737edff6e01f6fa6cf1164ce727e73ef3843c21808a68172818f7984e9c6",
-      "bytes": 11089
+      "sha256": "8bd119a4bb0162aae8b370ae3b47d77b275ff81a160d38a8e70b2d396c72ce9c",
+      "bytes": 11550
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/OneClickActivationSmokeClient.java",
@@ -5009,8 +5024,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/command/MineAgentCommands.java",
-      "sha256": "0d51847adcbb2bdb4c243ce31569b27fc1737fea3c129e64a70b071b4b204f63",
-      "bytes": 13658
+      "sha256": "8cf98c4efb38f63ddecf20b313e48c4c543ea384098784e932546069808933b0",
+      "bytes": 13648
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeApiCatalog.java",
@@ -6839,8 +6854,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/worker/MineAgentWorkerSupervisor.java",
-      "sha256": "cb51827196c805d8efb21437a40ee37d841e6c57661b5f99302565e8eec026d1",
-      "bytes": 70117
+      "sha256": "30cbabc7cabef815ca6aeeb171569a47c738f977dc8d4d8a8997c27986b9122e",
+      "bytes": 70245
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/blockstates/automation_console.json",
@@ -6909,13 +6924,13 @@
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/lang/en_us.json",
-      "sha256": "a645a97a26966a6cddc779c792a265f89da78bf4944b77e678b271bcf5e07959",
-      "bytes": 3137
+      "sha256": "d7abeac7f99ef2db9e52b3fb91140fe0c2dab203702854730d2425f7845c2b6e",
+      "bytes": 3951
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/lang/zh_cn.json",
-      "sha256": "2cde9748a8d341b84bda12ab47d995e18b0591573562a49402d15dfd10a9a964",
-      "bytes": 4263
+      "sha256": "05da5e5731a5062be622a51b43f8c40bfcef4aa30dbedf1bc4df967e404d0b96",
+      "bytes": 5060
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/models/block/automation_console.json",

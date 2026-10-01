@@ -9,6 +9,36 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NewWorldIdentityTest {
     @TempDir Path directory;
+    @Test void explicitAcceptActivatesCopiedAnchorWithoutReopenOrTouchingOriginal()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var first=Files.createDirectory(directory.resolve("first"));var copy=Files.createDirectory(directory.resolve("copy"));UUID original;
+        try(var id=WorldSaveIdentity.open(home,first,UUID.randomUUID())){original=id.scopeId();}
+        byte[] anchor=Files.readAllBytes(first.resolve(WorldSaveIdentity.ANCHOR_FILE));Files.write(copy.resolve(WorldSaveIdentity.ANCHOR_FILE),anchor);
+        UUID independent;try(var id=WorldSaveIdentity.open(home,copy,UUID.randomUUID())){assertFalse(id.ready());var accepted=id.acceptCurrent("SERVER_COMMAND_SOURCE");assertEquals("FRESH",accepted.decision());assertTrue(id.ready());independent=id.scopeId();assertNotEquals(original,independent);assertEquals(independent,id.acceptCurrent("SERVER_COMMAND_SOURCE").scope());}
+        assertArrayEquals(anchor,Files.readAllBytes(first.resolve(WorldSaveIdentity.ANCHOR_FILE)));
+        try(var id=WorldSaveIdentity.open(home,copy,UUID.randomUUID())){assertTrue(id.ready());assertEquals(independent,id.scopeId());}
+    }
+    @Test void explicitAcceptContinuesAMovedWorldWithItsOriginalScope()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var before=Files.createDirectory(directory.resolve("before"));UUID original;
+        try(var id=WorldSaveIdentity.open(home,before,UUID.randomUUID())){original=id.scopeId();}
+        var moved=Files.move(before,directory.resolve("moved"));
+        try(var id=WorldSaveIdentity.open(home,moved,UUID.randomUUID())){assertFalse(id.ready());assertEquals("PATH_CHANGED",id.status().state());assertEquals("RELOCATE",id.acceptCurrent("SERVER_COMMAND_SOURCE").decision());assertTrue(id.ready());assertEquals(original,id.scopeId());}
+    }
+    @Test void validImportedAnchorCanRestorePresentWorldDataWithoutRegistryOrRestart()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var save=Files.createDirectory(directory.resolve("save"));UUID scope;
+        try(var id=WorldSaveIdentity.open(home,save,UUID.randomUUID())){scope=id.scopeId();}
+        var newHome=Files.createDirectory(directory.resolve("restored-runtime"));
+        try(var db=DriverManager.getConnection("jdbc:sqlite:"+newHome.resolve("runtime.db"));var s=db.createStatement()){s.execute("CREATE TABLE mineagent_fixture(world TEXT,value TEXT)");s.execute("INSERT INTO mineagent_fixture VALUES('"+scope+"','preserved')");}
+        try(var id=WorldSaveIdentity.open(newHome,save,UUID.randomUUID())){assertEquals("ANCHOR_UNBOUND",id.status().state());assertEquals("ADOPT",id.acceptCurrent("SERVER_COMMAND_SOURCE").decision());assertTrue(id.ready());assertEquals(scope,id.scopeId());}
+        try(var db=DriverManager.getConnection("jdbc:sqlite:"+newHome.resolve("runtime.db"));var s=db.createStatement();var r=s.executeQuery("SELECT value FROM mineagent_fixture")){assertTrue(r.next());assertEquals("preserved",r.getString(1));}
+    }
+    @Test void explicitAcceptCannotBreakAnActiveSaveLease()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var save=Files.createDirectory(directory.resolve("save"));
+        try(var active=WorldSaveIdentity.open(home,save,UUID.randomUUID())){assertTrue(active.ready());var error=assertThrows(IllegalStateException.class,()->WorldSaveIdentity.open(home,save,UUID.randomUUID()));assertEquals("WORLD_IDENTITY_IN_USE",error.getMessage());}
+    }
+    @Test void oldExplicitSelectionCanBeActivatedInTheSameProcess()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var save=Files.createDirectory(directory.resolve("save"));Files.writeString(save.resolve(WorldSaveIdentity.ANCHOR_FILE),"old damaged identity");
+        try(var id=WorldSaveIdentity.open(home,save,UUID.randomUUID())){id.choose("FRESH",null,id.status().challenge(),"SERVER_COMMAND_SOURCE");assertFalse(id.ready());assertEquals("REOPEN_REQUIRED",id.status().state());assertEquals("SELECTED",id.acceptCurrent("SERVER_COMMAND_SOURCE").decision());assertTrue(id.ready());}
+    }
     @Test void reimportedTemplateGetsNewScopeWithoutDeletingOrAdoptingOldRows()throws Exception{
         var home=Files.createDirectory(directory.resolve("runtime"));var save=Files.createDirectory(directory.resolve("map"));UUID original;
         try(var id=WorldSaveIdentity.open(home,save,UUID.randomUUID())){original=id.scopeId();}

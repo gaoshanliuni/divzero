@@ -228,19 +228,26 @@ public final class MineAgentRuntimeMod {
         }
     }
 
+    static void initializeWorldServices(net.minecraft.server.MinecraftServer server)throws Exception{
+        dev.mineagent.runtime.neoforge.body.TerrainProvenance.get(server);
+        MineAgentRuntimeServices.config(server);
+        dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(server);
+        dev.mineagent.runtime.neoforge.content.NativeDataPackRuntime.get(server);
+        MineAgentRuntimeServices.events(server);MineAgentRuntimeServices.schedules(server);
+        for(var media:MineAgentRuntimeServices.media(server).all())if(media.playing()&&!media.screenBinding().isBlank())MineAgentRuntimeServices.mediaCoordinator(server).start(media);
+    }
+
     @SubscribeEvent
     public void serverStarted(ServerStartedEvent event) {
-        if(!WorldIdentityRuntime.boot(event.getServer())){LOGGER.warn("MineAgent world identity unresolved; no world services started. Use /ai identity.");return;}
+        if(!WorldIdentityRuntime.boot(event.getServer())){LOGGER.warn("MineAgent world identity unresolved; no world services started. Use /ai accept to initialize this connection.");return;}
         try {
             dev.mineagent.runtime.neoforge.body.TerrainProvenance.get(event.getServer());
             MineAgentRuntimeServices.config(event.getServer());
             String workerStatus = MineAgentRuntimeServices.worker(event.getServer())
                     .start(event.getServer().getServerDirectory());
             LOGGER.info("MineAgent Worker status={}", workerStatus);
-            dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(event.getServer());
-            dev.mineagent.runtime.neoforge.content.NativeDataPackRuntime.get(event.getServer());
-            MineAgentRuntimeServices.events(event.getServer());
-            MineAgentRuntimeServices.schedules(event.getServer());
+            initializeWorldServices(event.getServer());
+            WorldIdentityRuntime.servicesStarted(event.getServer());
             if (Boolean.getBoolean("mineagent.smokeTest")) {
                 String source = """
                         package dev.mineagent.smoke;
@@ -263,11 +270,6 @@ public final class MineAgentRuntimeMod {
                 }
                 LOGGER.info("MINEAGENT_SMOKE_JAVA_EXTENSION_OK activation={} result={}",
                         loaded.activationMode(), loaded.startResult());
-            }
-            for (var media : MineAgentRuntimeServices.media(event.getServer()).all()) {
-                if (media.playing() && !media.screenBinding().isBlank()) {
-                    MineAgentRuntimeServices.mediaCoordinator(event.getServer()).start(media);
-                }
             }
         } catch (Exception failure) {
             LOGGER.error("MineAgent Worker failed to start", failure);
@@ -534,6 +536,7 @@ public final class MineAgentRuntimeMod {
         if (mediaServer != null) {
             mediaServer.stop(0);
         }
+        WorldIdentityRuntime.stopAccepting(event.getServer());
         try{MineAgentRuntimeServices.remove(event.getServer());}finally{WorldIdentityRuntime.close(event.getServer());}
     }
 

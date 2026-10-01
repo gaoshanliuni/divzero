@@ -7,11 +7,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.permissions.Permissions;
 import java.util.*;
+import java.util.concurrent.*;
 
 /** Bootstrap-only identity decisions. No world-scoped service starts while a save binding is unresolved. */
 public final class WorldIdentityRuntime {
     private static final Map<MinecraftServer,Entry> ENTRIES=new WeakHashMap<>();
-    private static final class Entry {WorldSaveIdentity store;String error="";volatile boolean examined,allowed,reopen;final Map<UUID,Integer> notices=new HashMap<>();}
+    private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
+    private static final class Entry {WorldSaveIdentity store;String error="";volatile boolean examined,allowed,reopen,initializing,servicesStarted,closed,stopping;CompletableFuture<WorldSaveIdentity.Acceptance> starting;final Map<ServerPlayer,String> notices=new WeakHashMap<>();}
     private WorldIdentityRuntime(){}
     private static Entry open(MinecraftServer server){
         var entry=new Entry();
@@ -29,12 +31,41 @@ public final class WorldIdentityRuntime {
     }
     private static synchronized Entry entry(MinecraftServer server){return ENTRIES.computeIfAbsent(server,WorldIdentityRuntime::open);}
     public static boolean boot(MinecraftServer server){var e=entry(server);synchronized(e){e.examined=true;e.allowed=!e.reopen&&e.store!=null&&e.store.ready();return e.allowed;}}
-    public static boolean ready(MinecraftServer server){var e=entry(server);return e.examined&&e.allowed&&!e.reopen&&e.store!=null&&e.store.ready();}
-    public static UUID scope(MinecraftServer server){if(!ready(server))throw new IllegalStateException("WORLD_IDENTITY_NOT_READY");return entry(server).store.scopeId();}
+    public static boolean ready(MinecraftServer server){var e=entry(server);return e.examined&&e.allowed&&!e.reopen&&!e.initializing&&!e.closed&&e.store!=null&&e.store.ready();}
+    public static UUID scope(MinecraftServer server){var e=entry(server);if(!e.examined||!e.allowed||e.reopen||e.closed||e.store==null||!e.store.ready())throw new IllegalStateException("WORLD_IDENTITY_NOT_READY");return e.store.scopeId();}
     public static boolean notifyIfPending(ServerPlayer player){
-        var server=player.level().getServer();if(ready(server))return true;var e=entry(server);int tick=server.getTickCount();
-        if(tick-e.notices.getOrDefault(player.getUUID(),tick-200)>=200){e.notices.put(player.getUUID(),tick);player.sendSystemMessage(Component.literal("[MineAgent] 存档身份尚未接入，功能暂不启动，旧数据没有删除。请世界所有者/管理员执行 /ai identity 查看；选择后需保存并重新打开世界。"));}
+        var server=player.level().getServer();if(ready(server))return true;var e=entry(server);
+        if(e.initializing)return false;
+        String reason=e.error.isEmpty()?"PENDING":e.error;
+        if(!reason.equals(e.notices.put(player,reason))){
+            var line=Component.translatable(canManage(player.createCommandSourceStack())?"mineagent.activation.bootstrap.prompt":"mineagent.activation.bootstrap.owner");
+            line.append(Component.translatable("mineagent.activation.bootstrap.button").withStyle(style->style.withColor(net.minecraft.ChatFormatting.GREEN).withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/ai accept"))));
+            if(!e.error.isEmpty())line.append(Component.translatable("mineagent.activation.bootstrap.reason",e.error));player.sendSystemMessage(line);
+        }
         return false;
+    }
+    public static void servicesStarted(MinecraftServer server){var e=entry(server);e.servicesStarted=true;e.initializing=false;}
+    public static CompletableFuture<WorldSaveIdentity.Acceptance> accept(CommandSourceStack source){
+        var server=source.getServer();var e=entry(server);
+        if(!server.isSameThread()||!server.isRunning()||e.closed||e.stopping)return CompletableFuture.failedFuture(new IllegalStateException("WORLD_IDENTITY_SERVER_STOPPED"));
+        if(ready(server)&&e.servicesStarted)return CompletableFuture.completedFuture(new WorldSaveIdentity.Acceptance(scope(server),"EXISTING"));
+        if(e.starting!=null&&!e.starting.isDone())return e.starting;
+        if((e.store==null||!e.store.ready())&&!canManage(source))return CompletableFuture.failedFuture(new SecurityException("WORLD_IDENTITY_OWNER_REQUIRED"));
+        e.initializing=true;e.examined=true;String actor=source.getPlayer()==null?"SERVER_COMMAND_SOURCE":"PLAYER:"+source.getPlayer().getUUID();
+        e.starting=CompletableFuture.supplyAsync(()->{
+            try{if(e.closed||e.stopping)throw new IllegalStateException("WORLD_IDENTITY_SERVER_STOPPED");if(e.store==null){var opened=open(server);synchronized(e){if(e.closed||e.stopping){if(opened.store!=null)opened.store.close();throw new IllegalStateException("WORLD_IDENTITY_SERVER_STOPPED");}e.store=opened.store;e.error=opened.error;}}if(e.store==null)throw new IllegalStateException(e.error);return e.store.acceptCurrent(actor);}catch(Exception error){throw new CompletionException(error);}
+        },IO).thenCompose(accepted->server.submit(()->{if(e.closed||entry(server)!=e)throw new IllegalStateException("WORLD_IDENTITY_CONTEXT_CHANGED");e.allowed=true;e.reopen=false;return accepted;}))
+        .thenCompose(accepted->{var worker=MineAgentRuntimeServices.worker(server);return CompletableFuture.supplyAsync(()->{try{if(e.closed||e.stopping)throw new IllegalStateException("WORLD_IDENTITY_SERVER_STOPPED");worker.start(server.getServerDirectory());return accepted;}catch(Exception error){throw new CompletionException(error);}},IO);})
+        .thenCompose(accepted->server.submit(()->{
+            if(e.closed||entry(server)!=e)throw new IllegalStateException("WORLD_IDENTITY_CONTEXT_CHANGED");
+            e.initializing=false;
+            try{MineAgentRuntimeMod.initializeWorldServices(server);servicesStarted(server);
+                for(var player:List.copyOf(server.getPlayerList().getPlayers()))if(!(player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)){WorldActivationRuntime.login(player);server.getCommands().sendCommands(player);}
+                e.error="";return accepted;
+            }catch(Exception failure){e.initializing=true;throw new CompletionException(failure);}
+        }));
+        var attempt=e.starting;attempt.whenComplete((value,error)->{if(error!=null)server.execute(()->{if(e.closed||e.starting!=attempt)return;e.initializing=false;e.allowed=false;Throwable cause=error;while(cause.getCause()!=null)cause=cause.getCause();String code=Objects.toString(cause.getMessage(),"");e.error=code.matches("WORLD_[A-Z0-9_]{1,70}")?code:"WORLD_SERVICES_START_FAILED";});});
+        return e.starting;
     }
     public static boolean canManage(CommandSourceStack source){
         var player=source.getPlayer();if(player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer||player!=null&&source.getServer().getPlayerList().getPlayer(player.getUUID())!=player)return false;
@@ -49,7 +80,7 @@ public final class WorldIdentityRuntime {
         return builder.buildFuture();
     }
     public static int status(CommandSourceStack source){
-        if(!canManage(source)){source.sendFailure(Component.literal("MineAgent 存档身份待所有者/管理员处理；不会自动读取旧作用域。"));return 0;}
+        if(!canManage(source)){source.sendFailure(Component.literal("请房主或管理员使用 /ai accept 接入此存档。"));return 0;}
         var e=entry(source.getServer());try{
             if(e.store==null){source.sendFailure(Component.literal(e.error+"；确认没有其它实例占用后，可 /ai identity retry。"));return 0;}
             var s=e.store.status();String state=e.reopen?"REOPEN_REQUIRED":s.state();
@@ -65,12 +96,10 @@ public final class WorldIdentityRuntime {
         var e=entry(source.getServer());try{
             if(e.store==null)throw new IllegalStateException(e.error);if(e.allowed||e.reopen)throw new IllegalStateException("WORLD_IDENTITY_ALREADY_SELECTED");
             e.store.choose(choice,scope==null?null:UUID.fromString(scope),token,source.getPlayer()==null?"SERVER_COMMAND_SOURCE":"PLAYER:"+source.getPlayer().getUUID());e.reopen=true;
-            source.sendSuccess(()->Component.literal("身份绑定已保存。旧 payload/ID 未迁写，未启动 Worker 或恢复旧任务。请保存并重新打开世界后继续；本次游戏仍保持 MineAgent 未启动。"),false);return 1;
+            source.sendSuccess(()->Component.literal("身份绑定已保存。使用 /ai accept 即可在本次连接中启用，无需重新进入世界。"),false);return 1;
         }catch(Exception failure){String message=Objects.toString(failure.getMessage(),"");source.sendFailure(Component.literal(message.matches("WORLD_[A-Z0-9_]{1,70}")?message:"WORLD_IDENTITY_CHANGE_FAILED"));return 0;}
     }
-    public static synchronized int retry(CommandSourceStack source){
-        if(!source.getServer().isRunning()||!canManage(source))return 0;var old=ENTRIES.get(source.getServer());if(old!=null&&(old.allowed||old.reopen)){source.sendFailure(Component.literal("WORLD_IDENTITY_REOPEN_REQUIRED"));return 0;}
-        if(old!=null&&old.store!=null)old.store.close();var next=open(source.getServer());next.examined=true;if(next.store!=null&&next.store.ready())next.reopen=true;ENTRIES.put(source.getServer(),next);return status(source);
-    }
-    public static synchronized void close(MinecraftServer server){var e=ENTRIES.get(server);if(e!=null&&e.store!=null)e.store.close();var stopped=new Entry();stopped.examined=true;stopped.error="WORLD_IDENTITY_SERVER_STOPPED";ENTRIES.put(server,stopped);}
+    public static int retry(CommandSourceStack source){return WorldActivationRuntime.enable(source,null);}
+    public static void stopAccepting(MinecraftServer server){entry(server).stopping=true;}
+    public static synchronized void close(MinecraftServer server){var e=ENTRIES.get(server);if(e!=null)synchronized(e){e.closed=true;if(e.store!=null)e.store.close();}var stopped=new Entry();stopped.examined=true;stopped.error="WORLD_IDENTITY_SERVER_STOPPED";ENTRIES.put(server,stopped);}
 }

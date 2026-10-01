@@ -23,7 +23,7 @@ public final class MineAgentCommands {
                 .then(Commands.literal("accpet").executes(c->accept(c.getSource())))
                 .then(Commands.literal("setup").executes(c->{dev.mineagent.runtime.neoforge.network.MineAgentNetwork.sendPanelSnapshot(c.getSource().getPlayerOrException());return 1;}))
                 .then(Commands.literal("activation")
-                    .then(Commands.literal("enable").then(Commands.argument("token", StringArgumentType.word()).executes(c->dev.mineagent.runtime.neoforge.WorldActivationRuntime.decide(c.getSource(),true,StringArgumentType.getString(c,"token")))))
+                    .then(Commands.literal("enable").then(Commands.argument("token", StringArgumentType.word()).executes(c->dev.mineagent.runtime.neoforge.WorldActivationRuntime.enable(c.getSource(),StringArgumentType.getString(c,"token")))))
                     .then(Commands.literal("disable").then(Commands.argument("token", StringArgumentType.word()).executes(c->dev.mineagent.runtime.neoforge.WorldActivationRuntime.decide(c.getSource(),false,StringArgumentType.getString(c,"token"))))))
                 .then(Commands.literal("interrupt").then(Commands.argument("agent",net.minecraft.commands.arguments.UuidArgument.uuid())
                     .executes(c->interrupt(c.getSource(),net.minecraft.commands.arguments.UuidArgument.getUuid(c,"agent"),""))
@@ -71,7 +71,7 @@ public final class MineAgentCommands {
         try{return dev.mineagent.runtime.neoforge.ui.ServerConversations.get(source.getServer()).interruptNative(source.getPlayerOrException(),agent,message);}catch(Exception e){source.sendFailure(Component.literal("无法打断："+e.getMessage()));return 0;}
     }
     private static int accept(CommandSourceStack source){
-        return dev.mineagent.runtime.neoforge.WorldActivationRuntime.decide(source,true,null);
+        return dev.mineagent.runtime.neoforge.WorldActivationRuntime.enable(source,null);
     }
     private static int openPanel(CommandSourceStack source) {
         if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(source.getServer()))return dev.mineagent.runtime.neoforge.WorldIdentityRuntime.status(source);
