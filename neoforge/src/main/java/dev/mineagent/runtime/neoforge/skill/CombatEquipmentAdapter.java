@@ -23,7 +23,7 @@ public interface CombatEquipmentAdapter {
             else if(ItemStack.isSameItemSameComponents(player.getInventory().getItem(w.weaponPendingSlot),w.weaponPendingStack))return finishSelection(w);
             else{w.weaponPendingSlot=-1;w.weaponPendingStack=ItemStack.EMPTY;w.weaponDecisionTick=-10000;}
         }
-        boolean falling=net.minecraft.world.item.MaceItem.canSmashAttack(player)||target!=null&&player.getDeltaMovement().y<-.05&&player.getY()-target.getY()>2;
+        boolean falling=NativeAttackReadiness.preparingFall(player,target);
         if(w.weaponDecisionTick>w.tick()-8&&w.weaponBlocking==blocking&&w.weaponFalling==falling)return true;
         w.weaponFalling=falling;
         w.weaponDecisionTick=w.tick();w.weaponBlocking=blocking;

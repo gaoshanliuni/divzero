@@ -109,7 +109,10 @@ final class CombatSkill {
             boolean low=dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.pointFrom(p,normalEye,target.getHitbox()).isEmpty()&&dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.crouchedPoint(p,target).isPresent();
             if(low){w.gapCrouching=true;if(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty())w.actor.haltMotion(w.token());w.actor.crouch(w.token(),true);if(dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).isEmpty()){phase(w,"LOW_OPENING_AIM");return;}}
             else if(w.gapCrouching){w.actor.crouch(w.token(),false);w.gapCrouching=false;}
-            if((p.fallDistance>1.5||p.getDeltaMovement().y<-.05&&p.getY()-target.getY()>2)&&!CombatEquipmentAdapter.melee(w,target))return;
+            if(NativeAttackReadiness.preparingFall(p,target)){
+                if(!CombatEquipmentAdapter.melee(w,target))return;
+                if(p.getMainHandItem().getItem() instanceof net.minecraft.world.item.MaceItem&&!net.minecraft.world.item.MaceItem.canSmashAttack(p)){w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.point(p,target).orElse(target.getEyePosition()));phase(w,"MACE_FALL_WINDOW");return;}
+            }
         }
         int contacts=w.combat.contacts(w);boolean flanked=w.combat.flanked(w);
         if(w.combat.attacks.standingRisk(w,p.position(),12)>0&&rule.strategy()!=CombatPolicy.Strategy.HOLD_POSITION){
