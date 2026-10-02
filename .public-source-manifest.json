@@ -1379,8 +1379,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/AgentToolScope.java",
-      "sha256": "8ecf67f4e1f2ddc942830164e07b215d68e2ff8825de144d280df82cdc007d0c",
-      "bytes": 4966
+      "sha256": "686068810c02f94cfbf2d7b37af3e4aed439d608d16783d634ade5809297e936",
+      "bytes": 4972
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/BlockObservationRegion.java",
@@ -1454,8 +1454,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "sha256": "244caff575773fb6d65d3417908e7cfe26d0b1b3257f76fe8dcbae1518662c21",
-      "bytes": 68220
+      "sha256": "10185ea5a74ca1bca55cb1b9191015d33f924de097bd589b7811de413fccc801",
+      "bytes": 68250
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
@@ -3564,8 +3564,8 @@
     },
     {
       "path": "docs/SIBLING_AI_SETTINGS.md",
-      "sha256": "acb2d565ce8c5cf01d6f4f1bed5724bc413f55b372f0ce8c7dcca9b701cdf34a",
-      "bytes": 1930
+      "sha256": "bbcf46cc4676ed6f82a3376c0b8a6862030d64b0456999470020536acef14adf",
+      "bytes": 2935
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3779,8 +3779,8 @@
     },
     {
       "path": "docs/releases/1.0.31.md",
-      "sha256": "31b8ce016d4427ba982cf36b8833b8bea0a50548b009a50e60d67f742a9556df",
-      "bytes": 617
+      "sha256": "fdcde8edb2bb172eb517196858c1352c032b112363d8c4dda921630c508296d0",
+      "bytes": 874
     },
     {
       "path": "gradle.properties",
@@ -6224,8 +6224,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "f77ceb0d3cbff1c97acec8ec2f03a290d71a53e8609e6030c4a4a8128b2369b2",
-      "bytes": 76748
+      "sha256": "5ee8f8bc238609368626eef7b4ce99fa84a413e7f61e368bebbbd528d128da19",
+      "bytes": 76837
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",

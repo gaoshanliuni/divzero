@@ -64,6 +64,7 @@ public final class ConversationAgentTools {
         var invocation=new ToolLifecycleEvents.Invocation(MineAgentRuntimeServices.worldId(p.level().getServer()),p.getUUID(),agent,operation,tool,checked.arguments().toString());
         var veto=ToolLifecycleEvents.before(invocation);if(veto.isPresent()){ToolLifecycleEvents.after(invocation,veto.orElseThrow());return CompletableFuture.completedFuture(veto.orElseThrow());}
         // executeChecked repeats live authority and all domain admission after extension validation.
+        if(!current(p,permit))throw new SecurityException("AGENT_TOOL_CONTEXT_CHANGED");
         var action=sibling&&tool.equals("stop_actions")?CompletableFuture.completedFuture(ConversationAgentScope.stop(p,agent)):executeChecked(p,agent,operation,tool,args.toString(),permit,conversation);
         action=action.handle((value,failure)->value!=null?value:ToolFailure.result(tool,operation,failure,ConversationTools.mutation(tool)?ToolFailure.Phase.DISPATCH:ToolFailure.Phase.READ));
         action=action.thenApply(value->{p.level().getServer().execute(()->ToolLifecycleEvents.after(invocation,value));return value;});

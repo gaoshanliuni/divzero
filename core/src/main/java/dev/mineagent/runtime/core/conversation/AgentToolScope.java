@@ -38,7 +38,7 @@ public final class AgentToolScope {
             p.putObject("expected_revision").put("type","integer").put("minimum",0);p.putObject("name").put("type","string").put("minLength",1).put("maxLength",48);
             p.putObject("mode").put("type","string").putArray("enum").add("SURVIVAL").add("CREATIVE").add("ADVENTURE");p.putObject("expected_mode").put("type","string");p.putObject("enabled").put("type","boolean");
             p.putObject("model_mode").put("type","string").putArray("enum").add("DEFAULT").add("CUSTOM");p.putObject("model").put("type","string").put("maxLength",256);p.putObject("base_url").put("type","string").put("maxLength",2048);
-            description="按玩家要求修改一个AI设置，先inspect_agent_settings。name需name与AI的expected_revision；game_mode需mode与expected_mode；auto_respawn需enabled与respawn.expected_revision对应revision；model需model_mode、expected_revision、model和base_url（来自model读取，DEFAULT用空字符串）。模型仍使用现有Provider权限和地址绑定。只修改所选字段，不修改协作权限、不创建/删除AI。";
+            description="按玩家要求修改一个AI设置，先inspect_agent_settings。name需name与AI的expected_revision；game_mode需mode与expected_mode；auto_respawn需enabled与由respawn.revision取得的expected_revision；model需model_mode、expected_revision、model和base_url（来自model读取，DEFAULT用空字符串）。模型仍使用现有Provider权限和地址绑定。只修改所选字段，不修改协作权限、不创建/删除AI。";
         }else throw new IllegalArgumentException("AGENT_SETTING_TOOL");
         return new ConversationTools.Definition(name,description,schema.toString());
     }
