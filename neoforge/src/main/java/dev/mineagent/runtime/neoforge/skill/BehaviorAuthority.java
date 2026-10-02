@@ -16,6 +16,8 @@ public final class BehaviorAuthority {
     private final Map<UUID,java.util.concurrent.CompletableFuture<String>> localReplies=new java.util.concurrent.ConcurrentHashMap<>();
     public static BehaviorAuthority get(MinecraftServer s){return ALL.computeIfAbsent(s,k->new BehaviorAuthority());}
     public boolean current(ServerPlayer p,UUID agent,UUID request){return order.current(new Key(p.getUUID(),agent),request);}
+    public boolean currentRelated(ServerPlayer p,UUID source,UUID target,UUID request){return order.currentRelated(new Key(p.getUUID(),source),new Key(p.getUUID(),target),request);}
+    public boolean claimRelated(ServerPlayer p,UUID source,UUID target,UUID request){return order.claimRelated(new Key(p.getUUID(),source),new Key(p.getUUID(),target),request);}
     public boolean claim(ServerPlayer p,UUID agent,UUID request){return order.claim(new Key(p.getUUID(),agent),request);}
     public java.util.concurrent.CompletableFuture<String> localReply(UUID request){return localReplies.get(request);}
     public boolean playerRequested(ServerPlayer p,UUID agent,UUID operation){

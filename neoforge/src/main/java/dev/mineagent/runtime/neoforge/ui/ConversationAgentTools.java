@@ -51,20 +51,32 @@ public final class ConversationAgentTools {
         try{if(arguments==null||arguments.length()>ConversationTools.maxArgumentCharacters(tool))throw new IllegalArgumentException("AGENT_TOOL_ARGUMENT_SIZE");checked=ToolValidation.check(tool,ToolArguments.parse(tool,arguments));}
         catch(IllegalArgumentException invalid){return CompletableFuture.completedFuture(ToolFailure.result(tool,operation,invalid,ToolFailure.Phase.VALIDATION));}
         if(!checked.issues().isEmpty())return CompletableFuture.completedFuture(checked.rejection());
+        try{return executeValidated(p,agent,operation,tool,checked,permit,conversation);}catch(Exception error){return CompletableFuture.completedFuture(ToolFailure.result(tool,operation,error,ToolFailure.Phase.VALIDATION));}
+    }
+    private static CompletableFuture<Map<String,Object>> executeValidated(ServerPlayer p,UUID sourceAgent,UUID operation,String tool,ToolValidation.Checked checked,BooleanSupplier incomingPermit,UUID conversation){
+        if(!p.level().getServer().isSameThread()||!current(p,incomingPermit))throw new SecurityException("AGENT_TOOL_PERMISSION");
+        var args=checked.arguments().deepCopy();UUID agent=AgentToolScope.target(tool,args,sourceAgent);args.remove("agent_id");boolean sibling=!agent.equals(sourceAgent);
+        if(sibling&&!ConversationAgentScope.allowed(p,sourceAgent,agent))throw new SecurityException("AGENT_SAME_OWNER_REQUIRED");
+        if(sibling)ConversationAgentScope.aiOnly(p,agent,tool,args);
+        long targetEpoch=dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(p.level().getServer()).revision(p,agent);
+        BooleanSupplier permit=()->incomingPermit.getAsBoolean()&&(!sibling||ConversationAgentScope.allowed(p,sourceAgent,agent)&&(!ConversationTools.mutation(tool)||dev.mineagent.runtime.neoforge.skill.BehaviorAuthority.get(p.level().getServer()).revision(p,agent)==targetEpoch));
         if(!p.level().getServer().isSameThread()||!current(p,permit)||ConversationTools.mutation(tool)&&!personalTool(tool)&&!tool.equals("stop_actions")&&!ServerTaskStart.allowed(p,agent))return CompletableFuture.completedFuture(Map.of("status","REJECTED","error","AGENT_TOOL_PERMISSION","executionState","NOT_STARTED"));
         var invocation=new ToolLifecycleEvents.Invocation(MineAgentRuntimeServices.worldId(p.level().getServer()),p.getUUID(),agent,operation,tool,checked.arguments().toString());
         var veto=ToolLifecycleEvents.before(invocation);if(veto.isPresent()){ToolLifecycleEvents.after(invocation,veto.orElseThrow());return CompletableFuture.completedFuture(veto.orElseThrow());}
         // executeChecked repeats live authority and all domain admission after extension validation.
-        var action=executeChecked(p,agent,operation,tool,checked.arguments().toString(),permit,conversation);
+        var action=sibling&&tool.equals("stop_actions")?CompletableFuture.completedFuture(ConversationAgentScope.stop(p,agent)):executeChecked(p,agent,operation,tool,args.toString(),permit,conversation);
         action=action.handle((value,failure)->value!=null?value:ToolFailure.result(tool,operation,failure,ConversationTools.mutation(tool)?ToolFailure.Phase.DISPATCH:ToolFailure.Phase.READ));
         action=action.thenApply(value->{p.level().getServer().execute(()->ToolLifecycleEvents.after(invocation,value));return value;});
         if(!checked.normalized().isEmpty())action=action.thenApply(value->{var copy=new LinkedHashMap<String,Object>(value);copy.put("normalizedFields",checked.normalized());return copy;});
+        if(sibling)action=action.thenApply(value->{var result=new LinkedHashMap<String,Object>(value);result.put("sourceAgentId",sourceAgent);result.put("targetAgentId",agent);return result;});
         return action.thenApply(ToolErrors::explain);
     }
     private static CompletableFuture<Map<String,Object>> executeChecked(ServerPlayer p,UUID agent,UUID operation,String tool,String arguments,BooleanSupplier permit,UUID conversation){
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>ConversationTools.maxArgumentCharacters(tool))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=ToolArguments.parse(tool,arguments);
+            if(tool.equals("inspect_owned_agents")){keys(args,"query","offset");return CompletableFuture.completedFuture(ConversationAgentScope.list(p,agent,args));}
+            if(tool.equals("inspect_agent_settings")){keys(args);return CompletableFuture.completedFuture(ConversationAgentScope.settings(p,agent));}
             if(tool.equals("observe")){keys(args);return ConversationMetaTools.observe(p,agent);}
             if(tool.equals("stop_actions")){keys(args);return CompletableFuture.completedFuture(ConversationMetaTools.stop(p,agent));}
             if(tool.equals("skill")){keys(args,"name");var group=CapabilityCatalog.require(text(args,"name",64));return CompletableFuture.completedFuture(Map.of("status","CONTEXT_SCOPE_REQUIRED","name",group.name(),"description",group.description(),"runtimeAvailabilityChanged",false));}
@@ -175,6 +187,7 @@ public final class ConversationAgentTools {
         if(result.isEmpty()||result.getCount()>result.getMaxStackSize())throw new IllegalArgumentException("AGENT_ITEM_COUNT");return result;
     }
     private static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,UUID operation,String tool,JsonNode a,BooleanSupplier permit,UUID conversation)throws Exception{
+        if(tool.equals("set_agent_setting"))return ConversationAgentScope.set(p,agent,operation,a,permit);
         if(tool.equals("set_combat_policy")){dev.mineagent.runtime.core.task.SkillTools.canonical(tool,a.toString());return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).policy(p,agent,a,permit);}
         if(dev.mineagent.runtime.core.task.SkillTools.START.contains(tool)){dev.mineagent.runtime.core.task.SkillTools.canonical(tool,a.toString());return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).start(p,agent,operation,null,a,dev.mineagent.runtime.core.task.SkillTools.kind(tool),permit);}
         if(Set.of("control_skill","control_behavior").contains(tool)){dev.mineagent.runtime.core.task.SkillTools.canonical(tool,a.toString());return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).control(p,agent,a,permit);}

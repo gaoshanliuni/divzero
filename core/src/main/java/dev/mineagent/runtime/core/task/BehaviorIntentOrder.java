@@ -33,6 +33,15 @@ public final class BehaviorIntentOrder<K> {
         return true;
     }
 
+    /** A sibling target inherits the original request arrival, never a fresh timestamp. */
+    public synchronized boolean currentRelated(K source,K target,UUID request){
+        var arrival=arrivals.get(request);return current(source,request)&&arrival.sequence()>=revision(target);
+    }
+    public synchronized boolean claimRelated(K source,K target,UUID request){
+        if(!currentRelated(source,target,request))return false;
+        revisions.put(target,arrivals.get(request).sequence());return true;
+    }
+
     public synchronized long revision(K key) { return revisions.getOrDefault(key, 0L); }
     public synchronized void invalidate(K key) { revisions.put(key, ++sequence); }
 }

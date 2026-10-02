@@ -5,6 +5,13 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BehaviorIntentOrderTest {
+    @Test void siblingUpdatesKeepOriginalArrivalAndRespectIndependentNewerStops(){
+        var order=new BehaviorIntentOrder<String>();var group=UUID.randomUUID();order.accept("a",group,false);
+        assertTrue(order.claimRelated("a","b",group));assertTrue(order.claimRelated("a","c",group));
+        order.invalidate("b");assertFalse(order.currentRelated("a","b",group));assertFalse(order.claimRelated("a","b",group));assertTrue(order.currentRelated("a","c",group));
+        var newer=UUID.randomUUID();order.accept("c",newer,true);assertFalse(order.claimRelated("a","c",group));
+        assertTrue(order.current("a",group));order.invalidate("a");assertFalse(order.currentRelated("a","d",group));
+    }
     @Test void casualQueuedChatDoesNotCancelPlanningButNewBodyIntentDoes() {
         var order = new BehaviorIntentOrder<String>();
         var first = UUID.randomUUID(); var chat = UUID.randomUUID(); var follow = UUID.randomUUID();
