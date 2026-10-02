@@ -4,6 +4,7 @@ public final class WorldContentPrompt {
     private WorldContentPrompt(){}
     public static String build(String request){return """
         为 Minecraft 26.1.2 / NeoForge 26.1.2.106 / Java 25 的 MineAgent Runtime 生成独立世界内容。
+        这是游戏内容包生成，直接交付模型和游戏内脚本；普通新物品如召唤权杖使用item.use及核对过的原生API，不要求玩家运行Python或安装本机依赖。
         只输出严格 JSON 对象，根字段 manifest、files，两者同级；files[i].content 必须是正确转义的JSON字符串，包含的模型JSON引号也需转义，检查括号/引号完整，不要Markdown；没有成品模板和失败回退。
         manifest 仅允许 name、version、type、activationMode、permissions、entrypoints、definitions、dependencies、nativeCompatibility 这9个字段。HOT_RUNTIME/DATA_RELOAD/WORLD_REOPEN 的 nativeCompatibility 必须有 {schema:1,targets:{SERVER:{minecraft,loader,loaderVersion,namespace,javaFeature,requiredMods:{}}}}；RESOURCE_RELOAD 使用下文的 CLIENT 目标契约，不要求虚构 SERVER 入口。各字符串/数字版本来自实际 SERVER 环境，requiredMods 只填实际需要的 Mod 与准确版本，不能用 latest、* 或范围；含 COMMON/CLIENT 原生 JS 的包还须有 CLIENT 目标，ui/ 浏览器 JS 不需要 CLIENT 原生声明。网页入口放 manifest.entrypoints.ui，不能新增 manifest.ui/hud/feedback/viewSettings。
         type 按需求选择 CONTENT、FEATURE、SKILL、ADAPTER、EXTENSION。permissions 包含 RUN_CODE，无依赖时 dependencies={}。

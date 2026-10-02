@@ -5,12 +5,15 @@ import java.util.regex.Pattern;
 
 /** Request/task-local disclosure. It has no reference to skills, bodies or permissions. */
 public final class CapabilitySession {
+    private boolean nativeContentOnly;
     private final LinkedHashSet<String> groups=new LinkedHashSet<>(),tools=new LinkedHashSet<>(CapabilityCatalog.RESIDENT);
     public synchronized Map<String,Object> load(String name){
+        if(nativeContentOnly&&name.equals("host"))return GameContentRouting.nativeWorkflow();
         var group=CapabilityCatalog.require(name);boolean added=groups.add(name);for(String tool:group.tools())tools.add(CapabilityCatalog.canonical(tool));
         return Map.of("status",added?"LOADED":"ALREADY_LOADED","name",name,"description",group.description(),"tools",group.tools(),"contextOnly",true,"executionAuthorized",false);
     }
     public synchronized List<String> groups(){return List.copyOf(groups);}
+    public synchronized Optional<Map<String,Object>> admission(String tool){return nativeContentOnly&&GameContentRouting.hostTool(tool)?Optional.of(GameContentRouting.nativeWorkflow()):Optional.empty();}
     public synchronized List<String> tools(){return List.copyOf(tools);}
     public synchronized List<ConversationTools.Definition> definitions(){return CapabilityCatalog.selected(tools);}
     public synchronized void used(String tool){
@@ -21,10 +24,12 @@ public final class CapabilitySession {
     /** Explicit task verbs preload relevant domains. Discovery remains available for all other wording. */
     public synchronized void preload(String input,Collection<String> continuation){
         String text=input.toLowerCase(Locale.ROOT);
+        nativeContentOnly=GameContentRouting.nativeContent(text)&&!GameContentRouting.hostRequested(text);
         boolean continues=matches(text,"^(继续|接着|continue|resume)[。.!！\\s]*$|刚才|上次那个|继续之前|继续上次|same task|continue that");
         if(continues&&continuation!=null)for(String group:continuation)load(group);
         boolean act=matches(text,"创建|生成|建造|搭建|制作|修改|更改|添加|增加|删除|设置|替换|帮我|请你|我要|给我|打开|检查|查看|查询|读取|导入|修复|设计|扩大|缩小|预览|create|build|make|modify|change|add|remove|set |open |inspect|import|fix|show|preview");
         var chosen=new LinkedHashSet<String>();
+        if(GameContentRouting.item(text)){chosen.add("items");chosen.add("content");if(matches(text,"召唤|summon|spawn"))chosen.add("entities");}
         if(matches(text,"所有.*ai|全部.*ai|其他.*ai|其它.*ai|另一个.*ai|ai.*(设置|调整|改|跟随|模式)|all.*agents|other.*agents|another.*ai"))chosen.add("agents");
         if(matches(text,"ldlib|kubejs|ui wiki|界面文档|HUD文档"))chosen.add("ui");
         if(matches(text,"记住|记忆|我喜欢|偏好|喜欢的|回家|remember|preference|my home|go home"))chosen.add("memory");
@@ -41,7 +46,7 @@ public final class CapabilitySession {
         if(act&&matches(text,"皮肤|外观|人设|性格|skin|appearance|persona|ysm"))chosen.add("appearance");
         if(act&&matches(text,"文件|上传|下载|file|upload|download"))chosen.add("files");
         if(matches(text,"网上|上网|联网|搜索|网页|图片|search|website|web page"))chosen.add("web");
-        if(matches(text,"本机|电脑|python|安装.*库|打开.*网易云|打开.*记事本|terminal|operating system"))chosen.add("host");
+        if(GameContentRouting.hostRequested(text))chosen.add("host");
         if(act&&matches(text,"推土机|贴图|纹理|回调|上锁|bulldozer|texture|callback|lock"))chosen.add("rules");
         if(act&&matches(text,"聊天|消息|思考|默认响应|chat|message|thinking"))chosen.add("chat");
         if(act&&matches(text,"命令|游戏规则|容器|箱子|方块|坐标|世界状态|command|gamerule|container|chest|block|coordinates"))chosen.add("world");
