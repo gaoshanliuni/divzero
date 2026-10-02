@@ -3514,8 +3514,8 @@
     },
     {
       "path": "docs/GAME_CONTENT_ROUTING.md",
-      "sha256": "982d56c1faeb39ce6044da2925f6a1d08e086431f8b3008204e5bad19f78c837",
-      "bytes": 1572
+      "sha256": "e2e431dd3166a6d8e663a619675228ff66af1e65ba94d5b21e5de7a6fc2efb45",
+      "bytes": 2512
     },
     {
       "path": "docs/HUD_WIKI_LEARNING.md",
@@ -3579,8 +3579,8 @@
     },
     {
       "path": "docs/SIBLING_AI_SETTINGS.md",
-      "sha256": "bbcf46cc4676ed6f82a3376c0b8a6862030d64b0456999470020536acef14adf",
-      "bytes": 2935
+      "sha256": "a127a7b4d15c70de55fd5439603f6dd216095eeda3a32fbb2647b1f9faf1eeac",
+      "bytes": 3207
     },
     {
       "path": "docs/SOURCE_SNAPSHOT.md",
@@ -3794,8 +3794,8 @@
     },
     {
       "path": "docs/releases/1.0.31.md",
-      "sha256": "b8500debb5793e52a8559592f59cc0e5fe6e51ce0518da154e1c7bec2e201f27",
-      "bytes": 1276
+      "sha256": "1b48b92418003a00d91ba5650aed8c1913216dcb907bd484b089e88decac0e2d",
+      "bytes": 1535
     },
     {
       "path": "gradle.properties",
