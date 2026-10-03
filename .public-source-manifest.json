@@ -3244,8 +3244,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/maintenance/JavaMaintenanceTest.java",
-      "sha256": "c5cc3c3b99e3656e92efe89df8eaea255b626c2eebd76dde37e97eff3759bdf3",
-      "bytes": 6664
+      "sha256": "9528cd3f51ffc03c9608cfa254cb77b15d8f3621285cc10895c6d793201ac323",
+      "bytes": 6779
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/memory/DialogueMemoryStoreTest.java",
@@ -4269,8 +4269,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "369bcf73c669aeda4737f7806df69b4a89738719dfeddca2fdef2ce0deb9a1dc",
-      "bytes": 233780
+      "sha256": "ac001a83f6ac757c5578fbcf948fea1ab6a4ed857bb45ebceb01d1b399e6a2eb",
+      "bytes": 241031
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",

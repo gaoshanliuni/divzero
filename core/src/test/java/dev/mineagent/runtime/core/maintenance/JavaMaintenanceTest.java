@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JavaMaintenanceTest {
     @TempDir Path game;
+    @org.junit.jupiter.api.BeforeEach void resolveWindowsTemporaryAlias()throws Exception{game=game.toRealPath();}
     private final ObjectMapper json=new ObjectMapper();private final UUID pkg=UUID.randomUUID(),oldBuild=UUID.randomUUID();
     private final String modId="offline_fixture";
     private byte[] artifact(String canonical,BootReplacement replacement)throws Exception{
