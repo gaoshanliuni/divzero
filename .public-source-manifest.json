@@ -774,8 +774,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/ManagedPythonRuntime.java",
-      "sha256": "9146b6ab3b9338d342d99ea5f8b5b1cb5269398e1b3c9748277575f53c44a981",
-      "bytes": 17512
+      "sha256": "2f954e56613e27ca373face69c0aef7cab661fc6b233b0f72a413233f90b87c9",
+      "bytes": 18010
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/maintenance/JavaMaintenanceLauncher.java",
@@ -1019,8 +1019,8 @@
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/host/LocalPythonExecutorTest.java",
-      "sha256": "3b21ac045c6679e87f8994e775603c39a6c88d8ff6a556ed09cc740c5d750f06",
-      "bytes": 5018
+      "sha256": "9a3642eff847785313ce52d456d2e5c52888c6ff2287ca0ad9e9a10573537df3",
+      "bytes": 5115
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/host/ManagedPythonRuntimeTest.java",

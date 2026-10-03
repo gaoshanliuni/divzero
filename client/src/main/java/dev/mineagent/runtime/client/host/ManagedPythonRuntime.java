@@ -28,6 +28,15 @@ for key in ('executable', '_base_executable', 'prefix', 'exec_prefix', 'base_pre
 sys.path[:] = [extended(p) for p in sys.path]
 import runpy
 args = sys.argv[1:]
+if args[:2] == ['-m', 'pip']:
+    # pip's file URL conversion strips the extended Win32 prefix. Restore it
+    # before opening a wheel, including on machines without LongPathsEnabled.
+    import pip._internal.utils.urls as pip_urls
+    import pip._internal.models.link as pip_link
+    original_url_to_path = pip_urls.url_to_path
+    def native_url_to_path(url): return extended(original_url_to_path(url))
+    pip_urls.url_to_path = native_url_to_path
+    pip_link.url_to_path = native_url_to_path
 if args[0] == '-m':
     sys.argv = args[1:]
     runpy.run_module(sys.argv[0], run_name='__main__', alter_sys=True)

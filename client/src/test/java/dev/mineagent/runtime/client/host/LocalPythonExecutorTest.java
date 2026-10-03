@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 class LocalPythonExecutorTest {
  @TempDir static Path root;private static LocalPythonExecutor executor;
- @BeforeAll static void setup()throws Exception{assumeTrue(ManagedPythonRuntime.supported()&&Boolean.getBoolean("mineagent.bundledPythonTest"),"Bundled Windows runtime only; tests never download Python");new ManagedPythonRuntime(root).ensure(()->true);executor=new LocalPythonExecutor(root);}
+ @BeforeAll static void setup()throws Exception{assumeTrue(ManagedPythonRuntime.supported()&&Boolean.getBoolean("mineagent.bundledPythonTest"),"Bundled Windows runtime only; tests never download Python");for(int i=0;i<5;i++)root=root.resolve("long runtime directory "+i);Files.createDirectories(root);new ManagedPythonRuntime(root).ensure(()->true);executor=new LocalPythonExecutor(root);}
  @AfterAll static void unlockOwnedTemporaryBytecode()throws Exception{if(root!=null&&Files.isDirectory(root))try(var paths=Files.walk(root)){for(var p:paths.filter(x->x.toString().endsWith(".pyc")).toList())Files.setAttribute(p,"dos:readonly",false);}}
  private Map<String,Object> run(String code,int timeout){var r=new HostCommandRequest(UUID.randomUUID(),"Python regression",code,timeout);return executor.execute(r,r.sha256(),()->true);}
  @Test void actualManagedInterpreterUnicodeQuotesAndNoShell()throws Exception{
