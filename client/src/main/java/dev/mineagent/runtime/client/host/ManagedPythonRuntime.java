@@ -26,6 +26,19 @@ def extended(p):
 for key in ('executable', '_base_executable', 'prefix', 'exec_prefix', 'base_prefix', 'base_exec_prefix'):
     if hasattr(sys, key): setattr(sys, key, extended(getattr(sys, key)))
 sys.path[:] = [extended(p) for p in sys.path]
+import subprocess, inspect
+native_popen_signature = inspect.signature(subprocess.Popen)
+original_popen = subprocess.Popen
+class NativePopen(original_popen):
+    def __init__(self, *args, **kwargs):
+        bound = native_popen_signature.bind_partial(*args, **kwargs)
+        command = bound.arguments.get('args')
+        if isinstance(command, (list, tuple)) and command and not bound.arguments.get('shell', False) and bound.arguments.get('executable') is None:
+            executable = os.fspath(command[0])
+            if executable in (sys.executable, sys._base_executable):
+                bound.arguments['executable'] = extended(executable)
+        super().__init__(*bound.args, **bound.kwargs)
+subprocess.Popen = NativePopen
 import runpy
 args = sys.argv[1:]
 if args[:2] == ['-m', 'pip']:
@@ -47,7 +60,7 @@ else:
  private final Path root,archiveSource;
  public static final class PreparationFailure extends IOException {
   private final String diagnostic;
-  private PreparationFailure(String code,String diagnostic){super(code);this.diagnostic=diagnostic;}
+  private PreparationFailure(String code,String diagnostic){super(code,new IOException(diagnostic));this.diagnostic=diagnostic;}
   public String diagnostic(){return diagnostic;}
  }
  public ManagedPythonRuntime(Path gameDirectory){this(gameDirectory,null);}
@@ -82,7 +95,7 @@ else:
    if(Files.exists(pointer,LinkOption.NOFOLLOW_LINKS)){
     if(!Files.isRegularFile(pointer,LinkOption.NOFOLLOW_LINKS)||Files.size(pointer)>4*1024*1024)throw new IOException("PYTHON_ENV_PROOF_INVALID");var n=JSON.readTree(Files.readString(pointer));String directory=n.path("directory").asText();if(!directory.matches("environment-[a-f0-9-]{36}")||!SHA256.equals(n.path("archiveSha256").asText())||!BundledPythonResources.ID.equals(n.path("bundleId").asText()))throw new IOException("PYTHON_ENV_PROOF_INVALID");env=root.resolve(directory);
    }else{
-    progress.accept("CREATING_ENVIRONMENT");env=root.resolve("environment-"+UUID.randomUUID());bootstrap(List.of(base.toString(),"-I","-B","-X","utf8","-m","venv","--copies","--without-pip",commandPath(env)),live);progress.accept("BOOTSTRAPPING_PIP");bootstrap(List.of(env.resolve("Scripts/python.exe").toString(),"-I","-B","-X","utf8","-m","ensurepip","--upgrade","--default-pip"),live);
+    progress.accept("CREATING_ENVIRONMENT");env=root.resolve("environment-"+UUID.randomUUID());bootstrap(List.of(base.toString(),"-I","-B","-X","utf8","-m","venv","--copies","--without-pip",commandPath(env)),live);progress.accept("BOOTSTRAPPING_PIP");seedBundledPip(base.getParent(),env,live);
     progress.accept("INSTALLING_BUNDLED_LIBRARIES");Path wheels=BundledPythonResources.wheels(root,live);
     var install=new ArrayList<String>(List.of(env.resolve("Scripts/python.exe").toString(),"-I","-B","-X","utf8","-m","pip","--isolated","install","--no-index","--no-deps","--no-compile","--disable-pip-version-check","--find-links",commandPath(wheels)));
     install.addAll(BundledPythonResources.requirements());bootstrap(install,live);
@@ -100,6 +113,12 @@ else:
  private Path pointer(){return root.resolve("environment-"+BundledPythonResources.ID+".json");}
  public String bundleId(){return BundledPythonResources.ID;}
  public Path constraints(BooleanSupplier live)throws Exception{return BundledPythonResources.wheels(root,live).resolve("constraints.txt");}
+ private static void seedBundledPip(Path base,Path env,BooleanSupplier live)throws Exception{
+  Path source=base.resolve("Lib/site-packages"),target=safe(env,"Lib/site-packages");Files.createDirectories(target);boolean found=false;
+  try(var packages=Files.list(source)){for(var pkg:packages.toList()){String name=pkg.getFileName().toString();if(!name.equals("pip")&&!name.matches("pip-[A-Za-z0-9_.+-]+\\.dist-info"))continue;found|=name.equals("pip");
+   try(var files=Files.walk(pkg)){for(var file:files.toList()){current(live);String relative=source.relativize(file).toString().replace('\\','/');Path out=safe(target,relative);if(Files.isDirectory(file,LinkOption.NOFOLLOW_LINKS))Files.createDirectories(out);else if(Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)&&!relative.endsWith(".pyc"))Files.copy(file,out);else if(!relative.endsWith(".pyc"))throw new IOException("PYTHON_BUNDLED_PIP_LAYOUT");}}
+  }}if(!found||!Files.isRegularFile(target.resolve("pip/__main__.py")))throw new IOException("PYTHON_BUNDLED_PIP_MISSING");
+ }
  private static SortedMap<String,String> environmentIndex(Path env)throws Exception{var files=new TreeMap<String,String>();try(var walk=Files.walk(env)){for(var file:walk.filter(p->Files.isRegularFile(p,LinkOption.NOFOLLOW_LINKS)).toList()){String name=env.relativize(file).toString().replace('\\','/');if(!name.endsWith(".pyc"))files.put(name,hash(file));}}return files;}
  private void bootstrap(List<String> command,BooleanSupplier live)throws Exception{
   Path log=root.resolve("bootstrap-"+UUID.randomUUID()+".log");var p=process(command,root).redirectErrorStream(true).redirectOutput(log.toFile()).start();p.getOutputStream().close();var children=new LinkedHashMap<Long,ProcessHandle>();long deadline=System.nanoTime()+TimeUnit.MINUTES.toNanos(2);

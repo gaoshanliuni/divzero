@@ -774,8 +774,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/ManagedPythonRuntime.java",
-      "sha256": "2f954e56613e27ca373face69c0aef7cab661fc6b233b0f72a413233f90b87c9",
-      "bytes": 18010
+      "sha256": "9fa26482482b0f757cc904e6e603b856af1e3fa7be7ff3f8eea3c0c32559a658",
+      "bytes": 19712
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/maintenance/JavaMaintenanceLauncher.java",
