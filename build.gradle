@@ -57,6 +57,7 @@ subprojects {
 
         tasks.withType(Test).configureEach {
             useJUnitPlatform()
+            systemProperty 'divzero.pythonRuntimeRoot', rootProject.file('build/python-runtime-tests').absolutePath
             jvmArgs '--enable-native-access=ALL-UNNAMED'
             testLogging {
                 events 'failed', 'skipped'

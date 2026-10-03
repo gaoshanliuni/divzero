@@ -1,9 +1,9 @@
 package dev.mineagent.runtime.core.maintenance;
 import static dev.mineagent.runtime.core.maintenance.JavaMaintenance.*;
 import java.nio.file.*;import java.nio.channels.*;import java.util.*;import com.fasterxml.jackson.databind.ObjectMapper;import dev.mineagent.runtime.core.compile.NativeCompilationSnapshot;
-final class PythonMaintenance {private static final ObjectMapper JSON=new ObjectMapper();
+final class PythonMaintenance {static Path runtimeRoot(Path game)throws Exception{return dev.mineagent.runtime.core.host.PythonPaths.runtimeRoot(game);}private static final ObjectMapper JSON=new ObjectMapper();
     public static Map<String,Object> repair(Path game,String bundle)throws Exception{
-        if(!bundle.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("PYTHON_BUNDLE_ID");Path root=directory(game.resolve("mineagent-host"));
+        if(!bundle.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("PYTHON_BUNDLE_ID");dev.mineagent.runtime.core.host.PythonPaths.prepare(game,false);Path root=directory(runtimeRoot(game));
         try(var c=FileChannel.open(child(root,"runtime.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);var lease=c.tryLock();var processes=FileChannel.open(child(root,"execution.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);var executing=processes.tryLock()){
             if(lease==null||executing==null)throw new IllegalStateException("PYTHON_RUNTIME_IN_USE");String suffix=".quarantined-"+UUID.randomUUID();var moved=new ArrayList<String>();
             Path pointer=child(root,"environment-"+bundle+".json");

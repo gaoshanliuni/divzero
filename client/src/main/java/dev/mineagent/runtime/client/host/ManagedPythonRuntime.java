@@ -57,20 +57,20 @@ else:
     sys.argv = args
     runpy.run_path(args[0], run_name='__main__')
 """;
- private final Path root,archiveSource;
+ private final Path root,workspaceRoot,game,archiveSource;
  public static final class PreparationFailure extends IOException {
   private final String diagnostic;
   private PreparationFailure(String code,String diagnostic){super(code,new IOException(diagnostic));this.diagnostic=diagnostic;}
   public String diagnostic(){return diagnostic;}
  }
  public ManagedPythonRuntime(Path gameDirectory){this(gameDirectory,null);}
- public ManagedPythonRuntime(Path gameDirectory,Path verifiedArchiveSource){try{root=gameDirectory.toRealPath().resolve("mineagent-host");}catch(IOException e){throw new IllegalArgumentException("PYTHON_GAME_DIRECTORY",e);}archiveSource=verifiedArchiveSource;}
- Path root(){return root;}
+ public ManagedPythonRuntime(Path gameDirectory,Path verifiedArchiveSource){try{game=gameDirectory.toRealPath();workspaceRoot=game.resolve("mineagent-host");root=dev.mineagent.runtime.core.host.PythonPaths.runtimeRoot(game);}catch(Exception e){throw new IllegalArgumentException("PYTHON_GAME_DIRECTORY",e);}archiveSource=verifiedArchiveSource;}
+ Path root(){return workspaceRoot;}
  record ExecutionLease(java.nio.channels.FileChannel channel,java.nio.channels.FileLock lock) implements AutoCloseable {public void close()throws Exception{try{lock.release();}finally{channel.close();}}}
  ExecutionLease executionLease()throws Exception{var channel=java.nio.channels.FileChannel.open(safe(root,"execution.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);try{var lock=channel.tryLock();if(lock==null)throw new IOException("PYTHON_RUNTIME_IN_USE");return new ExecutionLease(channel,lock);}catch(Exception error){channel.close();throw error;}}
- void prepareRoot()throws IOException{Files.createDirectories(root);if(Files.isSymbolicLink(root)||!root.toRealPath().equals(root))throw new IOException("PYTHON_RUNTIME_PATH_CHANGED");}
+ void prepareRoot()throws IOException{try{dev.mineagent.runtime.core.host.PythonPaths.prepare(game,true);Files.createDirectories(workspaceRoot);if(Files.isSymbolicLink(workspaceRoot)||!workspaceRoot.toRealPath().equals(workspaceRoot))throw new IOException("PYTHON_WORKSPACE_PATH_CHANGED");}catch(IOException e){throw e;}catch(Exception e){throw new IOException("PYTHON_RUNTIME_PREPARATION_FAILED",e);}}
  public static boolean supported(){String os=System.getProperty("os.name","").toLowerCase(Locale.ROOT),arch=System.getProperty("os.arch","").toLowerCase(Locale.ROOT);return os.startsWith("windows")&&Set.of("amd64","x86_64").contains(arch);}
- public Map<String,Object> inspect(){return Map.of("supported",supported(),"pythonVersion",VERSION,"distribution","python-build-standalone install_only_stripped","release",RELEASE,"archiveSha256",SHA256,"bundledArchiveBytes",ARCHIVE_BYTES,"prepared",Files.isRegularFile(pointer(),LinkOption.NOFOLLOW_LINKS),"systemPythonUsed",false,"fixedLibraries",BundledPythonResources.requirements());}
+ public Map<String,Object> inspect(){return Map.of("supported",supported(),"pythonVersion",VERSION,"distribution","python-build-standalone install_only_stripped","release",RELEASE,"archiveSha256",SHA256,"bundledArchiveBytes",ARCHIVE_BYTES,"prepared",Files.isRegularFile(pointer(),LinkOption.NOFOLLOW_LINKS),"systemPythonUsed",false,"fixedLibraries",BundledPythonResources.requirements(),"runtimeDirectory",root.toString());}
  private static void current(BooleanSupplier live)throws IOException{if(!live.getAsBoolean())throw new IOException("HOST_CONTEXT_CHANGED");if(Thread.currentThread().isInterrupted())throw new IOException("HOST_EXECUTION_INTERRUPTED");}
  public Path ensure(BooleanSupplier live)throws Exception{return ensure(live,phase->{});}
  public Path ensure(BooleanSupplier live,java.util.function.Consumer<String> progress)throws Exception{

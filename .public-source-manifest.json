@@ -684,8 +684,8 @@
     },
     {
       "path": "build.gradle",
-      "sha256": "e2191a095a62590d44b38542c9aec44381659b8a68b3114c7cc1efc3e4545628",
-      "bytes": 3174
+      "sha256": "4359e310ae4daff0fe6e9e83e54cc38c5ce20f0791089e951476b065a746a6fe",
+      "bytes": 3290
     },
     {
       "path": "client/build.gradle",
@@ -774,18 +774,18 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/ManagedPythonRuntime.java",
-      "sha256": "6eac69928f4124fe5cc5e5b40f9cc747a916ff4caf18922aeda0e911b21e912a",
-      "bytes": 19724
+      "sha256": "0ac9febbb18dfe993f7993ddf52ba1424cf69485766c55e1e0463016a5bb0d4b",
+      "bytes": 20088
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/maintenance/JavaMaintenanceLauncher.java",
-      "sha256": "d7df8134ae52e4fb3d3ae4d0cf88765e0b212f4e69fa9697102a261512531ecd",
-      "bytes": 3131
+      "sha256": "491b3317bb0000a1bba56999e91b5efc8c81f956dc662a41e34920bf5fe6c513",
+      "bytes": 3291
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/maintenance/MaintenanceEntry.java",
-      "sha256": "5aba32aafe39b8f1fecf1974c5ed1d12b8be381517785a389e5ed4a5b36f5c9b",
-      "bytes": 1519
+      "sha256": "5a03e1c5446322c68c9da127b3dad051c09051a80c03ff45f080df0afc20f5f4",
+      "bytes": 1673
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/preview/NativeScene.java",
@@ -1786,6 +1786,11 @@
       "path": "core/src/main/java/dev/mineagent/runtime/core/host/HostExecutionOutcome.java",
       "sha256": "1894fb98e1304cabd301e2804abf292da57eb1894aba2eeb691547f158d5643d",
       "bytes": 1580
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/host/PythonPaths.java",
+      "sha256": "a01fcc35ae1dfcd958d2f80581a5b02fda399528ba8c8e407fa54f0ac304e26f",
+      "bytes": 1877
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/hostsupport/PythonEdition.java",
@@ -2954,8 +2959,8 @@
     },
     {
       "path": "core/src/main/variants/bundled/java/dev/mineagent/runtime/core/maintenance/PythonMaintenance.java",
-      "sha256": "a03c708b86a5166d5ba3b520adb851e42f4fd811b32fa92c7fef4e7d04c0f5fe",
-      "bytes": 2819
+      "sha256": "698eff21d158e30fe7d0e757c606de2c512e8a50677fd35ff1ef9cbae7ab7349",
+      "bytes": 2991
     },
     {
       "path": "core/src/main/variants/none/java/dev/mineagent/runtime/core/conversation/HostToolDefinitions.java",
@@ -2964,8 +2969,8 @@
     },
     {
       "path": "core/src/main/variants/none/java/dev/mineagent/runtime/core/maintenance/PythonMaintenance.java",
-      "sha256": "cfb9cae0e73ab69a531aa449c12c7ce7553469c56d822a246761ef66aa0808fd",
-      "bytes": 534
+      "sha256": "298f6ba90cfe14edd85fb7f102e94194bf4343af88ffdf0572bc689751d1f463",
+      "bytes": 632
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/AgentPersonaServiceTest.java",
@@ -3244,8 +3249,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/maintenance/JavaMaintenanceTest.java",
-      "sha256": "9528cd3f51ffc03c9608cfa254cb77b15d8f3621285cc10895c6d793201ac323",
-      "bytes": 6779
+      "sha256": "4535375268414e1dbd673375d8df9b9d76f75937e849aa710e81659d79efd882",
+      "bytes": 6864
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/memory/DialogueMemoryStoreTest.java",
@@ -3644,8 +3649,8 @@
     },
     {
       "path": "docs/PYTHON_EDITIONS.md",
-      "sha256": "f06621c76552b342ab9e8c2d4e0cf8e0173be886ab9abbc1e8fb237066a9e758",
-      "bytes": 3878
+      "sha256": "f2ecfab7d6f021311d668d44e5aa5377daf5e73287bc76c42472192c35e3c2f3",
+      "bytes": 4458
     },
     {
       "path": "docs/SIBLING_AI_SETTINGS.md",
@@ -4269,8 +4274,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "0c93caf8e747fc54085e2b2d7bff6290334373bdc512ea8130544e30a0a44438",
-      "bytes": 241051
+      "sha256": "e58cc5e1edb7d25a1e60561cecccbea76036a6b79627c5d82cf008acccd4ec9c",
+      "bytes": 241245
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
