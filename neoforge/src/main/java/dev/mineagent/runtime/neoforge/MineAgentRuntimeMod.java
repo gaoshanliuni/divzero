@@ -36,6 +36,7 @@ public final class MineAgentRuntimeMod {
             new java.util.IdentityHashMap<>();
 
     public MineAgentRuntimeMod(IEventBus modBus, ModContainer container) {
+        try{dev.mineagent.runtime.core.maintenance.GameProcessLease.hold(net.neoforged.fml.loading.FMLPaths.GAMEDIR.get());}catch(Exception error){throw new IllegalStateException("MAINTENANCE_LEASE_UNAVAILABLE",error);}
         LOGGER.info("MineAgent Runtime initializing for Minecraft 26.1.2");
         MineAgentRegistries.register(modBus);
         modBus.addListener(MineAgentNetwork::register);

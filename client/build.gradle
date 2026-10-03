@@ -8,6 +8,55 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
 }
 
-tasks.named('test') { systemProperty 'mineagent.testPythonArchive', providers.gradleProperty('pythonTestArchive').getOrElse('') }
+tasks.named('test') { systemProperty 'mineagent.bundledPythonTest', rootProject.pythonRuntime == 'bundled' }
+
+if (rootProject.pythonRuntime == 'bundled') {
+    def lockFile = layout.projectDirectory.file('src/main/resources/META-INF/divzero/python/bundle-lock.json')
+    def payload = layout.buildDirectory.dir('generated/pythonPayload')
+    def preparePython = tasks.register('prepareBundledPython') {
+        inputs.file(lockFile)
+        outputs.dir(payload)
+        doLast {
+            def lock = new groovy.json.JsonSlurper().parse(lockFile.asFile)
+            def out = payload.get().dir('META-INF/divzero/python').asFile
+            out.mkdirs()
+            def cache = rootProject.file('build/python-artifact-cache'); cache.mkdirs()
+            def sha = { File f ->
+                def digest=java.security.MessageDigest.getInstance('SHA-256')
+                f.withInputStream { stream -> byte[] data=new byte[65536]; int n; while((n=stream.read(data))!=-1)digest.update(data,0,n) }
+                digest.digest().encodeHex().toString()
+            }
+            def records=[lock.runtime]+lock.wheels
+            records.each { record ->
+                def uri = java.net.URI.create(record.url)
+                if(uri.scheme!='https' || !(uri.host in ['github.com','files.pythonhosted.org']))throw new GradleException('PYTHON_BUILD_ORIGIN')
+                def stored = new File(cache,record.sha256)
+                if(!stored.isFile() || stored.length()!=record.bytes || sha(stored)!=record.sha256){
+                    def partial=new File(cache,record.sha256+'.partial')
+                    def connection=uri.toURL().openConnection();connection.connectTimeout=30000;connection.readTimeout=120000
+                    connection.inputStream.withCloseable { input -> partial.withOutputStream { output -> input.transferTo(output) } }
+                    if(partial.length()!=record.bytes || sha(partial)!=record.sha256)throw new GradleException('PYTHON_BUILD_INTEGRITY')
+                    java.nio.file.Files.move(partial.toPath(),stored.toPath(),java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                }
+                def target=new File(out,record==lock.runtime?'runtime.tar.gz':'wheels/'+record.filename);target.parentFile.mkdirs()
+                java.nio.file.Files.copy(stored.toPath(),target.toPath(),java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                if(record!=lock.runtime){
+                    new java.util.zip.ZipFile(stored).withCloseable { zip ->
+                        def entries=zip.entries().toList().findAll { !it.directory && it.name.toLowerCase().matches('.*(?:license|copying|notice).*') }
+                        if(entries.isEmpty())throw new GradleException('PYTHON_WHEEL_LICENSE_MISSING: '+record.name)
+                        entries.each { entry ->
+                            if(entry.name.contains('..')||entry.name.startsWith('/'))throw new GradleException('PYTHON_LICENSE_PATH')
+                            def license=new File(out,'licenses/'+record.name+'/'+entry.name);license.parentFile.mkdirs()
+                            zip.getInputStream(entry).withCloseable { input -> license.withOutputStream { output -> input.transferTo(output) } }
+                        }
+                    }
+                }
+            }
+            new File(out,'BUNDLED-LIBRARIES.txt').setText(lock.wheels.collect { "${it.name}==${it.version}\n${it.source}\nSHA-256 ${it.sha256}\n" }.join('\n')+'\nCPython and all bundled native DLL/stdlib licenses are preserved in runtime.tar.gz (python/LICENSE.txt and package license directories).\n','UTF-8')
+        }
+    }
+    sourceSets.main.resources.srcDir(preparePython)
+    tasks.named('sourcesJar') { exclude 'META-INF/divzero/python/runtime.tar.gz', 'META-INF/divzero/python/wheels/**' }
+}
 
 // Native UI is covered by JVM contracts and isolated in-game acceptance.

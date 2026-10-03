@@ -129,11 +129,12 @@ def embeddedProjects = [
 ]
 
 tasks.named('jar', Jar).configure {
+    manifest { attributes 'Main-Class': 'dev.mineagent.runtime.client.maintenance.MaintenanceEntry' }
     dependsOn embeddedProjects.collect { it.tasks.named('classes') }
     from embeddedProjects.findAll { it != project(':worker') }.collect { it.sourceSets.main.output }
     from(project(':worker').sourceSets.main.output) {
         // The managed Worker JAR owns these large resources. Do not duplicate them in the outer Mod JAR.
-        exclude 'META-INF/mineagent/tools/**'
+        exclude 'META-INF/mineagent/tools/**', 'dev/mineagent/runtime/worker/smoke/ProductionJointAppearanceLauncher*'
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
@@ -162,7 +163,7 @@ tasks.named('processResources').configure {
     dependsOn project(':worker').tasks.named('fatJar')
     // FML's dev Mod module cannot see sibling project resources through Class.getResource.
     // Copy the same authored client resources that the release JAR embeds, not a test-only replacement.
-    from(project(':client').layout.projectDirectory.dir('src/main/resources'))
+    from(project(':client').tasks.named('processResources'))
     from(project(':worker').tasks.named('fatJar')) {
         into 'META-INF/mineagent/worker'
         rename { 'mineagent-worker.jar' }
@@ -194,3 +195,5 @@ tasks.named('check') { dependsOn 'verifyModBranding' }
 
 // Historical unfinished browser acceptance sources are preserved untouched, outside the shipped runtime.
 sourceSets.main.java.exclude '**/PackageAssetSmokeClient.java', '**/PackageAssetSmokeServer.java'
+
+apply from: rootProject.file('scripts/verify-python-editions.gradle')

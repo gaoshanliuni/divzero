@@ -78,6 +78,7 @@ public final class ConversationAgentTools {
             JsonNode args=ToolArguments.parse(tool,arguments);
             if(tool.equals("inspect_owned_agents")){keys(args,"query","offset");return CompletableFuture.completedFuture(ConversationAgentScope.list(p,agent,args));}
             if(tool.equals("inspect_agent_settings")){keys(args);return CompletableFuture.completedFuture(ConversationAgentScope.settings(p,agent));}
+            if(tool.equals("inspect_host")||tool.equals("read_host_output"))return dev.mineagent.runtime.neoforge.hostsupport.HostToolBridge.execute(p,agent,operation,tool,args,permit);
             if(tool.equals("observe")){keys(args);return ConversationMetaTools.observe(p,agent);}
             if(tool.equals("stop_actions")){keys(args);return CompletableFuture.completedFuture(ConversationMetaTools.stop(p,agent));}
             if(tool.equals("skill")){keys(args,"name");var group=CapabilityCatalog.require(text(args,"name",64));return CompletableFuture.completedFuture(Map.of("status","CONTEXT_SCOPE_REQUIRED","name",group.name(),"description",group.description(),"runtimeAvailabilityChanged",false));}
@@ -136,7 +137,7 @@ public final class ConversationAgentTools {
                 action.whenComplete((receipt,failure)->s.execute(()->{
                     if(failure!=null)dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Conversation tool failed: {}",tool,failure);
                     var value=failure==null&&receipt!=null?receipt:ToolFailure.result(tool,operation,failure,ToolFailure.Phase.DISPATCH);
-                    FeedbackNineSmokeServer.observe(tool,args,value);MediaToolsSmokeServer.observe(tool,value);BuildingImportSmokeServer.observe(tool,args,value);WorldGeometrySmokeServer.observe(tool,args,value);PythonHostSmokeServer.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
+                    FeedbackNineSmokeServer.observe(tool,args,value);MediaToolsSmokeServer.observe(tool,value);BuildingImportSmokeServer.observe(tool,args,value);WorldGeometrySmokeServer.observe(tool,args,value);dev.mineagent.runtime.neoforge.hostsupport.HostToolBridge.observe(tool,args,value);ConversationInteractionSmokeServer.observe(tool,args,value);
                     ConversationRuntimeItemSmokeServer.observe(tool,value);ConversationHostSmokeServer.observe(tool,args,value);ConversationFeedbackSmokeServer.observe(tool,value);ConversationCreatureSmokeServer.observe(tool,args,value);ConversationWatchSmokeServer.observe(tool,value);
                     try{String encoded=JSON.writeValueAsString(Map.of("owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args,"receipt",value));CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,1,encoded);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((written,writeError)->s.execute(()->{if(writeError!=null){var diagnostic=new LinkedHashMap<>(ToolFailure.result(tool,operation,writeError,ToolFailure.Phase.RECEIPT_STORAGE));diagnostic.put("observedResult",ToolFailure.summary(value));result.complete(diagnostic);}else result.complete(value);}));}
                     catch(Exception writeError){var diagnostic=new LinkedHashMap<>(ToolFailure.result(tool,operation,writeError,ToolFailure.Phase.RECEIPT_STORAGE));diagnostic.put("observedResult",ToolFailure.summary(value));result.complete(diagnostic);}
@@ -145,7 +146,7 @@ public final class ConversationAgentTools {
         }catch(Exception invalid){return CompletableFuture.completedFuture(ToolFailure.result(tool,operation,invalid,ToolFailure.Phase.VALIDATION));}
     }
     private static CompletableFuture<Map<String,Object>> read(ServerPlayer p,String tool,JsonNode args,BooleanSupplier permit)throws Exception{
-        if(tool.equals("read_host_output")){keys(args,"operation_id","stream","offset");return dev.mineagent.runtime.neoforge.host.LocalHostCommands.output(p,UUID.fromString(text(args,"operation_id",36)),text(args,"stream",6),args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0);}
+        if(tool.equals("read_host_output"))throw new IllegalStateException("HOST_TOOL_ROUTING");
         if(tool.equals("scan_blocks"))return scan(p,args,permit).thenApply(result->{ConversationDiamondSmokeServer.observe(result);return result;});
         if(tool.equals("web_search")||tool.equals("read_web_page"))return web(p,tool,args,permit);
         if(tool.equals("inspect_blocks"))return inspectBlocks(p,args,permit);
@@ -157,7 +158,7 @@ public final class ConversationAgentTools {
             case "inspect_creatures"->{yield dev.mineagent.runtime.neoforge.content.RuntimeCreatures.inspect(p,args);}
             case "inspect_webui"->{keys(args);yield Map.of("contract",dev.mineagent.runtime.worker.generation.WorldUiContract.TEXT,"watchSupported",true,"scope","WORLD_OBJECT_BOUND_PLAYER_WINDOW");}
             case "inspect_effects"->{keys(args);yield ConversationEffectTools.inspect(p);}
-            case "inspect_host"->{keys(args);yield dev.mineagent.runtime.neoforge.host.LocalHostCommands.inspect(p);}
+            case "inspect_host"->{keys(args);yield dev.mineagent.runtime.core.hostsupport.PythonEdition.unavailable();}
             case "inspect_capabilities"->{keys(args,"query");yield CapabilityCatalog.discovery(args.path("query").asText(""),List.of());}
             case "inspect_modeling"->{keys(args);ConversationRuntimeItemSmokeServer.observedModeling=true;yield dev.mineagent.runtime.core.objects.ModelGeometryTools.capabilities();}
             case "validate_model_geometry"->{keys(args,"source","target");String source=text(args,"source",8192),target=text(args,"target",16);Map<String,Object> model;try{model=dev.mineagent.runtime.core.objects.ModelGeometryTools.inspect(source,target);}catch(IllegalArgumentException invalid){model=dev.mineagent.runtime.core.objects.ModelGeometryTools.rejection(source,invalid);}ConversationHostSmokeServer.geometry(args,model);yield model;}
@@ -240,7 +241,7 @@ public final class ConversationAgentTools {
             case "interact_block"->{return ConversationNativeInteractions.useBlock(p,agent,a);}
             case "quick_move_container"->{return ConversationNativeInteractions.quickMove(p,agent,operation,a);}
             case "close_container"->{return ConversationNativeInteractions.closeMenu(p,agent,a);}
-            case "python_execute","python_install_packages"->{dev.mineagent.runtime.core.host.HostCommandRequest request;if(tool.equals("python_execute")){keys(a,"purpose","script","timeout_seconds");request=new dev.mineagent.runtime.core.host.HostCommandRequest(operation,text(a,"purpose",200),text(a,"script",8192),number(a,"timeout_seconds",1,60));}else{keys(a,"purpose","packages","timeout_seconds");if(!a.path("packages").isArray()||a.path("packages").size()>16)throw new IllegalArgumentException("PYTHON_PACKAGE_ARGUMENTS");var packages=new ArrayList<String>();for(var value:a.path("packages")){if(!value.isTextual())throw new IllegalArgumentException("PYTHON_PACKAGE_ARGUMENTS");packages.add(value.asText());}request=dev.mineagent.runtime.core.host.HostCommandRequest.install(operation,text(a,"purpose",200),packages,number(a,"timeout_seconds",1,300));}var resultFuture=dev.mineagent.runtime.neoforge.host.LocalHostCommands.request(p,request);var hostServer=p.level().getServer();WORK.computeIfAbsent(hostServer,k->new ArrayList<>()).add(new Work(){public boolean tick(){if(resultFuture.isDone())return true;String reason=hostServer.getPlayerList().getPlayer(p.getUUID())!=p?"HOST_PLAYER_SESSION_CHANGED":!ServerTaskStart.allowed(p,agent)?"HOST_PERMISSION_CHANGED":!permit.getAsBoolean()?"HOST_CONVERSATION_CANCELLED":"";if(!reason.isEmpty()){dev.mineagent.runtime.neoforge.host.LocalHostCommands.cancel(operation,reason);return true;}return false;}public void cancel(){dev.mineagent.runtime.neoforge.host.LocalHostCommands.cancel(operation,"HOST_SERVER_STOPPED");}});return resultFuture;}
+            case "python_execute","python_install_packages"->{return dev.mineagent.runtime.neoforge.hostsupport.HostToolBridge.execute(p,agent,operation,tool,a,permit);}
             case "run_game_command"->{keys(a,"command");return command(p,text(a,"command",2048),permit);}
             case "generate_content_package"->{keys(a,"prompt");return generateContent(p,agent,operation,text(a,"prompt",4096),null,permit);}
             case "control_package_edit"->{return CompletableFuture.completedFuture(ServerPackageRuntime.get(p.level().getServer()).controlPackageEdit(p,agent,a));}

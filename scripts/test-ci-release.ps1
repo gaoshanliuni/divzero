@@ -72,22 +72,22 @@ Write-Output "SOURCE_BUILD_VERSION_TEST_PASSED=$buildVersion"
     if($errors.Count){throw 'PUBLISH_SCRIPT_PARSE_FAILED'}
     $function=$ast.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Select-RuntimeFiles'},$true)
     . ([scriptblock]::Create($function.Extent.Text))
-    $info=[pscustomobject]@{jar='DivZero-test.jar'}
-    $names=@('DivZero-test.jar','ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar','native-sources.jar','BUILD-INFO.json','LICENSE-DIVZERO.txt','SHA256SUMS')
+    $info=[pscustomobject]@{jar='DivZero-test-no-python.jar';jars=@([pscustomobject]@{jar='DivZero-test-no-python.jar'},[pscustomobject]@{jar='DivZero-test-with-python.jar'})}
+    $names=@('DivZero-test-no-python.jar','DivZero-test-with-python.jar','ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar','native-sources.jar','BUILD-INFO.json','LICENSE-DIVZERO.txt','SHA256SUMS')
     $all=@($names | ForEach-Object {[pscustomobject]@{Name=$_}});$hashes=[Collections.Generic.Dictionary[string,string]]::new()
     foreach($name in $names){$hashes.Add($name,'0'*64)}
     $selected=@(Select-RuntimeFiles $info $all $hashes)
-    if($selected.Count -ne 4 -or @($selected | Where-Object {$_.Name -match 'sources|json|txt|SUMS|mcef|webgui'}).Count){throw 'RUNTIME_ONLY_SELECTION_FAILED'}
-    $info.jar='native-sources.jar';$rejected=$false
+    if($selected.Count -ne 5 -or @($selected | Where-Object {$_.Name -match 'sources|json|txt|SUMS|mcef|webgui'}).Count){throw 'RUNTIME_ONLY_SELECTION_FAILED'}
+    $info.jars[0].jar='native-sources.jar';$rejected=$false
     try{Select-RuntimeFiles $info $all $hashes | Out-Null}catch{if($_.Exception.Message -ne 'RELEASE_RUNTIME_JAR_REQUIRED'){throw};$rejected=$true}
     if(-not $rejected){throw 'SOURCE_JAR_WAS_PUBLISHABLE_AS_MAIN'}
-    $info.jar='DivZero-test.jar';$rejected=$false
+    $info.jars[0].jar='DivZero-test-no-python.jar';$rejected=$false
     try{Select-RuntimeFiles $info ($all+@([pscustomobject]@{Name='mcef-offline-neoforge-windows_amd64.jar'})) $hashes | Out-Null}catch{if($_.Exception.Message -ne 'RELEASE_BROWSER_FILE_FORBIDDEN'){throw};$rejected=$true}
     if(-not $rejected){throw 'LEGACY_BROWSER_WAS_ALLOWED_IN_STAGING'}
-    Write-Output 'RUNTIME_ONLY_NATIVE_SELECTION_PASSED=4'
+    Write-Output 'RUNTIME_ONLY_NATIVE_SELECTION_PASSED=5'
 }
 $fixture = Join-Path $root ('build/ci-release-test-' + [Guid]::NewGuid().ToString('N'))
-foreach ($dir in @('scripts','docs/licenses','docs/releases','neoforge/build/libs')) { New-Item -ItemType Directory -Path (Join-Path $fixture $dir) -Force | Out-Null }
+foreach ($dir in @('scripts','docs/licenses','docs/releases','build/editions/none/neoforge/libs','build/editions/bundled/neoforge/libs')) { New-Item -ItemType Directory -Path (Join-Path $fixture $dir) -Force | Out-Null }
 Copy-Item -LiteralPath (Join-Path $root "docs/releases/$buildVersion.md") -Destination (Join-Path $fixture "docs/releases/$buildVersion.md")
 foreach ($script in @('get-build-version.ps1','get-release-versions.ps1','package-ci-artifact.ps1','stage-native-ui-dependencies.ps1','publish-ci-release.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $script) -Destination (Join-Path $fixture "scripts/$script") }
 foreach ($file in @('gradle.properties','build.gradle','neoforge/build.gradle','LICENSE','docs/THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $root $file) -Destination (Join-Path $fixture $file) }
@@ -96,15 +96,19 @@ $props.mod_version=$buildVersion
 $env:DIVZERO_BUILD_VERSION=$buildVersion
 $metadata = [IO.File]::ReadAllText((Join-Path $root 'neoforge/src/main/templates/META-INF/neoforge.mods.toml'))
 foreach ($key in $props.Keys) { $metadata = $metadata.Replace('${'+$key+'}',[string]$props[$key]) }
-$jar = Join-Path $fixture 'neoforge/build/libs/TEST-ONLY-NOT-INSTALLABLE.jar'
+foreach($edition in @('none','bundled')) {
+$jar = Join-Path $fixture "build/editions/$edition/neoforge/libs/TEST-ONLY-NOT-INSTALLABLE.jar"
 $archive = [IO.Compression.ZipFile]::Open($jar,[IO.Compression.ZipArchiveMode]::Create)
 try {
     $writer = [IO.StreamWriter]::new($archive.CreateEntry('META-INF/neoforge.mods.toml').Open())
     try { $writer.Write($metadata) } finally { $writer.Dispose() }
     [void]$archive.CreateEntry('META-INF/mineagent/worker/mineagent-worker.jar')
+    $writer=[IO.StreamWriter]::new($archive.CreateEntry('META-INF/divzero/edition.properties').Open());try{$writer.Write("python=$edition`n")}finally{$writer.Dispose()}
+    if($edition -eq 'bundled'){[void]$archive.CreateEntry('META-INF/divzero/python/runtime.tar.gz')}
     [void]$archive.CreateEntry('LICENSE-DIVZERO.txt')
     [void]$archive.CreateEntry('META-INF/DIVZERO-THIRD-PARTY-NOTICES.md')
 } finally { $archive.Dispose() }
+}
 $oldRun=$env:GITHUB_RUN_ID; $oldAttempt=$env:GITHUB_RUN_ATTEMPT; $oldOutput=$env:GITHUB_OUTPUT
 $commit='a'*40
 function Expect-Failure([string]$Expected,[scriptblock]$Action) {
@@ -117,7 +121,7 @@ try {
     $assets=Join-Path $fixture 'build/ci-artifacts'
     $publish=Join-Path $fixture 'scripts/publish-ci-release.ps1'
     $result=& $publish -Commit $commit -AssetDirectory $assets -DryRun
-    if ($result -cnotcontains "RELEASE_TITLE=$($props.mod_version)" -or $result -cnotcontains "RELEASE_DRY_RUN_TAG=$($props.mod_version)" -or $result -cnotcontains "PUBLISH_JAR=DivZero-mineagent-$($props.mod_version).jar" -or -not ($result -match 'VERIFIED_FILES=10') -or -not ($result -match 'PUBLISHED_JARS=4')) { throw 'DRY_RUN_SUMMARY_MISSING' }
+    if ($result -cnotcontains "RELEASE_TITLE=$($props.mod_version)" -or $result -cnotcontains "RELEASE_DRY_RUN_TAG=$($props.mod_version)" -or $result -cnotcontains "PUBLISH_JAR=DivZero-mineagent-$($props.mod_version)-no-python.jar" -or -not ($result -match 'VERIFIED_FILES=11') -or -not ($result -match 'PUBLISHED_JARS=5')) { throw 'DRY_RUN_SUMMARY_MISSING' }
     $notes=$result -join "`n"
     if ($notes -notmatch '下载附件（Assets）' -or @($result | Where-Object { $_ -like 'PUBLISH_JAR=*' -and $_ -match 'sources|LICENSE|json|md|txt' }).Count) { throw 'RELEASE_NOTES_MUST_USE_ASSETS_SECTION' }
     $result | Where-Object { $_ -match '^(RELEASE_TITLE|VERIFIED_FILES)=' }

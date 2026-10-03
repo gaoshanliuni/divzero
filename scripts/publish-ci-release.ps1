@@ -21,7 +21,8 @@ if (-not $DryRun) {
 foreach ($property in $versions.PSObject.Properties) {
     if (-not $info.PSObject.Properties[$property.Name] -or $info.($property.Name) -cne $property.Value) { throw "RELEASE_VERSION_MISMATCH: $($property.Name)" }
 }
-if ($info.jar -cne "DivZero-mineagent-$($versions.modVersion).jar") { throw 'RELEASE_MAIN_NAME_MISMATCH' }
+$expectedMains=@("DivZero-mineagent-$($versions.modVersion)-no-python.jar","DivZero-mineagent-$($versions.modVersion)-with-python.jar")
+if(@($info.jars).Count -ne 2 -or @($info.jars | ForEach-Object jar | Sort-Object -Unique).Count -ne 2 -or @($info.jars | Where-Object { $_.jar -cnotin $expectedMains }).Count -or $info.jar -cne $expectedMains[0]) { throw 'RELEASE_MAIN_NAME_MISMATCH' }
 $run=[string]$info.workflowRunId;$attempt=[string]$info.workflowRunAttempt
 if ($run -notmatch '^[1-9][0-9]*$' -or $attempt -notmatch '^[1-9][0-9]*$') { throw 'RELEASE_BUILD_RUN_MISSING' }
 if (-not $DryRun -and ($run -ne $env:GITHUB_RUN_ID -or [long]$attempt -gt [long]$env:GITHUB_RUN_ATTEMPT -or $env:GITHUB_REPOSITORY -ne $repo -or $env:GITHUB_REF -ne 'refs/heads/main')) { throw 'RELEASE_ONLY_FROM_TRUSTED_MAIN_RUN' }
@@ -39,9 +40,9 @@ if ($files.Count -ne $manifest.Count+1 -or @(Get-ChildItem -LiteralPath $assets 
 foreach($file in $files) {
     if ($file.Extension -notin @('.jar','.json','.txt','.md','') -or $file.Name -ne 'SHA256SUMS' -and -not $manifest.ContainsKey($file.Name)) { throw 'RELEASE_FILE_NOT_ALLOWED' }
 }
-$required=@([string]$info.jar,'ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar','LICENSE-DIVZERO.txt','DEPENDENCIES.json','README.txt','THIRD-PARTY-NOTICES.md','BUILD-INFO.json')
+$required=@($expectedMains)+@('ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar','LICENSE-DIVZERO.txt','DEPENDENCIES.json','README.txt','THIRD-PARTY-NOTICES.md','BUILD-INFO.json')
 foreach($name in $required) { if (-not $manifest.ContainsKey($name)) { throw "RELEASE_REQUIRED_FILE_MISSING: $name" } }
-if ($manifest[[string]$info.jar] -ne $info.sha256) { throw 'RELEASE_MAIN_JAR_HASH_MISMATCH' }
+foreach($edition in $info.jars){if($manifest[[string]$edition.jar] -ne $edition.sha256){throw 'RELEASE_MAIN_JAR_HASH_MISMATCH'}}
 $manifest.Add('SHA256SUMS',(Get-FileHash -LiteralPath (Join-Path $assets 'SHA256SUMS') -Algorithm SHA256).Hash.ToLowerInvariant())
 $short=$Commit.Substring(0,12)
 $tag=[string]$versions.modVersion
@@ -63,12 +64,13 @@ $changes
 
 | 附件 | 用途 | 是否必需 |
 | --- | --- | --- |
-| $($info.jar) | DivZero 主模组 | 是 |
+| $($expectedMains[0]) | 无 Python 运行时；此版本不支持Python | 二选一 |
+| $($expectedMains[1]) | 内置完整 Python、固定基础库和许可证，首次使用离线解压 | 二选一 |
 | ldlib2-neoforge-26.1-26.1.2.41.jar | F2 与原生 UI / HUD | 是 |
 | kubejs-neoforge-26.1.2-8.0.6.jar | AI 动态界面 | 使用 AI 动态界面时 |
 | better-advanced-tooltips-2601.1.0-build.9.jar | KubeJS 依赖 | 安装 KubeJS 时 |
 
-内置 F2 只需前两个附件，完整 AI 动态界面安装四个。Rhino 已内嵌。新版本不打包或发行 MCEF / WebGUI，也没有浏览器备用渲染。
+两个主模组版本只能选择一个，不能同时放入 mods。再安装 LDLib2 即可使用内置 F2；AI 动态界面另需 KubeJS 和 Better Advanced Tooltips。Rhino 已内嵌。新版本不打包或发行 MCEF / WebGUI，也没有浏览器备用渲染。
 
 ### 升级方法
 
@@ -88,7 +90,8 @@ $changes
 $verifiedCount=$files.Count
 function Select-RuntimeFiles($Info,$AllFiles,$Manifest) {
 if (@($AllFiles | Where-Object { $_.Name -match '(?i)(mcef|webgui|jcef)' }).Count) { throw 'RELEASE_BROWSER_FILE_FORBIDDEN' }
-$publishNames=@([string]$Info.jar,'ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar')
+if(@($Info.jars).Count -ne 2){throw 'RELEASE_TWO_EDITIONS_REQUIRED'}
+$publishNames=@($Info.jars | ForEach-Object jar)+@('ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar')
 if (@($publishNames | Sort-Object -Unique).Count -ne $publishNames.Count) { throw 'RELEASE_RUNTIME_LIST_DUPLICATE' }
 foreach ($name in $publishNames) {
     if ($name -notmatch '^[A-Za-z0-9][A-Za-z0-9_.+-]*\.jar$' -or $name -match '(sources|javadoc|corresponding|neoforge-api)' -or -not $Manifest.ContainsKey($name)) { throw 'RELEASE_RUNTIME_JAR_REQUIRED' }

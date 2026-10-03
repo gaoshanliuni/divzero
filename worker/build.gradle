@@ -40,7 +40,7 @@ tasks.register('fatJar', Jar) {
     manifest {
         attributes 'Main-Class': application.mainClass.get()
     }
-    from sourceSets.main.output
+    from(sourceSets.main.output) { exclude 'dev/mineagent/runtime/worker/smoke/ProductionJointAppearanceLauncher*' }
     dependsOn configurations.runtimeClasspath
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

@@ -24,3 +24,13 @@ Pinned commit: 2fa3363c924c5c3e367b84a87ae478296a0ed59b
 Selected pure functions and templates are adapted for the existing Rhino runtime.
 The original sources, license, hashes and adaptation notes are packaged under
 /dev/mineagent/runtime/opencode/. OpenCode shell and agent execution are not enabled.
+
+Optional bundled Python edition (Windows x64)
+CPython 3.13.15 from astral-sh/python-build-standalone, release 20260901.
+Pinned requests, Pillow, NumPy, colorama and their dependency wheels retain their
+upstream licenses. Exact versions, official artifact URLs and SHA-256 digests are
+recorded in client/src/main/resources/META-INF/divzero/python/bundle-lock.json.
+The bundled distribution preserves its standard library, native DLLs and all
+vendor license files. Additional wheel licenses are included under
+META-INF/divzero/python/licenses/ in the bundled-Python JAR. These runtime
+artifacts are absent from the no-Python edition.

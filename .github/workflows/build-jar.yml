@@ -88,14 +88,16 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path build/ci-logs -Force | Out-Null
-          & ./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$env:DIVZERO_BUILD_VERSION" :neoforge:jar :neoforge:verifyProductionUiParser :neoforge:test :agent:test :api:test :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath build/ci-logs/gradle.log
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($edition in @('none','bundled')) {
+            & ./gradlew.bat -I scripts/release-build.init.gradle "-Pmod_version=$env:DIVZERO_BUILD_VERSION" "-PpythonRuntime=$edition" :neoforge:jar :neoforge:verifyPythonEdition :neoforge:verifyProductionUiParser :neoforge:test :agent:test :api:test :core:test :worker:test :client:test --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath "build/ci-logs/gradle-$edition.log"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Upload development Mod
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: development-mod-${{ github.sha }}-${{ github.run_id }}
-          path: neoforge/build/libs/mineagent_runtime-*.jar
+          path: build/editions/*/neoforge/libs/mineagent_runtime-*.jar
           if-no-files-found: error
           retention-days: 7
 

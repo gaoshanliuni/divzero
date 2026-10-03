@@ -2,6 +2,9 @@ plugins {
     id 'base'
 }
 
+ext.pythonRuntime = providers.gradleProperty('pythonRuntime').getOrElse('none')
+if (!(pythonRuntime in ['none', 'bundled'])) throw new GradleException('PYTHON_EDITION_INVALID')
+
 allprojects {
     group = mod_group_id
     version = mod_version
@@ -14,7 +17,33 @@ allprojects {
 }
 
 subprojects {
+    // Different source sets must never share incremental class/resource outputs.
+    layout.buildDirectory = rootProject.layout.projectDirectory.dir("build/editions/${rootProject.pythonRuntime}/${project.path.substring(1).replace(':', '/')}")
     plugins.withType(JavaPlugin).configureEach {
+        if (project.name == 'core') {
+            sourceSets.main.java.srcDir "src/main/variants/${rootProject.pythonRuntime}/java"
+            def editionMetadata = tasks.register('generateEditionMetadata') {
+                inputs.property('python', rootProject.pythonRuntime)
+                def out = layout.buildDirectory.dir('generated/edition')
+                outputs.dir(out)
+                doLast {
+                    def file = out.get().file('META-INF/divzero/edition.properties').asFile
+                    file.parentFile.mkdirs()
+                    file.setText("python=${rootProject.pythonRuntime}\n", 'UTF-8')
+                }
+            }
+            sourceSets.main.resources.srcDir(editionMetadata)
+        }
+        if (rootProject.pythonRuntime == 'none') {
+            if (project.name in ['core', 'client']) {
+                sourceSets.main.java.exclude '**/host/**'
+                sourceSets.test.java.exclude '**/host/**'
+            }
+            if (project.name == 'client') sourceSets.main.resources.exclude 'META-INF/divzero/python/**'
+            if (project.name == 'neoforge') {
+                sourceSets.main.java.exclude '**/client/host/**', '**/host/LocalHostCommands.java', '**/PythonHostSmokeClient.java', '**/PythonHostSmokeServer.java'
+            }
+        }
         java {
             toolchain.languageVersion = JavaLanguageVersion.of(25)
             withSourcesJar()

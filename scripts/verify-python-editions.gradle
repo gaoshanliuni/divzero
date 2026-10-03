@@ -1,0 +1,41 @@
+// Applied to :neoforge. Verify the actual shipped outer and Worker archives, not a build flag alone.
+tasks.register('verifyPythonEdition') {
+    group = 'verification'
+    dependsOn tasks.named('jar')
+    inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    inputs.property('edition', rootProject.pythonRuntime)
+    doLast {
+        def bundled = rootProject.pythonRuntime == 'bundled'
+        def forbidden = ['dev/mineagent/runtime/client/host/', 'dev/mineagent/runtime/core/host/', 'dev/mineagent/runtime/neoforge/client/host/', 'dev/mineagent/runtime/neoforge/host/LocalHostCommands']
+        new java.util.zip.ZipFile(inputs.files.singleFile).withCloseable { zip ->
+            def names=zip.entries().toList()*.name
+            if(names.any{it.contains('ProductionJointAppearanceLauncher')})throw new GradleException('LEGACY_SHELL_MAINTENANCE_PACKAGED')
+            def edition=zip.getEntry('META-INF/divzero/edition.properties')
+            if(edition==null || !zip.getInputStream(edition).getText('UTF-8').contains('python='+rootProject.pythonRuntime))throw new GradleException('PACKAGED_EDITION_METADATA')
+            if(!names.contains('dev/mineagent/runtime/client/maintenance/MaintenanceEntry.class'))throw new GradleException('JAVA_MAINTENANCE_MISSING')
+            if(bundled){
+                if(!names.contains('dev/mineagent/runtime/client/host/ManagedPythonRuntime.class')||!names.contains('dev/mineagent/runtime/neoforge/client/host/PythonToolProvider.class'))throw new GradleException('BUNDLED_PYTHON_EXECUTOR_MISSING')
+                def lock=new groovy.json.JsonSlurper().parseText(zip.getInputStream(zip.getEntry('META-INF/divzero/python/bundle-lock.json')).getText('UTF-8'))
+                ([lock.runtime]+lock.wheels).each { record ->
+                    def path='META-INF/divzero/python/'+(record==lock.runtime?'runtime.tar.gz':'wheels/'+record.filename)
+                    def entry=zip.getEntry(path);if(entry==null||entry.size!=record.bytes)throw new GradleException('BUNDLED_PYTHON_FILE_MISSING: '+path)
+                    def hash=java.security.MessageDigest.getInstance('SHA-256');zip.getInputStream(entry).withCloseable{stream->byte[] data=new byte[65536];int n;while((n=stream.read(data))!=-1)hash.update(data,0,n)}
+                    if(hash.digest().encodeHex().toString()!=record.sha256)throw new GradleException('BUNDLED_PYTHON_FILE_CHANGED: '+path)
+                }
+                if(!names.any{it.startsWith('META-INF/divzero/python/licenses/numpy/')}||!names.any{it.startsWith('META-INF/divzero/python/licenses/Pillow/')})throw new GradleException('BUNDLED_LIBRARY_LICENSE_MISSING')
+            }else if(names.any{it.startsWith('META-INF/divzero/python/')||forbidden.any{p->it.startsWith(p)}})throw new GradleException('NO_PYTHON_EDITION_CONTAINS_RUNTIME')
+            zip.getInputStream(zip.getEntry('META-INF/mineagent/worker/mineagent-worker.jar')).withCloseable{input->
+                new java.util.zip.ZipInputStream(input).withCloseable{worker->
+                    def found=false;java.util.zip.ZipEntry e
+                    while((e=worker.nextEntry)!=null){
+                        if(e.name=='META-INF/divzero/edition.properties'){found=true;def text=new String(worker.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);if(!text.contains('python='+rootProject.pythonRuntime))throw new GradleException('WORKER_EDITION_MISMATCH')}
+                        if(!bundled&&forbidden.any{p->e.name.startsWith(p)})throw new GradleException('WORKER_CONTAINS_PYTHON_RUNTIME')
+                        if(e.name.contains('ProductionJointAppearanceLauncher'))throw new GradleException('LEGACY_SHELL_MAINTENANCE_PACKAGED')
+                    }
+                    if(!found)throw new GradleException('WORKER_EDITION_MISSING')
+                }
+            }
+        }
+        logger.lifecycle('PYTHON_EDITION_VERIFIED: '+rootProject.pythonRuntime)
+    }
+}

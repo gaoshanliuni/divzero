@@ -9,11 +9,12 @@ public final class CapabilitySession {
     private final LinkedHashSet<String> groups=new LinkedHashSet<>(),tools=new LinkedHashSet<>(CapabilityCatalog.RESIDENT);
     public synchronized Map<String,Object> load(String name){
         if(nativeContentOnly&&name.equals("host"))return GameContentRouting.nativeWorkflow();
+        if(name.equals("host")&&!dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled())return dev.mineagent.runtime.core.hostsupport.PythonEdition.unavailable();
         var group=CapabilityCatalog.require(name);boolean added=groups.add(name);for(String tool:group.tools())tools.add(CapabilityCatalog.canonical(tool));
         return Map.of("status",added?"LOADED":"ALREADY_LOADED","name",name,"description",group.description(),"tools",group.tools(),"contextOnly",true,"executionAuthorized",false);
     }
     public synchronized List<String> groups(){return List.copyOf(groups);}
-    public synchronized Optional<Map<String,Object>> admission(String tool){return nativeContentOnly&&GameContentRouting.hostTool(tool)?Optional.of(GameContentRouting.nativeWorkflow()):Optional.empty();}
+    public synchronized Optional<Map<String,Object>> admission(String tool){if(!dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled()&&GameContentRouting.hostTool(tool)&&!nativeContentOnly)return Optional.of(dev.mineagent.runtime.core.hostsupport.PythonEdition.unavailable());return nativeContentOnly&&GameContentRouting.hostTool(tool)?Optional.of(GameContentRouting.nativeWorkflow()):Optional.empty();}
     public synchronized List<String> tools(){return List.copyOf(tools);}
     public synchronized List<ConversationTools.Definition> definitions(){return CapabilityCatalog.selected(tools);}
     public synchronized void used(String tool){

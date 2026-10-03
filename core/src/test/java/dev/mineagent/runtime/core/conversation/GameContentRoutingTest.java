@@ -15,7 +15,7 @@ class GameContentRoutingTest {
     }
     @Test void explicitComputerTasksRemainAvailableAndNegativeMentionsDoNotLoadHost(){
         for(String request:List.of("请用Python生成法杖的模型数据","帮我在电脑上打开记事本","Use Python to generate an item model")){
-            var session=new CapabilitySession();session.preload(request,List.of());assertTrue(session.groups().contains("host"),request);assertTrue(session.admission("python_execute").isEmpty());
+            var session=new CapabilitySession();session.preload(request,List.of());assertEquals(dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled(),session.groups().contains("host"),request);assertEquals(dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled(),session.admission("python_execute").isEmpty());
         }
         assertFalse(GameContentRouting.hostRequested("做一个召唤权杖，不用Python"));
         assertFalse(GameContentRouting.hostRequested("Create a wand without Python"));

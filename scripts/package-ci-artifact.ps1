@@ -17,15 +17,24 @@ if (-not $Commit) {
 if ($Commit -notmatch '^[0-9a-f]{40}([0-9a-f]{24})?$') { throw 'CI_SOURCE_COMMIT_INVALID' }
 $short = $Commit.Substring(0, 12)
 $versions = & (Join-Path $PSScriptRoot 'get-release-versions.ps1')
-$jars = @(Get-ChildItem -LiteralPath (Join-Path $root 'neoforge/build/libs') -Filter '*.jar' -File |
-    Where-Object { $_.Name -notmatch '-(sources|javadoc)\.jar$' })
-if ($jars.Count -ne 1) { throw "CI_EXPECTED_ONE_INSTALLABLE_JAR: found $($jars.Count)" }
+New-Item -ItemType Directory -Path $out -Force | Out-Null
+$editionJars = @()
+foreach ($edition in @('none','bundled')) {
+$jars = @(Get-ChildItem -LiteralPath (Join-Path $root "build/editions/$edition/neoforge/libs") -Filter '*.jar' -File | Where-Object { $_.Name -notmatch '-(sources|javadoc)\.jar$' })
+if ($jars.Count -ne 1) { throw "CI_EXPECTED_ONE_INSTALLABLE_JAR: $edition found $($jars.Count)" }
 $jar = $jars[0]
 $archive = [IO.Compression.ZipFile]::OpenRead($jar.FullName)
 try {
     foreach ($entry in @('META-INF/neoforge.mods.toml', 'META-INF/mineagent/worker/mineagent-worker.jar', 'LICENSE-DIVZERO.txt', 'META-INF/DIVZERO-THIRD-PARTY-NOTICES.md')) {
         if ($null -eq $archive.GetEntry($entry)) { throw "CI_MISSING_RUNTIME_ENTRY: $entry" }
     }
+    $identity=$archive.GetEntry('META-INF/divzero/edition.properties')
+    if($null -eq $identity){throw 'CI_EDITION_METADATA_MISSING'}
+    $reader=[IO.StreamReader]::new($identity.Open());try{$identityText=$reader.ReadToEnd()}finally{$reader.Dispose()}
+    if($identityText -notmatch ('(?m)^python='+$edition+'$')){throw 'CI_EDITION_METADATA_MISMATCH'}
+    $payload=$archive.GetEntry('META-INF/divzero/python/runtime.tar.gz')
+    if(($edition -eq 'bundled') -ne ($null -ne $payload)){throw 'CI_EDITION_PAYLOAD_MISMATCH'}
+    if($edition -eq 'none' -and @($archive.Entries | Where-Object FullName -Match '^dev/mineagent/runtime/(client/host|core/host|neoforge/client/host)/').Count){throw 'CI_NO_PYTHON_RUNTIME_PRESENT'}
     $reader = [IO.StreamReader]::new($archive.GetEntry('META-INF/neoforge.mods.toml').Open())
     try { $metadata = $reader.ReadToEnd() } finally { $reader.Dispose() }
     # Match complete table blocks, never a different Mod's version field.
@@ -46,11 +55,14 @@ try {
         }
     }
 } finally { $archive.Dispose() }
-New-Item -ItemType Directory -Path $out -Force | Out-Null
-$name = "DivZero-mineagent-$($versions.modVersion).jar"
+$suffix=if($edition -eq 'none'){'no-python'}else{'with-python'}
+$name = "DivZero-mineagent-$($versions.modVersion)-$suffix.jar"
 $destination = Join-Path $out $name
 Copy-Item -LiteralPath $jar.FullName -Destination $destination
 $sha = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
+$editionJars += [pscustomobject]@{edition=$suffix;jar=$name;sha256=$sha}
+}
+$name=$editionJars[0].jar;$sha=$editionJars[0].sha256
 & (Join-Path $PSScriptRoot 'stage-native-ui-dependencies.ps1') -OutputDirectory $out
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $out 'LICENSE-DIVZERO.txt')
 Copy-Item -LiteralPath (Join-Path $root 'docs/THIRD_PARTY_NOTICES.md') -Destination (Join-Path $out 'THIRD-PARTY-NOTICES.md')
@@ -59,6 +71,7 @@ $info = [ordered]@{
     sourceCommit = $Commit
     variant = $Variant
     builtAtUtc = [DateTime]::UtcNow.ToString('o')
+    jars = $editionJars
     jar = $name
     sha256 = $sha
     modId = $versions.modId
@@ -80,7 +93,8 @@ NeoForge: $($versions.neoForgeVersion); Java: $($versions.requiredJavaVersion)
 Source: https://github.com/gaoshanliuni/divzero/commit/$Commit
 
 Install the main JAR and LDLib2 for the built-in F2 workspace.
-- $name
+- Choose ONE: $($editionJars[0].jar) OR $($editionJars[1].jar)
+- Do not install both editions together. The with-python edition bundles full CPython, pinned requests/Pillow/NumPy/colorama, dependency wheels and licenses. First use is offline. The no-python edition removes the runtime executors.
 - ldlib2-neoforge-26.1-26.1.2.41.jar
 AI-created native interfaces additionally require:
 - kubejs-neoforge-26.1.2-8.0.6.jar

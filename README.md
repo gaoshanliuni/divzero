@@ -143,7 +143,7 @@ F2 → 文件，或对话 → 附件，选择建筑文件交给 AI。支持结�
 
 玩家明确要求接管本人后，AI 使用原生客户端输入持续执行。进入托管释放鼠标；**T、F2、切换电脑窗口及最小化均不中断**。MC 面板提供“暂停 / 继续、退出、追加命令”，按钮松开时触发；聊天栏 / F2 的 Esc 只处理界面；**回到游戏画面后双击 Esc 结束托管**。退出恢复原失焦暂停设置，死亡、断线、世界或权限变化仍释放控制。
 
-Java 管理的专用 Python 可执行本机任务、安装第三方库，每次在原生聊天中查看并确认。
+发行包提供“无 Python”和“内置 Python”两种主模组，二选一。内置版由 Java 从 JAR 本地解压完整解释器、标准库、DLL 与固定基础库，无需联网下载解释器；每条本机任务仍在原生聊天中查看并确认。无 Python 版不包含执行器，AI 会明确说明“此版本不支持Python”。详见 [Python 双版本与 Java 维护](docs/PYTHON_EDITIONS.md)。
 
 **[全部功能、适用范围与更多截图 →](docs/FEATURES.md)**
 
@@ -309,7 +309,7 @@ An AI you create responds directly to you by default. When another player mentio
 
 Explicitly requested player takeover uses native client input and releases the mouse cursor. **T, F2, switching windows and minimizing do not interrupt it.** The MC panel provides Pause/Continue, Exit and Add command, triggered on release. **Double-tap Esc in the game surface to exit; Esc in chat/F2 only handles the open UI.** Exiting restores your original focus-pause setting; death, disconnects, world and permission changes still release control.
 
-A dedicated Python runtime managed by Java can perform local tasks and install third-party libraries. Review and approve each request in Minecraft chat.
+Choose one main JAR: no-Python or bundled-Python. The bundled edition contains the full interpreter, standard library, DLLs, pinned libraries and licenses; Java extracts and verifies them locally with no interpreter download. Review and approve each local task in Minecraft chat. The no-Python edition omits the executors and tells AI that Python is unsupported. See [Python editions and Java maintenance](docs/PYTHON_EDITIONS.md).
 
 **[All features, supported scope, and more screenshots →](docs/FEATURES.md#english)**
 
