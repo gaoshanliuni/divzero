@@ -574,7 +574,7 @@ public final class PersistentSkillSmokeClient {
         if(resume)return;
         action("preserve-user-file-and-corrupt-fixed-library",()->{try{
             Files.writeString(hostFile("keep-user.txt"),"preserve me");Path root=mc().gameDirectory.toPath().resolve("mineagent-host");try(var entries=Files.list(root)){pythonPointer=entries.filter(f->f.getFileName().toString().matches("environment-[a-f0-9]{64}\\.json")).findFirst().orElseThrow();}
-            String env=JSON.readTree(Files.readString(pythonPointer)).path("directory").asText();require(env.matches("environment-[a-f0-9-]{36}"),"FIXTURE_ENV_PATH");pythonModule=root.resolve(env).resolve("Lib/site-packages/colorama/__init__.py");require(pythonModule.normalize().startsWith(root.normalize())&&Files.isRegularFile(pythonModule),"FIXTURE_MODULE_PATH");Files.writeString(pythonModule,"tampered fixture");return CompletableFuture.completedFuture(true);
+            String env=JSON.readTree(Files.readString(pythonPointer)).path("directory").asText();require(env.matches("(?:environment-[a-f0-9-]{36}|env-[0-9]{1,20})"),"FIXTURE_ENV_PATH");pythonModule=root.resolve(env).resolve("Lib/site-packages/colorama/__init__.py");require(pythonModule.normalize().startsWith(root.normalize())&&Files.isRegularFile(pythonModule),"FIXTURE_MODULE_PATH");Files.writeString(pythonModule,"tampered fixture");return CompletableFuture.completedFuture(true);
         }catch(Exception e){return CompletableFuture.failedFuture(e);}});
         action("request-after-integrity-change",()->hostRequest("验证损坏的内置库不会继续执行","print('must not run')\n"));
         waitFor("approve-integrity-probe",300,()->CompletableFuture.completedFuture(approveHostFixture()));

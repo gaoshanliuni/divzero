@@ -774,8 +774,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/ManagedPythonRuntime.java",
-      "sha256": "9fa26482482b0f757cc904e6e603b856af1e3fa7be7ff3f8eea3c0c32559a658",
-      "bytes": 19712
+      "sha256": "6eac69928f4124fe5cc5e5b40f9cc747a916ff4caf18922aeda0e911b21e912a",
+      "bytes": 19724
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/maintenance/JavaMaintenanceLauncher.java",
@@ -2954,8 +2954,8 @@
     },
     {
       "path": "core/src/main/variants/bundled/java/dev/mineagent/runtime/core/maintenance/PythonMaintenance.java",
-      "sha256": "667bf2d1020fede1194a39be6d7dcf367eadf48b312cd019fdd675448b65ce29",
-      "bytes": 2799
+      "sha256": "a03c708b86a5166d5ba3b520adb851e42f4fd811b32fa92c7fef4e7d04c0f5fe",
+      "bytes": 2819
     },
     {
       "path": "core/src/main/variants/none/java/dev/mineagent/runtime/core/conversation/HostToolDefinitions.java",
@@ -4269,8 +4269,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "ac001a83f6ac757c5578fbcf948fea1ab6a4ed857bb45ebceb01d1b399e6a2eb",
-      "bytes": 241031
+      "sha256": "0c93caf8e747fc54085e2b2d7bff6290334373bdc512ea8130544e30a0a44438",
+      "bytes": 241051
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
