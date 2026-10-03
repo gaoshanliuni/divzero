@@ -7509,8 +7509,8 @@
     },
     {
       "path": "scripts/test-ci-release.ps1",
-      "sha256": "fa1540df637b2263d680bb73ba7d642ad58746990783ca43d6eaa2f5fa5870e7",
-      "bytes": 11816
+      "sha256": "15f624cc655169ed13bc50a540415f2a9d1009b26dab2d771cee73f68416733b",
+      "bytes": 11827
     },
     {
       "path": "scripts/verify-python-editions.gradle",

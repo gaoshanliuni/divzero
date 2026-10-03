@@ -87,7 +87,7 @@ Write-Output "SOURCE_BUILD_VERSION_TEST_PASSED=$buildVersion"
     Write-Output 'RUNTIME_ONLY_NATIVE_SELECTION_PASSED=5'
 }
 $fixture = Join-Path $root ('build/ci-release-test-' + [Guid]::NewGuid().ToString('N'))
-foreach ($dir in @('scripts','docs/licenses','docs/releases','build/editions/none/neoforge/libs','build/editions/bundled/neoforge/libs')) { New-Item -ItemType Directory -Path (Join-Path $fixture $dir) -Force | Out-Null }
+foreach ($dir in @('scripts','docs/licenses','docs/releases','neoforge','build/editions/none/neoforge/libs','build/editions/bundled/neoforge/libs')) { New-Item -ItemType Directory -Path (Join-Path $fixture $dir) -Force | Out-Null }
 Copy-Item -LiteralPath (Join-Path $root "docs/releases/$buildVersion.md") -Destination (Join-Path $fixture "docs/releases/$buildVersion.md")
 foreach ($script in @('get-build-version.ps1','get-release-versions.ps1','package-ci-artifact.ps1','stage-native-ui-dependencies.ps1','publish-ci-release.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $script) -Destination (Join-Path $fixture "scripts/$script") }
 foreach ($file in @('gradle.properties','build.gradle','neoforge/build.gradle','LICENSE','docs/THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $root $file) -Destination (Join-Path $fixture $file) }
