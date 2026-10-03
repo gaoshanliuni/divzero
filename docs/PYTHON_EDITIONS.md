@@ -28,4 +28,19 @@ Python 损坏诊断提供“退出后修复 Python”。修复将专用运行时
 
 `-PpythonRuntime=none` 和 `-PpythonRuntime=bundled` 分别编译，默认 none。输出隔离在 `build/editions/<edition>/`，避免旧 class/resource 混入。`verifyPythonEdition` 检查最终外层 JAR、Worker JAR、真实资源摘要、许可和被剔除的执行类；构建流水线必须两个版本都通过后才发布同一 Release 的五个运行附件。
 
-已加入离线初始化、真实库/DLL import、脚本输出、超时停止、维护版本交换／备份／恢复、锁冲突、取消和较新文件拒绝等回归。实际构建及 Native 结果将在完成后补充；不以源码或测试定义冒充已通过。
+公开源码 `2361b65c10c965bd7a719c08892af3f8201d561d` 的 [Actions 37111280375](https://github.com/gaoshanliuni/divzero/actions/runs/37111280375) 对两个版本的编译、成品检查和测试全部通过。回归实际运行 CPython、SSL/SQLite、requests/Pillow/NumPy/colorama，包含图片写出、UTF-8 输出、长游戏目录、子进程、超时和取消；维护测试验证准确版本交换、备份、恢复、锁冲突、取消及较新文件拒绝。
+
+隔离游戏验证：
+
+- 无 Python 包：`90436c93-bb7a-45ef-b675-95aa0d647679` 通过。实际类加载确认解释器管理、执行器及相关运行类不存在，资源归档也不存在；技能明确不支持 Python，跟随正常，不创建 Python 环境。
+- 内置包首次使用：`e8c8a5dd-456c-4943-8db3-e845b7c7d11b` 通过。原生聊天确认后导入全部基础库和 DLL，执行 NumPy 计算、写出 PNG。故意损坏固定库后返回 `PYTHON_ENV_INTEGRITY_FAILED`、`NOT_STARTED`；安排的 Java 维护程序在游戏存活时没有修改文件。
+- 同一实例退出后：维护回执为 `REPAIR_STAGED_FOR_NEXT_USE`，原环境保留于隔离目录，工作区文件保留。重进同一世界后的 `persistent-skill-resume/result.json` 再次通过，重新从 JAR 离线准备并成功执行库检查。
+
+成品 SHA-256：
+
+| 版本 | SHA-256 |
+| --- | --- |
+| no-python | `a9276ebf484487fa42ee08ba1cee0c377ddb738412672bee8320a0744185d162` |
+| with-python | `bed5f94da21e4d3390fe986f219dd40aa0911754927e07e2210892244537929a` |
+
+首次内置包验证 `7b07e350-6238-48ec-b0da-c2d631509ba3` 曾因 pip 丢失 Windows 长路径前缀而失败，失败记录保留。后续回归进一步覆盖了 ensurepip 子进程和 Windows 可执行文件路径限制，最终采用 Java 初始化已校验的 pip 文件与专用短缓存，未更改系统长路径设置。测试未调用付费模型，未改动生产存档、配置或权重；BOOT 文件机制测试不代替任意扩展升级后的游戏兼容性验证。

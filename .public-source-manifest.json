@@ -3649,8 +3649,8 @@
     },
     {
       "path": "docs/PYTHON_EDITIONS.md",
-      "sha256": "f2ecfab7d6f021311d668d44e5aa5377daf5e73287bc76c42472192c35e3c2f3",
-      "bytes": 4458
+      "sha256": "0694eebdac2c7d9aaeda6a6fbcac89e3451b600657cc76b7e82bb2cf8401a9cd",
+      "bytes": 6205
     },
     {
       "path": "docs/SIBLING_AI_SETTINGS.md",
@@ -3874,8 +3874,8 @@
     },
     {
       "path": "docs/releases/1.0.32.md",
-      "sha256": "f1a3a9440b051571786f1aebef8d73569b0062daf63294948e94841a49759774",
-      "bytes": 1485
+      "sha256": "a9e6c4829a969c100e3407b3ccc479530c4d40b70412957d7842a14877a88d1f",
+      "bytes": 1850
     },
     {
       "path": "gradle.properties",
