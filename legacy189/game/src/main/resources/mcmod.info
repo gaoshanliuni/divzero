@@ -1,0 +1,13 @@
+[
+  {
+    "modid": "mineagent_runtime",
+    "name": "DivZero — Forge 1.8.9 development port",
+    "description": "Native legacy port in development. Full feature parity is not yet complete. KubeJS is not required.",
+    "version": "${version}",
+    "mcversion": "1.8.9",
+    "url": "https://github.com/gaoshanliuni/divzero",
+    "authorList": ["DivZero contributors"],
+    "credits": "Apache-2.0; see repository for corresponding source and port status.",
+    "dependencies": []
+  }
+]

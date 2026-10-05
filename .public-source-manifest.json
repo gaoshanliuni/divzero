@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/legacy189.yml",
-      "sha256": "268679a8195d043e2a532edc4dd051fc98238d4ea4897daab146546ce1d079b5",
-      "bytes": 2325
+      "sha256": "aeefc1322fb3affe280eca5e2d8e57aaa80d7a83b540e0250fed2ce02ac92147",
+      "bytes": 3395
     },
     {
       "path": ".gitignore",
@@ -4003,6 +4003,96 @@
       "bytes": 6587
     },
     {
+      "path": "legacy189/game/build.gradle",
+      "sha256": "4d1c5425675dd2e86a859157f38e55b56c99ad62361e97f861772501233eb410",
+      "bytes": 1603
+    },
+    {
+      "path": "legacy189/game/settings.gradle",
+      "sha256": "8bdc4a907a6cc0b51e38f60e584376b06edc93de433a6727d36a277c7febf63a",
+      "bytes": 38
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/CommonProxy.java",
+      "sha256": "d454f03fed9ea85eb20cdf5e9449f1cb3a18fcf4923c67193132fdaa5a2e4695",
+      "bytes": 340
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyMod.java",
+      "sha256": "966d51956497b1a4ab0dde0cd09c71f0980b864d16f3cac4034ff3d50f4cb7c0",
+      "bytes": 1767
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeAgent.java",
+      "sha256": "dc41b583a19eadcdf586340c4cb2331c57fef3ef88c5a91073767bf2943fd3e8",
+      "bytes": 2124
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeCommands.java",
+      "sha256": "27c9669836bb76660c34accc473bcde40c50013b530c4b620deefac932084305",
+      "bytes": 3841
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeFixture.java",
+      "sha256": "da9e7febdbfd3015dac62df6ae70b2704940a6b7e24ec64c2fd6abf1d80a4006",
+      "bytes": 7917
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeGuiHandler.java",
+      "sha256": "76f9947264d5d712a25f13b6da845921afc654dc3488a45051ad37a2eeeb315f",
+      "bytes": 668
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeNetwork.java",
+      "sha256": "9d33372a83fc82a4fdcde6208832ec42c832bb8380cd1d0d7a6ed72aa9d89d52",
+      "bytes": 5588
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeOffhand.java",
+      "sha256": "032b3ac5b473f8a332088190b1ac7fb3dee639cef7c18390f8221adddb980bb7",
+      "bytes": 6192
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeRuntime.java",
+      "sha256": "eb19cb9ddc08fc1e89db03f675fe27b60ff2d77800306635adb5178b502c81ac",
+      "bytes": 6221
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeWorldData.java",
+      "sha256": "54dff8f2a1dc95ad06a151a79ccdd7d1110b686a13a4b10b219eec373eb0d7cc",
+      "bytes": 4191
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/ClientProxy.java",
+      "sha256": "de128c70f1bac94b666d24053a587b4e6616c88a66bc1891f216a57eb7e3db73",
+      "bytes": 2905
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/EquipmentScreen.java",
+      "sha256": "9528f1316aa513b81bd9ad31b569e2945eda57f8105395b4918770edd8b9c213",
+      "bytes": 1379
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/NativeClientFixture.java",
+      "sha256": "5945d18c33a4411b1ec19e7d24c547db4c74939208c2e356c814da5d3be07223",
+      "bytes": 2398
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/lang/en_US.lang",
+      "sha256": "2a71e9ddce8ebdd7e6b6d34d06e8f1ccf73abf58261c461bd31c68c9818be29b",
+      "bytes": 125
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/lang/zh_CN.lang",
+      "sha256": "d69aa69aaa42daca908bf9c9810f24cb1c4f317eee69e05f0e531d13b26ab76e",
+      "bytes": 111
+    },
+    {
+      "path": "legacy189/game/src/main/resources/mcmod.info",
+      "sha256": "9282c93befbd3cf2ec5541950f8ea7c504dd7c5a55823f5d69d6ccaeafc10ea6",
+      "bytes": 487
+    },
+    {
       "path": "legacy189/requirements.json",
       "sha256": "3cce2bef207cbb66fae57a78ebccf0b51616171018006317c753ced1a1ee2069",
       "bytes": 6657
@@ -4011,6 +4101,11 @@
       "path": "legacy189/tests/test_map_tools.py",
       "sha256": "4df005a67f487e0373c12c9322db967b69807f28366383d38b44d1410c8e9100",
       "bytes": 10187
+    },
+    {
+      "path": "legacy189/tools/build-game.ps1",
+      "sha256": "e90625625eaa1fc0c72cb9006a35850902e7ad28b98f742ad26c244c6938a2f0",
+      "bytes": 1253
     },
     {
       "path": "legacy189/tools/inventory.py",

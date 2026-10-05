@@ -1,0 +1,41 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url 'https://maven.minecraftforge.net' }
+    }
+    dependencies { classpath 'net.minecraftforge.gradle:ForgeGradle:2.1-20211118.174922-42' }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+version = '1.0.32-legacy189-dev'
+group = 'dev.mineagent.runtime'
+archivesBaseName = 'DivZero-forge-1.8.9'
+sourceCompatibility = targetCompatibility = '1.8'
+repositories {
+    mavenCentral()
+    maven { url 'https://maven.minecraftforge.net' }
+}
+minecraft {
+    version = '1.8.9-11.15.1.2318-1.8.9'
+    mappings = 'stable_20'
+    runDir = 'run'
+    makeObfSourceJar = false
+}
+// Both sides use the same Java 8 protocol source; no modern core class enters FML's scanner.
+sourceSets.main.java.srcDir '../bridge/src/main/java'
+tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
+processResources {
+    inputs.property 'version', project.version
+    from(sourceSets.main.resources.srcDirs) { include 'mcmod.info'; expand version: project.version }
+    from(sourceSets.main.resources.srcDirs) { exclude 'mcmod.info' }
+}
+// ForgeGradle's legacy repository URLs must use the live HTTPS repository.
+allprojects {
+    repositories.all { repository ->
+        if (repository instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository) {
+            def url = repository.url.toString()
+            if (url.contains('files.minecraftforge.net/maven')) repository.url = uri('https://maven.minecraftforge.net')
+            if (url.startsWith('http://')) repository.url = uri(url.replaceFirst('http://', 'https://'))
+        }
+    }
+}
