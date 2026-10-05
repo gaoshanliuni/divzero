@@ -19,6 +19,7 @@ public final class NativeAgent extends EntityPlayerMP {
     public final String displayName;
     private long lastPhysicsTick = Long.MIN_VALUE;
     private long lastJumpTick = Long.MIN_VALUE;
+    private boolean bowUseSent;
     private final ClientlessConnection connection;
     private LegacyPolicy policy = LegacyPolicy.get();
     public double decisionRisk;
@@ -45,6 +46,12 @@ public final class NativeAgent extends EntityPlayerMP {
         // Vanilla MP players normally receive this calculation from their movement
         // packets. Use the displacement actually produced by our native physics.
         if (worldObj == previousWorld) handleFalling(posY - previousY, onGround);
+        boolean drawing=isUsingItem()&&getItemInUse().getItem() instanceof net.minecraft.item.ItemBow;
+        if(drawing||bowUseSent){if(drawing!=bowUseSent||tick%4==0)NativeNetwork.bowUse(this);bowUseSent=drawing;}
+    }
+    @Override public void clearItemInUse(){
+        super.clearItemInUse();
+        if(bowUseSent){NativeNetwork.bowUse(this);bowUseSent=false;}
     }
     public void stopActions() { moveForward = 0; moveStrafing = 0; setSprinting(false); setSneaking(false); clearItemInUse(); }
     public boolean requestJump() {

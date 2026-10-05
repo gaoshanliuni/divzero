@@ -10,12 +10,13 @@ import net.minecraftforge.fml.relauncher.Side;
 import java.util.UUID;
 
 public final class NativeNetwork {
-    public static final int PROTOCOL = 3;
+    public static final int PROTOCOL = 4;
     public static final SimpleNetworkWrapper CHANNEL = NetworkRegistry.INSTANCE.newSimpleChannel("divzero189");
     private NativeNetwork() { }
     public static void initialize() {
         CHANNEL.registerMessage(ActionHandler.class, Action.class, 0, Side.SERVER);
         CHANNEL.registerMessage(StateHandler.class, State.class, 1, Side.CLIENT);
+        CHANNEL.registerMessage(BowUseHandler.class, BowUse.class, 4, Side.CLIENT);
         NetworkRegistry.INSTANCE.registerGuiHandler(LegacyMod.instance, new NativeGuiHandler());
     }
     public static void sync(EntityPlayerMP player) {
@@ -26,6 +27,20 @@ public final class NativeNetwork {
     }
     private static UUID uuid(ByteBuf input) { return new UUID(input.readLong(), input.readLong()); }
     private static void uuid(ByteBuf output, UUID value) { output.writeLong(value.getMostSignificantBits()); output.writeLong(value.getLeastSignificantBits()); }
+    public static void bowUse(NativeAgent player) {
+        // Use the entity tracker: only actual observers receive this state; no clientless sink.
+        player.getServerForPlayer().getEntityTracker().sendToAllTrackingEntity(player,CHANNEL.getPacketFrom(new BowUse(player)));
+    }
+    public static class BowUse implements IMessage {
+        public UUID player; public int dimension,entity,remaining;
+        public BowUse() { }
+        BowUse(NativeAgent body){player=body.getUniqueID();dimension=body.dimension;entity=body.getEntityId();remaining=body.isEntityAlive()&&body.getItemInUse()!=null&&body.getItemInUse().getItem() instanceof net.minecraft.item.ItemBow?body.getItemInUseCount():0;}
+        @Override public void fromBytes(ByteBuf b){if(b.readableBytes()!=30||b.readUnsignedShort()!=PROTOCOL)throw new IllegalArgumentException("BOW_USE_FRAME");player=uuid(b);dimension=b.readInt();entity=b.readInt();remaining=b.readInt();if(remaining<0||remaining>72000)throw new IllegalArgumentException("BOW_USE_BOUNDS");}
+        @Override public void toBytes(ByteBuf b){b.writeShort(PROTOCOL);uuid(b,player);b.writeInt(dimension);b.writeInt(entity);b.writeInt(remaining);}
+    }
+    public static class BowUseHandler implements IMessageHandler<BowUse,IMessage>{
+        @Override public IMessage onMessage(BowUse message,MessageContext context){LegacyMod.proxy.bowUse(message);return null;}
+    }
     public static class Action implements IMessage {
         public UUID world, session;
         public int kind;

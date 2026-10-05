@@ -25,6 +25,10 @@ public final class NativeClientFixture {
         Minecraft mc = Minecraft.getMinecraft();
         if (!new File(mc.mcDataDir, "divzero-native-fixture-allow").isFile()) return;
         ticks++;
+        if(Boolean.getBoolean("divzero.legacyPredictionFixture")){
+            if(NativeFixture.finished)dev.mineagent.runtime.legacy189.NativePredictionVerification.mode=-1;
+            PredictionClientFixture.tick();
+        }
         if(Boolean.getBoolean("divzero.legacyAdvancedFixture")){
             if(NativeFixture.finished){dev.mineagent.runtime.legacy189.NativeAdvancedVerification.counterAttack=false;dev.mineagent.runtime.legacy189.NativeAdvancedVerification.closeAdvance=false;}
             AdvancedClientFixture.tick();

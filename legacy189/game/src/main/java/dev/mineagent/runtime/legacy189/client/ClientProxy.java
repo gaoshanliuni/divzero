@@ -21,6 +21,7 @@ public class ClientProxy extends CommonProxy {
         ClientRegistry.registerKeyBinding(SWAP); ClientRegistry.registerKeyBinding(EQUIPMENT); ClientRegistry.registerKeyBinding(DUEL);
         FMLCommonHandler.instance().bus().register(this); MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new DuelClient());
+        if(Boolean.getBoolean("divzero.legacyPredictionFixture"))MinecraftForge.EVENT_BUS.register(new PredictionClientFixture());
     }
     @Override public void registerModels() {
         for (java.util.Map.Entry<String, net.minecraft.block.Block> entry : LegacyBlocks.REGISTERED.entrySet())
@@ -31,6 +32,7 @@ public class ClientProxy extends CommonProxy {
         return id == 0 ? new EquipmentScreen(player) : null;
     }
     @Override public void duelState(String json) { DuelClient.receive(json); }
+    @Override public void bowUse(final NativeNetwork.BowUse message) { Minecraft.getMinecraft().addScheduledTask(() -> RemoteBowUse.receive(message)); }
     @Override public void receive(final NativeNetwork.State message) {
         Minecraft.getMinecraft().addScheduledTask(new Runnable() {
             @Override public void run() {
@@ -56,10 +58,11 @@ public class ClientProxy extends CommonProxy {
         if (EQUIPMENT.isPressed()) NativeNetwork.CHANNEL.sendToServer(new NativeNetwork.Action(state.world, state.session, 1, state.revision));
     }
     @SubscribeEvent public void unload(net.minecraftforge.event.world.WorldEvent.Unload event) {
-        if (event.world.isRemote) { state = null; pendingPlayer = false; ModernCombat.clientEnabled = false; DuelClient.clear(); }
+        if (event.world.isRemote) { state = null; pendingPlayer = false; ModernCombat.clientEnabled = false; DuelClient.clear(); RemoteBowUse.clear(); }
     }
     @SubscribeEvent public void tick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
+            RemoteBowUse.tick();
             if (pendingPlayer && Minecraft.getMinecraft().thePlayer != null) { apply(); pendingPlayer = false; }
             NativeClientFixture.tick();
             DuelClient.tick();

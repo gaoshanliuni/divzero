@@ -35,7 +35,7 @@ public final class LegacyRangedController {
             escapeUntil=-1;
         }
         escapeUntil=-1;
-        aim(actor,target,threats.opponentVelocity(),distance);
+        aim(actor,target,threats.motion,distance);
         actor.setSprinting(false);actor.moveForward=distance>9?.65f:distance<3?-.35f:0;actor.moveStrafing=0;
         double standing=threats.risk(actor.getPositionVector(),6),best=standing;float strafe=0;
         actor.decisionRisk=standing;
@@ -50,6 +50,7 @@ public final class LegacyRangedController {
         actor.moveStrafing=strafe;if(strafe!=0)dodgeTicks++;
         if(strafe!=0&&threats.projectileRisk(actor.getPositionVector(),6)>0){cancel(actor);actor.moveForward=0;phase="PROJECTILE_DODGE";return;}
         if(!LegacyMeleeController.safeMotion(actor,-Math.sin(Math.toRadians(actor.rotationYaw))*actor.moveForward*.8,Math.cos(Math.toRadians(actor.rotationYaw))*actor.moveForward*.8,false))actor.moveForward=0;
+        if(drawAt>=0&&!actor.isUsingItem())drawAt=-1;
         if(drawAt<0){
             if(tick-lastRelease<4)return;
             ItemStack use=held.useItemRightClick(actor.worldObj,actor);actor.inventory.setInventorySlotContents(actor.inventory.currentItem,use);
@@ -69,9 +70,15 @@ public final class LegacyRangedController {
         }
     }
     private static int arrowCount(NativeAgent actor){int n=0;for(EntityArrow arrow:actor.worldObj.getEntitiesWithinAABB(EntityArrow.class,actor.getEntityBoundingBox().expand(4,4,4)))if(!arrow.isDead&&arrow.shootingEntity==actor)n++;return n;}
-    private static void aim(NativeAgent actor,EntityPlayerMP target,Vec3 motion,double distance){
-        double flight=distance/3,dx=target.posX+motion.xCoord*flight-actor.posX,dz=target.posZ+motion.zCoord*flight-actor.posZ;
-        double dy=target.posY+target.getEyeHeight()*.75+motion.yCoord*flight-actor.posY-actor.getEyeHeight()+.025*flight*flight;
+    private static void aim(NativeAgent actor,EntityPlayerMP target,LegacyMotionForecast motion,double distance){
+        double speed=distance<4?1.56:3,flight=Math.min(18,distance/speed);Vec3 predicted=motion.at(flight);
+        for(int i=0;i<3;i++){
+            double horizontal=Math.hypot(predicted.xCoord-actor.posX,predicted.zCoord-actor.posZ);
+            flight=Math.min(20,Math.log(Math.max(.05,1-horizontal*.01/speed))/Math.log(.99));predicted=motion.at(flight);
+        }
+        double drop=5*(flight-(1-Math.pow(.99,flight))/.01);
+        double dx=predicted.xCoord-actor.posX,dz=predicted.zCoord-actor.posZ;
+        double dy=predicted.yCoord+target.getEyeHeight()*.75-actor.posY-actor.getEyeHeight()+drop;
         actor.rotationYaw=(float)Math.toDegrees(Math.atan2(dz,dx))-90;actor.rotationYawHead=actor.rotationYaw;actor.rotationPitch=(float)-Math.toDegrees(Math.atan2(dy,Math.hypot(dx,dz)));
     }
 }

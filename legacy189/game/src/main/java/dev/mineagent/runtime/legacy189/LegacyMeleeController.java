@@ -24,12 +24,14 @@ public final class LegacyMeleeController {
     private String phase="APPROACH";
     private int evasiveTicks,escapeUntil=-1,lastEscape=-10000;
     private Vec3 escapeDirection;
+    private int lastHurt=-10000,hurtChain,confirmedHurt,dropAvoidances,contactEscapes,escapeTicks;
     public int confirmedHits(){return hits;}
     public void reset(){
         rhythm.reset();footwork=new CombatFootwork();lastActor=lastTarget=null;previousBack=previousSprint=jumpActive=jumpSeen=false;
         jumpAt=backObservedAt=releaseObservedAt=lastHit=-10000;maxJumpRise=0;
         previousVital=Float.NaN;
         threats.reset();evasiveTicks=0;escapeUntil=-1;lastEscape=-10000;escapeDirection=null;
+        lastHurt=-10000;hurtChain=confirmedHurt=dropAvoidances=contactEscapes=escapeTicks=0;
         hits=wTaps=sTaps=backMoves=sprintResumes=sprintHits=jumpRequests=jumpObserved=jumpLandings=airHits=totalHitGap=maxHitGap=0;phase="APPROACH";
     }
     public JsonObject evidence(){
@@ -37,14 +39,17 @@ public final class LegacyMeleeController {
         value.addProperty("wTapReleases",wTaps);value.addProperty("sTapReleases",sTaps);value.addProperty("observedBackwardMoves",backMoves);
         value.addProperty("sprintResumes",sprintResumes);value.addProperty("sprintHits",sprintHits);value.addProperty("jumpRequests",jumpRequests);
         value.addProperty("observedJumps",jumpObserved);value.addProperty("landings",jumpLandings);value.addProperty("maxJumpRise",maxJumpRise);value.addProperty("airborneHits",airHits);
-        value.addProperty("meanHitGapTicks",hits<2?0:totalHitGap/(double)(hits-1));value.addProperty("maxHitGapTicks",maxHitGap);value.addProperty("evasiveTicks",evasiveTicks);value.addProperty("projectileThreatFrames",threats.projectileThreatFrames);value.addProperty("meleeThreatFrames",threats.meleeThreatFrames);return value;
+        value.addProperty("meanHitGapTicks",hits<2?0:totalHitGap/(double)(hits-1));value.addProperty("maxHitGapTicks",maxHitGap);value.addProperty("evasiveTicks",evasiveTicks);value.addProperty("projectileThreatFrames",threats.projectileThreatFrames);value.addProperty("meleeThreatFrames",threats.meleeThreatFrames);
+        value.addProperty("confirmedHurt",confirmedHurt);value.addProperty("dropAvoidances",dropAvoidances);value.addProperty("contactEscapes",contactEscapes);value.addProperty("escapeTicks",escapeTicks);
+        value.addProperty("observedStrafeReversals",threats.motion.reversals);value.addProperty("observedAirborneFrames",threats.motion.airborneFrames);return value;
     }
     public void tick(NativeDuel.Session run,int tick){
         int before=hits;tick(run.ai,run.human,run.navigation,tick);run.meleeHits+=hits-before;
     }
     public void tick(NativeAgent actor,EntityPlayerMP target,ArenaNavigator navigation,int tick){
         threats.observe(actor,target,tick);
-        float vital=actor.getHealth()+actor.getAbsorptionAmount();if(!Float.isNaN(previousVital)&&vital<previousVital-.001)rhythm.interrupted();previousVital=vital;
+        float vital=actor.getHealth()+actor.getAbsorptionAmount();boolean hurt=!Float.isNaN(previousVital)&&vital<previousVital-.001;
+        if(hurt){rhythm.interrupted();hurtChain=tick-lastHurt<=24?hurtChain+1:1;lastHurt=tick;confirmedHurt++;}previousVital=vital;
         Vec3 at=actor.getPositionVector(),targetAt=target.getPositionVector();
         double dx=target.posX-actor.posX,dz=target.posZ-actor.posZ,distance=Math.hypot(dx,dz),nx=dx/Math.max(.001,distance),nz=dz/Math.max(.001,distance);
         double radial=lastTarget==null?0:clamp((targetAt.xCoord-lastTarget.xCoord)*nx+(targetAt.zCoord-lastTarget.zCoord)*nz,-.8,.8);
@@ -55,13 +60,16 @@ public final class LegacyMeleeController {
             if(actor.onGround&&tick>jumpAt+2){if(jumpSeen)jumpLandings++;jumpActive=jumpSeen=false;}
         }
         lastActor=at;lastTarget=targetAt;towardX=nx;towardZ=nz;previousBack=false;
-        if(actor.hurtTime>0&&actor.getHealth()<actor.getMaxHealth()*.65&&distance<3.6&&tick-lastEscape>=30&&!jumpActive){
-            Vec3 away=new Vec3(-nx,0,-nz);if(safeMotion(actor,away.xCoord*1.4,away.zCoord*1.4,false)){escapeDirection=away;escapeUntil=tick+8;lastEscape=tick;}
+        boolean drop=threats.dropThreat();
+        if(escapeUntil<tick&&distance<6&&(drop&&tick-lastEscape>=12||hurt&&(hurtChain>=2||!actor.onGround||target.posY>actor.posY+.5||actor.getHealth()<actor.getMaxHealth()*.75))){
+            Vec3 exit=escapeRoute(actor,nx,nz);
+            if(exit!=null){escapeDirection=exit;escapeUntil=tick+10;lastEscape=tick;rhythm.interrupted();if(drop)dropAvoidances++;else contactEscapes++;}
         }
-        if(escapeUntil>=tick&&escapeDirection!=null&&distance<4.5&&safeMotion(actor,escapeDirection.xCoord*1.2,escapeDirection.zCoord*1.2,false)){
+        if(escapeUntil>=tick&&escapeDirection!=null&&(tick-lastEscape<5||distance<4.8)&&safeMotion(actor,escapeDirection.xCoord*1.3+actor.motionX*2,escapeDirection.zCoord*1.3+actor.motionZ*2,!actor.onGround)){
             actor.clearItemInUse();actor.rotationYaw=(float)Math.toDegrees(Math.atan2(escapeDirection.zCoord,escapeDirection.xCoord))-90;actor.rotationYawHead=actor.rotationYaw;
-            actor.moveForward=1;actor.moveStrafing=0;actor.setSprinting(true);phase="CONTACT_ESCAPE";evasiveTicks++;return;
+            actor.moveForward=1;actor.moveStrafing=0;actor.setSneaking(false);actor.setSprinting(actor.getFoodStats().getFoodLevel()>6);phase=drop?"DROP_ESCAPE":"CONTACT_ESCAPE";evasiveTicks++;escapeTicks++;return;
         }
+        escapeUntil=-1;
         boolean direct=safeMotion(actor,nx*Math.min(distance,1.2),nz*Math.min(distance,1.2),false);
         boolean local=jumpActive||distance<16&&direct&&actor.canEntityBeSeen(target)&&(distance>3.5||ModernCombat.reachable(actor,target));
         if(!local){
@@ -79,7 +87,7 @@ public final class LegacyMeleeController {
         phase=rhythm.phase(tick);
         double incoming=threats.risk(actor.getPositionVector(),6);
         actor.decisionRisk=incoming;
-        if(threats.activeMelee()||threats.projectileRisk(actor.getPositionVector(),6)>0){
+        if(threats.activeMelee()||drop||threats.projectileRisk(actor.getPositionVector(),6)>0){
             double[] current=worldInput(actor,forward,strafe);double best=threats.risk(at.addVector(current[0],0,current[1]),6);
             for(float[] candidate:new float[][]{{-.85f,0},{-.65f,.65f},{-.65f,-.65f},{0,1},{0,-1}}){
                 if(!safeInput(actor,candidate[0],candidate[1],!actor.onGround))continue;double[] delta=worldInput(actor,candidate[0],candidate[1]);double risk=threats.risk(at.addVector(delta[0],0,delta[1]),6);
@@ -87,7 +95,7 @@ public final class LegacyMeleeController {
             }
             if(phase.equals("THREAT_DODGE"))evasiveTicks++;
         }
-        if(!jumpActive&&tick-rhythm.lastHit()>0&&tick-rhythm.lastHit()<=4&&actor.getHealth()>=actor.getMaxHealth()*.4&&distance<4.2&&!actor.isUsingItem()&&!actor.isInWater()&&!actor.isOnLadder()){
+        if(!drop&&tick-lastHurt>18&&tick-lastEscape>12&&!jumpActive&&tick-rhythm.lastHit()>0&&tick-rhythm.lastHit()<=4&&actor.getHealth()>=actor.getMaxHealth()*.4&&distance<4.2&&!actor.isUsingItem()&&!actor.isInWater()&&!actor.isOnLadder()){
             float jumpF=distance<2.25?-.6f:.8f,jumpS=side*.35f;
             double[] jumpDelta=worldInput(actor,jumpF,jumpS);
             boolean safe=safeJump(actor,jumpF,jumpS)&&threats.risk(at.addVector(jumpDelta[0],.8,jumpDelta[1]),6)<=incoming+.25;
@@ -107,6 +115,21 @@ public final class LegacyMeleeController {
         observeRelease(tick,forward);
         previousBack=rhythm.resetting(tick)&&rhythm.backTap()&&forward<-.1;
         attack(actor,target,tick,distance,radial);
+    }
+    private Vec3 escapeRoute(NativeAgent actor,double nx,double nz){
+        Vec3 at=actor.getPositionVector(),future=threats.motion.at(8),best=null;double cost=Double.POSITIVE_INFINITY;
+        for(int i=0;i<16;i++){
+            double angle=i*Math.PI/8,x=Math.cos(angle),z=Math.sin(angle);
+            // Include current knockback and check the whole supported corridor, not only its endpoint.
+            double dx=x*2.4+actor.motionX*3,dz=z*2.4+actor.motionZ*3;
+            if(!safeMotion(actor,dx,dz,!actor.onGround))continue;
+            Vec3 end=at.addVector(dx,0,dz);
+            double score=threats.risk(end,8)*3-Math.hypot(end.xCoord-future.xCoord,end.zCoord-future.zCoord)*2;
+            score+=Math.max(0,x*nx+z*nz)*4;
+            if(escapeDirection!=null)score-=.3*(x*escapeDirection.xCoord+z*escapeDirection.zCoord);
+            if(score<cost){cost=score;best=new Vec3(x,0,z);}
+        }
+        return best;
     }
     private void attack(NativeAgent actor,EntityPlayerMP target,int tick,double distance,double radial){
         if(ModernCombat.reachable(actor,target)){

@@ -27,6 +27,7 @@ public final class NativeFixture {
     private static ArenaFeedbackVerification feedbackVerification;
     private static NativeComboVerification comboVerification;
     private static NativeAdvancedVerification advancedVerification;
+    private static NativePredictionVerification predictionVerification;
     public static volatile boolean trainingReady,trainingUiClicked;
     private static boolean trainingStarted,trainingReload;
     private static String trainedHash;
@@ -128,6 +129,10 @@ public final class NativeFixture {
         }
     }
     private static void packed(MinecraftServer server, EntityPlayerMP human) throws Exception {
+        if(Boolean.getBoolean("divzero.legacyPredictionFixture")){
+            if(predictionVerification==null)predictionVerification=new NativePredictionVerification(human,evidence);
+            if(predictionVerification.tick(NativeDuel.session(human),server.getTickCounter())){evidence.addProperty("source","FIXTURE_ONLY");complete(server,true,"NATIVE_PREDICTION_BOW_ESCAPE_PASSED");}return;
+        }
         if(Boolean.getBoolean("divzero.legacyTrainingFixture")){training(server,human);return;}
         if(Boolean.getBoolean("divzero.legacyAdvancedFixture")){
             if(advancedVerification==null)advancedVerification=new NativeAdvancedVerification(human,evidence);

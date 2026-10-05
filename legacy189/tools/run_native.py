@@ -90,11 +90,14 @@ def main():
     parser.add_argument("--combo-fixture", action="store_true")
     parser.add_argument("--training-fixture", action="store_true")
     parser.add_argument("--advanced-fixture", action="store_true")
+    parser.add_argument("--prediction-fixture", action="store_true")
     parser.add_argument("--policy-checkpoint", type=pathlib.Path)
     parser.add_argument("--gui-scale", type=int, choices=(1, 2, 3, 4), default=2)
     parser.add_argument("--width", type=int, default=1100)
     parser.add_argument("--height", type=int, default=720)
     args = parser.parse_args()
+    if args.prediction_fixture and (not args.packed_arena or args.advanced_fixture or args.combo_fixture or args.training_fixture):
+        raise ValueError("Prediction fixtures require their own clean packed arena")
     if args.advanced_fixture and (not args.packed_arena or args.combo_fixture or args.training_fixture):
         raise ValueError("Advanced combat fixtures require their own clean packed arena")
     if args.combo_fixture and not args.packed_arena:
@@ -218,6 +221,8 @@ def main():
         command.append("-Ddivzero.legacyTrainingFixture=true")
     if args.advanced_fixture:
         command.append("-Ddivzero.legacyAdvancedFixture=true")
+    if args.prediction_fixture:
+        command.append("-Ddivzero.legacyPredictionFixture=true")
     if args.java25:
         command.append("-Ddivzero.java25=" + str(args.java25.resolve(strict=True)))
     command += ["-cp", os.pathsep.join(classpath), version["mainClass"], "--username", "DivZeroFixture", "--version", instance.name,
