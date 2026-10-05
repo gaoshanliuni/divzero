@@ -4174,8 +4174,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativePredictionVerification.java",
-      "sha256": "36bab9857312b63edc9df039eb36a864ef9720469b56c7f1c8b55becb3268ad7",
-      "bytes": 6397
+      "sha256": "85e00563293f612a7a0cba1ee32ea88dcf0aa0644e46600671eda43a8164b3a2",
+      "bytes": 7300
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeRuntime.java",
@@ -4229,8 +4229,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/PredictionClientFixture.java",
-      "sha256": "792e3631010393bdb95fa27c0c7634df72cd6ea4be2e77bf9455035257b59cc1",
-      "bytes": 3639
+      "sha256": "ed1deb2932488b6b9ae0a97468b163f052bb32fe6ef983055fefccbc63dd03df",
+      "bytes": 4078
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/RemoteBowUse.java",

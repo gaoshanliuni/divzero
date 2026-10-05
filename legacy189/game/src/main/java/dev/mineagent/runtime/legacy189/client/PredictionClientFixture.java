@@ -10,6 +10,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /** Test-only native input and actual RenderPlayer model observations. */
 public final class PredictionClientFixture {
+    private static boolean captured;
     static void tick(){
         Minecraft mc=Minecraft.getMinecraft();int mode=NativePredictionVerification.mode;
         if(mc.currentScreen instanceof DuelClient.LoadoutScreen)mc.displayGuiScreen(null);
@@ -21,6 +22,9 @@ public final class PredictionClientFixture {
             float yaw=(float)Math.toDegrees(Math.atan2(dz,dx))-90,pitch=(float)-Math.toDegrees(Math.atan2(dy,Math.hypot(dx,dz)));
             mc.thePlayer.rotationYaw+=Math.max(-24,Math.min(24,MathHelper.wrapAngleTo180_float(yaw-mc.thePlayer.rotationYaw)));mc.thePlayer.rotationPitch=pitch;
             if(mode==1){left=mc.thePlayer.ticksExisted/18%2==0;right=!left;jump=true;}
+            if(mode==0&&!captured&&target instanceof net.minecraft.entity.player.EntityPlayer&&((net.minecraft.entity.player.EntityPlayer)target).getItemInUseDuration()>=12&&NativePredictionVerification.bowPoseFrames>5){
+                net.minecraft.util.ScreenShotHelper.saveScreenshot(mc.mcDataDir,"bow-drawing.png",mc.displayWidth,mc.displayHeight,mc.getFramebuffer());captured=true;
+            }
             if(mode>=2){forward=true;jump=mc.thePlayer.ticksExisted%24<12;if(mc.thePlayer.ticksExisted%2==0){KeyBinding.onTick(mc.gameSettings.keyBindAttack.getKeyCode());NativePredictionVerification.clientAttacks++;}}
             if(mc.thePlayer.movementInput.moveStrafe>.5)NativePredictionVerification.leftTicks++;
             if(mc.thePlayer.movementInput.moveStrafe<-.5)NativePredictionVerification.rightTicks++;

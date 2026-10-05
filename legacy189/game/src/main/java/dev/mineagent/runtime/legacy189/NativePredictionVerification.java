@@ -11,11 +11,13 @@ public final class NativePredictionVerification {
     public static volatile boolean poseSeen;
     private final JsonObject evidence;
     private final LegacyMotionForecast forecast=new LegacyMotionForecast();
+    private final JsonArray landingSamples=new JsonArray();
     private int scene,started,nextStart,landings,predictedAt,predictedTicks,damageEvents;
     private boolean waiting,prepared,fighting,wasGround;
     private Vec3 predictedLanding,startAI;
     private double maxLandingError,maxTimingError,maxEscape;
     private float initialHealth,previousAI;
+    private float forecastHealth;
     public NativePredictionVerification(EntityPlayerMP human,JsonObject evidence){this.evidence=evidence;start(human);}
     private static void require(boolean value,String code){if(!value)throw new IllegalStateException(code);}
     private void start(EntityPlayerMP human){
@@ -28,7 +30,7 @@ public final class NativePredictionVerification {
     private void next(EntityPlayerMP human,int tick){mode=-1;NativeDuel.command(human,"stop");scene++;waiting=true;nextStart=tick+20;}
     public boolean tick(NativeDuel.Session run,int tick){
         EntityPlayerMP human=run.human;
-        if(waiting){if(scene==4)return true;if(tick>=nextStart)start(human);return false;}
+        if(waiting){if(scene==4){require(evidence.get("motionForecastPassed").getAsBoolean(),"LANDING_OR_MOVEMENT_VERIFICATION_FAILED");return true;}if(tick>=nextStart)start(human);return false;}
         if(run.phase.equals("COUNTDOWN")&&!prepared){human.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(100);human.setHealth(100);prepared=true;}
         if(run.phase.equals("FIGHTING")&&!fighting){
             fighting=true;started=tick;initialHealth=human.getHealth();previousAI=run.ai.getHealth();startAI=run.ai.getPositionVector();wasGround=human.onGround;
@@ -46,18 +48,23 @@ public final class NativePredictionVerification {
                 evidence.add("bowAnimationAndRelease",ranged);evidence.addProperty("renderedBowPoseFrames",bowPoseFrames);evidence.addProperty("renderedReleaseFrames",bowRelaxFrames);evidence.addProperty("clientDrawDurationTicks",maxDrawDuration);next(human,tick);
             }
         }else if(scene==1){
-            if(!human.onGround&&forecast.descending&&predictedLanding==null&&forecast.landing!=null&&forecast.landingTicks>=2&&forecast.landingTicks<=10){predictedLanding=forecast.landing;predictedTicks=forecast.landingTicks;predictedAt=tick;}
+            if(predictedLanding!=null&&human.getHealth()<forecastHealth-.001){
+                JsonObject disturbed=new JsonObject();disturbed.addProperty("invalidatedByNativeDamage",true);disturbed.addProperty("at",tick);disturbed.addProperty("damage",forecastHealth-human.getHealth());landingSamples.add(disturbed);predictedLanding=null;
+            }
+            if(!human.onGround&&forecast.descending&&predictedLanding==null&&forecast.landing!=null&&forecast.landingTicks>=2&&forecast.landingTicks<=10){predictedLanding=forecast.landing;predictedTicks=forecast.landingTicks;predictedAt=tick;forecastHealth=human.getHealth();}
             if(!wasGround&&human.onGround&&predictedLanding!=null){
-                maxLandingError=Math.max(maxLandingError,predictedLanding.distanceTo(human.getPositionVector()));maxTimingError=Math.max(maxTimingError,Math.abs(tick-predictedAt-predictedTicks));landings++;predictedLanding=null;
+                double error=predictedLanding.distanceTo(human.getPositionVector()),timing=Math.abs(tick-predictedAt-predictedTicks);
+                JsonObject sample=new JsonObject();sample.addProperty("predicted",predictedLanding.toString());sample.addProperty("actual",human.getPositionVector().toString());sample.addProperty("ticksAhead",predictedTicks);sample.addProperty("elapsed",tick-predictedAt);sample.addProperty("error",error);landingSamples.add(sample);
+                maxLandingError=Math.max(maxLandingError,error);maxTimingError=Math.max(maxTimingError,timing);landings++;predictedLanding=null;
             }
             wasGround=human.onGround;
             if(tick-started>=280){
-                require(leftTicks>=30&&rightTicks>=30&&jumpTicks>=30&&forecast.reversals>=2&&landings>=4,"MOTION_OBSERVATIONS_MISSING left="+leftTicks+" right="+rightTicks+" jump="+jumpTicks+" reverse="+forecast.reversals+" landings="+landings);
-                require(maxLandingError<2&&maxTimingError<=4,"LANDING_FORECAST_DIVERGED error="+maxLandingError+" timing="+maxTimingError);
+                evidence.add("landingSamples",landingSamples);evidence.addProperty("motionForecastPassed",leftTicks>=30&&rightTicks>=30&&jumpTicks>=30&&forecast.reversals>=2&&landings>=4&&maxLandingError<2&&maxTimingError<=4);
                 require(run.ranged.evidence().get("shots").getAsInt()>=4&&human.getHealth()<initialHealth,"MOVING_BOW_NO_NATIVE_HIT");
                 evidence.add("movingBow",run.ranged.evidence());evidence.addProperty("movingBowDamage",initialHealth-human.getHealth());evidence.addProperty("strafeReversals",forecast.reversals);evidence.addProperty("observedLandings",landings);evidence.addProperty("maxLandingPositionError",maxLandingError);evidence.addProperty("maxLandingTimingErrorTicks",maxTimingError);next(human,tick);
             }
         }else{
+            evidence.add(scene==2?"highDropLatest":"closeDropLatest",run.melee.evidence());
             if(run.ai.getHealth()<previousAI-.001)damageEvents++;previousAI=run.ai.getHealth();maxEscape=Math.max(maxEscape,startAI.distanceTo(run.ai.getPositionVector()));
             if(tick-started>=240){
                 JsonObject melee=run.melee.evidence();require(clientAttacks>=50&&maxEscape>2,"DROP_CLIENT_ATTACKS_OR_ESCAPE_MISSING");
