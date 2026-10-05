@@ -72,7 +72,12 @@ public final class LegacyTerrainRecovery {
                 boolean clear=!hazard&&box==null,support=!hazard&&box!=null&&box.maxY>=p.getY()+.875&&box.minX<=p.getX()+.2&&box.maxX>=p.getX()+.8&&box.minZ<=p.getZ()+.2&&box.maxZ>=p.getZ()+.8;
                 return new TerrainPathSearch.Block(true,clear,support,!rejected.contains(c,Kind.BREAK,()->context(p,Kind.BREAK))&&mayBreak(p),breakTicks(p),signature(p));
             }
-            public boolean canPlace(Cell c){return !rejected.contains(c,Kind.PLACE,()->context(pos(c),Kind.PLACE))&&mayPlace(pos(c));}
+            public boolean canPlace(Cell c){
+                // Do not enumerate arbitrary pillars when the blocked opponent is on
+                // the same floor. Horizontal gaps still permit real support blocks.
+                if(pursuit&&goal.yCoord<=origin.yCoord+.5&&c.y()>=originCell.y())return false;
+                return !rejected.contains(c,Kind.PLACE,()->context(pos(c),Kind.PLACE))&&mayPlace(pos(c));
+            }
             public boolean exit(Cell c,Map<Cell,Kind> edits){
                 if(pursuit){
                     Map<BlockPos,Kind> overlay=new HashMap<BlockPos,Kind>();for(Map.Entry<Cell,Kind> edit:edits.entrySet())overlay.put(pos(edit.getKey()),edit.getValue());
@@ -84,6 +89,8 @@ public final class LegacyTerrainRecovery {
                     // Long approaches advance through checked terrain in bounded segments.
                     // A built support may be an intermediate attack approach, never an invented material.
                     double progress=origin.distanceTo(goal)-at.distanceTo(goal);
+                    double horizontalProgress=Math.hypot(origin.xCoord-goal.xCoord,origin.zCoord-goal.zCoord)-Math.hypot(at.xCoord-goal.xCoord,at.zCoord-goal.zCoord);
+                    if(edits.isEmpty()&&Math.abs(at.yCoord-origin.yCoord)<.25&&horizontalProgress>=2&&Math.hypot(at.xCoord-goal.xCoord,at.zCoord-goal.zCoord)>1.4)return true;
                     if(!edits.isEmpty()&&c.y()>originCell.y()&&goal.yCoord>origin.yCoord+2&&progress>.35)return true;
                     return progress>=3&&at.distanceTo(goal)>3.5&&(virtual.neighbors(floor).size()>=2||!edits.isEmpty()&&c.y()>originCell.y());
                 }
@@ -129,7 +136,7 @@ public final class LegacyTerrainRecovery {
             final long deadline=System.nanoTime()+3_000_000L;
             TerrainPathSearch.Result found=search.advance(96,()->System.nanoTime()<deadline);
             if(found.state().equals("SEARCHING"))return null;
-            search=null;if(!found.state().equals("FOUND")){state=found.state();return null;}
+            search=null;if(!found.state().equals("FOUND")){state=found.state();if(NativeFixture.requested())LegacyMod.logger.info("LEGACY_TERRAIN_SEARCH_END state={} expanded={} origin={} goal={}",state,found.expanded(),origin,goal);return null;}
             planned=found.steps().get(0);approachSteps.clear();if(pursuit)for(int i=1;i<found.steps().size();i++)approachSteps.addLast(found.steps().get(i));edit=planned.edits().isEmpty()?null:planned.edits().get(0);
             actionAt=tick;selectedSlot=actor.inventory.currentItem;sent=jumped=false;settled=0;progress=0;attempts++;
             state=edit==null?"ESCAPE_WALK":edit.kind()==Kind.BREAK?"ESCAPE_MINE":"ESCAPE_PLACE";
