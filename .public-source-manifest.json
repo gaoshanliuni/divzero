@@ -4064,8 +4064,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyCombatDriver.java",
-      "sha256": "b9db7a5e9f8273096b41084341e17ced0c5638daef3051726fe0639594f159ba",
-      "bytes": 1198
+      "sha256": "79581ecc7debce9215b2745ef8067d791f5c493ec78df01dd85fdc01f73d17ee",
+      "bytes": 1302
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyMeleeController.java",
@@ -4099,8 +4099,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyTerrainRecovery.java",
-      "sha256": "5bdd508763f9ebcf1cc1b8c7798b3163070dffd68b731a50f7c15f75d3812ead",
-      "bytes": 21191
+      "sha256": "925728512daf3ffa2368f83451a615677a3efeb1d39c4af7bbf8eabe52b46910",
+      "bytes": 22290
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyThreatSensor.java",

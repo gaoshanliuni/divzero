@@ -64,6 +64,17 @@ public final class LegacyTerrainRecovery {
         if(actor!=player||goal==null||goal.squareDistanceTo(targetPoint)>4){rejected.clear();}
         actor=player;this.target=target;goal=targetPoint;origin=player.getPositionVector();started=tick;pursuit=pursueTarget;state=pursuit?"SEARCHING_APPROACH":"SEARCHING_ESCAPE";
         final Cell originCell=cell(origin);
+        if(pursuit){
+            Vec3 eye=actor.getPositionEyes(1);MovingObjectPosition obstruction=actor.worldObj.rayTraceBlocks(eye,target.getPositionEyes(1),false,true,false);
+            if(obstruction!=null&&eye.squareDistanceTo(obstruction.hitVec)<=4.5*4.5){
+                BlockPos at=obstruction.getBlockPos();Cell editCell=new Cell(at.getX(),at.getY(),at.getZ());
+                if(mayBreak(at)&&breakTicks(at)<=240&&!at.equals(new BlockPos(actor).down())&&!rejected.contains(editCell,Kind.BREAK,()->context(at,Kind.BREAK))){
+                    edit=new Edit(editCell,Kind.BREAK,signature(at),breakTicks(at));planned=new TerrainPathSearch.Step(originCell,originCell,Collections.singletonList(edit),false,edit.ticks()+4);
+                    approachSteps.clear();actionAt=tick;selectedSlot=actor.inventory.currentItem;before=signature(at);progress=0;sent=jumped=false;attempts++;state="APPROACH_BREACH";
+                    if(NativeFixture.requested())LegacyMod.logger.info("LEGACY_PURSUIT_BREACH target={} position={}",at,origin);return true;
+                }
+            }
+        }
         TerrainPathSearch.World world=new TerrainPathSearch.World(){
             public TerrainPathSearch.Block block(Cell c){
                 BlockPos p=pos(c);if(!loaded(p))return new TerrainPathSearch.Block(false,false,false,false,0,"unloaded");
