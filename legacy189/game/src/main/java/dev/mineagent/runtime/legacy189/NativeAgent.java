@@ -20,6 +20,10 @@ public final class NativeAgent extends EntityPlayerMP {
     private long lastPhysicsTick = Long.MIN_VALUE;
     private long lastJumpTick = Long.MIN_VALUE;
     private final ClientlessConnection connection;
+    private LegacyPolicy policy = LegacyPolicy.get();
+    public double decisionRisk;
+    public LegacyPolicy policy() { return policy; }
+    public void policy(LegacyPolicy value) { if (value == null) throw new IllegalArgumentException("POLICY_MISSING"); policy = value; }
     public NativeAgent(MinecraftServer server, WorldServer world, NativeWorldData.AgentDefinition definition) {
         super(server, world, new GameProfile(definition.id, "DZ" + definition.id.toString().replace("-", "").substring(0, 14)), new ItemInWorldManager(world));
         owner = definition.owner; displayName = definition.name;

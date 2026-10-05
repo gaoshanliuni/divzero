@@ -81,10 +81,12 @@ public final class NativeRuntime {
         finally { body.closeConnection(); }
     }
     public static void stop() {
+        NativeTraining.stop("WORLD_STOPPED");
         NativeService.stopAll();
         NativeDuel.stop();
         NativeArena.stop();
         ModernCombat.stop();
+        LegacyModelStore.stop();
         for (NativeAgent body : BODIES.values()) { body.stopActions(); body.closeConnection(); }
         BODIES.clear(); SESSIONS.clear(); restored = false;
     }
@@ -126,6 +128,7 @@ public final class NativeRuntime {
                 }
             }
             NativeDuel.tick();
+            NativeTraining.tick();
             for (NativeAgent body : new ArrayList<NativeAgent>(BODIES.values())) {
                 body.physics(server.getTickCounter());
                 NativeWorldData.AgentDefinition definition = data().agent(body.getUniqueID());

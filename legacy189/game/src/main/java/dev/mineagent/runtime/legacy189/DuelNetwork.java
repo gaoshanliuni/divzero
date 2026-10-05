@@ -46,7 +46,7 @@ public final class DuelNetwork {
                     String action = value.get("action").getAsString();
                     if (action.equals("choose")) NativeDuel.choose(player, value.get("revision").getAsLong(), value.get("actor").getAsString(),
                             value.has("slot") ? value.get("slot").getAsInt() : -1, value.has("item") ? value.get("item").getAsString() : "", value.has("wool") ? value.get("wool").getAsBoolean() : null);
-                    else if (action.equals("ready") || action.equals("stop") || action.equals("equip")) {
+                    else if (action.equals("ready") || action.equals("stop") || action.equals("equip") || action.equals("train_start") || action.equals("train_stop")) {
                         if (value.get("revision").getAsLong() != NativeDuel.session(player).revision) throw new IllegalStateException("对局状态已变化");
                         NativeDuel.command(player, action);
                     } else throw new IllegalArgumentException("未知对局操作");

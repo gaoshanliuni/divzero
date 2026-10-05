@@ -33,6 +33,13 @@ public class NativeCommands extends CommandBase {
                         }));
             } else if (action.equals("duel")) {
                 NativeDuel.command(player, args.length > 1 ? args[1] : "equip");
+            } else if (action.equals("train")) {
+                if(!NativeDuel.allowed(player))throw new SecurityException("仅本地图拥有者可训练模型");
+                String choice=args.length>1?args[1]:"status";
+                if(choice.equals("start"))NativeTraining.start(player,args.length>2?Integer.parseInt(args[2]):12);
+                else if(choice.equals("stop"))NativeTraining.stop("CANCELLED");
+                else if(!choice.equals("status"))throw new IllegalArgumentException("/ai train start [偶数局数]|stop|status");
+                tell(player,"模型训练："+NativeTraining.status());
             } else if (action.equals("combat")) {
                 if (!player.canCommandSenderUseCommand(2, "ai") || args.length != 2 || !(args[1].equals("modern") || args[1].equals("legacy")))
                     throw new IllegalArgumentException("需要管理权限：/ai combat modern|legacy");
@@ -51,6 +58,7 @@ public class NativeCommands extends CommandBase {
                 if (args.length < 2) throw new IllegalArgumentException("请输入 AI 名称或 UUID");
                 NativeRuntime.delete(player, join(args, 1)); tell(player, "已移除指定 AI。");
             } else if (action.equals("stop")) {
+                if(NativeDuel.allowed(player))NativeTraining.stop("CANCELLED");
                 if (NativeDuel.allowed(player)) NativeDuel.command(player, "stop");
                 for (NativeAgent body : NativeRuntime.bodies()) if (body.owner.equals(player.getUniqueID())) body.stopActions();
                 tell(player, "本人的 AI 身体动作已停止。");
@@ -66,6 +74,6 @@ public class NativeCommands extends CommandBase {
     }
     private static void tell(EntityPlayerMP player, String text) { player.addChatMessage(new ChatComponentText("[DivZero] " + text)); }
     @Override public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
-        return args.length == 1 ? getListOfStringsMatchingLastWord(args, "enable", "disable", "status", "worker", "create", "list", "remove", "stop", "offhand", "swap", "arena", "combat", "duel") : Collections.<String>emptyList();
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, "enable", "disable", "status", "worker", "create", "list", "remove", "stop", "offhand", "swap", "arena", "combat", "duel", "train") : Collections.<String>emptyList();
     }
 }

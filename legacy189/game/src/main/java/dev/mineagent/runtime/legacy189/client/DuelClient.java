@@ -75,6 +75,13 @@ public final class DuelClient {
                 "总局数 " + state.get("rounds").getAsInt() + "  胜率 " + String.format(Locale.ROOT, "%.1f%%", state.get("winRate").getAsDouble()),
                 "胜 " + state.get("wins").getAsInt() + " 负 " + state.get("losses").getAsInt() + " 平 " + state.get("draws").getAsInt(),
                 "平均击杀 " + seconds("averageKill"), "平均被击杀 " + seconds("averageDeath"), menuHint()};
+        if(state.has("trainingActive")&&state.get("trainingActive").getAsBoolean()){
+            JsonObject training=state.getAsJsonObject("training");
+            lines=new String[]{I18n.format("gui.divzero.training.hud"),I18n.format("gui.divzero.training.phase."+training.get("phase").getAsString()),
+                    I18n.format("gui.divzero.training.rounds",training.get("trainingRounds").getAsInt(),training.get("plannedTrainingRounds").getAsInt()),
+                    I18n.format("gui.divzero.training.evaluation",training.get("evaluationRounds").getAsInt()),
+                    I18n.format("gui.divzero.training.samples",training.get("samples").getAsInt()),"v"+training.get("baseVersion").getAsLong()+" → v"+training.get("candidateVersion").getAsLong(),menuHint()};
+        }
         for (String line : lines) { mc.fontRendererObj.drawStringWithShadow(line, x, y, 0xffffff); y += 14; }
     }
     private static String seconds(String key) { double value = state.get(key).getAsDouble(); return value < 0 ? "—" : String.format(Locale.ROOT, "%.1f 秒", value); }
@@ -85,14 +92,17 @@ public final class DuelClient {
     public static final class LoadoutScreen extends GuiScreen {
         private long revision = Long.MIN_VALUE;
         private boolean enabled;
+        private boolean trainingActive;
         private int left, top, columnWidth, slotGap, woolY, footerY;
         @Override public void initGui() { revision = Long.MIN_VALUE; refresh(); }
         public void refresh() {
-            if (state == null || revision == state.get("revision").getAsLong() && enabled == state.get("enabled").getAsBoolean()) return;
+            if (state == null || revision == state.get("revision").getAsLong() && enabled == state.get("enabled").getAsBoolean() && trainingActive == state.get("trainingActive").getAsBoolean()) return;
             revision = state.get("revision").getAsLong(); enabled = state.get("enabled").getAsBoolean(); buttonList.clear();
+            trainingActive=state.get("trainingActive").getAsBoolean();
             int panelWidth = Math.min(490, width - 20); columnWidth = (panelWidth - 12) / 2; left = (width - panelWidth) / 2;
             slotGap = height < 280 ? 21 : 24; top = Math.max(4, (height - (107 + slotGap * 6)) / 2); woolY = top + 37 + slotGap * 6; footerY = woolY + 40;
-            boolean ready = state.get("phase").getAsString().equals("READY");
+            boolean training = trainingActive;
+            boolean ready = state.get("phase").getAsString().equals("READY") && !training;
             for (int actor = 0; actor < 2; actor++) for (int slot = 0; slot < 6; slot++) {
                 String id = state.getAsJsonArray(actor == 0 ? "human" : "ai").get(slot).getAsString();
                 GuiButton button = new ItemButton(actor * 10 + slot, left + actor * (columnWidth + 12), top + 34 + slot * slotGap, columnWidth,
@@ -104,14 +114,16 @@ public final class DuelClient {
                         "领取羊毛 ×64：" + (state.get(actor == 0 ? "humanWool" : "aiWool").getAsBoolean() ? "开" : "关"));
                 button.enabled = ready; buttonList.add(button);
             }
-            int startWidth = panelWidth * 42 / 100, stopWidth = panelWidth * 28 / 100;
+            int startWidth = (panelWidth - 18) / 4, stopWidth = startWidth;
             GuiButton start = new GuiButton(30, left, footerY, startWidth, 20, I18n.format("gui.divzero.duel.start")); start.enabled = ready; buttonList.add(start);
-            GuiButton stop = new GuiButton(31, left + startWidth + 6, footerY, stopWidth, 20, "停止本局"); stop.enabled = !ready; buttonList.add(stop);
-            buttonList.add(new GuiButton(32, left + startWidth + stopWidth + 12, footerY, panelWidth - startWidth - stopWidth - 12, 20, "返回游戏"));
+            GuiButton stop = new GuiButton(31, left + startWidth + 6, footerY, stopWidth, 20, "停止本局"); stop.enabled = !ready && !training; buttonList.add(stop);
+            GuiButton train = new GuiButton(33, left + 2 * (startWidth + 6), footerY, startWidth, 20, I18n.format(training ? "gui.divzero.training.stop" : "gui.divzero.training.start"));train.enabled=ready||training;buttonList.add(train);
+            buttonList.add(new GuiButton(32, left + 3 * (startWidth + 6), footerY, panelWidth - 3 * (startWidth + 6), 20, "返回游戏"));
         }
         @Override protected void actionPerformed(GuiButton button) {
             if (button.id < 20) { mc.displayGuiScreen(new ItemScreen(this, button.id / 10, button.id % 10)); return; }
             if (button.id == 32) { mc.displayGuiScreen(null); return; }
+            if (button.id == 33) { send(request(state.get("trainingActive").getAsBoolean() ? "train_stop" : "train_start")); return; }
             if (button.id == 30 || button.id == 31) { send(request(button.id == 30 ? "ready" : "stop")); mc.displayGuiScreen(null); return; }
             int actor = button.id - 20; JsonObject value = request("choose"); value.addProperty("actor", actor == 0 ? "human" : "ai");
             value.addProperty("wool", !state.get(actor == 0 ? "humanWool" : "aiWool").getAsBoolean()); send(value);
@@ -124,7 +136,7 @@ public final class DuelClient {
         }
         @Override public boolean doesGuiPauseGame() { return false; }
         public boolean fixtureLayoutFits() {
-            if (buttonList.size() != 17) return false;
+            if (buttonList.size() != 18) return false;
             for (GuiButton button : buttonList) if (button.xPosition < 0 || button.yPosition < 0 || button.xPosition + button.getButtonWidth() > width || button.yPosition + 20 > height) return false;
             return true;
         }

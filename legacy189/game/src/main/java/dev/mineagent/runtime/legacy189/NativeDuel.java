@@ -49,32 +49,34 @@ public final class NativeDuel {
     }
     public static void command(EntityPlayerMP player, String action) {
         Session run = session(player);
-        if (action.equals("ready")) start(run);
+        if (action.equals("train_start")) { NativeTraining.start(player,12);run.revision++; }
+        else if (action.equals("train_stop")) { NativeTraining.stop("CANCELLED");run.revision++; }
+        else if (action.equals("ready")) start(run);
         else if (action.equals("stop")) finish(run, "CANCELLED");
         else if (!action.equals("equip") && !action.equals("status")) throw new IllegalArgumentException("/ai duel equip|ready|stop|status");
         push(run, action.equals("equip"));
     }
     public static void choose(EntityPlayerMP player, long revision, String actor, int slot, String item, Boolean wool) {
         Session run = session(player);
-        if (run.active() || run.revision != revision) throw new IllegalStateException("对局或装备已变化，请重新打开面板");
+        if (run.active() || NativeTraining.active() || run.revision != revision) throw new IllegalStateException("对局或装备已变化，请重新打开面板");
         if (!actor.equals("human") && !actor.equals("ai")) throw new IllegalArgumentException("DUEL_ACTOR");
         if (wool != null) { if (actor.equals("human")) run.humanWool = wool; else run.aiWool = wool; }
         else { if (!choices(slot).contains(item)) throw new IllegalArgumentException("DUEL_EQUIPMENT"); (actor.equals("human") ? run.humanGear : run.aiGear)[slot] = item; }
         run.revision++; push(run, false);
     }
     private static void start(Session run) {
-        if (run.active()) throw new IllegalStateException("已有对局进行中");
+        if (run.active() || NativeTraining.active()) throw new IllegalStateException("已有对局或模型训练进行中");
         if (!run.human.isEntityAlive()) throw new IllegalStateException("请先使用原生重生");
         if (!ModernCombat.serverEnabled) throw new IllegalStateException("PvP 地图需要启用现代近战规则");
-        LegacyPolicy.get();
+        run.model=LegacyModelStore.current();
         // Starting an owned arena is explicit consent to enable its local controller.
         // Validate the map, phase and policy first; this does not grant command permissions.
         if (!NativeRuntime.enabled(run.human)) NativeRuntime.setEnabled(run.human, true);
         run.phase = "CLEANING"; run.cleanCursor = 0; run.result = ""; run.match = UUID.randomUUID(); run.revision++;
         run.humanDied = run.aiDied = false; run.pendingDeath = 0; run.travel = 0; run.meleeHits = 0;
-        run.policyStart = LegacyPolicy.get().inferences(); run.archive = null;
+        run.policyStart = run.model.inferences(); run.archive = null;
     }
-    private static void equip(EntityPlayerMP player, String[] gear, boolean wool, int woolColor) {
+    static void equip(EntityPlayerMP player, String[] gear, boolean wool, int woolColor) {
         player.inventory.clear(); player.inventory.setItemStack(null); NativeOffhand.get(player).set(null);
         for (int slot = 0; slot < 6; slot++) {
             if (!choices(slot).contains(gear[slot])) throw new IllegalArgumentException("DUEL_EQUIPMENT");
@@ -100,7 +102,8 @@ public final class NativeDuel {
     public static void tick() {
         MinecraftServer server = MinecraftServer.getServer(); int tick = server.getTickCounter();
         if (!NativeArena.ready()) return;
-        if (tick % 20 == 0 && SESSIONS.values().stream().noneMatch(Session::active)) clearDrops(server.worldServerForDimension(0));
+        LegacyModelStore.initialize();
+        if (tick % 20 == 0 && !NativeTraining.active() && SESSIONS.values().stream().noneMatch(Session::active)) clearDrops(server.worldServerForDimension(0));
         for (EntityPlayerMP player : new ArrayList<EntityPlayerMP>(server.getConfigurationManager().getPlayerList())) {
             if (allowed(player) && player.ticksExisted > 40 && !SESSIONS.containsKey(player.getUniqueID())) { Session run = session(player); NativeArena.lobby(player); push(run, true); }
         }
@@ -113,15 +116,16 @@ public final class NativeDuel {
                 if (run.phase.equals("CLEANING")) {
                     for (int count = 0; count < 4096 && run.cleanCursor < 33 * 33 * 155; count++) {
                         int cursor = run.cleanCursor++; BlockPos pos = new BlockPos(-16 + cursor % 33, 101 + cursor / (33 * 33), 784 + cursor / 33 % 33);
-                        if (online.worldObj.getBlockState(pos).getBlock() == Blocks.wool) online.worldObj.setBlockToAir(pos);
+                        LegacyArenaMaterials.clear(online.worldObj, pos);
                     }
                     if (run.cleanCursor == 33 * 33 * 155) {
                         clearDrops(online.worldObj);
                         online.setGameType(net.minecraft.world.WorldSettings.GameType.SURVIVAL);
                         equip(online, run.humanGear, run.humanWool, 0);
                         run.ai = NativeRuntime.createTransient(online, "PvP 陪练"); equip(run.ai, run.aiGear, run.aiWool, 3);
+                        run.ai.policy(run.model);
                         run.navigation.reset(run.ai);
-                        run.melee.reset();
+                        run.melee.reset(); run.ranged.reset();
                         place(run); run.phase = "COUNTDOWN"; run.deadline = tick + 100; run.revision++;
                     }
                 } else if (run.phase.equals("COUNTDOWN")) {
@@ -146,41 +150,10 @@ public final class NativeDuel {
     }
     private static boolean inside(Entity entity) { return entity != null && entity.posX > -17 && entity.posX < 18 && entity.posZ > 783 && entity.posZ < 818 && entity.posY >= 97; }
     private static void brain(Session run, int tick) {
-        NativeAgent actor = run.ai; EntityPlayerMP target = run.human;
-        run.travel += Math.hypot(actor.posX - run.lastX, actor.posZ - run.lastZ); run.lastX = actor.posX; run.lastZ = actor.posZ;
-        double distance = actor.getDistanceToEntity(target), dx = target.posX - actor.posX, dz = target.posZ - actor.posZ;
-        boolean bow = actor.getHeldItem() != null && actor.getHeldItem().getItem() instanceof ItemBow;
-        double flight = bow ? distance / 3 : 0, aimX = dx + target.motionX * flight, aimZ = dz + target.motionZ * flight;
-        double aimY = target.posY + target.getEyeHeight() * .8 - actor.posY - actor.getEyeHeight() + .025 * flight * flight;
-        actor.rotationYaw = (float) Math.toDegrees(Math.atan2(aimZ, aimX)) - 90;
-        actor.rotationPitch = (float) -Math.toDegrees(Math.atan2(aimY, Math.hypot(aimX, aimZ))); actor.rotationYawHead = actor.rotationYaw;
-        if (!bow) { run.melee.tick(run, tick); return; }
-        double desired = bow ? 8 : 2.5;
-        boolean navigating = run.navigation.move(actor, target, tick, bow);
-        if (run.navigation.recovering()) { actor.clearItemInUse(); return; }
-        double best = Double.POSITIVE_INFINITY; float forward = 0, strafe = 0; boolean jump = false;
-        if (!navigating) for (float[] candidate : new float[][] {{0,0},{1,0},{1,.65f},{1,-.65f},{0,1},{0,-1},{-1,0},{-1,.65f},{-1,-.65f}}) {
-            double yaw = Math.toRadians(actor.rotationYaw), vx = (candidate[1] * Math.cos(yaw) - candidate[0] * Math.sin(yaw)) * 1.2;
-            double vz = (candidate[0] * Math.cos(yaw) + candidate[1] * Math.sin(yaw)) * 1.2;
-            int clearance = clearance(actor, vx, vz); if (clearance < 0) continue;
-            double next = Math.hypot(dx - vx, dz - vz), progress = distance - next;
-            double risk = Math.max(0, 2.1 - next) * 20 + (clearance > 0 ? 4 : 0);
-            double[] features = {actor.getHealth() / Math.max(1, actor.getMaxHealth()), clamp(distance / 16, 0, 2), Math.hypot(actor.motionX, actor.motionZ) / .4, 0,
-                    1, clamp(progress / 8, -1, 1), clamp(risk / 80, 0, 2), .125, clamp(vx / 8, -1, 1), clamp(vz / 8, -1, 1), 0,
-                    1, 5d / 8, actor.onGround ? 0 : 1, ModernCombat.baseDamage(actor) / 10, 0};
-            double score = Math.abs(next - desired) * 4 + risk + LegacyPolicy.get().cost(features) * 2;
-            if (tick < run.retreatUntil && candidate[0] > 0) score += 10;
-            if (score < best) { best = score; forward = candidate[0]; strafe = candidate[1]; jump = clearance > 0; }
-        }
-        if (!navigating) {
-            actor.moveForward = forward; actor.moveStrafing = strafe; actor.setSprinting(forward > 0 && distance > (bow ? 10 : 3.3) && tick >= run.retreatUntil);
-            if (jump && actor.onGround) actor.requestJump();
-        }
-        if (bow) {
-            if (distance < 3 || !actor.canEntityBeSeen(target)) { actor.clearItemInUse(); return; }
-            if (!actor.isUsingItem()) actor.setItemInUse(actor.getHeldItem(), 72000);
-            else if (actor.getItemInUseDuration() >= 20) actor.stopUsingItem();
-        }
+        NativeAgent actor=run.ai;
+        run.travel+=Math.hypot(actor.posX-run.lastX,actor.posZ-run.lastZ);run.lastX=actor.posX;run.lastZ=actor.posZ;
+        LegacyCombatDriver.tick(actor,run.human,run.navigation,run.melee,run.ranged,tick);
+        run.meleeHits=run.melee.confirmedHits();
     }
     private static int clearance(NativeAgent actor, double dx, double dz) {
         int jump = 0;
@@ -205,13 +178,13 @@ public final class NativeDuel {
         if (win || loss || draw) { run.rounds++; if (win) { run.wins++; run.killSeconds += seconds; } else if (loss) { run.losses++; run.deathSeconds += seconds; } else run.draws++; }
         JsonObject record = snapshot(run, false); record.addProperty("outcome", outcome); record.addProperty("seconds", seconds);
         record.addProperty("source", NativeFixture.requested() ? "FIXTURE_ONLY" : "HUMAN_PVP"); record.addProperty("match", run.match.toString());
-        record.addProperty("policyHash", LegacyPolicy.get().hash()); record.addProperty("policyInferences", LegacyPolicy.get().inferences() - run.policyStart);
+        record.addProperty("policyHash", run.model.hash()); record.addProperty("policyInferences", run.model.inferences() - run.policyStart);
         record.addProperty("aiTravel", run.travel); record.addProperty("aiAppliedMeleeHits", run.meleeHits); record.addProperty("boost", false);
         record.addProperty("controller", "LEGACY_ARENA_CANDIDATES_WITH_ORIGINAL_WEIGHTS"); record.addProperty("completeNeoforgeBehaviorParity", false);
         record.addProperty("navigationPlans", run.navigation.plans); record.addProperty("stuckRecoveries", run.navigation.stuckRecoveries);
         record.addProperty("escapeWoolBroken", run.navigation.woolBroken); record.addProperty("attackCooldown", false);
         record.addProperty("escapeWoolPlaced", run.navigation.placed()); record.addProperty("escapeMaterialsConsumed", run.navigation.consumed());
-        record.add("meleeControl", run.melee.evidence());
+        record.add("meleeControl", run.melee.evidence()); record.add("rangedControl", run.ranged.evidence());
         Path output = run.human.getServerForPlayer().getSaveHandler().getWorldDirectory().toPath().resolve("data/divzero-pvp-rounds").resolve(run.match + ".json");
         byte[] bytes = JSON.toJson(record).getBytes(StandardCharsets.UTF_8);
         run.archive = CompletableFuture.runAsync(() -> { try { Files.createDirectories(output.getParent()); Files.write(output, bytes, StandardOpenOption.CREATE_NEW); } catch (Exception failure) { throw new CompletionException(failure); } });
@@ -231,6 +204,7 @@ public final class NativeDuel {
         value.addProperty("averageDeath", run.losses == 0 ? -1 : run.deathSeconds / run.losses);
         value.add("human", JSON.toJsonTree(run.humanGear)); value.add("ai", JSON.toJsonTree(run.aiGear)); value.addProperty("humanWool", run.humanWool); value.addProperty("aiWool", run.aiWool);
         value.addProperty("aiEntity", run.ai == null ? -1 : run.ai.getEntityId());
+        value.addProperty("trainingActive",NativeTraining.active());value.add("training",NativeTraining.status());value.addProperty("modelStatus",LegacyModelStore.status());
         return value;
     }
     private static void push(Session run, boolean open) { DuelNetwork.send(run.human, snapshot(run, open)); }
@@ -245,8 +219,10 @@ public final class NativeDuel {
     public static final class Session {
         public final ArenaNavigator navigation = new ArenaNavigator();
         public final LegacyMeleeController melee = new LegacyMeleeController();
+        public final LegacyRangedController ranged = new LegacyRangedController();
+        public LegacyPolicy model=LegacyPolicy.get();
         public final UUID owner; public EntityPlayerMP human; public NativeAgent ai; public UUID match;
-        public final String[] humanGear = defaults(), aiGear = defaults(); public boolean humanWool, aiWool;
+        public final String[] humanGear = defaults(), aiGear = defaults(); public boolean humanWool, aiWool=true;
         public String phase = "READY", result = ""; public long revision, started, policyStart; public int rounds, wins, losses, draws, deadline, cleanCursor, pendingDeath, retreatUntil, meleeHits;
         public double killSeconds, deathSeconds, travel, lastX, lastZ; public boolean humanDied, aiDied; public CompletableFuture<Void> archive;
         Session(EntityPlayerMP player) { owner = player.getUniqueID(); human = player; }
@@ -257,6 +233,7 @@ public final class NativeDuel {
     public static final class Events {
         @SubscribeEvent public void drops(LivingDropsEvent event) {
             if (event.entityLiving.worldObj.isRemote) return;
+            if(NativeTraining.participant(event.entityLiving)){event.drops.clear();event.setCanceled(true);return;}
             for (Session run : SESSIONS.values()) if (run.active() && (event.entityLiving == run.human || event.entityLiving == run.ai)) {
                 event.drops.clear(); event.setCanceled(true); return;
             }
@@ -264,6 +241,7 @@ public final class NativeDuel {
         @SubscribeEvent(priority = EventPriority.HIGHEST) public void protect(LivingAttackEvent event) {
             if (event.entityLiving.worldObj.isRemote || event.entityLiving.dimension != 0 || !NativeArena.ready() || !(event.entityLiving instanceof EntityPlayerMP)) return;
             if (NativeFixture.combatProbe(event.entityLiving, event.source.getEntity())) return;
+            if(NativeTraining.participant(event.entityLiving)){if(!NativeTraining.permits(event.entityLiving,event.source.getEntity()))event.setCanceled(true);return;}
             if (!NativeArena.protectedArea(new BlockPos(event.entityLiving))) return;
             boolean allowed = false;
             for (Session run : SESSIONS.values()) if (run.phase.equals("FIGHTING") && ModernCombat.serverEnabled && NativeRuntime.enabled(run.human)
@@ -282,11 +260,14 @@ public final class NativeDuel {
         }
         @SubscribeEvent public void breaking(BlockEvent.BreakEvent event) {
             if (!event.world.isRemote && event.world.provider.getDimensionId() == 0 && NativeArena.ready() && NativeArena.protectedArea(event.pos)
-                    && !(NativeArena.field(event.pos) && event.state.getBlock() == Blocks.wool)) event.setCanceled(true);
+                    && !LegacyArenaMaterials.editable(event.world,event.pos)) event.setCanceled(true);
         }
-        @SubscribeEvent public void placing(BlockEvent.PlaceEvent event) {
-            if (!event.world.isRemote && event.world.provider.getDimensionId() == 0 && NativeArena.ready() && NativeArena.protectedArea(event.pos)
-                    && !(NativeArena.field(event.pos) && event.placedBlock.getBlock() == Blocks.wool)) event.setCanceled(true);
+        @SubscribeEvent(priority = EventPriority.LOWEST) public void placing(BlockEvent.PlaceEvent event) {
+            if (!event.world.isRemote && event.world.provider.getDimensionId() == 0 && NativeArena.ready() && NativeArena.protectedArea(event.pos)) {
+                Block block = event.placedBlock.getBlock();
+                if (!NativeArena.field(event.pos) || event.blockSnapshot.getReplacedBlock().getBlock() != Blocks.air || block.hasTileEntity(event.placedBlock) || block.getBlockHardness(event.world,event.pos)<0) event.setCanceled(true);
+                else if (!event.isCanceled()) NativeRuntime.data().temporary(event.pos,true);
+            }
         }
         @SubscribeEvent public void explosion(net.minecraftforge.event.world.ExplosionEvent.Detonate event) {
             if (!event.world.isRemote && event.world.provider.getDimensionId() == 0 && NativeArena.ready()) event.getAffectedBlocks().removeIf(NativeArena::protectedArea);

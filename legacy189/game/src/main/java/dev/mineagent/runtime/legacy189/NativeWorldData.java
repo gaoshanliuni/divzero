@@ -14,6 +14,9 @@ public final class NativeWorldData extends WorldSavedData {
     private boolean modernCombat;
     private final Set<UUID> enabled = new HashSet<UUID>();
     private final Map<UUID, AgentDefinition> agents = new LinkedHashMap<UUID, AgentDefinition>();
+    private final Set<net.minecraft.util.BlockPos> temporary = new HashSet<net.minecraft.util.BlockPos>();
+    public boolean temporary(net.minecraft.util.BlockPos pos) { return temporary.contains(pos); }
+    public void temporary(net.minecraft.util.BlockPos pos, boolean value) { if (value ? temporary.add(pos) : temporary.remove(pos)) markDirty(); }
     public NativeWorldData() { super(KEY); }
     public NativeWorldData(String key) { super(key); }
     public UUID identity() { return identity; }
@@ -39,7 +42,9 @@ public final class NativeWorldData extends WorldSavedData {
         arenaHash = nbt.getString("arenaHash");
         modernCombat = nbt.getBoolean("modernCombat"); ModernCombat.serverEnabled = modernCombat;
         if (!arenaHash.isEmpty() && !arenaHash.matches("[0-9a-f]{64}")) throw new IllegalStateException("ARENA_HASH");
-        enabled.clear(); agents.clear();
+        enabled.clear(); agents.clear(); temporary.clear();
+        NBTTagList terrain = nbt.getTagList("temporaryArenaBlocks", 10);
+        for (int i = 0; i < terrain.tagCount(); i++) { NBTTagCompound row = terrain.getCompoundTagAt(i); net.minecraft.util.BlockPos pos = new net.minecraft.util.BlockPos(row.getInteger("x"), row.getInteger("y"), row.getInteger("z")); if (NativeArena.field(pos)) temporary.add(pos); }
         NBTTagList players = nbt.getTagList("enabled", 8);
         for (int i = 0; i < players.tagCount(); i++) enabled.add(UUID.fromString(players.getStringTagAt(i)));
         NBTTagList saved = nbt.getTagList("agents", 10);
@@ -54,6 +59,9 @@ public final class NativeWorldData extends WorldSavedData {
         nbt.setInteger("schema", 1); nbt.setString("identity", identity.toString());
         nbt.setString("arenaHash", arenaHash);
         nbt.setBoolean("modernCombat", modernCombat);
+        NBTTagList terrain = new NBTTagList();
+        for (net.minecraft.util.BlockPos pos : temporary) { NBTTagCompound row = new NBTTagCompound(); row.setInteger("x", pos.getX()); row.setInteger("y", pos.getY()); row.setInteger("z", pos.getZ()); terrain.appendTag(row); }
+        nbt.setTag("temporaryArenaBlocks", terrain);
         NBTTagList players = new NBTTagList();
         for (UUID id : enabled) players.appendTag(new net.minecraft.nbt.NBTTagString(id.toString()));
         nbt.setTag("enabled", players);

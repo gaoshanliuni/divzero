@@ -22,6 +22,7 @@ public final class LegacyTerrainRecovery {
     private Vec3 origin, goal;
     private int started, actionAt, selectedSlot, settled;
     private boolean sent, jumped;
+    private boolean pursuit;
     private String before;
     private float progress;
     private final Rejections<String> rejected=new Rejections<String>();
@@ -38,7 +39,7 @@ public final class LegacyTerrainRecovery {
     private static Node node(Cell c){return new Node(c.x(),c.y()*16,c.z());}
     private static Vec3 point(Cell c){return new Vec3(c.x()+.5,c.y(),c.z()+.5);}
     private boolean loaded(BlockPos p){return actor.worldObj.isBlockLoaded(p)&&p.getY()>=0&&p.getY()<256;}
-    private boolean mayBreak(BlockPos p){return NativeArena.field(p)&&loaded(p)&&actor.worldObj.getTileEntity(p)==null&&actor.worldObj.getBlockState(p).getBlock()==Blocks.wool;}
+    private boolean mayBreak(BlockPos p){return LegacyArenaMaterials.editable(actor.worldObj,p);}
     private boolean mayPlace(BlockPos p){return NativeArena.field(p)&&loaded(p)&&actor.worldObj.isAirBlock(p);}
     private String signature(BlockPos p){return p.toString()+":"+actor.worldObj.getBlockState(p).toString();}
     private int materialSlot(){for(int i=0;i<36;i++){ItemStack stack=actor.inventory.mainInventory[i];if(stack!=null&&stack.stackSize>0&&net.minecraft.block.Block.getBlockFromItem(stack.getItem())==Blocks.wool)return i;}return -1;}
@@ -53,11 +54,14 @@ public final class LegacyTerrainRecovery {
         return result.append(stack==null?"empty":stack.writeToNBT(new net.minecraft.nbt.NBTTagCompound()).toString()).toString();
     }
     public boolean request(NativeAgent player,EntityPlayerMP target,int tick){
+        return request(player,target,tick,false);
+    }
+    public boolean request(NativeAgent player,EntityPlayerMP target,int tick,boolean pursueTarget){
         if(active())return true;
         if(!player.onGround||!player.isEntityAlive()||Math.abs(player.posY-Math.rint(player.posY))>.06)return false;
         Vec3 targetPoint=target.getPositionVector();
         if(actor!=player||goal==null||goal.squareDistanceTo(targetPoint)>4){rejected.clear();}
-        actor=player;this.target=target;goal=targetPoint;origin=player.getPositionVector();started=tick;state="SEARCHING_ESCAPE";
+        actor=player;this.target=target;goal=targetPoint;origin=player.getPositionVector();started=tick;pursuit=pursueTarget;state=pursuit?"SEARCHING_APPROACH":"SEARCHING_ESCAPE";
         final Cell originCell=cell(origin);
         TerrainPathSearch.World world=new TerrainPathSearch.World(){
             public TerrainPathSearch.Block block(Cell c){
@@ -69,6 +73,18 @@ public final class LegacyTerrainRecovery {
             }
             public boolean canPlace(Cell c){return !rejected.contains(c,Kind.PLACE,()->context(pos(c),Kind.PLACE))&&mayPlace(pos(c));}
             public boolean exit(Cell c,Map<Cell,Kind> edits){
+                if(pursuit){
+                    Map<BlockPos,Kind> overlay=new HashMap<BlockPos,Kind>();for(Map.Entry<Cell,Kind> edit:edits.entrySet())overlay.put(pos(edit.getKey()),edit.getValue());
+                    LegacyTraversal virtual=new LegacyTraversal(actor,overlay);Vec3 at=point(c);Node floor=virtual.closest(at);
+                    if(floor==null||Math.abs(floor.y()-at.yCoord)>.251||!virtual.clear(at,false))return false;
+                    Vec3 eye=at.addVector(0,actor.getEyeHeight(),0);AxisAlignedBB box=target.getEntityBoundingBox();
+                    Vec3 hit=new Vec3(Math.max(box.minX+.001,Math.min(box.maxX-.001,eye.xCoord)),Math.max(box.minY+.001,Math.min(box.maxY-.001,eye.yCoord)),Math.max(box.minZ+.001,Math.min(box.maxZ-.001,eye.zCoord)));
+                    if(eye.squareDistanceTo(hit)<=9&&virtual.rayClear(eye,hit))return true;
+                    // Long approaches advance through checked terrain in bounded segments.
+                    // A built support may be an intermediate attack approach, never an invented material.
+                    double progress=origin.distanceTo(goal)-at.distanceTo(goal);
+                    return progress>=3&&at.distanceTo(goal)>3.5&&(virtual.neighbors(floor).size()>=2||!edits.isEmpty()&&c.y()>originCell.y());
+                }
                 if(Math.abs(c.x()-originCell.x())+Math.abs(c.z()-originCell.z())<1)return false;
                 Cell below=c.add(0,-1,0);if(edits.containsKey(below)||!block(below).supports())return false;
                 Vec3 at=point(c);LegacyTraversal check=new LegacyTraversal(actor);Node n=check.closest(at);
@@ -83,7 +99,7 @@ public final class LegacyTerrainRecovery {
                 double[] features={actor.getHealth()/Math.max(1,actor.getMaxHealth()),Math.min(2,origin.distanceTo(goal)/16),Math.hypot(actor.motionX,actor.motionZ)/.4,0,1,
                         Math.min(1,delta.lengthVector()/8),Math.min(2,risk/80),.125,delta.xCoord/8,delta.zCoord/8,delta.yCoord/4,0,7d/8,actor.onGround?0:1,ModernCombat.baseDamage(actor)/10,
                         step.edits().stream().filter(e->e.kind()==Kind.PLACE).count()};
-                return LegacyPolicy.get().cost(features)*5;
+                return actor.policy().cost(features)*5;
             }
         };
         int slot=materialSlot();
@@ -102,7 +118,7 @@ public final class LegacyTerrainRecovery {
     /** changed[0] requests immediate re-evaluation of the original route. */
     public PathStep tick(int tick,boolean[] changed){
         if(!active())return null;
-        if(!actor.isEntityAlive()||actor.worldObj!=target.worldObj){cancel();return null;}
+        if(!actor.isEntityAlive()||actor.worldObj!=target.worldObj||goal.squareDistanceTo(target.getPositionVector())>4){cancel();return null;}
         if(tick-started>300){fail("ESCAPE_CONTEXT_RECHECK_TIMEOUT");return null;}
         if(search!=null){
             final long deadline=System.nanoTime()+3_000_000L;

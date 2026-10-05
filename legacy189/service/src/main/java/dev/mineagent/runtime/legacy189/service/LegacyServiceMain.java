@@ -87,6 +87,27 @@ public final class LegacyServiceMain {
                             "nativeParityVerified", false));
                     continue;
                 }
+                if (type.equals("policy.fit")) {
+                    FutureTask<Void> training = new FutureTask<>(() -> {
+                        try {
+                            if (!(payload.get("model") instanceof String modelJson) || modelJson.length() > 131072)
+                                throw new IllegalArgumentException("POLICY_MODEL_SIZE");
+                            var samples = JSON.convertValue(payload.get("samples"), new TypeReference<List<dev.mineagent.runtime.core.task.LocalActionPolicy.Sample>>() {});
+                            if (samples == null || samples.size() < 128 || samples.size() > 2048) throw new IllegalArgumentException("POLICY_SAMPLE_COUNT");
+                            for (var sample : samples) for (double value : sample.features()) if (!Double.isFinite(value)) throw new IllegalArgumentException("POLICY_SAMPLE_FINITE");
+                            var base = dev.mineagent.runtime.core.task.LocalActionPolicy.parse(modelJson);
+                            var reference = dev.mineagent.runtime.core.task.LocalActionPolicy.referenceSamples(dev.mineagent.runtime.core.task.LocalActionPolicy.pretrained());
+                            var update = dev.mineagent.runtime.core.task.LocalPolicyTrainer.fit(base, samples, reference);
+                            if (!Thread.currentThread().isInterrupted()) emit(output, frame, BridgeFrame.Kind.RESULT, "policy.fit", Map.of(
+                                    "accepted", update.accepted(), "before", update.before(), "after", update.after(), "referenceDrift", update.referenceDrift(),
+                                    "scale", update.scale(), "reason", update.reason(), "model", update.model().json(), "baseVersion", base.version()));
+                        } catch (Exception invalid) {
+                            if (!Thread.currentThread().isInterrupted()) emit(output, frame, BridgeFrame.Kind.RESULT, "error", Map.of("code", "POLICY_TRAINING_REJECTED"));
+                        }
+                        return null;
+                    }) { @Override protected void done() { pending.remove(frame.operation(), this); } };
+                    pending.put(frame.operation(), training); pool.execute(training); continue;
+                }
                 WorkerEnvelope request = new WorkerEnvelope(1, frame.operation(), type, payload);
                 if (Set.of("health.check", "provider.configure", "provider.snapshot").contains(type)) {
                     WorkerEnvelope result = handler.handle(request);

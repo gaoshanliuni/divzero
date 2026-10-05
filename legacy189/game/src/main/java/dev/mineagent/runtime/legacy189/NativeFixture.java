@@ -26,6 +26,8 @@ public final class NativeFixture {
     private static boolean packedFighting;
     private static ArenaFeedbackVerification feedbackVerification;
     private static NativeComboVerification comboVerification;
+    private static boolean trainingStarted,trainingReload;
+    private static String trainedHash;
     public static volatile int packedGuiScale;
     public static volatile boolean equipmentClicks;
     public static volatile boolean finished;
@@ -124,6 +126,7 @@ public final class NativeFixture {
         }
     }
     private static void packed(MinecraftServer server, EntityPlayerMP human) throws Exception {
+        if(Boolean.getBoolean("divzero.legacyTrainingFixture")){training(server,human);return;}
         require(NativeArena.ready() && ModernCombat.serverEnabled, "PACKED_ARENA_RULES");
         require(!human.canCommandSenderUseCommand(2, "ai"), "PACKED_MAP_GRANTED_COMMANDS");
         if (packedClientFailure != null) throw new IllegalStateException(packedClientFailure);
@@ -174,6 +177,19 @@ public final class NativeFixture {
             complete(server, true, "NATIVE_PVP_FEEDBACK_PASSED");
         }
         if (server.getTickCounter() > 2600) throw new IllegalStateException("PACKED_UI_TIMEOUT phase=" + run.phase);
+    }
+    private static void training(MinecraftServer server,EntityPlayerMP human)throws Exception{
+        require(NativeArena.ready()&&!human.canCommandSenderUseCommand(2,"ai"),"TRAINING_MAP_PERMISSION");
+        if(!trainingStarted){NativeTraining.start(human,12);trainingStarted=true;return;}
+        if(NativeTraining.active())return;
+        JsonObject status=NativeTraining.status();require(status.has("phase")&&status.get("phase").getAsString().equals("PROMOTED"),"SELF_PLAY_NOT_PROMOTED "+status);
+        if(!trainingReload){
+            JsonObject receipt=NativeTraining.receipt();require(receipt.get("samples").getAsInt()>=128&&receipt.get("evaluationRounds").getAsInt()==8,"TRAINING_EVIDENCE_INCOMPLETE");
+            trainedHash=receipt.get("candidateHash").getAsString();evidence.add("selfPlay",receipt);LegacyModelStore.stop();LegacyModelStore.initialize();trainingReload=true;return;
+        }
+        if(LegacyModelStore.status().equals("LOADING"))return;
+        require(LegacyModelStore.current().hash().equals(trainedHash),"PROMOTED_MODEL_NOT_RELOADED");
+        evidence.addProperty("checkpointReloaded",true);evidence.addProperty("source","SELF_PLAY_ISOLATED_NATIVE");complete(server,true,"NATIVE_SELF_PLAY_PROMOTION_PASSED");
     }
     private static void resume(MinecraftServer server, EntityPlayerMP human) throws Exception {
         File source = server.getFile("divzero-native-result.json");

@@ -73,7 +73,7 @@ public final class ArenaNavigator {
             if(segment&&end==null){for(int radius=1;radius<=3&&end==null;radius++)for(int dx=-radius;dx<=radius&&end==null;dx++)for(int dz=-radius;dz<=radius;dz++){
                 Node candidate=evaluator.closest(routeGoal.addVector(dx,0,dz));if(candidate!=null&&LegacyTraversal.point(candidate).squareDistanceTo(position)>4){end=candidate;break;}
             }}
-            if(start==null||end==null){reason=evaluator.encounteredUnloaded()?"WAITING_CHUNKS":"INVALID_TARGET";if(evaluator.encounteredUnloaded())retry.waitUntil(tick+20);else retry.failed(tick);return null;}
+            if(start==null||end==null){reason=evaluator.encounteredUnloaded()?"WAITING_CHUNKS":"INVALID_TARGET";if(evaluator.encounteredUnloaded())retry.waitUntil(tick+20);else{retry.failed(tick);if(start!=null&&recovery.request(actor,target,tick,!evaluator.neighbors(start).isEmpty()))reason="APPROACH_BLOCKED_TARGET";}return null;}
             search=new SurfacePathfinder.Search(start,end,evaluator);
         }
         if(search!=null){
@@ -84,7 +84,8 @@ public final class ArenaNavigator {
                 search=null;
                 if(evaluator.encounteredUnloaded()){retry.waitUntil(tick+20);return null;}
                 retry.failed(tick);
-                if(result.status()==Status.NO_PATH&&recovery.request(actor,target,tick))reason="NO_ORDINARY_PATH";
+                Node current=evaluator.closest(position);boolean pursue=current!=null&&!evaluator.neighbors(current).isEmpty();
+                if(result.status()==Status.NO_PATH&&recovery.request(actor,target,tick,pursue))reason=pursue?"APPROACH_BLOCKED_TARGET":"NO_ORDINARY_PATH";
                 return null;
             }else return null;
         }

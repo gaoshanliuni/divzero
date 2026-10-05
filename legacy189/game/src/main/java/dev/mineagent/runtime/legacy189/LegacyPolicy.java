@@ -11,8 +11,10 @@ public final class LegacyPolicy {
     private static LegacyPolicy instance;
     private final Weights weights;
     private final String hash;
+    private final String source;
     private long inferences;
     private LegacyPolicy(byte[] bytes) throws Exception {
+        source = new String(bytes, StandardCharsets.UTF_8);
         weights = new Gson().fromJson(new String(bytes, StandardCharsets.UTF_8), Weights.class);
         if (!"divzero-admissible-action-value/2".equals(weights.schema) || weights.version < 1 || weights.hidden.length != 24 || weights.bias.length != 24 || weights.output.length != 24) throw new IllegalStateException("POLICY_SHAPE");
         for (int i = 0; i < 24; i++) { if (weights.hidden[i].length != 16) throw new IllegalStateException("POLICY_INPUTS"); for (double value : weights.hidden[i]) finite(value); finite(weights.bias[i]); finite(weights.output[i]); }
@@ -28,6 +30,12 @@ public final class LegacyPolicy {
             instance = new LegacyPolicy(bytes.toByteArray()); return instance;
         } catch (Exception failure) { throw new IllegalStateException("POLICY_LOAD_FAILED", failure); }
     }
+    public static LegacyPolicy parse(String json) {
+        if (json == null || json.length() > 1024 * 1024) throw new IllegalArgumentException("POLICY_SIZE");
+        try { return new LegacyPolicy(json.getBytes(StandardCharsets.UTF_8)); }
+        catch (Exception invalid) { throw new IllegalArgumentException("POLICY_INVALID", invalid); }
+    }
+    public String json() { return source; }
     public double cost(double[] features) {
         if (features.length != 16) throw new IllegalArgumentException("POLICY_FEATURES");
         double output = weights.outputBias;

@@ -88,12 +88,15 @@ def main():
     parser.add_argument("--arena", type=pathlib.Path)
     parser.add_argument("--packed-arena", type=pathlib.Path)
     parser.add_argument("--combo-fixture", action="store_true")
+    parser.add_argument("--training-fixture", action="store_true")
     parser.add_argument("--gui-scale", type=int, choices=(1, 2, 3, 4), default=2)
     parser.add_argument("--width", type=int, default=1100)
     parser.add_argument("--height", type=int, default=720)
     args = parser.parse_args()
     if args.combo_fixture and not args.packed_arena:
         raise ValueError("Combo fixtures require a clean packed arena")
+    if args.training_fixture and (not args.packed_arena or args.combo_fixture):
+        raise ValueError("Self-play fixtures require their own clean packed arena")
     if any(len(value) != 64 or any(c not in "0123456789abcdef" for c in value) for value in args.exclude_installed_mod_sha256):
         raise ValueError("Excluded Mod hashes must be lowercase SHA-256")
     if args.exclude_installed_mod_sha256 and (not args.with_installed_mods or args.resume):
@@ -193,6 +196,8 @@ def main():
         command.append("-Ddivzero.fixtureExpectedScale=" + str(args.gui_scale))
     if args.combo_fixture:
         command.append("-Ddivzero.legacyComboFixture=true")
+    if args.training_fixture:
+        command.append("-Ddivzero.legacyTrainingFixture=true")
     if args.java25:
         command.append("-Ddivzero.java25=" + str(args.java25.resolve(strict=True)))
     command += ["-cp", os.pathsep.join(classpath), version["mainClass"], "--username", "DivZeroFixture", "--version", instance.name,
