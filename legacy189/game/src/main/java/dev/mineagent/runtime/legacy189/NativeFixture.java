@@ -74,7 +74,8 @@ public final class NativeFixture {
                 evidence.addProperty("humanDamage", humanBefore - human.getHealth());
                 evidence.addProperty("agentDamage", agentBefore - body.getHealth());
                 evidence.addProperty("nativeGravity", true); evidence.addProperty("nativeContainer", true);
-                server.getConfigurationManager().saveAllPlayerData(); server.saveAllWorlds(false);
+                server.getConfigurationManager().saveAllPlayerData();
+                for (net.minecraft.world.WorldServer level : server.worldServers) level.saveAllChunks(true, null);
                 complete(server, true, "NATIVE_BASELINE_PASSED");
             } else if (server.getTickCounter() - started > 1000 && stage > 0) throw new IllegalStateException("NATIVE_FIXTURE_TIMEOUT_STAGE_" + stage);
         } catch (Throwable failure) {

@@ -4034,8 +4034,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeFixture.java",
-      "sha256": "da9e7febdbfd3015dac62df6ae70b2704940a6b7e24ec64c2fd6abf1d80a4006",
-      "bytes": 7917
+      "sha256": "66b8a214048a3cd8b9a4cfd6a4b344c4c02810a66d5befd1a90543c2028a8f58",
+      "bytes": 8003
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeGuiHandler.java",
@@ -4121,6 +4121,11 @@
       "path": "legacy189/tools/nbt.py",
       "sha256": "72dac7701b8f2b6b208c3f962e58cb66e26623c05f99bfbd636b98551f8eb237",
       "bytes": 6481
+    },
+    {
+      "path": "legacy189/tools/run_native.py",
+      "sha256": "b0dc564ef06334c5988ad78a276cf3a4d9a4fd272404ee0cc5a88c9a9079e6ca",
+      "bytes": 7313
     },
     {
       "path": "neoforge/build.gradle",
