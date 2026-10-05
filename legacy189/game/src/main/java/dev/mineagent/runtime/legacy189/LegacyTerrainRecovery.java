@@ -104,7 +104,10 @@ public final class LegacyTerrainRecovery {
             }
         };
         int slot=materialSlot();
-        if(NativeFixture.requested()){
+        if(pursuit&&world.exit(originCell,Collections.emptyMap())&&actor.getPositionVector().squareDistanceTo(point(originCell))>.0001){
+            planned=new TerrainPathSearch.Step(originCell,originCell,Collections.emptyList(),false,1);edit=null;actionAt=tick;selectedSlot=actor.inventory.currentItem;attempts++;state="ALIGN_ATTACK_STANCE";return true;
+        }
+        if(NativeFixture.requested()&&!pursuit){
             com.google.gson.JsonObject debug=new com.google.gson.JsonObject();debug.addProperty("origin",origin.toString());debug.addProperty("goal",goal.toString());debug.addProperty("materialSlot",slot);debug.addProperty("materials",slot<0?0:actor.inventory.mainInventory[slot].stackSize);
             debug.add("originBlock",new com.google.gson.Gson().toJsonTree(world.block(originCell)));debug.addProperty("canPlaceOrigin",world.canPlace(originCell));
             com.google.gson.JsonArray exits=new com.google.gson.JsonArray();
@@ -130,9 +133,10 @@ public final class LegacyTerrainRecovery {
             actionAt=tick;selectedSlot=actor.inventory.currentItem;sent=jumped=false;settled=0;progress=0;attempts++;
             state=edit==null?"ESCAPE_WALK":edit.kind()==Kind.BREAK?"ESCAPE_MINE":"ESCAPE_PLACE";
             if(edit!=null)before=signature(pos(edit.cell()));
+            if(NativeFixture.requested()&&pursuit)LegacyMod.logger.info("LEGACY_PURSUIT_PLAN from={} to={} edit={}",point(planned.from()),point(planned.to()),edit==null?"WALK":edit.kind()+":"+pos(edit.cell()));
         }
         if(edit==null){
-            if(actor.getPositionVector().squareDistanceTo(point(planned.to()))<.16&&actor.onGround){complete(changed);return null;}
+            if(actor.getPositionVector().squareDistanceTo(point(planned.to()))<(pursuit?.0001:.16)&&actor.onGround){complete(changed);return null;}
             if(tick-actionAt>50){fail("ESCAPE_MOVE_BLOCKED");return null;}
             return new PathStep(node(planned.from()),node(planned.to()),planned.to().y()>planned.from().y()?Action.JUMP:Action.WALK,Posture.STANDING,1);
         }
@@ -175,7 +179,7 @@ public final class LegacyTerrainRecovery {
         if(tick-actionAt>25)fail("PLACEMENT_NOT_CONFIRMED_CHECK_WORLD");return null;
     }
     private void complete(boolean[] changed){cancel();state="RECHECK_ORIGINAL_ROUTE";changed[0]=true;}
-    private void fail(String reason){if(edit!=null)rejected.reject(edit.cell(),edit.kind(),context(pos(edit.cell()),edit.kind()));cancel();state=reason;}
+    private void fail(String reason){if(NativeFixture.requested())LegacyMod.logger.info("LEGACY_RECOVERY_FAILED reason={} position={} edit={}",reason,actor.getPositionVector(),edit==null?"none":edit.kind()+":"+pos(edit.cell()));if(edit!=null)rejected.reject(edit.cell(),edit.kind(),context(pos(edit.cell()),edit.kind()));cancel();state=reason;}
     private void aim(Vec3 at){Vec3 delta=at.subtract(actor.getPositionEyes(1));actor.rotationYaw=(float)Math.toDegrees(Math.atan2(delta.zCoord,delta.xCoord))-90;actor.rotationYawHead=actor.rotationYaw;actor.rotationPitch=(float)-Math.toDegrees(Math.atan2(delta.yCoord,Math.hypot(delta.xCoord,delta.zCoord)));}
     private Vec3 visibleMiningPoint(BlockPos target){
         for(double y:new double[]{.5,.05,.95})for(double x:new double[]{.5,.05,.95})for(double z:new double[]{.5,.05,.95}){

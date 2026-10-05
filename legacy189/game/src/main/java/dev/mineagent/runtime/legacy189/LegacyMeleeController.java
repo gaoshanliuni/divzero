@@ -63,7 +63,7 @@ public final class LegacyMeleeController {
             actor.moveForward=1;actor.moveStrafing=0;actor.setSprinting(true);phase="CONTACT_ESCAPE";evasiveTicks++;return;
         }
         boolean direct=safeMotion(actor,nx*Math.min(distance,1.2),nz*Math.min(distance,1.2),false);
-        boolean local=jumpActive||distance<16&&direct&&actor.canEntityBeSeen(target);
+        boolean local=jumpActive||distance<16&&direct&&actor.canEntityBeSeen(target)&&(distance>3.5||ModernCombat.reachable(actor,target));
         if(!local){
             navigation.move(actor,target,tick,false);phase=navigation.recovering()?"TERRAIN_ESCAPE":"NAVIGATION";previousSprint=actor.isSprinting();
             if(!navigation.recovering()&&actor.moveForward>.7f&&actor.getFoodStats().getFoodLevel()>6&&!actor.isUsingItem()&&safeInput(actor,actor.moveForward,actor.moveStrafing,false))actor.setSprinting(true);

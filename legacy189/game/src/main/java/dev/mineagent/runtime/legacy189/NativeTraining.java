@@ -39,13 +39,13 @@ public final class NativeTraining {
         double distance=actor.getDistanceToEntity(target),future=Math.hypot(target.posX-actor.posX-vx,target.posZ-actor.posZ-vz);
         double[] features={beforeSelf/Math.max(1,actor.getMaxHealth()),clamp(distance/16,0,2),Math.hypot(actor.motionX,actor.motionZ)/.4,0,1,
                 clamp((distance-future)/8,-1,1),clamp(actor.decisionRisk/80,0,2),.125,clamp(vx/8,-1,1),clamp(vz/8,-1,1),0,ModernCombat.reachable(actor,target)?1:0,5d/8,actor.onGround?0:1,ModernCombat.baseDamage(actor)/10,0};
-        run.pending.put(actor.getUniqueID(),new Pending(actor,target,tick,beforeSelf,beforeTarget,distance,features));
+        run.pending.put(actor.getUniqueID(),new Pending(actor,target,tick,beforeSelf,beforeTarget,actor.getPositionVector().addVector(vx,0,vz),features));
     }
     private static double clamp(double value,double low,double high){return Math.max(low,Math.min(high,value));}
     private static float vital(EntityPlayerMP p){return p.getHealth()+p.getAbsorptionAmount();}
     private static final class Pending {
-        final NativeAgent actor;final EntityPlayerMP target;final int tick;final float self,other;final double distance;final double[] features;
-        Pending(NativeAgent actor,EntityPlayerMP target,int tick,float self,float other,double distance,double[] features){this.actor=actor;this.target=target;this.tick=tick;this.self=self;this.other=other;this.distance=distance;this.features=features;}
+        final NativeAgent actor;final EntityPlayerMP target;final int tick;final float self,other;final double distance;final double[] features;final Vec3 waypoint;double bestDistance;
+        Pending(NativeAgent actor,EntityPlayerMP target,int tick,float self,float other,Vec3 waypoint,double[] features){this.actor=actor;this.target=target;this.tick=tick;this.self=self;this.other=other;this.waypoint=waypoint;this.distance=actor.getPositionVector().distanceTo(waypoint);bestDistance=distance;this.features=features;}
     }
     private static final class Run {
         final UUID id=UUID.randomUUID(),owner,session;final LegacyPolicy base;final int collectTarget;
@@ -98,10 +98,12 @@ public final class NativeTraining {
         }
         void flush(int tick,boolean all){
             Iterator<Pending> iterator=pending.values().iterator();while(iterator.hasNext()){
-                Pending p=iterator.next();if(!all&&tick-p.tick<12)continue;iterator.remove();
+                Pending p=iterator.next();p.bestDistance=Math.min(p.bestDistance,p.actor.getPositionVector().distanceTo(p.waypoint));if(!all&&tick-p.tick<12)continue;iterator.remove();
                 double received=Math.max(0,p.self-vital(p.actor)),given=Math.max(0,p.other-vital(p.target));
-                double progress=p.distance-p.actor.getDistanceToEntity(p.target);
-                double cost=clamp(.45+received/20*1.2-given/20*.8-clamp(progress,-3,3)/8*.2+(!p.actor.isEntityAlive()||!inside(p.actor)?.1:0)-(!p.target.isEntityAlive()||!inside(p.target)?.1:0),0,1);
+                double progress=p.distance-p.bestDistance,maximum=Math.max(1,p.actor.getMaxHealth()),healed=Math.max(0,vital(p.actor)-p.self)/maximum;
+                // Same observed-outcome scale as 26.1.2 LocalPolicyRuntime: reaching
+                // the selected movement point matters, rather than always moving toward the enemy.
+                double cost=clamp(!p.actor.isEntityAlive()||!inside(p.actor)?1:.25+received/maximum*1.8-healed*1.2+(progress>.2?-.1:.08)-given/maximum*.65-(!p.target.isEntityAlive()||!inside(p.target)?.35:0),0,1);
                 JsonObject sample=new JsonObject();sample.add("features",new Gson().toJsonTree(p.features));sample.addProperty("cost",cost);replay.addLast(sample);
                 if(replay.size()>2048)replay.removeFirst();
             }

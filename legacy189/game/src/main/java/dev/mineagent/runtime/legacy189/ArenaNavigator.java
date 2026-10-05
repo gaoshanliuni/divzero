@@ -42,7 +42,7 @@ public final class ArenaNavigator {
         // The old clientless body integrates vanilla travel once per tick. Convert the
         // same waypoint to native local movement inputs instead of moving it twice.
         double length=Math.hypot(offset.xCoord,offset.zCoord),yaw=Math.toRadians(actor.rotationYaw);
-        if(length>.025){
+        if(length>.001){
             double amount=Math.min(1,length/.22);
             actor.moveForward=(float)((-offset.xCoord*Math.sin(yaw)+offset.zCoord*Math.cos(yaw))/length*amount);
             actor.moveStrafing=(float)((offset.xCoord*Math.cos(yaw)+offset.zCoord*Math.sin(yaw))/length*amount);
