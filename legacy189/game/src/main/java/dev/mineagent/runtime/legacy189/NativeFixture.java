@@ -24,10 +24,12 @@ public final class NativeFixture {
     private static int stage, started;
     private static NativeAgent body;
     private static CombatVerification combatVerification;
+    private static DuelVerification duelVerification;
     private static java.util.concurrent.CompletableFuture<JsonObject> workerHealth;
     private static final JsonObject evidence = new JsonObject();
     private NativeFixture() { }
     public static boolean requested() { return Boolean.getBoolean("divzero.legacyFixture"); }
+    public static boolean duelProbe() { return requested() && stage == 4 && !finished; }
     public static boolean combatProbe(net.minecraft.entity.Entity target, net.minecraft.entity.Entity source) {
         if (!requested() || stage != 3 || body == null) return false;
         return target == body && (source == null || source.getUniqueID().equals(body.owner))
@@ -102,7 +104,9 @@ public final class NativeFixture {
                     combatVerification = new CombatVerification(human, body, evidence); stage = 3;
                 } else if (server.getTickCounter() - started > 1000) throw new IllegalStateException("ARENA_FIXTURE_TIMEOUT");
             } else if (stage == 3) {
-                if (combatVerification.advance()) { save(server); complete(server, true, "NATIVE_ARENA_COMBAT_PASSED"); }
+                if (combatVerification.advance()) { duelVerification = new DuelVerification(human, body, evidence); stage = 4; }
+            } else if (stage == 4) {
+                if (duelVerification.advance(human)) { save(server); complete(server, true, "NATIVE_PVP_PASSED"); }
             } else if (server.getTickCounter() - started > 1000 && stage > 0) throw new IllegalStateException("NATIVE_FIXTURE_TIMEOUT_STAGE_" + stage);
         } catch (Throwable failure) {
             LegacyMod.logger.error("DIVZERO_LEGACY_FIXTURE_FAILED", failure);

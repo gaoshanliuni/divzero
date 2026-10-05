@@ -28,6 +28,14 @@ public final class DuelClient {
         if (mc.currentScreen instanceof LoadoutScreen) ((LoadoutScreen) mc.currentScreen).refresh();
     }
     public static JsonObject state() { return state; }
+    public static boolean fixtureChoose(int actor, int slot, String item) throws IOException {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (!(mc.currentScreen instanceof LoadoutScreen)) return false;
+        ((LoadoutScreen) mc.currentScreen).fixtureSelect(actor * 10 + slot);
+        ItemScreen picker = (ItemScreen) mc.currentScreen;
+        int index = picker.choices.indexOf(item); if (index < 0) throw new IllegalArgumentException("FIXTURE_ITEM_MISSING");
+        picker.page = index / 12; picker.initGui(); picker.fixtureSelect(index); return true;
+    }
     private static JsonObject request(String action) {
         JsonObject value = new JsonObject(); value.add("world", state.get("world")); value.add("session", state.get("session"));
         value.add("revision", state.get("revision")); value.addProperty("action", action); return value;
@@ -112,6 +120,7 @@ public final class DuelClient {
         @Override public void handleMouseInput() throws IOException { super.handleMouseInput(); int wheel = Mouse.getEventDWheel(); if (wheel != 0) { page = Math.max(0, Math.min((choices.size() - 1) / 12, page + (wheel < 0 ? 1 : -1))); initGui(); } }
         @Override public void drawScreen(int mouseX, int mouseY, float ticks) { drawDefaultBackground(); drawCenteredString(fontRendererObj, (actor == 0 ? "玩家 · " : "AI · ") + LABELS[slot], width / 2, 12, 0xffffff); super.drawScreen(mouseX, mouseY, ticks); }
         @Override public boolean doesGuiPauseGame() { return false; }
+        private void fixtureSelect(int id) throws IOException { for (GuiButton button : buttonList) if (button.id == id) { int x = button.xPosition + button.getButtonWidth() / 2, y = button.yPosition + 10; mouseClicked(x, y, 0); mouseReleased(x, y, 0); return; } throw new IllegalArgumentException("FIXTURE_ITEM_BUTTON"); }
     }
     private static final class ItemButton extends GuiButton {
         final ItemStack stack;
