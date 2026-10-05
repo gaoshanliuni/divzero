@@ -44,7 +44,9 @@ public final class DuelClient {
     private static String itemName(String id) { ItemStack item = NativeDuel.stack(id); return item == null ? "无" : item.getDisplayName(); }
     @SubscribeEvent public void overlay(RenderGameOverlayEvent.Post event) {
         if (event.type != RenderGameOverlayEvent.ElementType.ALL || state == null) return;
-        Minecraft mc = Minecraft.getMinecraft(); int x = event.resolution.getScaledWidth() - 164, y = 12;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.currentScreen instanceof LoadoutScreen || mc.currentScreen instanceof ItemScreen) return;
+        int x = event.resolution.getScaledWidth() - 164, y = 44;
         Gui.drawRect(x - 6, y - 6, x + 158, y + 89, 0xa0101418);
         String[] lines = {"PvP 训练场 · " + phase(), "本局剩余 " + state.get("remaining").getAsInt() + " 秒",
                 "总局数 " + state.get("rounds").getAsInt() + "  胜率 " + String.format(Locale.ROOT, "%.1f%%", state.get("winRate").getAsDouble()),
@@ -76,7 +78,7 @@ public final class DuelClient {
             }
             for (int actor = 0; actor < 2; actor++) {
                 GuiButton button = new GuiButton(20 + actor, left + actor * (columnWidth + 12), woolY, columnWidth, 20,
-                        (state.get(actor == 0 ? "humanWool" : "aiWool").getAsBoolean() ? "☑ " : "☐ ") + "领取羊毛 ×64");
+                        "领取羊毛 ×64：" + (state.get(actor == 0 ? "humanWool" : "aiWool").getAsBoolean() ? "开" : "关"));
                 button.enabled = ready; buttonList.add(button);
             }
             int startWidth = panelWidth * 42 / 100, stopWidth = panelWidth * 28 / 100;
@@ -99,6 +101,11 @@ public final class DuelClient {
             super.drawScreen(mouseX, mouseY, partialTicks);
         }
         @Override public boolean doesGuiPauseGame() { return false; }
+        public boolean fixtureLayoutFits() {
+            if (buttonList.size() != 17) return false;
+            for (GuiButton button : buttonList) if (button.xPosition < 0 || button.yPosition < 0 || button.xPosition + button.getButtonWidth() > width || button.yPosition + 20 > height) return false;
+            return true;
+        }
         public void fixtureSelect(int id) throws IOException { for (GuiButton button : buttonList) if (button.id == id && button.enabled) { int x = button.xPosition + button.getButtonWidth() / 2, y = button.yPosition + 10; mouseClicked(x, y, 0); mouseReleased(x, y, 0); return; } throw new IllegalArgumentException("FIXTURE_BUTTON_MISSING"); }
     }
     private static final class ItemScreen extends GuiScreen {

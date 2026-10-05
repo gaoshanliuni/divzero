@@ -29,6 +29,60 @@ class Tag:
         return self.value
 
 
+def encode(root: Tag) -> bytes:
+    """Write typed NBT without guessing numeric or array types during migration."""
+    output = io.BytesIO()
+
+    def number(fmt, value):
+        output.write(struct.pack(">" + fmt, value))
+
+    def string(value):
+        # DataOutput.writeUTF encodes UTF-16 units as modified UTF-8, including NUL.
+        utf16 = value.encode("utf-16-be", errors="strict")
+        units = "".join(chr(struct.unpack(">H", utf16[i:i + 2])[0]) for i in range(0, len(utf16), 2))
+        raw = units.encode("utf-8", errors="surrogatepass").replace(b"\0", b"\xc0\x80")
+        if len(raw) > 65535:
+            raise ValueError("NBT string exceeds modified UTF length")
+        number("H", len(raw)); output.write(raw)
+
+    def payload(tag, depth=0):
+        if depth > MAX_DEPTH:
+            raise ValueError("NBT depth exceeded")
+        kind, value = tag.kind, tag.value
+        if 1 <= kind <= 6:
+            number({1: "b", 2: "h", 3: "i", 4: "q", 5: "f", 6: "d"}[kind], value)
+        elif kind == 7:
+            number("i", len(value)); output.write(value)
+        elif kind == 8:
+            string(value)
+        elif kind == 9:
+            child, values = value
+            if child == 0 and values or any(item.kind != child for item in values):
+                raise ValueError("NBT list element type mismatch")
+            number("B", child); number("i", len(values))
+            for item in values:
+                payload(item, depth + 1)
+        elif kind == 10:
+            for name, item in value.items():
+                if item.kind == 0:
+                    raise ValueError("End tag cannot be a named field")
+                number("B", item.kind); string(name); payload(item, depth + 1)
+            number("B", 0)
+        elif kind in (11, 12):
+            number("i", len(value))
+            for item in value:
+                number("i" if kind == 11 else "q", item)
+        else:
+            raise ValueError("Unknown NBT kind")
+        if output.tell() > MAX_BYTES:
+            raise ValueError("NBT byte budget exceeded")
+
+    if root.kind != 10:
+        raise ValueError("NBT root must be a compound")
+    number("B", 10); string(""); payload(root)
+    return output.getvalue()
+
+
 def decompress(data: bytes, codec: int) -> bytes:
     if codec not in (1, 2, 3):
         raise ValueError(f"Unsupported Anvil codec: {codec}")

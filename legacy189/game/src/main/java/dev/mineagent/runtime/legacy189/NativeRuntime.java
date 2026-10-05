@@ -93,6 +93,7 @@ public final class NativeRuntime {
             if (!(event.player instanceof EntityPlayerMP) || event.player instanceof NativeAgent) return;
             EntityPlayerMP player = (EntityPlayerMP) event.player;
             SESSIONS.put(player.getUniqueID(), UUID.randomUUID()); NativeNetwork.sync(player);
+            if (NativeDuel.allowed(player)) { player.setSpawnPoint(new net.minecraft.util.BlockPos(0, 101, 766), true); NativeArena.lobby(player); }
         }
         @SubscribeEvent public void logout(PlayerEvent.PlayerLoggedOutEvent event) {
             NativeService.stop(event.player.getUniqueID());

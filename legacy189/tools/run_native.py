@@ -12,6 +12,7 @@ import pathlib
 import shutil
 import subprocess
 import uuid
+import zipfile
 
 
 def sha256(path):
@@ -45,6 +46,34 @@ def coordinate_path(name):
     return pathlib.Path(group.replace(".", "/")) / artifact / version / filename
 
 
+def clean_arena_files(archive):
+    from nbt import decompress, parse
+    from package_arena import NAME, read_chunk
+    expected = {"level.dat", "data/divzero_legacy_world.dat", "region/r.-1.1.mca", "region/r.0.1.mca", "arena-template.json"}
+    with zipfile.ZipFile(archive) as source:
+        entries = source.infolist()
+        if len(entries) != len(expected) or {entry.filename for entry in entries} != {NAME + "/" + name for name in expected}:
+            raise ValueError("Unexpected clean-map archive layout")
+        if sum(entry.file_size for entry in entries) > 64 * 1024 * 1024:
+            raise ValueError("Clean-map archive is too large")
+        files = {name: source.read(NAME + "/" + name) for name in expected}
+    manifest = json.loads(files["arena-template.json"])
+    if manifest["kind"] != "legacy189-arena-development-template" or manifest["fullModParity"] is not False:
+        raise ValueError("Unrecognized arena template")
+    for name in expected - {"arena-template.json"}:
+        if hashlib.sha256(files[name]).hexdigest() != manifest["files"][name]:
+            raise ValueError("Arena template digest mismatch")
+    level = parse(decompress(files["level.dat"], 1)).plain()["Data"]
+    identity = parse(decompress(files["data/divzero_legacy_world.dat"], 1)).plain()["data"]
+    if "Player" in level or level["allowCommands"] or identity["agents"] or identity["enabled"]:
+        raise ValueError("Arena still contains player or operator state")
+    for x in range(-2, 2):
+        for z in range(47, 52):
+            if read_chunk(files[f"region/r.{x // 32}.1.mca"], x, z, clean=False).plain()["Level"]["Entities"]:
+                raise ValueError("Arena still contains entities")
+    return files
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--instance", required=True, type=pathlib.Path)
@@ -55,6 +84,8 @@ def main():
     parser.add_argument("--with-installed-mods", action="store_true")
     parser.add_argument("--java25", type=pathlib.Path)
     parser.add_argument("--arena", type=pathlib.Path)
+    parser.add_argument("--packed-arena", type=pathlib.Path)
+    parser.add_argument("--gui-scale", type=int, choices=(1, 2, 3, 4), default=2)
     args = parser.parse_args()
     instance, java, mod = (p.resolve(strict=True) for p in (args.instance, args.java, args.mod))
     output = args.output.resolve()
@@ -62,6 +93,9 @@ def main():
     if arena:
         from map_blueprint import validate
         validate(json.loads(arena.read_text(encoding="utf-8")))
+    if args.packed_arena and (arena or args.resume):
+        raise ValueError("Clean-template validation requires a fresh isolated run")
+    packed = clean_arena_files(args.packed_arena.resolve(strict=True)) if args.packed_arena else None
     if os.name != "nt":
         raise ValueError("This local fixture launcher targets Windows x64")
     if output.is_relative_to(instance) or instance.is_relative_to(output):
@@ -119,7 +153,12 @@ def main():
         if arena:
             (output / "divzero-import").mkdir()
             shutil.copy2(arena, output / "divzero-import/pvp-arena-transfer.json")
-        (output / "options.txt").write_text("lang:zh_CN\nrenderDistance:4\nguiScale:2\nfullscreen:false\npauseOnLostFocus:false\nmaxFps:60\nmusic:0.0\nsound:0.2\n")
+        if packed:
+            for name, data in packed.items():
+                destination = output / "saves/DivZero PvP 1.8.9" / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                with destination.open("xb") as stream: stream.write(data)
+        (output / "options.txt").write_text(f"lang:zh_CN\nrenderDistance:4\nguiScale:{args.gui_scale}\nfullscreen:false\npauseOnLostFocus:false\nmaxFps:60\nmusic:0.0\nsound:0.2\n")
     installed = output / "mods" / mod.name
     if not installed.is_file() or sha256(installed) != sha256(mod):
         raise ValueError("Fixture Mod differs from the selected build")
@@ -129,6 +168,8 @@ def main():
                "-Djava.library.path=" + str(natives), "-Dlog4j2.formatMsgNoLookups=true"]
     if args.resume:
         command.append("-Ddivzero.legacyFixtureResume=true")
+    if packed:
+        command.append("-Ddivzero.legacyPackedFixture=true")
     if args.java25:
         command.append("-Ddivzero.java25=" + str(args.java25.resolve(strict=True)))
     command += ["-cp", os.pathsep.join(classpath), version["mainClass"], "--username", "DivZeroFixture", "--version", instance.name,

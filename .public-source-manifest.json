@@ -4074,8 +4074,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeFixture.java",
-      "sha256": "94156571a8575973e01975df7ebdc2d58109581293515cafabd34f97c0c00030",
-      "bytes": 11515
+      "sha256": "1a6a70d2995c25ac894dc5e947946b6355a3115361a5e77879a905ef8b559982",
+      "bytes": 13677
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeGuiHandler.java",
@@ -4094,8 +4094,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeRuntime.java",
-      "sha256": "88291da9b9002180240a45507ca69fd3cc97125bb2c9f0e219d344805dd0ef33",
-      "bytes": 7985
+      "sha256": "317d6f9f9fbafab416c8a215b874e15717534ec3081ab34b1013c10d5fe07a03",
+      "bytes": 8134
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeService.java",
@@ -4114,8 +4114,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/DuelClient.java",
-      "sha256": "8f452efe676139872691daa16b3ce9868e88466c62398d6a8e1e3a809e367e92",
-      "bytes": 11470
+      "sha256": "8062b1bbb3afe826165fa983533efbd2a032c54b137b75d55fa19fe1e95836b5",
+      "bytes": 11919
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/EquipmentScreen.java",
@@ -4124,8 +4124,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/NativeClientFixture.java",
-      "sha256": "f567ce0aa0c2ad421ecbf31183c51e0188f88ed7ece707834ae145109513b144",
-      "bytes": 5653
+      "sha256": "eb60bbccb0262eca922c204bed37d68686910be38a4c929a7c025f47f7656984",
+      "bytes": 6707
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/coremod/CombatTransformer.java",
@@ -4238,6 +4238,11 @@
       "bytes": 8656
     },
     {
+      "path": "legacy189/tests/test_arena_package.py",
+      "sha256": "0885df845e118d58fa29b21da96e7b89b30b50e272a140626ddd25e2d24caf66",
+      "bytes": 2699
+    },
+    {
       "path": "legacy189/tests/test_map_tools.py",
       "sha256": "4df005a67f487e0373c12c9322db967b69807f28366383d38b44d1410c8e9100",
       "bytes": 10187
@@ -4264,13 +4269,18 @@
     },
     {
       "path": "legacy189/tools/nbt.py",
-      "sha256": "72dac7701b8f2b6b208c3f962e58cb66e26623c05f99bfbd636b98551f8eb237",
-      "bytes": 6481
+      "sha256": "46dfcd08c01e834092626e18ddd9bd31ec8843f58496c61777fb7c5d9b3f0936",
+      "bytes": 8700
+    },
+    {
+      "path": "legacy189/tools/package_arena.py",
+      "sha256": "695cb79c591acbffccdf8107ce0b7e356ee5a8563c2002516adc0965713da0c0",
+      "bytes": 6813
     },
     {
       "path": "legacy189/tools/run_native.py",
-      "sha256": "310561d3b469e94970ccdc2a9ac71f39b93d3d3e6e15a7d92a273ccbebe2c9c1",
-      "bytes": 8044
+      "sha256": "5b19239efadb08034898c5d61798d7defca4bccac8b0cbc3289a5d7b948b4137",
+      "bytes": 10547
     },
     {
       "path": "neoforge/build.gradle",

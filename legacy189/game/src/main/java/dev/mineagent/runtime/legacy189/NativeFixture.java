@@ -18,6 +18,8 @@ import java.util.UUID;
 /** Explicitly gated isolated-instance probe. It never runs in an ordinary world. */
 public final class NativeFixture {
     public static final String WORLD = "DivZero189NativeFixture";
+    public static final String PACKED_WORLD = "DivZero PvP 1.8.9";
+    public static volatile boolean packedChecked, packedUiClicked;
     public static volatile boolean equipmentClicks;
     public static volatile boolean finished;
     public static volatile boolean successful;
@@ -38,11 +40,12 @@ public final class NativeFixture {
     public static void tick(MinecraftServer server) {
         if (!requested() || finished || !server.isSinglePlayer()) return;
         if (!new File(server.getFile("."), "divzero-native-fixture-allow").isFile()) return;
-        if (!WORLD.equals(server.worldServerForDimension(0).getWorldInfo().getWorldName())) return;
+        if (!(Boolean.getBoolean("divzero.legacyPackedFixture") ? PACKED_WORLD : WORLD).equals(server.worldServerForDimension(0).getWorldInfo().getWorldName())) return;
         EntityPlayerMP human = null;
         for (EntityPlayerMP player : server.getConfigurationManager().getPlayerList()) if (!(player instanceof NativeAgent)) { human = player; break; }
         if (human == null || server.getTickCounter() < 180) return;
         try {
+            if (Boolean.getBoolean("divzero.legacyPackedFixture")) { packed(server, human); return; }
             if (Boolean.getBoolean("divzero.legacyFixtureResume")) { resume(server, human); return; }
             if (stage == 0) {
                 UUID beforeActivation = NativeRuntime.session(human);
@@ -112,6 +115,27 @@ public final class NativeFixture {
             LegacyMod.logger.error("DIVZERO_LEGACY_FIXTURE_FAILED", failure);
             complete(server, false, failure.toString());
         }
+    }
+    private static void packed(MinecraftServer server, EntityPlayerMP human) throws Exception {
+        require(NativeArena.ready() && ModernCombat.serverEnabled, "PACKED_ARENA_RULES");
+        require(!human.canCommandSenderUseCommand(2, "ai"), "PACKED_MAP_GRANTED_COMMANDS");
+        require(NativeRuntime.data().agents().isEmpty(), "PACKED_MAP_OLD_AGENTS");
+        require(human.worldObj.getBlockState(new BlockPos(0, 100, 766)).getBlock() == LegacyBlocks.SMOOTH_QUARTZ, "PACKED_REGISTRY_QUARTZ");
+        require(human.worldObj.getBlockState(new BlockPos(10, 100, 766)).getBlock() == LegacyBlocks.DEEPSLATE, "PACKED_REGISTRY_DEEPSLATE");
+        if (!packedChecked) {
+            require(!NativeRuntime.enabled(human), "PACKED_MAP_OLD_ENABLE_STATE");
+            for (ItemStack stack : human.inventory.mainInventory) require(stack == null, "PACKED_MAP_OLD_INVENTORY");
+            require(NativeOffhand.get(human).stack() == null, "PACKED_MAP_OLD_OFFHAND");
+            require(Math.abs(human.posY - 101) < .01 && Math.abs(human.posX - .5) < .1 && Math.abs(human.posZ - 766.5) < .1, "PACKED_LOBBY_SPAWN");
+            packedChecked = true;
+        }
+        if (packedUiClicked && NativeRuntime.enabled(human)) {
+            require(!human.canCommandSenderUseCommand(2, "ai"), "ACTIVATION_GRANTED_COMMANDS");
+            require(NativeDuel.session(human).rounds == 0, "PACKED_MAP_OLD_STATISTICS");
+            evidence.addProperty("source", "FIXTURE_ONLY"); evidence.addProperty("cleanTemplateNative", true);
+            evidence.addProperty("noOperatorGrant", true); evidence.addProperty("nativeActivationButton", true); evidence.addProperty("loadoutBoundsVisible", true);
+            complete(server, true, "NATIVE_CLEAN_TEMPLATE_PASSED");
+        } else if (server.getTickCounter() > 800) throw new IllegalStateException("PACKED_UI_TIMEOUT");
     }
     private static void resume(MinecraftServer server, EntityPlayerMP human) throws Exception {
         File source = server.getFile("divzero-native-result.json");

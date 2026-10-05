@@ -24,7 +24,8 @@ public final class NativeClientFixture {
         if (!launched && ticks > 40 && mc.currentScreen instanceof GuiMainMenu) {
             launched = true;
             WorldSettings settings = new WorldSettings(189L, WorldSettings.GameType.SURVIVAL, false, false, WorldType.FLAT).enableCommands();
-            mc.launchIntegratedServer(NativeFixture.WORLD, NativeFixture.WORLD, settings);
+            String world = Boolean.getBoolean("divzero.legacyPackedFixture") ? NativeFixture.PACKED_WORLD : NativeFixture.WORLD;
+            mc.launchIntegratedServer(world, world, settings);
         }
         if (mc.thePlayer != null && mc.currentScreen instanceof EquipmentScreen && mc.thePlayer.openContainer instanceof NativeOffhand.EquipmentContainer
                 && !NativeFixture.finished && ticks - lastClick > 15) {
@@ -38,11 +39,19 @@ public final class NativeClientFixture {
         if (NativeFixture.finished) {
             if (finishedAt == 0) {
                 finishedAt = ticks;
-                if (mc.thePlayer != null && NativeFixture.successful && !new File(mc.mcDataDir, "divzero-import/pvp-arena-transfer.json").isFile()) mc.thePlayer.sendChatMessage("/ai offhand");
+                if (mc.thePlayer != null && NativeFixture.successful && !Boolean.getBoolean("divzero.legacyPackedFixture") && !new File(mc.mcDataDir, "divzero-import/pvp-arena-transfer.json").isFile()) mc.thePlayer.sendChatMessage("/ai offhand");
                 else mc.displayGuiScreen(null);
             }
             if (ticks - finishedAt == 30) ScreenShotHelper.saveScreenshot(mc.mcDataDir, Boolean.getBoolean("divzero.legacyFixtureResume") ? "legacy189-resume.png" : "legacy189-native.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
             if (ticks - finishedAt > 50) mc.shutdown();
+        }
+        if (Boolean.getBoolean("divzero.legacyPackedFixture") && NativeFixture.packedChecked && !NativeFixture.packedUiClicked && mc.currentScreen instanceof DuelClient.LoadoutScreen) {
+            try {
+                DuelClient.LoadoutScreen screen = (DuelClient.LoadoutScreen) mc.currentScreen;
+                if (!screen.fixtureLayoutFits()) throw new IllegalStateException("PACKED_LOADOUT_CLIPPED");
+                ScreenShotHelper.saveScreenshot(mc.mcDataDir, "legacy189-packed-scale.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+                screen.fixtureSelect(30); NativeFixture.packedUiClicked = true;
+            } catch (Exception failure) { throw new IllegalStateException("PACKED_UI_INPUT", failure); }
         }
         if (NativeFixture.duelProbe() && mc.thePlayer != null) {
             if (!mc.thePlayer.isEntityAlive()) { if (!respawnRequested) { mc.thePlayer.respawnPlayer(); respawnRequested = true; } return; }
@@ -56,6 +65,7 @@ public final class NativeClientFixture {
                 else if ((next.action.equals("human_wool") || next.action.equals("ai_wool") || next.action.equals("start") || next.action.equals("stop")) && mc.currentScreen instanceof DuelClient.LoadoutScreen) {
                     if (next.action.equals("stop") && !DuelClient.state().get("phase").getAsString().equals("COUNTDOWN")) return;
                     if (next.action.equals("start") && !loadoutCaptured) {
+                        if (!((DuelClient.LoadoutScreen) mc.currentScreen).fixtureLayoutFits()) throw new IllegalStateException("LOADOUT_CLIPPED");
                         ScreenShotHelper.saveScreenshot(mc.mcDataDir, "legacy189-loadouts.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer()); loadoutCaptured = true;
                     }
                     ((DuelClient.LoadoutScreen) mc.currentScreen).fixtureSelect(next.action.equals("human_wool") ? 20 : next.action.equals("ai_wool") ? 21 : next.action.equals("start") ? 30 : 31); done = true;
