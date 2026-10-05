@@ -4019,8 +4019,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/ArenaFeedbackVerification.java",
-      "sha256": "71d725139907906c51c21c5ff4dbb42c01b8176b0f3a4810098cb575be69ee68",
-      "bytes": 8658
+      "sha256": "e62ef5e3db4926a34da4410a1180d9f45007ececc45e99cf76099e101a446a0f",
+      "bytes": 9056
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/ArenaNavigator.java",

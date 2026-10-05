@@ -73,7 +73,12 @@ public final class ArenaFeedbackVerification {
             evidence.addProperty("nativeWoolEscape",true);evidence.addProperty("escapeWoolBroken",run.navigation.woolBroken);clear(human);
             run.ai.playerNetServerHandler.setPlayerLocation(5.5,101,800.5,90,0);run.ai.motionX=run.ai.motionY=run.ai.motionZ=0;run.ai.fallDistance=0;
             run.navigation.reset(run.ai);run.ai.inventory.mainInventory[1]=new ItemStack(Blocks.wool,64,3);
-            cage(human,Blocks.iron_block,2);stage=6;began=tick;
+            cage(human,Blocks.iron_block,2);
+            // Upstream recovery requires two onward transitions within 1.25 blocks.
+            // Four isolated column tops only offer two-block drops and are rejected.
+            // Join those tops into an existing ledge, as in the upstream pit fixture.
+            for(int y=101;y<=102;y++)for(int x:new int[]{4,6})for(int z:new int[]{799,801})put(human,x,y,z,Blocks.iron_block);
+            stage=6;began=tick;
         }else if(stage==6&&run.ai!=null&&Math.hypot(run.ai.posX-5.5,run.ai.posZ-800.5)>3){
             require(run.navigation.placed()>0&&run.navigation.consumed()>0&&run.navigation.woolBroken==0,"NATIVE_SUPPORT_ESCAPE_FAILED");
             require(run.ai.inventory.mainInventory[1]!=null&&run.ai.inventory.mainInventory[1].stackSize==64-run.navigation.consumed(),"ESCAPE_MATERIAL_NOT_CONSUMED");
