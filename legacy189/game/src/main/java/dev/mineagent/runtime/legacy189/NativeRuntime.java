@@ -79,6 +79,7 @@ public final class NativeRuntime {
     public static void stop() {
         NativeService.stopAll();
         NativeArena.stop();
+        ModernCombat.stop();
         for (NativeAgent body : BODIES.values()) { body.stopActions(); body.closeConnection(); }
         BODIES.clear(); SESSIONS.clear(); restored = false;
     }
@@ -117,6 +118,7 @@ public final class NativeRuntime {
                     try { spawn(definition, true); } catch (RuntimeException failure) { LegacyMod.logger.error("Agent restore failed: {}", definition.id, failure); }
                 }
             }
+            ModernCombat.tick();
             for (NativeAgent body : new ArrayList<NativeAgent>(BODIES.values())) {
                 body.physics(server.getTickCounter());
                 NativeWorldData.AgentDefinition definition = data().agent(body.getUniqueID());

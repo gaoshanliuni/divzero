@@ -93,6 +93,8 @@ public final class NativeArena {
                 throw new IllegalStateException("ARENA_NATIVE_SPAWN_COLLISION");
         }
         NativeRuntime.data().arena(job.hash);
+        NativeRuntime.data().modernCombat(true);
+        for (EntityPlayerMP player : MinecraftServer.getServer().getConfigurationManager().getPlayerList()) NativeNetwork.sync(player);
         job.world.setSpawnPoint(new BlockPos(0, 101, 766));
         job.world.getGameRules().setOrCreateGameRule("spawnRadius", "0");
         job.owner.setSpawnPoint(new BlockPos(0, 101, 766), true);

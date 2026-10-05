@@ -27,6 +27,12 @@ public class NativeCommands extends CommandBase {
                             if (!world.equals(NativeRuntime.data().identity()) || !session.equals(NativeRuntime.session(player)) || !NativeRuntime.enabled(player)) return;
                             tell(player, failure == null ? "Java 25 Worker 实际回执：" + value.get("type").getAsString() : "Worker 未就绪：" + failure.getClass().getSimpleName());
                         }));
+            } else if (action.equals("combat")) {
+                if (!player.canCommandSenderUseCommand(2, "ai") || args.length != 2 || !(args[1].equals("modern") || args[1].equals("legacy")))
+                    throw new IllegalArgumentException("需要管理权限：/ai combat modern|legacy");
+                NativeRuntime.data().modernCombat(args[1].equals("modern"));
+                for (EntityPlayerMP online : net.minecraft.server.MinecraftServer.getServer().getConfigurationManager().getPlayerList()) NativeNetwork.sync(online);
+                tell(player, "已切换全世界近战及护甲规则：" + args[1]);
             } else if (action.equals("arena")) {
                 if (args.length == 2 && args[1].equals("import")) NativeArena.start(player);
                 else tell(player, "竞技场：" + NativeArena.phase() + "，已核对 " + NativeArena.verified() + "。/ai arena import 从 divzero-import/pvp-arena-transfer.json 导入。");

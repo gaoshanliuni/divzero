@@ -39,8 +39,10 @@ public class ClientProxy extends CommonProxy {
     }
     private static void apply() {
         Minecraft mc = Minecraft.getMinecraft();
-        if (state != null && mc.thePlayer != null && mc.thePlayer.getUniqueID().equals(state.owner) && mc.thePlayer.dimension == state.dimension)
+        if (state != null && mc.thePlayer != null && mc.thePlayer.getUniqueID().equals(state.owner) && mc.thePlayer.dimension == state.dimension) {
+            ModernCombat.clientEnabled = state.modern;
             NativeOffhand.get(mc.thePlayer).sync(state.offhand == null ? null : state.offhand.copy(), state.revision);
+        }
     }
     @SubscribeEvent public void key(InputEvent.KeyInputEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
@@ -49,7 +51,7 @@ public class ClientProxy extends CommonProxy {
         if (EQUIPMENT.isPressed()) NativeNetwork.CHANNEL.sendToServer(new NativeNetwork.Action(state.world, state.session, 1, state.revision));
     }
     @SubscribeEvent public void unload(net.minecraftforge.event.world.WorldEvent.Unload event) {
-        if (event.world.isRemote) { state = null; pendingPlayer = false; }
+        if (event.world.isRemote) { state = null; pendingPlayer = false; ModernCombat.clientEnabled = false; }
     }
     @SubscribeEvent public void tick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {

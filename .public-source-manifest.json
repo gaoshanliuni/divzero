@@ -4004,8 +4004,8 @@
     },
     {
       "path": "legacy189/game/build.gradle",
-      "sha256": "f907239f9780c1bf0ae0c63406aba98ec271c51e60ce2989d16fb4c1faffa942",
-      "bytes": 2434
+      "sha256": "04cb074327c3747b13b04960a454e6c65009be6f182914529e0386e817c6f0df",
+      "bytes": 2573
     },
     {
       "path": "legacy189/game/settings.gradle",
@@ -4024,8 +4024,13 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyMod.java",
-      "sha256": "2749d5865a241468c0744dac998cdc55d7e61affa2a4b86e131ca87be53efafb",
-      "bytes": 1897
+      "sha256": "80d4a47743416fe9eba59d953ae1243e7574ac9d94b12da35891e525fe82055b",
+      "bytes": 2020
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/ModernCombat.java",
+      "sha256": "3e65a1ec58b39de8811f880a76db832718cf8e47055d168101368020c67d7d31",
+      "bytes": 12756
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeAgent.java",
@@ -4034,13 +4039,13 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeArena.java",
-      "sha256": "e5a0b02e49f571e31b0da4c958c84b4d371cf03fcee15d9a5d6cc05d5c55c2f7",
-      "bytes": 10457
+      "sha256": "ce38e5480ba131f1b0f1925dc50c9017ac7b02c9456e8d4caa25f4239564dd96",
+      "bytes": 10642
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeCommands.java",
-      "sha256": "4c5e3d6f6d5f86ef663afa19c75445621ad5dda8e670188d920ce521b9e5a8e6",
-      "bytes": 4796
+      "sha256": "df54805d92b45cd7af2ac240cdde9bd800e12c36f97031ce08f8aba81b6130e9",
+      "bytes": 5423
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeFixture.java",
@@ -4054,8 +4059,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeNetwork.java",
-      "sha256": "9d33372a83fc82a4fdcde6208832ec42c832bb8380cd1d0d7a6ed72aa9d89d52",
-      "bytes": 5588
+      "sha256": "56170787805c9120fa8ff2b32390d9291c9210876059446cd8015ee8bd97a614",
+      "bytes": 5743
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeOffhand.java",
@@ -4064,8 +4069,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeRuntime.java",
-      "sha256": "474a81551190090ff7ffb769ee908794f934d5f6adf2ff605a2b3694c3316974",
-      "bytes": 7532
+      "sha256": "8c3227d4c6fa18aeade72662056812e3f70bcf4e4cabbf450e87d78f78bc71cb",
+      "bytes": 7594
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeService.java",
@@ -4074,13 +4079,13 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeWorldData.java",
-      "sha256": "55568987b16dea26f2bd155e11224055258ae2aa09dc1a5ed3653200bf9bc326",
-      "bytes": 4712
+      "sha256": "eed9537011db87e3fb6a61436ae19dbb6d11eb39586ba0fbd3f7f58153bdc592",
+      "bytes": 5076
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/ClientProxy.java",
-      "sha256": "fbea80b9c93dd103934c8f16d4e88ebfd97eeb2f865d47e3ac8a61d3a86d3d0e",
-      "bytes": 3593
+      "sha256": "73f0152681af80950d458e939f8527cc9c948ebc9b9ff17fe2b2e93bb86b8665",
+      "bytes": 3696
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/EquipmentScreen.java",
@@ -4091,6 +4096,16 @@
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/NativeClientFixture.java",
       "sha256": "3cbfd5360511d82e3e648b508dd5ec27f5c17ee462596eb0e9fad15a09fd72e3",
       "bytes": 2553
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/coremod/CombatTransformer.java",
+      "sha256": "d00af4ee818b07ac0e9b4446fe6a6dc5f76e04de42ecd92ef520eff717a4ee87",
+      "bytes": 4011
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/coremod/LegacyCore.java",
+      "sha256": "efc859cec4924180115fe1008918ebfd30a480c57639e02cfcdf14aa6e557408",
+      "bytes": 819
     },
     {
       "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/blockstates/acacia_leaves.json",

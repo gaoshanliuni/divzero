@@ -10,7 +10,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import java.util.UUID;
 
 public final class NativeNetwork {
-    public static final int PROTOCOL = 1;
+    public static final int PROTOCOL = 2;
     public static final SimpleNetworkWrapper CHANNEL = NetworkRegistry.INSTANCE.newSimpleChannel("divzero189");
     private NativeNetwork() { }
     public static void initialize() {
@@ -22,7 +22,7 @@ public final class NativeNetwork {
         if (player instanceof NativeAgent || player.worldObj.isRemote) return;
         NativeOffhand hand = NativeOffhand.get(player);
         CHANNEL.sendTo(new State(NativeRuntime.data().identity(), NativeRuntime.session(player), player.getUniqueID(), player.dimension,
-                hand.revision(), hand.stack(), NativeRuntime.enabled(player)), player);
+                hand.revision(), hand.stack(), NativeRuntime.enabled(player), NativeRuntime.data().modernCombat()), player);
     }
     private static UUID uuid(ByteBuf input) { return new UUID(input.readLong(), input.readLong()); }
     private static void uuid(ByteBuf output, UUID value) { output.writeLong(value.getMostSignificantBits()); output.writeLong(value.getLeastSignificantBits()); }
@@ -44,21 +44,22 @@ public final class NativeNetwork {
         public int dimension;
         public long revision;
         public ItemStack offhand;
-        public boolean enabled;
+        public boolean enabled, modern;
         public State() { }
-        public State(UUID world, UUID session, UUID owner, int dimension, long revision, ItemStack stack, boolean enabled) {
+        public State(UUID world, UUID session, UUID owner, int dimension, long revision, ItemStack stack, boolean enabled, boolean modern) {
             this.world = world; this.session = session; this.owner = owner; this.dimension = dimension;
             this.revision = revision; offhand = stack == null ? null : stack.copy(); this.enabled = enabled;
+            this.modern = modern;
         }
         @Override public void fromBytes(ByteBuf buffer) {
             if (buffer.readableBytes() > 2 * 1024 * 1024 || buffer.readUnsignedShort() != PROTOCOL) throw new IllegalArgumentException("LEGACY_STATE_FRAME");
             world = uuid(buffer); session = uuid(buffer); owner = uuid(buffer); dimension = buffer.readInt(); revision = buffer.readLong();
-            enabled = buffer.readBoolean(); offhand = ByteBufUtils.readItemStack(buffer);
+            enabled = buffer.readBoolean(); modern = buffer.readBoolean(); offhand = ByteBufUtils.readItemStack(buffer);
             if (revision < 0 || buffer.isReadable()) throw new IllegalArgumentException("LEGACY_STATE_BOUNDS");
         }
         @Override public void toBytes(ByteBuf buffer) {
             buffer.writeShort(PROTOCOL); uuid(buffer, world); uuid(buffer, session); uuid(buffer, owner);
-            buffer.writeInt(dimension); buffer.writeLong(revision); buffer.writeBoolean(enabled); ByteBufUtils.writeItemStack(buffer, offhand);
+            buffer.writeInt(dimension); buffer.writeLong(revision); buffer.writeBoolean(enabled); buffer.writeBoolean(modern); ByteBufUtils.writeItemStack(buffer, offhand);
         }
     }
     public static class ActionHandler implements IMessageHandler<Action, IMessage> {
