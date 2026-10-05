@@ -1,0 +1,17 @@
+plugins { id 'java-library' }
+
+group = 'dev.mineagent.runtime'
+version = '0.1.0'
+repositories { mavenCentral() }
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) }; withSourcesJar() }
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 8
+}
+dependencies { testImplementation 'junit:junit:4.13.2' }
+tasks.named('test') {
+    useJUnit()
+    systemProperty 'legacy189.java8', providers.environmentVariable('LEGACY189_JAVA8').getOrElse('')
+    testLogging { events 'failed', 'skipped'; exceptionFormat 'full' }
+}
+// A protocol library, not an FML Mod. No mcmod.info or playable artifact is emitted.

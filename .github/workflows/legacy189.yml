@@ -1,0 +1,62 @@
+name: Legacy 1.8.9 migration foundation
+
+on:
+  push:
+    branches: [main]
+    paths: ['legacy189/**', '.github/workflows/legacy189.yml']
+  pull_request:
+    paths: ['legacy189/**', '.github/workflows/legacy189.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migration-foundation:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Validate offline map and inventory tools
+        run: |
+          python -m unittest discover -s legacy189/tests -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python legacy189/tools/inventory.py --output build/legacy189/source-inventory.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Remember Java 8 child runtime
+        run: '"LEGACY189_JAVA8=$env:JAVA_HOME/bin/java.exe" >> $env:GITHUB_ENV'
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
+        with:
+          validate-wrappers: true
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Compile Java 8 protocol and test actual Java 25 to Java 8 pipes
+        run: |
+          ./gradlew.bat -p legacy189/bridge build --no-daemon --no-configuration-cache --console=plain
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload foundation diagnostics (not a playable Mod)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: legacy189-foundation-${{ github.sha }}
+          path: |
+            build/legacy189/source-inventory.json
+            legacy189/bridge/build/test-results/**
+            legacy189/bridge/build/reports/**
+          if-no-files-found: error
+          retention-days: 14

@@ -13,6 +13,11 @@
       "bytes": 6554
     },
     {
+      "path": ".github/workflows/legacy189.yml",
+      "sha256": "268679a8195d043e2a532edc4dd051fc98238d4ea4897daab146546ce1d079b5",
+      "bytes": 2325
+    },
+    {
       "path": ".gitignore",
       "sha256": "3f3f9d75bac80d38767e8fe18faab6136e0a75fe395b887eeeb08fb036d12a8d",
       "bytes": 979
@@ -3966,6 +3971,61 @@
       "path": "integrations/ysm/src/main/java/dev/mineagent/runtime/integrations/ysm/YsmRuntimeBridge.java",
       "sha256": "1a1ddee454911c5327417b383e02cfd2cffaf6a918a374519f5b468c43af14e2",
       "bytes": 361
+    },
+    {
+      "path": "legacy189/README.md",
+      "sha256": "569ffa8bbae06a0ab07f0aeea157f2d46d283b56080fe34621c10d78f8b372fa",
+      "bytes": 4840
+    },
+    {
+      "path": "legacy189/bridge/build.gradle",
+      "sha256": "7eb710f1376e90be4068f6e68228dbe382b0ebf57967431f88c70fc09b9674c7",
+      "bytes": 654
+    },
+    {
+      "path": "legacy189/bridge/settings.gradle",
+      "sha256": "75796a65d04f2cb4a828ef445c587ef714603e1d6fd7f2c13f75ff3786e85540",
+      "bytes": 46
+    },
+    {
+      "path": "legacy189/bridge/src/main/java/dev/mineagent/runtime/legacy189/bridge/BridgeFrame.java",
+      "sha256": "b8ae26553bf12a2ed63c748dc307a1f0c04c33acf233ee7b8f365f1618b5dc11",
+      "bytes": 2771
+    },
+    {
+      "path": "legacy189/bridge/src/main/java/dev/mineagent/runtime/legacy189/bridge/FrameCodec.java",
+      "sha256": "77bf1c59806c07f818c6215b1f4316c80d1a6aed2580fafb5f5f918fb9d95209",
+      "bytes": 4207
+    },
+    {
+      "path": "legacy189/bridge/src/test/java/dev/mineagent/runtime/legacy189/bridge/FrameCodecTest.java",
+      "sha256": "aacf3a75fc2b7866984b9f34227f0eb014cbb632d6359fb2a18815d2504fb7ab",
+      "bytes": 6587
+    },
+    {
+      "path": "legacy189/requirements.json",
+      "sha256": "3cce2bef207cbb66fae57a78ebccf0b51616171018006317c753ced1a1ee2069",
+      "bytes": 6657
+    },
+    {
+      "path": "legacy189/tests/test_map_tools.py",
+      "sha256": "4df005a67f487e0373c12c9322db967b69807f28366383d38b44d1410c8e9100",
+      "bytes": 10187
+    },
+    {
+      "path": "legacy189/tools/inventory.py",
+      "sha256": "dfe5098d514eec3108c5a1025f6af9228f38b8aa26687e5eb72b902cfdbbf518",
+      "bytes": 4080
+    },
+    {
+      "path": "legacy189/tools/map_blueprint.py",
+      "sha256": "81de2cde0feaa341189d423a4476730fac4e16d7bf15980ca0b6365a15c9c5a1",
+      "bytes": 8324
+    },
+    {
+      "path": "legacy189/tools/nbt.py",
+      "sha256": "72dac7701b8f2b6b208c3f962e58cb66e26623c05f99bfbd636b98551f8eb237",
+      "bytes": 6481
     },
     {
       "path": "neoforge/build.gradle",
