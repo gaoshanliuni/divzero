@@ -48,7 +48,8 @@ def main():
     write_json(ROOT / "blockstates/acacia_leaves.json", {"variants": variants})
     # A cube with tint-enabled faces follows the active biome foliage color.
     faces = {face: {"texture": "#all", "cullface": face, "tintindex": 0} for face in ("down", "up", "north", "south", "west", "east")}
-    write_json(ROOT / "models/block/acacia_leaves.json", {"parent": "block/block", "textures": {"all": "blocks/leaves_acacia", "particle": "blocks/leaves_acacia"},
+    # 1.8.9 rejects a model declaring both parent and elements.
+    write_json(ROOT / "models/block/acacia_leaves.json", {"textures": {"all": "blocks/leaves_acacia", "particle": "blocks/leaves_acacia"},
                "elements": [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": faces}]})
     write_json(ROOT / "models/item/acacia_leaves.json", {"parent": "mineagent_runtime:block/acacia_leaves"})
 

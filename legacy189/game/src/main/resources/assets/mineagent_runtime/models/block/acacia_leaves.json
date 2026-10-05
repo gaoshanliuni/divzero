@@ -1,5 +1,4 @@
 {
-  "parent": "block/block",
   "textures": {
     "all": "blocks/leaves_acacia",
     "particle": "blocks/leaves_acacia"

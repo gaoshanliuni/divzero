@@ -3974,8 +3974,8 @@
     },
     {
       "path": "legacy189/README.md",
-      "sha256": "9d89fcd0c6ee42e85021bef7865286a26199b40ea5e88839d6d350f28cde053f",
-      "bytes": 9130
+      "sha256": "09ff59421953364265949bf1ff8b439f30e9460717553526b75113ea179af90a",
+      "bytes": 9601
     },
     {
       "path": "legacy189/bridge/build.gradle",
@@ -4169,8 +4169,8 @@
     },
     {
       "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/block/acacia_leaves.json",
-      "sha256": "b5b553d15313871691bef63e442383175612322c03e360feee49f45ffa76b2d2",
-      "bytes": 975
+      "sha256": "68328db554f1b47a70b6a0473d0181fe228c68ab4c53632d348d7ec065d4ee6f",
+      "bytes": 948
     },
     {
       "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/block/polished_deepslate.json",
@@ -4254,8 +4254,8 @@
     },
     {
       "path": "legacy189/tools/generate_block_assets.py",
-      "sha256": "18f75ba4f8718d6b9bc18555e6eb5df88cbd51cdcd7153442a11a80f4327de23",
-      "bytes": 3160
+      "sha256": "65df21a184aac384619d41c4d292427c37f1d5a7aac88a59a2255c806ec34a71",
+      "bytes": 3199
     },
     {
       "path": "legacy189/tools/inventory.py",
