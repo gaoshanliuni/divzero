@@ -16,6 +16,7 @@ public final class NativeClientFixture {
     private static int instructionDone;
     private static boolean respawnRequested, loadoutCaptured;
     private static boolean disconnected;
+    private static int packedStep;
     private NativeClientFixture() { }
     public static void tick() {
         if (!NativeFixture.requested()) return;
@@ -51,14 +52,36 @@ public final class NativeClientFixture {
             }
             if (disconnected && ticks - finishedAt > 90) mc.shutdown();
         }
-        if (Boolean.getBoolean("divzero.legacyPackedFixture") && NativeFixture.packedChecked && !NativeFixture.packedUiClicked && mc.currentScreen instanceof DuelClient.LoadoutScreen) {
+        if (Boolean.getBoolean("divzero.legacyPackedFixture") && NativeFixture.packedChecked && !NativeFixture.finished) {
             try {
-                DuelClient.LoadoutScreen screen = (DuelClient.LoadoutScreen) mc.currentScreen;
-                if (!screen.fixtureLayoutFits()) throw new IllegalStateException("PACKED_LOADOUT_CLIPPED");
-                NativeFixture.packedGuiScale = new net.minecraft.client.gui.ScaledResolution(mc).getScaleFactor();
-                ScreenShotHelper.saveScreenshot(mc.mcDataDir, "legacy189-packed-scale.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
-                screen.fixtureSelect(30); NativeFixture.packedUiClicked = true;
-            } catch (Exception failure) { throw new IllegalStateException("PACKED_UI_INPUT", failure); }
+                if (mc.thePlayer != null && !mc.thePlayer.isEntityAlive()) {
+                    if (!respawnRequested) { mc.thePlayer.respawnPlayer(); respawnRequested = true; }
+                    return;
+                }
+                respawnRequested = false;
+                if (packedStep == 0 && mc.currentScreen instanceof DuelClient.LoadoutScreen) {
+                    mc.displayGuiScreen(null); packedKey();
+                    if (!(mc.currentScreen instanceof DuelClient.LoadoutScreen)) throw new IllegalStateException("PACKED_MENU_KEY");
+                    mc.displayGuiScreen(new PauseProbe()); packedStep++;
+                } else if (packedStep == 1 && mc.currentScreen instanceof PauseProbe) {
+                    ((PauseProbe) mc.currentScreen).clickDuel();
+                    if (!(mc.currentScreen instanceof DuelClient.LoadoutScreen)) throw new IllegalStateException("PACKED_PAUSE_MENU");
+                    NativeFixture.packedMenuRecovered = true; packedStep++;
+                } else if (packedStep == 2 && mc.currentScreen instanceof DuelClient.LoadoutScreen) {
+                    DuelClient.LoadoutScreen screen = (DuelClient.LoadoutScreen) mc.currentScreen;
+                    if (!screen.fixtureLayoutFits()) throw new IllegalStateException("PACKED_LOADOUT_CLIPPED");
+                    NativeFixture.packedGuiScale = new net.minecraft.client.gui.ScaledResolution(mc).getScaleFactor();
+                    ScreenShotHelper.saveScreenshot(mc.mcDataDir, "legacy189-packed-scale.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+                    screen.fixtureSelect(30); NativeFixture.packedUiClicked = true; packedStep++;
+                } else if (packedStep == 3 && NativeFixture.packedNextRound && mc.currentScreen instanceof DuelClient.LoadoutScreen
+                        && DuelClient.state().get("phase").getAsString().equals("READY")) {
+                    ((DuelClient.LoadoutScreen) mc.currentScreen).fixtureSelect(30); packedStep++;
+                } else if (packedStep == 4 && DuelClient.state().get("phase").getAsString().equals("COUNTDOWN")) {
+                    packedKey();
+                    if (!(mc.currentScreen instanceof DuelClient.LoadoutScreen)) throw new IllegalStateException("PACKED_ACTIVE_MENU_KEY");
+                    ((DuelClient.LoadoutScreen) mc.currentScreen).fixtureSelect(31); NativeFixture.packedStopClicked = true; packedStep++;
+                }
+            } catch (Exception failure) { NativeFixture.packedClientFailure = failure.toString(); }
         }
         if (NativeFixture.duelProbe() && mc.thePlayer != null) {
             if (!mc.thePlayer.isEntityAlive()) { if (!respawnRequested) { mc.thePlayer.respawnPlayer(); respawnRequested = true; } return; }
@@ -90,6 +113,20 @@ public final class NativeClientFixture {
                 }
                 if (done) instructionDone = next.sequence;
             } catch (Exception failure) { dev.mineagent.runtime.legacy189.DuelVerification.clientFailure = failure.toString(); }
+        }
+    }
+    private static void packedKey() {
+        net.minecraft.client.settings.KeyBinding.onTick(ClientProxy.DUEL.getKeyCode());
+        new ClientProxy().key(new net.minecraftforge.fml.common.gameevent.InputEvent.KeyInputEvent());
+    }
+    private static final class PauseProbe extends net.minecraft.client.gui.GuiIngameMenu {
+        void clickDuel() throws java.io.IOException {
+            for (net.minecraft.client.gui.GuiButton button : buttonList) if (button.id == DuelClient.MENU_BUTTON) {
+                if (button.yPosition < 0 || button.yPosition + 20 > height) throw new IllegalStateException("PACKED_PAUSE_CLIPPED");
+                mouseClicked(button.xPosition + button.getButtonWidth() / 2, button.yPosition + 10, 0);
+                mouseReleased(button.xPosition + button.getButtonWidth() / 2, button.yPosition + 10, 0); return;
+            }
+            throw new IllegalStateException("PACKED_PAUSE_BUTTON_MISSING");
         }
     }
 }

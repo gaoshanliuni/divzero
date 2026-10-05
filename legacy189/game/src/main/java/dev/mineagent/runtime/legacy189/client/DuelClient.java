@@ -4,7 +4,9 @@ import com.google.gson.*;
 import dev.mineagent.runtime.legacy189.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.*;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.input.Mouse;
@@ -14,6 +16,7 @@ import java.util.*;
 public final class DuelClient {
     private static JsonObject state;
     private static boolean openPending;
+    static final int MENU_BUTTON = 18930;
     private static final String[] LABELS = {"头盔", "胸甲", "护腿", "靴子", "主手", "副手"};
     public static void receive(String json) {
         final JsonObject value = new JsonParser().parse(json).getAsJsonObject();
@@ -28,6 +31,26 @@ public final class DuelClient {
         if (mc.currentScreen instanceof LoadoutScreen) ((LoadoutScreen) mc.currentScreen).refresh();
     }
     public static JsonObject state() { return state; }
+    private static boolean available() {
+        Minecraft mc = Minecraft.getMinecraft();
+        return state != null && mc.theWorld != null && mc.thePlayer != null && mc.isSingleplayer()
+                && mc.thePlayer.dimension == 0 && mc.thePlayer.isEntityAlive()
+                && mc.thePlayer.getUniqueID().toString().equals(state.get("owner").getAsString());
+    }
+    public static void open() {
+        if (available()) Minecraft.getMinecraft().displayGuiScreen(new LoadoutScreen());
+    }
+    @SubscribeEvent public void pauseMenu(GuiScreenEvent.InitGuiEvent.Post event) {
+        if (event.gui instanceof GuiIngameMenu && available()) event.buttonList.add(new GuiButton(MENU_BUTTON,
+                event.gui.width / 2 - 100, Math.min(event.gui.height - 24, event.gui.height / 4 + 128), 200, 20,
+                I18n.format("gui.divzero.duel.menu")));
+    }
+    @SubscribeEvent public void pauseClick(GuiScreenEvent.ActionPerformedEvent.Post event) {
+        if (event.gui instanceof GuiIngameMenu && event.button.id == MENU_BUTTON) open();
+    }
+    private static String menuHint() {
+        return I18n.format("gui.divzero.duel.hint", net.minecraft.client.settings.GameSettings.getKeyDisplayString(ClientProxy.DUEL.getKeyCode()));
+    }
     public static boolean fixtureChoose(int actor, int slot, String item) throws IOException {
         Minecraft mc = Minecraft.getMinecraft();
         if (!(mc.currentScreen instanceof LoadoutScreen)) return false;
@@ -47,11 +70,11 @@ public final class DuelClient {
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.currentScreen instanceof LoadoutScreen || mc.currentScreen instanceof ItemScreen) return;
         int x = event.resolution.getScaledWidth() - 164, y = 44;
-        Gui.drawRect(x - 6, y - 6, x + 158, y + 89, 0xa0101418);
+        Gui.drawRect(x - 6, y - 6, x + 158, y + 103, 0xa0101418);
         String[] lines = {"PvP 训练场 · " + phase(), "本局剩余 " + state.get("remaining").getAsInt() + " 秒",
                 "总局数 " + state.get("rounds").getAsInt() + "  胜率 " + String.format(Locale.ROOT, "%.1f%%", state.get("winRate").getAsDouble()),
                 "胜 " + state.get("wins").getAsInt() + " 负 " + state.get("losses").getAsInt() + " 平 " + state.get("draws").getAsInt(),
-                "平均击杀 " + seconds("averageKill"), "平均被击杀 " + seconds("averageDeath")};
+                "平均击杀 " + seconds("averageKill"), "平均被击杀 " + seconds("averageDeath"), menuHint()};
         for (String line : lines) { mc.fontRendererObj.drawStringWithShadow(line, x, y, 0xffffff); y += 14; }
     }
     private static String seconds(String key) { double value = state.get(key).getAsDouble(); return value < 0 ? "—" : String.format(Locale.ROOT, "%.1f 秒", value); }
@@ -82,14 +105,13 @@ public final class DuelClient {
                 button.enabled = ready; buttonList.add(button);
             }
             int startWidth = panelWidth * 42 / 100, stopWidth = panelWidth * 28 / 100;
-            GuiButton start = new GuiButton(30, left, footerY, startWidth, 20, enabled ? "准备并开始" : "启用此世界"); start.enabled = ready; buttonList.add(start);
+            GuiButton start = new GuiButton(30, left, footerY, startWidth, 20, I18n.format("gui.divzero.duel.start")); start.enabled = ready; buttonList.add(start);
             GuiButton stop = new GuiButton(31, left + startWidth + 6, footerY, stopWidth, 20, "停止本局"); stop.enabled = !ready; buttonList.add(stop);
             buttonList.add(new GuiButton(32, left + startWidth + stopWidth + 12, footerY, panelWidth - startWidth - stopWidth - 12, 20, "返回游戏"));
         }
         @Override protected void actionPerformed(GuiButton button) {
             if (button.id < 20) { mc.displayGuiScreen(new ItemScreen(this, button.id / 10, button.id % 10)); return; }
             if (button.id == 32) { mc.displayGuiScreen(null); return; }
-            if (button.id == 30 && !enabled) { mc.thePlayer.sendChatMessage("/ai enable"); return; }
             if (button.id == 30 || button.id == 31) { send(request(button.id == 30 ? "ready" : "stop")); mc.displayGuiScreen(null); return; }
             int actor = button.id - 20; JsonObject value = request("choose"); value.addProperty("actor", actor == 0 ? "human" : "ai");
             value.addProperty("wool", !state.get(actor == 0 ? "humanWool" : "aiWool").getAsBoolean()); send(value);
@@ -97,7 +119,7 @@ public final class DuelClient {
         @Override public void drawScreen(int mouseX, int mouseY, float partialTicks) {
             drawDefaultBackground(); drawCenteredString(fontRendererObj, "PvP 训练场 · 双方装备", width / 2, top + 3, 0xffffff);
             drawString(fontRendererObj, "玩家", left, top + 20, 0xe2e2e2); drawString(fontRendererObj, "AI", left + columnWidth + 12, top + 20, 0xe2e2e2);
-            drawCenteredString(fontRendererObj, "开局会替换双方背包 · 每局最多 3 分钟", width / 2, woolY + 26, 0xc3c3c3);
+            drawCenteredString(fontRendererObj, I18n.format(enabled ? "gui.divzero.duel.rules" : "gui.divzero.duel.enableStart"), width / 2, woolY + 26, 0xc3c3c3);
             super.drawScreen(mouseX, mouseY, partialTicks);
         }
         @Override public boolean doesGuiPauseGame() { return false; }

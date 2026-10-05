@@ -14,10 +14,11 @@ import org.lwjgl.input.Keyboard;
 public class ClientProxy extends CommonProxy {
     private static final KeyBinding SWAP = new KeyBinding("key.divzero.swap", Keyboard.KEY_F, "DivZero");
     private static final KeyBinding EQUIPMENT = new KeyBinding("key.divzero.offhand", Keyboard.KEY_V, "DivZero");
+    static final KeyBinding DUEL = new KeyBinding("key.divzero.duel", Keyboard.KEY_P, "DivZero");
     private static NativeNetwork.State state;
     private static boolean pendingPlayer;
     @Override public void initialize() {
-        ClientRegistry.registerKeyBinding(SWAP); ClientRegistry.registerKeyBinding(EQUIPMENT);
+        ClientRegistry.registerKeyBinding(SWAP); ClientRegistry.registerKeyBinding(EQUIPMENT); ClientRegistry.registerKeyBinding(DUEL);
         FMLCommonHandler.instance().bus().register(this); MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new DuelClient());
     }
@@ -48,7 +49,9 @@ public class ClientProxy extends CommonProxy {
     }
     @SubscribeEvent public void key(InputEvent.KeyInputEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.currentScreen != null || mc.thePlayer == null || state == null) return;
+        if (mc.currentScreen != null || mc.thePlayer == null) return;
+        if (DUEL.isPressed()) DuelClient.open();
+        if (state == null) return;
         if (SWAP.isPressed()) NativeNetwork.CHANNEL.sendToServer(new NativeNetwork.Action(state.world, state.session, 0, state.revision));
         if (EQUIPMENT.isPressed()) NativeNetwork.CHANNEL.sendToServer(new NativeNetwork.Action(state.world, state.session, 1, state.revision));
     }

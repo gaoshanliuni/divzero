@@ -1,3 +1,9 @@
 key.divzero.swap=Swap main hand and offhand
 key.divzero.offhand=Open offhand inventory
 gui.divzero.offhand=Offhand equipment
+key.divzero.duel=Open PvP start / loadouts
+gui.divzero.duel.menu=PvP - Start / Loadouts / Stop
+gui.divzero.duel.start=Start game
+gui.divzero.duel.hint=%s / Esc menu - PvP
+gui.divzero.duel.rules=Replaces inventory - 3 minutes per round
+gui.divzero.duel.enableStart=Start enables this world and replaces inventory

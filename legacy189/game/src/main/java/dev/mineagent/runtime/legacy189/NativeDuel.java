@@ -64,7 +64,10 @@ public final class NativeDuel {
         if (run.active()) throw new IllegalStateException("已有对局进行中");
         if (!run.human.isEntityAlive()) throw new IllegalStateException("请先使用原生重生");
         if (!ModernCombat.serverEnabled) throw new IllegalStateException("PvP 地图需要启用现代近战规则");
-        NativeRuntime.requireEnabled(run.human); LegacyPolicy.get();
+        LegacyPolicy.get();
+        // Starting an owned arena is explicit consent to enable its local controller.
+        // Validate the map, phase and policy first; this does not grant command permissions.
+        if (!NativeRuntime.enabled(run.human)) NativeRuntime.setEnabled(run.human, true);
         run.phase = "CLEANING"; run.cleanCursor = 0; run.result = ""; run.match = UUID.randomUUID(); run.revision++;
         run.humanDied = run.aiDied = false; run.pendingDeath = 0; run.travel = 0; run.meleeHits = 0;
         run.policyStart = LegacyPolicy.get().inferences(); run.archive = null;

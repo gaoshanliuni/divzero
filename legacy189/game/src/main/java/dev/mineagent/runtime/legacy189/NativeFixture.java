@@ -20,6 +20,9 @@ public final class NativeFixture {
     public static final String WORLD = "DivZero189NativeFixture";
     public static final String PACKED_WORLD = "DivZero PvP 1.8.9";
     public static volatile boolean packedChecked, packedUiClicked;
+    public static volatile boolean packedMenuRecovered, packedNextRound, packedStopClicked;
+    public static volatile String packedClientFailure;
+    private static boolean packedFighting;
     public static volatile int packedGuiScale;
     public static volatile boolean equipmentClicks;
     public static volatile boolean finished;
@@ -120,19 +123,23 @@ public final class NativeFixture {
     private static void packed(MinecraftServer server, EntityPlayerMP human) throws Exception {
         require(NativeArena.ready() && ModernCombat.serverEnabled, "PACKED_ARENA_RULES");
         require(!human.canCommandSenderUseCommand(2, "ai"), "PACKED_MAP_GRANTED_COMMANDS");
-        require(NativeRuntime.data().agents().isEmpty(), "PACKED_MAP_OLD_AGENTS");
+        if (packedClientFailure != null) throw new IllegalStateException(packedClientFailure);
         require(human.worldObj.getBlockState(new BlockPos(0, 100, 766)).getBlock() == LegacyBlocks.SMOOTH_QUARTZ, "PACKED_REGISTRY_QUARTZ");
         require(human.worldObj.getBlockState(new BlockPos(10, 100, 766)).getBlock() == LegacyBlocks.DEEPSLATE, "PACKED_REGISTRY_DEEPSLATE");
         if (!packedChecked) {
+            require(NativeRuntime.data().agents().isEmpty(), "PACKED_MAP_OLD_AGENTS");
             require(!NativeRuntime.enabled(human), "PACKED_MAP_OLD_ENABLE_STATE");
             for (ItemStack stack : human.inventory.mainInventory) require(stack == null, "PACKED_MAP_OLD_INVENTORY");
             require(NativeOffhand.get(human).stack() == null, "PACKED_MAP_OLD_OFFHAND");
             require(Math.abs(human.posY - 101) < .01 && Math.abs(human.posX - .5) < .1 && Math.abs(human.posZ - 766.5) < .1, "PACKED_LOBBY_SPAWN");
             packedChecked = true;
         }
-        if (packedUiClicked && NativeRuntime.enabled(human)) {
+        NativeDuel.Session run = NativeDuel.session(human);
+        if (packedUiClicked && NativeRuntime.enabled(human) && !packedFighting) {
             require(!human.canCommandSenderUseCommand(2, "ai"), "ACTIVATION_GRANTED_COMMANDS");
-            require(NativeDuel.session(human).rounds == 0, "PACKED_MAP_OLD_STATISTICS");
+            require(run.rounds == 0, "PACKED_MAP_OLD_STATISTICS");
+            require(packedMenuRecovered, "PACKED_MENU_RECOVERY");
+            require(run.active(), "PACKED_ONE_CLICK_START");
             require(packedGuiScale == Integer.getInteger("divzero.fixtureExpectedScale", 2), "PACKED_GUI_SCALE_NOT_EFFECTIVE");
             boolean denied = false;
             try { new NativeCommands().processCommand(human, new String[] {"combat", "legacy"}); } catch (net.minecraft.command.CommandException expected) { denied = true; }
@@ -140,8 +147,22 @@ public final class NativeFixture {
             evidence.addProperty("source", "FIXTURE_ONLY"); evidence.addProperty("cleanTemplateNative", true);
             evidence.addProperty("noOperatorGrant", true); evidence.addProperty("nativeActivationButton", true); evidence.addProperty("loadoutBoundsVisible", true);
             evidence.addProperty("effectiveGuiScale", packedGuiScale); evidence.addProperty("globalRuleMutationDenied", true);
-            complete(server, true, "NATIVE_CLEAN_TEMPLATE_PASSED");
-        } else if (server.getTickCounter() > 800) throw new IllegalStateException("PACKED_UI_TIMEOUT");
+            evidence.addProperty("oneClickStart", true); evidence.addProperty("keyAndPauseMenuRecovery", true);
+            if (run.phase.equals("FIGHTING")) packedFighting = true;
+        }
+        if (packedFighting && run.rounds == 1 && human.isEntityAlive() && !packedNextRound) {
+            require(run.result.equals("AI_WON") && run.losses == 1 && run.travel > 3 && run.meleeHits > 0, "PACKED_NATIVE_ROUND");
+            if (run.archive == null || !run.archive.isDone()) return;
+            run.archive.get();
+            evidence.addProperty("cleanMapRoundAndRespawn", true); evidence.addProperty("aiTravel", run.travel); evidence.addProperty("aiMeleeHits", run.meleeHits);
+            packedNextRound = true;
+        }
+        if (packedStopClicked && !run.active()) {
+            require(run.result.equals("CANCELLED") && run.rounds == 1 && run.losses == 1, "PACKED_NEXT_ROUND_CANCEL");
+            evidence.addProperty("nextRoundAndStop", true);
+            complete(server, true, "NATIVE_CLEAN_TEMPLATE_PLAYABLE_PASSED");
+        }
+        if (server.getTickCounter() > 2600) throw new IllegalStateException("PACKED_UI_TIMEOUT phase=" + run.phase);
     }
     private static void resume(MinecraftServer server, EntityPlayerMP human) throws Exception {
         File source = server.getFile("divzero-native-result.json");
