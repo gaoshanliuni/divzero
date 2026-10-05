@@ -25,6 +25,7 @@ public final class NativeFixture {
     public static volatile String packedClientFailure;
     private static boolean packedFighting;
     private static ArenaFeedbackVerification feedbackVerification;
+    private static NativeComboVerification comboVerification;
     public static volatile int packedGuiScale;
     public static volatile boolean equipmentClicks;
     public static volatile boolean finished;
@@ -134,10 +135,15 @@ public final class NativeFixture {
             for (ItemStack stack : human.inventory.mainInventory) require(stack == null, "PACKED_MAP_OLD_INVENTORY");
             require(NativeOffhand.get(human).stack() == null, "PACKED_MAP_OLD_OFFHAND");
             require(Math.abs(human.posY - 101) < .01 && Math.abs(human.posX - .5) < .1 && Math.abs(human.posZ - 766.5) < .1, "PACKED_LOBBY_SPAWN");
-            feedbackVerification = new ArenaFeedbackVerification(human, evidence);
+            if (Boolean.getBoolean("divzero.legacyComboFixture")) comboVerification = new NativeComboVerification(evidence);
+            else feedbackVerification = new ArenaFeedbackVerification(human, evidence);
             packedChecked = true;
         }
         NativeDuel.Session run = NativeDuel.session(human);
+        if (comboVerification != null) {
+            if (comboVerification.tick(run, server.getTickCounter())) complete(server, true, "NATIVE_COMBO_JUMP_PASSED");
+            return;
+        }
         feedbackVerification.tick(run, server.getTickCounter());
         if (packedUiClicked && NativeRuntime.enabled(human) && !packedFighting) {
             require(!human.canCommandSenderUseCommand(2, "ai"), "ACTIVATION_GRANTED_COMMANDS");

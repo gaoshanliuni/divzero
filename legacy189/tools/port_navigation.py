@@ -68,7 +68,7 @@ def generate(name):
     for variable, kind in types.items():
         source = re.sub(r'\bvar\s+' + variable + r'\b', kind + ' ' + variable, source)
     source = source.replace('List.copyOf(', 'copyList(').replace('List.of()', 'Collections.emptyList()').replace('Map.of()', 'Collections.emptyMap()')
-    if name != 'NavigationRetry':
+    if name in ('SurfacePathfinder', 'TerrainPathSearch'):
         at = source.rfind('}')
         source = source[:at] + 'private static <T> List<T> copyList(Collection<T> values){return Collections.unmodifiableList(new ArrayList<T>(values));}\n' + source[at:]
     if re.search(r'\bvar\b|\brecord\b|List\.of|Map\.of|Math\.clamp|return switch', source):
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
-    for name in ('SurfacePathfinder', 'TerrainPathSearch', 'NavigationRetry'):
+    for name in ('SurfacePathfinder', 'TerrainPathSearch', 'NavigationRetry', 'CombatFootwork'):
         output = OUTPUT / (name + '.java')
         data = generate(name)
         if args.check:

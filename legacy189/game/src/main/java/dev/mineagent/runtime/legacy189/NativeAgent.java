@@ -18,6 +18,7 @@ public final class NativeAgent extends EntityPlayerMP {
     public final UUID owner;
     public final String displayName;
     private long lastPhysicsTick = Long.MIN_VALUE;
+    private long lastJumpTick = Long.MIN_VALUE;
     private final ClientlessConnection connection;
     public NativeAgent(MinecraftServer server, WorldServer world, NativeWorldData.AgentDefinition definition) {
         super(server, world, new GameProfile(definition.id, "DZ" + definition.id.toString().replace("-", "").substring(0, 14)), new ItemInWorldManager(world));
@@ -41,7 +42,11 @@ public final class NativeAgent extends EntityPlayerMP {
         if (worldObj == previousWorld) handleFalling(posY - previousY, onGround);
     }
     public void stopActions() { moveForward = 0; moveStrafing = 0; setSprinting(false); setSneaking(false); clearItemInUse(); }
-    public void requestJump() { if (onGround && isEntityAlive()) jump(); }
+    public boolean requestJump() {
+        long tick = MinecraftServer.getServer().getTickCounter();
+        if (!onGround || !isEntityAlive() || tick == lastJumpTick) return false;
+        lastJumpTick = tick; jump(); return true;
+    }
     public void closeConnection() { connection.closeChannel(new ChatComponentText("AI body closed")); }
     /** Forge may query channel attributes directly, bypassing NetHandler.sendPacket.
      * An empty real channel safely reports no FML dispatcher for this clientless body.

@@ -25,6 +25,10 @@ public final class NativeClientFixture {
         Minecraft mc = Minecraft.getMinecraft();
         if (!new File(mc.mcDataDir, "divzero-native-fixture-allow").isFile()) return;
         ticks++;
+        if (Boolean.getBoolean("divzero.legacyComboFixture")) {
+            if (NativeFixture.finished) dev.mineagent.runtime.legacy189.NativeComboVerification.clientMode = -1;
+            ComboClientFixture.tick();
+        }
         if (!launched && ticks > 40 && mc.currentScreen instanceof GuiMainMenu) {
             launched = true;
             WorldSettings settings = new WorldSettings(189L, WorldSettings.GameType.SURVIVAL, false, false, WorldType.FLAT).enableCommands();
@@ -56,7 +60,7 @@ public final class NativeClientFixture {
         }
         if (Boolean.getBoolean("divzero.legacyPackedFixture") && NativeFixture.packedChecked && !NativeFixture.finished) {
             try {
-                if (DuelClient.state() != null && DuelClient.state().get("rounds").getAsInt() == 0 && DuelClient.state().get("phase").getAsString().equals("COUNTDOWN") && !NativeFixture.packedFoodUsed) {
+                if (!Boolean.getBoolean("divzero.legacyComboFixture") && DuelClient.state() != null && DuelClient.state().get("rounds").getAsInt() == 0 && DuelClient.state().get("phase").getAsString().equals("COUNTDOWN") && !NativeFixture.packedFoodUsed) {
                     if (foodAt == 0) {
                         foodAt = ticks; mc.thePlayer.inventory.currentItem = 2;
                         net.minecraft.client.settings.KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
@@ -80,7 +84,7 @@ public final class NativeClientFixture {
                     if (!(mc.currentScreen instanceof DuelClient.LoadoutScreen)) throw new IllegalStateException("PACKED_PAUSE_MENU");
                     NativeFixture.packedMenuRecovered = true; packedStep++;
                 } else if (packedStep == 2 && mc.currentScreen instanceof DuelClient.LoadoutScreen) {
-                    if (!DuelClient.state().getAsJsonArray("human").get(5).getAsString().equals("minecraft:golden_apple")) {
+                    if (!Boolean.getBoolean("divzero.legacyComboFixture") && !DuelClient.state().getAsJsonArray("human").get(5).getAsString().equals("minecraft:golden_apple")) {
                         if (!foodChosen) foodChosen = DuelClient.fixtureChoose(0, 5, "minecraft:golden_apple");
                         return;
                     }

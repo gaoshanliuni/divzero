@@ -121,6 +121,7 @@ public final class NativeDuel {
                         equip(online, run.humanGear, run.humanWool, 0);
                         run.ai = NativeRuntime.createTransient(online, "PvP 陪练"); equip(run.ai, run.aiGear, run.aiWool, 3);
                         run.navigation.reset(run.ai);
+                        run.melee.reset();
                         place(run); run.phase = "COUNTDOWN"; run.deadline = tick + 100; run.revision++;
                     }
                 } else if (run.phase.equals("COUNTDOWN")) {
@@ -153,6 +154,7 @@ public final class NativeDuel {
         double aimY = target.posY + target.getEyeHeight() * .8 - actor.posY - actor.getEyeHeight() + .025 * flight * flight;
         actor.rotationYaw = (float) Math.toDegrees(Math.atan2(aimZ, aimX)) - 90;
         actor.rotationPitch = (float) -Math.toDegrees(Math.atan2(aimY, Math.hypot(aimX, aimZ))); actor.rotationYawHead = actor.rotationYaw;
+        if (!bow) { run.melee.tick(run, tick); return; }
         double desired = bow ? 8 : 2.5;
         boolean navigating = run.navigation.move(actor, target, tick, bow);
         if (run.navigation.recovering()) { actor.clearItemInUse(); return; }
@@ -178,9 +180,6 @@ public final class NativeDuel {
             if (distance < 3 || !actor.canEntityBeSeen(target)) { actor.clearItemInUse(); return; }
             if (!actor.isUsingItem()) actor.setItemInUse(actor.getHeldItem(), 72000);
             else if (actor.getItemInUseDuration() >= 20) actor.stopUsingItem();
-        } else if (ModernCombat.reachable(actor, target)) {
-            float before = target.getHealth(); actor.swingItem(); actor.attackTargetEntityWithCurrentItem(target);
-            if (target.getHealth() < before) { run.meleeHits++; run.retreatUntil = tick + 4; actor.setSprinting(false); }
         }
     }
     private static int clearance(NativeAgent actor, double dx, double dz) {
@@ -212,6 +211,7 @@ public final class NativeDuel {
         record.addProperty("navigationPlans", run.navigation.plans); record.addProperty("stuckRecoveries", run.navigation.stuckRecoveries);
         record.addProperty("escapeWoolBroken", run.navigation.woolBroken); record.addProperty("attackCooldown", false);
         record.addProperty("escapeWoolPlaced", run.navigation.placed()); record.addProperty("escapeMaterialsConsumed", run.navigation.consumed());
+        record.add("meleeControl", run.melee.evidence());
         Path output = run.human.getServerForPlayer().getSaveHandler().getWorldDirectory().toPath().resolve("data/divzero-pvp-rounds").resolve(run.match + ".json");
         byte[] bytes = JSON.toJson(record).getBytes(StandardCharsets.UTF_8);
         run.archive = CompletableFuture.runAsync(() -> { try { Files.createDirectories(output.getParent()); Files.write(output, bytes, StandardOpenOption.CREATE_NEW); } catch (Exception failure) { throw new CompletionException(failure); } });
@@ -230,6 +230,7 @@ public final class NativeDuel {
         value.addProperty("winRate", run.rounds == 0 ? 0 : 100d * run.wins / run.rounds); value.addProperty("averageKill", run.wins == 0 ? -1 : run.killSeconds / run.wins);
         value.addProperty("averageDeath", run.losses == 0 ? -1 : run.deathSeconds / run.losses);
         value.add("human", JSON.toJsonTree(run.humanGear)); value.add("ai", JSON.toJsonTree(run.aiGear)); value.addProperty("humanWool", run.humanWool); value.addProperty("aiWool", run.aiWool);
+        value.addProperty("aiEntity", run.ai == null ? -1 : run.ai.getEntityId());
         return value;
     }
     private static void push(Session run, boolean open) { DuelNetwork.send(run.human, snapshot(run, open)); }
@@ -243,6 +244,7 @@ public final class NativeDuel {
     public static void respawn(EntityPlayerMP player) { if (allowed(player)) { Session run = session(player); NativeArena.lobby(player); push(run, true); } }
     public static final class Session {
         public final ArenaNavigator navigation = new ArenaNavigator();
+        public final LegacyMeleeController melee = new LegacyMeleeController();
         public final UUID owner; public EntityPlayerMP human; public NativeAgent ai; public UUID match;
         public final String[] humanGear = defaults(), aiGear = defaults(); public boolean humanWool, aiWool;
         public String phase = "READY", result = ""; public long revision, started, policyStart; public int rounds, wins, losses, draws, deadline, cleanCursor, pendingDeath, retreatUntil, meleeHits;
