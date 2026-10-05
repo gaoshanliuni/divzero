@@ -16,6 +16,7 @@ import java.util.*;
 public final class LegacyTerrainRecovery {
     private TerrainPathSearch search;
     private TerrainPathSearch.Step planned;
+    private final Deque<TerrainPathSearch.Step> approachSteps=new ArrayDeque<TerrainPathSearch.Step>();
     private Edit edit;
     private NativeAgent actor;
     private EntityPlayerMP target;
@@ -32,7 +33,7 @@ public final class LegacyTerrainRecovery {
     public void reset(NativeAgent actor){cancel();this.actor=actor;rejected.clear();attempts=broken=placed=consumed=0;goal=null;}
     public void cancel(){
         if(actor!=null){if(edit!=null)actor.worldObj.sendBlockBreakProgress(actor.getEntityId(),pos(edit.cell()),-1);if(planned!=null)actor.inventory.currentItem=selectedSlot;}
-        search=null;planned=null;edit=null;state="IDLE";progress=0;
+        search=null;planned=null;edit=null;approachSteps.clear();state="IDLE";progress=0;
     }
     private static BlockPos pos(Cell c){return new BlockPos(c.x(),c.y(),c.z());}
     private static Cell cell(Vec3 at){return new Cell((int)Math.floor(at.xCoord),(int)Math.floor(at.yCoord),(int)Math.floor(at.zCoord));}
@@ -129,14 +130,22 @@ public final class LegacyTerrainRecovery {
             TerrainPathSearch.Result found=search.advance(96,()->System.nanoTime()<deadline);
             if(found.state().equals("SEARCHING"))return null;
             search=null;if(!found.state().equals("FOUND")){state=found.state();return null;}
-            planned=found.steps().get(0);edit=planned.edits().isEmpty()?null:planned.edits().get(0);
+            planned=found.steps().get(0);approachSteps.clear();if(pursuit)for(int i=1;i<found.steps().size();i++)approachSteps.addLast(found.steps().get(i));edit=planned.edits().isEmpty()?null:planned.edits().get(0);
             actionAt=tick;selectedSlot=actor.inventory.currentItem;sent=jumped=false;settled=0;progress=0;attempts++;
             state=edit==null?"ESCAPE_WALK":edit.kind()==Kind.BREAK?"ESCAPE_MINE":"ESCAPE_PLACE";
             if(edit!=null)before=signature(pos(edit.cell()));
             if(NativeFixture.requested()&&pursuit)LegacyMod.logger.info("LEGACY_PURSUIT_PLAN from={} to={} edit={}",point(planned.from()),point(planned.to()),edit==null?"WALK":edit.kind()+":"+pos(edit.cell()));
         }
         if(edit==null){
-            if(actor.getPositionVector().squareDistanceTo(point(planned.to()))<(pursuit?.0001:.16)&&actor.onGround){complete(changed);return null;}
+            if(actor.getPositionVector().squareDistanceTo(point(planned.to()))<(pursuit?.0001:.16)&&actor.onGround){
+                if(pursuit&&!approachSteps.isEmpty()){
+                    planned=approachSteps.removeFirst();edit=planned.edits().isEmpty()?null:planned.edits().get(0);actionAt=tick;sent=jumped=false;settled=0;progress=0;
+                    state=edit==null?"APPROACH_WALK":edit.kind()==Kind.BREAK?"APPROACH_MINE":"APPROACH_PLACE";if(edit!=null)before=signature(pos(edit.cell()));
+                    if(NativeFixture.requested())LegacyMod.logger.info("LEGACY_PURSUIT_CONTINUE to={} edit={}",point(planned.to()),edit==null?"WALK":edit.kind()+":"+pos(edit.cell()));return null;
+                }
+                complete(changed);return null;
+            }
+            if(pursuit&&!planned.from().equals(planned.to())&&new LegacyTraversal(actor).transition(node(planned.from()),node(planned.to()))==null){fail("APPROACH_ROUTE_CHANGED");return null;}
             if(tick-actionAt>50){fail("ESCAPE_MOVE_BLOCKED");return null;}
             return new PathStep(node(planned.from()),node(planned.to()),planned.to().y()>planned.from().y()?Action.JUMP:Action.WALK,Posture.STANDING,1);
         }

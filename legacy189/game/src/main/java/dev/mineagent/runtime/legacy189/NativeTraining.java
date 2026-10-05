@@ -64,7 +64,7 @@ public final class NativeTraining {
                 for(int n=0;n<4096&&cleanCursor<33*33*155;n++){int at=cleanCursor++;LegacyArenaMaterials.clear(ownerPlayer.worldObj,new BlockPos(-16+at%33,101+at/(33*33),784+at/33%33));}
                 if(cleanCursor<33*33*155)return;NativeDuel.clearDrops(ownerPlayer.worldObj);
                 left=NativeRuntime.createTransient(ownerPlayer,"训练模型 A");right=NativeRuntime.createTransient(ownerPlayer,"训练模型 B");
-                int episode=evaluating?evalDone:collectDone;boolean bow=evaluating?episode>=4:episode%4>=2;candidateLeft=episode%2==0;
+                int episode=evaluating?evalDone:collectDone;boolean bow=evaluating?episode>=4:episode%2==1;candidateLeft=episode%2==0;
                 left.policy(evaluating&&candidateLeft?candidate:base);right.policy(evaluating&&!candidateLeft?candidate:base);
                 String[] kit={"minecraft:iron_helmet","minecraft:iron_chestplate","minecraft:iron_leggings","minecraft:iron_boots",bow?"minecraft:bow":"minecraft:diamond_sword","minecraft:air"};
                 NativeDuel.equip(left,kit,true,3);NativeDuel.equip(right,kit,true,0);
