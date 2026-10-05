@@ -72,7 +72,7 @@ public final class ModernCombat {
         float charge = strength(player); Cooldown cooldown = state(player); cooldown.last = MinecraftServer.getServer().getTickCounter();
         ItemStack weapon = player.getHeldItem();
         double base = baseDamage(player) * (.2 + .8 * charge * charge);
-        float enchantment = EnchantmentHelper.getModifierForCreature(weapon, target instanceof EntityLivingBase ? ((EntityLivingBase) target).getCreatureAttribute() : EnumCreatureAttribute.UNDEFINED);
+        float enchantment = EnchantmentHelper.func_152377_a(weapon, target instanceof EntityLivingBase ? ((EntityLivingBase) target).getCreatureAttribute() : EnumCreatureAttribute.UNDEFINED);
         int sharpness = weapon == null ? 0 : EnchantmentHelper.getEnchantmentLevel(Enchantment.sharpness.effectId, weapon);
         if (sharpness > 0) enchantment += .5f + .5f * sharpness - 1.25f * sharpness;
         enchantment *= charge;

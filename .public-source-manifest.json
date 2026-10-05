@@ -4039,8 +4039,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/ModernCombat.java",
-      "sha256": "3e65a1ec58b39de8811f880a76db832718cf8e47055d168101368020c67d7d31",
-      "bytes": 12756
+      "sha256": "33288f5fdf9edb03cb0ac71d10f7648898873ad8cc3f31daed325f0ba7f0566e",
+      "bytes": 12747
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeAgent.java",
