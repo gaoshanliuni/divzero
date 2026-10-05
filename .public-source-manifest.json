@@ -3974,8 +3974,8 @@
     },
     {
       "path": "legacy189/README.md",
-      "sha256": "de105a84003dece451beb4b292f2c066e5dd8287fb1835a5f5bac7fb7c534d06",
-      "bytes": 16901
+      "sha256": "b14e716c53151372820376020292581eed9155988b40906f0cd40c16384cbfd5",
+      "bytes": 18566
     },
     {
       "path": "legacy189/bridge/build.gradle",
@@ -4299,8 +4299,8 @@
     },
     {
       "path": "legacy189/requirements.json",
-      "sha256": "0d939b712e468ecee75990da5609ac48590e4bae04ffa5e1d054696823835ba2",
-      "bytes": 10454
+      "sha256": "8f58f20c7948b9b2f28a34fefa10dc102eed932b848e585855a3f015c55595bb",
+      "bytes": 10787
     },
     {
       "path": "legacy189/service/src/main/java/dev/mineagent/runtime/legacy189/service/LegacyServiceMain.java",

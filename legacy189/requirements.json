@@ -200,7 +200,8 @@
       "status": "IN_PROGRESS",
       "verifiedPaths": [
         "Native repeated attacks retain full damage without charge; original victim hurt immunity retained",
-        "Prior real falling critical, armor/toughness and wall rejection evidence remains historical for those unchanged paths"
+        "Prior real falling critical, armor/toughness and wall rejection evidence remains historical for those unchanged paths",
+        "Native hit-confirmed W/S tap, sprint re-engagement and safe jump taps without weapon charge; victim immunity and AI base attributes preserved"
       ]
     },
     {
@@ -265,7 +266,8 @@
       "status": "IN_PROGRESS",
       "verifiedPaths": [
         "FIXTURE_ONLY stationary-human round; not a human win-rate benchmark",
-        "Native obstacle detour, wool mining and material-consuming jump-place escape; protected map blocks retained"
+        "Native obstacle detour, wool mining and material-consuming jump-place escape; protected map blocks retained",
+        "Three real-client movement fixtures: stationary/advancing/strafing; longest observed hit chains 4/6/6, eight physical jumps and landings, consumed forward/strafe inputs"
       ]
     },
     {
