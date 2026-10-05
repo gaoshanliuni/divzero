@@ -10,7 +10,14 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 version = '1.0.32-legacy189.3'
 group = 'dev.mineagent.runtime'
 archivesBaseName = 'DivZero-forge-1.8.9'
-jar { manifest { attributes 'FMLCorePlugin': 'dev.mineagent.runtime.legacy189.coremod.LegacyCore', 'FMLCorePluginContainsFMLMod': 'true' } }
+jar {
+    manifest { attributes 'FMLCorePlugin': 'dev.mineagent.runtime.legacy189.coremod.LegacyCore', 'FMLCorePluginContainsFMLMod': 'true' }
+    from('../../LICENSE') { into 'META-INF/divzero/licenses' }
+    from('../../NOTICE') { into 'META-INF/divzero/licenses' }
+    def notices = file('../../docs/THIRD_PARTY_NOTICES.md')
+    if (!notices.isFile()) notices = file('../../docs/public/THIRD_PARTY_NOTICES.md')
+    from(notices) { into 'META-INF/divzero/licenses' }
+}
 sourceCompatibility = targetCompatibility = '1.8'
 repositories {
     mavenCentral()

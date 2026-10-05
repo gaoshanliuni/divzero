@@ -49,6 +49,11 @@ tasks.register('legacy189ServiceJar', Jar) {
     archiveClassifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest { attributes 'Main-Class': 'dev.mineagent.runtime.legacy189.service.LegacyServiceMain' }
+    from(rootProject.file('LICENSE')) { into 'META-INF/divzero/licenses' }
+    from(rootProject.file('NOTICE')) { into 'META-INF/divzero/licenses' }
+    def notices = rootProject.file('docs/THIRD_PARTY_NOTICES.md')
+    if (!notices.isFile()) notices = rootProject.file('docs/public/THIRD_PARTY_NOTICES.md')
+    from(notices) { into 'META-INF/divzero/licenses' }
     from sourceSets.legacy189.output
     from(sourceSets.main.output) { exclude 'META-INF/mineagent/tools/**' }
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }

@@ -40,10 +40,14 @@
 | 自动对练 | AI 行走约 25.51 格、近战命中 9 次、约 7.25 秒击败不反击测试玩家 |
 | 生命周期 | 死亡、原生重生、计分、落盘通过；下一局取消不增加战绩 |
 | 重进 | 世界身份、原 AI UUID、副手、竞技场方块/标记保留；访问统计重新初始化 |
+| 干净 ZIP 首次进入 | 无旧背包、AI、战绩及 OP；原生按钮启用有效，全局规则写入仍被拒绝 |
+| 大比例界面 | 实际生效比例为 4，17 个装备/操作控件均在屏幕边界内 |
 
 一轮自动对练不能推导真人胜率。完整真人对练、双方胜出/平局组合、复杂弓压制及全部装备组合尚未覆盖。实际运行组合包含目标实例的 OptiFine M5、entityculling 1.5.0、PingPlusFPS 和 I18nUpdateMod JAR；Minecraft 客户端 JAR 的 SHA-1 与目标版本元数据一致。
 
 近战对应 `d55ad38` 的 [Actions 37276094630](https://github.com/gaoshanliuni/divzero/actions/runs/37276094630)；对局及重进对应 `d07bf77` 的 [Actions 37277096395](https://github.com/gaoshanliuni/divzero/actions/runs/37277096395)。较早协议基础 [Actions 37256968208](https://github.com/gaoshanliuni/divzero/actions/runs/37256968208) 的 7 项跨 JVM 测试保留。
+
+干净 ZIP 与真实 4 倍比例检查使用 `e5d9b80` / [Actions 37282026319](https://github.com/gaoshanliuni/divzero/actions/runs/37282026319) 产物。初次关闭作弊的启用入口被 1.8.9 命令门禁拒绝，失败已保留；修复为玩家自助入口加操作级鉴权后通过，没有打开作弊。测试客户端采用原生退出世界再关闭流程，完成维度卸载后结束。
 
 保留了旧 API 可见性、MCP 方法名、服务打包依赖次序、无客户端连接恢复、旧 Netty 空处理器、Windows JDK selector，以及玩家下落结算缺失的失败记录。修复后重测受影响路径，没有降低断言或删除失败证据。
 

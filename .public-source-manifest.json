@@ -3974,8 +3974,8 @@
     },
     {
       "path": "legacy189/README.md",
-      "sha256": "ae2f1a3d197ad00b87d5fe9937abc2d7844c32d59bb1fe25a2c881011c3fb6d0",
-      "bytes": 7168
+      "sha256": "6deef517980c5bd0af1947987c3e698e945433974a3caa57ed951fa29a43caf2",
+      "bytes": 7789
     },
     {
       "path": "legacy189/bridge/build.gradle",
@@ -4004,8 +4004,8 @@
     },
     {
       "path": "legacy189/game/build.gradle",
-      "sha256": "2d5c3d6f56946b303c14758d6d62abf76e3200432fd12c27f77ccaf31a07c656",
-      "bytes": 2700
+      "sha256": "605cd5cb36ee015ee74ae1e540bf350d0f1ee3fc11a8bd0c722cf1d1c917f264",
+      "bytes": 3030
     },
     {
       "path": "legacy189/game/settings.gradle",
@@ -7844,8 +7844,8 @@
     },
     {
       "path": "worker/build.gradle",
-      "sha256": "411d77bfe0f8535539d87891e24ec781c34e57135c1892cab02e01446ab37528",
-      "bytes": 5116
+      "sha256": "9b74057e2c513436823d91cac72bdac2167186fffd5faf201418f7b86e8dc9ad",
+      "bytes": 5478
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/WorkerCancellation.java",
