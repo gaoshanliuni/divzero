@@ -82,6 +82,8 @@ def main():
     parser.add_argument("--output", required=True, type=pathlib.Path)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--with-installed-mods", action="store_true")
+    parser.add_argument("--exclude-installed-mod-sha256", action="append", default=[],
+                        help="Explicitly account for an installed DivZero build without copying it into the fixture")
     parser.add_argument("--java25", type=pathlib.Path)
     parser.add_argument("--arena", type=pathlib.Path)
     parser.add_argument("--packed-arena", type=pathlib.Path)
@@ -89,6 +91,10 @@ def main():
     parser.add_argument("--width", type=int, default=1100)
     parser.add_argument("--height", type=int, default=720)
     args = parser.parse_args()
+    if any(len(value) != 64 or any(c not in "0123456789abcdef" for c in value) for value in args.exclude_installed_mod_sha256):
+        raise ValueError("Excluded Mod hashes must be lowercase SHA-256")
+    if args.exclude_installed_mod_sha256 and (not args.with_installed_mods or args.resume):
+        raise ValueError("Explicit Mod exclusions apply only to a fresh installed-Mod fixture")
     if not 640 <= args.width <= 3840 or not 480 <= args.height <= 2160:
         raise ValueError("Fixture window size is outside the supported range")
     instance, java, mod = (p.resolve(strict=True) for p in (args.instance, args.java, args.mod))
@@ -148,11 +154,18 @@ def main():
         output.mkdir(parents=True)
         marker.write_text("DIVZERO_LEGACY189_ISOLATED_FIXTURE\n")
         (output / "mods").mkdir()
+        excluded_mods = {}
         if args.with_installed_mods:
             for source in sorted((instance / "mods").glob("*.jar")):
                 if "mineagent" in source.name.lower() or "divzero" in source.name.lower():
-                    raise ValueError("An existing DivZero Mod must be accounted for explicitly")
+                    digest = sha256(source)
+                    if digest not in args.exclude_installed_mod_sha256:
+                        raise ValueError("An existing DivZero Mod must be accounted for explicitly")
+                    excluded_mods[source.name] = digest
+                    continue
                 shutil.copy2(source, output / "mods" / source.name)
+            if set(excluded_mods.values()) != set(args.exclude_installed_mod_sha256):
+                raise ValueError("An explicitly excluded Mod was not found in the installed instance")
         shutil.copy2(mod, output / "mods" / mod.name)
         if arena:
             (output / "divzero-import").mkdir()
@@ -189,6 +202,8 @@ def main():
                                    creationflags=subprocess.CREATE_NO_WINDOW)
     receipt = {"pid": process.pid, "modSha256": sha256(mod), "source": "FIXTURE_ONLY", "resume": args.resume,
                "installedMods": [p.name for p in sorted((output / "mods").glob("*.jar"))]}
+    if not args.resume:
+        receipt["explicitlyExcludedInstalledMods"] = excluded_mods
     (output / ("resume-launch.json" if args.resume else "launch.json")).write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt))
 

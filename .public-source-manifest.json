@@ -3974,8 +3974,8 @@
     },
     {
       "path": "legacy189/README.md",
-      "sha256": "09ff59421953364265949bf1ff8b439f30e9460717553526b75113ea179af90a",
-      "bytes": 9601
+      "sha256": "0bf33822979d13809ee236a9a1bc72251e3bb3ed143956e6928e36f87ea1a8aa",
+      "bytes": 10920
     },
     {
       "path": "legacy189/bridge/build.gradle",
@@ -4229,8 +4229,8 @@
     },
     {
       "path": "legacy189/requirements.json",
-      "sha256": "db5d8f511200bb4562e3d608d3928f5fa51738a06e5568ecbd63f9751cb50cac",
-      "bytes": 9377
+      "sha256": "8380f3b2d4e043b0976ad185285ce796cf3eeae48ad41edb71d9548ccdec0d9d",
+      "bytes": 9501
     },
     {
       "path": "legacy189/service/src/main/java/dev/mineagent/runtime/legacy189/service/LegacyServiceMain.java",
@@ -4279,8 +4279,8 @@
     },
     {
       "path": "legacy189/tools/run_native.py",
-      "sha256": "8b21b47c322578a6977260860933f89fd96c0a4af6bfd5bc9437bbf3dad12ed6",
-      "bytes": 10916
+      "sha256": "657e45c656126556de43b8a9f9e3b7856a913bf89377355e10457273cf208694",
+      "bytes": 12023
     },
     {
       "path": "neoforge/build.gradle",

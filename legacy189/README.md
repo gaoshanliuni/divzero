@@ -65,6 +65,10 @@
 
 此次检查同时发现树叶模型带有 `parent` 和 `elements`，被 1.8.9 拒绝。移除冲突的父模型声明并同步资源生成脚本；保留原生树叶贴图引用及六面染色。
 
+最终安装产物为 `3bf5c21` / [Actions 37286876013](https://github.com/gaoshanliuni/divzero/actions/runs/37286876013)，SHA-256 为 `bd23a5b4cd5b539c5f8890f9637e8589ccc07a51101671e934d5ade1b81316ad`。与前一通过产物逐项比较，仅树叶模型 JSON 变化；再次原生加载未出现本 Mod 模型加载错误，同一完整流程再次返回 `NATIVE_CLEAN_TEMPLATE_PLAYABLE_PASSED`（AI 移动约 13.72 格、命中 6 次）。测试使用原实例四个附加 Mod，付费模型调用为 0。
+
+本地目标实例已补装 JAR，并新增独立地图目录 `DivZero PvP 1.8.9 - Playable`，游戏列表名称为 **DivZero PvP 1.8.9 - 可玩版**。重新启动该版本后选择新地图。原地图曾在缺少 JAR 时被保存，四种新增方块被 Forge 标为占位，故保留原存档而新增完整副本；误放在 `mods` 的地图 ZIP 保存到版本目录内的安装备份目录。安装文件重新读取的 SHA-256、地图注册表与清单均已核对。
+
 游戏使用 Java 8，服务使用 Java 25。可通过 `divzero.java25` JVM 属性指定 Java 25 可执行文件；也支持发现标准 Minecraft `java-runtime-epsilon` 位置。完整图形安装向导仍待实现。
 
 开发入口为 `/ai enable`、`/ai create 名称`、`/ai worker`、`/ai offhand`、`/ai swap`。副手快捷键默认 F，窗口默认 V。`/ai combat modern|legacy` 需要已有管理权限。标记地图使用 `/ai duel equip|ready|stop|status`。
@@ -79,5 +83,7 @@ python -m unittest discover -s legacy189/tests -v
 ```
 
 Java 仅在公开 main 的 Actions 构建。`tools/run_native.py` 使用选定产物和目标实例的库/资源/Native 文件创建隔离测试目录，可以复制其 Mod 组合联验，不复制账号、凭据或生产配置。模型、磁盘与编译不阻塞活动服务器 Tick。
+
+目标已安装 DivZero 时，隔离测试使用 `--exclude-installed-mod-sha256 <已安装JAR的精确SHA-256>` 显式登记旧包，仍仅加载 `--mod` 选定产物。哈希不符、未找到指定包或未显式登记的 DivZero 包会拒绝运行，排除列表写入测试启动回执；不会删除目标实例的 JAR。
 
 源码按独立公开历史同步干净快照；构建包、地图、数据库、日志和密钥留在本地忽略目录。不自动发布 Release。安装与实机验收分开记录，新增地图副本不覆盖原存档。

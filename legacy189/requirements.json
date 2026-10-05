@@ -249,7 +249,8 @@
       "name": "Loadout GUI, five-second countdown, three-minute rounds, death/stop and HUD",
       "status": "IN_PROGRESS",
       "verifiedPaths": [
-        "Loadout selection, countdown, AI win, respawn and cancellation"
+        "Loadout selection, countdown, AI win, respawn and cancellation",
+        "Clean-map one-click activation/start without OP, configurable P key and pause-menu recovery, next round and stop"
       ]
     },
     {
