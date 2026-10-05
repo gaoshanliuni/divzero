@@ -4099,8 +4099,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeComboVerification.java",
-      "sha256": "5c7240f177b5d6df4a5513651cdbe3aae0f9e78dc84fdc645afa0197bee8a4b7",
-      "bytes": 5163
+      "sha256": "0795216c802cd7b01b97d9121e29137b27eabad0efcd1c4dc827318b4f72e0cb",
+      "bytes": 5403
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeCommands.java",
@@ -4154,8 +4154,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/ComboClientFixture.java",
-      "sha256": "1398a41566a3287b712d0717c33c8899dd23e552f591d3d35776540ba896dcad",
-      "bytes": 1814
+      "sha256": "1b1b8858f19e133ba7a008016b8c47d9996afa72a004e700ab091c4c6ee362c7",
+      "bytes": 1976
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/DuelClient.java",

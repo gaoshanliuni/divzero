@@ -12,6 +12,7 @@ import java.util.*;
 public final class NativeComboVerification {
     public static volatile int clientMode=-1;
     public static volatile int clientMovementTicks;
+    public static volatile int clientStrafeTicks;
     private final JsonObject evidence;
     private final JsonArray cases=new JsonArray();
     private int scenario,began,nextStart;
@@ -32,7 +33,7 @@ public final class NativeComboVerification {
             require(run.ai.getMaxHealth()==20,"AI_HEALTH_CHANGED");
             // Only the fixture opponent has extra health so multiple native hits can be observed.
             human.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(80);human.setHealth(80);
-            human.clearActivePotions();human.setAbsorptionAmount(0);clientMode=-1;clientMovementTicks=0;
+            human.clearActivePotions();human.setAbsorptionAmount(0);clientMode=-1;clientMovementTicks=clientStrafeTicks=0;
             if(scenario==0){
                 require(LegacyMeleeController.safeJump(run.ai,.8f,.3f),"OPEN_FLOOR_JUMP_REJECTED");
                 Map<BlockPos,IBlockState> roof=new HashMap<BlockPos,IBlockState>();
@@ -60,8 +61,10 @@ public final class NativeComboVerification {
             else ready&=metrics.get("wTapReleases").getAsInt()>0&&metrics.get("sprintResumes").getAsInt()>0&&metrics.get("sprintHits").getAsInt()>=2;
             if(ready){
                 require(targetTravel>.5,"NATIVE_TARGET_DID_NOT_MOVE");if(scenario>0)require(clientMovementTicks>=20,"REAL_CLIENT_INPUT_MISSING");
+                if(scenario==2)require(clientStrafeTicks>=20,"REAL_CLIENT_STRAFE_MISSING");
                 metrics.addProperty("opponent",new String[]{"STATIONARY","ADVANCING","STRAFING"}[scenario]);metrics.addProperty("ticks",tick-began);
                 metrics.addProperty("targetDisplacement",targetTravel);metrics.addProperty("realClientMovementTicks",clientMovementTicks);cases.add(metrics);
+                metrics.addProperty("realClientStrafeTicks",clientStrafeTicks);
                 clientMode=-1;NativeDuel.command(human,"stop");scenario++;waiting=true;nextStart=tick+20;
             }
         }else if(started&&!waiting)throw new IllegalStateException("COMBO_ROUND_ENDED_EARLY "+run.phase+"/"+run.result);

@@ -19,7 +19,8 @@ final class ComboClientFixture {
                 if(Math.abs(mc.thePlayer.posX)>13||mc.thePlayer.posZ<787||mc.thePlayer.posZ>813){dx=.5-mc.thePlayer.posX;dz=800.5-mc.thePlayer.posZ;}
                 mc.thePlayer.rotationYaw=(float)Math.toDegrees(Math.atan2(dz,dx))-90;mc.thePlayer.rotationPitch=0;
                 if(mode==2){left=mc.thePlayer.ticksExisted/40%2==0;right=!left;}
-                NativeComboVerification.clientMovementTicks++;
+                if(mc.thePlayer.movementInput.moveForward>.5f)NativeComboVerification.clientMovementTicks++;
+                if(Math.abs(mc.thePlayer.movementInput.moveStrafe)>.5f)NativeComboVerification.clientStrafeTicks++;
             }
         }
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(),active);
