@@ -41,3 +41,10 @@ python -m unittest discover -s legacy189/tests -v
 所有 Java 构建继续使用公开 main 的 GitHub Actions。前置工具测试通过只证明离线读取/提取；不能替代 Forge 启动、F2、双方真实伤害、现代物品、轮次结束、存档重进和双客户端联验。
 
 公开 `Legacy 1.8.9 migration foundation` 工作流运行离线工具测试，并用 Java 25 编译 `--release 8` 的桥接协议，在真实 Java 8 子进程上验证管道通信。子进程是明确的测试用 echo peer，不是 Forge、模型 Provider 或实际通用服务。工作流不生成可玩的安装包、不发布 Release。
+
+## 2026-10-05 验证记录
+
+- [Actions 37256968208](https://github.com/gaoshanliuni/divzero/actions/runs/37256968208) 在公开提交 `cf4f185` 上成功：13 项离线工具测试、7 项协议测试通过；协议报告为 0 失败、0 错误、0 跳过，包含真实 Java 25 → Java 8 子进程往返。
+- 原 PvP 存档实际提取 33,670 个位置、18 种状态，地图 transfer 内容 SHA-256 为 `eced3fda07f392c879aff919dc3241bb0b6df68cce0f9bde1ec3f353f155d612`。其中 170 个磨制深板岩仍保持原 ID，未替换为空气或旧版方块。产物只保存在本地忽略的 `build/legacy189/`，不进入公开源码。
+- 源码清单读取 1,322 个 Java 文件（含 4 个 Python 变体文件），静态匹配到 141 个工具声明名称。这些数值不是待移植功能总数或验收通过数。
+- **未完成**：Forge 游戏适配器、既有服务接入、LDLib2 原生界面、现代物品/战斗回移、地图写入与读回、全部功能及双客户端联验。没有启动目标版本运行 PvP，不能给出该版本胜率、连击或伤害效果结论。
