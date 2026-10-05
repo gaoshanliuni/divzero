@@ -80,7 +80,7 @@ public final class LegacyTerrainRecovery {
                     if(floor==null||Math.abs(floor.y()-at.yCoord)>.251||!virtual.clear(at,false))return false;
                     Vec3 eye=at.addVector(0,actor.getEyeHeight(),0);AxisAlignedBB box=target.getEntityBoundingBox();
                     Vec3 hit=new Vec3(Math.max(box.minX+.001,Math.min(box.maxX-.001,eye.xCoord)),Math.max(box.minY+.001,Math.min(box.maxY-.001,eye.yCoord)),Math.max(box.minZ+.001,Math.min(box.maxZ-.001,eye.zCoord)));
-                    if(eye.squareDistanceTo(hit)<=9&&virtual.rayClear(eye,hit))return true;
+                    if(eye.squareDistanceTo(hit)<=9&&virtual.rayClear(eye,hit)&&stableAttackStance(virtual,at,target))return true;
                     // Long approaches advance through checked terrain in bounded segments.
                     // A built support may be an intermediate attack approach, never an invented material.
                     double progress=origin.distanceTo(goal)-at.distanceTo(goal);
@@ -188,6 +188,16 @@ public final class LegacyTerrainRecovery {
         if(tick-actionAt>25)fail("PLACEMENT_NOT_CONFIRMED_CHECK_WORLD");return null;
     }
     private void complete(boolean[] changed){cancel();state="RECHECK_ORIGINAL_ROUTE";changed[0]=true;}
+    private boolean stableAttackStance(LegacyTraversal world,Vec3 at,EntityPlayerMP target){
+        // Do not accept a zero-width ray along the shared corner of two blocks.
+        // The executed body has inertia and cannot maintain a mathematical grid point exactly.
+        AxisAlignedBB box=target.getEntityBoundingBox();
+        for(double[] delta:new double[][]{{.04,0},{-.04,0},{0,.04},{0,-.04}}){
+            Vec3 eye=at.addVector(delta[0],actor.getEyeHeight(),delta[1]);
+            Vec3 hit=new Vec3(Math.max(box.minX+.001,Math.min(box.maxX-.001,eye.xCoord)),Math.max(box.minY+.001,Math.min(box.maxY-.001,eye.yCoord)),Math.max(box.minZ+.001,Math.min(box.maxZ-.001,eye.zCoord)));
+            if(eye.squareDistanceTo(hit)>9||!world.rayClear(eye,hit))return false;
+        }return true;
+    }
     private void fail(String reason){if(NativeFixture.requested())LegacyMod.logger.info("LEGACY_RECOVERY_FAILED reason={} position={} edit={}",reason,actor.getPositionVector(),edit==null?"none":edit.kind()+":"+pos(edit.cell()));if(edit!=null)rejected.reject(edit.cell(),edit.kind(),context(pos(edit.cell()),edit.kind()));cancel();state=reason;}
     private void aim(Vec3 at){Vec3 delta=at.subtract(actor.getPositionEyes(1));actor.rotationYaw=(float)Math.toDegrees(Math.atan2(delta.zCoord,delta.xCoord))-90;actor.rotationYawHead=actor.rotationYaw;actor.rotationPitch=(float)-Math.toDegrees(Math.atan2(delta.yCoord,Math.hypot(delta.xCoord,delta.zCoord)));}
     private Vec3 visibleMiningPoint(BlockPos target){
