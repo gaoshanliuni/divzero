@@ -4084,8 +4084,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyMotionForecast.java",
-      "sha256": "f2b400794632c4e1066e707fedb20b62529a8c3506dd0eab0900c73e4b8d2cb1",
-      "bytes": 4598
+      "sha256": "888893e7364b8b7df70526ad8413f0a0f2ab3ca63b4c0e0ac146c60750993d2f",
+      "bytes": 5226
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyPolicy.java",
