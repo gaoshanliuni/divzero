@@ -56,7 +56,7 @@ public final class ModernCombat {
         double reach = actor.capabilities.isCreativeMode ? 4.5 : 3;
         return eye.squareDistanceTo(hit) <= reach * reach && actor.worldObj.rayTraceBlocks(eye, hit, false, true, false) == null;
     }
-    private static double baseDamage(EntityPlayer player) {
+    public static double baseDamage(EntityPlayer player) {
         initialize(); double damage = player.getEntityAttribute(SharedMonsterAttributes.attackDamage).getAttributeValue();
         int strength = player.isPotionActive(Potion.damageBoost) ? player.getActivePotionEffect(Potion.damageBoost).getAmplifier() + 1 : 0;
         int weakness = player.isPotionActive(Potion.weakness) ? player.getActivePotionEffect(Potion.weakness).getAmplifier() + 1 : 0;

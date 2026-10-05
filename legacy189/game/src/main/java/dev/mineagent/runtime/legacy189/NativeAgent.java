@@ -34,7 +34,11 @@ public final class NativeAgent extends EntityPlayerMP {
     public void physics(long tick) {
         if (lastPhysicsTick == tick || isDead) return;
         lastPhysicsTick = tick;
+        double previousY = posY; net.minecraft.world.World previousWorld = worldObj;
         onUpdateEntity();
+        // Vanilla MP players normally receive this calculation from their movement
+        // packets. Use the displacement actually produced by our native physics.
+        if (worldObj == previousWorld) handleFalling(posY - previousY, onGround);
     }
     public void stopActions() { moveForward = 0; moveStrafing = 0; setSprinting(false); setSneaking(false); clearItemInUse(); }
     public void requestJump() { if (onGround && isEntityAlive()) jump(); }

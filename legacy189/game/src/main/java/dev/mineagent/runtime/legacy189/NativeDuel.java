@@ -152,7 +152,7 @@ public final class NativeDuel {
             double risk = Math.max(0, 2.1 - next) * 20 + (clearance > 0 ? 4 : 0);
             double[] features = {actor.getHealth() / Math.max(1, actor.getMaxHealth()), clamp(distance / 16, 0, 2), Math.hypot(actor.motionX, actor.motionZ) / .4, 0,
                     ModernCombat.strength(actor), clamp(progress / 8, -1, 1), clamp(risk / 80, 0, 2), .125, clamp(vx / 8, -1, 1), clamp(vz / 8, -1, 1), 0,
-                    ModernCombat.strength(actor) > .95 ? 1 : 0, 5d / 8, actor.onGround ? 0 : 1, actor.getEntityAttribute(SharedMonsterAttributes.attackDamage).getAttributeValue() / 10, 0};
+                    ModernCombat.strength(actor) > .95 ? 1 : 0, 5d / 8, actor.onGround ? 0 : 1, ModernCombat.baseDamage(actor) / 10, 0};
             double score = Math.abs(next - desired) * 4 + risk + LegacyPolicy.get().cost(features) * 2;
             if (tick < run.retreatUntil && candidate[0] > 0) score += 10;
             if (score < best) { best = score; forward = candidate[0]; strafe = candidate[1]; jump = clearance > 0; }
