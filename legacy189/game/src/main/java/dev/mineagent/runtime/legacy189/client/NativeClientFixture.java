@@ -25,6 +25,13 @@ public final class NativeClientFixture {
         Minecraft mc = Minecraft.getMinecraft();
         if (!new File(mc.mcDataDir, "divzero-native-fixture-allow").isFile()) return;
         ticks++;
+        if(Boolean.getBoolean("divzero.legacyAdvancedFixture")){
+            if(NativeFixture.finished)dev.mineagent.runtime.legacy189.NativeAdvancedVerification.counterAttack=false;
+            AdvancedClientFixture.tick();
+        }
+        if(Boolean.getBoolean("divzero.legacyTrainingFixture")&&NativeFixture.trainingReady&&!NativeFixture.trainingUiClicked&&mc.currentScreen instanceof DuelClient.LoadoutScreen){
+            try{DuelClient.LoadoutScreen screen=(DuelClient.LoadoutScreen)mc.currentScreen;if(!screen.fixtureLayoutFits())throw new IllegalStateException("TRAINING_MENU_CLIPPED");screen.fixtureSelect(33);NativeFixture.trainingUiClicked=true;screen.fixtureSelect(32);}catch(Exception failure){throw new IllegalStateException("TRAINING_UI_INPUT",failure);}
+        }
         if (Boolean.getBoolean("divzero.legacyComboFixture")) {
             if (NativeFixture.finished) dev.mineagent.runtime.legacy189.NativeComboVerification.clientMode = -1;
             ComboClientFixture.tick();

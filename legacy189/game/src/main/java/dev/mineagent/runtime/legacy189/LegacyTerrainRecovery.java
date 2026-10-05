@@ -83,6 +83,7 @@ public final class LegacyTerrainRecovery {
                     // Long approaches advance through checked terrain in bounded segments.
                     // A built support may be an intermediate attack approach, never an invented material.
                     double progress=origin.distanceTo(goal)-at.distanceTo(goal);
+                    if(!edits.isEmpty()&&c.y()>originCell.y()&&goal.yCoord>origin.yCoord+2&&progress>.35)return true;
                     return progress>=3&&at.distanceTo(goal)>3.5&&(virtual.neighbors(floor).size()>=2||!edits.isEmpty()&&c.y()>originCell.y());
                 }
                 if(Math.abs(c.x()-originCell.x())+Math.abs(c.z()-originCell.z())<1)return false;

@@ -22,6 +22,7 @@ public final class NativeAgent extends EntityPlayerMP {
     private final ClientlessConnection connection;
     private LegacyPolicy policy = LegacyPolicy.get();
     public double decisionRisk;
+    public final LegacyProjectileGuard projectileGuard=new LegacyProjectileGuard();
     public LegacyPolicy policy() { return policy; }
     public void policy(LegacyPolicy value) { if (value == null) throw new IllegalArgumentException("POLICY_MISSING"); policy = value; }
     public NativeAgent(MinecraftServer server, WorldServer world, NativeWorldData.AgentDefinition definition) {

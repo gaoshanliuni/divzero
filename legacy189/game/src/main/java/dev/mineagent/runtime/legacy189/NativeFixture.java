@@ -26,6 +26,8 @@ public final class NativeFixture {
     private static boolean packedFighting;
     private static ArenaFeedbackVerification feedbackVerification;
     private static NativeComboVerification comboVerification;
+    private static NativeAdvancedVerification advancedVerification;
+    public static volatile boolean trainingReady,trainingUiClicked;
     private static boolean trainingStarted,trainingReload;
     private static String trainedHash;
     public static volatile int packedGuiScale;
@@ -127,6 +129,10 @@ public final class NativeFixture {
     }
     private static void packed(MinecraftServer server, EntityPlayerMP human) throws Exception {
         if(Boolean.getBoolean("divzero.legacyTrainingFixture")){training(server,human);return;}
+        if(Boolean.getBoolean("divzero.legacyAdvancedFixture")){
+            if(advancedVerification==null)advancedVerification=new NativeAdvancedVerification(human,evidence);
+            if(advancedVerification.tick(NativeDuel.session(human),server.getTickCounter())){evidence.addProperty("source","FIXTURE_ONLY");complete(server,true,"NATIVE_ADVANCED_COMBAT_PASSED");}return;
+        }
         require(NativeArena.ready() && ModernCombat.serverEnabled, "PACKED_ARENA_RULES");
         require(!human.canCommandSenderUseCommand(2, "ai"), "PACKED_MAP_GRANTED_COMMANDS");
         if (packedClientFailure != null) throw new IllegalStateException(packedClientFailure);
@@ -180,7 +186,7 @@ public final class NativeFixture {
     }
     private static void training(MinecraftServer server,EntityPlayerMP human)throws Exception{
         require(NativeArena.ready()&&!human.canCommandSenderUseCommand(2,"ai"),"TRAINING_MAP_PERMISSION");
-        if(!trainingStarted){NativeTraining.start(human,12);trainingStarted=true;return;}
+        if(!trainingStarted){trainingReady=true;if(NativeTraining.active()){require(trainingUiClicked,"TRAINING_UI_NOT_CLICKED");trainingStarted=true;}else if(server.getTickCounter()>500)throw new IllegalStateException("TRAINING_UI_TIMEOUT");return;}
         if(NativeTraining.active())return;
         JsonObject status=NativeTraining.status();require(status.has("phase")&&status.get("phase").getAsString().equals("PROMOTED"),"SELF_PLAY_NOT_PROMOTED "+status);
         if(!trainingReload){

@@ -112,6 +112,7 @@ public final class NativeTraining {
             JsonObject game=new JsonObject();game.addProperty("phase",evaluating?"HELD_OUT_NATIVE_EVALUATION":"TRAINING");game.addProperty("result",result);game.addProperty("ticks",tick-started);game.addProperty("leftHash",left.policy().hash());game.addProperty("rightHash",right.policy().hash());game.addProperty("leftHealth",vital(left));game.addProperty("rightHealth",vital(right));game.add("leftMelee",meleeLeft.evidence());game.add("rightMelee",meleeRight.evidence());game.add("leftRanged",rangedLeft.evidence());game.add("rightRanged",rangedRight.evidence());games.add(game);
             if(evaluating){evalDone++;boolean win=candidateLeft?result.equals("LEFT_WON"):result.equals("RIGHT_WON");if(result.equals("DRAW"))evalDraws++;else if(win)evalWins++;else evalLosses++;candidateLoss+=Math.max(0,20-vital(candidateLeft?left:right));baseLoss+=Math.max(0,20-vital(candidateLeft?right:left));}
             else collectDone++;
+            LegacyMod.logger.info("DIVZERO_SELFPLAY round={} stage={} result={} ticks={} samples={} leftShots={} rightShots={}",collectDone+evalDone,evaluating?"EVALUATE":"COLLECT",result,tick-started,replay.size(),rangedLeft.evidence().get("shots"),rangedRight.evidence().get("shots"));
             dispose();NativeDuel.clearDrops(ownerPlayer.worldObj);
             if(evaluating&&evalDone==8){
                 boolean accepted=evalWins+evalDraws*.5>=4&&evalWins+evalLosses>=4&&candidateLoss<=baseLoss*1.05+1;

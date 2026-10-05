@@ -17,17 +17,18 @@ public final class ArenaNavigator {
     private List<PathStep> steps=Collections.emptyList();
     private Vec3 plannedTarget,lastPosition;
     private int index,stuck;
+    private boolean pursuing;
     public int plans,stuckRecoveries,woolBroken;
     public String reason="IDLE";
     public boolean recovering(){return recovery.active();}
     public int placed(){return recovery.placed;}
     public int consumed(){return recovery.consumed;}
     public void reset(NativeAgent actor){stop(actor);recovery.reset(actor);plans=stuckRecoveries=woolBroken=0;retry.reset(0);plannedTarget=lastPosition=null;}
-    public void stop(NativeAgent actor){recovery.cancel();steps=Collections.emptyList();search=null;index=stuck=0;actor.stopActions();}
+    public void stop(NativeAgent actor){recovery.cancel();steps=Collections.emptyList();search=null;index=stuck=0;pursuing=false;actor.stopActions();}
     private void recheck(int tick){steps=Collections.emptyList();search=null;index=0;retry.reset(tick);reason="TERRAIN_CHANGED_RECHECK";}
     public boolean move(NativeAgent actor,EntityPlayerMP target,int tick,boolean bow){
         double distance=actor.getDistanceToEntity(target);
-        if(!recovery.active()&&(bow?distance<9&&actor.canEntityBeSeen(target):ModernCombat.reachable(actor,target))){steps=Collections.emptyList();search=null;stuck=0;return false;}
+        if(!recovery.active()&&(bow?distance<9&&actor.canEntityBeSeen(target):ModernCombat.reachable(actor,target))){steps=Collections.emptyList();search=null;stuck=0;pursuing=false;return false;}
         actor.moveForward=actor.moveStrafing=0;actor.setSprinting(false);
         Vec3 goal=target.getPositionVector();PathStep step=null;
         if(!recovery.active())step=route(actor,target,goal,tick);
@@ -57,6 +58,8 @@ public final class ArenaNavigator {
         Vec3 position=actor.getPositionVector();
         if(lastPosition==null||lastPosition.squareDistanceTo(position)>=.01){lastPosition=position;stuck=0;}else if(index<steps.size())stuck++;
         boolean moved=plannedTarget!=null&&plannedTarget.squareDistanceTo(goal)>2.25;
+        if(moved)pursuing=false;
+        if(pursuing&&actor.onGround){recovery.request(actor,target,tick,true);reason="APPROACH_BLOCKED_TARGET";return null;}
         if(stuck>=30&&actor.onGround&&recovery.request(actor,target,tick)){
             stuckRecoveries++;search=null;steps=Collections.emptyList();index=stuck=0;reason="REPEATED_ROUTE_OBSTRUCTION";return null;
         }
@@ -85,7 +88,7 @@ public final class ArenaNavigator {
                 if(evaluator.encounteredUnloaded()){retry.waitUntil(tick+20);return null;}
                 retry.failed(tick);
                 Node current=evaluator.closest(position);boolean pursue=current!=null&&!evaluator.neighbors(current).isEmpty();
-                if(result.status()==Status.NO_PATH&&recovery.request(actor,target,tick,pursue))reason=pursue?"APPROACH_BLOCKED_TARGET":"NO_ORDINARY_PATH";
+                if(result.status()==Status.NO_PATH&&recovery.request(actor,target,tick,pursue)){pursuing=pursue;reason=pursue?"APPROACH_BLOCKED_TARGET":"NO_ORDINARY_PATH";}
                 return null;
             }else return null;
         }

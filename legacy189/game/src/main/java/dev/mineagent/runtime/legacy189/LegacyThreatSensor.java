@@ -2,6 +2,8 @@ package dev.mineagent.runtime.legacy189;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.EntityExpBottle;
+import net.minecraft.entity.item.EntityEnderPearl;
 import net.minecraft.entity.projectile.*;
 import net.minecraft.util.*;
 import java.util.*;
@@ -25,7 +27,7 @@ public final class LegacyThreatSensor {
         for(Entity projectile:projectiles){
             if(flights.size()>=64)break;if(projectile.isDead)continue;
             double gravity,damage,airDrag=.99,waterDrag=.8,ax=0,ay=0,az=0;
-            if(projectile instanceof EntityArrow){EntityArrow arrow=(EntityArrow)projectile;if(arrow.shootingEntity==actor)continue;gravity=.05;waterDrag=.6;damage=Math.max(1,Math.ceil(Math.sqrt(arrow.motionX*arrow.motionX+arrow.motionY*arrow.motionY+arrow.motionZ*arrow.motionZ)*arrow.getDamage()));}
+            if(projectile instanceof EntityArrow){EntityArrow arrow=(EntityArrow)projectile;net.minecraft.nbt.NBTTagCompound state=new net.minecraft.nbt.NBTTagCompound();arrow.writeToNBT(state);if(state.getBoolean("inGround")||arrow.shootingEntity==actor&&arrow.ticksExisted<5)continue;gravity=.05;waterDrag=.6;damage=Math.max(1,Math.ceil(Math.sqrt(arrow.motionX*arrow.motionX+arrow.motionY*arrow.motionY+arrow.motionZ*arrow.motionZ)*arrow.getDamage()));}
             else if(projectile instanceof EntityThrowable){EntityThrowable thrown=(EntityThrowable)projectile;if(thrown.getThrower()==actor||projectile instanceof EntityExpBottle)continue;gravity=projectile instanceof EntityPotion?.05:.03;damage=projectile instanceof EntityPotion?4:projectile instanceof EntityEnderPearl?3:1;}
             else if(projectile instanceof EntityLargeFireball||projectile instanceof EntitySmallFireball){EntityFireball fireball=(EntityFireball)projectile;if(fireball.shootingEntity==actor)continue;gravity=0;airDrag=.95;ax=fireball.accelerationX;ay=fireball.accelerationY;az=fireball.accelerationZ;damage=6;}
             else continue;
