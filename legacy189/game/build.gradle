@@ -45,6 +45,7 @@ processResources {
     inputs.property 'version', project.version
     from(sourceSets.main.resources.srcDirs) { include 'mcmod.info'; expand version: project.version }
     from(sourceSets.main.resources.srcDirs) { exclude 'mcmod.info' }
+    from('../../core/src/main/resources/dev/mineagent/runtime/policy/pretrained.json') { into 'dev/mineagent/runtime/policy' }
 }
 // ForgeGradle's legacy repository URLs must use the live HTTPS repository.
 allprojects {

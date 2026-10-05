@@ -23,6 +23,7 @@ public final class NativeFixture {
     public static volatile boolean successful;
     private static int stage, started;
     private static NativeAgent body;
+    private static CombatVerification combatVerification;
     private static java.util.concurrent.CompletableFuture<JsonObject> workerHealth;
     private static final JsonObject evidence = new JsonObject();
     private NativeFixture() { }
@@ -93,8 +94,10 @@ public final class NativeFixture {
                     evidence.addProperty("arenaVerified", true); evidence.addProperty("arenaBlocks", NativeArena.verified());
                     evidence.addProperty("arenaHash", NativeRuntime.data().arenaHash());
                     body.playerNetServerHandler.setPlayerLocation(5.5, 101, 800.5, 90, 0);
-                    save(server); complete(server, true, "NATIVE_ARENA_PASSED");
+                    combatVerification = new CombatVerification(human, body, evidence); stage = 3;
                 } else if (server.getTickCounter() - started > 1000) throw new IllegalStateException("ARENA_FIXTURE_TIMEOUT");
+            } else if (stage == 3) {
+                if (combatVerification.advance()) { save(server); complete(server, true, "NATIVE_ARENA_COMBAT_PASSED"); }
             } else if (server.getTickCounter() - started > 1000 && stage > 0) throw new IllegalStateException("NATIVE_FIXTURE_TIMEOUT_STAGE_" + stage);
         } catch (Throwable failure) {
             LegacyMod.logger.error("DIVZERO_LEGACY_FIXTURE_FAILED", failure);

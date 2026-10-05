@@ -4004,13 +4004,18 @@
     },
     {
       "path": "legacy189/game/build.gradle",
-      "sha256": "04cb074327c3747b13b04960a454e6c65009be6f182914529e0386e817c6f0df",
-      "bytes": 2573
+      "sha256": "1f7c765a288f80f8c7ee9adb601dd4a782e50496ac2a9c0ff7dd72b216bc6eb8",
+      "bytes": 2700
     },
     {
       "path": "legacy189/game/settings.gradle",
       "sha256": "8bdc4a907a6cc0b51e38f60e584376b06edc93de433a6727d36a277c7febf63a",
       "bytes": 38
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/CombatVerification.java",
+      "sha256": "d769769351746a6e66c57cf4cde491834809fea3caa287d08bf5e905df8fca93",
+      "bytes": 6457
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/CommonProxy.java",
@@ -4026,6 +4031,11 @@
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyMod.java",
       "sha256": "80d4a47743416fe9eba59d953ae1243e7574ac9d94b12da35891e525fe82055b",
       "bytes": 2020
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyPolicy.java",
+      "sha256": "10d9cde252bb55040043a64e593b2e90220ca337760bf8d4928215ceb79c722d",
+      "bytes": 3239
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/ModernCombat.java",
@@ -4049,8 +4059,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeFixture.java",
-      "sha256": "bb3498e0be882ab044542265d49b886249741ffdf2f4a192de8d8673248604bc",
-      "bytes": 10618
+      "sha256": "2c4c4952830ea3c233d09d23bbd546f31330eb14ec0e4c603abd0df9c8d338da",
+      "bytes": 10853
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeGuiHandler.java",
@@ -4204,8 +4214,8 @@
     },
     {
       "path": "legacy189/service/src/main/java/dev/mineagent/runtime/legacy189/service/LegacyServiceMain.java",
-      "sha256": "88352c66552740e6d1bd7bf733a30029446f41a5e1bd61275eabdd52512af3b7",
-      "bytes": 7854
+      "sha256": "6b4db0e0b61191397475d6d54027a9741c22238e8a34c285e3d63dd53c84b13f",
+      "bytes": 8656
     },
     {
       "path": "legacy189/tests/test_map_tools.py",

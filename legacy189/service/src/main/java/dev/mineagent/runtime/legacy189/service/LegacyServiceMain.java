@@ -71,6 +71,16 @@ public final class LegacyServiceMain {
                 if (type.equals("storage.configure")) {
                     emit(output, frame, BridgeFrame.Kind.RESULT, "error", Map.of("code", "LEGACY_STORAGE_SCOPE_FIXED")); continue;
                 }
+                if (type.equals("policy.reference")) {
+                    var model = dev.mineagent.runtime.core.task.LocalActionPolicy.pretrained();
+                    var random = new Random(18920261005L);
+                    var vectors = new ArrayList<Map<String, Object>>();
+                    for (int sample = 0; sample < 32; sample++) {
+                        double[] features = new double[16]; for (int column = 0; column < features.length; column++) features[column] = random.nextDouble() * 4 - 2;
+                        vectors.add(Map.of("features", features, "cost", model.cost(features)));
+                    }
+                    emit(output, frame, BridgeFrame.Kind.RESULT, "policy.reference", Map.of("version", model.version(), "vectors", vectors)); continue;
+                }
                 if (type.equals("conversation.sourceCatalog")) {
                     emit(output, frame, BridgeFrame.Kind.RESULT, "conversation.sourceCatalog", Map.of(
                             "kind", "SOURCE_CATALOG_NOT_NATIVE_CAPABILITIES", "tools", ConversationTools.ALL,
