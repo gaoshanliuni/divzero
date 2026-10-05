@@ -32,8 +32,9 @@ public final class LegacyServiceMain {
         var pending = new ConcurrentHashMap<UUID, FutureTask<Void>>();
         Set<UUID> seen = new HashSet<>();
         var pool = Executors.newVirtualThreadPerTaskExecutor();
-        WorkerRequestHandler handler = new WorkerRequestHandler();
+        WorkerRequestHandler handler = null;
         try {
+            handler = new WorkerRequestHandler();
             Files.createDirectories(directory);
             WorkerEnvelope configured = handler.handle(new WorkerEnvelope(1, UUID.randomUUID(), "storage.configure", Map.of("contentRoot", directory.resolve("content").toString())));
             if (!configured.type().equals("storage.configured")) throw new IllegalStateException("LEGACY_STORAGE_FAILED");
@@ -105,7 +106,7 @@ public final class LegacyServiceMain {
         } finally {
             pending.values().forEach(task -> task.cancel(true)); pool.shutdownNow();
             try { pool.awaitTermination(5, TimeUnit.SECONDS); } catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); }
-            handler.close();
+            if (handler != null) handler.close();
         }
     }
     private static void emit(FrameCodec.Writer output, BridgeFrame source, BridgeFrame.Kind kind, String type, Map<String, ?> payload) throws IOException {

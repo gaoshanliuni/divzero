@@ -42,7 +42,12 @@ public final class NativeAgent extends EntityPlayerMP {
      * An empty real channel safely reports no FML dispatcher for this clientless body.
      */
     private static final class ClientlessConnection extends NetworkManager {
-        private final io.netty.channel.embedded.EmbeddedChannel sink = new io.netty.channel.embedded.EmbeddedChannel();
+        private final io.netty.channel.embedded.EmbeddedChannel sink = new io.netty.channel.embedded.EmbeddedChannel(new io.netty.channel.ChannelDuplexHandler() {
+            @Override public void write(io.netty.channel.ChannelHandlerContext context, Object message, io.netty.channel.ChannelPromise promise) {
+                io.netty.util.ReferenceCountUtil.release(message);
+                promise.setSuccess();
+            }
+        });
         ClientlessConnection() { super(EnumPacketDirection.SERVERBOUND); }
         @Override public io.netty.channel.Channel channel() { return sink; }
         @Override public boolean isChannelOpen() { return sink.isOpen(); }

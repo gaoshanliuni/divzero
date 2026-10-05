@@ -28,8 +28,14 @@ public final class NativeService implements AutoCloseable {
         this.world = world; this.owner = owner; this.session = session;
         File java = java25();
         Path jar = extract(directory);
-        Files.createDirectories(directory.resolve(world.toString()).resolve(owner.toString()));
-        process = new ProcessBuilder(java.getCanonicalPath(), "--enable-native-access=ALL-UNNAMED", "-Dfile.encoding=UTF-8", "-jar", jar.toString(),
+        Path scope = directory.resolve(world.toString()).resolve(owner.toString());
+        Files.createDirectories(scope);
+        // Keep JDK selector wakeup files scoped to this service. On Windows the
+        // JDK falls back to local TCP if a private path exceeds AF_UNIX's limit;
+        // this also avoids the observed invalid-argument failure in global TEMP.
+        Path nioTemp = Files.createDirectories(scope.resolve("nio-temp"));
+        process = new ProcessBuilder(java.getCanonicalPath(), "--enable-native-access=ALL-UNNAMED", "-Dfile.encoding=UTF-8",
+                "-Djdk.net.unixdomain.tmpdir=" + nioTemp.toString(), "-jar", jar.toString(),
                 world.toString(), owner.toString(), session.toString(), directory.toString())
                 .directory(directory.toFile()).redirectError(directory.resolve(world.toString()).resolve(owner.toString()).resolve("service-stderr.log").toFile()).start();
         writer = new FrameCodec.Writer(process.getOutputStream());
