@@ -4119,8 +4119,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeAdvancedVerification.java",
-      "sha256": "6bad982425e66819d9d8d9ccb28699bcb7466605b424177358137aeebc4b1a9e",
-      "bytes": 6636
+      "sha256": "8bbee56dbf314fe030a1db19f8b73f72d1a5794c198c476316f15ad918f94a27",
+      "bytes": 7379
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeAgent.java",
@@ -4189,8 +4189,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/AdvancedClientFixture.java",
-      "sha256": "90cf15985539b010ffe89586191830f5ebf70fae7202debf9341d570b310aad5",
-      "bytes": 1404
+      "sha256": "0ff240c5e1e8591bb9562ffdada616f8e9355981ae123e5ef98e23f0568cafeb",
+      "bytes": 1678
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/ClientProxy.java",
@@ -4214,8 +4214,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/NativeClientFixture.java",
-      "sha256": "e402e8d3823be5b09765ff3ec27cb059be79e2d1a4deb3085ca73e0cf09ad9b8",
-      "bytes": 12382
+      "sha256": "cd7e0fa345366f7d06b65b635d2eaec0c5e828370288ae592d1956b84c20b4e3",
+      "bytes": 12462
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/coremod/CombatTransformer.java",

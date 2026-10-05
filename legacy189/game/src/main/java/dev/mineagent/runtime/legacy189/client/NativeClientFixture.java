@@ -26,7 +26,7 @@ public final class NativeClientFixture {
         if (!new File(mc.mcDataDir, "divzero-native-fixture-allow").isFile()) return;
         ticks++;
         if(Boolean.getBoolean("divzero.legacyAdvancedFixture")){
-            if(NativeFixture.finished)dev.mineagent.runtime.legacy189.NativeAdvancedVerification.counterAttack=false;
+            if(NativeFixture.finished){dev.mineagent.runtime.legacy189.NativeAdvancedVerification.counterAttack=false;dev.mineagent.runtime.legacy189.NativeAdvancedVerification.closeAdvance=false;}
             AdvancedClientFixture.tick();
         }
         if(Boolean.getBoolean("divzero.legacyTrainingFixture")&&NativeFixture.trainingReady&&!NativeFixture.trainingUiClicked&&mc.currentScreen instanceof DuelClient.LoadoutScreen){
