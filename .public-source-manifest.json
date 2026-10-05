@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/legacy189.yml",
-      "sha256": "35433619ba4e4c833b964b1d8400a1a582e0dff3bb05596be2c67388df469584",
-      "bytes": 4850
+      "sha256": "ffd4c2b3bba6f44f00ba70d9d6c57d7120181b3b768c3477c50d94fd55dc6e81",
+      "bytes": 5046
     },
     {
       "path": ".gitignore",

@@ -3,9 +3,9 @@ name: Legacy 1.8.9 migration foundation
 on:
   push:
     branches: [main]
-    paths: ['legacy189/**', '.github/workflows/legacy189.yml']
+    paths: ['legacy189/**', 'worker/**', 'api/src/main/**', 'core/src/main/**', 'agent/src/main/**', 'scripting/src/main/**', '.github/workflows/legacy189.yml']
   pull_request:
-    paths: ['legacy189/**', '.github/workflows/legacy189.yml']
+    paths: ['legacy189/**', 'worker/**', 'api/src/main/**', 'core/src/main/**', 'agent/src/main/**', 'scripting/src/main/**', '.github/workflows/legacy189.yml']
   workflow_dispatch:
 
 permissions:
