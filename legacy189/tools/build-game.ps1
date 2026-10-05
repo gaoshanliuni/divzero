@@ -14,5 +14,10 @@ if (-not (Test-Path -LiteralPath $gradle)) { Expand-Archive -LiteralPath $archiv
 if (-not $env:LEGACY189_JAVA8) { throw 'LEGACY_JAVA8_REQUIRED' }
 $env:JAVA_HOME = Split-Path (Split-Path $env:LEGACY189_JAVA8 -Parent) -Parent
 $env:GRADLE_USER_HOME = Join-Path $root 'cache'
-& $gradle -p legacy189/game setupCIWorkspace build --no-daemon --console=plain 2>&1 | Tee-Object -FilePath (Join-Path $root 'forge-build.log')
+$service = @(Get-ChildItem -LiteralPath 'build/legacy189-service' -Filter '*.jar' -File -ErrorAction SilentlyContinue)
+$serviceArguments = @()
+if ($service.Count -gt 1) { throw 'LEGACY_SERVICE_ARTIFACT_AMBIGUOUS' }
+if ($env:SERVICE_REQUIRED -eq 'true' -and $service.Count -ne 1) { throw 'LEGACY_SERVICE_ARTIFACT_REQUIRED' }
+if ($service.Count -eq 1) { $serviceArguments += "-PserviceJar=$($service[0].FullName)" }
+& $gradle -p legacy189/game @serviceArguments setupCIWorkspace build --no-daemon --console=plain 2>&1 | Tee-Object -FilePath (Join-Path $root 'forge-build.log')
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -10,9 +10,14 @@ public final class EquipmentScreen extends GuiContainer {
     @Override protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
         drawRect(guiLeft, guiTop, guiLeft + xSize, guiTop + ySize, 0xffc6c6c6);
         drawRect(guiLeft + 79, guiTop + 19, guiLeft + 97, guiTop + 37, 0xff555555);
-        for (net.minecraft.inventory.Slot slot : inventorySlots.inventorySlots)
+        for (net.minecraft.inventory.Slot slot : inventorySlots.inventorySlots) {
             drawRect(guiLeft + slot.xDisplayPosition - 1, guiTop + slot.yDisplayPosition - 1,
-                    guiLeft + slot.xDisplayPosition + 17, guiTop + slot.yDisplayPosition + 17, 0xff8b8b8b);
+                    guiLeft + slot.xDisplayPosition + 17, guiTop + slot.yDisplayPosition + 17, 0xff373737);
+            drawRect(guiLeft + slot.xDisplayPosition, guiTop + slot.yDisplayPosition,
+                    guiLeft + slot.xDisplayPosition + 17, guiTop + slot.yDisplayPosition + 17, 0xffffffff);
+            drawRect(guiLeft + slot.xDisplayPosition, guiTop + slot.yDisplayPosition,
+                    guiLeft + slot.xDisplayPosition + 16, guiTop + slot.yDisplayPosition + 16, 0xff8b8b8b);
+        }
     }
     @Override protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY) {
         fontRendererObj.drawString(net.minecraft.client.resources.I18n.format("gui.divzero.offhand"), 8, 6, 0x404040);

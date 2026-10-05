@@ -15,6 +15,7 @@ public class ClientProxy extends CommonProxy {
     private static final KeyBinding SWAP = new KeyBinding("key.divzero.swap", Keyboard.KEY_F, "DivZero");
     private static final KeyBinding EQUIPMENT = new KeyBinding("key.divzero.offhand", Keyboard.KEY_V, "DivZero");
     private static NativeNetwork.State state;
+    private static boolean pendingPlayer;
     @Override public void initialize() {
         ClientRegistry.registerKeyBinding(SWAP); ClientRegistry.registerKeyBinding(EQUIPMENT);
         FMLCommonHandler.instance().bus().register(this); MinecraftForge.EVENT_BUS.register(this);
@@ -27,7 +28,7 @@ public class ClientProxy extends CommonProxy {
             @Override public void run() {
                 Minecraft mc = Minecraft.getMinecraft();
                 if (mc.thePlayer != null && (!mc.thePlayer.getUniqueID().equals(message.owner) || mc.thePlayer.dimension != message.dimension)) return;
-                state = message; apply();
+                state = message; pendingPlayer = mc.thePlayer == null; apply();
             }
         });
     }
@@ -43,9 +44,12 @@ public class ClientProxy extends CommonProxy {
         if (EQUIPMENT.isPressed()) NativeNetwork.CHANNEL.sendToServer(new NativeNetwork.Action(state.world, state.session, 1, state.revision));
     }
     @SubscribeEvent public void unload(net.minecraftforge.event.world.WorldEvent.Unload event) {
-        if (event.world.isRemote) state = null;
+        if (event.world.isRemote) { state = null; pendingPlayer = false; }
     }
     @SubscribeEvent public void tick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) NativeClientFixture.tick();
+        if (event.phase == TickEvent.Phase.END) {
+            if (pendingPlayer && Minecraft.getMinecraft().thePlayer != null) { apply(); pendingPlayer = false; }
+            NativeClientFixture.tick();
+        }
     }
 }

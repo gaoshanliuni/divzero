@@ -64,9 +64,14 @@ public final class NativeRuntime {
     public static void removeBody(NativeAgent body) {
         if (BODIES.remove(body.getUniqueID()) == null) return;
         body.stopActions();
-        MinecraftServer.getServer().getConfigurationManager().playerLoggedOut(body);
+        try { MinecraftServer.getServer().getConfigurationManager().playerLoggedOut(body); }
+        finally { body.closeConnection(); }
     }
-    public static void stop() { BODIES.clear(); SESSIONS.clear(); restored = false; }
+    public static void stop() {
+        NativeService.stopAll();
+        for (NativeAgent body : BODIES.values()) { body.stopActions(); body.closeConnection(); }
+        BODIES.clear(); SESSIONS.clear(); restored = false;
+    }
     public static class Events {
         @SubscribeEvent public void login(PlayerEvent.PlayerLoggedInEvent event) {
             if (!(event.player instanceof EntityPlayerMP) || event.player instanceof NativeAgent) return;
@@ -74,12 +79,21 @@ public final class NativeRuntime {
             SESSIONS.put(player.getUniqueID(), UUID.randomUUID()); NativeNetwork.sync(player);
         }
         @SubscribeEvent public void logout(PlayerEvent.PlayerLoggedOutEvent event) {
+            NativeService.stop(event.player.getUniqueID());
             SESSIONS.remove(event.player.getUniqueID());
             for (NativeAgent body : BODIES.values()) if (body.owner.equals(event.player.getUniqueID())) body.stopActions();
         }
         @SubscribeEvent public void dimension(PlayerEvent.PlayerChangedDimensionEvent event) {
             if (event.player instanceof EntityPlayerMP && !(event.player instanceof NativeAgent)) {
                 EntityPlayerMP player = (EntityPlayerMP) event.player;
+                NativeService.stop(player.getUniqueID());
+                SESSIONS.put(player.getUniqueID(), UUID.randomUUID()); NativeNetwork.sync(player);
+            }
+        }
+        @SubscribeEvent public void respawn(PlayerEvent.PlayerRespawnEvent event) {
+            if (event.player instanceof EntityPlayerMP && !(event.player instanceof NativeAgent)) {
+                EntityPlayerMP player = (EntityPlayerMP) event.player;
+                NativeService.stop(player.getUniqueID());
                 SESSIONS.put(player.getUniqueID(), UUID.randomUUID()); NativeNetwork.sync(player);
             }
         }

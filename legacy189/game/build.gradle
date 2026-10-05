@@ -24,6 +24,22 @@ minecraft {
 // Both sides use the same Java 8 protocol source; no modern core class enters FML's scanner.
 sourceSets.main.java.srcDir '../bridge/src/main/java'
 tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
+task stageLegacyService {
+    def output = file("$buildDir/generated/legacy-service/META-INF/divzero")
+    if (project.hasProperty('serviceJar')) inputs.file file(project.property('serviceJar'))
+    outputs.dir output
+    doLast {
+        if (project.hasProperty('serviceJar')) {
+            def service = file(project.property('serviceJar'))
+            if (!service.isFile()) throw new GradleException('LEGACY_SERVICE_ARTIFACT_MISSING')
+            output.mkdirs()
+            copy { from service; into output; rename { 'service.jar' } }
+            new File(output, 'service.sha256').text = java.security.MessageDigest.getInstance('SHA-256').digest(service.bytes).encodeHex().toString() + '\n'
+        }
+    }
+}
+sourceSets.main.resources.srcDir "$buildDir/generated/legacy-service"
+processResources.dependsOn stageLegacyService
 processResources {
     inputs.property 'version', project.version
     from(sourceSets.main.resources.srcDirs) { include 'mcmod.info'; expand version: project.version }

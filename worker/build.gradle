@@ -30,6 +30,30 @@ application {
     mainClass = 'dev.mineagent.runtime.worker.WorkerMain'
 }
 
+// The legacy game remains Java 8. Reuse the actual Java 25 Worker/services in a
+// separate executable without embedding the legacy transport in the modern Mod.
+sourceSets {
+    legacy189 {
+        java.srcDir rootProject.file('legacy189/service/src/main/java')
+        java.srcDir rootProject.file('legacy189/bridge/src/main/java')
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations.legacy189Implementation.extendsFrom configurations.implementation
+tasks.named('compileLegacy189Java') { dependsOn tasks.named('classes') }
+tasks.register('legacy189ServiceJar', Jar) {
+    dependsOn tasks.named('legacy189Classes')
+    archiveBaseName = 'DivZero-legacy189-service'
+    archiveClassifier = 'all'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest { attributes 'Main-Class': 'dev.mineagent.runtime.legacy189.service.LegacyServiceMain' }
+    from sourceSets.legacy189.output
+    from(sourceSets.main.output) { exclude 'META-INF/mineagent/tools/**' }
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
+}
+
 tasks.named('sourcesJar', Jar).configure {
     exclude 'META-INF/mineagent/tools/**'
 }

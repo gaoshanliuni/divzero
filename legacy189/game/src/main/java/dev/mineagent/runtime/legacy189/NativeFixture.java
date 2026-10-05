@@ -23,6 +23,7 @@ public final class NativeFixture {
     public static volatile boolean successful;
     private static int stage, started;
     private static NativeAgent body;
+    private static java.util.concurrent.CompletableFuture<JsonObject> workerHealth;
     private static final JsonObject evidence = new JsonObject();
     private NativeFixture() { }
     public static boolean requested() { return Boolean.getBoolean("divzero.legacyFixture"); }
@@ -37,6 +38,8 @@ public final class NativeFixture {
             if (Boolean.getBoolean("divzero.legacyFixtureResume")) { resume(server, human); return; }
             if (stage == 0) {
                 NativeRuntime.data().enabled(human.getUniqueID(), true);
+                if (NativeService.class.getResource("/META-INF/divzero/service.sha256") != null)
+                    workerHealth = NativeService.get(human).thenCompose(service -> service.request("health.check", new JsonObject()));
                 for (int x = -6; x <= 6; x++) for (int z = -6; z <= 6; z++) {
                     human.worldObj.setBlockState(new BlockPos(x, 79, z), Blocks.stone.getDefaultState(), 3);
                     for (int y = 80; y <= 85; y++) human.worldObj.setBlockToAir(new BlockPos(x, y, z));
@@ -61,7 +64,12 @@ public final class NativeFixture {
                 evidence.addProperty("modernCombatVerified", false);
                 human.openGui(LegacyMod.instance, 0, human.worldObj, 0, 0, 0);
                 started = server.getTickCounter(); stage = 1;
-            } else if (stage == 1 && equipmentClicks && server.getTickCounter() - started >= 140) {
+            } else if (stage == 1 && equipmentClicks && server.getTickCounter() - started >= 140 && (workerHealth == null || workerHealth.isDone())) {
+                if (workerHealth != null) {
+                    JsonObject result = workerHealth.getNow(null);
+                    require(result != null && result.get("type").getAsString().equals("health.ok"), "REAL_JAVA25_WORKER_HEALTH");
+                    evidence.addProperty("java25WorkerHealth", true);
+                }
                 require(Math.abs(body.posY - 80) < 0.02, "NATIVE_PLAYER_GRAVITY");
                 require(NativeOffhand.get(human).stack() != null && NativeOffhand.get(human).stack().getItem() == Items.iron_sword
                         && NativeOffhand.get(human).stack().stackSize == 1 && human.inventory.getStackInSlot(9) == null, "NATIVE_CONTAINER_CLICKS");

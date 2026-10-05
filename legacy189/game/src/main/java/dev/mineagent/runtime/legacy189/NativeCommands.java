@@ -16,11 +16,21 @@ public class NativeCommands extends CommandBase {
         try {
             if (action.equals("enable") || action.equals("disable")) {
                 boolean enabled = action.equals("enable"); NativeRuntime.data().enabled(player.getUniqueID(), enabled);
-                if (!enabled) for (NativeAgent body : NativeRuntime.bodies()) if (body.owner.equals(player.getUniqueID())) body.stopActions();
+                if (!enabled) {
+                    NativeService.stop(player.getUniqueID());
+                    for (NativeAgent body : NativeRuntime.bodies()) if (body.owner.equals(player.getUniqueID())) body.stopActions();
+                }
                 NativeNetwork.sync(player); tell(player, enabled ? "当前世界已启用。" : "当前世界已禁用，身体动作已停止。");
             } else if (action.equals("status")) {
                 tell(player, "Forge 1.8.9 移植开发中；全部功能尚未完成。世界：" + NativeRuntime.data().identity());
                 tell(player, "已接入：世界启用、原生玩家身体、副手存取/换装。现代战斗、完整工作区与服务仍待接入。");
+            } else if (action.equals("worker")) {
+                final UUID world = NativeRuntime.data().identity(), session = NativeRuntime.session(player);
+                NativeService.get(player).thenCompose(service -> service.request("health.check", new com.google.gson.JsonObject()))
+                        .whenComplete((value, failure) -> player.getServerForPlayer().addScheduledTask(() -> {
+                            if (!world.equals(NativeRuntime.data().identity()) || !session.equals(NativeRuntime.session(player)) || !NativeRuntime.enabled(player)) return;
+                            tell(player, failure == null ? "Java 25 Worker 实际回执：" + value.get("type").getAsString() : "Worker 未就绪：" + failure.getClass().getSimpleName());
+                        }));
             } else if (action.equals("create")) {
                 if (args.length < 2) throw new IllegalArgumentException("请输入 AI 名称");
                 NativeAgent body = NativeRuntime.create(player, join(args, 1)); tell(player, "已创建 " + body.displayName + " · " + body.getUniqueID());

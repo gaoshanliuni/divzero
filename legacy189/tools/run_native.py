@@ -73,6 +73,10 @@ def main():
         if not library_allowed(library):
             continue
         artifact = library.get("downloads", {}).get("artifact", {})
+        if library.get("natives") and (not artifact or (artifact.get("size") == 22 and artifact.get("sha1") == "b04f3ee8f5e43fa3b162981b50bb72fe1acabb33")):
+            # Native-only classifier JARs are already unpacked in the installed
+            # natives directory and do not provide a regular classpath artifact.
+            continue
         relative = pathlib.Path(artifact["path"]) if artifact.get("path") else coordinate_path(library["name"])
         path = (root / "libraries" / relative).resolve()
         if not path.is_relative_to(root / "libraries") or not path.is_file():

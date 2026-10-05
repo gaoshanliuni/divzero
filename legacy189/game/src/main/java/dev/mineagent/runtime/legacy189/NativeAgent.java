@@ -18,10 +18,12 @@ public final class NativeAgent extends EntityPlayerMP {
     public final UUID owner;
     public final String displayName;
     private long lastPhysicsTick = Long.MIN_VALUE;
+    private final ClientlessConnection connection;
     public NativeAgent(MinecraftServer server, WorldServer world, NativeWorldData.AgentDefinition definition) {
         super(server, world, new GameProfile(definition.id, "DZ" + definition.id.toString().replace("-", "").substring(0, 14)), new ItemInWorldManager(world));
         owner = definition.owner; displayName = definition.name;
-        playerNetServerHandler = new NetHandlerPlayServer(server, new NetworkManager(EnumPacketDirection.SERVERBOUND), this) {
+        connection = new ClientlessConnection();
+        playerNetServerHandler = new NetHandlerPlayServer(server, connection, this) {
             @Override public void sendPacket(Packet packet) { /* no physical client, no unbounded outbound queue */ }
             @Override public void kickPlayerFromServer(String reason) { NativeRuntime.removeBody(NativeAgent.this); }
         };
@@ -35,4 +37,16 @@ public final class NativeAgent extends EntityPlayerMP {
         onUpdateEntity();
     }
     public void stopActions() { moveForward = 0; moveStrafing = 0; setSprinting(false); setSneaking(false); clearItemInUse(); }
+    public void closeConnection() { connection.closeChannel(new ChatComponentText("AI body closed")); }
+    /** Forge may query channel attributes directly, bypassing NetHandler.sendPacket.
+     * An empty real channel safely reports no FML dispatcher for this clientless body.
+     */
+    private static final class ClientlessConnection extends NetworkManager {
+        private final io.netty.channel.embedded.EmbeddedChannel sink = new io.netty.channel.embedded.EmbeddedChannel();
+        ClientlessConnection() { super(EnumPacketDirection.SERVERBOUND); }
+        @Override public io.netty.channel.Channel channel() { return sink; }
+        @Override public boolean isChannelOpen() { return sink.isOpen(); }
+        @Override public void sendPacket(Packet packet) { }
+        @Override public void closeChannel(IChatComponent reason) { sink.close(); }
+    }
 }
