@@ -1,0 +1,168 @@
+package dev.mineagent.runtime.legacy189;
+
+import dev.mineagent.runtime.legacy189.navigation.TerrainPathSearch;
+import dev.mineagent.runtime.legacy189.navigation.TerrainPathSearch.*;
+import dev.mineagent.runtime.legacy189.navigation.SurfacePathfinder;
+import dev.mineagent.runtime.legacy189.navigation.SurfacePathfinder.*;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.*;
+import java.util.*;
+
+/** Port of 26.1.2 NativeTerrainRecovery/NativeTerrainPolicy's PvP branch.
+ * Execute one observed edit/move, then recheck the original surface route.
+ * Permanent map blocks stay protected; only real carried wool can be placed. */
+public final class LegacyTerrainRecovery {
+    private TerrainPathSearch search;
+    private TerrainPathSearch.Step planned;
+    private Edit edit;
+    private NativeAgent actor;
+    private EntityPlayerMP target;
+    private Vec3 origin, goal;
+    private int started, actionAt, selectedSlot, settled;
+    private boolean sent, jumped;
+    private String before;
+    private float progress;
+    private final Rejections<String> rejected=new Rejections<String>();
+    public int attempts, broken, placed, consumed;
+    public String state="IDLE";
+    public boolean active(){return search!=null||planned!=null;}
+    public void reset(NativeAgent actor){cancel();this.actor=actor;rejected.clear();attempts=broken=placed=consumed=0;goal=null;}
+    public void cancel(){
+        if(actor!=null){if(edit!=null)actor.worldObj.sendBlockBreakProgress(actor.getEntityId(),pos(edit.cell()),-1);if(planned!=null)actor.inventory.currentItem=selectedSlot;}
+        search=null;planned=null;edit=null;state="IDLE";progress=0;
+    }
+    private static BlockPos pos(Cell c){return new BlockPos(c.x(),c.y(),c.z());}
+    private static Cell cell(Vec3 at){return new Cell((int)Math.floor(at.xCoord),(int)Math.floor(at.yCoord),(int)Math.floor(at.zCoord));}
+    private static Node node(Cell c){return new Node(c.x(),c.y()*16,c.z());}
+    private static Vec3 point(Cell c){return new Vec3(c.x()+.5,c.y(),c.z()+.5);}
+    private boolean loaded(BlockPos p){return actor.worldObj.isBlockLoaded(p)&&p.getY()>=0&&p.getY()<256;}
+    private boolean mayBreak(BlockPos p){return NativeArena.field(p)&&loaded(p)&&actor.worldObj.getTileEntity(p)==null&&actor.worldObj.getBlockState(p).getBlock()==Blocks.wool;}
+    private boolean mayPlace(BlockPos p){return NativeArena.field(p)&&loaded(p)&&actor.worldObj.isAirBlock(p);}
+    private String signature(BlockPos p){return p.toString()+":"+actor.worldObj.getBlockState(p).toString();}
+    private int materialSlot(){for(int i=0;i<36;i++){ItemStack stack=actor.inventory.mainInventory[i];if(stack!=null&&stack.stackSize>0&&net.minecraft.block.Block.getBlockFromItem(stack.getItem())==Blocks.wool)return i;}return -1;}
+    private int toolSlot(BlockPos p){int best=actor.inventory.currentItem;float speed=0;for(int i=0;i<36;i++){ItemStack stack=actor.inventory.mainInventory[i];float value=stack==null?1:stack.getStrVsBlock(actor.worldObj.getBlockState(p).getBlock());if(value>speed&&(stack==null||!stack.isItemStackDamageable()||stack.getItemDamage()<stack.getMaxDamage()-1)){best=i;speed=value;}}return best;}
+    private void select(int slot){if(slot<9)actor.inventory.currentItem=slot;else{ItemStack old=actor.inventory.mainInventory[0];actor.inventory.mainInventory[0]=actor.inventory.mainInventory[slot];actor.inventory.mainInventory[slot]=old;actor.inventory.currentItem=0;}actor.inventoryContainer.detectAndSendChanges();}
+    private int breakTicks(BlockPos p){float value=actor.worldObj.getBlockState(p).getBlock().getPlayerRelativeBlockHardness(actor,actor.worldObj,p);return value<=0||!Float.isFinite(value)?Integer.MAX_VALUE:Math.max(1,(int)Math.ceil(1/value));}
+    private String context(BlockPos at,Kind kind){
+        StringBuilder result=new StringBuilder(new BlockPos(actor).toString());
+        for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++){BlockPos p=at.add(x,y,z);result.append(loaded(p)?signature(p):"unloaded");}
+        result.append(kind==Kind.BREAK?mayBreak(at):mayPlace(at));
+        int slot=kind==Kind.BREAK?toolSlot(at):materialSlot();ItemStack stack=slot<0?null:actor.inventory.mainInventory[slot];
+        return result.append(stack==null?"empty":stack.writeToNBT(new net.minecraft.nbt.NBTTagCompound()).toString()).toString();
+    }
+    public boolean request(NativeAgent player,EntityPlayerMP target,int tick){
+        if(active())return true;
+        if(!player.onGround||!player.isEntityAlive()||Math.abs(player.posY-Math.rint(player.posY))>.06)return false;
+        Vec3 targetPoint=target.getPositionVector();
+        if(actor!=player||goal==null||goal.squareDistanceTo(targetPoint)>4){rejected.clear();}
+        actor=player;this.target=target;goal=targetPoint;origin=player.getPositionVector();started=tick;state="SEARCHING_ESCAPE";
+        final Cell originCell=cell(origin);
+        TerrainPathSearch.World world=new TerrainPathSearch.World(){
+            public TerrainPathSearch.Block block(Cell c){
+                BlockPos p=pos(c);if(!loaded(p))return new TerrainPathSearch.Block(false,false,false,false,0,"unloaded");
+                net.minecraft.block.Block block=actor.worldObj.getBlockState(p).getBlock();boolean hazard=LegacyTraversal.hazard(block)||block.getMaterial().isLiquid();
+                AxisAlignedBB box=block.getCollisionBoundingBox(actor.worldObj,p,actor.worldObj.getBlockState(p));
+                boolean clear=!hazard&&box==null,support=!hazard&&box!=null&&box.maxY>=p.getY()+.875&&box.minX<=p.getX()+.2&&box.maxX>=p.getX()+.8&&box.minZ<=p.getZ()+.2&&box.maxZ>=p.getZ()+.8;
+                return new TerrainPathSearch.Block(true,clear,support,!rejected.contains(c,Kind.BREAK,()->context(p,Kind.BREAK))&&mayBreak(p),breakTicks(p),signature(p));
+            }
+            public boolean canPlace(Cell c){return !rejected.contains(c,Kind.PLACE,()->context(pos(c),Kind.PLACE))&&mayPlace(pos(c));}
+            public boolean exit(Cell c,Map<Cell,Kind> edits){
+                if(Math.abs(c.x()-originCell.x())+Math.abs(c.z()-originCell.z())<1)return false;
+                Cell below=c.add(0,-1,0);if(edits.containsKey(below)||!block(below).supports())return false;
+                Vec3 at=point(c);LegacyTraversal check=new LegacyTraversal(actor);Node n=check.closest(at);
+                if(n==null||Math.abs(n.y()-at.yCoord)>.251||!check.clear(LegacyTraversal.point(n),false))return false;
+                if(check.neighbors(n).stream().filter(e->Math.abs(e.to().y()-n.y())<=1.25).count()<2)return false;
+                Vec3 delta=goal.subtract(at), nextGoal=goal.squareDistanceTo(at)>256?at.addVector(delta.normalize().xCoord*16,delta.normalize().yCoord*16,delta.normalize().zCoord*16):goal;
+                Node end=check.closest(nextGoal);return end!=null&&new SurfacePathfinder.Search(n,end,check).advance(96).status()==Status.FOUND;
+            }
+            public double risk(Cell c){double risk=Math.max(0,4-point(c).distanceTo(target.getPositionVector()))*2;return actor.getHealth()<6?risk*2:risk;}
+            public double learnedCost(TerrainPathSearch.Step step,double risk){
+                Vec3 delta=point(step.to()).subtract(point(step.from()));
+                double[] features={actor.getHealth()/Math.max(1,actor.getMaxHealth()),Math.min(2,origin.distanceTo(goal)/16),Math.hypot(actor.motionX,actor.motionZ)/.4,0,1,
+                        Math.min(1,delta.lengthVector()/8),Math.min(2,risk/80),.125,delta.xCoord/8,delta.zCoord/8,delta.yCoord/4,0,7d/8,actor.onGround?0:1,ModernCombat.baseDamage(actor)/10,
+                        step.edits().stream().filter(e->e.kind()==Kind.PLACE).count()};
+                return LegacyPolicy.get().cost(features)*5;
+            }
+        };
+        int slot=materialSlot();search=new TerrainPathSearch(world,originCell,slot<0?0:actor.inventory.mainInventory[slot].stackSize,6);return true;
+    }
+    /** changed[0] requests immediate re-evaluation of the original route. */
+    public PathStep tick(int tick,boolean[] changed){
+        if(!active())return null;
+        if(!actor.isEntityAlive()||actor.worldObj!=target.worldObj){cancel();return null;}
+        if(tick-started>300){fail("ESCAPE_CONTEXT_RECHECK_TIMEOUT");return null;}
+        if(search!=null){
+            final long deadline=System.nanoTime()+3_000_000L;
+            TerrainPathSearch.Result found=search.advance(96,()->System.nanoTime()<deadline);
+            if(found.state().equals("SEARCHING"))return null;
+            search=null;if(!found.state().equals("FOUND")){state=found.state();return null;}
+            planned=found.steps().get(0);edit=planned.edits().isEmpty()?null:planned.edits().get(0);
+            actionAt=tick;selectedSlot=actor.inventory.currentItem;sent=jumped=false;settled=0;progress=0;attempts++;
+            state=edit==null?"ESCAPE_WALK":edit.kind()==Kind.BREAK?"ESCAPE_MINE":"ESCAPE_PLACE";
+            if(edit!=null)before=signature(pos(edit.cell()));
+        }
+        if(edit==null){
+            if(actor.getPositionVector().squareDistanceTo(point(planned.to()))<.16&&actor.onGround){complete(changed);return null;}
+            if(tick-actionAt>50){fail("ESCAPE_MOVE_BLOCKED");return null;}
+            return new PathStep(node(planned.from()),node(planned.to()),planned.to().y()>planned.from().y()?Action.JUMP:Action.WALK,Posture.STANDING,1);
+        }
+        BlockPos at=pos(edit.cell());if(!loaded(at)){fail("WAITING_CHUNKS");return null;}
+        if(!signature(at).equals(before)){
+            boolean verified=edit.kind()==Kind.BREAK?actor.worldObj.isAirBlock(at):actor.worldObj.getBlockState(at).getBlock()==Blocks.wool;
+            if(!verified){fail("TERRAIN_TARGET_CHANGED");return null;}
+            if(edit.kind()==Kind.PLACE&&planned.jumpPlace()){
+                if(!actor.onGround||Math.abs(actor.posY-at.getY()-1)>.12){if(tick-actionAt>35)fail("SUPPORT_STANDING_NOT_CONFIRMED");return null;}
+                if(++settled<2)return null;
+            }
+            complete(changed);return null;
+        }
+        if(edit.kind()==Kind.BREAK){
+            if(!mayBreak(at)){fail("TERRAIN_BREAK_REVOKED");return null;}select(toolSlot(at));
+            Vec3 visible=visibleMiningPoint(at);if(visible==null){fail("MINING_TARGET_OCCLUDED");return null;}aim(visible);
+            int duration=breakTicks(at);if(duration>240||tick-actionAt>Math.max(30,duration+30)){fail("MINING_NO_CONFIRMED_PROGRESS");return null;}
+            actor.swingItem();progress+=actor.worldObj.getBlockState(at).getBlock().getPlayerRelativeBlockHardness(actor,actor.worldObj,at);
+            actor.worldObj.sendBlockBreakProgress(actor.getEntityId(),at,Math.min(9,(int)(progress*10)));
+            if(progress>=1&&!sent){sent=true;if(actor.theItemInWorldManager.tryHarvestBlock(at)&&actor.worldObj.isAirBlock(at))broken++;else fail("NATIVE_BREAK_REJECTED");}
+            return null;
+        }
+        if(!mayPlace(at)){fail("TERRAIN_PLACE_REVOKED");return null;}int slot=materialSlot();if(slot<0){fail("BUILDING_MATERIAL_REQUIRED");return null;}select(slot);
+        if(planned.jumpPlace()){
+            if(!jumped){
+                if(!actor.onGround)return null;
+                if(Math.hypot(actor.posX-at.getX()-.5,actor.posZ-at.getZ()-.5)>.1)return new PathStep(node(planned.from()),node(planned.from()),Action.WALK,Posture.STANDING,1);
+                if(!actor.worldObj.getCollidingBoundingBoxes(actor,actor.getEntityBoundingBox().addCoord(0,1.3,0)).isEmpty()){fail("JUMP_COLUMN_HEADROOM_BLOCKED");return null;}
+                actor.requestJump();jumped=true;actionAt=tick;return null;
+            }
+            if(actor.posY<at.getY()+1.02){if(tick-actionAt>15)fail("JUMP_PLACE_WINDOW_MISSED");return null;}
+        }
+        if(!sent){
+            MovingObjectPosition hit=placementHit(at);if(hit==null){fail("SUPPORT_FACE_NOT_REACHABLE");return null;}aim(hit.hitVec);
+            ItemStack stack=actor.getHeldItem();int count=stack.stackSize;BlockPos anchor=hit.getBlockPos();
+            boolean accepted=actor.theItemInWorldManager.activateBlockOrUseItem(actor,actor.worldObj,stack,anchor,hit.sideHit,(float)(hit.hitVec.xCoord-anchor.getX()),(float)(hit.hitVec.yCoord-anchor.getY()),(float)(hit.hitVec.zCoord-anchor.getZ()));
+            int used=count-stack.stackSize;if(accepted&&used>0&&actor.worldObj.getBlockState(at).getBlock()==Blocks.wool){placed++;consumed+=used;}
+            actor.swingItem();actor.inventoryContainer.detectAndSendChanges();sent=true;actionAt=tick;
+        }
+        if(tick-actionAt>25)fail("PLACEMENT_NOT_CONFIRMED_CHECK_WORLD");return null;
+    }
+    private void complete(boolean[] changed){cancel();state="RECHECK_ORIGINAL_ROUTE";changed[0]=true;}
+    private void fail(String reason){if(edit!=null)rejected.reject(edit.cell(),edit.kind(),context(pos(edit.cell()),edit.kind()));cancel();state=reason;}
+    private void aim(Vec3 at){Vec3 delta=at.subtract(actor.getPositionEyes(1));actor.rotationYaw=(float)Math.toDegrees(Math.atan2(delta.zCoord,delta.xCoord))-90;actor.rotationYawHead=actor.rotationYaw;actor.rotationPitch=(float)-Math.toDegrees(Math.atan2(delta.yCoord,Math.hypot(delta.xCoord,delta.zCoord)));}
+    private Vec3 visibleMiningPoint(BlockPos target){
+        for(double y:new double[]{.5,.05,.95})for(double x:new double[]{.5,.05,.95})for(double z:new double[]{.5,.05,.95}){
+            Vec3 at=new Vec3(target.getX()+x,target.getY()+y,target.getZ()+z);if(actor.getPositionEyes(1).squareDistanceTo(at)>4.5*4.5)continue;
+            MovingObjectPosition hit=actor.worldObj.rayTraceBlocks(actor.getPositionEyes(1),at,false,true,false);if(hit!=null&&target.equals(hit.getBlockPos()))return at;
+        }return null;
+    }
+    private MovingObjectPosition placementHit(BlockPos target){
+        for(EnumFacing face:EnumFacing.values()){
+            BlockPos anchor=target.offset(face.getOpposite());if(!loaded(anchor)||actor.worldObj.isAirBlock(anchor))continue;
+            Vec3 point=new Vec3(anchor.getX()+.5+face.getFrontOffsetX()*.5,anchor.getY()+.5+face.getFrontOffsetY()*.5,anchor.getZ()+.5+face.getFrontOffsetZ()*.5);
+            if(actor.getPositionEyes(1).squareDistanceTo(point)>4.5*4.5)continue;
+            MovingObjectPosition hit=actor.worldObj.rayTraceBlocks(actor.getPositionEyes(1),point,false,true,false);
+            if(hit!=null&&!anchor.equals(hit.getBlockPos()))continue;
+            return new MovingObjectPosition(point,face,anchor);
+        }return null;
+    }
+}

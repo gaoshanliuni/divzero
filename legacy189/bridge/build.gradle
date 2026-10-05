@@ -9,6 +9,7 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 8
 }
 dependencies { testImplementation 'junit:junit:4.13.2' }
+sourceSets.test.java.srcDir '../game/src/main/java/dev/mineagent/runtime/legacy189/navigation'
 tasks.named('test') {
     useJUnit()
     systemProperty 'legacy189.java8', providers.environmentVariable('LEGACY189_JAVA8').getOrElse('')

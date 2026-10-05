@@ -17,7 +17,7 @@ public final class DuelClient {
     private static JsonObject state;
     private static boolean openPending;
     static final int MENU_BUTTON = 18930;
-    private static final String[] LABELS = {"头盔", "胸甲", "护腿", "靴子", "主手", "副手"};
+    private static final String[] LABELS = {"头盔", "胸甲", "护腿", "靴子", "主手", "副手/补给"};
     public static void receive(String json) {
         final JsonObject value = new JsonParser().parse(json).getAsJsonObject();
         Minecraft.getMinecraft().addScheduledTask(() -> { state = value; openPending |= value.get("open").getAsBoolean(); });
@@ -64,7 +64,7 @@ public final class DuelClient {
         value.add("revision", state.get("revision")); value.addProperty("action", action); return value;
     }
     private static void send(JsonObject value) { NativeNetwork.CHANNEL.sendToServer(new DuelNetwork.Request(value.toString())); }
-    private static String itemName(String id) { ItemStack item = NativeDuel.stack(id); return item == null ? "无" : item.getDisplayName(); }
+    private static String itemName(String id) { ItemStack item = NativeDuel.stack(id); return item == null ? "无" : item.getDisplayName() + (item.getItem() instanceof net.minecraft.item.ItemFood ? " ×16" : ""); }
     @SubscribeEvent public void overlay(RenderGameOverlayEvent.Post event) {
         if (event.type != RenderGameOverlayEvent.ElementType.ALL || state == null) return;
         Minecraft mc = Minecraft.getMinecraft();

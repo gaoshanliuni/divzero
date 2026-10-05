@@ -5,5 +5,5 @@ key.divzero.duel=打开 PvP 开始 / 装备面板
 gui.divzero.duel.menu=PvP · 开始 / 装备 / 停止
 gui.divzero.duel.start=开始游戏
 gui.divzero.duel.hint=%s / Esc 菜单 · PvP 面板
-gui.divzero.duel.rules=开局替换背包 · 每局最多 3 分钟
-gui.divzero.duel.enableStart=开始即启用此世界并替换背包 · 最多 3 分钟
+gui.divzero.duel.rules=选中补给才发放到快捷栏 · 开局替换背包 · 3 分钟
+gui.divzero.duel.enableStart=开始即启用并替换背包 · 补给需选中 · 3 分钟

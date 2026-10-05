@@ -21,8 +21,6 @@ import java.util.*;
  */
 public final class ModernCombat {
     public static volatile boolean serverEnabled, clientEnabled;
-    private static final Map<EntityPlayer, Cooldown> COOLDOWNS = new WeakHashMap<EntityPlayer, Cooldown>();
-    private static final Map<Item, Double> SPEED = new IdentityHashMap<Item, Double>();
     private static final Map<Item, Double> DAMAGE_DELTA = new IdentityHashMap<Item, Double>();
     private static boolean initialized;
     private ModernCombat() { }
@@ -30,26 +28,14 @@ public final class ModernCombat {
     private static void initialize() {
         if (initialized) return; initialized = true;
         Item[] swords = {Items.wooden_sword, Items.stone_sword, Items.iron_sword, Items.diamond_sword, Items.golden_sword};
-        for (Item item : swords) { SPEED.put(item, 1.6); DAMAGE_DELTA.put(item, -1d); }
+        for (Item item : swords) DAMAGE_DELTA.put(item, -1d);
         Item[] axes = {Items.wooden_axe, Items.stone_axe, Items.iron_axe, Items.diamond_axe, Items.golden_axe};
-        double[] speeds = {.8, .8, .9, 1, 1}, deltas = {3, 4, 3, 2, 3};
-        for (int i = 0; i < axes.length; i++) { SPEED.put(axes[i], speeds[i]); DAMAGE_DELTA.put(axes[i], deltas[i]); }
-        for (Item item : new Item[] {Items.wooden_pickaxe, Items.stone_pickaxe, Items.iron_pickaxe, Items.diamond_pickaxe, Items.golden_pickaxe}) { SPEED.put(item, 1.2); DAMAGE_DELTA.put(item, -1d); }
-        for (Item item : new Item[] {Items.wooden_shovel, Items.stone_shovel, Items.iron_shovel, Items.diamond_shovel, Items.golden_shovel}) { SPEED.put(item, 1d); DAMAGE_DELTA.put(item, .5); }
-        Item[] hoes = {Items.wooden_hoe, Items.stone_hoe, Items.iron_hoe, Items.diamond_hoe, Items.golden_hoe};
-        double[] hoeSpeeds = {1, 2, 3, 4, 1}; for (int i = 0; i < hoes.length; i++) SPEED.put(hoes[i], hoeSpeeds[i]);
+        double[] deltas = {3, 4, 3, 2, 3};
+        for (int i = 0; i < axes.length; i++) DAMAGE_DELTA.put(axes[i], deltas[i]);
+        for (Item item : new Item[] {Items.wooden_pickaxe, Items.stone_pickaxe, Items.iron_pickaxe, Items.diamond_pickaxe, Items.golden_pickaxe}) DAMAGE_DELTA.put(item, -1d);
+        for (Item item : new Item[] {Items.wooden_shovel, Items.stone_shovel, Items.iron_shovel, Items.diamond_shovel, Items.golden_shovel}) DAMAGE_DELTA.put(item, .5);
     }
-    public static double speed(EntityPlayer player) { initialize(); ItemStack stack = player.getHeldItem(); return stack == null ? 4 : SPEED.containsKey(stack.getItem()) ? SPEED.get(stack.getItem()) : stack.getItem() instanceof ItemSword ? 1.6 : 4; }
-    private static Cooldown state(EntityPlayer player) {
-        Cooldown value = COOLDOWNS.get(player); long now = MinecraftServer.getServer().getTickCounter();
-        if (value == null) { value = new Cooldown(); value.last = now; COOLDOWNS.put(player, value); }
-        ItemStack held = player.getHeldItem();
-        if (!ItemStack.areItemStacksEqual(value.held, held)) { value.held = held == null ? null : held.copy(); value.last = now; }
-        return value;
-    }
-    public static float strength(EntityPlayer player) { Cooldown value = state(player); return (float) clamp((MinecraftServer.getServer().getTickCounter() - value.last + .5) * speed(player) / 20, 0, 1); }
-    public static void tick() { for (EntityPlayerMP player : MinecraftServer.getServer().getConfigurationManager().getPlayerList()) state(player); }
-    public static void stop() { COOLDOWNS.clear(); serverEnabled = clientEnabled = false; }
+    public static void stop() { serverEnabled = clientEnabled = false; }
     public static boolean reachable(EntityPlayer actor, Entity target) {
         Vec3 eye = actor.getPositionEyes(1); AxisAlignedBB box = target.getEntityBoundingBox();
         Vec3 hit = new Vec3(clamp(eye.xCoord, box.minX + .001, box.maxX - .001), clamp(eye.yCoord, box.minY + .001, box.maxY - .001), clamp(eye.zCoord, box.minZ + .001, box.maxZ - .001));
@@ -69,15 +55,13 @@ public final class ModernCombat {
         if (!player.isEntityAlive() || player.isSpectator() || target == player || target.isDead || player.worldObj != target.worldObj
                 || !reachable(player, target) || !target.canAttackWithItem() || target.hitByEntity(player)) return;
         if (target instanceof EntityPlayer && !player.canAttackPlayer((EntityPlayer) target)) return;
-        float charge = strength(player); Cooldown cooldown = state(player); cooldown.last = MinecraftServer.getServer().getTickCounter();
         ItemStack weapon = player.getHeldItem();
-        double base = baseDamage(player) * (.2 + .8 * charge * charge);
+        double base = baseDamage(player);
         float enchantment = EnchantmentHelper.func_152377_a(weapon, target instanceof EntityLivingBase ? ((EntityLivingBase) target).getCreatureAttribute() : EnumCreatureAttribute.UNDEFINED);
         int sharpness = weapon == null ? 0 : EnchantmentHelper.getEnchantmentLevel(Enchantment.sharpness.effectId, weapon);
         if (sharpness > 0) enchantment += .5f + .5f * sharpness - 1.25f * sharpness;
-        enchantment *= charge;
-        boolean charged = charge > .9f, sprint = charged && player.isSprinting();
-        boolean critical = charged && !player.isSprinting() && player.fallDistance > 0 && !player.onGround && !player.isOnLadder()
+        boolean sprint = player.isSprinting();
+        boolean critical = !player.isSprinting() && player.fallDistance > 0 && !player.onGround && !player.isOnLadder()
                 && !player.isInWater() && !player.isPotionActive(Potion.blindness) && player.ridingEntity == null && target instanceof EntityLivingBase;
         if (critical) base *= 1.5;
         float damage = (float) Math.max(0, base + enchantment);
@@ -90,7 +74,7 @@ public final class ModernCombat {
             double yaw = Math.toRadians(player.rotationYaw); target.addVelocity(-Math.sin(yaw) * knockback * .5, .1, Math.cos(yaw) * knockback * .5);
             player.motionX *= .6; player.motionZ *= .6; player.setSprinting(false);
         }
-        boolean sweep = charged && !critical && !sprint && player.onGround && weapon != null && weapon.getItem() instanceof ItemSword
+        boolean sweep = !critical && !sprint && player.onGround && weapon != null && weapon.getItem() instanceof ItemSword
                 && Math.hypot(player.posX - player.prevPosX, player.posZ - player.prevPosZ) < .1;
         if (sweep) for (EntityLivingBase nearby : player.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, target.getEntityBoundingBox().expand(1, .25, 1))) {
             if (nearby != player && nearby != target && !player.isOnSameTeam(nearby) && player.getDistanceSqToEntity(nearby) < 9
@@ -111,7 +95,6 @@ public final class ModernCombat {
         }
         if (fire > 0) target.setFire(fire * 4);
         player.addStat(StatList.damageDealtStat, Math.round(damage * 10)); player.addExhaustion(.1f);
-        cooldown.held = player.getHeldItem() == null ? null : player.getHeldItem().copy();
     }
     public static float playerArmor(EntityLivingBase entity, ItemStack[] armor, DamageSource source, double damage) {
         if (!enabled(entity)) return ISpecialArmor.ArmorProperties.applyArmor(entity, armor, source, damage);
@@ -150,7 +133,6 @@ public final class ModernCombat {
         return damage * (1 - Math.min(20, protection) / 25f);
     }
     private static double clamp(double value, double min, double max) { return Math.max(min, Math.min(max, value)); }
-    private static final class Cooldown { long last; ItemStack held; }
     public static final class Events {
         @SubscribeEvent(priority = EventPriority.LOWEST) public void attack(AttackEntityEvent event) {
             if (!enabled(event.entityPlayer)) return;

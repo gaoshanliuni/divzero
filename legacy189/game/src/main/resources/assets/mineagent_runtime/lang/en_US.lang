@@ -5,5 +5,5 @@ key.divzero.duel=Open PvP start / loadouts
 gui.divzero.duel.menu=PvP - Start / Loadouts / Stop
 gui.divzero.duel.start=Start game
 gui.divzero.duel.hint=%s / Esc menu - PvP
-gui.divzero.duel.rules=Replaces inventory - 3 minutes per round
-gui.divzero.duel.enableStart=Start enables this world and replaces inventory
+gui.divzero.duel.rules=Selected food goes to hotbar - Replaces inventory - 3 min
+gui.divzero.duel.enableStart=Start enables and equips - Select food to receive it

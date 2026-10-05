@@ -42,10 +42,9 @@ public final class CombatVerification {
             require(maximum < 1e-12, "JAVA8_POLICY_PARITY"); evidence.addProperty("policyMaximumError", maximum);
             float before = body.getHealth(); human.attackTargetEntityWithCurrentItem(body); float strong = before - body.getHealth();
             close(strong, 7, "FULL_SWORD_DAMAGE");
-            // Only this controlled scene clears hurt immunity so it can distinguish
-            // weak cooldown damage from vanilla's invulnerability window.
+            // Only this controlled scene clears victim immunity to isolate attack damage.
             body.hurtResistantTime = 0; before = body.getHealth(); human.attackTargetEntityWithCurrentItem(body); float weak = before - body.getHealth();
-            close(weak, 1.40896, "WEAK_SWORD_DAMAGE"); evidence.addProperty("chargedSwordDamage", strong); evidence.addProperty("weakSwordDamage", weak);
+            close(weak, 7, "NO_COOLDOWN_REPEAT_DAMAGE"); evidence.addProperty("firstSwordDamage", strong); evidence.addProperty("immediateRepeatSwordDamage", weak);
             reset(); body.setCurrentItemOrArmor(1, new ItemStack(Items.iron_boots)); body.setCurrentItemOrArmor(2, new ItemStack(Items.iron_leggings));
             body.setCurrentItemOrArmor(3, new ItemStack(Items.iron_chestplate)); body.setCurrentItemOrArmor(4, new ItemStack(Items.iron_helmet));
             stage = 1; began = tick();

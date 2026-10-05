@@ -17,6 +17,8 @@ public final class NativeClientFixture {
     private static boolean respawnRequested, loadoutCaptured;
     private static boolean disconnected;
     private static int packedStep;
+    private static int foodAt;
+    private static boolean foodChosen;
     private NativeClientFixture() { }
     public static void tick() {
         if (!NativeFixture.requested()) return;
@@ -54,6 +56,16 @@ public final class NativeClientFixture {
         }
         if (Boolean.getBoolean("divzero.legacyPackedFixture") && NativeFixture.packedChecked && !NativeFixture.finished) {
             try {
+                if (DuelClient.state() != null && DuelClient.state().get("rounds").getAsInt() == 0 && DuelClient.state().get("phase").getAsString().equals("COUNTDOWN") && !NativeFixture.packedFoodUsed) {
+                    if (foodAt == 0) {
+                        foodAt = ticks; mc.thePlayer.inventory.currentItem = 2;
+                        net.minecraft.client.settings.KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
+                        net.minecraft.client.settings.KeyBinding.onTick(mc.gameSettings.keyBindUseItem.getKeyCode());
+                    } else if (ticks - foodAt >= 40) {
+                        net.minecraft.client.settings.KeyBinding.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
+                        mc.thePlayer.inventory.currentItem = 0; NativeFixture.packedFoodUsed = true;
+                    }
+                }
                 if (mc.thePlayer != null && !mc.thePlayer.isEntityAlive()) {
                     if (!respawnRequested) { mc.thePlayer.respawnPlayer(); respawnRequested = true; }
                     return;
@@ -68,6 +80,10 @@ public final class NativeClientFixture {
                     if (!(mc.currentScreen instanceof DuelClient.LoadoutScreen)) throw new IllegalStateException("PACKED_PAUSE_MENU");
                     NativeFixture.packedMenuRecovered = true; packedStep++;
                 } else if (packedStep == 2 && mc.currentScreen instanceof DuelClient.LoadoutScreen) {
+                    if (!DuelClient.state().getAsJsonArray("human").get(5).getAsString().equals("minecraft:golden_apple")) {
+                        if (!foodChosen) foodChosen = DuelClient.fixtureChoose(0, 5, "minecraft:golden_apple");
+                        return;
+                    }
                     DuelClient.LoadoutScreen screen = (DuelClient.LoadoutScreen) mc.currentScreen;
                     if (!screen.fixtureLayoutFits()) throw new IllegalStateException("PACKED_LOADOUT_CLIPPED");
                     NativeFixture.packedGuiScale = new net.minecraft.client.gui.ScaledResolution(mc).getScaleFactor();
@@ -76,7 +92,7 @@ public final class NativeClientFixture {
                 } else if (packedStep == 3 && NativeFixture.packedNextRound && mc.currentScreen instanceof DuelClient.LoadoutScreen
                         && DuelClient.state().get("phase").getAsString().equals("READY")) {
                     ((DuelClient.LoadoutScreen) mc.currentScreen).fixtureSelect(30); packedStep++;
-                } else if (packedStep == 4 && DuelClient.state().get("phase").getAsString().equals("COUNTDOWN")) {
+                } else if (packedStep == 4 && NativeFixture.packedStopAllowed && DuelClient.state().get("phase").getAsString().equals("FIGHTING")) {
                     packedKey();
                     if (!(mc.currentScreen instanceof DuelClient.LoadoutScreen)) throw new IllegalStateException("PACKED_ACTIVE_MENU_KEY");
                     ((DuelClient.LoadoutScreen) mc.currentScreen).fixtureSelect(31); NativeFixture.packedStopClicked = true; packedStep++;

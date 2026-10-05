@@ -21,8 +21,10 @@ public final class NativeFixture {
     public static final String PACKED_WORLD = "DivZero PvP 1.8.9";
     public static volatile boolean packedChecked, packedUiClicked;
     public static volatile boolean packedMenuRecovered, packedNextRound, packedStopClicked;
+    public static volatile boolean packedFoodUsed, packedStopAllowed;
     public static volatile String packedClientFailure;
     private static boolean packedFighting;
+    private static ArenaFeedbackVerification feedbackVerification;
     public static volatile int packedGuiScale;
     public static volatile boolean equipmentClicks;
     public static volatile boolean finished;
@@ -132,9 +134,11 @@ public final class NativeFixture {
             for (ItemStack stack : human.inventory.mainInventory) require(stack == null, "PACKED_MAP_OLD_INVENTORY");
             require(NativeOffhand.get(human).stack() == null, "PACKED_MAP_OLD_OFFHAND");
             require(Math.abs(human.posY - 101) < .01 && Math.abs(human.posX - .5) < .1 && Math.abs(human.posZ - 766.5) < .1, "PACKED_LOBBY_SPAWN");
+            feedbackVerification = new ArenaFeedbackVerification(human, evidence);
             packedChecked = true;
         }
         NativeDuel.Session run = NativeDuel.session(human);
+        feedbackVerification.tick(run, server.getTickCounter());
         if (packedUiClicked && NativeRuntime.enabled(human) && !packedFighting) {
             require(!human.canCommandSenderUseCommand(2, "ai"), "ACTIVATION_GRANTED_COMMANDS");
             require(run.rounds == 0, "PACKED_MAP_OLD_STATISTICS");
@@ -160,7 +164,8 @@ public final class NativeFixture {
         if (packedStopClicked && !run.active()) {
             require(run.result.equals("CANCELLED") && run.rounds == 1 && run.losses == 1, "PACKED_NEXT_ROUND_CANCEL");
             evidence.addProperty("nextRoundAndStop", true);
-            complete(server, true, "NATIVE_CLEAN_TEMPLATE_PLAYABLE_PASSED");
+            require(packedStopAllowed, "FEEDBACK_SCENES_INCOMPLETE");
+            complete(server, true, "NATIVE_PVP_FEEDBACK_PASSED");
         }
         if (server.getTickCounter() > 2600) throw new IllegalStateException("PACKED_UI_TIMEOUT phase=" + run.phase);
     }

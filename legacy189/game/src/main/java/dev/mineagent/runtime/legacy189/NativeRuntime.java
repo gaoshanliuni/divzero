@@ -125,7 +125,6 @@ public final class NativeRuntime {
                     try { spawn(definition, true); } catch (RuntimeException failure) { LegacyMod.logger.error("Agent restore failed: {}", definition.id, failure); }
                 }
             }
-            ModernCombat.tick();
             NativeDuel.tick();
             for (NativeAgent body : new ArrayList<NativeAgent>(BODIES.values())) {
                 body.physics(server.getTickCounter());

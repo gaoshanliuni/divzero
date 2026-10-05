@@ -4,6 +4,8 @@ import com.google.gson.*;
 import net.minecraft.block.Block;
 import net.minecraft.entity.*;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.item.EntityXPOrb;
+import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.*;
 import net.minecraft.item.*;
@@ -78,10 +80,15 @@ public final class NativeDuel {
             if (!choices(slot).contains(gear[slot])) throw new IllegalArgumentException("DUEL_EQUIPMENT");
             ItemStack stack = stack(gear[slot]);
             if (slot < 4) player.setCurrentItemOrArmor(4 - slot, stack);
-            else if (slot == 4) player.inventory.setInventorySlotContents(0, stack); else NativeOffhand.get(player).set(stack);
+            else if (slot == 4) player.inventory.setInventorySlotContents(0, stack);
+            else if (stack != null && stack.getItem() instanceof ItemFood) {
+                // 1.8.9 uses food from the selected main-hand hotbar slot.
+                stack.stackSize = 16; player.inventory.setInventorySlotContents(2, stack);
+            } else NativeOffhand.get(player).set(stack);
         }
         if (gear[4].equals("minecraft:bow")) for (int slot = 9; slot < 13; slot++) player.inventory.setInventorySlotContents(slot, new ItemStack(Items.arrow, 64));
         if (wool) player.inventory.setInventorySlotContents(1, new ItemStack(Blocks.wool, 64, woolColor));
+        player.clearActivePotions(); player.setAbsorptionAmount(0); player.extinguish();
         player.inventory.currentItem = 0; player.setHealth(player.getMaxHealth()); player.getFoodStats().setFoodLevel(20);
         player.inventoryContainer.detectAndSendChanges(); NativeNetwork.sync(player);
     }
@@ -93,6 +100,7 @@ public final class NativeDuel {
     public static void tick() {
         MinecraftServer server = MinecraftServer.getServer(); int tick = server.getTickCounter();
         if (!NativeArena.ready()) return;
+        if (tick % 20 == 0 && SESSIONS.values().stream().noneMatch(Session::active)) clearDrops(server.worldServerForDimension(0));
         for (EntityPlayerMP player : new ArrayList<EntityPlayerMP>(server.getConfigurationManager().getPlayerList())) {
             if (allowed(player) && player.ticksExisted > 40 && !SESSIONS.containsKey(player.getUniqueID())) { Session run = session(player); NativeArena.lobby(player); push(run, true); }
         }
@@ -108,11 +116,11 @@ public final class NativeDuel {
                         if (online.worldObj.getBlockState(pos).getBlock() == Blocks.wool) online.worldObj.setBlockToAir(pos);
                     }
                     if (run.cleanCursor == 33 * 33 * 155) {
-                        for (EntityItem drop : online.worldObj.getEntitiesWithinAABB(EntityItem.class, new AxisAlignedBB(-17, 100, 783, 18, 256, 818)))
-                            if (Block.getBlockFromItem(drop.getEntityItem().getItem()) == Blocks.wool) drop.setDead();
+                        clearDrops(online.worldObj);
                         online.setGameType(net.minecraft.world.WorldSettings.GameType.SURVIVAL);
                         equip(online, run.humanGear, run.humanWool, 0);
                         run.ai = NativeRuntime.createTransient(online, "PvP 陪练"); equip(run.ai, run.aiGear, run.aiWool, 3);
+                        run.navigation.reset(run.ai);
                         place(run); run.phase = "COUNTDOWN"; run.deadline = tick + 100; run.revision++;
                     }
                 } else if (run.phase.equals("COUNTDOWN")) {
@@ -145,28 +153,32 @@ public final class NativeDuel {
         double aimY = target.posY + target.getEyeHeight() * .8 - actor.posY - actor.getEyeHeight() + .025 * flight * flight;
         actor.rotationYaw = (float) Math.toDegrees(Math.atan2(aimZ, aimX)) - 90;
         actor.rotationPitch = (float) -Math.toDegrees(Math.atan2(aimY, Math.hypot(aimX, aimZ))); actor.rotationYawHead = actor.rotationYaw;
-        double desired = bow ? 8 : ModernCombat.strength(actor) > .9 ? 2.5 : 3.2;
+        double desired = bow ? 8 : 2.5;
+        boolean navigating = run.navigation.move(actor, target, tick, bow);
+        if (run.navigation.recovering()) { actor.clearItemInUse(); return; }
         double best = Double.POSITIVE_INFINITY; float forward = 0, strafe = 0; boolean jump = false;
-        for (float[] candidate : new float[][] {{0,0},{1,0},{1,.65f},{1,-.65f},{0,1},{0,-1},{-1,0},{-1,.65f},{-1,-.65f}}) {
+        if (!navigating) for (float[] candidate : new float[][] {{0,0},{1,0},{1,.65f},{1,-.65f},{0,1},{0,-1},{-1,0},{-1,.65f},{-1,-.65f}}) {
             double yaw = Math.toRadians(actor.rotationYaw), vx = (candidate[1] * Math.cos(yaw) - candidate[0] * Math.sin(yaw)) * 1.2;
             double vz = (candidate[0] * Math.cos(yaw) + candidate[1] * Math.sin(yaw)) * 1.2;
             int clearance = clearance(actor, vx, vz); if (clearance < 0) continue;
             double next = Math.hypot(dx - vx, dz - vz), progress = distance - next;
             double risk = Math.max(0, 2.1 - next) * 20 + (clearance > 0 ? 4 : 0);
             double[] features = {actor.getHealth() / Math.max(1, actor.getMaxHealth()), clamp(distance / 16, 0, 2), Math.hypot(actor.motionX, actor.motionZ) / .4, 0,
-                    ModernCombat.strength(actor), clamp(progress / 8, -1, 1), clamp(risk / 80, 0, 2), .125, clamp(vx / 8, -1, 1), clamp(vz / 8, -1, 1), 0,
-                    ModernCombat.strength(actor) > .95 ? 1 : 0, 5d / 8, actor.onGround ? 0 : 1, ModernCombat.baseDamage(actor) / 10, 0};
+                    1, clamp(progress / 8, -1, 1), clamp(risk / 80, 0, 2), .125, clamp(vx / 8, -1, 1), clamp(vz / 8, -1, 1), 0,
+                    1, 5d / 8, actor.onGround ? 0 : 1, ModernCombat.baseDamage(actor) / 10, 0};
             double score = Math.abs(next - desired) * 4 + risk + LegacyPolicy.get().cost(features) * 2;
             if (tick < run.retreatUntil && candidate[0] > 0) score += 10;
             if (score < best) { best = score; forward = candidate[0]; strafe = candidate[1]; jump = clearance > 0; }
         }
-        actor.moveForward = forward; actor.moveStrafing = strafe; actor.setSprinting(forward > 0 && distance > (bow ? 10 : 3.3) && tick >= run.retreatUntil);
-        if (jump && actor.onGround) actor.requestJump();
+        if (!navigating) {
+            actor.moveForward = forward; actor.moveStrafing = strafe; actor.setSprinting(forward > 0 && distance > (bow ? 10 : 3.3) && tick >= run.retreatUntil);
+            if (jump && actor.onGround) actor.requestJump();
+        }
         if (bow) {
             if (distance < 3 || !actor.canEntityBeSeen(target)) { actor.clearItemInUse(); return; }
             if (!actor.isUsingItem()) actor.setItemInUse(actor.getHeldItem(), 72000);
             else if (actor.getItemInUseDuration() >= 20) actor.stopUsingItem();
-        } else if (ModernCombat.strength(actor) >= .95 && ModernCombat.reachable(actor, target)) {
+        } else if (ModernCombat.reachable(actor, target)) {
             float before = target.getHealth(); actor.swingItem(); actor.attackTargetEntityWithCurrentItem(target);
             if (target.getHealth() < before) { run.meleeHits++; run.retreatUntil = tick + 4; actor.setSprinting(false); }
         }
@@ -197,12 +209,16 @@ public final class NativeDuel {
         record.addProperty("policyHash", LegacyPolicy.get().hash()); record.addProperty("policyInferences", LegacyPolicy.get().inferences() - run.policyStart);
         record.addProperty("aiTravel", run.travel); record.addProperty("aiAppliedMeleeHits", run.meleeHits); record.addProperty("boost", false);
         record.addProperty("controller", "LEGACY_ARENA_CANDIDATES_WITH_ORIGINAL_WEIGHTS"); record.addProperty("completeNeoforgeBehaviorParity", false);
+        record.addProperty("navigationPlans", run.navigation.plans); record.addProperty("stuckRecoveries", run.navigation.stuckRecoveries);
+        record.addProperty("escapeWoolBroken", run.navigation.woolBroken); record.addProperty("attackCooldown", false);
+        record.addProperty("escapeWoolPlaced", run.navigation.placed()); record.addProperty("escapeMaterialsConsumed", run.navigation.consumed());
         Path output = run.human.getServerForPlayer().getSaveHandler().getWorldDirectory().toPath().resolve("data/divzero-pvp-rounds").resolve(run.match + ".json");
         byte[] bytes = JSON.toJson(record).getBytes(StandardCharsets.UTF_8);
         run.archive = CompletableFuture.runAsync(() -> { try { Files.createDirectories(output.getParent()); Files.write(output, bytes, StandardOpenOption.CREATE_NEW); } catch (Exception failure) { throw new CompletionException(failure); } });
         run.archive.whenComplete((unused, failure) -> { if (failure != null) LegacyMod.logger.error("PvP result archive failed; no automatic replay", failure); });
         run.phase = "READY"; run.result = outcome; run.revision++;
-        if (run.ai != null) { NativeRuntime.removeBody(run.ai); run.ai = null; }
+        if (run.ai != null) { run.navigation.stop(run.ai); NativeRuntime.removeBody(run.ai); run.ai = null; }
+        clearDrops(run.human.worldObj);
         if (run.human.isEntityAlive() && run.human.dimension == 0) NativeArena.lobby(run.human);
         push(run, false);
     }
@@ -226,6 +242,7 @@ public final class NativeDuel {
     }
     public static void respawn(EntityPlayerMP player) { if (allowed(player)) { Session run = session(player); NativeArena.lobby(player); push(run, true); } }
     public static final class Session {
+        public final ArenaNavigator navigation = new ArenaNavigator();
         public final UUID owner; public EntityPlayerMP human; public NativeAgent ai; public UUID match;
         public final String[] humanGear = defaults(), aiGear = defaults(); public boolean humanWool, aiWool;
         public String phase = "READY", result = ""; public long revision, started, policyStart; public int rounds, wins, losses, draws, deadline, cleanCursor, pendingDeath, retreatUntil, meleeHits;
@@ -236,6 +253,12 @@ public final class NativeDuel {
         private static String[] defaults() { return new String[] {"minecraft:iron_helmet", "minecraft:iron_chestplate", "minecraft:iron_leggings", "minecraft:iron_boots", "minecraft:diamond_sword", "minecraft:air"}; }
     }
     public static final class Events {
+        @SubscribeEvent public void drops(LivingDropsEvent event) {
+            if (event.entityLiving.worldObj.isRemote) return;
+            for (Session run : SESSIONS.values()) if (run.active() && (event.entityLiving == run.human || event.entityLiving == run.ai)) {
+                event.drops.clear(); event.setCanceled(true); return;
+            }
+        }
         @SubscribeEvent(priority = EventPriority.HIGHEST) public void protect(LivingAttackEvent event) {
             if (event.entityLiving.worldObj.isRemote || event.entityLiving.dimension != 0 || !NativeArena.ready() || !(event.entityLiving instanceof EntityPlayerMP)) return;
             if (NativeFixture.combatProbe(event.entityLiving, event.source.getEntity())) return;
@@ -266,5 +289,12 @@ public final class NativeDuel {
         @SubscribeEvent public void explosion(net.minecraftforge.event.world.ExplosionEvent.Detonate event) {
             if (!event.world.isRemote && event.world.provider.getDimensionId() == 0 && NativeArena.ready()) event.getAffectedBlocks().removeIf(NativeArena::protectedArea);
         }
+    }
+    static void clearDrops(net.minecraft.world.World world) {
+        if (world == null || world.isRemote || world.provider.getDimensionId() != 0 || !NativeArena.ready()) return;
+        AxisAlignedBB area = new AxisAlignedBB(-19, 0, 753, 20, 256, 820);
+        for (EntityItem drop : world.getEntitiesWithinAABB(EntityItem.class, area)) drop.setDead();
+        for (EntityXPOrb orb : world.getEntitiesWithinAABB(EntityXPOrb.class, area)) orb.setDead();
+        for (EntityArrow arrow : world.getEntitiesWithinAABB(EntityArrow.class, area)) arrow.setDead();
     }
 }
