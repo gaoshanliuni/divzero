@@ -90,6 +90,7 @@ def main():
     parser.add_argument("--combo-fixture", action="store_true")
     parser.add_argument("--training-fixture", action="store_true")
     parser.add_argument("--advanced-fixture", action="store_true")
+    parser.add_argument("--policy-checkpoint", type=pathlib.Path)
     parser.add_argument("--gui-scale", type=int, choices=(1, 2, 3, 4), default=2)
     parser.add_argument("--width", type=int, default=1100)
     parser.add_argument("--height", type=int, default=720)
@@ -115,6 +116,16 @@ def main():
     if args.packed_arena and (arena or args.resume):
         raise ValueError("Clean-template validation requires a fresh isolated run")
     packed = clean_arena_files(args.packed_arena.resolve(strict=True)) if args.packed_arena else None
+    policy_bytes = None
+    if args.policy_checkpoint:
+        if not packed or args.resume:
+            raise ValueError("A model checkpoint requires a fresh clean-map fixture")
+        policy_bytes = args.policy_checkpoint.resolve(strict=True).read_bytes()
+        if len(policy_bytes) > 1024 * 1024:
+            raise ValueError("Model checkpoint too large")
+        checkpoint = json.loads(policy_bytes)
+        if checkpoint.get("schema") != 1 or hashlib.sha256(checkpoint["model"].encode("utf-8")).hexdigest() != checkpoint["sha256"]:
+            raise ValueError("Model checkpoint digest or schema mismatch")
     if os.name != "nt":
         raise ValueError("This local fixture launcher targets Windows x64")
     if output.is_relative_to(instance) or instance.is_relative_to(output):
@@ -184,6 +195,10 @@ def main():
                 destination = output / "saves/DivZero PvP 1.8.9" / name
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 with destination.open("xb") as stream: stream.write(data)
+            if policy_bytes:
+                checkpoint_file = output / "saves/DivZero PvP 1.8.9/data/divzero-policy/active.json"
+                checkpoint_file.parent.mkdir(parents=True)
+                with checkpoint_file.open("xb") as stream: stream.write(policy_bytes)
         (output / "options.txt").write_text(f"lang:zh_CN\nrenderDistance:4\nguiScale:{args.gui_scale}\nfullscreen:false\npauseOnLostFocus:false\nmaxFps:60\nmusic:0.0\nsound:0.2\n")
     installed = output / "mods" / mod.name
     if not installed.is_file() or sha256(installed) != sha256(mod):

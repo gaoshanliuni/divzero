@@ -95,7 +95,8 @@
       "status": "IN_PROGRESS",
       "verifiedPaths": [
         "Original 26.1.2 SurfacePathfinder/TerrainPathSearch/NavigationRetry lowered to Java 8 with generation drift checks",
-        "Native U-wall detour, two wool blocks harvested to escape, one carried wool consumed for jump-place escape onto a connected ledge"
+        "Native U-wall detour, two wool blocks harvested to escape, one carried wool consumed for jump-place escape onto a connected ledge",
+        "Player cover breached before actual hit; twelve inventory wool consumed to approach an elevated opponent while permanent blocks remain protected"
       ]
     },
     {
@@ -103,13 +104,18 @@
       "name": "Existing learned policy, combat behavior, self-play, replay and training isolation",
       "status": "IN_PROGRESS",
       "verifiedPaths": [
-        "Unchanged checkpoint inference matches original within 1e-12"
+        "Unchanged checkpoint inference matches original within 1e-12",
+        "Two native AI models collect real self-play samples; original Java 25 trainer and held-out paired evaluation gate model promotion",
+        "Native v3 promotion: 296 samples, holdout MSE 0.0828865 to 0.0741285, 4/4 paired result, checkpoint saved/reloaded and used in six native combat scenes"
       ]
     },
     {
       "id": "world_observation",
       "name": "Loaded world, entities, blocks, containers and native interaction observations",
-      "status": "PENDING"
+      "status": "IN_PROGRESS",
+      "verifiedPaths": [
+        "Arena entity AABB/reach/look/swing and existing vanilla projectile trajectories; full general observation remains pending"
+      ]
     },
     {
       "id": "world_actions",
@@ -267,7 +273,9 @@
       "verifiedPaths": [
         "FIXTURE_ONLY stationary-human round; not a human win-rate benchmark",
         "Native obstacle detour, wool mining and material-consuming jump-place escape; protected map blocks retained",
-        "Three real-client movement fixtures: stationary/advancing/strafing; longest observed hit chains 4/6/6, eight physical jumps and landings, consumed forward/strafe inputs"
+        "Three real-client movement fixtures: stationary/advancing/strafing; longest observed hit chains 4/6/6, eight physical jumps and landings, consumed forward/strafe inputs",
+        "Native arrows spawned, ammunition consumed and damage applied, including finite retreat and counterfire against a closing client",
+        "Predicted real arrow collision, physical 1.061-block lateral dodge, and native melee threat responses against a sword-input client"
       ]
     },
     {
