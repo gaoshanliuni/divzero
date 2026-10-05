@@ -4029,13 +4029,13 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeCommands.java",
-      "sha256": "49784ce559b8c5ef09fa202b9630d088e9f988d8af3dce1ad5941f46f54068bf",
-      "bytes": 4735
+      "sha256": "1c55ace0efc12bfd77b6503c7d8b088b169d08dc709c5fe49ee63116701fec00",
+      "bytes": 4461
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeFixture.java",
-      "sha256": "080e3e4c1659f30c503d17cdb5bc7f3265635635e5ebfc99b713add5968d1c4c",
-      "bytes": 8699
+      "sha256": "520c868944ef9263c1192de21764a5b6b84f7e43d8fce80b6dbc71ec49af8f20",
+      "bytes": 8866
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeGuiHandler.java",
@@ -4054,8 +4054,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeRuntime.java",
-      "sha256": "4553fb5660e66fee76ea7f4332bc7e05f40bdc642a2f9b2ff449ba8fa766896f",
-      "bytes": 6969
+      "sha256": "75e7f1b9bf26bf6ec75e33d7b38af41aea91c101267d5630c7f8cbba463d5774",
+      "bytes": 7472
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeService.java",

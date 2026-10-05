@@ -20,6 +20,15 @@ public final class NativeRuntime {
         return id;
     }
     public static boolean enabled(EntityPlayerMP player) { return data().enabled(player.getUniqueID()); }
+    public static void setEnabled(EntityPlayerMP player, boolean enabled) {
+        if (data().enabled(player.getUniqueID()) != enabled) {
+            data().enabled(player.getUniqueID(), enabled);
+            SESSIONS.put(player.getUniqueID(), UUID.randomUUID());
+            NativeService.stop(player.getUniqueID());
+            if (!enabled) for (NativeAgent body : BODIES.values()) if (body.owner.equals(player.getUniqueID())) body.stopActions();
+        }
+        NativeNetwork.sync(player);
+    }
     public static void requireEnabled(EntityPlayerMP player) {
         if (!enabled(player)) throw new IllegalStateException("请先输入 /ai enable 启用当前世界");
     }

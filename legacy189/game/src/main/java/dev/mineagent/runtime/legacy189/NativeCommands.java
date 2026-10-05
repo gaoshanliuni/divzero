@@ -8,19 +8,15 @@ import java.util.*;
 
 public class NativeCommands extends CommandBase {
     @Override public String getCommandName() { return "ai"; }
-    @Override public String getCommandUsage(ICommandSender sender) { return "/ai enable|disable|status|create <name>|list|remove <name>|stop|offhand|swap"; }
+    @Override public String getCommandUsage(ICommandSender sender) { return "/ai enable|disable|status|worker|create <name>|list|remove <name>|stop|offhand|swap"; }
     @Override public int getRequiredPermissionLevel() { return 0; }
     @Override public void processCommand(ICommandSender sender, String[] args) throws CommandException {
         EntityPlayerMP player = getCommandSenderAsPlayer(sender);
         String action = args.length == 0 ? "status" : args[0];
         try {
             if (action.equals("enable") || action.equals("disable")) {
-                boolean enabled = action.equals("enable"); NativeRuntime.data().enabled(player.getUniqueID(), enabled);
-                if (!enabled) {
-                    NativeService.stop(player.getUniqueID());
-                    for (NativeAgent body : NativeRuntime.bodies()) if (body.owner.equals(player.getUniqueID())) body.stopActions();
-                }
-                NativeNetwork.sync(player); tell(player, enabled ? "当前世界已启用。" : "当前世界已禁用，身体动作已停止。");
+                boolean enabled = action.equals("enable"); NativeRuntime.setEnabled(player, enabled);
+                tell(player, enabled ? "当前世界已启用。" : "当前世界已禁用，身体动作已停止。");
             } else if (action.equals("status")) {
                 tell(player, "Forge 1.8.9 移植开发中；全部功能尚未完成。世界：" + NativeRuntime.data().identity());
                 tell(player, "已接入：世界启用、原生玩家身体、副手存取/换装。现代战斗、完整工作区与服务仍待接入。");
@@ -54,6 +50,6 @@ public class NativeCommands extends CommandBase {
     }
     private static void tell(EntityPlayerMP player, String text) { player.addChatMessage(new ChatComponentText("[DivZero] " + text)); }
     @Override public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
-        return args.length == 1 ? getListOfStringsMatchingLastWord(args, "enable", "disable", "status", "create", "list", "remove", "stop", "offhand", "swap") : Collections.<String>emptyList();
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, "enable", "disable", "status", "worker", "create", "list", "remove", "stop", "offhand", "swap") : Collections.<String>emptyList();
     }
 }

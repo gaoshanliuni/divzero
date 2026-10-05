@@ -37,7 +37,9 @@ public final class NativeFixture {
         try {
             if (Boolean.getBoolean("divzero.legacyFixtureResume")) { resume(server, human); return; }
             if (stage == 0) {
-                NativeRuntime.data().enabled(human.getUniqueID(), true);
+                UUID beforeActivation = NativeRuntime.session(human);
+                NativeRuntime.setEnabled(human, true);
+                require(!beforeActivation.equals(NativeRuntime.session(human)), "ACTIVATION_SESSION_NOT_CHANGED");
                 if (NativeService.class.getResource("/META-INF/divzero/service.sha256") != null)
                     workerHealth = NativeService.get(human).thenCompose(service -> service.request("health.check", new JsonObject()));
                 for (int x = -6; x <= 6; x++) for (int z = -6; z <= 6; z++) {
