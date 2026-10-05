@@ -86,7 +86,18 @@ public final class LegacyTerrainRecovery {
                 return LegacyPolicy.get().cost(features)*5;
             }
         };
-        int slot=materialSlot();search=new TerrainPathSearch(world,originCell,slot<0?0:actor.inventory.mainInventory[slot].stackSize,6);return true;
+        int slot=materialSlot();
+        if(NativeFixture.requested()){
+            com.google.gson.JsonObject debug=new com.google.gson.JsonObject();debug.addProperty("origin",origin.toString());debug.addProperty("goal",goal.toString());debug.addProperty("materialSlot",slot);debug.addProperty("materials",slot<0?0:actor.inventory.mainInventory[slot].stackSize);
+            debug.add("originBlock",new com.google.gson.Gson().toJsonTree(world.block(originCell)));debug.addProperty("canPlaceOrigin",world.canPlace(originCell));
+            com.google.gson.JsonArray exits=new com.google.gson.JsonArray();
+            for(int[] d:new int[][]{{-1,0},{1,0},{0,-1},{0,1}}){
+                Cell c=originCell.add(d[0],2,d[1]);LegacyTraversal check=new LegacyTraversal(actor);Node n=check.closest(point(c)),end=check.closest(goal);
+                com.google.gson.JsonObject exit=new com.google.gson.JsonObject();exit.add("cell",new com.google.gson.Gson().toJsonTree(c));exit.add("floor",new com.google.gson.Gson().toJsonTree(world.block(c.add(0,-1,0))));exit.add("node",new com.google.gson.Gson().toJsonTree(n));exit.add("end",new com.google.gson.Gson().toJsonTree(end));exit.addProperty("neighbors",n==null?-1:check.neighbors(n).size());exit.addProperty("route",n==null||end==null?"MISSING_NODE":new SurfacePathfinder.Search(n,end,check).advance(96).status().name());exit.addProperty("exit",world.exit(c,Collections.emptyMap()));exits.add(exit);
+            }
+            debug.add("exitProbes",exits);LegacyMod.logger.info("LEGACY_RECOVERY_FIXTURE_CONTEXT={}",debug);
+        }
+        search=new TerrainPathSearch(world,originCell,slot<0?0:actor.inventory.mainInventory[slot].stackSize,6);return true;
     }
     /** changed[0] requests immediate re-evaluation of the original route. */
     public PathStep tick(int tick,boolean[] changed){

@@ -4064,8 +4064,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyTerrainRecovery.java",
-      "sha256": "d95206a29faadf7b727197626112c7cd28b601c14f303e3e31cdd21c9bc97f95",
-      "bytes": 14522
+      "sha256": "55ee33efd3c94b37d78ec5cd05229d296ee9e32cce6062c66d93f98f84d1eddc",
+      "bytes": 16073
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyTraversal.java",
