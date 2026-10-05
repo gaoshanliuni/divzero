@@ -36,9 +36,9 @@ public final class NativeClientFixture {
         if (NativeFixture.finished) {
             if (finishedAt == 0) {
                 finishedAt = ticks;
-                if (mc.thePlayer != null && NativeFixture.successful) mc.thePlayer.sendChatMessage("/ai offhand");
+                if (mc.thePlayer != null && NativeFixture.successful && !new File(mc.mcDataDir, "divzero-import/pvp-arena-transfer.json").isFile()) mc.thePlayer.sendChatMessage("/ai offhand");
             }
-            if (ticks - finishedAt == 30) ScreenShotHelper.saveScreenshot(mc.mcDataDir, "legacy189-native.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+            if (ticks - finishedAt == 30) ScreenShotHelper.saveScreenshot(mc.mcDataDir, Boolean.getBoolean("divzero.legacyFixtureResume") ? "legacy189-resume.png" : "legacy189-native.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
             if (ticks - finishedAt > 50) mc.shutdown();
         }
     }

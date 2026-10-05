@@ -78,6 +78,7 @@ public final class NativeRuntime {
     }
     public static void stop() {
         NativeService.stopAll();
+        NativeArena.stop();
         for (NativeAgent body : BODIES.values()) { body.stopActions(); body.closeConnection(); }
         BODIES.clear(); SESSIONS.clear(); restored = false;
     }
@@ -124,6 +125,7 @@ public final class NativeRuntime {
                 }
             }
             NativeFixture.tick(server);
+            NativeArena.tick();
         }
     }
 }

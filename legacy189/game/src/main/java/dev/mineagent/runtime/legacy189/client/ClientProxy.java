@@ -20,6 +20,11 @@ public class ClientProxy extends CommonProxy {
         ClientRegistry.registerKeyBinding(SWAP); ClientRegistry.registerKeyBinding(EQUIPMENT);
         FMLCommonHandler.instance().bus().register(this); MinecraftForge.EVENT_BUS.register(this);
     }
+    @Override public void registerModels() {
+        for (java.util.Map.Entry<String, net.minecraft.block.Block> entry : LegacyBlocks.REGISTERED.entrySet())
+            Minecraft.getMinecraft().getRenderItem().getItemModelMesher().register(net.minecraft.item.Item.getItemFromBlock(entry.getValue()), 0,
+                    new net.minecraft.client.resources.model.ModelResourceLocation(LegacyMod.ID + ":" + entry.getKey(), "inventory"));
+    }
     @Override public Object equipmentScreen(int id, net.minecraft.entity.player.EntityPlayer player) {
         return id == 0 ? new EquipmentScreen(player) : null;
     }

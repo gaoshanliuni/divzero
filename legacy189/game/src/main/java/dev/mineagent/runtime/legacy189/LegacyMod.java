@@ -18,6 +18,7 @@ public final class LegacyMod {
 
     @Mod.EventHandler public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
+        LegacyBlocks.register();
         NativeNetwork.initialize();
         NativeOffhand.Events equipment = new NativeOffhand.Events();
         MinecraftForge.EVENT_BUS.register(equipment);
@@ -28,6 +29,7 @@ public final class LegacyMod {
         proxy.initialize();
         logger.info("DIVZERO_LEGACY_BOOTSTRAP protocol={} target=1.8.9-11.15.1.2318", NativeNetwork.PROTOCOL);
     }
+    @Mod.EventHandler public void init(FMLInitializationEvent event) { proxy.registerModels(); }
     @Mod.EventHandler public void starting(FMLServerStartingEvent event) {
         event.registerServerCommand(new NativeCommands());
     }

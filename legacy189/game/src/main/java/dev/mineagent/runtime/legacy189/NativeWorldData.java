@@ -10,11 +10,15 @@ import java.util.*;
 public final class NativeWorldData extends WorldSavedData {
     public static final String KEY = "divzero_legacy_world";
     private UUID identity = UUID.randomUUID();
+    private String arenaHash = "";
     private final Set<UUID> enabled = new HashSet<UUID>();
     private final Map<UUID, AgentDefinition> agents = new LinkedHashMap<UUID, AgentDefinition>();
     public NativeWorldData() { super(KEY); }
     public NativeWorldData(String key) { super(key); }
     public UUID identity() { return identity; }
+    public boolean arenaReady() { return !arenaHash.isEmpty(); }
+    public String arenaHash() { return arenaHash; }
+    public void arena(String hash) { if (!hash.matches("[0-9a-f]{64}")) throw new IllegalArgumentException("ARENA_HASH"); arenaHash = hash; markDirty(); }
     public boolean enabled(UUID owner) { return enabled.contains(owner); }
     public void enabled(UUID owner, boolean value) { if (value) enabled.add(owner); else enabled.remove(owner); markDirty(); }
     public Collection<AgentDefinition> agents() { return Collections.unmodifiableCollection(agents.values()); }
@@ -29,6 +33,8 @@ public final class NativeWorldData extends WorldSavedData {
     @Override public void readFromNBT(NBTTagCompound nbt) {
         if (nbt.getInteger("schema") != 1) throw new IllegalStateException("LEGACY_WORLD_SCHEMA");
         identity = UUID.fromString(nbt.getString("identity"));
+        arenaHash = nbt.getString("arenaHash");
+        if (!arenaHash.isEmpty() && !arenaHash.matches("[0-9a-f]{64}")) throw new IllegalStateException("ARENA_HASH");
         enabled.clear(); agents.clear();
         NBTTagList players = nbt.getTagList("enabled", 8);
         for (int i = 0; i < players.tagCount(); i++) enabled.add(UUID.fromString(players.getStringTagAt(i)));
@@ -42,6 +48,7 @@ public final class NativeWorldData extends WorldSavedData {
     }
     @Override public void writeToNBT(NBTTagCompound nbt) {
         nbt.setInteger("schema", 1); nbt.setString("identity", identity.toString());
+        nbt.setString("arenaHash", arenaHash);
         NBTTagList players = new NBTTagList();
         for (UUID id : enabled) players.appendTag(new net.minecraft.nbt.NBTTagString(id.toString()));
         nbt.setTag("enabled", players);

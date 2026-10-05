@@ -4014,13 +4014,18 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/CommonProxy.java",
-      "sha256": "d454f03fed9ea85eb20cdf5e9449f1cb3a18fcf4923c67193132fdaa5a2e4695",
-      "bytes": 340
+      "sha256": "a36c1a856a4a132dc2e71c9015baf88bc787d7bb5648da8d8609b27fcee5b266",
+      "bytes": 377
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyBlocks.java",
+      "sha256": "870d6aad147ad55850871ff7782e4b917d890a19bb2a3499e33a6a02e7e3316d",
+      "bytes": 8067
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/LegacyMod.java",
-      "sha256": "966d51956497b1a4ab0dde0cd09c71f0980b864d16f3cac4034ff3d50f4cb7c0",
-      "bytes": 1767
+      "sha256": "2749d5865a241468c0744dac998cdc55d7e61affa2a4b86e131ca87be53efafb",
+      "bytes": 1897
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeAgent.java",
@@ -4028,14 +4033,19 @@
       "bytes": 3364
     },
     {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeArena.java",
+      "sha256": "e5a0b02e49f571e31b0da4c958c84b4d371cf03fcee15d9a5d6cc05d5c55c2f7",
+      "bytes": 10457
+    },
+    {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeCommands.java",
-      "sha256": "1c55ace0efc12bfd77b6503c7d8b088b169d08dc709c5fe49ee63116701fec00",
-      "bytes": 4461
+      "sha256": "4c5e3d6f6d5f86ef663afa19c75445621ad5dda8e670188d920ce521b9e5a8e6",
+      "bytes": 4796
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeFixture.java",
-      "sha256": "520c868944ef9263c1192de21764a5b6b84f7e43d8fce80b6dbc71ec49af8f20",
-      "bytes": 8866
+      "sha256": "bb3498e0be882ab044542265d49b886249741ffdf2f4a192de8d8673248604bc",
+      "bytes": 10618
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeGuiHandler.java",
@@ -4054,8 +4064,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeRuntime.java",
-      "sha256": "75e7f1b9bf26bf6ec75e33d7b38af41aea91c101267d5630c7f8cbba463d5774",
-      "bytes": 7472
+      "sha256": "474a81551190090ff7ffb769ee908794f934d5f6adf2ff605a2b3694c3316974",
+      "bytes": 7532
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeService.java",
@@ -4064,13 +4074,13 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeWorldData.java",
-      "sha256": "54dff8f2a1dc95ad06a151a79ccdd7d1110b686a13a4b10b219eec373eb0d7cc",
-      "bytes": 4191
+      "sha256": "55568987b16dea26f2bd155e11224055258ae2aa09dc1a5ed3653200bf9bc326",
+      "bytes": 4712
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/ClientProxy.java",
-      "sha256": "005f8f5d75484c58c947c922f9af6b780db396c30ff4affbd9c2dd586e6f4af7",
-      "bytes": 3149
+      "sha256": "fbea80b9c93dd103934c8f16d4e88ebfd97eeb2f865d47e3ac8a61d3a86d3d0e",
+      "bytes": 3593
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/EquipmentScreen.java",
@@ -4079,8 +4089,28 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/NativeClientFixture.java",
-      "sha256": "5945d18c33a4411b1ec19e7d24c547db4c74939208c2e356c814da5d3be07223",
-      "bytes": 2398
+      "sha256": "3cbfd5360511d82e3e648b508dd5ec27f5c17ee462596eb0e9fad15a09fd72e3",
+      "bytes": 2553
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/blockstates/acacia_leaves.json",
+      "sha256": "7d5e392a6d9ec527c912e12cbfaf9dc3dd4527bef6400a80955c4f80e6d58f25",
+      "bytes": 1318
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/blockstates/polished_deepslate.json",
+      "sha256": "5d4a79b1671b23d29dc743c35aabef4aa9707759d56472a3cbafce87df1c196b",
+      "bytes": 100
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/blockstates/smooth_quartz.json",
+      "sha256": "d1a44ff16e8a0ca6a0bc74860adb08f98cae953edfec0250d1f9efd46f40a4b9",
+      "bytes": 95
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/blockstates/smooth_stone.json",
+      "sha256": "0c7c5ba443a162dc0e44e2bd9b078f617639c850f7cbd8c446efc481584c870e",
+      "bytes": 94
     },
     {
       "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/lang/en_US.lang",
@@ -4091,6 +4121,61 @@
       "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/lang/zh_CN.lang",
       "sha256": "d69aa69aaa42daca908bf9c9810f24cb1c4f317eee69e05f0e531d13b26ab76e",
       "bytes": 111
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/block/acacia_leaves.json",
+      "sha256": "b5b553d15313871691bef63e442383175612322c03e360feee49f45ffa76b2d2",
+      "bytes": 975
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/block/polished_deepslate.json",
+      "sha256": "5c85cfa8f9566db77fce14258a446a152a28d7276e41e77c542601c073214e91",
+      "bytes": 111
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/block/smooth_quartz.json",
+      "sha256": "17627a52719a396d5ccc2522b486ea9b468385d8f5888da4ff7d352fa03afcc4",
+      "bytes": 106
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/block/smooth_stone.json",
+      "sha256": "366958c9b63e001e6dbab1ddea4d5cfd5ab32c0f27b9d981f3cacff2832ba1ae",
+      "bytes": 105
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/item/acacia_leaves.json",
+      "sha256": "bca23086977f913b3412355799dadd1dccdf6525fdcad890abb45877eeaba03f",
+      "bytes": 56
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/item/polished_deepslate.json",
+      "sha256": "e3c46620428549a4e1594706920b365dc9ebd244b955ce5eb37076318e937f29",
+      "bytes": 61
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/item/smooth_quartz.json",
+      "sha256": "1f228f727944c207a5a59d11dbac41b2997ef5fd8c2b9f51bf4c4b0563d98a6f",
+      "bytes": 56
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/models/item/smooth_stone.json",
+      "sha256": "84033f35fe81c8758ee06b81007a654a37ba27a2787e615761f15866565dcbcd",
+      "bytes": 55
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/textures/blocks/polished_deepslate.png",
+      "sha256": "a11ea9ef0d9a8d7a4758be2827ff738fc53bb1171f187c48910db2f1ac00bd53",
+      "bytes": 363
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/textures/blocks/smooth_quartz.png",
+      "sha256": "2178fdd1fe4fa1272538930c784a66dc4d23ad0725f80eb6c78d8003b725f2ef",
+      "bytes": 327
+    },
+    {
+      "path": "legacy189/game/src/main/resources/assets/mineagent_runtime/textures/blocks/smooth_stone.png",
+      "sha256": "39813c5cb37fbeef7fcbcc45422f3ed5c280ab150f94deee80ee6758ee4980c2",
+      "bytes": 354
     },
     {
       "path": "legacy189/game/src/main/resources/mcmod.info",
@@ -4118,6 +4203,11 @@
       "bytes": 1685
     },
     {
+      "path": "legacy189/tools/generate_block_assets.py",
+      "sha256": "18f75ba4f8718d6b9bc18555e6eb5df88cbd51cdcd7153442a11a80f4327de23",
+      "bytes": 3160
+    },
+    {
       "path": "legacy189/tools/inventory.py",
       "sha256": "dfe5098d514eec3108c5a1025f6af9228f38b8aa26687e5eb72b902cfdbbf518",
       "bytes": 4080
@@ -4134,8 +4224,8 @@
     },
     {
       "path": "legacy189/tools/run_native.py",
-      "sha256": "05502cb3f84f832866cd4fcfd617a6fd9fc53d3ef9c466c9855aed9165163320",
-      "bytes": 7652
+      "sha256": "310561d3b469e94970ccdc2a9ac71f39b93d3d3e6e15a7d92a273ccbebe2c9c1",
+      "bytes": 8044
     },
     {
       "path": "neoforge/build.gradle",

@@ -27,6 +27,9 @@ public class NativeCommands extends CommandBase {
                             if (!world.equals(NativeRuntime.data().identity()) || !session.equals(NativeRuntime.session(player)) || !NativeRuntime.enabled(player)) return;
                             tell(player, failure == null ? "Java 25 Worker 实际回执：" + value.get("type").getAsString() : "Worker 未就绪：" + failure.getClass().getSimpleName());
                         }));
+            } else if (action.equals("arena")) {
+                if (args.length == 2 && args[1].equals("import")) NativeArena.start(player);
+                else tell(player, "竞技场：" + NativeArena.phase() + "，已核对 " + NativeArena.verified() + "。/ai arena import 从 divzero-import/pvp-arena-transfer.json 导入。");
             } else if (action.equals("create")) {
                 if (args.length < 2) throw new IllegalArgumentException("请输入 AI 名称");
                 NativeAgent body = NativeRuntime.create(player, join(args, 1)); tell(player, "已创建 " + body.displayName + " · " + body.getUniqueID());

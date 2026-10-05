@@ -84,9 +84,17 @@ public final class NativeFixture {
                 evidence.addProperty("humanDamage", humanBefore - human.getHealth());
                 evidence.addProperty("agentDamage", agentBefore - body.getHealth());
                 evidence.addProperty("nativeGravity", true); evidence.addProperty("nativeContainer", true);
-                server.getConfigurationManager().saveAllPlayerData();
-                for (net.minecraft.world.WorldServer level : server.worldServers) level.saveAllChunks(true, null);
-                complete(server, true, "NATIVE_BASELINE_PASSED");
+                if (server.getFile("divzero-import/pvp-arena-transfer.json").isFile()) { NativeArena.start(human); stage = 2; started = server.getTickCounter(); }
+                else { save(server); complete(server, true, "NATIVE_BASELINE_PASSED"); }
+            } else if (stage == 2) {
+                if (NativeArena.phase().equals("PARTIAL") || NativeArena.phase().equals("REJECTED")) throw new IllegalStateException(NativeArena.error());
+                if (NativeArena.phase().equals("VERIFIED")) {
+                    require(NativeArena.verified() == NativeArena.VOLUME && NativeArena.ready(), "ARENA_NATIVE_READBACK");
+                    evidence.addProperty("arenaVerified", true); evidence.addProperty("arenaBlocks", NativeArena.verified());
+                    evidence.addProperty("arenaHash", NativeRuntime.data().arenaHash());
+                    body.playerNetServerHandler.setPlayerLocation(5.5, 101, 800.5, 90, 0);
+                    save(server); complete(server, true, "NATIVE_ARENA_PASSED");
+                } else if (server.getTickCounter() - started > 1000) throw new IllegalStateException("ARENA_FIXTURE_TIMEOUT");
             } else if (server.getTickCounter() - started > 1000 && stage > 0) throw new IllegalStateException("NATIVE_FIXTURE_TIMEOUT_STAGE_" + stage);
         } catch (Throwable failure) {
             LegacyMod.logger.error("DIVZERO_LEGACY_FIXTURE_FAILED", failure);
@@ -104,7 +112,17 @@ public final class NativeFixture {
         require(NativeOffhand.get(human).stack() != null && NativeOffhand.get(human).stack().getItem() == Items.iron_sword, "OFFHAND_NOT_RESTORED");
         evidence.addProperty("agent", id.toString()); evidence.addProperty("world", NativeRuntime.data().identity().toString());
         evidence.addProperty("persistentIdentityAndOffhand", true); evidence.addProperty("source", "FIXTURE_ONLY");
+        if (previous.has("arenaVerified") && previous.get("arenaVerified").getAsBoolean()) {
+            require(NativeArena.ready() && NativeRuntime.data().arenaHash().equals(previous.get("arenaHash").getAsString()), "ARENA_MARKER_NOT_RESTORED");
+            require(human.worldObj.getBlockState(new BlockPos(0, 100, 766)).getBlock() == LegacyBlocks.SMOOTH_QUARTZ, "ARENA_QUARTZ_NOT_RESTORED");
+            require(human.worldObj.getBlockState(new BlockPos(10, 100, 766)).getBlock() == LegacyBlocks.DEEPSLATE, "ARENA_DEEPSLATE_NOT_RESTORED");
+            evidence.addProperty("persistentArena", true);
+        }
         complete(server, true, "NATIVE_REOPEN_PASSED");
+    }
+    private static void save(MinecraftServer server) throws Exception {
+        server.getConfigurationManager().saveAllPlayerData();
+        for (net.minecraft.world.WorldServer level : server.worldServers) level.saveAllChunks(true, null);
     }
     private static void complete(MinecraftServer server, boolean success, String message) {
         successful = success; evidence.addProperty("successful", success); evidence.addProperty("result", message);

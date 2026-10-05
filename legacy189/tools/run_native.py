@@ -54,9 +54,14 @@ def main():
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--with-installed-mods", action="store_true")
     parser.add_argument("--java25", type=pathlib.Path)
+    parser.add_argument("--arena", type=pathlib.Path)
     args = parser.parse_args()
     instance, java, mod = (p.resolve(strict=True) for p in (args.instance, args.java, args.mod))
     output = args.output.resolve()
+    arena = args.arena.resolve(strict=True) if args.arena else None
+    if arena:
+        from map_blueprint import validate
+        validate(json.loads(arena.read_text(encoding="utf-8")))
     if os.name != "nt":
         raise ValueError("This local fixture launcher targets Windows x64")
     if output.is_relative_to(instance) or instance.is_relative_to(output):
@@ -111,6 +116,9 @@ def main():
                     raise ValueError("An existing DivZero Mod must be accounted for explicitly")
                 shutil.copy2(source, output / "mods" / source.name)
         shutil.copy2(mod, output / "mods" / mod.name)
+        if arena:
+            (output / "divzero-import").mkdir()
+            shutil.copy2(arena, output / "divzero-import/pvp-arena-transfer.json")
         (output / "options.txt").write_text("lang:zh_CN\nrenderDistance:4\nguiScale:2\nfullscreen:false\npauseOnLostFocus:false\nmaxFps:60\nmusic:0.0\nsound:0.2\n")
     installed = output / "mods" / mod.name
     if not installed.is_file() or sha256(installed) != sha256(mod):
