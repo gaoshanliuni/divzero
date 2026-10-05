@@ -20,6 +20,7 @@ public final class NativeFixture {
     public static final String WORLD = "DivZero189NativeFixture";
     public static final String PACKED_WORLD = "DivZero PvP 1.8.9";
     public static volatile boolean packedChecked, packedUiClicked;
+    public static volatile int packedGuiScale;
     public static volatile boolean equipmentClicks;
     public static volatile boolean finished;
     public static volatile boolean successful;
@@ -132,8 +133,13 @@ public final class NativeFixture {
         if (packedUiClicked && NativeRuntime.enabled(human)) {
             require(!human.canCommandSenderUseCommand(2, "ai"), "ACTIVATION_GRANTED_COMMANDS");
             require(NativeDuel.session(human).rounds == 0, "PACKED_MAP_OLD_STATISTICS");
+            require(packedGuiScale == Integer.getInteger("divzero.fixtureExpectedScale", 2), "PACKED_GUI_SCALE_NOT_EFFECTIVE");
+            boolean denied = false;
+            try { new NativeCommands().processCommand(human, new String[] {"combat", "legacy"}); } catch (net.minecraft.command.CommandException expected) { denied = true; }
+            require(denied && ModernCombat.serverEnabled, "PACKED_GLOBAL_RULE_PERMISSION");
             evidence.addProperty("source", "FIXTURE_ONLY"); evidence.addProperty("cleanTemplateNative", true);
             evidence.addProperty("noOperatorGrant", true); evidence.addProperty("nativeActivationButton", true); evidence.addProperty("loadoutBoundsVisible", true);
+            evidence.addProperty("effectiveGuiScale", packedGuiScale); evidence.addProperty("globalRuleMutationDenied", true);
             complete(server, true, "NATIVE_CLEAN_TEMPLATE_PASSED");
         } else if (server.getTickCounter() > 800) throw new IllegalStateException("PACKED_UI_TIMEOUT");
     }

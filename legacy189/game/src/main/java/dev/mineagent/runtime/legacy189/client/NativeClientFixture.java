@@ -15,6 +15,7 @@ public final class NativeClientFixture {
     private static boolean launched;
     private static int instructionDone;
     private static boolean respawnRequested, loadoutCaptured;
+    private static boolean disconnected;
     private NativeClientFixture() { }
     public static void tick() {
         if (!NativeFixture.requested()) return;
@@ -43,12 +44,18 @@ public final class NativeClientFixture {
                 else mc.displayGuiScreen(null);
             }
             if (ticks - finishedAt == 30) ScreenShotHelper.saveScreenshot(mc.mcDataDir, Boolean.getBoolean("divzero.legacyFixtureResume") ? "legacy189-resume.png" : "legacy189-native.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
-            if (ticks - finishedAt > 50) mc.shutdown();
+            if (ticks - finishedAt > 50 && !disconnected) {
+                disconnected = true;
+                if (mc.theWorld != null) mc.theWorld.sendQuittingDisconnectingPacket();
+                mc.loadWorld(null); mc.displayGuiScreen(new GuiMainMenu());
+            }
+            if (disconnected && ticks - finishedAt > 90) mc.shutdown();
         }
         if (Boolean.getBoolean("divzero.legacyPackedFixture") && NativeFixture.packedChecked && !NativeFixture.packedUiClicked && mc.currentScreen instanceof DuelClient.LoadoutScreen) {
             try {
                 DuelClient.LoadoutScreen screen = (DuelClient.LoadoutScreen) mc.currentScreen;
                 if (!screen.fixtureLayoutFits()) throw new IllegalStateException("PACKED_LOADOUT_CLIPPED");
+                NativeFixture.packedGuiScale = new net.minecraft.client.gui.ScaledResolution(mc).getScaleFactor();
                 ScreenShotHelper.saveScreenshot(mc.mcDataDir, "legacy189-packed-scale.png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
                 screen.fixtureSelect(30); NativeFixture.packedUiClicked = true;
             } catch (Exception failure) { throw new IllegalStateException("PACKED_UI_INPUT", failure); }

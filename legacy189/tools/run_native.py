@@ -86,7 +86,11 @@ def main():
     parser.add_argument("--arena", type=pathlib.Path)
     parser.add_argument("--packed-arena", type=pathlib.Path)
     parser.add_argument("--gui-scale", type=int, choices=(1, 2, 3, 4), default=2)
+    parser.add_argument("--width", type=int, default=1100)
+    parser.add_argument("--height", type=int, default=720)
     args = parser.parse_args()
+    if not 640 <= args.width <= 3840 or not 480 <= args.height <= 2160:
+        raise ValueError("Fixture window size is outside the supported range")
     instance, java, mod = (p.resolve(strict=True) for p in (args.instance, args.java, args.mod))
     output = args.output.resolve()
     arena = args.arena.resolve(strict=True) if args.arena else None
@@ -170,12 +174,13 @@ def main():
         command.append("-Ddivzero.legacyFixtureResume=true")
     if packed:
         command.append("-Ddivzero.legacyPackedFixture=true")
+        command.append("-Ddivzero.fixtureExpectedScale=" + str(args.gui_scale))
     if args.java25:
         command.append("-Ddivzero.java25=" + str(args.java25.resolve(strict=True)))
     command += ["-cp", os.pathsep.join(classpath), version["mainClass"], "--username", "DivZeroFixture", "--version", instance.name,
                 "--gameDir", str(output), "--assetsDir", str(root / "assets"), "--assetIndex", "1.8", "--uuid", player_id.hex,
                 "--accessToken", "0", "--userProperties", "{}", "--userType", "legacy",
-                "--tweakClass", "net.minecraftforge.fml.common.launcher.FMLTweaker", "--width", "1100", "--height", "720"]
+                "--tweakClass", "net.minecraftforge.fml.common.launcher.FMLTweaker", "--width", str(args.width), "--height", str(args.height)]
     log = output / ("resume-console.log" if args.resume else "console.log")
     if log.exists():
         raise ValueError("Fixture log already exists; retain failure evidence and use a new run")

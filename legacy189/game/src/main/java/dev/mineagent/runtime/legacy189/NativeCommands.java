@@ -10,6 +10,10 @@ public class NativeCommands extends CommandBase {
     @Override public String getCommandName() { return "ai"; }
     @Override public String getCommandUsage(ICommandSender sender) { return "/ai enable|disable|status|worker|create <name>|list|remove <name>|stop|offhand|swap"; }
     @Override public int getRequiredPermissionLevel() { return 0; }
+    // 1.8's EntityPlayerMP command gate can reject level 0 when cheats are off.
+    // Self-service operations have their own ownership checks; global mutations
+    // below still explicitly require the caller's real level-2 authority.
+    @Override public boolean canCommandSenderUseCommand(ICommandSender sender) { return sender instanceof EntityPlayerMP && !(sender instanceof NativeAgent); }
     @Override public void processCommand(ICommandSender sender, String[] args) throws CommandException {
         EntityPlayerMP player = getCommandSenderAsPlayer(sender);
         String action = args.length == 0 ? "status" : args[0];
