@@ -10,7 +10,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import java.util.UUID;
 
 public final class NativeNetwork {
-    public static final int PROTOCOL = 2;
+    public static final int PROTOCOL = 3;
     public static final SimpleNetworkWrapper CHANNEL = NetworkRegistry.INSTANCE.newSimpleChannel("divzero189");
     private NativeNetwork() { }
     public static void initialize() {

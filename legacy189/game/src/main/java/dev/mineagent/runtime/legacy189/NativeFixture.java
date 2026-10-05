@@ -28,6 +28,11 @@ public final class NativeFixture {
     private static final JsonObject evidence = new JsonObject();
     private NativeFixture() { }
     public static boolean requested() { return Boolean.getBoolean("divzero.legacyFixture"); }
+    public static boolean combatProbe(net.minecraft.entity.Entity target, net.minecraft.entity.Entity source) {
+        if (!requested() || stage != 3 || body == null) return false;
+        return target == body && (source == null || source.getUniqueID().equals(body.owner))
+                || target.getUniqueID().equals(body.owner) && source == body;
+    }
     public static void tick(MinecraftServer server) {
         if (!requested() || finished || !server.isSinglePlayer()) return;
         if (!new File(server.getFile("."), "divzero-native-fixture-allow").isFile()) return;

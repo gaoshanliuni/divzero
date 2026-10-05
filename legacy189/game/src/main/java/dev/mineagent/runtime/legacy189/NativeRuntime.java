@@ -40,6 +40,10 @@ public final class NativeRuntime {
         data().put(value);
         return body;
     }
+    public static NativeAgent createTransient(EntityPlayerMP owner, String name) {
+        requireEnabled(owner);
+        return spawn(new NativeWorldData.AgentDefinition(UUID.randomUUID(), owner.getUniqueID(), name, owner.dimension, owner.posX + 2, owner.posY, owner.posZ), false);
+    }
     private static NativeAgent spawn(NativeWorldData.AgentDefinition value, boolean restore) {
         MinecraftServer server = MinecraftServer.getServer();
         WorldServer world = server.worldServerForDimension(value.dimension);
@@ -78,6 +82,7 @@ public final class NativeRuntime {
     }
     public static void stop() {
         NativeService.stopAll();
+        NativeDuel.stop();
         NativeArena.stop();
         ModernCombat.stop();
         for (NativeAgent body : BODIES.values()) { body.stopActions(); body.closeConnection(); }
@@ -106,6 +111,7 @@ public final class NativeRuntime {
                 EntityPlayerMP player = (EntityPlayerMP) event.player;
                 NativeService.stop(player.getUniqueID());
                 SESSIONS.put(player.getUniqueID(), UUID.randomUUID()); NativeNetwork.sync(player);
+                NativeDuel.respawn(player);
             }
         }
         @SubscribeEvent public void tick(TickEvent.ServerTickEvent event) {
@@ -119,6 +125,7 @@ public final class NativeRuntime {
                 }
             }
             ModernCombat.tick();
+            NativeDuel.tick();
             for (NativeAgent body : new ArrayList<NativeAgent>(BODIES.values())) {
                 body.physics(server.getTickCounter());
                 NativeWorldData.AgentDefinition definition = data().agent(body.getUniqueID());

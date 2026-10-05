@@ -27,6 +27,8 @@ public class NativeCommands extends CommandBase {
                             if (!world.equals(NativeRuntime.data().identity()) || !session.equals(NativeRuntime.session(player)) || !NativeRuntime.enabled(player)) return;
                             tell(player, failure == null ? "Java 25 Worker 实际回执：" + value.get("type").getAsString() : "Worker 未就绪：" + failure.getClass().getSimpleName());
                         }));
+            } else if (action.equals("duel")) {
+                NativeDuel.command(player, args.length > 1 ? args[1] : "equip");
             } else if (action.equals("combat")) {
                 if (!player.canCommandSenderUseCommand(2, "ai") || args.length != 2 || !(args[1].equals("modern") || args[1].equals("legacy")))
                     throw new IllegalArgumentException("需要管理权限：/ai combat modern|legacy");
@@ -45,6 +47,7 @@ public class NativeCommands extends CommandBase {
                 if (args.length < 2) throw new IllegalArgumentException("请输入 AI 名称或 UUID");
                 NativeRuntime.delete(player, join(args, 1)); tell(player, "已移除指定 AI。");
             } else if (action.equals("stop")) {
+                if (NativeDuel.allowed(player)) NativeDuel.command(player, "stop");
                 for (NativeAgent body : NativeRuntime.bodies()) if (body.owner.equals(player.getUniqueID())) body.stopActions();
                 tell(player, "本人的 AI 身体动作已停止。");
             } else if (action.equals("offhand")) player.openGui(LegacyMod.instance, 0, player.worldObj, 0, 0, 0);
@@ -59,6 +62,6 @@ public class NativeCommands extends CommandBase {
     }
     private static void tell(EntityPlayerMP player, String text) { player.addChatMessage(new ChatComponentText("[DivZero] " + text)); }
     @Override public List<String> addTabCompletionOptions(ICommandSender sender, String[] args, BlockPos pos) {
-        return args.length == 1 ? getListOfStringsMatchingLastWord(args, "enable", "disable", "status", "worker", "create", "list", "remove", "stop", "offhand", "swap") : Collections.<String>emptyList();
+        return args.length == 1 ? getListOfStringsMatchingLastWord(args, "enable", "disable", "status", "worker", "create", "list", "remove", "stop", "offhand", "swap", "arena", "combat", "duel") : Collections.<String>emptyList();
     }
 }

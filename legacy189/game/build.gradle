@@ -7,7 +7,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = '1.0.32-legacy189.2'
+version = '1.0.32-legacy189.3'
 group = 'dev.mineagent.runtime'
 archivesBaseName = 'DivZero-forge-1.8.9'
 jar { manifest { attributes 'FMLCorePlugin': 'dev.mineagent.runtime.legacy189.coremod.LegacyCore', 'FMLCorePluginContainsFMLMod': 'true' } }

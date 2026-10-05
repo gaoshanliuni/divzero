@@ -19,6 +19,7 @@ public class ClientProxy extends CommonProxy {
     @Override public void initialize() {
         ClientRegistry.registerKeyBinding(SWAP); ClientRegistry.registerKeyBinding(EQUIPMENT);
         FMLCommonHandler.instance().bus().register(this); MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(new DuelClient());
     }
     @Override public void registerModels() {
         for (java.util.Map.Entry<String, net.minecraft.block.Block> entry : LegacyBlocks.REGISTERED.entrySet())
@@ -28,6 +29,7 @@ public class ClientProxy extends CommonProxy {
     @Override public Object equipmentScreen(int id, net.minecraft.entity.player.EntityPlayer player) {
         return id == 0 ? new EquipmentScreen(player) : null;
     }
+    @Override public void duelState(String json) { DuelClient.receive(json); }
     @Override public void receive(final NativeNetwork.State message) {
         Minecraft.getMinecraft().addScheduledTask(new Runnable() {
             @Override public void run() {
@@ -51,12 +53,13 @@ public class ClientProxy extends CommonProxy {
         if (EQUIPMENT.isPressed()) NativeNetwork.CHANNEL.sendToServer(new NativeNetwork.Action(state.world, state.session, 1, state.revision));
     }
     @SubscribeEvent public void unload(net.minecraftforge.event.world.WorldEvent.Unload event) {
-        if (event.world.isRemote) { state = null; pendingPlayer = false; ModernCombat.clientEnabled = false; }
+        if (event.world.isRemote) { state = null; pendingPlayer = false; ModernCombat.clientEnabled = false; DuelClient.clear(); }
     }
     @SubscribeEvent public void tick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             if (pendingPlayer && Minecraft.getMinecraft().thePlayer != null) { apply(); pendingPlayer = false; }
             NativeClientFixture.tick();
+            DuelClient.tick();
         }
     }
 }

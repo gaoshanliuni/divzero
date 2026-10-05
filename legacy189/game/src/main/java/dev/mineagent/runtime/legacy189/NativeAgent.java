@@ -37,6 +37,7 @@ public final class NativeAgent extends EntityPlayerMP {
         onUpdateEntity();
     }
     public void stopActions() { moveForward = 0; moveStrafing = 0; setSprinting(false); setSneaking(false); clearItemInUse(); }
+    public void requestJump() { if (onGround && isEntityAlive()) jump(); }
     public void closeConnection() { connection.closeChannel(new ChatComponentText("AI body closed")); }
     /** Forge may query channel attributes directly, bypassing NetHandler.sendPacket.
      * An empty real channel safely reports no FML dispatcher for this clientless body.
