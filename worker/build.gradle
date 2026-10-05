@@ -44,6 +44,7 @@ configurations.legacy189Implementation.extendsFrom configurations.implementation
 tasks.named('compileLegacy189Java') { dependsOn tasks.named('classes') }
 tasks.register('legacy189ServiceJar', Jar) {
     dependsOn tasks.named('legacy189Classes')
+    dependsOn configurations.runtimeClasspath
     archiveBaseName = 'DivZero-legacy189-service'
     archiveClassifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE

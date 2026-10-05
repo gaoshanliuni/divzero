@@ -7699,8 +7699,8 @@
     },
     {
       "path": "worker/build.gradle",
-      "sha256": "55af25c72b350e127de277e9af94cbab474613613162a1bc81287b874286f748",
-      "bytes": 5070
+      "sha256": "411d77bfe0f8535539d87891e24ec781c34e57135c1892cab02e01446ab37528",
+      "bytes": 5116
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/WorkerCancellation.java",
