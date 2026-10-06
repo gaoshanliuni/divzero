@@ -22,13 +22,15 @@ public final class ModernPlacementClientVerification {
                     p.getInventory().setSelectedSlot(1);var d=Vec3.atCenterOf(floor).add(0,.499,0).subtract(p.getEyePosition());p.setYRot((float)Math.toDegrees(Math.atan2(-d.x,d.z)));p.setXRot((float)-Math.toDegrees(Math.atan2(d.y,d.horizontalDistance())));
                     var hit=p.pick(p.blockInteractionRange(),0,false);if(!(hit instanceof BlockHitResult block)||!block.getBlockPos().equals(floor))throw new IllegalStateException("CLIENT_NATIVE_RAY_MISSED");
                     mc.gameMode.useItemOn(p,InteractionHand.MAIN_HAND,block);p.swing(InteractionHand.MAIN_HAND);
-                }else p.connection.sendCommand("ai duel "+kind);
+                }else if(kind.equals("hold")){p.getInventory().setSelectedSlot(2);mc.gameMode.useItem(p,InteractionHand.MAIN_HAND);}
+                else if(kind.equals("respawn")){if(++elapsed<25)return;p.respawn();elapsed=0;}
+                else p.connection.sendCommand("ai duel "+kind);
                 issued=true;
             }
-            if(++elapsed< (kind.equals("place")?12:2))return;
+            if(++elapsed< (kind.equals("place")||kind.equals("respawn")?12:2))return;
         }catch(Throwable failure){error=failure.toString();}
         try{
-            var result=Map.of("source","FIXTURE_ONLY","id",pending.get("id").getAsString(),"kind",kind,"selected",p.getInventory().getSelectedSlot(),"count",p.getInventory().getItem(1).getCount(),"wool",mc.level.getBlockState(floor.above()).is(Blocks.WHITE_WOOL),"error",error);
+            var result=Map.of("source","FIXTURE_ONLY","id",pending.get("id").getAsString(),"kind",kind,"selected",p.getInventory().getSelectedSlot(),"count",p.getInventory().getItem(1).getCount(),"wool",mc.level.getBlockState(floor.above()).is(Blocks.WHITE_WOOL),"error",error,"alive",p.isAlive(),"using",p.isUsingItem(),"supply",p.getInventory().getItem(2).getCount());
             var temp=mc.gameDirectory.toPath().resolve("modern-placement-client.tmp");Files.writeString(temp,new Gson().toJson(result));Files.move(temp,mc.gameDirectory.toPath().resolve("modern-placement-client.json"),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);pending=null;
         }catch(Exception e){throw new IllegalStateException(e);}
     }

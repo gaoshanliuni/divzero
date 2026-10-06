@@ -593,6 +593,7 @@
   "关联的接收邀请 · ": "Associated received invitation · ",
   "关键词 / 本文件标识符；不是 Native 类型推断或运行兼容证明。": "Keywords / this file identifier; not a Native type inference or runtime compatibility proof.",
   "关闭": "Off",
+  "关闭窗口": "Close",
   "关闭 F2 不会停止已启动脚本；断开服务器或退出客户端会停止受管运行。重启后绝不自动恢复，必须再次确认。这里不是浏览器 ui/ JS，也不是资源包重载。": "Closing F2 does not stop already-started scripts; disconnecting from the server or exiting the client stops managed runs. It will never auto-recover after restart; you must confirm again. This is not browser ui/ JS, nor a resource pack reload.",
   "关闭…": "Close…",
   "关闭或收起本窗口只隐藏界面，不提交、不授权、不取消任务。": "Closing or collapsing this window only hides the UI; it does not submit, authorize, or cancel tasks.",

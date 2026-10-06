@@ -24,12 +24,14 @@ final class ModernLifecycleVerification {
                 send(p,"place",0,new BlockPos(-4,100,800));phase=2;started=now;
             }else if(phase==2){var ack=ack(p);if(ack!=null){checkPlace(p,ack,new BlockPos(-4,101,800),true,63);rounds++;results.add(Map.of("round",rounds,"placement",ack));send(p,"stop",1,new BlockPos(1,100,766));phase=3;started=now;}}
             else if(phase==3&&s.phase().equals("STOPPED")){
-                if(rounds==4){finish(p,"PASS","");return true;}
+                if(rounds==4){send(p,"hold",1,new BlockPos(1,100,766));phase=7;started=now;return false;}
                 send(p,"ready",1,new BlockPos(1,100,766));phase=rounds==1?4:1;started=now;
             }else if(phase==4&&s.cleaning()){
                 send(p,"place",1,new BlockPos(1,100,766));phase=5;started=now;
             }else if(phase==5){var ack=ack(p);if(ack!=null){checkPlace(p,ack,new BlockPos(1,101,766),false,63);results.add(Map.of("cleanupRejectedPlacement",ack));require(s.cleaning(),"CLEANUP_CANCELLATION_WINDOW_MISSED");send(p,"stop",1,new BlockPos(1,100,766));phase=6;started=now;}}
             else if(phase==6&&s.phase().equals("STOPPED")){require(!s.cleaning(),"CLEANUP_CONTINUED_AFTER_STOP");send(p,"ready",1,new BlockPos(-4,100,800));phase=1;started=now;}
+            else if(phase==7){var ack=ack(p);if(ack!=null){require(p.isUsingItem()&&ack.path("using").asBoolean(),"PRE_DEATH_NATIVE_USE_REQUIRED");p.setInvulnerable(false);p.hurtServer(p.level(),p.damageSources().genericKill(),1000);send(p,"respawn",2,new BlockPos(1,100,766));phase=8;started=now;}}
+            else if(phase==8){var ack=ack(p);if(ack!=null&&p.isAlive()){require(ack.path("alive").asBoolean()&&!ack.path("using").asBoolean()&&!p.isUsingItem(),"RESPAWN_USE_STATE");require(p.getInventory().getSelectedSlot()==ack.path("selected").asInt(),"RESPAWN_SELECTED_SLOT");require(p.getInventory().getItem(2).getCount()==3&&ack.path("supply").asInt()==3,"DEATH_CONSUMED_UNFINISHED_FOOD");results.add(Map.of("nativeRespawn",ack));finish(p,"PASS","");return true;}}
         }catch(Throwable error){finish(p,"FAILED",error.toString());return true;}
         return false;
     }

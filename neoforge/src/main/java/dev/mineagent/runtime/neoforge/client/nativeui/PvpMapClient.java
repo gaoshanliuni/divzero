@@ -108,7 +108,7 @@ public final class PvpMapClient {
             }
             content.addChild(NativeUiTheme.text(t("双方独立选装，弓和弩自动配发箭矢。"),NativeUiTheme.MUTED,8));
             var buttons=WorkspacePanels.row();buttons.getLayout().height(25).flexShrink(0);content.addChild(buttons);
-            var ready=NativeUiTheme.button(t("准备并开始"),()->{command("ai duel ready");onClose();});ready.setId("pvp-ready");buttons.addChild(ready);buttons.addChild(NativeUiTheme.button(t("停止本局"),()->{command("ai duel stop");onClose();}));buttons.addChild(NativeUiTheme.button(t("关闭"),this::onClose));NativeUiTheme.controls(card);
+            var ready=NativeUiTheme.button(t("准备并开始"),()->{command("ai duel ready");onClose();});ready.setId("pvp-ready");buttons.addChild(ready);buttons.addChild(NativeUiTheme.button(t("停止本局"),()->{command("ai duel stop");onClose();}));buttons.addChild(NativeUiTheme.button(t("关闭窗口"),this::onClose));NativeUiTheme.controls(card);
         }
         private void pick(String actor,String slot){
             content.clearAllChildren();content.addChild(NativeUiTheme.text(t(actor.equals("human")?"我的装备":"AI 的装备")+" / "+slotName(slot),NativeUiTheme.ACCENT,10));

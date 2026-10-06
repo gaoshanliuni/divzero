@@ -979,8 +979,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "83e69d6433f0f8f4e98c1eb4b4560c9e15967c5d68d8b5ef4c8621fdcb478778",
-      "bytes": 322018
+      "sha256": "60bb4c97def5bd2359042543b6662400dbf2851ece6ecec9950729aace9d6d87",
+      "bytes": 322045
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -4804,8 +4804,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPlacementClientVerification.java",
-      "sha256": "1b94a79257a7890cc1e805d4c9d8917eb407729190274a8f9998f9ec35582449",
-      "bytes": 3094
+      "sha256": "ace237b98aea6cc50defec5124fe7fb8f023a6aa5ee7d70acaa03f547b954b6c",
+      "bytes": 3437
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPvpClientVerification.java",
@@ -4829,8 +4829,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "e58cc5e1edb7d25a1e60561cecccbea76036a6b79627c5d82cf008acccd4ec9c",
-      "bytes": 241245
+      "sha256": "8dca6fe637467318c2e617c9868046ecedf46b8392fb9cf9a89ec0065e0f1950",
+      "bytes": 241364
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5374,8 +5374,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PvpMapClient.java",
-      "sha256": "44b8b1c1d701348c1f7868272a786cd82601d935b9418ac4be028457094980c2",
-      "bytes": 16574
+      "sha256": "522039ca02383e703176627e71a5d18d0ead0f57bb45a155eb31b9faee13ecc9",
+      "bytes": 16580
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
@@ -6544,8 +6544,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernLifecycleVerification.java",
-      "sha256": "9fcd69dc6a52fb24e6e45aca6ffd757f89f3756aaa4a5b819d6238d536b5072c",
-      "bytes": 5285
+      "sha256": "d39d01c4e509fe8e463abe3aeae72ec407fa2b433ff83cc8df204a3616695888",
+      "bytes": 6097
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernPvpVerification.java",
