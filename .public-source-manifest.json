@@ -3913,6 +3913,11 @@
       "bytes": 496
     },
     {
+      "path": "gradle/modern-api.gradle",
+      "sha256": "b2c74876784c5b85bfab6ac85b6406cacf27749f8d5b46d93a87946269c9ed64",
+      "bytes": 3270
+    },
+    {
       "path": "gradle/modern-targets.json",
       "sha256": "5fb65a88c70bf4cf70cdef4861b5aa84fb99e741423e20ef986096acd768e6f8",
       "bytes": 552
@@ -4484,8 +4489,8 @@
     },
     {
       "path": "neoforge/build.gradle",
-      "sha256": "845d16881a4218143e8149f58ef33d1de2584209cc77e633f09714e0205f7d38",
-      "bytes": 10621
+      "sha256": "79ca671bdbe1128946cf519094fb02ff6824417ff6b2cf2f46fbc153f9d1450a",
+      "bytes": 10187
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/CommandBlockLimitRuntime.java",

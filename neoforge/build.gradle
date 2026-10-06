@@ -66,14 +66,7 @@ sourceSets.main.resources {
 
 // Only API-specific adapters are replaced. Every other production source remains in the target build.
 if (rootProject.gameTarget != '26.1.2') {
-    def common = file('src/main/java').toPath().toAbsolutePath().normalize()
-    def overlay = file('src/main/targets/26.2/java')
-    def overrides = fileTree(overlay).files.collect { overlay.toPath().relativize(it.toPath()).toString() }.toSet()
-    sourceSets.main.java.srcDir(overlay)
-    sourceSets.main.java.exclude { entry ->
-        def path = entry.file.toPath().toAbsolutePath().normalize()
-        path.startsWith(common) && overrides.contains(common.relativize(path).toString())
-    }
+    apply from: rootProject.file('gradle/modern-api.gradle')
 }
 
 neoForge {

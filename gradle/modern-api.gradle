@@ -1,0 +1,36 @@
+// Reviewed source translations for the 26.2+ native API. Original 26.1.2 sources are never rewritten.
+// Algorithm and feature code stays shared. Structural render/mixin changes use explicit target adapters.
+def translate = { String line ->
+    def colors = ['WHITE':'white','ORANGE':'orange','MAGENTA':'magenta','LIGHT_BLUE':'lightBlue','YELLOW':'yellow','LIME':'lime','PINK':'pink','GRAY':'gray','LIGHT_GRAY':'lightGray','CYAN':'cyan','PURPLE':'purple','BLUE':'blue','BROWN':'brown','GREEN':'green','RED':'red','BLACK':'black']
+    def groups = ['WOOL':'WOOL','TERRACOTTA':'DYED_TERRACOTTA','CARPET':'CARPET','STAINED_GLASS':'STAINED_GLASS','STAINED_GLASS_PANE':'STAINED_GLASS_PANE','SHULKER_BOX':'DYED_SHULKER_BOX','GLAZED_TERRACOTTA':'GLAZED_TERRACOTTA','CONCRETE':'CONCRETE','CONCRETE_POWDER':'CONCRETE_POWDER','CANDLE':'DYED_CANDLE','CANDLE_CAKE':'DYED_CANDLE_CAKE','BED':'BED','BANNER':'BANNER','WALL_BANNER':'WALL_BANNER','DYE':'DYE','HARNESS':'HARNESS','BUNDLE':'DYED_BUNDLE']
+    line = line.replaceAll(/\b(Blocks|Items)\.([A-Z_]+)\b/) { all, registry, name ->
+        def color = colors.keySet().sort { -it.length() }.find { name.startsWith(it + '_') }
+        def group = color == null ? null : groups[name.substring(color.length()+1)]
+        group == null ? all : "${registry}.${group}.${colors[color]}()"
+    }
+    line = line.replaceAll(/(?<![\w.])(?:net\.minecraft\.world\.entity\.)?EntityType\.([A-Z_]+)\b/) { all, name ->
+        name in ['CODEC','STREAM_CODEC'] ? all : "net.minecraft.world.entity.EntityTypes.${name}"
+    }
+    line = line.replaceAll(/(?<![\w.])(?:net\.minecraft\.world\.level\.block\.entity\.)?BlockEntityType\.([A-Z_]+)\b/) { all, name ->
+        name in ['CODEC','STREAM_CODEC'] ? all : "net.minecraft.world.level.block.entity.BlockEntityTypes.${name}"
+    }
+    def receiver = /(?:net\.minecraft\.client\.)?Minecraft\.getInstance\(\)|mc\(\)|mc|minecraft|this\.minecraft|client/
+    line = line.replaceAll("(?<![\\w.])(${receiver})\\.screen\\b") { all, value -> "${value}.gui.screen()" }
+    line = line.replaceAll("(?<![\\w.])(${receiver})\\.setScreen\\(") { all, value -> "${value}.gui.setScreen(" }
+    line = line.replaceAll("(?<![\\w.])(${receiver})\\.getOverlay\\(\\)") { all, value -> "${value}.gui.overlay()" }
+    line = line.replaceAll("(?<![\\w.])(${receiver})\\.getMainRenderTarget\\(\\)") { all, value -> "${value}.gameRenderer.mainRenderTarget()" }
+    line = line.replace('.gameRenderer.getMainCamera()', '.gameRenderer.mainCamera()')
+    return line
+}
+def overlay = file('src/main/targets/26.2/java')
+def replaced = fileTree(overlay).files.collect { overlay.toPath().relativize(it.toPath()).toString().replace('\\','/') }.toSet()
+def prepared = tasks.register('prepareTargetSources', Sync) {
+    inputs.property('gameTarget', rootProject.gameTarget)
+    inputs.file(rootProject.file('gradle/modern-api.gradle'))
+    from('src/main/java') { exclude(replaced); filter { String line -> translate(line) } }
+    from(overlay)
+    into(layout.buildDirectory.dir('generated/target-java'))
+    filteringCharset = 'UTF-8'
+}
+sourceSets.main.java.setSrcDirs([prepared])
+tasks.named('jar') { doFirst { throw new GradleException('TARGET_DIAGNOSTICS_ONLY: full dependency and native validation required before packaging') } }
