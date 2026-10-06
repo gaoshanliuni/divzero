@@ -43,6 +43,7 @@ public final class PvpMapClient {
     private static void command(String text){var connection=Minecraft.getInstance().getConnection();if(connection!=null)connection.sendCommand(text);}
     /** Actual LDLib2 press/release and server round trips, enabled only in the isolated fixture. */
     public static void fixtureTick(){
+        if(Boolean.getBoolean("mineagent.modernLifecycleFixture")){lifecycleUiFixture();return;}
         if(Boolean.getBoolean("mineagent.pvpMapReentryFixture")){
             if(state!=null&&++fixtureTicks==30){var mc=Minecraft.getInstance();try{var p=state.getAsJsonObject("profile");if(p.get("rounds").getAsInt()!=0||p.get("humanWool").getAsBoolean()||p.get("aiWool").getAsBoolean()||!p.getAsJsonObject("human").get("chest").getAsString().equals("minecraft:iron_chestplate")||!p.getAsJsonObject("ai").get("mainhand").getAsString().equals("minecraft:diamond_sword"))throw new IllegalStateException("MAP_REENTRY_DID_NOT_RESET");screenshot("pvp-map-reentry.png");java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("pvp-map-reentry.json"),"{\"status\":\"PASS\",\"worldMarkerWithoutJvmFlag\":true,\"scoreReset\":true,\"loadoutsReset\":true}");}catch(Exception e){try{java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("pvp-map-reentry.json"),new Gson().toJson(Map.of("status","FAILED","error",e.toString())));}catch(Exception ignored){}}mc.stop();}return;
         }
@@ -59,6 +60,25 @@ public final class PvpMapClient {
             else if(fixtureStep==42&&mc.screen instanceof Loadouts s&&s.data.getAsJsonObject("profile").get("aiWool").getAsBoolean()){screenshot("pvp-map-loadouts.png");if(click(s,"pvp-ready"))fixtureStep=5;}
             else if(fixtureStep==5&&state!=null&&state.getAsJsonObject("profile").get("rounds").getAsInt()==1&&!capturedHud){screenshot("pvp-map-score.png");capturedHud=true;java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("pvp-map-ui.json"),"{\"status\":\"PASS\",\"realReleaseClicks\":true,\"independentEquipment\":true,\"scoreHud\":true}");}
         }catch(Exception error){try{java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("human-duel-fixture.json"),new Gson().toJson(Map.of("status","FAILED","error",error.toString())));}catch(Exception ignored){}}
+    }
+    private static void lifecycleUiFixture(){
+        var mc=Minecraft.getInstance();if(++fixtureTicks%6!=0||fixtureStep>=20)return;
+        try{
+            if(fixtureTicks>1600)throw new IllegalStateException("MODERN_LOADOUT_UI_TIMEOUT_"+fixtureStep);
+            if(!(mc.screen instanceof Loadouts screen))return;
+            var profile=screen.data.getAsJsonObject("profile");
+            switch(fixtureStep){
+                case 0->{if(click(screen,"pvp-human-secondary"))fixtureStep=1;}
+                case 1->{if(click(screen,"pvp-item-minecraft-ender_pearl"))fixtureStep=2;}
+                case 2->{if(profile.getAsJsonObject("human").get("secondary").getAsString().equals("minecraft:ender_pearl")&&click(screen,"pvp-ai-secondary"))fixtureStep=3;}
+                case 3->{if(click(screen,"pvp-item-minecraft-shears"))fixtureStep=4;}
+                case 4->{if(profile.getAsJsonObject("ai").get("secondary").getAsString().equals("minecraft:shears")&&click(screen,"pvp-human-supply"))fixtureStep=5;}
+                case 5->{if(click(screen,"pvp-item-minecraft-golden_apple"))fixtureStep=6;}
+                case 6->{if(profile.getAsJsonObject("human").get("supply").getAsString().equals("minecraft:golden_apple")&&click(screen,"pvp-human-wool"))fixtureStep=7;}
+                case 7->{if(profile.get("humanWool").getAsBoolean()){screenshot("modern-loadouts-zh.png");var view=ClientLanguage.view();ClientLanguage.save("en_us",((Number)view.get("revision")).longValue()).join();command("ai duel equip");fixtureStep=8;}}
+                case 8->{if(ClientLanguage.language().equals("en_us")){screenshot("modern-loadouts-en.png");java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("modern-loadout-client.json"),new Gson().toJson(Map.of("status","PASS","source","FIXTURE_ONLY","realClicks",true,"guiScale",mc.getWindow().getGuiScale(),"secondary",profile.getAsJsonObject("human").get("secondary").getAsString(),"supply",profile.getAsJsonObject("human").get("supply").getAsString(),"englishLabel",t("第二物品"))));screen.onClose();fixtureStep=20;}}
+            }
+        }catch(Exception error){fixtureStep=20;try{java.nio.file.Files.writeString(mc.gameDirectory.toPath().resolve("modern-loadout-client.json"),new Gson().toJson(Map.of("status","FAILED","error",error.toString())));}catch(Exception ignored){}}
     }
     private static UIElement find(UIElement node,String id){if(id.equals(node.getId()))return node;for(var child:node.getChildren()){var found=find(child,id);if(found!=null)return found;}return null;}
     private static boolean click(Loadouts screen,String id){

@@ -44,6 +44,12 @@ public final class NativeHumanDuel {
         int fixtureStage;List<LocalActionPolicy.Sample> partialSamples=List.of();
         Run(ServerPlayer player){series=PvpMapSupport.enabled()?new HumanDuelSeries(0,PvpMapSupport.profile(player).rounds()):new HumanDuelSeries();this.player=player;owner=player.getUUID();server=player.level().getServer();level=player.level();directory=server.getServerDirectory().resolve("human-duel").resolve(id.toString());}
     }
+    record FixtureState(ServerPlayer player,MineAgentPlayer ai,String phase,boolean cleaning){}
+    static FixtureState fixtureState(MinecraftServer server){
+        if(!ENABLED||!Boolean.getBoolean("mineagent.modernLifecycleFixture"))return null;var run=RUNS.get(server);
+        var p=run==null?server.getPlayerList().getPlayers().stream().filter(v->!(v instanceof MineAgentPlayer)&&server.isSingleplayerOwner(v.nameAndId())).findFirst().orElse(null):server.getPlayerList().getPlayer(run.owner);
+        return p==null?null:new FixtureState(p,run==null?null:run.ai,run==null?"NONE":run.series.phase().name(),run!=null&&run.cleanup!=null);
+    }
     public static boolean enabled(){return ENABLED||mapActive;}
     public static boolean mapEnabled(){return mapActive||ENABLED&&Boolean.getBoolean("mineagent.pvpMap");}
     static boolean participant(MineAgentPlayer body){var run=RUNS.get(body.level().getServer());return enabled()&&run!=null&&run.ai==body;}
@@ -106,6 +112,7 @@ public final class NativeHumanDuel {
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
         var server=event.getServer();if(!enabled()||!server.isSingleplayer())return;
         if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server))return;
+        if(ENABLED&&Boolean.getBoolean("mineagent.modernLifecycleFixture")&&ModernLifecycleVerification.tick(server))return;
         if(Boolean.getBoolean("mineagent.humanDuelFixture"))fixtureTick(server);
         var run=RUNS.get(server);
         if(ENABLED&&(Boolean.getBoolean("mineagent.modernPvpFixture")||Boolean.getBoolean("mineagent.modernCombatFixture"))&&run==null&&server.getTickCount()>160){for(var p:server.getPlayerList().getPlayers())if(!(p instanceof MineAgentPlayer)){command(p,"ready");break;}return;}
@@ -189,7 +196,7 @@ public final class NativeHumanDuel {
         run.player.setInvulnerable(true);if(PvpMapSupport.enabled()&&run.player.level()==run.level)PvpMapArena.returnToLobby(run.player);persist(run);tell(run.player,"对练已停止，完成 "+run.series.completed()+(PvpMapSupport.enabled()?" 场。原因：":" / 5 场。原因：")+reason);
     }
     private static Map<String,Object> snapshot(Run run){
-        var data=new LinkedHashMap<String,Object>();data.put("schema",1);data.put("source",(Boolean.getBoolean("mineagent.humanDuelFixture")||Boolean.getBoolean("mineagent.modernPvpFixture")||Boolean.getBoolean("mineagent.modernCombatFixture"))?"FIXTURE_ONLY":PvpMapSupport.enabled()?"PVP_MAP":"HUMAN_DUEL");data.put("series",run.id.toString());data.put("status",run.series.phase().name());data.put("error",run.error);data.put("roundLimitSeconds",180);data.put("requiredRounds",PvpMapSupport.enabled()?0:5);data.put("completedRounds",run.series.completed());data.put("human",run.owner.toString());data.put("model",run.model);data.put("initialModelHash",run.modelHash);data.put("boost",false);data.put("onlineUpdates",false);data.put("equipment",List.of("minecraft:diamond_sword","minecraft:iron_helmet","minecraft:iron_chestplate","minecraft:iron_leggings","minecraft:iron_boots"));data.put("matches",List.copyOf(run.matches));
+        var data=new LinkedHashMap<String,Object>();data.put("schema",1);data.put("source",(Boolean.getBoolean("mineagent.humanDuelFixture")||Boolean.getBoolean("mineagent.modernPvpFixture")||Boolean.getBoolean("mineagent.modernCombatFixture")||Boolean.getBoolean("mineagent.modernLifecycleFixture"))?"FIXTURE_ONLY":PvpMapSupport.enabled()?"PVP_MAP":"HUMAN_DUEL");data.put("series",run.id.toString());data.put("status",run.series.phase().name());data.put("error",run.error);data.put("roundLimitSeconds",180);data.put("requiredRounds",PvpMapSupport.enabled()?0:5);data.put("completedRounds",run.series.completed());data.put("human",run.owner.toString());data.put("model",run.model);data.put("initialModelHash",run.modelHash);data.put("boost",false);data.put("onlineUpdates",false);data.put("equipment",List.of("minecraft:diamond_sword","minecraft:iron_helmet","minecraft:iron_chestplate","minecraft:iron_leggings","minecraft:iron_boots"));data.put("matches",List.copyOf(run.matches));
         if(run.match!=null&&(run.series.phase()==HumanDuelSeries.Phase.FIGHTING||run.series.phase()==HumanDuelSeries.Phase.STOPPED))data.put("partial",Map.of("match",run.match.toString(),"frames",List.copyOf(run.frames),"damageEvents",List.copyOf(run.damage),"samples",run.partialSamples));
         return data;
     }

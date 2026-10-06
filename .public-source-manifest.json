@@ -4803,6 +4803,11 @@
       "bytes": 2167
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPlacementClientVerification.java",
+      "sha256": "1b94a79257a7890cc1e805d4c9d8917eb407729190274a8f9998f9ec35582449",
+      "bytes": 3094
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPvpClientVerification.java",
       "sha256": "f918677021401b5cee0fcba999675320d8a90649a4932df1021325e392ddedec",
       "bytes": 2961
@@ -5369,8 +5374,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PvpMapClient.java",
-      "sha256": "cab0682c26474ae283fdf9eabbebd73dce86208ae25c302ea1f05333e3858097",
-      "bytes": 14135
+      "sha256": "44b8b1c1d701348c1f7868272a786cd82601d935b9418ac4be028457094980c2",
+      "bytes": 16574
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
@@ -5639,8 +5644,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/UiClientSessions.java",
-      "sha256": "86da51b38377599829ec123e1143ded2eba2a41fc7cfa759cde2317d8463c37c",
-      "bytes": 7691
+      "sha256": "6a2adbc79f1e536fd394e0efb1b7dee9025193d55587d11b4a97705f1e41aa00",
+      "bytes": 7903
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/UiPresentationClient.java",
@@ -6538,6 +6543,11 @@
       "bytes": 7768
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernLifecycleVerification.java",
+      "sha256": "9fcd69dc6a52fb24e6e45aca6ffd757f89f3756aaa4a5b819d6238d536b5072c",
+      "bytes": 5285
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernPvpVerification.java",
       "sha256": "716751929f0f95ad96941bef808405ab347b99bad5556e178740efc10be0f4a6",
       "bytes": 11555
@@ -6574,8 +6584,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "75730ad24dee6edca7a7b4192cc7e4c8f42cc94e04fdc6831d6cd9a45cd3041b",
-      "bytes": 39738
+      "sha256": "de832af07b25b92efb83b651107106b8dc7297424d35a594e43974e828eb9940",
+      "bytes": 40566
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
