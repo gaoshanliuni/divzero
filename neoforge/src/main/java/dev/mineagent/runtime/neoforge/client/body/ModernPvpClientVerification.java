@@ -15,6 +15,9 @@ public final class ModernPvpClientVerification {
             if(++startupTicks%40==0&&mc.screen!=null){try{
                 var buttons=mc.screen.children().stream().filter(v->v instanceof net.minecraft.client.gui.components.AbstractWidget).map(v->((net.minecraft.client.gui.components.AbstractWidget)v).getMessage().getString()).toList();
                 Files.writeString(mc.gameDirectory.toPath().resolve("modern-startup-screen.json"),new com.google.gson.Gson().toJson(Map.of("screen",mc.screen.getClass().getName(),"buttons",buttons)));
+                if(mc.screen instanceof net.minecraft.client.gui.screens.BackupConfirmScreen&&Files.isRegularFile(mc.gameDirectory.toPath().resolve("human-duel-instance.json"))){
+                    for(var child:mc.screen.children())if(child instanceof net.minecraft.client.gui.components.Button button&&(button.getMessage().getString().equals("创建备份并加载")||button.getMessage().getString().equals("Backup and load"))){button.onPress(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN,0,0));break;}
+                }
                 if(!startupCaptured&&startupTicks>120){startupCaptured=true;net.minecraft.client.Screenshot.takeScreenshot(mc.getMainRenderTarget(),image->{try(image){image.writeToFile(mc.gameDirectory.toPath().resolve("modern-startup.png"));}catch(Exception e){throw new IllegalStateException(e);}});}
             }catch(Exception e){throw new IllegalStateException(e);}}
             return;

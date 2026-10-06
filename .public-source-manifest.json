@@ -4809,8 +4809,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPvpClientVerification.java",
-      "sha256": "f918677021401b5cee0fcba999675320d8a90649a4932df1021325e392ddedec",
-      "bytes": 2961
+      "sha256": "8ad19a306ad3c4e239818923afd76a881d76cfa38d71fdbc9463932c3da850b7",
+      "bytes": 3533
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeBoostInput.java",
@@ -7906,6 +7906,21 @@
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/LivingEntityPartsMixin.java",
       "sha256": "fcca137faa97136bc21fa5e2bedfe61ed6794a4b07fdb35528f54a3073993fab",
       "bytes": 1313
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/PlayerBodyFocusMixin.java",
+      "sha256": "7f6bc433631a56e7dcfc86f6e4c7f6a66dc5c1580d1dc4235c7267446a09b64f",
+      "bytes": 636
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/PlayerBodyMouseMixin.java",
+      "sha256": "d3bd38d15c942b17fac363ded4ecec57f75d46eb426c53738c9479c292c38624",
+      "bytes": 903
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/WorkspaceMouseAccess.java",
+      "sha256": "1a97fdce1fb9af68f759f3cc54fc42aade3ce5114a4ad3e3778401396c0a1184",
+      "bytes": 708
     },
     {
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/ui/NativeMenuData.java",
