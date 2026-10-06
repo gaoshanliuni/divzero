@@ -15,6 +15,7 @@ public final class NativeTraining {
     private static JsonObject last=new JsonObject(),lastReceipt=new JsonObject();
     private NativeTraining(){}
     public static boolean active(){return current!=null;}
+    public static boolean cleaning(){return current!=null&&current.phase.equals("CLEANING");}
     public static JsonObject status(){JsonObject value=current==null?new JsonParser().parse(last.toString()).getAsJsonObject():current.summary();value.remove("games");value.remove("replay");return value;}
     public static JsonObject receipt(){return new JsonParser().parse(lastReceipt.toString()).getAsJsonObject();}
     public static void start(EntityPlayerMP owner,int rounds){

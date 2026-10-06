@@ -16,6 +16,7 @@ public final class NativePlacementVerification {
     private final JsonObject evidence;
     private final JsonArray attempts=new JsonArray();
     private int stage,cycle,waitUntil,began,beforeServer,beforeClient;
+    private boolean cleanupChecked;
     public NativePlacementVerification(EntityPlayerMP player,JsonObject evidence){
         this.evidence=evidence;NativeDuel.Session run=NativeDuel.session(player);
         NativeDuel.choose(player,run.revision,"human",-1,"",true);NativeDuel.command(player,"ready");
@@ -40,6 +41,7 @@ public final class NativePlacementVerification {
             request("STOP",tick);stage=4;
         }else if(stage==4&&ack==request&&run.phase.equals("READY")&&tick>=waitUntil){
             require(player.inventory.currentItem==1&&clientSlot==1,"STOP_DID_NOT_RETAIN_SELECTED_WOOL");cycle++;
+            if(cleanupChecked){evidence.addProperty("realClientPlacementAttempts",clientPlacements);evidence.addProperty("stopRestartCycles",cycle-1);action="";return true;}
             if(cycle<3){request("START",tick);stage=5;}
             else{anchor=new BlockPos(0,100,768);waitUntil=tick+10;stage=6;}
         }else if(stage==5&&ack==request&&run.active()){stage=0;}
@@ -47,7 +49,15 @@ public final class NativePlacementVerification {
         else if(stage==7&&ack==request&&tick>=waitUntil){
             JsonObject denied=observation(player);evidence.add("protectedLobbyPlacement",denied);
             require(player.worldObj.isAirBlock(anchor.up())&&!clientBlock&&wool(player)==beforeServer&&clientCount==beforeClient,"REJECTED_PLACE_DESYNC "+denied);
-            evidence.addProperty("realClientPlacementAttempts",clientPlacements);evidence.addProperty("stopRestartCycles",cycle-1);action="";return true;
+            request("START",tick);stage=8;
+        }else if(stage==8&&ack==request&&run.phase.equals("CLEANING")){
+            player.playerNetServerHandler.setPlayerLocation(-10.5,101,810.5,90,45);anchor=new BlockPos(-13,100,810);waitUntil=tick+3;stage=9;
+        }else if(stage==9&&tick>=waitUntil){beforeServer=wool(player);beforeClient=clientCount;request("PLACE",tick);stage=10;}
+        else if(stage==10&&ack==request&&tick>=waitUntil){
+            JsonObject denied=observation(player);evidence.add("cleaningPlacement",denied);
+            require(run.phase.equals("CLEANING")&&player.worldObj.isAirBlock(anchor.up())&&!clientBlock&&wool(player)==beforeServer&&clientCount==beforeClient,"CLEANING_PLACEMENT_CONSUMED "+denied);
+            request("STOP",tick);stage=11;
+        }else if(stage==11&&ack==request&&run.phase.equals("READY")&&tick>=waitUntil){cleanupChecked=true;request("START",tick);stage=5;
         }
         return false;
     }

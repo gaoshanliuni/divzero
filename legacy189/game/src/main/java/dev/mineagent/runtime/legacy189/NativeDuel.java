@@ -23,6 +23,7 @@ import java.util.concurrent.*;
 public final class NativeDuel {
     public static final String[] SLOTS = {"head", "chest", "legs", "feet", "mainhand", "offhand"};
     private static final Map<UUID, Session> SESSIONS = new HashMap<UUID, Session>();
+    private static final Map<UUID, EntityPlayerMP> BUILD_INVENTORY_SYNC = new HashMap<UUID, EntityPlayerMP>();
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().create();
     private NativeDuel() { }
     public static boolean allowed(EntityPlayerMP player) {
@@ -77,6 +78,8 @@ public final class NativeDuel {
         run.policyStart = run.model.inferences(); run.archive = null;
     }
     static void equip(EntityPlayerMP player, String[] gear, boolean wool, int woolColor) {
+        player.clearItemInUse();
+        if(player.openContainer!=player.inventoryContainer)player.closeScreen();
         player.inventory.clear(); player.inventory.setItemStack(null); NativeOffhand.get(player).set(null);
         for (int slot = 0; slot < 6; slot++) {
             if (!choices(slot).contains(gear[slot])) throw new IllegalArgumentException("DUEL_EQUIPMENT");
@@ -93,6 +96,14 @@ public final class NativeDuel {
         player.clearActivePotions(); player.setAbsorptionAmount(0); player.extinguish();
         player.inventory.currentItem = 0; player.setHealth(player.getMaxHealth()); player.getFoodStats().setFoodLevel(20);
         player.inventoryContainer.detectAndSendChanges(); NativeNetwork.sync(player);
+        if(!(player instanceof NativeAgent)){
+            // Container deltas do not carry the selected hotbar slot. A restart while
+            // holding wool otherwise leaves the client on wool and the server on a sword.
+            // Send a full inventory too: a previous rejected client prediction may differ
+            // even when the server's container cache already equals the new loadout.
+            player.sendContainerToPlayer(player.inventoryContainer);
+            player.playerNetServerHandler.sendPacket(new net.minecraft.network.play.server.S09PacketHeldItemChange(player.inventory.currentItem));
+        }
     }
     public static ItemStack stack(String name) {
         if (name.equals("minecraft:air")) return null;
@@ -102,6 +113,11 @@ public final class NativeDuel {
     public static void tick() {
         MinecraftServer server = MinecraftServer.getServer(); int tick = server.getTickCounter();
         if (!NativeArena.ready()) return;
+        // Forge refunds cancelled placement after PlaceEvent returns. Reconcile after
+        // that transaction, rather than sending the provisional count during the event.
+        for(EntityPlayerMP player:BUILD_INVENTORY_SYNC.values())if(server.getConfigurationManager().getPlayerByUUID(player.getUniqueID())==player)
+            player.sendContainerToPlayer(player.inventoryContainer);
+        BUILD_INVENTORY_SYNC.clear();
         LegacyModelStore.initialize();
         if (tick % 20 == 0 && !NativeTraining.active() && SESSIONS.values().stream().noneMatch(Session::active)) clearDrops(server.worldServerForDimension(0));
         for (EntityPlayerMP player : new ArrayList<EntityPlayerMP>(server.getConfigurationManager().getPlayerList())) {
@@ -214,6 +230,7 @@ public final class NativeDuel {
             if (run.archive != null) try { run.archive.get(5, TimeUnit.SECONDS); } catch (Exception failure) { LegacyMod.logger.warn("Round archive not confirmed at shutdown", failure); }
         }
         SESSIONS.clear();
+        BUILD_INVENTORY_SYNC.clear();
     }
     public static void respawn(EntityPlayerMP player) { if (allowed(player)) { Session run = session(player); NativeArena.lobby(player); push(run, true); } }
     public static final class Session {
@@ -262,11 +279,13 @@ public final class NativeDuel {
             if (!event.world.isRemote && event.world.provider.getDimensionId() == 0 && NativeArena.ready() && NativeArena.protectedArea(event.pos)
                     && !LegacyArenaMaterials.editable(event.world,event.pos)) event.setCanceled(true);
         }
-        @SubscribeEvent(priority = EventPriority.LOWEST) public void placing(BlockEvent.PlaceEvent event) {
+        @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true) public void placing(BlockEvent.PlaceEvent event) {
             if (!event.world.isRemote && event.world.provider.getDimensionId() == 0 && NativeArena.ready() && NativeArena.protectedArea(event.pos)) {
                 Block block = event.placedBlock.getBlock();
-                if (!NativeArena.field(event.pos) || event.blockSnapshot.getReplacedBlock().getBlock() != Blocks.air || block.hasTileEntity(event.placedBlock) || block.getBlockHardness(event.world,event.pos)<0) event.setCanceled(true);
+                boolean cleaning=NativeTraining.cleaning()||SESSIONS.values().stream().anyMatch(run->run.phase.equals("CLEANING"));
+                if (cleaning || !NativeArena.field(event.pos) || event.blockSnapshot.getReplacedBlock().getBlock() != Blocks.air || block.hasTileEntity(event.placedBlock) || block.getBlockHardness(event.world,event.pos)<0) event.setCanceled(true);
                 else if (!event.isCanceled()) NativeRuntime.data().temporary(event.pos,true);
+                if(event.player instanceof EntityPlayerMP&&!(event.player instanceof NativeAgent))BUILD_INVENTORY_SYNC.put(event.player.getUniqueID(),(EntityPlayerMP)event.player);
             }
         }
         @SubscribeEvent public void explosion(net.minecraftforge.event.world.ExplosionEvent.Detonate event) {

@@ -20,7 +20,7 @@ final class PlacementClientFixture {
             String action=NativePlacementVerification.action;
             if(action.equals("STOP")||action.equals("START")){
                 if(DuelClient.state()==null)return;
-                String phase=DuelClient.state().get("phase").getAsString();if(action.equals("START")&&!phase.equals("READY")||action.equals("STOP")&&!phase.equals("FIGHTING"))return;
+                String phase=DuelClient.state().get("phase").getAsString();if(action.equals("START")&&!phase.equals("READY")||action.equals("STOP")&&phase.equals("READY"))return;
                 if(!(mc.currentScreen instanceof DuelClient.LoadoutScreen)){DuelClient.open();return;}
                 ((DuelClient.LoadoutScreen)mc.currentScreen).fixtureSelect(action.equals("START")?30:31);
             }else{
