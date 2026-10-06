@@ -4804,8 +4804,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPlacementClientVerification.java",
-      "sha256": "2d68613d7cbf075a83427137ad64bea3e5ae9b7eb4dc0edda0585bfd02ce38fd",
-      "bytes": 3502
+      "sha256": "668de44477e880e310892c1972d00f40af9d162a44f04f86cd2214648fc73851",
+      "bytes": 3587
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPvpClientVerification.java",
@@ -4819,7 +4819,7 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "sha256": "18424072e4d29ad5499aeab50af587ca3db51a3bb69f95a611e22ed9e6bd39ed",
+      "sha256": "f51513e4106cc1baf76a2ad40cb76944816b8017726a2cb4b7f0a93c645bcce4",
       "bytes": 12188
     },
     {
@@ -6594,8 +6594,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativePearlCombat.java",
-      "sha256": "5d4bd6b7df821a355c3a4117ff6f09f07f7025a8bd813544266d366bde5357d6",
-      "bytes": 6090
+      "sha256": "79aa3177ae1f02908cb9766f2b6c3a3069bce51bcf6911f615584977cd58f0a6",
+      "bytes": 6311
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",

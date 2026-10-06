@@ -20,7 +20,9 @@ final class NativePearlCombat {
             if(state.consumed&&!state.arrived&&p.position().distanceTo(state.origin)>4&&p.position().distanceTo(state.landing)<2){state.arrived=true;w.session.add("nativePearlTeleports",1);w.positioning.reset();}
             if(w.tick()-state.issued<3)return true;
         }
-        boolean retreat=w.recentDamageChain>=2&&w.tick()-w.lastContactDamage<24;
+        // A confirmed contact escape is already an urgent retreat. Waiting for two heavy hits can
+        // leave too little health for the native five-damage teleport, making the safe option expire.
+        boolean retreat=(w.recentDamageChain>=2||w.contactEscape)&&w.tick()-w.lastContactDamage<24;
         // Native pearls can be used during knockback. Requiring ground prevents the escape precisely when needed.
         // The same trajectory planner includes inherited vertical motion and still validates the whole landing area.
         if(target==null||!NativeHumanDuel.pvpParticipant(p)||w.actor.recovering()||!p.onGround()&&!retreat||p.isPassenger()||p.isUsingItem()||w.tick()-state.issued<60||w.tick()-state.probe<12)return false;

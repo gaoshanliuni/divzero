@@ -20,7 +20,7 @@ public final class ModernPlacementClientVerification {
                 if(kind.equals("place")){
                     if(p.getInventory().getSelectedSlot()!=pending.get("selected").getAsInt())throw new IllegalStateException("CLIENT_PRE_USE_SELECTED_SLOT");
                     p.getInventory().setSelectedSlot(1);var d=Vec3.atCenterOf(floor).add(0,.499,0).subtract(p.getEyePosition());p.setYRot((float)Math.toDegrees(Math.atan2(-d.x,d.z)));p.setXRot((float)-Math.toDegrees(Math.atan2(d.y,d.horizontalDistance())));
-                    var hit=p.pick(p.blockInteractionRange(),0,false);if(!(hit instanceof BlockHitResult block)||!block.getBlockPos().equals(floor))throw new IllegalStateException("CLIENT_NATIVE_RAY_MISSED");
+                    var hit=p.pick(p.blockInteractionRange(),1,false);if(!(hit instanceof BlockHitResult block)||!block.getBlockPos().equals(floor))throw new IllegalStateException("CLIENT_NATIVE_RAY_MISSED expected="+floor+" actual="+hit+" position="+p.position()+" view="+p.getViewVector(1));
                     mc.gameMode.useItemOn(p,InteractionHand.MAIN_HAND,block);p.swing(InteractionHand.MAIN_HAND);
                 }else if(kind.equals("hold")){mc.options.keyUse.setDown(true);p.getInventory().setSelectedSlot(2);mc.gameMode.useItem(p,InteractionHand.MAIN_HAND);}
                 else if(kind.equals("respawn")){mc.options.keyUse.setDown(false);if(++elapsed<25)return;p.respawn();elapsed=0;}
