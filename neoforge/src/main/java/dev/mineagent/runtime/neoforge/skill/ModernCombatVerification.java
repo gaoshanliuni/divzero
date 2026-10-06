@@ -46,7 +46,13 @@ final class ModernCombatVerification {
                 }else require(now-started<220,"PURSUED_ARCHER_NEVER_RETURNED_FIRE");
             }else if(phase==5&&now-started>=160){
                 require(ai.isAlive(),"MELEE_PRESSURE_DEATH");proof.put("pressureAiHealth",ai.getHealth());proof.put("pressureHumanHealth",p.getHealth());proof.put("pressureSkills",skills(p,ai));
-                require(ai.getHealth()<aiHealth&&p.getHealth()<playerHealth,"PRESSURE_NATIVE_DAMAGE_AND_COUNTER_REQUIRED");finish(p,ai,"PASS","");return true;
+                require(ai.getHealth()<aiHealth&&p.getHealth()<playerHealth,"PRESSURE_NATIVE_DAMAGE_AND_COUNTER_REQUIRED");
+                client(p,ai,false,false);p.setHealth(80);place(p,new Vec3(.5,101,800.5));place(ai,new Vec3(3.5,101,800.5));phase=6;started=now;
+            }else if(phase==6&&now-started>=160){
+                var state=JSON.valueToTree(skills(p,ai));long combo=0,jumps=0,hits=0;
+                for(var skill:state.path("skills")){var counters=skill.path("session").path("counters");combo=Math.max(combo,counters.path("maxMeleeCombo").asLong());jumps+=counters.path("observedJumpTaps").asLong()+counters.path("observedCounterJumps").asLong();hits+=counters.path("verifiedHits").asLong();}
+                proof.put("comboSkills",state);proof.put("maxCombo",combo);proof.put("observedTacticalJumps",jumps);proof.put("verifiedHits",hits);
+                require(combo>=2,"NATIVE_COMBO_NOT_CONFIRMED");finish(p,ai,"PASS","");return true;
             }
         }catch(Throwable error){finish(p,ai,"FAILED",error.toString());return true;}
         return false;

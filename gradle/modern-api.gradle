@@ -35,6 +35,11 @@ def translate = { String line ->
     line = line.replace('.publishServer(GameType.', '.publishServer(net.minecraft.server.MinecraftServer.MultiplayerScope.LAN,GameType.')
     line = line.replaceAll(/\b(b|cow)\.knockback\(([^(),]+),([^(),]+),([^(),]+)\)/) { all, entity, force, x, z -> "${entity}.knockback(${force},${x},${z},${entity}.damageSources().generic(),0f)" }
     if (rootProject.gameTarget == '26.3') {
+        line = line.replaceAll(/\bswing\((InteractionHand\.\w+|hand),\s*(true|false)\)/) { all, hand, force -> 'swing('+hand+',net.minecraft.world.item.component.SwingAnimation.DEFAULT,'+force+')' }
+        line = line.replace('ContainerScreenGeometry)screen','ContainerScreenGeometry)(Object)screen')
+        line = line.replace('player.drop(stack,false)','player.drop(stack,false,net.minecraft.util.Prediction.SERVER_ONLY)')
+        line = line.replace('getDataPackRegistriesWithDimensions()', 'getWorldRegistriesWithDimensions()')
+
         line = line.replace('org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_selectFolderDialog','dev.mineagent.runtime.neoforge.client.nativeui.NativeFileDialogs.folder').replace('org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog','dev.mineagent.runtime.neoforge.client.nativeui.NativeFileDialogs.open').replace('org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_saveFileDialog','dev.mineagent.runtime.neoforge.client.nativeui.NativeFileDialogs.save')
         line = line.replace('ProjectInfo.URL,true)', 'java.net.URI.create(ProjectInfo.URL),true)')
         line = line.replace('p.drop(offered,false)', 'p.drop(offered,false,net.minecraft.util.Prediction.SERVER_ONLY)')
@@ -56,8 +61,8 @@ def translate = { String line ->
         line = line.replace('event.scancode()', 'event.keycode()')
         line = line.replace('MultiplayerScope.LAN,GameType.SURVIVAL,', 'MultiplayerScope.LAN,')
         line = line.replace('import net.minecraft.world.item.HoeItem;', '')
-        line = line.replace('w.player().getInventory().getItem(i).getItem() instanceof HoeItem', 'w.player().getInventory().getItem(i).canPerformAction(net.neoforged.neoforge.common.ItemAbilities.HOE_TILL)')
-        line = line.replace('w.player().getMainHandItem().getItem() instanceof HoeItem', 'w.player().getMainHandItem().canPerformAction(net.neoforged.neoforge.common.ItemAbilities.HOE_TILL)')
+        line = line.replace('w.player().getInventory().getItem(i).getItem() instanceof HoeItem', 'w.player().getInventory().getItem(i).getOrDefault(net.minecraft.core.component.DataComponents.BLOCK_TRANSFORMER,net.minecraft.core.Holder.direct(new net.minecraft.core.component.BlockTransformer(java.util.List.of()))).is(net.minecraft.world.item.component.BlockTransformers.HOE)')
+        line = line.replace('w.player().getMainHandItem().getItem() instanceof HoeItem', 'w.player().getMainHandItem().getOrDefault(net.minecraft.core.component.DataComponents.BLOCK_TRANSFORMER,net.minecraft.core.Holder.direct(new net.minecraft.core.component.BlockTransformer(java.util.List.of()))).is(net.minecraft.world.item.component.BlockTransformers.HOE)')
 
         line = line.replace('import org.lwjgl.glfw.GLFW;', '')
         def input = 'com.mojang.blaze3d.platform.InputConstants.'

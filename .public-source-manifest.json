@@ -3914,8 +3914,8 @@
     },
     {
       "path": "gradle/modern-api.gradle",
-      "sha256": "abbd56341bafb8c34a6ff96fb5abf62558eaa2eeec7e67d9e9a85829e98c8fba",
-      "bytes": 11422
+      "sha256": "d109ab16a6be5c4ba3c779b2f59d2f8f5e2088362fc707a4bc5a3f19b20cdaf1",
+      "bytes": 12299
     },
     {
       "path": "gradle/modern-targets.json",
@@ -6534,8 +6534,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernCombatVerification.java",
-      "sha256": "901d8301685f3a2ee1f99c12fec029f3c89e7ed498cfda07f867c1f4ced2ca98",
-      "bytes": 6966
+      "sha256": "11552aee342b1cc895952f248e3cae0faeb6798bf9bf2eec814de5b0644581c5",
+      "bytes": 7768
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernPvpVerification.java",
@@ -7878,6 +7878,11 @@
       "bytes": 1238
     },
     {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/content/MediaScreenBlock.java",
+      "sha256": "580095864681d780a35f88cd4660b0e9e4c0d5307f4521663deb0cdf160db69c",
+      "bytes": 1397
+    },
+    {
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/content/NativePackResources.java",
       "sha256": "d9392d9f9e6db53088f38003be4f975b75958abc07a2424eba04ace249f91c61",
       "bytes": 374
@@ -7886,6 +7891,11 @@
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/content/NativePackSupplier.java",
       "sha256": "ae85017976a05a6c8d408c169cb3f3a45b466f23b8c61fb08e308288ae16f304",
       "bytes": 784
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/LivingEntityPartsMixin.java",
+      "sha256": "fcca137faa97136bc21fa5e2bedfe61ed6794a4b07fdb35528f54a3073993fab",
+      "bytes": 1313
     },
     {
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/ui/NativeMenuData.java",
