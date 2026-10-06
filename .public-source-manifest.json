@@ -3914,8 +3914,8 @@
     },
     {
       "path": "gradle/modern-api.gradle",
-      "sha256": "59683a5d5f0f8e819db5f7529974a45e7d42b759a487293b8a5f02abab4dfe77",
-      "bytes": 7610
+      "sha256": "abbd56341bafb8c34a6ff96fb5abf62558eaa2eeec7e67d9e9a85829e98c8fba",
+      "bytes": 11422
     },
     {
       "path": "gradle/modern-targets.json",
@@ -7858,9 +7858,39 @@
       "bytes": 1013
     },
     {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/basketball/BasketballHoopBlock.java",
+      "sha256": "3b4058a22f2ab75287e0f9b965bc46aebdc9d95b842b8f40aba564be2d4802cd",
+      "bytes": 1378
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeFileDialogs.java",
+      "sha256": "549411eec5002caaee4850a7d5d8f2adf2383ca70065a64a242335df13e9db76",
+      "bytes": 3446
+    },
+    {
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePlatformInput.java",
       "sha256": "a4361f3631de0b27cdb7afdfdd1a4dce363ea49288418d2e0c419f85dec19273",
       "bytes": 1735
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/content/AutomationConsoleBlock.java",
+      "sha256": "18cad73acd40b95d452a667042dd92748102a947e80562687d46fafc96047459",
+      "bytes": 1238
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/content/NativePackResources.java",
+      "sha256": "d9392d9f9e6db53088f38003be4f975b75958abc07a2424eba04ace249f91c61",
+      "bytes": 374
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/content/NativePackSupplier.java",
+      "sha256": "ae85017976a05a6c8d408c169cb3f3a45b466f23b8c61fb08e308288ae16f304",
+      "bytes": 784
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/ui/NativeMenuData.java",
+      "sha256": "c6691645b306340816fcc3cae6a927073481d5e7ef6484e5d91802510f66ea2f",
+      "bytes": 5536
     },
     {
       "path": "neoforge/src/main/templates/META-INF/neoforge.mods.toml",

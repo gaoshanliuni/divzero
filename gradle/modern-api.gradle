@@ -35,6 +35,30 @@ def translate = { String line ->
     line = line.replace('.publishServer(GameType.', '.publishServer(net.minecraft.server.MinecraftServer.MultiplayerScope.LAN,GameType.')
     line = line.replaceAll(/\b(b|cow)\.knockback\(([^(),]+),([^(),]+),([^(),]+)\)/) { all, entity, force, x, z -> "${entity}.knockback(${force},${x},${z},${entity}.damageSources().generic(),0f)" }
     if (rootProject.gameTarget == '26.3') {
+        line = line.replace('org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_selectFolderDialog','dev.mineagent.runtime.neoforge.client.nativeui.NativeFileDialogs.folder').replace('org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog','dev.mineagent.runtime.neoforge.client.nativeui.NativeFileDialogs.open').replace('org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_saveFileDialog','dev.mineagent.runtime.neoforge.client.nativeui.NativeFileDialogs.save')
+        line = line.replace('ProjectInfo.URL,true)', 'java.net.URI.create(ProjectInfo.URL),true)')
+        line = line.replace('p.drop(offered,false)', 'p.drop(offered,false,net.minecraft.util.Prediction.SERVER_ONLY)')
+
+        if(line.contains('private final InterpolationHandler interpolation=')) return ' // Entity now owns the native interpolation handler.'
+        line = line.replace('@Override public InterpolationHandler getInterpolation(){return interpolation;}', '@Override protected InterpolationHandler createInterpolationHandler(){return net.minecraft.world.entity.LinearInterpolationHandler.create(this,3);}')
+        line = line.replace('interpolation.interpolate()', 'getInterpolation().interpolate()')
+        line = line.replaceAll(/(?<![\w.])(?:net\.minecraft\.server\.packs\.)?AbstractPackResources\b/, 'dev.mineagent.runtime.neoforge.content.NativePackResources')
+        line = line.replace('new Pack.ResourcesSupplier()', 'new dev.mineagent.runtime.neoforge.content.NativePackSupplier()')
+        line = line.replaceAll(/(\b[a-zA-Z_][\w]*(?:\.[a-zA-Z_][\w]*)*)\.invulnerableTime\s*=\s*([^;]+);/) { all, entity, value -> entity+'.setInvulnerableTime('+value+');' }
+        line = line.replaceAll(/(\b[a-zA-Z_][\w]*(?:\.[a-zA-Z_][\w]*)*)\.invulnerableTime\b/) { all, entity -> entity+'.getInvulnerableTime()' }
+        line = line.replaceAll(/\.swing\((InteractionHand\.\w+|net\.minecraft\.world\.InteractionHand\.\w+|hand)\)/) { all, hand -> '.swing('+hand+',net.minecraft.world.item.component.SwingAnimation.DEFAULT,false)' }
+        line = line.replace('.getAttackAnim(', '.getSwingAnimation(').replace('.setInvulnerable(', '.setPermanentlyInvulnerable(')
+        line = line.replace('poses.mulPose(', 'poses.rotate(')
+        line = line.replace('RenderTypes.entityTranslucentCullItemTarget(', 'RenderTypes.entityTranslucentCull(')
+        line = line.replace(',null,outline,crumble)', ',null,outline)')
+        line = line.replaceAll(/getBoundingBoxForCulling\((\w+) entity\)/) { all, type -> 'getBoundingBoxForCulling('+type+' entity,float partial)' }
+        line = line.replace('screen.getGuiLeft()', '((dev.mineagent.runtime.neoforge.mixin.client.ContainerScreenGeometry)screen).divzero$left()').replace('screen.getGuiTop()', '((dev.mineagent.runtime.neoforge.mixin.client.ContainerScreenGeometry)screen).divzero$top()')
+        line = line.replace('event.scancode()', 'event.keycode()')
+        line = line.replace('MultiplayerScope.LAN,GameType.SURVIVAL,', 'MultiplayerScope.LAN,')
+        line = line.replace('import net.minecraft.world.item.HoeItem;', '')
+        line = line.replace('w.player().getInventory().getItem(i).getItem() instanceof HoeItem', 'w.player().getInventory().getItem(i).canPerformAction(net.neoforged.neoforge.common.ItemAbilities.HOE_TILL)')
+        line = line.replace('w.player().getMainHandItem().getItem() instanceof HoeItem', 'w.player().getMainHandItem().canPerformAction(net.neoforged.neoforge.common.ItemAbilities.HOE_TILL)')
+
         line = line.replace('import org.lwjgl.glfw.GLFW;', '')
         def input = 'com.mojang.blaze3d.platform.InputConstants.'
         def aliases = ['ENTER':'RETURN','KP_ENTER':'NUMPADENTER','LEFT_SHIFT':'LSHIFT','RIGHT_SHIFT':'RSHIFT','LEFT_CONTROL':'LCONTROL','RIGHT_CONTROL':'RCONTROL','LEFT_ALT':'LALT','RIGHT_ALT':'RALT']
@@ -56,7 +80,7 @@ def replaced = (fileTree(overlay).files.collect { overlay.toPath().relativize(it
 def prepared = tasks.register('prepareTargetSources', Sync) {
     inputs.property('gameTarget', rootProject.gameTarget)
     inputs.file(rootProject.file('gradle/modern-api.gradle'))
-    from('src/main/java') { exclude(replaced); filter { String line -> translate(line) } }
+    from('src/main/java') { exclude(replaced); if(rootProject.gameTarget == '26.3') exclude('**/PotionBrewingAccess.java','**/PotionMixAccess.java'); filter { String line -> translate(line) } }
     from(overlay) { exclude(extra) }
     if (rootProject.gameTarget != '26.2') from(specific)
     into(layout.buildDirectory.dir('generated/target-java'))
@@ -67,5 +91,11 @@ tasks.named('jar') {
     archiveClassifier = "mc-${rootProject.gameTarget}-experimental"
     doFirst {
         if (!providers.gradleProperty('nativeProbe').getOrElse('false').toBoolean()) throw new GradleException('TARGET_DIAGNOSTICS_ONLY: use explicit nativeProbe for an isolated acceptance artifact, never a Release')
+    }
+}
+
+if (rootProject.gameTarget == '26.3') {
+    tasks.named('processResources') {
+        filesMatching('mineagent_actions.mixins.json') { filter { String line -> line.contains('"PotionBrewingAccess"') || line.contains('"PotionMixAccess"') ? null : line } }
     }
 }
