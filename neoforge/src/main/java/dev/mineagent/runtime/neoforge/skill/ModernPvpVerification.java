@@ -78,9 +78,24 @@ final class ModernPvpVerification {
                 ai.stopUsingItem();require(!ai.isUsingItem(),"NATIVE_BOW_CANCEL");phase=12;started=tick;
             }else if(phase==12&&tick-started>=12){
                 verifyPlacement(viewer);RESULTS.put("nativePlacementAndProtection",true);
-                RESULTS.put("health",ai.getHealth());RESULTS.put("movementAttribute",ai.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED));finish(viewer,ai,"PASS","");
+                RESULTS.put("health",ai.getHealth());RESULTS.put("movementAttribute",ai.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED));
+                for(int x=-12;x<=-5;x++){ai.level().setBlock(new BlockPos(x,103,804),Blocks.STONE.defaultBlockState(),3);for(int y=104;y<=106;y++)ai.level().setBlock(new BlockPos(x,y,805),Blocks.STONE.defaultBlockState(),3);}
+                begin(ai,new Vec3(-11.5,104,804.5),new Vec3(-4.5,104,804.5));phase=13;started=tick;
+            }else if(phase==13){
+                require(ai.getY()>=103.99,"NARROW_LEDGE_FALL");
+                if(ai.movementController().outcome().equals("ARRIVED")){RESULTS.put("narrowWallLedgeTicks",tick-started);RESULTS.put("narrowWallLedgeNavigation",ai.movementController().evidence());begin(ai,new Vec3(-4.5,101,810.5),new Vec3(4.5,101,810.5));phase=14;started=tick;}else require(tick-started<180,"NARROW_LEDGE_TIMEOUT");
+            }else if(phase==14){
+                if(tick-started==5){ai.level().setBlock(new BlockPos(0,101,810),Blocks.STONE.defaultBlockState(),3);ai.level().setBlock(new BlockPos(0,102,810),Blocks.STONE.defaultBlockState(),3);}
+                if(ai.movementController().outcome().equals("ARRIVED")){RESULTS.put("changedTerrainTicks",tick-started);RESULTS.put("changedTerrainNavigation",ai.movementController().evidence());verifySafety(ai);finish(viewer,ai,"PASS","");}else require(tick-started<220,"CHANGED_TERRAIN_TIMEOUT");
             }
         }catch(Throwable failure){finish(viewer,ai,"FAILED",failure.toString());}
+    }
+    private static void verifySafety(MineAgentPlayer p){
+        float health=p.getHealth();p.setHealth(1);require(!NativeDropSafety.affordable(p,4),"LETHAL_DROP_ACCEPTED");p.setHealth(health);
+        var terrain=new NativeTraversalEvaluator(p);require(!terrain.loaded(new BlockPos(30000,101,30000)),"UNKNOWN_CHUNK_ACCEPTED");
+        var at=new Vec3(10.5,101,810.5);var lava=new BlockPos(10,101,810);p.level().setBlock(lava,Blocks.LAVA.defaultBlockState(),3);terrain.beginSlice();require(!terrain.clear(at,net.minecraft.world.entity.Pose.STANDING,false),"LAVA_LANDING_ACCEPTED");p.level().setBlock(lava,Blocks.AIR.defaultBlockState(),3);terrain.beginSlice();require(terrain.clear(at,net.minecraft.world.entity.Pose.STANDING,false),"COLLISION_CACHE_NOT_INVALIDATED");
+        var enemies=new ArrayList<net.minecraft.world.entity.monster.Zombie>();for(int i=0;i<2;i++){var enemy=net.minecraft.world.entity.EntityType.ZOMBIE.create(p.level(),net.minecraft.world.entity.EntitySpawnReason.COMMAND);enemy.setPos(at.add(i,0,0));enemy.setNoAi(true);p.level().addFreshEntity(enemy);enemies.add(enemy);}require(!NativeDropSafety.landing(p,at),"ENEMY_POCKET_ACCEPTED");for(var enemy:enemies)enemy.discard();
+        RESULTS.put("lethalUnknownLiquidCrowdRejected",true);RESULTS.put("collisionCacheInvalidated",true);
     }
     private static void verifyPlacement(ServerPlayer p){
         p.stopUsingItem();p.teleportTo(p.level(),-4.5,101,800.5,Set.of(),-90,0,true);p.getInventory().setItem(1,new ItemStack(Items.WHITE_WOOL,64));p.getInventory().setSelectedSlot(1);NativeInventorySync.full(p);

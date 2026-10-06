@@ -15,7 +15,10 @@ final class CombatPrediction {
     private final Map<UUID,List<List<MotionForecast.Sample>>> predictions=new HashMap<>();
     private int tick=-1,decisionTick=-1;
     void observe(SkillWork work,List<LivingEntity> entities){
-        int now=work.tick();if(now==tick)return;tick=now;predictions.clear();
+        observe(work.tick(),entities);
+    }
+    void observe(int now,List<LivingEntity> entities){
+        if(now==tick)return;tick=now;predictions.clear();
         var live=new HashSet<UUID>();
         for(var entity:entities){live.add(entity.getUUID());var old=history.get(entity.getUUID());
             var velocity=old!=null&&now>old.tick?entity.position().subtract(old.position).scale(1d/(now-old.tick)):entity.getDeltaMovement();
@@ -26,14 +29,17 @@ final class CombatPrediction {
         }history.keySet().retainAll(live);
     }
     private List<List<MotionForecast.Sample>> paths(SkillWork work,LivingEntity entity){
-        if(decisionTick!=work.tick()){decisionTick=work.tick();predictions.clear();}
+        return paths(work.tick(),entity);
+    }
+    private List<List<MotionForecast.Sample>> paths(int now,LivingEntity entity){
+        if(decisionTick!=now){decisionTick=now;predictions.clear();}
         return predictions.computeIfAbsent(entity.getUUID(),id->{
             var observed=history.get(id);var velocity=observed==null?entity.getDeltaMovement():observed.velocity;
             double gravity=entity.isNoGravity()?0:entity.getGravity();
             if(!entity.onGround()&&!entity.isInWater()&&!entity.onClimbable())velocity=new Vec3(velocity.x,(velocity.y-gravity)*.98,velocity.z);
             var origin=entity.position();var bounds=entity.getBoundingBox();var level=entity.level();
             double speed=entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)==null?.1:entity.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
-            return MotionForecast.predict(new MotionForecast.Input(point(origin),point(velocity),entity.onGround(),entity.isNoGravity()?0:entity.getGravity(),Math.max(.02,speed*.3),observed==null?10:work.tick()-observed.tick,entity instanceof net.minecraft.world.entity.player.Player?point(entity.getLookAngle()):null,observed==null?point(Vec3.ZERO):point(observed.acceleration)),new MotionForecast.Collision(){
+            return MotionForecast.predict(new MotionForecast.Input(point(origin),point(velocity),entity.onGround(),entity.isNoGravity()?0:entity.getGravity(),Math.max(.02,speed*.3),observed==null?10:now-observed.tick,entity instanceof net.minecraft.world.entity.player.Player?point(entity.getLookAngle()):null,observed==null?point(Vec3.ZERO):point(observed.acceleration)),new MotionForecast.Collision(){
                 public MotionForecast.Point move(MotionForecast.Point from,MotionForecast.Point requested){
                     var at=vec(from);var displacement=vec(requested);var next=at.add(displacement);
                     if(!level.hasChunkAt(BlockPos.containing(next)))return from;
@@ -46,6 +52,13 @@ final class CombatPrediction {
                 public boolean supported(MotionForecast.Point at){return !(entity instanceof net.minecraft.world.entity.monster.Vex)&&!level.noCollision(entity,bounds.move(vec(at).subtract(origin)).move(0,-.06,0));}
             },24);
         });
+    }
+    record Landing(Vec3 position,int ticks){}
+    Landing landing(int now,LivingEntity entity){
+        var observed=history.get(entity.getUUID());
+        if(observed==null||entity.onGround()||observed.velocity.y>=-.05||observed.impulseUntil>=now)return null;
+        for(var sample:paths(now,entity).getFirst())if(sample.grounded())return new Landing(vec(sample.position()),sample.tick());
+        return null;
     }
     Vec3 intercept(SkillWork work,LivingEntity target,double ticks){
         var values=paths(work,target).getFirst();double time=Math.clamp(ticks,0,values.size());int whole=(int)time;

@@ -4799,8 +4799,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernCombatClientVerification.java",
-      "sha256": "f9ec74113279b2d888c5ff8e47d5660c1a2ef0b73996e6d9406295d529af5cf7",
-      "bytes": 2167
+      "sha256": "7f2d589feeb0114c5d56f18ad3c5abbb1f8d7cf803414ec687c7ac0d1e44bf46",
+      "bytes": 2973
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPlacementClientVerification.java",
@@ -6494,8 +6494,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",
-      "sha256": "80dec7d1eed30be386e4f492bc246ff9e0f2f72ff750d05621fb6f22e5316068",
-      "bytes": 7682
+      "sha256": "4f5cc610a74a448bb54251c368bf048a2ac01dfbe583f552eb36f9450e591976",
+      "bytes": 8287
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
@@ -6539,18 +6539,18 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernCombatVerification.java",
-      "sha256": "11552aee342b1cc895952f248e3cae0faeb6798bf9bf2eec814de5b0644581c5",
-      "bytes": 7768
+      "sha256": "8552d5a10e86a9b5176e666a459cd3f8157c9fa9da3ef8f21d17b6905100251c",
+      "bytes": 9604
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernLifecycleVerification.java",
-      "sha256": "d39d01c4e509fe8e463abe3aeae72ec407fa2b433ff83cc8df204a3616695888",
-      "bytes": 6097
+      "sha256": "3f29f561eece14ac205e752a24d2ea12d13ffb5d606f31dc45fb2046a4be2865",
+      "bytes": 6783
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernPvpVerification.java",
-      "sha256": "716751929f0f95ad96941bef808405ab347b99bad5556e178740efc10be0f4a6",
-      "bytes": 11555
+      "sha256": "f25dddef579d513ab36165b9026985b1c7bc36764c561de4886f450879b9139c",
+      "bytes": 14127
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/MovementSkills.java",
@@ -7916,6 +7916,11 @@
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/PlayerBodyMouseMixin.java",
       "sha256": "d3bd38d15c942b17fac363ded4ecec57f75d46eb426c53738c9479c292c38624",
       "bytes": 903
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/WorkspaceKeyboardMixin.java",
+      "sha256": "ab04de1b8997a3336e88136a3fa4db111093945a65549adf102eb8e94748452d",
+      "bytes": 1602
     },
     {
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/WorkspaceMouseAccess.java",
