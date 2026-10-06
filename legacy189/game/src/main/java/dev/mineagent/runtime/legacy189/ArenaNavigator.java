@@ -25,6 +25,7 @@ public final class ArenaNavigator {
     public boolean recovering(){return recovery.active();}
     public int placed(){return recovery.placed;}
     public int consumed(){return recovery.consumed;}
+    public int sheared(){return recovery.sheared;}
     public void reset(NativeAgent actor){stop(actor);recovery.reset(actor);plans=stuckRecoveries=woolBroken=directPlans=expandedNodes=searchTicks=0;maxSliceMillis=0;retry.reset(0);plannedTarget=lastPosition=null;}
     public void stop(NativeAgent actor){recovery.cancel();steps=Collections.emptyList();search=null;index=stuck=0;pursuing=false;actor.stopActions();}
     private void recheck(int tick){steps=Collections.emptyList();search=null;index=0;retry.reset(tick);reason="TERRAIN_CHANGED_RECHECK";}

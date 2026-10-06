@@ -17,6 +17,8 @@ final class MobilityClientFixture {
             if(stage==0&&DuelClient.fixtureChoose(0,6,"minecraft:ender_pearl"))stage=1;
             else if(stage==1&&DuelClient.state().getAsJsonArray("human").get(6).getAsString().equals("minecraft:ender_pearl")&&DuelClient.fixtureChoose(1,6,"minecraft:shears"))stage=2;
             else if(stage==2&&DuelClient.state().getAsJsonArray("ai").get(6).getAsString().equals("minecraft:shears")){
+                ((DuelClient.LoadoutScreen)mc.currentScreen).refresh();stage=3;
+            }else if(stage==3){
                 net.minecraft.util.ScreenShotHelper.saveScreenshot(mc.mcDataDir,"secondary-equipment.png",mc.displayWidth,mc.displayHeight,mc.getFramebuffer());NativeMobilityVerification.uiPassed=true;mc.displayGuiScreen(null);
             }
         }catch(Exception failure){NativeMobilityVerification.clientFailure=failure.toString();}

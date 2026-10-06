@@ -82,7 +82,12 @@ public final class NativeMobilityVerification {
         if(scenario==0&&run.meleeHits>0){require(a.posY>112.8&&minHealth==20,"RIM_TRAVERSAL_FELL");evidence.addProperty("rimPursuitHit",true);evidence.addProperty("rimDirectPlans",run.navigation.directPlans);evidence.addProperty("rimStartDelayTicks",firstMove);next(p,tick);}
         else if(scenario==1&&run.meleeHits>0){require(a.onGround&&a.posY<101.1&&minHealth>=17&&minHealth<20&&firstMove<=8,"LOW_DAMAGE_DROP_FAILED health="+minHealth+" firstMove="+firstMove);evidence.addProperty("dropDamage",20-minHealth);evidence.addProperty("dropStartDelayTicks",firstMove);evidence.addProperty("dropApproachTicks",tick-started);evidence.addProperty("dropDirectPlans",run.navigation.directPlans);next(p,tick);}
         else if(scenario==2&&run.meleeHits>0){require(run.navigation.placed()>=2&&run.navigation.consumed()==run.navigation.placed()&&a.posY>102,"PVP_TOWER_NOT_EXECUTED");for(BlockPos pos:scene.keySet())require(p.worldObj.getBlockState(pos).getBlock()==Blocks.iron_block,"PERMANENT_TOWER_WALL_DESTROYED");evidence.addProperty("verticalWoolPlaced",run.navigation.placed());evidence.addProperty("verticalWoolConsumed",run.navigation.consumed());evidence.addProperty("towerApproachTicks",tick-started);next(p,tick);}
-        else if(scenario==3&&run.meleeHits>0){require(run.navigation.woolBroken>0&&toolTicks>0&&a.inventory.getStackInSlot(3).getItemDamage()>0,"SHEARS_NOT_USED_NATIVELY");evidence.addProperty("shearsMiningTicks",toolTicks);evidence.addProperty("shearsDurabilityUsed",a.inventory.getStackInSlot(3).getItemDamage());next(p,tick);}
+        else if(scenario==3&&run.meleeHits>0){
+            // Forge 1.8.9 removes vanilla wool durability consumption from ItemShears.
+            // Verify the held tool at the successful native harvest instead.
+            evidence.addProperty("shearsMiningTicks",toolTicks);evidence.addProperty("shearsDurabilityUsed",a.inventory.getStackInSlot(3).getItemDamage());evidence.addProperty("shearsBlocksBroken",run.navigation.sheared());
+            require(run.navigation.woolBroken>0&&toolTicks>0&&run.navigation.sheared()>0,"SHEARS_NOT_USED_NATIVELY");next(p,tick);
+        }
         else if(scenario==4){
             if(!closeBow&&run.ranged.evidence().get("shots").getAsInt()>=2){require(a.inventory.currentItem==3,"SECONDARY_BOW_NOT_SELECTED");evidence.add("secondaryBow",run.ranged.evidence());p.playerNetServerHandler.setPlayerLocation(a.posX-2.2,a.posY,a.posZ,-90,0);closeBow=true;}
             if(closeBow&&run.meleeHits>0){require(a.inventory.currentItem==0&&a.loadout.switches>=2,"MELEE_SWITCH_NOT_EXECUTED");evidence.addProperty("nativeWeaponSwitches",a.loadout.switches);next(p,tick);}

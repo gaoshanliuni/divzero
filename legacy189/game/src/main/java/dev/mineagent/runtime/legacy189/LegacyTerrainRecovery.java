@@ -27,10 +27,10 @@ public final class LegacyTerrainRecovery {
     private String before;
     private float progress;
     private final Rejections<String> rejected=new Rejections<String>();
-    public int attempts, broken, placed, consumed;
+    public int attempts, broken, placed, consumed, sheared;
     public String state="IDLE";
     public boolean active(){return search!=null||planned!=null;}
-    public void reset(NativeAgent actor){cancel();this.actor=actor;rejected.clear();attempts=broken=placed=consumed=0;goal=null;}
+    public void reset(NativeAgent actor){cancel();this.actor=actor;rejected.clear();attempts=broken=placed=consumed=sheared=0;goal=null;}
     public void cancel(){
         if(actor!=null){if(edit!=null)actor.worldObj.sendBlockBreakProgress(actor.getEntityId(),pos(edit.cell()),-1);if(planned!=null)actor.inventory.currentItem=selectedSlot;}
         search=null;planned=null;edit=null;approachSteps.clear();state="IDLE";progress=0;
@@ -192,7 +192,10 @@ public final class LegacyTerrainRecovery {
             int duration=breakTicks(at);if(duration>240||tick-actionAt>Math.max(30,duration+30)){fail("MINING_NO_CONFIRMED_PROGRESS");return null;}
             actor.swingItem();progress+=actor.worldObj.getBlockState(at).getBlock().getPlayerRelativeBlockHardness(actor,actor.worldObj,at);
             actor.worldObj.sendBlockBreakProgress(actor.getEntityId(),at,Math.min(9,(int)(progress*10)));
-            if(progress>=1&&!sent){sent=true;if(actor.theItemInWorldManager.tryHarvestBlock(at)&&actor.worldObj.isAirBlock(at))broken++;else fail("NATIVE_BREAK_REJECTED");}
+            if(progress>=1&&!sent){
+                sent=true;boolean scissors=actor.getHeldItem()!=null&&actor.getHeldItem().getItem()==net.minecraft.init.Items.shears;
+                if(actor.theItemInWorldManager.tryHarvestBlock(at)&&actor.worldObj.isAirBlock(at)){broken++;if(scissors)sheared++;}else fail("NATIVE_BREAK_REJECTED");
+            }
             return null;
         }
         if(!mayPlace(at)){fail("TERRAIN_PLACE_REVOKED");return null;}int slot=materialSlot();if(slot<0){fail("BUILDING_MATERIAL_REQUIRED");return null;}select(slot);
