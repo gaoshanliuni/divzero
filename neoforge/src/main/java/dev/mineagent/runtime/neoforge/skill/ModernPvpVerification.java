@@ -15,6 +15,7 @@ import java.nio.file.*;
 final class ModernPvpVerification {
     private static final UUID TOKEN=UUID.randomUUID();
     private static final Map<String,Object> RESULTS=new LinkedHashMap<>();
+    private static final List<Long> movementTicks=new ArrayList<>();
     private static int phase,started,placedBefore;private static Vec3 origin;private static float health;
     private static double straight;private static boolean done;
     static void tick(ServerPlayer viewer,MineAgentPlayer ai){
@@ -22,6 +23,7 @@ final class ModernPvpVerification {
         if(!Boolean.getBoolean("mineagent.modernPvpFixture")||!Files.isRegularFile(Path.of("human-duel-instance.json")))return;
         int tick=ai.level().getServer().getTickCount();
         try{
+            if(phase>=1&&phase<=6){var times=ai.level().getServer().getTickTimesNanos();movementTicks.add(times[Math.floorMod(tick-1,times.length)]);}
             if(tick%10==0){var state=new LinkedHashMap<String,Object>();state.put("phase",phase);state.put("tick",tick);state.put("position",ai.position().toString());state.put("grounded",ai.onGround());state.put("held",ai.getMainHandItem().toString());state.put("wool",ai.getInventory().countItem(Items.LIGHT_BLUE_WOOL));state.put("movement",ai.movementController().evidence());Files.writeString(viewer.level().getServer().getServerDirectory().resolve("modern-pvp-progress.json"),new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(state));}
             viewer.setInvulnerable(true);
             if(phase==0){
@@ -64,8 +66,17 @@ final class ModernPvpVerification {
                     placedBefore=ai.getInventory().countItem(Items.ARROW);require(ai.beginTaskItemUse(UUID.randomUUID(),InteractionHand.MAIN_HAND)&&ai.isUsingItem(),"NATIVE_BOW_START");phase=7;started=tick;
                 }else {if(!ai.movementController().recovering())ai.movementController().recover(ai,new Vec3(11.5,101,795.5));require(tick-started<100,"SHEARS_TIMEOUT");}
             }else if(phase==7&&tick-started>=24){
-                require(ai.isUsingItem()&&ai.getTicksUsingItem()>=20,"NATIVE_BOW_CHARGE");ai.releaseUsingItem();require(!ai.isUsingItem()&&ai.getInventory().countItem(Items.ARROW)==placedBefore-1,"NATIVE_BOW_RELEASE");RESULTS.put("bowChargeAndConsumption",true);
-                ai.beginTaskItemUse(UUID.randomUUID(),InteractionHand.MAIN_HAND);ai.stopUsingItem();require(!ai.isUsingItem(),"NATIVE_BOW_CANCEL");
+                require(ai.isUsingItem()&&ai.getTicksUsingItem()>=20,"NATIVE_BOW_CHARGE");
+                viewer.teleportTo(viewer.level(),520.5,101,807.5,Set.of(),90,0,true);phase=8;started=tick;
+            }else if(phase==8&&tick-started>=24){
+                viewer.teleportTo(viewer.level(),12.5,101,807.5,Set.of(),90,0,true);viewer.setDeltaMovement(Vec3.ZERO);viewer.fallDistance=0;phase=9;started=tick;
+            }else if(phase==9&&tick-started>=24){
+                require(ai.isUsingItem()&&ai.getTicksUsingItem()>=60,"BOW_RETRACK_CHARGE_PRESERVED");ai.releaseUsingItem();require(!ai.isUsingItem()&&ai.getInventory().countItem(Items.ARROW)==placedBefore-1,"NATIVE_BOW_RELEASE");RESULTS.put("bowChargeAndConsumption",true);phase=10;started=tick;
+            }else if(phase==10&&tick-started>=12){
+                ai.beginTaskItemUse(UUID.randomUUID(),InteractionHand.MAIN_HAND);phase=11;started=tick;
+            }else if(phase==11&&tick-started>=8){
+                ai.stopUsingItem();require(!ai.isUsingItem(),"NATIVE_BOW_CANCEL");phase=12;started=tick;
+            }else if(phase==12&&tick-started>=12){
                 verifyPlacement(viewer);RESULTS.put("nativePlacementAndProtection",true);
                 RESULTS.put("health",ai.getHealth());RESULTS.put("movementAttribute",ai.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED));finish(viewer,ai,"PASS","");
             }
@@ -83,6 +94,7 @@ final class ModernPvpVerification {
     private static void place(MineAgentPlayer p,Vec3 at){p.teleportTo(p.level(),at.x,at.y,at.z,Set.of(),0,0,true);p.setDeltaMovement(Vec3.ZERO);p.fallDistance=0;p.setOnGround(true);}
     private static void require(boolean pass,String message){if(!pass)throw new IllegalStateException(message);}
     private static void finish(ServerPlayer p,MineAgentPlayer ai,String status,String error){
+        if(!movementTicks.isEmpty()){var sorted=movementTicks.stream().mapToLong(Long::longValue).sorted().toArray();RESULTS.put("movementWindowServerTickMaxMillis",sorted[sorted.length-1]/1e6);RESULTS.put("movementWindowServerTickP95Millis",sorted[Math.min(sorted.length-1,(int)(sorted.length*.95))]/1e6);RESULTS.put("movementWindowServerTickMeanMillis",java.util.Arrays.stream(sorted).average().orElse(0)/1e6);}
         RESULTS.put("failureMovementBeforeStop",ai.movementController().evidence());done=true;ai.movementController().stop();ai.stopUsingItem();ai.controls().release(TOKEN);RESULTS.put("source","FIXTURE_ONLY");RESULTS.put("status",status);RESULTS.put("error",error);RESULTS.put("phase",phase);RESULTS.put("finalPosition",ai.position().toString());RESULTS.put("finalMovement",ai.movementController().evidence());
         try{Files.writeString(p.level().getServer().getServerDirectory().resolve("modern-pvp-fixture.json"),new com.fasterxml.jackson.databind.ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(RESULTS));}catch(Exception e){throw new IllegalStateException(e);}
         NativeHumanDuel.command(p,"stop");

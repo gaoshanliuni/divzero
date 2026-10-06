@@ -30,6 +30,7 @@ public final class UiClientSessions {
     public static Session current(){return NativeWorkspaceConnection.current();}
     public static void open(){NativeWorkspaceConnection.open();}
     private static void accept(UiPayloads.Event packet){
+        if(packet.channel().equals("modernCombatFixture")){dev.mineagent.runtime.neoforge.client.body.ModernCombatClientVerification.accept(JsonParser.parseString(packet.json()).getAsJsonObject());return;}
         if(packet.channel().equals("agentUse")){dev.mineagent.runtime.neoforge.client.body.RemoteNativeUse.accept(JsonParser.parseString(packet.json()).getAsJsonObject());return;}
         if(packet.channel().equals("pvpMap")){PvpMapClient.accept(JsonParser.parseString(packet.json()).getAsJsonObject());return;}
         if(packet.channel().equals("agentPanelOpen")){var data=JsonParser.parseString(packet.json()).getAsJsonObject();dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen.open(UUID.fromString(data.get("agentId").getAsString()),data.get("name").getAsString());return;}
