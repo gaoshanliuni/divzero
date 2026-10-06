@@ -47,6 +47,8 @@
     "CombatArrowStateAccess",
     "CombatMobRangeAccess",
     "CombatJumpAccess",
+    "NativeFallDamageAccess",
+    "NativeUseStateAccess",
     "SkillItemUseOutcomeMixin",
     "ObservedPortalRouteMixin",
     "WaterBucketReceiptMixin"

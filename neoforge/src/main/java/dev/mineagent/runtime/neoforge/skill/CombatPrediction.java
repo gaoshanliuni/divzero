@@ -10,7 +10,7 @@ import java.util.*;
 
 /** Cached observations and collision-constrained branches, reused by all candidates in one decision. */
 final class CombatPrediction {
-    private record Observation(Vec3 position,Vec3 velocity,int tick){}
+    private record Observation(Vec3 position,Vec3 velocity,Vec3 acceleration,int tick,float vital,int impulseUntil){}
     private final Map<UUID,Observation> history=new HashMap<>();
     private final Map<UUID,List<List<MotionForecast.Sample>>> predictions=new HashMap<>();
     private int tick=-1,decisionTick=-1;
@@ -20,24 +20,28 @@ final class CombatPrediction {
         for(var entity:entities){live.add(entity.getUUID());var old=history.get(entity.getUUID());
             var velocity=old!=null&&now>old.tick?entity.position().subtract(old.position).scale(1d/(now-old.tick)):entity.getDeltaMovement();
             if(velocity.lengthSqr()>4)velocity=entity.getDeltaMovement();
-            history.put(entity.getUUID(),new Observation(entity.position(),velocity,now));
+            var acceleration=old==null||now-old.tick>3?Vec3.ZERO:new Vec3(Math.clamp(velocity.x-old.velocity.x,-.06,.06),0,Math.clamp(velocity.z-old.velocity.z,-.06,.06));
+            float vital=entity.getHealth()+entity.getAbsorptionAmount();int impulse=old==null?-1:vital<old.vital-.001?now+2:old.impulseUntil;
+            history.put(entity.getUUID(),new Observation(entity.position(),velocity,acceleration,now,vital,impulse));
         }history.keySet().retainAll(live);
     }
     private List<List<MotionForecast.Sample>> paths(SkillWork work,LivingEntity entity){
         if(decisionTick!=work.tick()){decisionTick=work.tick();predictions.clear();}
         return predictions.computeIfAbsent(entity.getUUID(),id->{
             var observed=history.get(id);var velocity=observed==null?entity.getDeltaMovement():observed.velocity;
+            double gravity=entity.isNoGravity()?0:entity.getGravity();
+            if(!entity.onGround()&&!entity.isInWater()&&!entity.onClimbable())velocity=new Vec3(velocity.x,(velocity.y-gravity)*.98,velocity.z);
             var origin=entity.position();var bounds=entity.getBoundingBox();var level=entity.level();
             double speed=entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)==null?.1:entity.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
-            return MotionForecast.predict(new MotionForecast.Input(point(origin),point(velocity),entity.onGround(),entity.isNoGravity()?0:entity.getGravity(),Math.max(.02,speed*.3),observed==null?10:work.tick()-observed.tick,entity instanceof net.minecraft.world.entity.player.Player?point(entity.getLookAngle()):null),new MotionForecast.Collision(){
+            return MotionForecast.predict(new MotionForecast.Input(point(origin),point(velocity),entity.onGround(),entity.isNoGravity()?0:entity.getGravity(),Math.max(.02,speed*.3),observed==null?10:work.tick()-observed.tick,entity instanceof net.minecraft.world.entity.player.Player?point(entity.getLookAngle()):null,observed==null?point(Vec3.ZERO):point(observed.acceleration)),new MotionForecast.Collision(){
                 public MotionForecast.Point move(MotionForecast.Point from,MotionForecast.Point requested){
                     var at=vec(from);var displacement=vec(requested);var next=at.add(displacement);
                     if(!level.hasChunkAt(BlockPos.containing(next)))return from;
                     if(entity instanceof net.minecraft.world.entity.monster.Vex)return point(next);
-                    if(level.noCollision(entity,bounds.move(next.subtract(origin))))return point(next);
-                    var vertical=at.add(0,displacement.y,0);if(level.noCollision(entity,bounds.move(vertical.subtract(origin))))at=vertical;
-                    var horizontal=at.add(displacement.x,0,displacement.z);if(level.noCollision(entity,bounds.move(horizontal.subtract(origin))))at=horizontal;
-                    return point(at);
+                    var box=bounds.move(at.subtract(origin));var sweep=box.expandTowards(displacement);
+                    for(var block:BlockPos.betweenClosed(BlockPos.containing(sweep.minX,sweep.minY,sweep.minZ),BlockPos.containing(sweep.maxX,sweep.maxY,sweep.maxZ)))if(!level.hasChunkAt(block))return from;
+                    // Native swept collision clips to the landing surface; whole-box rejection loses the landing.
+                    return point(at.add(net.minecraft.world.entity.Entity.collideBoundingBox(entity,displacement,box,level,level.getEntityCollisions(entity,sweep))));
                 }
                 public boolean supported(MotionForecast.Point at){return !(entity instanceof net.minecraft.world.entity.monster.Vex)&&!level.noCollision(entity,bounds.move(vec(at).subtract(origin)).move(0,-.06,0));}
             },24);
@@ -45,6 +49,13 @@ final class CombatPrediction {
     }
     Vec3 intercept(SkillWork work,LivingEntity target,double ticks){
         var values=paths(work,target).getFirst();return vec(values.get(Math.clamp((int)Math.round(ticks)-1,0,values.size()-1)).position());
+    }
+    boolean fallingContact(SkillWork work,LivingEntity target){
+        var observed=history.get(target.getUUID());
+        if(observed==null||target.onGround()||target.isInWater()||target.onClimbable()||observed.velocity.y>=-.05||observed.impulseUntil>=work.tick())return false;
+        if(target.getY()<work.player().getY()+.5||target.distanceTo(work.player())>9)return false;
+        for(var sample:paths(work,target).getFirst())if(sample.tick()<=8&&vec(sample.position()).distanceTo(work.player().position())<3.2)return true;
+        return false;
     }
     double risk(SkillWork work,Vec3 self,int atTick,LivingEntity opportunity){
         double risk=0;for(var threat:work.combat.threats){var entity=threat.entity();if(!entity.isAlive())continue;

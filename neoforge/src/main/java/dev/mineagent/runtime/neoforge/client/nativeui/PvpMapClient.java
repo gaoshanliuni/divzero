@@ -39,7 +39,7 @@ public final class PvpMapClient {
     private static String average(String key){return state.get(key).isJsonNull()?"—":String.format(Locale.ROOT,"%.1f",state.get(key).getAsDouble())+" "+t("秒");}
     private static ItemStack item(String id){var value=BuiltInRegistries.ITEM.getValue(Identifier.parse(id));return value==null?ItemStack.EMPTY:new ItemStack(value);}
     private static String itemName(String id){var stack=item(id);return stack.isEmpty()?t("不装备"):stack.getHoverName().getString();}
-    private static String slotName(String slot){return t(switch(slot){case "head"->"头盔";case "chest"->"胸甲";case "legs"->"护腿";case "feet"->"靴子";case "mainhand"->"主手武器";default->"副手装备";});}
+    private static String slotName(String slot){return t(switch(slot){case "head"->"头盔";case "chest"->"胸甲";case "legs"->"护腿";case "feet"->"靴子";case "mainhand"->"主手武器";case "secondary"->"第二物品";case "supply"->"补给物品";default->"副手装备";});}
     private static void command(String text){var connection=Minecraft.getInstance().getConnection();if(connection!=null)connection.sendCommand(text);}
     /** Actual LDLib2 press/release and server round trips, enabled only in the isolated fixture. */
     public static void fixtureTick(){
@@ -83,7 +83,7 @@ public final class PvpMapClient {
         private void home(){
             content.clearAllChildren();boolean compact=Minecraft.getInstance().getWindow().getGuiScaledHeight()<280;var scroll=WorkspacePanels.scroller(content);var columns=WorkspacePanels.row();columns.getLayout().alignItems(AlignItems.FLEX_START);scroll.addScrollViewChild(columns);
             for(String actor:List.of("human","ai")){var column=new UIElement();column.getLayout().flex(1).minWidth(0).gapAll(compact?2:4);columns.addChild(column);column.addChild(NativeUiTheme.text(t(actor.equals("human")?"我的装备":"AI 的装备"),NativeUiTheme.ACCENT,10));
-                for(String slot:List.of("head","chest","legs","feet","mainhand","offhand")){String id=data.getAsJsonObject("profile").getAsJsonObject(actor).get(slot).getAsString();var button=NativeUiTheme.button(slotName(slot)+" · "+itemName(id),()->pick(actor,slot));button.setId("pvp-"+actor+"-"+slot);button.getLayout().widthPercent(100).minHeight(compact?20:24).height(compact?20:24).marginAll(0).paddingHorizontal(3);column.addChild(button);}
+                for(String slot:dev.mineagent.runtime.core.task.PvpMapProfile.SLOTS){String id=data.getAsJsonObject("profile").getAsJsonObject(actor).get(slot).getAsString();var button=NativeUiTheme.button(slotName(slot)+" · "+itemName(id),()->pick(actor,slot));button.setId("pvp-"+actor+"-"+slot);button.getLayout().widthPercent(100).minHeight(compact?20:24).height(compact?20:24).marginAll(0).paddingHorizontal(3);column.addChild(button);}
                 boolean wool=data.getAsJsonObject("profile").get(actor.equals("human")?"humanWool":"aiWool").getAsBoolean();var blocks=NativeUiTheme.button(t("领取羊毛 ×64")+" · "+t(wool?"开启":"关闭"),()->command("ai duel loadout "+data.getAsJsonObject("profile").get("revision").getAsLong()+" "+actor+" wool "+!wool));blocks.setId("pvp-"+actor+"-wool");blocks.getLayout().widthPercent(100).minHeight(compact?20:24).height(compact?20:24).marginAll(0);column.addChild(blocks);
             }
             content.addChild(NativeUiTheme.text(t("双方独立选装，弓和弩自动配发箭矢。"),NativeUiTheme.MUTED,8));

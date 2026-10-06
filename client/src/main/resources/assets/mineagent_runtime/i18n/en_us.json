@@ -3522,5 +3522,7 @@
   "正在离线安装内置基础库，尚未执行请求。": "Installing bundled libraries offline; your request has not started.",
   "退出后修复 Python": "Repair Python after exit",
   "已安排：退出游戏后修复 Python，工作目录和历史记录会保留。": "Scheduled: repair Python after exit, preserving the workspace and operation history.",
-  "仅本机当前账号执行；输出返回 AI。首次从模组内本地解压完整 Python 与固定库并校验，无需联网下载解释器；可点停止。": "Runs for this local account; output is returned to AI. Full Python and pinned libraries are extracted from the Mod and verified locally, with no interpreter download. You can stop it."
+  "仅本机当前账号执行；输出返回 AI。首次从模组内本地解压完整 Python 与固定库并校验，无需联网下载解释器；可点停止。": "Runs for this local account; output is returned to AI. Full Python and pinned libraries are extracted from the Mod and verified locally, with no interpreter download. You can stop it.",
+  "第二物品": "Secondary item",
+  "补给物品": "Supplies"
 }

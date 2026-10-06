@@ -28,21 +28,25 @@ public final class PvpMapSupport {
             String suffix=switch(slot){case "head"->"helmet";case "chest"->"chestplate";case "legs"->"leggings";default->"boots";};
             for(String material:List.of("leather","chainmail","iron","golden","diamond","netherite"))values.add("minecraft:"+material+"_"+suffix);
             if(slot.equals("head"))values.add("minecraft:turtle_helmet");
-        }else if(slot.equals("mainhand")){
+        }else if(slot.equals("mainhand")||slot.equals("secondary")){
             for(String type:List.of("sword","axe"))for(String material:List.of("wooden","stone","iron","golden","diamond","netherite"))values.add("minecraft:"+material+"_"+type);
             for(String name:List.of("mace","trident","bow","crossbow"))values.add("minecraft:"+name);
+            if(slot.equals("secondary")){values.add("minecraft:ender_pearl");values.add("minecraft:shears");}
         }else if(slot.equals("offhand")){for(String name:List.of("shield","totem_of_undying","golden_apple","cooked_beef"))values.add("minecraft:"+name);}
+        else if(slot.equals("supply")){for(String name:List.of("golden_apple","enchanted_golden_apple","cooked_beef"))values.add("minecraft:"+name);}
         else throw new IllegalArgumentException("未知装备部位");
         return List.copyOf(values);
     }
     public static Map<String,List<String>> catalog(){var result=new LinkedHashMap<String,List<String>>();for(String slot:PvpMapProfile.SLOTS)result.put(slot,choices(slot));return result;}
     public static void apply(ServerPlayer p,Map<String,String> gear){
-        p.getInventory().clearContent();
+        p.stopUsingItem();p.closeContainer();p.getInventory().clearContent();
         for(String slot:PvpMapProfile.SLOTS){String id=gear.get(slot);if(!choices(slot).contains(id))throw new IllegalArgumentException("所选装备不受支持");var item=BuiltInRegistries.ITEM.getValue(Identifier.parse(id));if(item==null)throw new IllegalArgumentException("所选物品不存在");var stack=item==Items.AIR?ItemStack.EMPTY:new ItemStack(item);
-            if(slot.equals("mainhand"))p.getInventory().setItem(0,stack);else p.setItemSlot(switch(slot){case "head"->EquipmentSlot.HEAD;case "chest"->EquipmentSlot.CHEST;case "legs"->EquipmentSlot.LEGS;case "feet"->EquipmentSlot.FEET;default->EquipmentSlot.OFFHAND;},stack);
+            if(slot.equals("secondary")){if(stack.is(Items.ENDER_PEARL))stack.setCount(16);p.getInventory().setItem(3,stack);}
+            else if(slot.equals("supply")){if(!stack.isEmpty())stack.setCount(stack.is(Items.COOKED_BEEF)?16:3);p.getInventory().setItem(2,stack);}
+            else if(slot.equals("mainhand"))p.getInventory().setItem(0,stack);else p.setItemSlot(switch(slot){case "head"->EquipmentSlot.HEAD;case "chest"->EquipmentSlot.CHEST;case "legs"->EquipmentSlot.LEGS;case "feet"->EquipmentSlot.FEET;default->EquipmentSlot.OFFHAND;},stack);
         }
-        if(Set.of("minecraft:bow","minecraft:crossbow").contains(gear.get("mainhand")))for(int slot=9;slot<13;slot++)p.getInventory().setItem(slot,new ItemStack(Items.ARROW,64));
-        p.getInventory().setSelectedSlot(0);p.inventoryMenu.broadcastFullState();
+        if(Set.of("minecraft:bow","minecraft:crossbow").contains(gear.get("mainhand"))||Set.of("minecraft:bow","minecraft:crossbow").contains(gear.get("secondary")))for(int slot=9;slot<13;slot++)p.getInventory().setItem(slot,new ItemStack(Items.ARROW,64));
+        p.getInventory().setSelectedSlot(0);dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(p);
     }
     public static void push(ServerPlayer p,String phase,long seconds,boolean open){
         if(!enabled())return;

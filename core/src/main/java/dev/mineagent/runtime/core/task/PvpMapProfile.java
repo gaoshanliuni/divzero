@@ -5,12 +5,14 @@ import java.util.*;
 /** Statistics for one world visit. Time averages exclude draws and interrupted rounds. */
 public record PvpMapProfile(long revision,int rounds,int wins,int losses,int draws,double killSeconds,double deathSeconds,
                             Map<String,String> human,Map<String,String> ai,boolean humanWool,boolean aiWool) {
-    public static final List<String> SLOTS=List.of("head","chest","legs","feet","mainhand","offhand");
+    public static final List<String> SLOTS=List.of("head","chest","legs","feet","mainhand","secondary","supply","offhand");
     public PvpMapProfile {
         if(revision<0||rounds<0||wins<0||losses<0||draws<0||wins+losses+draws!=rounds||!Double.isFinite(killSeconds)||!Double.isFinite(deathSeconds)||killSeconds<0||deathSeconds<0)throw new IllegalArgumentException("PVP_MAP_STATISTICS");
-        human=Map.copyOf(human);ai=Map.copyOf(ai);
+        human=upgrade(human);ai=upgrade(ai);
         if(!human.keySet().equals(Set.copyOf(SLOTS))||!ai.keySet().equals(Set.copyOf(SLOTS)))throw new IllegalArgumentException("PVP_MAP_SLOTS");
     }
+    // Older visit snapshots have six slots. Additional choices default to empty, never free supplies.
+    private static Map<String,String> upgrade(Map<String,String> gear){var copy=new LinkedHashMap<>(gear);copy.putIfAbsent("secondary","minecraft:air");copy.putIfAbsent("supply","minecraft:air");return Map.copyOf(copy);}
     public static PvpMapProfile defaults(){var gear=Map.of("head","minecraft:iron_helmet","chest","minecraft:iron_chestplate","legs","minecraft:iron_leggings","feet","minecraft:iron_boots","mainhand","minecraft:diamond_sword","offhand","minecraft:air");return new PvpMapProfile(0,0,0,0,0,0,0,gear,gear,false,false);}
     public PvpMapProfile gear(long expected,String actor,String slot,String item){
         if(expected!=revision)throw new IllegalStateException("PVP_MAP_VERSION_CHANGED");

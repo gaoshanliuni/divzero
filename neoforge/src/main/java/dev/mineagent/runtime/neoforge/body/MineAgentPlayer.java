@@ -58,7 +58,8 @@ public final class MineAgentPlayer extends ServerPlayer {
         try{var result=gameMode.useItem(this,level(),getItemInHand(hand),hand);return result.consumesAction()||isUsingItem();}
         finally{startingTaskUse=false;}
     }
-    @Override public void startUsingItem(InteractionHand hand){if(!canAct())return;boolean alreadyUsing=isUsingItem();super.startUsingItem(hand);if(!alreadyUsing&&isUsingItem()){itemUseRevision++;if(startingTaskUse)ownedUseRevision=itemUseRevision;}}
+    @Override public void startUsingItem(InteractionHand hand){if(!canAct())return;boolean alreadyUsing=isUsingItem();super.startUsingItem(hand);if(!alreadyUsing&&isUsingItem()){itemUseRevision++;if(startingTaskUse)ownedUseRevision=itemUseRevision;NativeUseSync.send(this);}}
+    @Override public void stopUsingItem(){super.stopUsingItem();NativeUseSync.send(this);}
     @Override protected void completeUsingItem(){
         if(!canAct()||!validateTaskControl()||!canAct()){stopUsingItem();return;}
         UUID operation=itemUseOperation;boolean tracked=ownsItemUse(operation)&&isUsingItem()&&getUsedItemHand()==taskUseHand&&getUseItem()==getItemInHand(taskUseHand);
@@ -204,8 +205,19 @@ public final class MineAgentPlayer extends ServerPlayer {
         }
         super.tick();
         doTick();
+        if(level().getGameTime()%4==0)NativeUseSync.send(this);
         dev.mineagent.runtime.neoforge.skill.NativeEquipmentSupport.maintainAi(this);
-        if(isAlive()&&!lifecycle.deathAccepted()){movementController.tick(this);tickMining();if(lookTarget!=null&&lookUntil>=level().getServer().getTickCount()&&taskControl.owns(lookOwner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,lookTarget);}
+        if(isAlive()&&!lifecycle.deathAccepted()){movementController.tick(this);tickMining();if(!movementController.diagonalThisTick()&&lookTarget!=null&&lookUntil>=level().getServer().getTickCount()&&taskControl.owns(lookOwner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,lookTarget);}
+    }
+
+    /** PvP locomotion is prepared before vanilla travel, never an extra move afterwards. */
+    public boolean nativePvpMovement(){return dev.mineagent.runtime.neoforge.skill.NativeHumanDuel.pvpParticipant(this);}
+    @Override protected void applyInput(){
+        super.applyInput();xxa=zza=0;setJumping(false);
+        if(nativePvpMovement()){
+            if(lookTarget!=null&&lookUntil>=level().getServer().getTickCount()&&taskControl.owns(lookOwner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,lookTarget);
+            movementController.tick(this);
+        }
     }
 
     @Override public void doTick(){if(isRemoved()||!playerTicks.enterTick(level().getServer().getTickCount()))return;super.doTick();}

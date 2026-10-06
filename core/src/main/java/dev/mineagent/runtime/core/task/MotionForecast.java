@@ -11,7 +11,8 @@ public final class MotionForecast {
         public double length(){return Math.sqrt(x*x+y*y+z*z);}
     }
     public record Sample(int tick,Point position,Point velocity,boolean grounded,double uncertainty){}
-    public record Input(Point position,Point velocity,boolean grounded,double gravity,double acceleration,int age,Point facing){
+    public record Input(Point position,Point velocity,boolean grounded,double gravity,double acceleration,int age,Point facing,Point observedAcceleration){
+        public Input(Point position,Point velocity,boolean grounded,double gravity,double acceleration,int age,Point facing){this(position,velocity,grounded,gravity,acceleration,age,facing,new Point(0,0,0));}
         public Input(Point position,Point velocity,boolean grounded,double gravity,double acceleration,int age){this(position,velocity,grounded,gravity,acceleration,age,null);}
     }
     public interface Collision {Point move(Point from,Point displacement);boolean supported(Point at);}
@@ -27,6 +28,7 @@ public final class MotionForecast {
                 if(observedHeading){double length=Math.hypot(input.facing.x,input.facing.z),desired=Math.max(speed,input.acceleration*4);if(length>.001){vx=input.facing.x/length*desired;vz=input.facing.z/length*desired;}}
                 double blend=Math.min(1,input.acceleration/Math.max(.01,speed));
                 velocity=new Point(velocity.x+(vx-velocity.x)*blend,ground?0:velocity.y,velocity.z+(vz-velocity.z)*blend);
+                velocity=velocity.add(input.observedAcceleration.scale(Math.pow(.5,tick)));
                 var next=collision.move(at,velocity);var actual=next.subtract(at);
                 ground=velocity.y<=0&&collision.supported(next);
                 velocity=new Point(actual.x,ground?0:(Math.abs(actual.y-velocity.y)>.001?0:velocity.y-input.gravity)*.98,actual.z);

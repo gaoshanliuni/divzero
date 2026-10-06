@@ -24,6 +24,7 @@ final class SkillWork {
     NativeTraversalEvaluator wanderEvaluator;SurfaceReachability wanderSearch;
     LivingEntity lastCombatTarget;
     final CombatFootwork footwork=new CombatFootwork();String jumpKind="COUNTER";int jumpTapUntil=-1,sideStepUntil=-1;Vec3 footworkPosition;
+    final NativePearlCombat.State pearl=new NativePearlCombat.State();
     final NativeRangedCombat.State ranged=new NativeRangedCombat.State();
     final CombatPrediction prediction=new CombatPrediction();
     final CombatRecoveryWindow recoveryWindow=new CombatRecoveryWindow();
@@ -34,6 +35,7 @@ final class SkillWork {
     int weaponDecisionTick=-10000,shieldCounterAt=-10000,weaponPendingSlot=-1;ItemStack weaponPendingStack=ItemStack.EMPTY;boolean weaponBlocking,weaponFalling,gapCrouching;LivingEntity shieldCounterTarget;ItemStack shieldCounterItem=ItemStack.EMPTY;
     int criticalStarted=-10000,lastCriticalJump=-10000,observedCriticalTick=-1;UUID criticalTarget,observedCriticalTarget;
     UUID extensionOperation,shieldOperation;boolean wasBlocking;FishingTackleAdapter tackle=FishingTackleAdapter.VANILLA;
+    int recentDamageChain,sprintReleaseUntil=-1;
     int lastTacticalJump=-10000,observedTacticalJump=-10000;double tacticalJumpY;
     private String lastNotice="";private int lastNoticeTick=-10000;
     void notice(String key,String fallback){if(key.equals(lastNotice)&&tick()-lastNoticeTick<200)return;lastNotice=key;lastNoticeTick=tick();var owner=runtime.server.getPlayerList().getPlayer(session.owner());if(owner==null)return;String name=MineAgentRuntimeServices.bodies(runtime.server).definitions().stream().filter(d->d.agentId().equals(session.agent())).map(d->d.displayName()).findFirst().orElse("AI");dev.mineagent.runtime.neoforge.chat.AiPlayerChat.send(owner,session.agent(),net.minecraft.network.chat.Component.translatableWithFallback("mineagent.behavior."+key,fallback));}

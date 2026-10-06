@@ -82,20 +82,20 @@ public final class NativeHumanDuel {
     }
     private static void prepareRound(Run run){
         var p=run.player;run.match=UUID.randomUUID();run.frames.clear();run.damage.clear();run.humanDamage=run.aiDamage=0;run.humanHits=run.aiHits=0;run.lastCountdown=-1;
-        if(PvpMapSupport.enabled())PvpMapArena.clearWool(p);equip(p);if(PvpMapSupport.enabled()){var profile=PvpMapSupport.profile(p);PvpMapSupport.apply(p,profile.human());if(profile.humanWool())p.getInventory().setItem(1,new ItemStack(Items.WHITE_WOOL,64));p.inventoryMenu.broadcastFullState();}placeHuman(p);p.setInvulnerable(true);
+        if(PvpMapSupport.enabled())PvpMapArena.clearWool(p);equip(p);if(PvpMapSupport.enabled()){var profile=PvpMapSupport.profile(p);PvpMapSupport.apply(p,profile.human());if(profile.humanWool())p.getInventory().setItem(1,new ItemStack(Items.WHITE_WOOL,64));dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(p);}placeHuman(p);p.setInvulnerable(true);
         var definition=MineAgentRuntimeServices.bodies(run.server).createPersistentAt("神经网络陪练"+run.series.round(),p.getUUID(),p.level(),new Vec3(5.5,101,800.5));
         run.ai=MineAgentRuntimeServices.bodies(run.server).body(definition.agentId()).orElseThrow();
-        IsolatedCombatArena.place(p,run.ai,ARENA,1,new Vec3(5.5,101,800.5));equip(run.ai);if(PvpMapSupport.enabled()){var profile=PvpMapSupport.profile(p);PvpMapSupport.apply(run.ai,profile.ai());if(profile.aiWool())run.ai.getInventory().setItem(1,new ItemStack(Items.LIGHT_BLUE_WOOL,64));run.ai.inventoryMenu.broadcastFullState();}run.ai.setInvulnerable(true);
-        ActorEnhancements.update(p,run.ai.agentId(),JSON.createObjectNode().put("actor","ai").put("expected_revision",0).put("boost",false).put("neural",true).put("learning",false).put("recovery",PvpMapSupport.enabled()&&PvpMapSupport.profile(p).aiWool()));
+        IsolatedCombatArena.place(p,run.ai,ARENA,1,new Vec3(5.5,101,800.5));equip(run.ai);if(PvpMapSupport.enabled()){var profile=PvpMapSupport.profile(p);PvpMapSupport.apply(run.ai,profile.ai());if(profile.aiWool())run.ai.getInventory().setItem(1,new ItemStack(Items.LIGHT_BLUE_WOOL,64));dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(run.ai);}run.ai.setInvulnerable(true);
+        ActorEnhancements.update(p,run.ai.agentId(),JSON.createObjectNode().put("actor","ai").put("expected_revision",0).put("boost",false).put("neural",true).put("learning",false).put("recovery",PvpMapSupport.enabled()));
         LocalPolicyRuntime.seedTrainingModel(run.ai,run.model,run.modelHash);
         tell(p,"第 "+run.series.round()+(PvpMapSupport.enabled()?" 场：已应用双方所选装备":" / 5 场：双方钻石剑、无附魔铁套")+"，满血满饥饿。5 秒后开始；/ai duel stop 随时停止。");
         persist(run);
     }
     private static void equip(ServerPlayer p){
-        p.closeContainer();p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();p.removeAllEffects();p.setAbsorptionAmount(0);p.clearFire();p.setHealth(p.getMaxHealth());p.getFoodData().setFoodLevel(20);p.getFoodData().setSaturation(5);
+        p.stopUsingItem();p.closeContainer();p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();p.removeAllEffects();p.setAbsorptionAmount(0);p.clearFire();p.setHealth(p.getMaxHealth());p.getFoodData().setFoodLevel(20);p.getFoodData().setSaturation(5);
         p.getInventory().setSelectedSlot(0);p.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));
         p.setItemSlot(EquipmentSlot.HEAD,new ItemStack(Items.IRON_HELMET));p.setItemSlot(EquipmentSlot.CHEST,new ItemStack(Items.IRON_CHESTPLATE));p.setItemSlot(EquipmentSlot.LEGS,new ItemStack(Items.IRON_LEGGINGS));p.setItemSlot(EquipmentSlot.FEET,new ItemStack(Items.IRON_BOOTS));p.setItemSlot(EquipmentSlot.OFFHAND,ItemStack.EMPTY);
-        p.setDeltaMovement(Vec3.ZERO);p.fallDistance=0;p.invulnerableTime=0;p.resetAttackStrengthTicker();p.stopUsingItem();p.inventoryMenu.broadcastFullState();
+        p.setDeltaMovement(Vec3.ZERO);p.fallDistance=0;p.invulnerableTime=0;p.resetAttackStrengthTicker();p.stopUsingItem();dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(p);
     }
     private static void placeHuman(ServerPlayer p){
         p.teleportTo(p.level(),-4.5,101,800.5,Set.of(),-90,0,true);p.setDeltaMovement(Vec3.ZERO);p.fallDistance=0;
@@ -106,6 +106,7 @@ public final class NativeHumanDuel {
         if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server))return;
         if(Boolean.getBoolean("mineagent.humanDuelFixture"))fixtureTick(server);
         var run=RUNS.get(server);
+        if(ENABLED&&Boolean.getBoolean("mineagent.modernPvpFixture")&&run==null&&server.getTickCount()>160){for(var p:server.getPlayerList().getPlayers())if(!(p instanceof MineAgentPlayer)){command(p,"ready");break;}return;}
         if(run==null){if(server.getTickCount()>100&&!OFFERED.contains(server))for(var p:server.getPlayerList().getPlayers())if(!(p instanceof MineAgentPlayer)&&server.isSingleplayerOwner(p.nameAndId())){OFFERED.add(server);if(PvpMapSupport.enabled()){PvpMapArena.lobby(p);PvpMapArena.returnToLobby(p);}menu(p,null);if(PvpMapSupport.enabled())PvpMapSupport.push(p,"READY",180,true);break;}return;}
         try{
             var online=server.getPlayerList().getPlayer(run.owner);
@@ -131,6 +132,7 @@ public final class NativeHumanDuel {
                 if(now-run.startNanos>20_000_000_000L)throw new IllegalStateException("启动战斗超时");
                 if(run.start.isDone()){var receipt=run.start.join();if(!(receipt instanceof Map<?,?> m)||!Objects.equals(m.get("status"),"STARTED"))throw new IllegalStateException("战斗未启动");run.series.started(now);LocalPolicyRuntime.beginRecording(run.ai);online.setInvulnerable(false);run.ai.setInvulnerable(false);run.startTick=server.getTickCount();tell(online,"开始！第 "+run.series.round()+(PvpMapSupport.enabled()?" 场，最长 3 分钟。":" / 5 场，最长 3 分钟。"));persist(run);}
             }else if(run.series.phase()==HumanDuelSeries.Phase.FIGHTING){
+                if(ENABLED&&Boolean.getBoolean("mineagent.modernPvpFixture")){ModernPvpVerification.tick(online,run.ai);return;}
                 String result=run.series.outcome(now,online.isAlive(),run.ai.isAlive());
                 if(!result.isEmpty()){endCombat(run,result);return;}
                 if(!(PvpMapSupport.enabled()?PvpMapArena.inside(online.position())&&PvpMapArena.inside(run.ai.position()):ARENA.contains(online.position())&&ARENA.contains(run.ai.position()))||run.ai.level()!=run.level){abort(run,"LEFT_ARENA");return;}
@@ -156,7 +158,7 @@ public final class NativeHumanDuel {
         if(!run.finishReason.isEmpty())return;run.finishReason=reason;run.endNanos=System.nanoTime();
         PvpConsent.revoke(run.player,run.ai.agentId());run.ai.controls().cancel();run.ai.movementController().stop();run.ai.stopUsingItem();
         // End the combat lease immediately; post-death telemetry is finalized on the next server tick.
-        run.player.setInvulnerable(true);run.ai.setInvulnerable(true);
+        run.player.stopUsingItem();dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(run.player);run.player.setInvulnerable(true);run.ai.setInvulnerable(true);
     }
     private static void finishRound(Run run){
         var result=new LinkedHashMap<String,Object>();result.put("match",run.match.toString());result.put("round",run.series.round());result.put("outcome",run.finishReason);result.put("seconds",Math.min(180,run.series.elapsed(run.endNanos)));result.put("observedSeconds",run.series.elapsed(run.endNanos));result.put("ticks",run.server.getTickCount()-run.startTick);
@@ -211,14 +213,15 @@ public final class NativeHumanDuel {
         for(int x=-17;x<=17;x++)for(int z=783;z<=817;z++)if(Math.abs(x)==17||z==783||z==817)for(int y=101;y<=105;y++)p.level().setBlock(new net.minecraft.core.BlockPos(x,y,z),(y==105?net.minecraft.world.level.block.Blocks.SEA_LANTERN:y>=103?net.minecraft.world.level.block.Blocks.GLASS:net.minecraft.world.level.block.Blocks.STONE_BRICKS).defaultBlockState(),2);
         PvpMapArena.lobby(p);
     }
-    public static boolean woolAction(ServerPlayer p,net.minecraft.core.BlockPos pos){var run=RUNS.get(p.level().getServer());return PvpMapSupport.enabled()&&run!=null&&run.series.phase()==HumanDuelSeries.Phase.FIGHTING&&run.finishReason.isEmpty()&&(p==run.player||p==run.ai)&&p.level()==run.level&&PvpMapArena.field(pos);}
+    public static boolean pvpParticipant(ServerPlayer p){var run=RUNS.get(p.level().getServer());return PvpMapSupport.enabled()&&run!=null&&run.series.phase()==HumanDuelSeries.Phase.FIGHTING&&run.finishReason.isEmpty()&&(p==run.player||p==run.ai)&&p.level()==run.level;}
+    public static boolean woolAction(ServerPlayer p,net.minecraft.core.BlockPos pos){return pvpParticipant(p)&&PvpMapArena.field(pos);}
     @SubscribeEvent public static void protectArena(net.neoforged.neoforge.event.level.block.BreakBlockEvent event){if(PvpMapSupport.enabled()&&event.getLevel() instanceof net.minecraft.server.level.ServerLevel level&&level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)&&PvpMapArena.protectedArea(event.getPos())&&!(event.getPlayer() instanceof ServerPlayer p&&woolAction(p,event.getPos())&&level.getBlockState(event.getPos()).is(net.minecraft.tags.BlockTags.WOOL))){event.setCanceled(true);event.setNotifyClient(true);}}
     @SubscribeEvent public static void placing(net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent event){
         if(!PvpMapSupport.enabled()||!(event.getLevel() instanceof net.minecraft.server.level.ServerLevel level)||!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD))return;
         var positions=new ArrayList<net.minecraft.core.BlockPos>();if(event instanceof net.neoforged.neoforge.event.level.BlockEvent.EntityMultiPlaceEvent multi)for(var snapshot:multi.getReplacedBlockSnapshots())positions.add(snapshot.getPos());else positions.add(event.getPos());
         for(var pos:positions)if(PvpMapArena.protectedArea(pos)&&(!(event.getEntity() instanceof ServerPlayer p)||!woolAction(p,pos)||!level.getBlockState(pos).is(net.minecraft.tags.BlockTags.WOOL))){event.setCanceled(true);return;}
     }
-    @SubscribeEvent public static void respawned(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent event){if(PvpMapSupport.enabled()&&event.getEntity() instanceof ServerPlayer p&&!(p instanceof MineAgentPlayer))PvpMapArena.returnToLobby(p);}
+    @SubscribeEvent public static void respawned(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent event){if(PvpMapSupport.enabled()&&event.getEntity() instanceof ServerPlayer p&&!(p instanceof MineAgentPlayer)){p.stopUsingItem();PvpMapArena.returnToLobby(p);dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(p);}}
     private static void fixtureTick(MinecraftServer server){
         if(!Boolean.getBoolean("mineagent.humanDuelFixture")||server.getTickCount()<160)return;
         var run=RUNS.get(server);
@@ -252,7 +255,7 @@ public final class NativeHumanDuel {
         if(!p.level().getBlockState(wool).is(net.minecraft.tags.BlockTags.WOOL)||p.getInventory().getItem(1).getCount()!=63)throw new IllegalStateException("PVP_WOOL_NATIVE_PLACE_FAILED");
         if(!p.gameMode.destroyBlock(wool)||!p.level().getBlockState(wool).isAir())throw new IllegalStateException("PVP_WOOL_NATIVE_BREAK_FAILED");
         if(p.gameMode.destroyBlock(floor)||p.level().getBlockState(floor).isAir())throw new IllegalStateException("PVP_ARENA_FLOOR_NOT_PROTECTED");
-        p.gameMode.useItemOn(p,p.level(),p.getMainHandItem(),net.minecraft.world.InteractionHand.MAIN_HAND,hit);p.getInventory().setSelectedSlot(0);p.inventoryMenu.broadcastFullState();run.woolFixtureDone=true;
+        p.gameMode.useItemOn(p,p.level(),p.getMainHandItem(),net.minecraft.world.InteractionHand.MAIN_HAND,hit);p.getInventory().setSelectedSlot(0);dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(p);run.woolFixtureDone=true;
     }
     private static void checkRangedContact(Run run){
         if(run.rangedFixtureStage>=4)return;var p=run.player;var ai=run.ai;var snapshot=JSON.valueToTree(SkillRuntime.get(run.server).snapshot(p,ai.agentId()));

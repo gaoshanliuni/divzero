@@ -60,7 +60,7 @@ final class CombatPositioning {
         for(var edge:check.neighbors(current)){
             if(!Set.of(Action.WALK,Action.STEP_UP,Action.CROUCH,Action.DROP).contains(edge.action())||Math.abs(edge.to().y()-current.y())>1.25||edgeExposure(work,edge.to(),check)>0)continue;
             var point=NativeTraversalEvaluator.point(edge.to());
-            if(check.neighbors(edge.to()).stream().filter(next->!next.to().equals(current)&&Math.abs(next.to().y()-edge.to().y())<=1.25&&NativeTraversalEvaluator.point(next.to()).distanceTo(dangerCenter)>=point.distanceTo(dangerCenter)-.25).count()<2)continue;
+            if(!NativeHumanDuel.pvpParticipant(p)&&check.neighbors(edge.to()).stream().filter(next->!next.to().equals(current)&&Math.abs(next.to().y()-edge.to().y())<=1.25&&NativeTraversalEvaluator.point(next.to()).distanceTo(dangerCenter)>=point.distanceTo(dangerCenter)-.25).count()<2)continue;
             if(protectedEntity!=null&&protectedEntity!=p&&protectedEntity!=work.combat.selected&&protectedEntity.level()==p.level()&&!(protectedEntity instanceof net.minecraft.world.entity.player.Player other&&(other.isCreative()||other.isSpectator()))&&point.distanceTo(protectedEntity.position())<p.distanceTo(protectedEntity)-.25)continue;
             var middle=p.position().lerp(point,.5);double risk=work.combat.risk(work,point),future=Math.max(work.combat.collisionRisk(work,middle,2),work.combat.collisionRisk(work,point,4));
             if(work.combat.attacks.routeRisk(work,point,4,4)>0)continue;
@@ -145,8 +145,8 @@ final class CombatPositioning {
             var route=open.removeFirst();var point=NativeTraversalEvaluator.point(route.node);if(route.steps.size()>=1&&evaluator.neighbors(route.node).stream().filter(edge->!route.steps.stream().anyMatch(step->step.from().equals(edge.to()))).count()>=1)candidates.add(route);
             if(route.steps.size()>=7)continue;
             for(var edge:evaluator.neighbors(route.node)){
-                var next=NativeTraversalEvaluator.point(edge.to());if(Math.abs(next.y-origin.y)>1.25||next.distanceToSqr(origin)>49||!seen.add(edge.to()))continue;
-                if(edge.action()==Action.DROP&&(edge.from().y()-edge.to().y()>1.25||evaluator.transition(edge.to(),edge.from())==null))continue;
+                var next=NativeTraversalEvaluator.point(edge.to());if((!NativeHumanDuel.pvpParticipant(w.player())&&Math.abs(next.y-origin.y)>1.25)||next.distanceToSqr(origin)>49||!seen.add(edge.to()))continue;
+                if(!NativeHumanDuel.pvpParticipant(w.player())&&edge.action()==Action.DROP&&(edge.from().y()-edge.to().y()>1.25||evaluator.transition(edge.to(),edge.from())==null))continue;
                 var policy=w.session.spec().combat();boolean assigned=policy.area()!=null&&policy.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(next.x,next.y,next.z));
                 if(!withdrawal&&!dev.mineagent.runtime.core.task.CombatBounds.canAdvance(assigned,next.distanceTo(w.combat.center(w)),origin.distanceTo(w.combat.center(w)),policy.leash()))continue;
                 var steps=new ArrayList<>(route.steps);steps.add(edge);open.add(new Route(edge.to(),List.copyOf(steps),Math.max(route.worstRisk,w.combat.risk(w,next))));

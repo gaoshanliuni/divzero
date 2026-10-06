@@ -572,6 +572,7 @@ public final class MineAgentRuntimeMod {
                 || !(event.getTarget() instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer agent)) {
             return;
         }
+        dev.mineagent.runtime.neoforge.body.NativeUseSync.send(agent,observer);
         dev.mineagent.runtime.neoforge.integration.MineAgentAppearanceLifecycle.reapply(
                 agent.level().getServer(), agent.agentId(), "tracking:" + observer.getUUID());
     }

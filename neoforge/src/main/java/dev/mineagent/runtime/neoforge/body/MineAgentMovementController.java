@@ -12,6 +12,9 @@ public final class MineAgentMovementController {
     private long commandRevision;private int lastTick=Integer.MIN_VALUE;
     private long pendingJumpRevision=-1;private UUID pendingJumpOwner;private int pendingJumpExpires;
     private int executedSteps,openedDoors,openedGates,crouchingSteps,climbingSteps,swimmingSteps;
+    private boolean diagonalThisTick;private long diagonalTicks;
+    public boolean diagonalThisTick(){return diagonalThisTick;}
+    public long diagonalTicks(){return diagonalTicks;}
     private boolean manualSneak;private final Set<Double> traversedFloors=new LinkedHashSet<>();
     public void recordOpened(boolean gate){if(gate)openedGates++;else openedDoors++;}
     public Map<String,Object> evidence(){var out=new LinkedHashMap<String,Object>();out.put("steps",executedSteps);out.put("crouchingSteps",crouchingSteps);out.put("openedDoors",openedDoors);out.put("openedGates",openedGates);out.put("observedGroundHeights",List.copyOf(traversedFloors));out.put("climbingSteps",climbingSteps);out.put("swimmingSteps",swimmingSteps);out.put("search",intent.evidence());return out;}
@@ -35,7 +38,7 @@ public final class MineAgentMovementController {
     public Optional<Vec3> target(){return intent.target();}
     public String backendName(){return "builtin-surface-actions";}
     public void tick(MineAgentPlayer p){
-        int tick=p.level().getServer().getTickCount();if(lastTick==tick)return;lastTick=tick;
+        int tick=p.level().getServer().getTickCount();if(lastTick==tick)return;lastTick=tick;diagonalThisTick=false;
         p.applySneaking(p.canAct()&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
         if(!p.canAct()||intent.target().isEmpty())return;
         if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
@@ -63,6 +66,20 @@ public final class MineAgentMovementController {
         p.applySneaking(!swim&&!climb&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
         var travelHeading=new Vec3(offset.x,0,offset.z);if(travelHeading.lengthSqr()>.001)p.lookAlongPath(p.getEyePosition().add(travelHeading.normalize().scale(4)));
         if((step.action()==Action.JUMP||step.action()==Action.LEAVE_WATER)&&offset.y>.65&&p.onGround())p.jumpFromGround();
+        if(p.nativePvpMovement()){
+            if(p.isUsingItem()&&!p.getUseItem().getOrDefault(net.minecraft.core.component.DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT).canSprint())p.setSprinting(false);
+            double length=offset.horizontalDistance(),yaw=Math.toRadians(p.getYRot());
+            if(length>.001){
+                double amount=Math.min(1,length/.35);
+                boolean ordinary=step.action()==Action.WALK&&!intent.recovery().active();
+                diagonalThisTick=ordinary&&!Boolean.getBoolean("mineagent.disableSprint45")&&NativeSprintSteering.apply(p,offset);
+                if(diagonalThisTick)diagonalTicks++;
+                else NativeSprintSteering.inputs(p,offset.x*Math.cos(yaw)+offset.z*Math.sin(yaw),-offset.x*Math.sin(yaw)+offset.z*Math.cos(yaw),amount);
+                executedSteps++;
+            }
+            if((climb&&offset.y>0)||(swim&&offset.y>.1))p.setJumping(true);
+            return;
+        }
         double friction=Math.max(.1,p.level().getBlockState(p.blockPosition().below()).getBlock().getFriction());
         var useEffects=p.getUseItem().getOrDefault(net.minecraft.core.component.DataComponents.USE_EFFECTS,net.minecraft.world.item.component.UseEffects.DEFAULT);
         if(p.isUsingItem()&&!useEffects.canSprint())p.setSprinting(false);

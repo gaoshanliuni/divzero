@@ -2,6 +2,13 @@ package dev.mineagent.runtime.core.task;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class PvpMapProfileTest {
+    @Test void secondarySupplyAndRealOffhandAreIndependent(){
+        var p=PvpMapProfile.defaults();assertEquals("minecraft:air",p.ai().get("supply"));
+        p=p.gear(0,"ai","secondary","minecraft:bow").gear(1,"ai","offhand","minecraft:shield").gear(2,"ai","supply","minecraft:golden_apple");
+        assertEquals("minecraft:diamond_sword",p.ai().get("mainhand"));assertEquals("minecraft:bow",p.ai().get("secondary"));
+        assertEquals("minecraft:shield",p.ai().get("offhand"));assertEquals("minecraft:air",p.human().get("secondary"));
+        assertEquals("minecraft:air",PvpMapProfile.defaults().ai().get("supply"));
+    }
     @Test void independentGearAndPersistentStatistics(){
         var p=PvpMapProfile.defaults().gear(0,"ai","chest","minecraft:diamond_chestplate");
         assertEquals("minecraft:iron_chestplate",p.human().get("chest"));

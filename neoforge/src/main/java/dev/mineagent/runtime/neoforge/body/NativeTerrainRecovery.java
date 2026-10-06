@@ -48,6 +48,23 @@ public final class NativeTerrainRecovery {
         if(player!=p||level!=p.level()||goal==null||goal.distanceToSqr(target)>4){rejected.clear();attempts=changes=broken=placed=consumed=0;}
         player=p;ACTIVE.put(p,this);level=p.level();goal=target;origin=p.position();started=at=p.level().getServer().getTickCount();reason=cause;state="SEARCHING_ESCAPE";
         var originCell=cell(BlockPos.containing(origin));
+        boolean pvp=dev.mineagent.runtime.neoforge.skill.NativeHumanDuel.pvpParticipant(p);
+        if(pvp&&target.y>origin.y+1.3&&target.subtract(origin).horizontalDistance()<3.5&&NativeTerrainPolicy.materialCount(p)>0
+                &&NativeTerrainPolicy.mayPlace(p,pos(originCell))&&!rejected.contains(originCell,TerrainPathSearch.Kind.PLACE,()->rejectionContext(pos(originCell),TerrainPathSearch.Kind.PLACE))
+                &&p.level().noCollision(p,p.getBoundingBox().expandTowards(0,1.3,0))){
+            var block=new TerrainPathSearch.Edit(originCell,TerrainPathSearch.Kind.PLACE,signature(pos(originCell)),12);
+            prepare(new TerrainPathSearch.Step(originCell,originCell.add(0,1,0),List.of(block),true,22),started);state="PVP_VERTICAL_BUILD";return true;
+        }
+        if(pvp){
+            var hit=p.level().clip(new ClipContext(p.getEyePosition(),target.add(0,p.getEyeHeight(),0),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
+            var at=hit.getBlockPos();var c=cell(at);
+            if(hit.getType()==HitResult.Type.BLOCK&&p.isWithinBlockInteractionRange(at,0)&&!at.equals(p.blockPosition().below())
+                    &&NativeTerrainPolicy.mayBreak(p,at)&&!rejected.contains(c,TerrainPathSearch.Kind.BREAK,()->rejectionContext(at,TerrainPathSearch.Kind.BREAK))){
+                var block=new TerrainPathSearch.Edit(c,TerrainPathSearch.Kind.BREAK,signature(at),NativeTerrainPolicy.breakTicks(p,at));
+                prepare(new TerrainPathSearch.Step(originCell,originCell,List.of(block),false,block.ticks()+4),started);state="PVP_APPROACH_BREACH";return true;
+            }
+        }
+
         var nearby=p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,p.getBoundingBox().inflate(12),e->e!=p&&e.isAlive()&&(e instanceof net.minecraft.world.entity.monster.Enemy||e==p.getLastHurtByMob()));
         var risks=new HashMap<TerrainPathSearch.Cell,Double>();
         var policy=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.snapshot(p);
@@ -63,6 +80,14 @@ public final class NativeTerrainRecovery {
             }
             public boolean canPlace(TerrainPathSearch.Cell c){return !rejected.contains(c,TerrainPathSearch.Kind.PLACE,()->rejectionContext(pos(c),TerrainPathSearch.Kind.PLACE))&&NativeTerrainPolicy.mayPlace(p,pos(c));}
             public boolean exit(TerrainPathSearch.Cell c,Map<TerrainPathSearch.Cell,TerrainPathSearch.Kind> edits){
+                if(pvp){
+                    if(c.equals(originCell))return false;
+                    var overlay=new HashMap<BlockPos,TerrainPathSearch.Kind>();edits.forEach((cell,kind)->overlay.put(pos(cell),kind));
+                    var virtual=new NativeTraversalEvaluator(p,overlay);var at=new Vec3(c.x()+.5,c.y(),c.z()+.5);var floor=virtual.closest(at);
+                    if(floor==null||Math.abs(floor.y()-at.y)>.251||!virtual.clear(at,Pose.STANDING,false)||!NativeDropSafety.landing(p,at))return false;
+                    double progress=origin.distanceTo(target)-at.distanceTo(target);
+                    return progress>=1||!edits.isEmpty()&&c.y()>originCell.y()&&target.y>origin.y+.5&&progress>.15;
+                }
                 if(Math.abs(c.x()-originCell.x())+Math.abs(c.z()-originCell.z())<1)return false;
                 var below=c.add(0,-1,0);if(edits.containsKey(below)||!block(below).supports())return false;
                 // Exit candidates must rejoin existing traversable terrain, not end on a new pillar.
@@ -91,9 +116,7 @@ public final class NativeTerrainRecovery {
             var found=search.advance(Math.min(allowed,96),budget::timeAvailable);expanded=found.expanded();
             if(found.state().equals("SEARCHING"))return new Tick(true,null,false);
             search=null;if(!found.state().equals("FOUND")){state=found.state();ACTIVE.remove(player,this);return new Tick(false,null,false);}
-            planned=found.steps().getFirst();healthBefore=player.getHealth();var displacement=new Vec3(planned.to().x()-planned.from().x(),planned.to().y()-planned.from().y(),planned.to().z()-planned.from().z());decisionFeatures=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.features(player,origin.distanceTo(goal),displacement.length(),0,1,displacement,0,false,7,planned.edits().stream().filter(e->e.kind()==TerrainPathSearch.Kind.PLACE).count());edit=planned.edits().isEmpty()?null:planned.edits().getFirst();operation=UUID.randomUUID();at=now;sent=jumped=false;settled=0;nativeConsumed=0;nativeBroken=false;placementAnchor=null;attempts++;
-            state=edit==null?"ESCAPE_WALK":edit.kind()==TerrainPathSearch.Kind.BREAK?"ESCAPE_MINE":"ESCAPE_PLACE";
-            if(edit!=null)before=signature(pos(edit.cell()));
+            prepare(found.steps().getFirst(),now);
         }
         if(edit==null){
             var target=planned.to();var destination=new Vec3(target.x()+.5,target.y(),target.z()+.5);
@@ -135,6 +158,11 @@ public final class NativeTerrainRecovery {
         }
         if(!sent){var hit=placementHit(player,target);if(hit==null){fail("SUPPORT_FACE_NOT_REACHABLE");return new Tick(false,null,false);}controls.aim(hit.getLocation());placementAnchor=hit.getBlockPos();controls.place(operation,hit);sent=true;at=now;}
         if(now-at>25){fail("PLACEMENT_NOT_CONFIRMED_CHECK_WORLD");return new Tick(false,null,false);}return new Tick(true,null,false);
+    }
+    private void prepare(TerrainPathSearch.Step step,int now){
+        planned=step;healthBefore=player.getHealth();var displacement=new Vec3(planned.to().x()-planned.from().x(),planned.to().y()-planned.from().y(),planned.to().z()-planned.from().z());decisionFeatures=dev.mineagent.runtime.neoforge.skill.LocalPolicyRuntime.features(player,origin.distanceTo(goal),displacement.length(),0,1,displacement,0,false,7,planned.edits().stream().filter(e->e.kind()==TerrainPathSearch.Kind.PLACE).count());edit=planned.edits().isEmpty()?null:planned.edits().getFirst();operation=UUID.randomUUID();at=now;sent=jumped=false;settled=0;nativeConsumed=0;nativeBroken=false;placementAnchor=null;attempts++;
+        state=edit==null?"ESCAPE_WALK":edit.kind()==TerrainPathSearch.Kind.BREAK?"ESCAPE_MINE":"ESCAPE_PLACE";
+        if(edit!=null)before=signature(pos(edit.cell()));
     }
     private Tick complete(boolean edited){ACTIVE.remove(player,this);learn(false);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="RECHECK_ORIGINAL_ROUTE";return new Tick(false,null,true);}
     private void fail(String why){ACTIVE.remove(player,this);learn(true);if(edit!=null)rejected.reject(edit.cell(),edit.kind(),rejectionContext(pos(edit.cell()),edit.kind()));if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="BLOCKED";reason=why;}
