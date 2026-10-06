@@ -3974,8 +3974,8 @@
     },
     {
       "path": "legacy189/README.md",
-      "sha256": "782863dfdb802064a5c64967ec0e5ab60bc5670449ff885e0f8dd09f52424116",
-      "bytes": 32260
+      "sha256": "c23aedf8665ed33ed695315b4f1b7244bfb1c8cabb5c05f4312a24193262e7d9",
+      "bytes": 34848
     },
     {
       "path": "legacy189/bridge/build.gradle",
