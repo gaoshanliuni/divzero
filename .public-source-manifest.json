@@ -3624,8 +3624,8 @@
     },
     {
       "path": "docs/MODERN26_MOBILITY_PORT.md",
-      "sha256": "e78c0ebf1d579b0312b23c59fd9a28ba9328c004d8b457233aa95998337c41a8",
-      "bytes": 13648
+      "sha256": "a7cbc723f12755a3f4c396cc1a3ac3685b63d868518722b5ba517add65fbe548",
+      "bytes": 13996
     },
     {
       "path": "docs/NATIVE_INSTALLATION.md",
@@ -4829,8 +4829,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "762bf899415c81ba47a67a6f14bc965b1bd8fece15107e74d71ef7811578a7f1",
-      "bytes": 241480
+      "sha256": "5a4eb5d5e96e71c3c2d8234b84a3c87d050be0c6fb8a58b5fb3411b9a680ee33",
+      "bytes": 241600
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
