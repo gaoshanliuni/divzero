@@ -24,8 +24,8 @@
     },
     {
       "path": ".gitignore",
-      "sha256": "3f3f9d75bac80d38767e8fe18faab6136e0a75fe395b887eeeb08fb036d12a8d",
-      "bytes": 979
+      "sha256": "a89e63b495b5cdab9b07e00d199845ac0c26f44785a81ef443b12632c3d19133",
+      "bytes": 1092
     },
     {
       "path": "LICENSE",
@@ -3624,8 +3624,8 @@
     },
     {
       "path": "docs/MODERN26_MOBILITY_PORT.md",
-      "sha256": "ea3ea04733e830008095c3cb8462eeac55f75f67329ca64481b19c7c9569a467",
-      "bytes": 3479
+      "sha256": "1de97e210783f8029468f2816bfea10b45e4dbd340fadb5f9afa81e5b30db4bf",
+      "bytes": 8148
     },
     {
       "path": "docs/NATIVE_INSTALLATION.md",
