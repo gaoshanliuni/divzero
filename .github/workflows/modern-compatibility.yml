@@ -27,8 +27,14 @@ jobs:
       - name: Compile all production modules against target APIs (not runtime certification)
         run: |
           New-Item -ItemType Directory -Force build/probe-logs | Out-Null
-          & ./gradlew.bat -I scripts/release-build.init.gradle '-PgameTarget=${{ matrix.game }}' -PcompatibilityProbe=true -PpythonRuntime=none :neoforge:compileJava --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath 'build/probe-logs/compile-${{ matrix.game }}.log'
+          & ./gradlew.bat -I scripts/release-build.init.gradle '-PgameTarget=${{ matrix.game }}' -PcompatibilityProbe=true -PnativeProbe=true -PpythonRuntime=none :neoforge:jar --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath 'build/probe-logs/compile-${{ matrix.game }}.log'
           exit $LASTEXITCODE
+      - name: Isolated native acceptance candidate (experimental, not a Release)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: experimental-native-${{ matrix.game }}-${{ github.run_id }}
+          path: build/targets/${{ matrix.game }}/editions/none/neoforge/libs/*-experimental.jar
+          retention-days: 7
       - name: Retain exact compiler diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

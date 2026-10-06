@@ -166,6 +166,9 @@ def generateModMetadata = tasks.register('generateModMetadata', ProcessResources
     ]
     inputs.properties replacements
     expand replacements
+    if (rootProject.gameTarget != '26.1.2') {
+        filter { String line -> line.replace('[26.1.2.41,26.2)', rootProject.modernTarget.ldlibRange).replace('Minecraft 26.1.2', 'Minecraft ' + rootProject.gameTarget) }
+    }
     from 'src/main/templates'
     into layout.buildDirectory.dir('generated/sources/modMetadata')
 }

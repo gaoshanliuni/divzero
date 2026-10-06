@@ -19,8 +19,8 @@
     },
     {
       "path": ".github/workflows/modern-compatibility.yml",
-      "sha256": "03196249f90b7c48a1130efa0fbf64820c5ae521cb08f086ace805d1b559c8f8",
-      "bytes": 1526
+      "sha256": "f9a1f47b3393e9ee578c907be8c401d2a9b738b3841e3e7a6a38155860e0efed",
+      "bytes": 1911
     },
     {
       "path": ".gitignore",
@@ -3914,8 +3914,8 @@
     },
     {
       "path": "gradle/modern-api.gradle",
-      "sha256": "c699ba4c222064cad7f0dfa54139ae5af8d4d856801f4b4c41efc014762eedf7",
-      "bytes": 5141
+      "sha256": "59683a5d5f0f8e819db5f7529974a45e7d42b759a487293b8a5f02abab4dfe77",
+      "bytes": 7610
     },
     {
       "path": "gradle/modern-targets.json",
@@ -4489,8 +4489,8 @@
     },
     {
       "path": "neoforge/build.gradle",
-      "sha256": "79ca671bdbe1128946cf519094fb02ff6824417ff6b2cf2f46fbc153f9d1450a",
-      "bytes": 10187
+      "sha256": "097b12ac2bd95b93d60c6ef6e6dab337deab5a7acc55072cc2ed2ae103054cce",
+      "bytes": 10410
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/CommandBlockLimitRuntime.java",
@@ -7856,6 +7856,11 @@
       "path": "neoforge/src/main/targets/26.2/java/dev/mineagent/runtime/neoforge/mixin/client/EntityModelRenderRulesMixin.java",
       "sha256": "a2f691c5ee7eb662b7a1ee447343b9ea762c454deb9c48e6015099d509bc2b8b",
       "bytes": 1013
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePlatformInput.java",
+      "sha256": "a4361f3631de0b27cdb7afdfdd1a4dce363ea49288418d2e0c419f85dec19273",
+      "bytes": 1735
     },
     {
       "path": "neoforge/src/main/templates/META-INF/neoforge.mods.toml",

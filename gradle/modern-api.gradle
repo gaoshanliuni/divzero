@@ -32,18 +32,40 @@ def translate = { String line ->
     line = line.replace('chest.getCenter()', 'net.minecraft.world.phys.Vec3.atCenterOf(chest)')
     line = line.replace('Blocks.COPPER_BLOCK)', 'Blocks.COPPER_BLOCK.weathering().unaffected())')
     line = line.replace('.publishServer(net.minecraft.world.level.GameType.', '.publishServer(net.minecraft.server.MinecraftServer.MultiplayerScope.LAN,net.minecraft.world.level.GameType.')
+    line = line.replace('.publishServer(GameType.', '.publishServer(net.minecraft.server.MinecraftServer.MultiplayerScope.LAN,GameType.')
     line = line.replaceAll(/\b(b|cow)\.knockback\(([^(),]+),([^(),]+),([^(),]+)\)/) { all, entity, force, x, z -> "${entity}.knockback(${force},${x},${z},${entity}.damageSources().generic(),0f)" }
+    if (rootProject.gameTarget == '26.3') {
+        line = line.replace('import org.lwjgl.glfw.GLFW;', '')
+        def input = 'com.mojang.blaze3d.platform.InputConstants.'
+        def aliases = ['ENTER':'RETURN','KP_ENTER':'NUMPADENTER','LEFT_SHIFT':'LSHIFT','RIGHT_SHIFT':'RSHIFT','LEFT_CONTROL':'LCONTROL','RIGHT_CONTROL':'RCONTROL','LEFT_ALT':'LALT','RIGHT_ALT':'RALT']
+        line = line.replaceAll(/(?:org\.lwjgl\.glfw\.)?GLFW\.GLFW_KEY_([A-Z0-9_]+)/) { all, key -> key == 'UNKNOWN' ? input+'UNKNOWN.getValue()' : input+'KEY_'+aliases.getOrDefault(key,key) }
+        line = line.replaceAll(/(?:org\.lwjgl\.glfw\.)?GLFW\.GLFW_(MOD_[A-Z_]+|PRESS|RELEASE|MOUSE_BUTTON_[A-Z_]+)/) { all, key -> input+(key == 'MOUSE_BUTTON_LAST' ? 'MOUSE_BUTTON_8' : key) }
+        def functions = ['glfwGetKey':'key','glfwGetMouseButton':'mouse','glfwGetKeyScancode':'keycode','glfwFocusWindow':'focus','glfwIconifyWindow':'minimize','glfwRestoreWindow':'restore','glfwSetCursorPos':'cursor']
+        line = line.replaceAll(/(?:org\.lwjgl\.glfw\.)?GLFW\.(glfw[A-Za-z]+)\(/) { all, function -> functions.containsKey(function) ? 'dev.mineagent.runtime.neoforge.client.nativeui.NativePlatformInput.'+functions[function]+'(' : all }
+        line = line.replace('InputConstants.Type.KEYSYM','InputConstants.Type.KEYBOARD').replace('InputConstants.Type.SCANCODE','InputConstants.Type.KEYBOARD')
+        line = line.replace('com.mojang.blaze3d.pipeline.RenderPipeline','com.mojang.renderpearl.api.pipeline.RenderPipeline')
+        line = line.replace('new net.minecraft.client.input.MouseButtonInfo(0,','new net.minecraft.client.input.MouseButtonInfo('+input+'MOUSE_BUTTON_LEFT,')
+        line = line.replaceAll(/\.button\(\)(\s*[!=]=\s*)([01])\b/) { all, op, button -> '.button()'+op+input+(button == '0' ? 'MOUSE_BUTTON_LEFT' : 'MOUSE_BUTTON_RIGHT') }
+    }
     return line
 }
 def overlay = file('src/main/targets/26.2/java')
-def replaced = fileTree(overlay).files.collect { overlay.toPath().relativize(it.toPath()).toString().replace('\\','/') }.toSet()
+def specific = file("src/main/targets/${rootProject.gameTarget}/java")
+def extra = rootProject.gameTarget == '26.2' ? [] : fileTree(specific).files.collect { specific.toPath().relativize(it.toPath()).toString().replace('\\','/') }
+def replaced = (fileTree(overlay).files.collect { overlay.toPath().relativize(it.toPath()).toString().replace('\\','/') } + extra).toSet()
 def prepared = tasks.register('prepareTargetSources', Sync) {
     inputs.property('gameTarget', rootProject.gameTarget)
     inputs.file(rootProject.file('gradle/modern-api.gradle'))
     from('src/main/java') { exclude(replaced); filter { String line -> translate(line) } }
-    from(overlay)
+    from(overlay) { exclude(extra) }
+    if (rootProject.gameTarget != '26.2') from(specific)
     into(layout.buildDirectory.dir('generated/target-java'))
     filteringCharset = 'UTF-8'
 }
 sourceSets.main.java.setSrcDirs([prepared])
-tasks.named('jar') { doFirst { throw new GradleException('TARGET_DIAGNOSTICS_ONLY: full dependency and native validation required before packaging') } }
+tasks.named('jar') {
+    archiveClassifier = "mc-${rootProject.gameTarget}-experimental"
+    doFirst {
+        if (!providers.gradleProperty('nativeProbe').getOrElse('false').toBoolean()) throw new GradleException('TARGET_DIAGNOSTICS_ONLY: use explicit nativeProbe for an isolated acceptance artifact, never a Release')
+    }
+}
