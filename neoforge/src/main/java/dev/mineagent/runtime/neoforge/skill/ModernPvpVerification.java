@@ -17,7 +17,7 @@ final class ModernPvpVerification {
     private static final Map<String,Object> RESULTS=new LinkedHashMap<>();
     private static final List<Long> movementTicks=new ArrayList<>();
     private static int phase,started,placedBefore;private static Vec3 origin;private static float health;
-    private static double straight;private static boolean done;
+    private static double straight,mitigatedPrediction,vitalBefore;private static boolean done;
     static void tick(ServerPlayer viewer,MineAgentPlayer ai){
         if(done)return;
         if(!Boolean.getBoolean("mineagent.modernPvpFixture")||!Files.isRegularFile(Path.of("human-duel-instance.json")))return;
@@ -86,7 +86,11 @@ final class ModernPvpVerification {
                 if(ai.movementController().outcome().equals("ARRIVED")){RESULTS.put("narrowWallLedgeTicks",tick-started);RESULTS.put("narrowWallLedgeNavigation",ai.movementController().evidence());begin(ai,new Vec3(-4.5,101,810.5),new Vec3(4.5,101,810.5));phase=14;started=tick;}else require(tick-started<180,"NARROW_LEDGE_TIMEOUT");
             }else if(phase==14){
                 if(tick-started==5){ai.level().setBlock(new BlockPos(0,101,810),Blocks.STONE.defaultBlockState(),3);ai.level().setBlock(new BlockPos(0,102,810),Blocks.STONE.defaultBlockState(),3);}
-                if(ai.movementController().outcome().equals("ARRIVED")){RESULTS.put("changedTerrainTicks",tick-started);RESULTS.put("changedTerrainNavigation",ai.movementController().evidence());verifySafety(ai);finish(viewer,ai,"PASS","");}else require(tick-started<220,"CHANGED_TERRAIN_TIMEOUT");
+                if(ai.movementController().outcome().equals("ARRIVED")){RESULTS.put("changedTerrainTicks",tick-started);RESULTS.put("changedTerrainNavigation",ai.movementController().evidence());verifySafety(ai);
+                    var boots=new ItemStack(Items.DIAMOND_BOOTS);var feather=ai.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FEATHER_FALLING);net.minecraft.world.item.enchantment.EnchantmentHelper.updateEnchantments(boots,e->e.set(feather,4));ai.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET,boots);ai.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.RESISTANCE,200,1));ai.setAbsorptionAmount(2);ai.getFoodData().setFoodLevel(10);vitalBefore=ai.getHealth()+ai.getAbsorptionAmount();mitigatedPrediction=NativeDropSafety.damage(ai,4);require(mitigatedPrediction>0&&mitigatedPrediction<1,"NATIVE_MITIGATION_NOT_READ");begin(ai,new Vec3(-11.5,105,794.5),new Vec3(-8.5,101,794.5));phase=15;started=tick;
+                }else require(tick-started<220,"CHANGED_TERRAIN_TIMEOUT");
+            }else if(phase==15){
+                if(ai.onGround()&&ai.getY()<101.1&&ai.position().distanceTo(new Vec3(-8.5,101,794.5))<.5){double actual=vitalBefore-ai.getHealth()-ai.getAbsorptionAmount();require(Math.abs(actual-mitigatedPrediction)<.02,"ENCHANTMENT_RESISTANCE_ABSORPTION_FALL_MISMATCH");RESULTS.put("mitigatedPredictedDamage",mitigatedPrediction);RESULTS.put("mitigatedActualVitalDamage",actual);RESULTS.put("remainingAbsorption",ai.getAbsorptionAmount());finish(viewer,ai,"PASS","");}else require(tick-started<170,"MITIGATED_DROP_TIMEOUT");
             }
         }catch(Throwable failure){finish(viewer,ai,"FAILED",failure.toString());}
     }
