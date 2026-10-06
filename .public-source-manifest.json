@@ -3914,8 +3914,8 @@
     },
     {
       "path": "gradle/modern-api.gradle",
-      "sha256": "1f28ca9aadb1bba71055313ffb5279a39a47e8f54c380b17b14156211d3415a9",
-      "bytes": 12315
+      "sha256": "2dde57dd136ba5f25a6d765aab043ec95d1303506b76e57b2c7d6ba0168095a6",
+      "bytes": 12516
     },
     {
       "path": "gradle/modern-targets.json",
@@ -4809,8 +4809,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPvpClientVerification.java",
-      "sha256": "8ad19a306ad3c4e239818923afd76a881d76cfa38d71fdbc9463932c3da850b7",
-      "bytes": 3533
+      "sha256": "b7000a41dcbaf68791d277ccc401619985c06e58ede34c118cece085d9bbba10",
+      "bytes": 4118
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeBoostInput.java",
@@ -7919,8 +7919,8 @@
     },
     {
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/mixin/client/WorkspaceMouseAccess.java",
-      "sha256": "1a97fdce1fb9af68f759f3cc54fc42aade3ce5114a4ad3e3778401396c0a1184",
-      "bytes": 708
+      "sha256": "6cd532d6ce3d3e16b91219ea9968752db71460c13dafbc909482938679b9fb4b",
+      "bytes": 595
     },
     {
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/ui/NativeMenuData.java",

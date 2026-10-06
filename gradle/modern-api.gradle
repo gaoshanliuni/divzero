@@ -35,6 +35,8 @@ def translate = { String line ->
     line = line.replace('.publishServer(GameType.', '.publishServer(net.minecraft.server.MinecraftServer.MultiplayerScope.LAN,GameType.')
     line = line.replaceAll(/\b(b|cow)\.knockback\(([^(),]+),([^(),]+),([^(),]+)\)/) { all, entity, force, x, z -> "${entity}.knockback(${force},${x},${z},${entity}.damageSources().generic(),0f)" }
     if (rootProject.gameTarget == '26.3') {
+        // SDL has no synthetic GLFW right-click state. Keep the accessor a pure accessor mixin.
+        line = line.replace('m.mineagent$fakeRight(0);','').replace('mouse.mineagent$fakeRight(0);','')
         line = line.replaceAll(/\bswing\((InteractionHand\.\w+|hand),\s*(true|false)\)/) { all, hand, force -> 'swing('+hand+',net.minecraft.world.item.component.SwingAnimation.DEFAULT,'+force+')' }
         line = line.replace('ContainerScreenGeometry)screen','ContainerScreenGeometry)(Object)screen')
         line = line.replace('player.drop(stack,false)','player.drop(stack,false,net.minecraft.util.Prediction.SERVER_ONLY)')

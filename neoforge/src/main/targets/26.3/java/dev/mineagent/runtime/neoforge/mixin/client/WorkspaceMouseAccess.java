@@ -9,6 +9,4 @@ public interface WorkspaceMouseAccess {
     @Accessor("isMiddlePressed") void mineagent$middle(boolean value);
     @Accessor("isRightPressed") void mineagent$right(boolean value);
     @Accessor("activeButton") void mineagent$activeButton(MouseButtonInfo value);
-    // SDL no longer stores GLFW synthetic-right-click state.
-    default void mineagent$fakeRight(int value) {}
 }
