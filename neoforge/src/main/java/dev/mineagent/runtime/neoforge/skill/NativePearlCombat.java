@@ -20,17 +20,20 @@ final class NativePearlCombat {
             if(state.consumed&&!state.arrived&&p.position().distanceTo(state.origin)>4&&p.position().distanceTo(state.landing)<2){state.arrived=true;w.session.add("nativePearlTeleports",1);w.positioning.reset();}
             if(w.tick()-state.issued<3)return true;
         }
-        if(target==null||!NativeHumanDuel.pvpParticipant(p)||w.actor.recovering()||!p.onGround()||p.isPassenger()||p.isUsingItem()||w.tick()-state.issued<60||w.tick()-state.probe<12)return false;
-        boolean retreat=w.recentDamageChain>=2&&w.tick()-w.lastContactDamage<24;double distance=p.distanceTo(target);
+        boolean retreat=w.recentDamageChain>=2&&w.tick()-w.lastContactDamage<24;
+        // Native pearls can be used during knockback. Requiring ground prevents the escape precisely when needed.
+        // The same trajectory planner includes inherited vertical motion and still validates the whole landing area.
+        if(target==null||!NativeHumanDuel.pvpParticipant(p)||w.actor.recovering()||!p.onGround()&&!retreat||p.isPassenger()||p.isUsingItem()||w.tick()-state.issued<60||w.tick()-state.probe<12)return false;
+        double distance=p.distanceTo(target);
         // Conservative full native pearl damage plus landing margin, even with absorption/protection.
         if(p.getHealth()+p.getAbsorptionAmount()<10||(!retreat&&distance<10)||distance>28)return false;
         int slot=-1;for(int i=0;i<36;i++)if(p.getInventory().getItem(i).is(Items.ENDER_PEARL)&&!p.getCooldowns().isOnCooldown(p.getInventory().getItem(i))){slot=i;break;}
-        if(slot<0)return false;state.probe=w.tick();var plan=plan(w,target,retreat);if(plan==null)return false;
+        if(slot<0)return false;state.probe=w.tick();var plan=plan(w,target,retreat);if(plan==null){w.session.add("pearlPlansUnavailable",1);return false;}
         w.actor.stop(w.token());if(!w.actor.select(w.token(),slot)||!p.getMainHandItem().is(Items.ENDER_PEARL))return true;
         w.actor.haltMotion(w.token());w.actor.aimImmediately(w.token(),plan.aim);
         if(p.getLookAngle().dot(plan.aim.subtract(p.getEyePosition()).normalize())<.999)return true;
         state.origin=p.position();state.landing=plan.landing;state.before=w.count(Items.ENDER_PEARL);state.operation=UUID.randomUUID();state.issued=w.tick();state.consumed=state.arrived=false;
-        w.combatStage=0;w.combatOperation=null;w.actor.useOnce(w.token(),state.operation,net.minecraft.world.InteractionHand.MAIN_HAND);w.session.add("nativePearlAttempts",1);return true;
+        w.combatStage=0;w.combatOperation=null;w.actor.useOnce(w.token(),state.operation,net.minecraft.world.InteractionHand.MAIN_HAND);w.session.add("nativePearlAttempts",1);w.session.add(retreat?"nativeRetreatPearlAttempts":"nativeApproachPearlAttempts",1);return true;
     }
     private static Plan plan(SkillWork w,LivingEntity target,boolean retreat){
         var p=w.player();var budget=NativeNavigationBudget.get(w.runtime.server);if(budget.claim(w.token(),w.tick())==0)return null;
