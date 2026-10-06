@@ -4809,8 +4809,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPvpClientVerification.java",
-      "sha256": "33e785d04f097c980d2d4f069bd3b5d489253f58ba93a6c8494991165c1ad06f",
-      "bytes": 4289
+      "sha256": "2ebc9c0f3a3833512d9443b3acf5e239f230addec3110aa324dbd86a46cf99e6",
+      "bytes": 4344
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeBoostInput.java",
