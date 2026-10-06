@@ -3914,8 +3914,8 @@
     },
     {
       "path": "gradle/modern-api.gradle",
-      "sha256": "d109ab16a6be5c4ba3c779b2f59d2f8f5e2088362fc707a4bc5a3f19b20cdaf1",
-      "bytes": 12299
+      "sha256": "1f28ca9aadb1bba71055313ffb5279a39a47e8f54c380b17b14156211d3415a9",
+      "bytes": 12315
     },
     {
       "path": "gradle/modern-targets.json",
@@ -4804,8 +4804,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPvpClientVerification.java",
-      "sha256": "2e2cae8ef7e5eb731e2ab6c600f65e54bbae7548f1b3c7a25755fe5f7976809f",
-      "bytes": 1996
+      "sha256": "f918677021401b5cee0fcba999675320d8a90649a4932df1021325e392ddedec",
+      "bytes": 2961
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeBoostInput.java",
