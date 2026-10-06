@@ -19,6 +19,10 @@ def nativeUiHashes = [
     'B1CBVXHX-15aCZh6V.jar': '613f7e5d890c3c6c89f62e52a6336e775d83766c39cd52d5e1822e45c3520826',
     'umyGl7zF-FzLyIIBB.jar': '36df262649e53c4b8256193198e7f5d225a6fec05f4b1e74e55c271e657ea5f0'
 ]
+if (rootProject.gameTarget != '26.1.2') {
+    nativeUiHashes.remove('B1CBVXHX-15aCZh6V.jar')
+    nativeUiHashes['B1CBVXHX-' + rootProject.modernTarget.ldlib + '.jar'] = rootProject.modernTarget.ldlibSha256
+}
 tasks.register('verifyNativeUiDependencies') {
     group = 'verification'
     inputs.files(configurations.nativeUiLocked)
@@ -92,9 +96,14 @@ configurations {
 
 dependencies {
     // Locked upstream native UI APIs. F2 uses LDLib2 directly; AI-authored trees additionally use KubeJS.
-    implementation('maven.modrinth:B1CBVXHX:15aCZh6V') { transitive = false }
+    if (rootProject.gameTarget == '26.1.2') {
+        implementation('maven.modrinth:B1CBVXHX:15aCZh6V') { transitive = false }
+        nativeUiLocked('maven.modrinth:B1CBVXHX:15aCZh6V') { transitive = false }
+    } else {
+        implementation("maven.modrinth:B1CBVXHX:${rootProject.modernTarget.ldlib}") { transitive = false }
+        nativeUiLocked("maven.modrinth:B1CBVXHX:${rootProject.modernTarget.ldlib}") { transitive = false }
+    }
     implementation('maven.modrinth:umyGl7zF:FzLyIIBB') { transitive = false }
-    nativeUiLocked('maven.modrinth:B1CBVXHX:15aCZh6V') { transitive = false }
     nativeUiLocked('maven.modrinth:umyGl7zF:FzLyIIBB') { transitive = false }
     // Both are already supplied at runtime (Rhino below; Taffy inside LDLib2).
     compileOnly "dev.latvian.mods:rhino:${rhino_version}"

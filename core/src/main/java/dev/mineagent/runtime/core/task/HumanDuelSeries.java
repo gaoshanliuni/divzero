@@ -21,6 +21,7 @@ public final class HumanDuelSeries {
         phase = Phase.COUNTDOWN; deadline = now + Duration.ofSeconds(5).toNanos(); return true;
     }
     public boolean countdownComplete(long now) { return phase == Phase.COUNTDOWN && now >= deadline; }
+    public void prepared(long now){if(phase!=Phase.COUNTDOWN)throw new IllegalStateException("DUEL_PHASE");deadline=now+Duration.ofSeconds(5).toNanos();}
     public void starting() { if (phase != Phase.COUNTDOWN) throw new IllegalStateException("DUEL_PHASE"); phase = Phase.STARTING; }
     public void started(long now) { if (phase != Phase.STARTING) throw new IllegalStateException("DUEL_PHASE"); phase = Phase.FIGHTING; started = now; deadline = now + LIMIT; }
     public long remainingSeconds(long now) { return Math.max(0, (deadline - now + 999_999_999L) / 1_000_000_000L); }

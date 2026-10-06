@@ -1,0 +1,5 @@
+{
+  "26.1.2": {"neo":"26.1.2.106","ldlib":"15aCZh6V","ldlibSha256":"613f7e5d890c3c6c89f62e52a6336e775d83766c39cd52d5e1822e45c3520826","ldlibRange":"[26.1.2.41,26.2)","probeOnly":false},
+  "26.2": {"neo":"26.2.0.88","ldlib":"FiGmJmpx","ldlibSha256":"2ee256a97fd4f472d8b61c84bacfe4fdcf03953932b9a7f41d26a4bcc83f6106","ldlibRange":"[26.2.2.42,26.3)","probeOnly":true},
+  "26.3": {"neo":"26.3.0.51-beta","ldlib":"CcNvp4yE","ldlibSha256":"db5015465600a6428a58736b09922ed80cfb086ec09b2baf28c8bb711916306b","ldlibRange":"[26.3.2.41,26.4)","probeOnly":true}
+}

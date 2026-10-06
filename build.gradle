@@ -4,6 +4,15 @@ plugins {
 
 ext.pythonRuntime = providers.gradleProperty('pythonRuntime').getOrElse('none')
 if (!(pythonRuntime in ['none', 'bundled'])) throw new GradleException('PYTHON_EDITION_INVALID')
+ext.gameTarget = providers.gradleProperty('gameTarget').getOrElse('26.1.2')
+ext.modernTarget = new groovy.json.JsonSlurper().parse(file('gradle/modern-targets.json'))[gameTarget]
+if (modernTarget == null) throw new GradleException('UNKNOWN_GAME_TARGET')
+if (modernTarget.probeOnly && !providers.gradleProperty('compatibilityProbe').getOrElse('false').toBoolean()) {
+    throw new GradleException('GAME_TARGET_NOT_VERIFIED: compatible KubeJS and native acceptance are required; compatibilityProbe is compile diagnostics only')
+}
+ext.minecraft_version = gameTarget
+ext.minecraft_version_range = "[${gameTarget}]"
+ext.neo_version = modernTarget.neo
 
 allprojects {
     group = mod_group_id
@@ -18,7 +27,7 @@ allprojects {
 
 subprojects {
     // Different source sets must never share incremental class/resource outputs.
-    layout.buildDirectory = rootProject.layout.projectDirectory.dir("build/editions/${rootProject.pythonRuntime}/${project.path.substring(1).replace(':', '/')}")
+    layout.buildDirectory = rootProject.layout.projectDirectory.dir("build/${rootProject.gameTarget == '26.1.2' ? '' : 'targets/' + rootProject.gameTarget + '/'}editions/${rootProject.pythonRuntime}/${project.path.substring(1).replace(':', '/')}")
     plugins.withType(JavaPlugin).configureEach {
         if (project.name == 'core') {
             sourceSets.main.java.srcDir "src/main/variants/${rootProject.pythonRuntime}/java"

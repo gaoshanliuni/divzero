@@ -3,6 +3,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static dev.mineagent.runtime.core.task.MotionForecast.*;
 class MotionForecastTest {
+    @Test void measuredReversalChangesNearTermPredictionWithoutUnboundedAcceleration(){
+        var input=new Input(new Point(0,0,0),new Point(.15,0,0),true,.08,.03,0,null,new Point(-.06,0,0));
+        var path=predict(input,FLOOR,24).getFirst();assertTrue(path.getFirst().velocity().x()<.15);
+        assertTrue(path.stream().allMatch(s->Math.abs(s.velocity().x())<=.15));
+    }
     @Test void playerLookDirectionAddsAPossibleTurnWithoutReplacingObservedMomentum(){
         var paths=predict(new Input(new Point(0,1,0),new Point(.25,-.1,0),false,.08,.03,0,new Point(0,0,1)),FLOOR,8);
         assertEquals(6,paths.size());assertTrue(paths.getFirst().getLast().position().x()>1);

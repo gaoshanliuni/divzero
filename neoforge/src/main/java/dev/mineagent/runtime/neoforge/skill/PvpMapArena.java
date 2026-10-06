@@ -14,10 +14,25 @@ public final class PvpMapArena {
     public static boolean field(BlockPos p){return walkCell(p.getX(),p.getZ())&&p.getY()>FLOOR_Y&&p.getY()<=319;}
     public static boolean inside(Vec3 p){return p.x> -17&&p.x<18&&p.z>783&&p.z<818&&p.y>=97;}
     public static boolean protectedArea(BlockPos p){return p.getX()>=-18&&p.getX()<=18&&p.getZ()>=754&&p.getZ()<=818&&p.getY()>=97&&p.getY()<=319;}
+    public static final class Cleanup {
+        private final net.minecraft.server.level.ServerLevel level;private int x=MIN_X,z=MIN_Z,y=FLOOR_Y+1;
+        public Cleanup(ServerPlayer p){level=p.level();}
+        public boolean advance(){
+            long deadline=System.nanoTime()+2_000_000;int remaining=4096;
+            while(x<=MAX_X&&remaining-->0&&System.nanoTime()<deadline){
+                var at=new BlockPos(x,y,z);if(!level.hasChunkAt(at))throw new IllegalStateException("ARENA_CLEANUP_CHUNK_UNAVAILABLE");
+                if(level.getBlockState(at).is(net.minecraft.tags.BlockTags.WOOL))level.setBlock(at,Blocks.AIR.defaultBlockState(),3);
+                if(++y>level.getMaxY()){y=FLOOR_Y+1;if(++z>MAX_Z){z=MIN_Z;x++;}}
+            }
+            if(x<=MAX_X)return false;
+            clearDrops(level);return true;
+        }
+    }
+    private static void clearDrops(net.minecraft.server.level.ServerLevel level){for(var drop:level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(MIN_X,FLOOR_Y,MIN_Z,MAX_X+1,level.getMaxY()+1,MAX_Z+1),e->true))drop.discard();}
     public static int clearWool(ServerPlayer player){
         var level=player.level();int count=0;for(int x=-16;x<=16;x++)for(int z=784;z<=816;z++)for(int y=101;y<=level.getMaxY();y++){var at=new BlockPos(x,y,z);if(level.getBlockState(at).is(net.minecraft.tags.BlockTags.WOOL)){level.setBlock(at,Blocks.AIR.defaultBlockState(),3);count++;}}
         // Only the arena volume, including the full editable height; lobby/outside items survive.
-        for(var drop:level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(MIN_X,FLOOR_Y,MIN_Z,MAX_X+1,level.getMaxY()+1,MAX_Z+1),e->true))drop.discard();return count;
+        clearDrops(level);return count;
     }
     public static void lobby(ServerPlayer p){
         var level=p.level();for(int x=-11;x<=11;x++)for(int z=754;z<=782;z++)level.getChunk(new BlockPos(x,100,z));

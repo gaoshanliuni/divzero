@@ -4,6 +4,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HumanDuelSeriesTest {
+    @Test void cleanupCompletionStartsFreshCountdownAndCannotReviveCancelledRound(){
+        var s=new HumanDuelSeries(0,0);assertTrue(s.ready(0));s.prepared(9_000_000_000L);
+        assertFalse(s.countdownComplete(13_999_999_999L));assertTrue(s.countdownComplete(14_000_000_000L));
+        s.stop();assertThrows(IllegalStateException.class,()->s.prepared(15_000_000_000L));assertEquals(0,s.completed());
+    }
     @Test void fiveHumanReadyRoundsWithDeathAndExactWallClockLimit() {
         var s = new HumanDuelSeries();
         for (int i = 0; i < 5; i++) {

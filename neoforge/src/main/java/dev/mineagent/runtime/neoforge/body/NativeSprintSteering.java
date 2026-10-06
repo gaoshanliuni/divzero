@@ -5,7 +5,7 @@ import net.minecraft.world.phys.Vec3;
 /** Input adapter for the clientless player. Only yaw and native forward/strafe inputs are changed. */
 public final class NativeSprintSteering {
     public static boolean apply(MineAgentPlayer p,Vec3 heading){
-        if(!p.onGround()||!p.isSprinting()||p.isUsingItem()||p.isCrouching()||p.isInWater()||p.onClimbable()||p.horizontalCollision||heading.horizontalDistanceSqr()<.42)return false;
+        if(!p.onGround()||p.getDeltaMovement().y>.05||!p.isSprinting()||p.isUsingItem()||p.isCrouching()||p.isInWater()||p.onClimbable()||p.horizontalCollision||heading.horizontalDistanceSqr()<.42)return false;
         var check=new NativeTraversalEvaluator(p);var at=p.position().add(heading.multiply(1,0,1).normalize().scale(.75));var node=check.closest(at);
         if(node==null||Math.abs(node.y()-p.getY())>.1||!check.clear(at,net.minecraft.world.entity.Pose.STANDING,false))return false;
         var steering=TraversalSafety.diagonal(heading.x,heading.z,p.getYRot());p.setYRot(steering.yaw());p.setYHeadRot(steering.yaw());

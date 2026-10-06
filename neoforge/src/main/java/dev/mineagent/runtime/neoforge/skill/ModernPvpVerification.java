@@ -43,7 +43,7 @@ final class ModernPvpVerification {
                 if(ai.movementController().outcome().equals("ARRIVED")){
                     RESULTS.put("edgeArrivalTicks",tick-started);RESULTS.put("edgeNavigation",ai.movementController().evidence());
                     for(int y=101;y<=104;y++)ai.level().setBlock(new BlockPos(-12,y,794),Blocks.WHITE_WOOL.defaultBlockState(),3);
-                    health=ai.getHealth();RESULTS.put("predictedFourBlockDamage",NativeDropSafety.damage(ai,4));begin(ai,new Vec3(-11.5,105,794.5),new Vec3(-8.5,101,794.5));phase=4;started=tick;
+                    ai.getFoodData().setFoodLevel(10);health=ai.getHealth();RESULTS.put("predictedFourBlockDamage",NativeDropSafety.damage(ai,4));begin(ai,new Vec3(-11.5,105,794.5),new Vec3(-8.5,101,794.5));phase=4;started=tick;
                 }else require(tick-started<150,"EDGE_ROUTE_TIMEOUT");
             }else if(phase==4){
                 if(ai.onGround()&&ai.getY()<101.1&&ai.position().distanceTo(new Vec3(-8.5,101,794.5))<.5){

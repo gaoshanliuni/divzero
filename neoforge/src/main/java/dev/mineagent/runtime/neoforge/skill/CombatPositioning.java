@@ -58,7 +58,7 @@ final class CombatPositioning {
         var owner=work.runtime.server.getPlayerList().getPlayer(work.session.owner());var protectedEntity=work.combat.protectedEntity!=null?work.combat.protectedEntity:owner;
         var model=LocalPolicyRuntime.snapshot(p);double best=Double.POSITIVE_INFINITY;PathStep selected=null;double[] features=null;
         for(var edge:check.neighbors(current)){
-            if(!Set.of(Action.WALK,Action.STEP_UP,Action.CROUCH,Action.DROP).contains(edge.action())||Math.abs(edge.to().y()-current.y())>1.25||edgeExposure(work,edge.to(),check)>0)continue;
+            if(!Set.of(Action.WALK,Action.STEP_UP,Action.CROUCH,Action.DROP).contains(edge.action())||Math.abs(edge.to().y()-current.y())>1.25||!NativeHumanDuel.pvpParticipant(p)&&edgeExposure(work,edge.to(),check)>0)continue;
             var point=NativeTraversalEvaluator.point(edge.to());
             if(!NativeHumanDuel.pvpParticipant(p)&&check.neighbors(edge.to()).stream().filter(next->!next.to().equals(current)&&Math.abs(next.to().y()-edge.to().y())<=1.25&&NativeTraversalEvaluator.point(next.to()).distanceTo(dangerCenter)>=point.distanceTo(dangerCenter)-.25).count()<2)continue;
             if(protectedEntity!=null&&protectedEntity!=p&&protectedEntity!=work.combat.selected&&protectedEntity.level()==p.level()&&!(protectedEntity instanceof net.minecraft.world.entity.player.Player other&&(other.isCreative()||other.isSpectator()))&&point.distanceTo(protectedEntity.position())<p.distanceTo(protectedEntity)-.25)continue;
@@ -80,7 +80,7 @@ final class CombatPositioning {
         var intercept=work.prediction.intercept(work,target,Math.min(8,player.distanceTo(target)/.3));
         double initial=player.position().distanceTo(intercept),initialRisk=work.combat.risk(work,player.position(),target),best=Double.POSITIVE_INFINITY;PathStep chosen=null;double[] features=null;var model=LocalPolicyRuntime.snapshot(player);
         for(var edge:check.neighbors(current)){
-            if(!Set.of(Action.WALK,Action.STEP_UP,Action.JUMP,Action.CROUCH,Action.DROP).contains(edge.action())||edge.from().y()-edge.to().y()>1.25||edgeExposure(work,edge.to(),check)>0)continue;
+            if(!Set.of(Action.WALK,Action.STEP_UP,Action.JUMP,Action.CROUCH,Action.DROP).contains(edge.action())||edge.from().y()-edge.to().y()>1.25||!NativeHumanDuel.pvpParticipant(p)&&edgeExposure(work,edge.to(),check)>0)continue;
             var point=NativeTraversalEvaluator.point(edge.to());double progress=initial-point.distanceTo(intercept);if(progress<.15)continue;
             var rule=work.session.spec().combat();boolean assigned=rule.area()!=null&&rule.area().contains(new dev.mineagent.runtime.core.task.SkillSpec.Point(point.x,point.y,point.z));
             if(!dev.mineagent.runtime.core.task.CombatBounds.canAdvance(assigned,point.distanceTo(work.combat.center(work)),player.position().distanceTo(work.combat.center(work)),rule.leash()))continue;
@@ -171,7 +171,7 @@ final class CombatPositioning {
             score+=route.steps.stream().mapToInt(step->edgeExposure(w,step.to())).max().orElse(0)*10000;
             double damage=0;for(var threat:w.combat.threats)if(threat.entity().isAlive()&&route.steps.stream().anyMatch(step->NativeCombatStates.meleeAt(threat.entity(),w.player(),NativeTraversalEvaluator.point(step.to())))){var attribute=threat.entity().getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);damage+=legacy?(attribute==null?4:Math.max(0,attribute.getValue())):estimatedMeleeDamage(w.player(),threat.entity(),attribute==null?4:Math.max(0,attribute.getValue()));}
             double health=Math.max(1,w.player().getHealth()+w.player().getAbsorptionAmount());score+=damage/health*25;if(damage>=health)score+=1000;
-            if(edgeExposure(w,route.node)>0)continue;
+            if(!NativeHumanDuel.pvpParticipant(w.player())&&edgeExposure(w,route.node)>0)continue;
             var onwards=evaluator.neighbors(route.node).stream().filter(edge->!route.steps.stream().anyMatch(step->step.from().equals(edge.to()))).toList();
             score+=Math.max(0,3-onwards.size())*2;
             int trapRisk=0;if(!legacy&&withdrawal&&target!=null){double distanceHere=point.distanceTo(target.position());long exits=onwards.stream().filter(edge->Math.abs(edge.to().y()-route.node.y())<=1.25&&NativeTraversalEvaluator.point(edge.to()).distanceTo(target.position())>=distanceHere-.1).count();trapRisk=exits==0?4:exits==1?2:0;score+=trapRisk*8;}

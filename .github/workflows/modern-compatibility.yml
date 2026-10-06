@@ -1,0 +1,38 @@
+name: Modern compatibility probes
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile:
+    name: Full source / MC ${{ matrix.game }}
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ['26.2', '26.3']
+    runs-on: windows-2025
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
+      - name: Compile all production modules against target APIs (not runtime certification)
+        run: |
+          New-Item -ItemType Directory -Force build/probe-logs | Out-Null
+          & ./gradlew.bat -I scripts/release-build.init.gradle '-PgameTarget=${{ matrix.game }}' -PcompatibilityProbe=true -PpythonRuntime=none :neoforge:compileJava --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object -FilePath 'build/probe-logs/compile-${{ matrix.game }}.log'
+          exit $LASTEXITCODE
+      - name: Retain exact compiler diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: compatibility-diagnostics-${{ matrix.game }}-${{ github.run_id }}
+          path: build/probe-logs/*
+          retention-days: 7

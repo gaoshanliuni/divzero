@@ -20,6 +20,7 @@ public final class NativeTerrainRecovery {
     public record Tick(boolean busy,PathStep move,boolean changed){}
     private TerrainPathSearch search;
     private TerrainPathSearch.Step planned;
+    private final Deque<TerrainPathSearch.Step> walkingPrefix=new ArrayDeque<>();
     private ServerPlayer player;
     private Object level;
     private Vec3 goal,origin;
@@ -41,7 +42,7 @@ public final class NativeTerrainRecovery {
     public boolean active(){return search!=null||planned!=null;}
     public String state(){return state;}
     public Map<String,Object> evidence(){return Map.of("state",state,"reason",reason,"changes",changes,"attempts",attempts,"expanded",expanded,"operation",operation==null?"":operation.toString(),"sourcePolicy","UNKNOWN_NATURAL_MATERIALS_IN_LOCAL_AUTHORIZED_CORRIDOR","blocksBroken",broken,"blocksPlaced",placed,"materialsConsumed",consumed);}
-    public void cancel(){ACTIVE.remove(player,this);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;operation=null;edit=null;actions=null;state="IDLE";}
+    public void cancel(){ACTIVE.remove(player,this);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;walkingPrefix.clear();operation=null;edit=null;actions=null;state="IDLE";}
     public boolean request(ServerPlayer p,Vec3 target,String cause){
         if(active())return true;
         if(!NativeTerrainPolicy.allowed(p)||!p.onGround()||Math.abs(p.getY()-Math.rint(p.getY()))>.06)return false;
@@ -116,6 +117,7 @@ public final class NativeTerrainRecovery {
             var found=search.advance(Math.min(allowed,96),budget::timeAvailable);expanded=found.expanded();
             if(found.state().equals("SEARCHING"))return new Tick(true,null,false);
             search=null;if(!found.state().equals("FOUND")){state=found.state();ACTIVE.remove(player,this);return new Tick(false,null,false);}
+            walkingPrefix.clear();for(var candidate:found.steps().subList(1,found.steps().size())){walkingPrefix.addLast(candidate);if(!candidate.edits().isEmpty())break;}
             prepare(found.steps().getFirst(),now);
         }
         if(edit==null){
@@ -164,8 +166,14 @@ public final class NativeTerrainRecovery {
         state=edit==null?"ESCAPE_WALK":edit.kind()==TerrainPathSearch.Kind.BREAK?"ESCAPE_MINE":"ESCAPE_PLACE";
         if(edit!=null)before=signature(pos(edit.cell()));
     }
-    private Tick complete(boolean edited){ACTIVE.remove(player,this);learn(false);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="RECHECK_ORIGINAL_ROUTE";return new Tick(false,null,true);}
-    private void fail(String why){ACTIVE.remove(player,this);learn(true);if(edit!=null)rejected.reject(edit.cell(),edit.kind(),rejectionContext(pos(edit.cell()),edit.kind()));if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="BLOCKED";reason=why;}
+    private Tick complete(boolean edited){
+        if(!edited&&!walkingPrefix.isEmpty()){
+            var next=walkingPrefix.removeFirst();var check=new NativeTraversalEvaluator(player);
+            if(next.edits().isEmpty()&&check.transition(node(next.from()),node(next.to()))==null){walkingPrefix.clear();}
+            else {prepare(next,player.level().getServer().getTickCount());return new Tick(true,edit==null?new PathStep(node(next.from()),node(next.to()),next.to().y()>next.from().y()?Action.JUMP:Action.WALK,Posture.STANDING,1):null,false);}
+        }
+        walkingPrefix.clear();ACTIVE.remove(player,this);learn(false);if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="RECHECK_ORIGINAL_ROUTE";return new Tick(false,null,true);}
+    private void fail(String why){walkingPrefix.clear();ACTIVE.remove(player,this);learn(true);if(edit!=null)rejected.reject(edit.cell(),edit.kind(),rejectionContext(pos(edit.cell()),edit.kind()));if(actions!=null&&operation!=null)actions.cancel(operation);search=null;planned=null;edit=null;operation=null;state="BLOCKED";reason=why;}
     private RejectionContext rejectionContext(BlockPos target,TerrainPathSearch.Kind kind){
         var terrain=new ArrayList<String>();
         for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++){
