@@ -6594,8 +6594,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativePearlCombat.java",
-      "sha256": "79aa3177ae1f02908cb9766f2b6c3a3069bce51bcf6911f615584977cd58f0a6",
-      "bytes": 6311
+      "sha256": "e2868d4bd2fba22ef5b4ff243fb183aa2edf9952fc80c1b1bff13e05e7073d29",
+      "bytes": 6429
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeRangedCombat.java",
