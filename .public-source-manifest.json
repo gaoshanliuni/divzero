@@ -4174,8 +4174,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativePlacementVerification.java",
-      "sha256": "9c47ab6b50faf6d156a4c4743f94120dd73b6a9e34f04f5ad50da4c78f170a24",
-      "bytes": 5723
+      "sha256": "7317b8fce9c6bb2bf15487af43e847251b79278e6288528dafd31eb5f4d3eacd",
+      "bytes": 5945
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativePredictionVerification.java",
@@ -4234,8 +4234,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/PlacementClientFixture.java",
-      "sha256": "c4394f8defa5324a6c316478ff1b85605dda79af37f4f3bcf77726bb63b1ae32",
-      "bytes": 3643
+      "sha256": "fa22baaf6f331e0d3092ee52baeae96f2f4bde1fa557d417e88626b0f989f078",
+      "bytes": 3925
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/PredictionClientFixture.java",

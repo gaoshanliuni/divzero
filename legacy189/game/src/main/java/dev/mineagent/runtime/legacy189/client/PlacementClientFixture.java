@@ -26,7 +26,10 @@ final class PlacementClientFixture {
                 ((DuelClient.LoadoutScreen)mc.currentScreen).fixtureSelect(action.equals("START")?30:31);
             }else{
                 if(mc.currentScreen instanceof DuelClient.LoadoutScreen){mc.displayGuiScreen(null);return;}
-                if(mc.currentScreen!=null)return;
+                if(mc.currentScreen!=null){
+                    if(!mc.thePlayer.isEntityAlive()){NativePlacementVerification.clientFailure="PLAYER_DIED_BEFORE_PLACEMENT";return;}
+                    NativePlacementVerification.clearedScreen=mc.currentScreen.getClass().getName();mc.displayGuiScreen(null);return;
+                }
                 if(action.equals("SELECT_WOOL")){mc.thePlayer.inventory.currentItem=1;mc.playerController.updateController();}
                 else if(action.equals("PLACE")){
                     if(anchor==null)return;double dx=anchor.getX()+.5-mc.thePlayer.posX,dz=anchor.getZ()+.5-mc.thePlayer.posZ,dy=anchor.getY()+1-mc.thePlayer.posY-mc.thePlayer.getEyeHeight();

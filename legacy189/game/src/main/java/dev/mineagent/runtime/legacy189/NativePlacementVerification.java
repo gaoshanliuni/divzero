@@ -14,9 +14,10 @@ public final class NativePlacementVerification {
     public static volatile boolean clientBlock;
     public static volatile String clientFailure="";
     public static volatile String clientRay="",clientPosition="";
+    public static volatile String clearedScreen="";
     private final JsonObject evidence;
     private final JsonArray attempts=new JsonArray();
-    private int stage,cycle,waitUntil,began,beforeServer,beforeClient;
+    private int stage,cycle,waitUntil,began,beforeServer,beforeClient,lastAck,ackAt;
     private boolean cleanupChecked;
     public NativePlacementVerification(EntityPlayerMP player,JsonObject evidence){
         this.evidence=evidence;NativeDuel.Session run=NativeDuel.session(player);
@@ -28,6 +29,8 @@ public final class NativePlacementVerification {
     public boolean tick(NativeDuel.Session run,int tick){
         if(began==0)began=tick;require(tick-began<1500,"PLACEMENT_FIXTURE_TIMEOUT stage="+stage+" phase="+run.phase+" request="+request+" ack="+ack+" ray="+clientRay+" player="+clientPosition);
         require(clientFailure.isEmpty(),"PLACEMENT_CLIENT "+clientFailure);EntityPlayerMP player=run.human;
+        if(lastAck!=ack){lastAck=ack;ackAt=tick;waitUntil=Math.max(waitUntil,ackAt+4);}
+        evidence.addProperty("fixtureClearedScreen",clearedScreen);
         if(stage==0&&run.phase.equals("FIGHTING")){
             player.playerNetServerHandler.setPlayerLocation(-10.5,101,810.5,90,45);anchor=new BlockPos(-13,100,810);
             require(player.worldObj.isAirBlock(anchor.up()),"OLD_ROUND_BLOCK_NOT_CLEANED");waitUntil=tick+10;stage=1;
