@@ -3898,6 +3898,11 @@
       "bytes": 1850
     },
     {
+      "path": "docs/releases/1.0.33.md",
+      "sha256": "4307d154696f6efc1e51ce0071e62f23351d4528607d0456bb0ec6fcb25ad09f",
+      "bytes": 668
+    },
+    {
       "path": "gradle.properties",
       "sha256": "eb04c016d9b54135d5d8c6708630aa75fbe1b6d82bc1a62cd880bc591eea732a",
       "bytes": 496
@@ -4304,8 +4309,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/navigation/NavigationRetry.java",
-      "sha256": "014d98ecebe8a94b9b2ce8c8d60c8f45a5fb4108a8a27e7a69df3c4eaa55b113",
-      "bytes": 799
+      "sha256": "67e96634dfa119f7a480606c845cb82b9d27b7d3c2e58630f454195abe0dcf09",
+      "bytes": 1008
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/navigation/SurfacePathfinder.java",
