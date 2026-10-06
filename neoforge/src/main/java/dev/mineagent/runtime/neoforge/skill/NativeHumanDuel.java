@@ -34,6 +34,7 @@ public final class NativeHumanDuel {
         final MinecraftServer server;final UUID owner,id=UUID.randomUUID();final Object level;
         final HumanDuelSeries series;final List<Object> matches=new ArrayList<>();
         final List<Object> frames=new ArrayList<>(),damage=new ArrayList<>();
+        final Set<UUID> roundProjectiles=new HashSet<>();
         final String model=LocalActionPolicy.pretrained().json();final String modelHash=hash(model);
         final Path directory;MineAgentPlayer ai;ServerPlayer player;UUID match;CompletableFuture<?> start;
         CompletableFuture<Void> saved=CompletableFuture.completedFuture(null);String error="",finishReason="";
@@ -156,8 +157,16 @@ public final class NativeHumanDuel {
         if(!enabled()||event.isCanceled()||!(event.getEntity() instanceof ServerPlayer victim))return;var run=RUNS.get(victim.level().getServer());
         if(run!=null&&run.series.phase()==HumanDuelSeries.Phase.FIGHTING&&(victim==run.ai||victim==run.player))endCombat(run,victim==run.ai?"HUMAN_WON":"AI_WON");
     }
+    @SubscribeEvent public static void roundProjectile(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event){
+        if(event.loadedFromDisk()||event.isCanceled()||!(event.getEntity() instanceof net.minecraft.world.entity.projectile.Projectile projectile)||!(event.getLevel() instanceof net.minecraft.server.level.ServerLevel level))return;
+        var run=RUNS.get(level.getServer());if(run!=null&&run.series.phase()==HumanDuelSeries.Phase.FIGHTING&&run.finishReason.isEmpty()&&(projectile.getOwner()==run.player||projectile.getOwner()==run.ai))run.roundProjectiles.add(projectile.getUUID());
+    }
+    private static void clearRoundProjectiles(Run run){
+        if(run.level instanceof net.minecraft.server.level.ServerLevel level)for(var id:run.roundProjectiles){var entity=level.getEntity(id);if(entity instanceof net.minecraft.world.entity.projectile.Projectile projectile&&(projectile.getOwner()==run.player||projectile.getOwner()==run.ai))projectile.discard();}
+        run.roundProjectiles.clear();
+    }
     private static void endCombat(Run run,String reason){
-        if(!run.finishReason.isEmpty())return;run.finishReason=reason;run.endNanos=System.nanoTime();
+        if(!run.finishReason.isEmpty())return;run.finishReason=reason;run.endNanos=System.nanoTime();clearRoundProjectiles(run);
         PvpConsent.revoke(run.player,run.ai.agentId());run.ai.controls().cancel();run.ai.movementController().stop();run.ai.stopUsingItem();
         // End the combat lease immediately; post-death telemetry is finalized on the next server tick.
         run.player.stopUsingItem();dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(run.player);run.player.setInvulnerable(true);run.ai.setInvulnerable(true);
@@ -173,7 +182,7 @@ public final class NativeHumanDuel {
     private static void retire(Run run){if(run.ai!=null){IsolatedCombatArena.retire(run.player,run.ai);run.ai=null;}}
     private static void abort(Run run,String reason){
         if(run.series.phase()==HumanDuelSeries.Phase.STOPPED||run.series.phase()==HumanDuelSeries.Phase.COMPLETE)return;
-        run.error=reason;run.cleanup=null;run.series.stop();run.finishReason="";run.player.stopUsingItem();dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(run.player);
+        clearRoundProjectiles(run);run.error=reason;run.cleanup=null;run.series.stop();run.finishReason="";run.player.stopUsingItem();dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(run.player);
         if(run.ai!=null){PvpConsent.revoke(run.player,run.ai.agentId());run.ai.controls().cancel();run.ai.movementController().stop();run.partialSamples=LocalPolicyRuntime.endRecording(run.ai);try{retire(run);}catch(Exception e){run.ai.discard();run.ai=null;}}
         run.player.setInvulnerable(true);if(PvpMapSupport.enabled()&&run.player.level()==run.level)PvpMapArena.returnToLobby(run.player);persist(run);tell(run.player,"对练已停止，完成 "+run.series.completed()+(PvpMapSupport.enabled()?" 场。原因：":" / 5 场。原因：")+reason);
     }

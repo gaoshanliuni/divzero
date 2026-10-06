@@ -64,8 +64,21 @@ sourceSets.main.resources {
     exclude 'src/generated/**/.cache'
 }
 
+// Only API-specific adapters are replaced. Every other production source remains in the target build.
+if (rootProject.gameTarget != '26.1.2') {
+    def common = file('src/main/java').toPath().toAbsolutePath().normalize()
+    def overlay = file('src/main/targets/26.2/java')
+    def overrides = fileTree(overlay).files.collect { overlay.toPath().relativize(it.toPath()).toString() }.toSet()
+    sourceSets.main.java.srcDir(overlay)
+    sourceSets.main.java.exclude { entry ->
+        def path = entry.file.toPath().toAbsolutePath().normalize()
+        path.startsWith(common) && overrides.contains(common.relativize(path).toString())
+    }
+}
+
 neoForge {
-    version = project.neo_version
+    // Subprojects also receive gradle.properties; do not accidentally probe with the base game's APIs.
+    version = rootProject.modernTarget.neo
 
     runs {
         client { client() }
@@ -150,9 +163,9 @@ tasks.named('jar', Jar).configure {
 
 def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     def replacements = [
-            minecraft_version: minecraft_version,
-            minecraft_version_range: minecraft_version_range,
-            neo_version: neo_version,
+            minecraft_version: rootProject.gameTarget,
+            minecraft_version_range: "[${rootProject.gameTarget}]",
+            neo_version: rootProject.modernTarget.neo,
             mod_id: mod_id,
             mod_name: mod_name,
             mod_license: mod_license,

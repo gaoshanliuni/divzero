@@ -4484,8 +4484,8 @@
     },
     {
       "path": "neoforge/build.gradle",
-      "sha256": "9a0a2eca74d66d3d8183182c84cb0ff913714f2a8d2e84fe54c545ce6e3f8b1a",
-      "bytes": 9837
+      "sha256": "845d16881a4218143e8149f58ef33d1de2584209cc77e633f09714e0205f7d38",
+      "bytes": 10621
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/CommandBlockLimitRuntime.java",
@@ -5113,6 +5113,11 @@
       "bytes": 10253
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeCaptureBackend.java",
+      "sha256": "22c6939c0c14d15547ef01b9bbcf332f13830beb5c95d30b91ea026da1bcad67",
+      "bytes": 2462
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeCodeEditor.java",
       "sha256": "b997c79aadd483d6954b633d40e56ed7a77888add9ab208c2276f20c23bbd825",
       "bytes": 7416
@@ -5309,8 +5314,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewCapture.java",
-      "sha256": "b5a93f299e5050ba37d117ad86bc1662a85e84260c24fd9d92c4ea0008f9a4c9",
-      "bytes": 6467
+      "sha256": "b773af28cde4fae161f847ab937648b13c13a44b7afb1a4b9d4c2e6b2b200807",
+      "bytes": 4752
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewsPanel.java",
@@ -6554,8 +6559,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "aaf26bac848e4d820eeb5f31129ce256679755c341cedc50d5b9ea909012b2fb",
-      "bytes": 38211
+      "sha256": "9576dcb309c65046a3fa677d6a1d488b7ba6d42099da337cbafda1c44d965dff",
+      "bytes": 39347
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",
@@ -7816,6 +7821,11 @@
       "path": "neoforge/src/main/resources/resourcepacks/legacy_compat/pack.mcmeta",
       "sha256": "7b6df983719dd5167e31fcefb9169e7630fb65657d64a460f2637b72c013abd9",
       "bytes": 183
+    },
+    {
+      "path": "neoforge/src/main/targets/26.2/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeCaptureBackend.java",
+      "sha256": "c1467334cb47fa969663fbf4d571da97c1979232b113a07c3f76e371796cbd97",
+      "bytes": 907
     },
     {
       "path": "neoforge/src/main/templates/META-INF/neoforge.mods.toml",

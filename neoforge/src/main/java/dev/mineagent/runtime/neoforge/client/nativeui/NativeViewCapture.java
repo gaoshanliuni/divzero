@@ -1,8 +1,5 @@
 package dev.mineagent.runtime.neoforge.client.nativeui;
 
-import com.lowdragmc.lowdraglib2.client.RenderTargetScope;
-import com.lowdragmc.lowdraglib2.core.mixins.accessor.GameRendererAccessor;
-import com.lowdragmc.lowdraglib2.core.mixins.accessor.PictureInPictureRendererPoolAccessor;
 import com.lowdragmc.lowdraglib2.gui.ui.*;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.*;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -10,8 +7,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
-import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
-import net.neoforged.neoforge.client.gui.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
@@ -32,20 +27,13 @@ public final class NativeViewCapture {
             surface=new OffscreenSurface(mc.getWindow().handle(),width,height,width,height);
             var ui=isolated.ui;isolated.root.getLayout().width(guiWidth).height(guiHeight).left(0).top(0);ui.init(guiWidth,guiHeight);source.copyScrollTo(isolated);
             var state=new GuiRenderState();var graphics=new GuiGraphicsExtractor(mc,state,-10000,-10000);
-            var main=((GameRendererAccessor)(Object)mc.gameRenderer).ldlib2$getGuiRenderer();var shared=(IGuiRendererExt)(Object)main;
-            renderer=new GuiRenderer(state,shared.ldlib2$getBufferSource(),shared.ldlib2$getSubmitNodeCollector(),shared.ldlib2$getFeatureRenderDispatcher(),List.of());
-            var pools=new HashMap<Class<? extends PictureInPictureRenderState>,PictureInPictureRendererPool<?>>();
-            shared.ldlib2$getPictureInPictureRendererPools().forEach((kind,pool)->pools.put(kind,pool(((PictureInPictureRendererPoolAccessor)pool).ldlib2$getFactory(),shared)));
-            ((IGuiRendererExt)(Object)renderer).ldlib2$setPictureInPictureRendererPools(pools);
-            var target=surface.target();var fog=IGuiRendererExt.ldlib2$getLastFogBuffer();if(fog==null)throw new IllegalStateException("CAPTURE_PAINT_PENDING");
+            renderer=NativeCaptureBackend.create(state);
+            var target=surface.target();
             try(var selected=UISurface.push(surface);var active=ModularUI.scopedActive(ui)){
                 ModularUIClientAccess.getWidget(ui).extractRenderState(graphics,-10000,-10000,0);
                 if(!source.sameGeometry(isolated))throw new IllegalStateException("NATIVE_CAPTURE_LAYOUT_CHANGED");
                 RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(target.getColorTexture(),0,target.getDepthTexture(),1.0);
-                try(var output=RenderTargetScope.redirect(target.getColorTextureView(),target.getDepthTextureView())){
-                    IGuiRendererExt.ldlib2$pushTargetOverride(target);IGuiRendererExt.ldlib2$pushOrthoOverride(guiWidth,guiHeight,width,height,(int)scale);
-                    try{renderer.render(fog);}finally{IGuiRendererExt.ldlib2$popOrthoOverride();IGuiRendererExt.ldlib2$popTargetOverride();renderer.endFrame();}
-                }
+                NativeCaptureBackend.render(renderer,target,guiWidth,guiHeight,width,height,(int)scale);
             }
             var capturedSurface=surface;var capturedRenderer=renderer;
             net.minecraft.client.Screenshot.takeScreenshot(target,image->mc.execute(()->{
@@ -57,6 +45,5 @@ public final class NativeViewCapture {
         }catch(Exception failure){if(renderer!=null)renderer.close();if(surface!=null)surface.destroy();isolated.close();busy=false;result.completeExceptionally(failure);}
         return result.orTimeout(5,TimeUnit.SECONDS);
     }
-    @SuppressWarnings({"rawtypes","unchecked"}) private static PictureInPictureRendererPool<?> pool(PictureInPictureRendererRegistration<?> factory,IGuiRendererExt renderer){return new PictureInPictureRendererPool(factory,renderer.ldlib2$getBufferSource());}
     private NativeViewCapture(){}
 }
