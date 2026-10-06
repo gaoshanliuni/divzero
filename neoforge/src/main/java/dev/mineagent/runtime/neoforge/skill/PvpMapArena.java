@@ -8,12 +8,12 @@ import java.util.Set;
 
 /** Permanent lobby and tightly scoped, wool-only round cleanup for the marked map. */
 public final class PvpMapArena {
-    public static final int MIN_X=-16,MAX_X=16,MIN_Z=784,MAX_Z=816,FLOOR_Y=100;
+    public static final int MIN_X=-16,MAX_X=16,MIN_Z=784,MAX_Z=816,FLOOR_Y=100,MAX_EDIT_Y=319;
     public static boolean walkCell(int x,int z){return x>=MIN_X&&x<=MAX_X&&z>=MIN_Z&&z<=MAX_Z;}
     public static boolean walkable(Vec3 p,double radius){return p.x-radius>=MIN_X-.0001&&p.x+radius<=MAX_X+1.0001&&p.z-radius>=MIN_Z-.0001&&p.z+radius<=MAX_Z+1.0001;}
-    public static boolean field(BlockPos p){return walkCell(p.getX(),p.getZ())&&p.getY()>FLOOR_Y&&p.getY()<=319;}
-    public static boolean inside(Vec3 p){return p.x> -17&&p.x<18&&p.z>783&&p.z<818&&p.y>=97;}
-    public static boolean protectedArea(BlockPos p){return p.getX()>=-18&&p.getX()<=18&&p.getZ()>=754&&p.getZ()<=818&&p.getY()>=97&&p.getY()<=319;}
+    public static boolean field(BlockPos p){return walkCell(p.getX(),p.getZ())&&p.getY()>FLOOR_Y&&p.getY()<=MAX_EDIT_Y;}
+    public static boolean inside(Vec3 p){return p.x>MIN_X-1&&p.x<MAX_X+2&&p.z>MIN_Z-1&&p.z<MAX_Z+2&&p.y>=FLOOR_Y-3;}
+    public static boolean protectedArea(BlockPos p){return p.getX()>=MIN_X-2&&p.getX()<=MAX_X+2&&p.getZ()>=754&&p.getZ()<=MAX_Z+2&&p.getY()>=FLOOR_Y-3&&p.getY()<=MAX_EDIT_Y;}
     public static final class Cleanup {
         private final net.minecraft.server.level.ServerLevel level;private int x=MIN_X,z=MIN_Z,y=FLOOR_Y+1;
         public Cleanup(ServerPlayer p){level=p.level();}
@@ -22,15 +22,15 @@ public final class PvpMapArena {
             while(x<=MAX_X&&remaining-->0&&System.nanoTime()<deadline){
                 var at=new BlockPos(x,y,z);if(!level.hasChunkAt(at))throw new IllegalStateException("ARENA_CLEANUP_CHUNK_UNAVAILABLE");
                 if(level.getBlockState(at).is(net.minecraft.tags.BlockTags.WOOL))level.setBlock(at,Blocks.AIR.defaultBlockState(),3);
-                if(++y>level.getMaxY()){y=FLOOR_Y+1;if(++z>MAX_Z){z=MIN_Z;x++;}}
+                if(++y>Math.min(MAX_EDIT_Y,level.getMaxY())){y=FLOOR_Y+1;if(++z>MAX_Z){z=MIN_Z;x++;}}
             }
             if(x<=MAX_X)return false;
             clearDrops(level);return true;
         }
     }
-    private static void clearDrops(net.minecraft.server.level.ServerLevel level){for(var drop:level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(MIN_X,FLOOR_Y,MIN_Z,MAX_X+1,level.getMaxY()+1,MAX_Z+1),e->true))drop.discard();}
+    private static void clearDrops(net.minecraft.server.level.ServerLevel level){for(var drop:level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(MIN_X,FLOOR_Y,MIN_Z,MAX_X+1,Math.min(MAX_EDIT_Y,level.getMaxY())+1,MAX_Z+1),e->true))drop.discard();}
     public static int clearWool(ServerPlayer player){
-        var level=player.level();int count=0;for(int x=-16;x<=16;x++)for(int z=784;z<=816;z++)for(int y=101;y<=level.getMaxY();y++){var at=new BlockPos(x,y,z);if(level.getBlockState(at).is(net.minecraft.tags.BlockTags.WOOL)){level.setBlock(at,Blocks.AIR.defaultBlockState(),3);count++;}}
+        var level=player.level();int count=0;for(int x=MIN_X;x<=MAX_X;x++)for(int z=MIN_Z;z<=MAX_Z;z++)for(int y=FLOOR_Y+1;y<=Math.min(MAX_EDIT_Y,level.getMaxY());y++){var at=new BlockPos(x,y,z);if(level.getBlockState(at).is(net.minecraft.tags.BlockTags.WOOL)){level.setBlock(at,Blocks.AIR.defaultBlockState(),3);count++;}}
         // Only the arena volume, including the full editable height; lobby/outside items survive.
         clearDrops(level);return count;
     }

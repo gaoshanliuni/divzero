@@ -103,6 +103,9 @@ tasks.named('jar') {
 
 if (rootProject.gameTarget == '26.3') {
     tasks.named('processResources') {
+        // Configured features are now the data-driven feature registry, with flattened native codecs.
+        exclude('data/mineagent_runtime/worldgen/configured_feature/**')
+        from('src/main/targets/26.3/resources')
         filesMatching('mineagent_actions.mixins.json') { filter { String line -> line.contains('"PotionBrewingAccess"') || line.contains('"PotionMixAccess"') ? null : line } }
     }
 }

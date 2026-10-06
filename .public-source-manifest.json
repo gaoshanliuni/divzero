@@ -3914,8 +3914,8 @@
     },
     {
       "path": "gradle/modern-api.gradle",
-      "sha256": "2dde57dd136ba5f25a6d765aab043ec95d1303506b76e57b2c7d6ba0168095a6",
-      "bytes": 12516
+      "sha256": "ab576b62f4d9c68dac77ec98fc4d3aa83e16ad094392bebcbaedf3de6ea20e2f",
+      "bytes": 12740
     },
     {
       "path": "gradle/modern-targets.json",
@@ -6629,8 +6629,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapArena.java",
-      "sha256": "fb9d188973df4fadd622c7eb42b9445b54831c010506be77f8491f94ae2daa00",
-      "bytes": 4491
+      "sha256": "74ffbc869dd05f80b33f58b2c78df1bc8b153e2ba9aea80018d93026666793bd",
+      "bytes": 4641
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpMapSupport.java",
@@ -7936,6 +7936,11 @@
       "path": "neoforge/src/main/targets/26.3/java/dev/mineagent/runtime/neoforge/ui/NativeMenuData.java",
       "sha256": "c6691645b306340816fcc3cae6a927073481d5e7ef6484e5d91802510f66ea2f",
       "bytes": 5536
+    },
+    {
+      "path": "neoforge/src/main/targets/26.3/resources/data/mineagent_runtime/worldgen/feature/runtime_crystal_ore.json",
+      "sha256": "83862e4372205e9a409def42021137e90236ad457c1ef7429033c5b4b84b3fd4",
+      "bytes": 269
     },
     {
       "path": "neoforge/src/main/templates/META-INF/neoforge.mods.toml",
