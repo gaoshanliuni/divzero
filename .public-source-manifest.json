@@ -4809,8 +4809,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/ModernPvpClientVerification.java",
-      "sha256": "b7000a41dcbaf68791d277ccc401619985c06e58ede34c118cece085d9bbba10",
-      "bytes": 4118
+      "sha256": "33e785d04f097c980d2d4f069bd3b5d489253f58ba93a6c8494991165c1ad06f",
+      "bytes": 4289
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeBoostInput.java",
@@ -6539,13 +6539,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernCombatVerification.java",
-      "sha256": "8552d5a10e86a9b5176e666a459cd3f8157c9fa9da3ef8f21d17b6905100251c",
-      "bytes": 9604
+      "sha256": "0d3ef9d00ac432dc6f8ed88353cf148b9be6ee8331212a9e5c4245d3007a747c",
+      "bytes": 10753
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernLifecycleVerification.java",
-      "sha256": "3f29f561eece14ac205e752a24d2ea12d13ffb5d606f31dc45fb2046a4be2865",
-      "bytes": 6783
+      "sha256": "0859deac98869e617e148afb471d5eec36686605c658af18467d9addceeb6e35",
+      "bytes": 7651
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernPvpVerification.java",

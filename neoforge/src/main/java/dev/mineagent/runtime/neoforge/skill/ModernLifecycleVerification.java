@@ -9,7 +9,9 @@ import java.nio.file.*;
 import java.util.*;
 
 /** Real client useItemOn, selected-slot prediction, stop/restart and cleanup cancellation. */
-final class ModernLifecycleVerification {
+@net.neoforged.fml.common.EventBusSubscriber(modid="mineagent_runtime")
+public final class ModernLifecycleVerification {
+    private static boolean rejectPlacement;
     private static final com.fasterxml.jackson.databind.ObjectMapper JSON=new com.fasterxml.jackson.databind.ObjectMapper();
     private static final List<Object> results=new ArrayList<>();private static int phase,rounds,started;private static UUID request,insideDrop,outsideDrop;private static boolean done;
     static boolean tick(MinecraftServer server){
@@ -22,8 +24,9 @@ final class ModernLifecycleVerification {
                 require(p.getInventory().getItem(3).is(Items.ENDER_PEARL)&&p.getInventory().getItem(3).getCount()==16&&p.getInventory().getItem(2).is(Items.GOLDEN_APPLE)&&s.ai().getInventory().getItem(3).is(Items.SHEARS),"UI_EQUIPMENT_NOT_APPLIED");
                 require(p.level().getBlockState(new BlockPos(-4,101,800)).isAir(),"RESTART_DID_NOT_CLEAR_OLD_WOOL");
                 if(rounds==1){require(p.level().getEntity(insideDrop)==null&&p.level().getEntity(outsideDrop)!=null,"DROP_CLEANUP_SCOPE");results.add(Map.of("insideDropRemoved",true,"outsideDropPreserved",true));}
-                send(p,"place",0,new BlockPos(-4,100,800));phase=2;started=now;
-            }else if(phase==2){var ack=ack(p);if(ack!=null){checkPlace(p,ack,new BlockPos(-4,101,800),true,63);rounds++;results.add(Map.of("round",rounds,"placement",ack));send(p,"stop",1,new BlockPos(1,100,766));phase=3;started=now;}}
+                rejectPlacement=rounds==2;send(p,"place",0,new BlockPos(-4,100,800));phase=rejectPlacement?10:2;started=now;
+            }else if(phase==10){var ack=ack(p);if(ack!=null){checkPlace(p,ack,new BlockPos(-4,101,800),false,64);results.add(Map.of("nativeEventRollback",ack));rejectPlacement=false;send(p,"place",1,new BlockPos(-4,100,800));phase=2;started=now;}}
+            else if(phase==2){var ack=ack(p);if(ack!=null){checkPlace(p,ack,new BlockPos(-4,101,800),true,63);rounds++;results.add(Map.of("round",rounds,"placement",ack));send(p,"stop",1,new BlockPos(1,100,766));phase=3;started=now;}}
             else if(phase==3&&s.phase().equals("STOPPED")){
                 if(rounds==4){send(p,"hold",1,new BlockPos(1,100,766));phase=7;started=now;return false;}
                 if(rounds==1){insideDrop=drop(p,10.5,805.5);outsideDrop=drop(p,10.5,776.5);}
@@ -36,6 +39,9 @@ final class ModernLifecycleVerification {
             else if(phase==8){var ack=ack(p);if(ack!=null&&p.isAlive()){require(ack.path("alive").asBoolean()&&!ack.path("using").asBoolean()&&!p.isUsingItem(),"RESPAWN_USE_STATE");require(p.getInventory().getSelectedSlot()==ack.path("selected").asInt(),"RESPAWN_SELECTED_SLOT");require(p.getInventory().getItem(2).getCount()==3&&ack.path("supply").asInt()==3,"DEATH_CONSUMED_UNFINISHED_FOOD");results.add(Map.of("nativeRespawn",ack));finish(p,"PASS","");return true;}}
         }catch(Throwable error){finish(p,"FAILED",error.toString());return true;}
         return false;
+    }
+    @net.neoforged.bus.api.SubscribeEvent public static void cancelNativePlacement(net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent event){
+        if(Boolean.getBoolean("mineagent.modernLifecycleFixture")&&Files.isRegularFile(Path.of("human-duel-instance.json"))&&rejectPlacement&&event.getEntity() instanceof ServerPlayer p&&!(p instanceof MineAgentPlayer)&&event.getPos().equals(new BlockPos(-4,101,800)))event.setCanceled(true);
     }
     private static UUID drop(ServerPlayer p,double x,double z){var item=new net.minecraft.world.entity.item.ItemEntity(p.level(),x,103,z,new net.minecraft.world.item.ItemStack(Items.DIAMOND));item.setNoGravity(true);item.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);item.setPickUpDelay(32767);p.level().addFreshEntity(item);return item.getUUID();}
     private static void send(ServerPlayer p,String kind,int selected,BlockPos floor){request=UUID.randomUUID();try{var payload=JSON.writeValueAsString(Map.of("id",request.toString(),"kind",kind,"selected",selected,"x",floor.getX(),"y",floor.getY(),"z",floor.getZ()));net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(request,"modernPlacementFixture",payload));}catch(Exception e){throw new IllegalStateException(e);}}

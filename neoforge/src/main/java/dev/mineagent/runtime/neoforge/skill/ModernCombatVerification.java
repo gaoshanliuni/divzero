@@ -48,14 +48,22 @@ final class ModernCombatVerification {
             }else if(phase==5&&now-started>=160){
                 require(ai.isAlive(),"MELEE_PRESSURE_DEATH");proof.put("pressureAiHealth",ai.getHealth());proof.put("pressureHumanHealth",p.getHealth());proof.put("pressureSkills",skills(p,ai));
                 require(ai.getHealth()<aiHealth&&p.getHealth()<playerHealth,"PRESSURE_NATIVE_DAMAGE_AND_COUNTER_REQUIRED");
-                client(p,ai,false,false);p.setHealth(80);ai.setHealth(ai.getMaxHealth());place(p,new Vec3(.5,101,800.5));place(ai,new Vec3(3.5,101,800.5));phase=6;started=now;
+                client(p,ai,false,false);p.setHealth(80);ai.setHealth(ai.getMaxHealth());place(p,new Vec3(.5,106,800.5));place(ai,new Vec3(1.7,101,800.5));phase=6;started=now;
             }else if(phase==6&&now-started>=160){
                 var state=JSON.valueToTree(skills(p,ai));long combo=0,jumps=0,hits=0;
                 for(var skill:state.path("skills")){var counters=skill.path("session").path("counters");combo=Math.max(combo,counters.path("maxMeleeCombo").asLong());jumps+=counters.path("observedJumpTaps").asLong()+counters.path("observedCounterJumps").asLong();hits+=counters.path("verifiedHits").asLong();}
                 proof.put("comboSkills",state);proof.put("maxCombo",combo);proof.put("observedTacticalJumps",jumps);proof.put("verifiedHits",hits);
                 require(combo>=2,"NATIVE_COMBO_NOT_CONFIRMED");
-                SkillRuntime.cancelForBody(p,ai.agentId());ai.controls().cancel();ai.movementController().stop();ai.setInvulnerable(true);p.setInvulnerable(true);place(ai,new Vec3(12.5,101,813.5));place(p,new Vec3(.5,101,800.5));phase=7;started=now;wasGround=true;
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(UUID.randomUUID(),"modernCombatFixture","{\"entity\":"+ai.getId()+",\"chase\":false,\"attack\":false,\"motion\":true}"));
+                var profile=PvpMapProfile.defaults().gear(0,"ai","secondary","minecraft:ender_pearl");PvpMapSupport.apply(ai,profile.ai());ai.setHealth(ai.getMaxHealth());ai.getFoodData().setFoodLevel(10);p.setHealth(80);place(ai,new Vec3(.5,101,800.5));place(p,new Vec3(-.9,101,800.5));pearls=ai.getInventory().countItem(Items.ENDER_PEARL);phase=8;started=now;client(p,ai,true,true);
+            }else if(phase==8){
+                if(ai.getInventory().countItem(Items.ENDER_PEARL)<pearls){client(p,ai,false,false);proof.put("escapePearlSkills",skills(p,ai));pearlOrigin=ai.position();aiHealth=ai.getHealth();phase=9;started=now;}
+                else require(now-started<240,"ESCAPE_PEARL_NOT_USED");
+            }else if(phase==9){
+                if(ai.position().distanceTo(pearlOrigin)>4&&ai.getHealth()<aiHealth){
+                    require(pearls-ai.getInventory().countItem(Items.ENDER_PEARL)==1,"ESCAPE_PEARL_REPLAY");proof.put("escapePearlDistance",ai.position().distanceTo(pearlOrigin));proof.put("escapePearlDamage",aiHealth-ai.getHealth());
+                    SkillRuntime.cancelForBody(p,ai.agentId());ai.controls().cancel();ai.movementController().stop();ai.setInvulnerable(true);p.setInvulnerable(true);place(ai,new Vec3(12.5,101,813.5));place(p,new Vec3(.5,101,800.5));phase=7;started=now;wasGround=true;
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,new dev.mineagent.runtime.neoforge.network.UiPayloads.Event(UUID.randomUUID(),"modernCombatFixture","{\"entity\":"+ai.getId()+",\"chase\":false,\"attack\":false,\"motion\":true}"));
+                }else require(now-started<70,"ESCAPE_PEARL_TELEPORT_NOT_CONFIRMED");
             }else if(phase==7){
                 forecast.observe(now,List.of(p));
                 if(!wasGround&&p.onGround()&&predicted!=null){double error=predicted.position().distanceTo(p.position()),timing=Math.abs(now-predictedAt-predicted.ticks());maxError=Math.max(maxError,error);maxTiming=Math.max(maxTiming,timing);landings.add(Map.of("predicted",predicted.position().toString(),"actual",p.position().toString(),"ticksAhead",predicted.ticks(),"elapsed",now-predictedAt,"error",error));predicted=null;}
