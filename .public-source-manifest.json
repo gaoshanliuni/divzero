@@ -3624,8 +3624,8 @@
     },
     {
       "path": "docs/MODERN26_MOBILITY_PORT.md",
-      "sha256": "1de97e210783f8029468f2816bfea10b45e4dbd340fadb5f9afa81e5b30db4bf",
-      "bytes": 8148
+      "sha256": "e78c0ebf1d579b0312b23c59fd9a28ba9328c004d8b457233aa95998337c41a8",
+      "bytes": 13648
     },
     {
       "path": "docs/NATIVE_INSTALLATION.md",
@@ -6549,8 +6549,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernPvpVerification.java",
-      "sha256": "a25c2d32f4b9569e3d29e310f8dabc9e0a193507fa370739dbbc9e2126fe632a",
-      "bytes": 15557
+      "sha256": "9f89a62be29deb2cea31b47156f422de78bb0b75dbeb0db4e890ae1724c80202",
+      "bytes": 15813
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/MovementSkills.java",
