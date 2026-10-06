@@ -156,6 +156,7 @@ public final class NativeHumanDuel {
     }
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.LOWEST) public static void death(net.neoforged.neoforge.event.entity.living.LivingDeathEvent event){
         if(!enabled()||event.isCanceled()||!(event.getEntity() instanceof ServerPlayer victim))return;var run=RUNS.get(victim.level().getServer());
+        if(ENABLED&&Boolean.getBoolean("mineagent.modernCombatFixture")&&run!=null&&victim==run.ai)ModernCombatVerification.died(run.player,run.ai);
         if(run!=null&&run.series.phase()==HumanDuelSeries.Phase.FIGHTING&&(victim==run.ai||victim==run.player))endCombat(run,victim==run.ai?"HUMAN_WON":"AI_WON");
     }
     @SubscribeEvent public static void roundProjectile(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event){

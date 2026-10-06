@@ -6494,8 +6494,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
-      "sha256": "a3ff8a66b441872a2eb1ee73df5bf64500c93664ab471afc234a28b242d0a103",
-      "bytes": 42711
+      "sha256": "517c14bcd6ec172911e57ab4eb69fe824169180c68da04a2e3728f9e827bfa35",
+      "bytes": 42938
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -6534,8 +6534,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernCombatVerification.java",
-      "sha256": "be9745acbd751304b87c7697c4ed1bb0a3638a6e284e1807b8115d7fa1648dac",
-      "bytes": 6733
+      "sha256": "901d8301685f3a2ee1f99c12fec029f3c89e7ed498cfda07f867c1f4ced2ca98",
+      "bytes": 6966
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernPvpVerification.java",
@@ -6574,8 +6574,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeHumanDuel.java",
-      "sha256": "fb6fc5f9b35341062ef28f6decba254967aa8c158eb4d2fe05758bcd33516463",
-      "bytes": 39589
+      "sha256": "75730ad24dee6edca7a7b4192cc7e4c8f42cc94e04fdc6831d6cd9a45cd3041b",
+      "bytes": 39738
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/NativeMobCombatLab.java",

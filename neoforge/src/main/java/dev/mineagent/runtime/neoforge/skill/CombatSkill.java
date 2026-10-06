@@ -335,9 +335,10 @@ final class CombatSkill {
     private static void breakthrough(SkillWork w,Vec3 exit){
         if(w.session.spec().combat().engagement()==CombatPolicy.Engagement.NONE)return;
         var p=w.player();var corridor=exit==null?p.getBoundingBox().inflate(3):p.getBoundingBox().expandTowards(exit.subtract(p.position())).inflate(.35);
-        var blocker=w.combat.threats.stream().filter(t->t.eligible()&&t.entity().isAlive()&&corridor.intersects(t.entity().getBoundingBox())&&p.hasLineOfSight(t.entity())&&p.isWithinAttackRange(p.getMainHandItem(),t.entity().getHitbox(),0)).min(Comparator.comparingDouble(t->p.distanceToSqr(t.entity()))).orElse(null);
+        var blocker=w.combat.threats.stream().filter(t->t.eligible()&&t.entity().isAlive()&&(corridor.intersects(t.entity().getBoundingBox())||w.contactEscape&&t.entity()==w.combat.selected)&&p.hasLineOfSight(t.entity())&&p.isWithinAttackRange(p.getMainHandItem(),t.entity().getHitbox(),0)).min(Comparator.comparingDouble(t->p.distanceToSqr(t.entity()))).orElse(null);
         if(blocker==null||!NativeAttackReadiness.ready(p)||!weapon(w))return;
-        phase(w,"BREAKTHROUGH");w.fighting=blocker.entity().getUUID();w.actor.aim(w.token(),blocker.entity().getEyePosition());
+        phase(w,"BREAKTHROUGH");w.fighting=blocker.entity().getUUID();w.actor.aimImmediately(w.token(),dev.mineagent.runtime.neoforge.body.NativeTargetGeometry.attackPoint(p,blocker.entity()).orElse(blocker.entity().getEyePosition()));
+        if(w.contactEscape)w.session.add("escapeCounterAttempts",1);
         if(w.combatOperation==null||w.tick()-w.combatAt>5){w.combatOperation=UUID.randomUUID();w.combatAt=w.tick();w.session.add("breakthroughAttempts",1);}
         w.actor.attack(w.token(),w.combatOperation,blocker.entity());
         if(p.getAttackStrengthScale(.5f)<.8f||w.lastHitAt>=w.combatAt){w.lastAttackAt=w.tick();log(w,"NATIVE_BREAKTHROUGH_ATTACK_OBSERVED");w.combatOperation=null;}

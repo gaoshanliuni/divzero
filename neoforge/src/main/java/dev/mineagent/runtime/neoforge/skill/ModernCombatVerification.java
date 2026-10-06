@@ -56,9 +56,11 @@ final class ModernCombatVerification {
     }
     private static void place(ServerPlayer p,Vec3 at){p.teleportTo(p.level(),at.x,at.y,at.z,Set.of(),0,0,true);p.setDeltaMovement(Vec3.ZERO);p.fallDistance=0;p.setOnGround(true);}
     private static void require(boolean value,String error){if(!value)throw new IllegalStateException(error);}
-    private static void finish(ServerPlayer p,MineAgentPlayer ai,String status,String error){
+    static void died(ServerPlayer p,MineAgentPlayer ai){if(!done)record(p,ai,"FAILED","MELEE_PRESSURE_DEATH");}
+    private static void finish(ServerPlayer p,MineAgentPlayer ai,String status,String error){record(p,ai,status,error);NativeHumanDuel.command(p,"stop");}
+    private static void record(ServerPlayer p,MineAgentPlayer ai,String status,String error){
         done=true;client(p,ai,false,false);proof.put("source","FIXTURE_ONLY");proof.put("status",status);proof.put("error",error);proof.put("phase",phase);proof.put("finalSkills",skills(p,ai));proof.put("aiBaseMovement",ai.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue());proof.put("aiMaxHealth",ai.getMaxHealth());
-        try{Files.writeString(p.level().getServer().getServerDirectory().resolve("modern-combat-fixture.json"),JSON.writerWithDefaultPrettyPrinter().writeValueAsString(proof));}catch(Exception e){throw new IllegalStateException(e);}NativeHumanDuel.command(p,"stop");
+        try{Files.writeString(p.level().getServer().getServerDirectory().resolve("modern-combat-fixture.json"),JSON.writerWithDefaultPrettyPrinter().writeValueAsString(proof));}catch(Exception e){throw new IllegalStateException(e);}
     }
     private ModernCombatVerification(){}
 }
