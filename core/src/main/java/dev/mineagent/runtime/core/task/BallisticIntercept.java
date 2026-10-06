@@ -15,7 +15,9 @@ public final class BallisticIntercept {
     }
     public static Optional<Shot> solve(Point start,Physics physics,Point inherited,DoubleFunction<Point> target,double radius,Corridor corridor,BooleanSupplier budget){
         var candidates=new ArrayList<Candidate>();
-        for(double time=1;time<=physics.maxTicks;time+=.25){
+        // Close native hits occur before the first whole tick. Without these candidates,
+        // distant high arcs can displace the only useful direct shot from the bounded shortlist.
+        for(double time=.05;time<=physics.maxTicks;time+=time<2?.05:.25){
             if(!budget.getAsBoolean())return Optional.empty();int whole=(int)time;double fraction=time-whole,drag=Math.pow(physics.drag,whole);
             double travel=physics.drag==1?time:(1-drag)/(1-physics.drag)+fraction*drag;
             double falling=physics.drag==1?-physics.gravity*(whole*(whole-1)/2d+fraction*whole):-physics.gravity*((whole-(1-drag)/(1-physics.drag))/(1-physics.drag)+fraction*(1-drag)/(1-physics.drag));

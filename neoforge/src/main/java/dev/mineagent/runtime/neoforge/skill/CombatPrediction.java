@@ -48,7 +48,9 @@ final class CombatPrediction {
         });
     }
     Vec3 intercept(SkillWork work,LivingEntity target,double ticks){
-        var values=paths(work,target).getFirst();return vec(values.get(Math.clamp((int)Math.round(ticks)-1,0,values.size()-1)).position());
+        var values=paths(work,target).getFirst();double time=Math.clamp(ticks,0,values.size());int whole=(int)time;
+        var a=whole==0?target.position():vec(values.get(whole-1).position());
+        var b=whole>=values.size()?a:vec(values.get(whole).position());return a.lerp(b,time-whole);
     }
     boolean fallingContact(SkillWork work,LivingEntity target){
         var observed=history.get(target.getUUID());

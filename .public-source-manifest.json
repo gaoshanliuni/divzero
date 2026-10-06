@@ -2544,8 +2544,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/BallisticIntercept.java",
-      "sha256": "1ea090f9f4c710ddef79bc5f34e0c0c0104a33a2e8498a310fe45fe05a90a59b",
-      "bytes": 3549
+      "sha256": "1557bd5ab21fe0418b33168f73283a8b6f8c1a449d993b1d57361511fb7fa496",
+      "bytes": 3750
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/BehaviorIntentOrder.java",
@@ -3379,8 +3379,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/BallisticInterceptTest.java",
-      "sha256": "ddf8e69b201d684bbf23a45f7f6dbf1c0509fa2403d701a731b8026a343047c2",
-      "bytes": 1045
+      "sha256": "7c35fa8927a7c152a22d945cce3477d1c5fe84248cd97be4b7e94e920252593e",
+      "bytes": 1474
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/BehaviorIntentOrderTest.java",
@@ -3914,8 +3914,8 @@
     },
     {
       "path": "gradle/modern-api.gradle",
-      "sha256": "b2c74876784c5b85bfab6ac85b6406cacf27749f8d5b46d93a87946269c9ed64",
-      "bytes": 3270
+      "sha256": "c699ba4c222064cad7f0dfa54139ae5af8d4d856801f4b4c41efc014762eedf7",
+      "bytes": 5141
     },
     {
       "path": "gradle/modern-targets.json",
@@ -6489,8 +6489,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",
-      "sha256": "c9948a097c897539dc67625176b3a80f15ebe541b2e0bb0a6b1324a5b30601b0",
-      "bytes": 7528
+      "sha256": "80dec7d1eed30be386e4f492bc246ff9e0f2f72ff750d05621fb6f22e5316068",
+      "bytes": 7682
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
@@ -7841,6 +7841,21 @@
       "path": "neoforge/src/main/targets/26.2/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeCaptureBackend.java",
       "sha256": "c1467334cb47fa969663fbf4d571da97c1979232b113a07c3f76e371796cbd97",
       "bytes": 907
+    },
+    {
+      "path": "neoforge/src/main/targets/26.2/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeTargetApi.java",
+      "sha256": "6656373555a35b9e21f162aba8367cba741420707fe78fd75f25903595d51a0a",
+      "bytes": 388
+    },
+    {
+      "path": "neoforge/src/main/targets/26.2/java/dev/mineagent/runtime/neoforge/mixin/BoostKnockbackMixin.java",
+      "sha256": "f0399172617f6b47d7ad497b7aee6c2796c1fad9682a7eaafcee915ed2423738",
+      "bytes": 1273
+    },
+    {
+      "path": "neoforge/src/main/targets/26.2/java/dev/mineagent/runtime/neoforge/mixin/client/EntityModelRenderRulesMixin.java",
+      "sha256": "a2f691c5ee7eb662b7a1ee447343b9ea762c454deb9c48e6015099d509bc2b8b",
+      "bytes": 1013
     },
     {
       "path": "neoforge/src/main/templates/META-INF/neoforge.mods.toml",

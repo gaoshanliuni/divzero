@@ -3,6 +3,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import dev.mineagent.runtime.core.task.MotionForecast.Point;
 class BallisticInterceptTest {
+    @Test void sweptFirstTickContactSurvivesTheBoundedCandidateShortlist(){
+        for(double distance:new double[]{.6,1.25,2.3}){
+            var shot=BallisticIntercept.solve(new Point(0,1.6,0),new BallisticIntercept.Physics(3,.05,.99,60),
+                    t->new Point(distance+t*.2,1,0),.3,(a,b,t)->true,()->true).orElseThrow();
+            assertTrue(shot.flightTicks()<1.1);assertTrue(shot.miss()<=.3);
+        }
+    }
     @Test void leadsHorizontalAndVerticalMotionWithNativeDrag(){
         var shot=BallisticIntercept.solve(new Point(0,1.6,0),new BallisticIntercept.Physics(3,.05,.99,40),t->new Point(18+t*.15,1.3+t*.08,2+t*.2),.4,(a,b,t)->true,()->true).orElseThrow();
         assertTrue(shot.direction().z()>2d/18);assertTrue(shot.direction().y()>0);assertTrue(shot.flightTicks()>5);assertTrue(shot.miss()<.4);

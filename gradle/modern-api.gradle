@@ -1,6 +1,9 @@
 // Reviewed source translations for the 26.2+ native API. Original 26.1.2 sources are never rewritten.
 // Algorithm and feature code stays shared. Structural render/mixin changes use explicit target adapters.
 def translate = { String line ->
+    // NeoForge 26.2 EntityInteract handles both plain and position-specific interactions.
+    // The existing general handler contains the same authorization and callback behavior.
+    if (line.contains('@SubscribeEvent') && line.contains('PlayerInteractEvent.EntityInteractSpecific')) return ' // Position-specific interaction is covered by the unified EntityInteract handler above.'
     def colors = ['WHITE':'white','ORANGE':'orange','MAGENTA':'magenta','LIGHT_BLUE':'lightBlue','YELLOW':'yellow','LIME':'lime','PINK':'pink','GRAY':'gray','LIGHT_GRAY':'lightGray','CYAN':'cyan','PURPLE':'purple','BLUE':'blue','BROWN':'brown','GREEN':'green','RED':'red','BLACK':'black']
     def groups = ['WOOL':'WOOL','TERRACOTTA':'DYED_TERRACOTTA','CARPET':'CARPET','STAINED_GLASS':'STAINED_GLASS','STAINED_GLASS_PANE':'STAINED_GLASS_PANE','SHULKER_BOX':'DYED_SHULKER_BOX','GLAZED_TERRACOTTA':'GLAZED_TERRACOTTA','CONCRETE':'CONCRETE','CONCRETE_POWDER':'CONCRETE_POWDER','CANDLE':'DYED_CANDLE','CANDLE_CAKE':'DYED_CANDLE_CAKE','BED':'BED','BANNER':'BANNER','WALL_BANNER':'WALL_BANNER','DYE':'DYE','HARNESS':'HARNESS','BUNDLE':'DYED_BUNDLE']
     line = line.replaceAll(/\b(Blocks|Items)\.([A-Z_]+)\b/) { all, registry, name ->
@@ -20,6 +23,16 @@ def translate = { String line ->
     line = line.replaceAll("(?<![\\w.])(${receiver})\\.getOverlay\\(\\)") { all, value -> "${value}.gui.overlay()" }
     line = line.replaceAll("(?<![\\w.])(${receiver})\\.getMainRenderTarget\\(\\)") { all, value -> "${value}.gameRenderer.mainRenderTarget()" }
     line = line.replace('.gameRenderer.getMainCamera()', '.gameRenderer.mainCamera()')
+    line = line.replaceAll(/\.gui\.(getChat|getGuiTicks|setOverlayMessage|getTabList|getBossOverlay)\(/) { all, method -> ".gui.hud.${method}(" }
+    line = line.replaceAll("(?<![\\w.])(${receiver})\\.options\\.hideGui\\s*=\\s*([^;]+);") { all, value, hide -> "dev.mineagent.runtime.neoforge.client.nativeui.NativeTargetApi.hideHud(${value},${hide});" }
+    line = line.replaceAll("(?<![\\w.])(${receiver})\\.options\\.hideGui\\b") { all, value -> "${value}.gui.hud.isHidden()" }
+    line = line.replace('.levelRenderer.needsUpdate()', '.levelRenderer.sectionOcclusionGraph().invalidate()')
+    line = line.replace('target.getColorTexture(),0,target.getDepthTexture(),1.0', 'target.getColorTexture(),new org.joml.Vector4f(),target.getDepthTexture(),1.0')
+    line = line.replace('team.getColor().getName()', 'team.getColor().map(net.minecraft.world.scores.TeamColor::getSerializedName).orElse("reset")')
+    line = line.replace('chest.getCenter()', 'net.minecraft.world.phys.Vec3.atCenterOf(chest)')
+    line = line.replace('Blocks.COPPER_BLOCK)', 'Blocks.COPPER_BLOCK.weathering().unaffected())')
+    line = line.replace('.publishServer(net.minecraft.world.level.GameType.', '.publishServer(net.minecraft.server.MinecraftServer.MultiplayerScope.LAN,net.minecraft.world.level.GameType.')
+    line = line.replaceAll(/\b(b|cow)\.knockback\(([^(),]+),([^(),]+),([^(),]+)\)/) { all, entity, force, x, z -> "${entity}.knockback(${force},${x},${z},${entity}.damageSources().generic(),0f)" }
     return line
 }
 def overlay = file('src/main/targets/26.2/java')
