@@ -11,6 +11,7 @@ import net.minecraft.util.*;
 final class PlacementClientFixture {
     static void tick(){
         Minecraft mc=Minecraft.getMinecraft();if(mc.thePlayer==null||mc.theWorld==null)return;
+        for(KeyBinding key:new KeyBinding[]{mc.gameSettings.keyBindForward,mc.gameSettings.keyBindBack,mc.gameSettings.keyBindLeft,mc.gameSettings.keyBindRight,mc.gameSettings.keyBindJump,mc.gameSettings.keyBindAttack,mc.gameSettings.keyBindUseItem})KeyBinding.setKeyBindState(key.getKeyCode(),false);
         NativePlacementVerification.clientSlot=mc.thePlayer.inventory.currentItem;
         ItemStack wool=mc.thePlayer.inventory.getStackInSlot(1);NativePlacementVerification.clientCount=wool==null?0:wool.stackSize;
         BlockPos anchor=NativePlacementVerification.anchor;
@@ -30,8 +31,12 @@ final class PlacementClientFixture {
                 else if(action.equals("PLACE")){
                     if(anchor==null)return;double dx=anchor.getX()+.5-mc.thePlayer.posX,dz=anchor.getZ()+.5-mc.thePlayer.posZ,dy=anchor.getY()+1-mc.thePlayer.posY-mc.thePlayer.getEyeHeight();
                     mc.thePlayer.rotationYaw=(float)Math.toDegrees(Math.atan2(dz,dx))-90;mc.thePlayer.rotationPitch=(float)-Math.toDegrees(Math.atan2(dy,Math.hypot(dx,dz)));
-                    MovingObjectPosition hit=mc.objectMouseOver;if(hit==null||hit.typeOfHit!=MovingObjectPosition.MovingObjectType.BLOCK||!anchor.equals(hit.getBlockPos())||hit.sideHit!=EnumFacing.UP)return;
-                    KeyBinding.onTick(mc.gameSettings.keyBindUseItem.getKeyCode());NativePlacementVerification.clientPlacements++;
+                    // Trace this tick's aim, not EntityRenderer's interpolated previous frame.
+                    MovingObjectPosition hit=mc.thePlayer.rayTrace(mc.playerController.getBlockReachDistance(),1);
+                    NativePlacementVerification.clientRay=String.valueOf(hit);NativePlacementVerification.clientPosition=mc.thePlayer.getPositionVector().toString();
+                    if(hit==null||hit.typeOfHit!=MovingObjectPosition.MovingObjectType.BLOCK||!anchor.equals(hit.getBlockPos())||hit.sideHit!=EnumFacing.UP)return;
+                    if(mc.playerController.onPlayerRightClick(mc.thePlayer,mc.theWorld,mc.thePlayer.getHeldItem(),hit.getBlockPos(),hit.sideHit,hit.hitVec))mc.thePlayer.swingItem();
+                    NativePlacementVerification.clientPlacements++;
                 }
             }
             NativePlacementVerification.ack=request;

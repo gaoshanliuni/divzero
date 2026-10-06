@@ -13,6 +13,7 @@ public final class NativePlacementVerification {
     public static volatile BlockPos anchor;
     public static volatile boolean clientBlock;
     public static volatile String clientFailure="";
+    public static volatile String clientRay="",clientPosition="";
     private final JsonObject evidence;
     private final JsonArray attempts=new JsonArray();
     private int stage,cycle,waitUntil,began,beforeServer,beforeClient;
@@ -25,7 +26,7 @@ public final class NativePlacementVerification {
     public static int wool(EntityPlayerMP p){ItemStack s=p.inventory.getStackInSlot(1);return s==null?0:s.stackSize;}
     private void request(String value,int tick){action=value;request++;waitUntil=tick+12;}
     public boolean tick(NativeDuel.Session run,int tick){
-        if(began==0)began=tick;require(tick-began<1500,"PLACEMENT_FIXTURE_TIMEOUT stage="+stage+" phase="+run.phase);
+        if(began==0)began=tick;require(tick-began<1500,"PLACEMENT_FIXTURE_TIMEOUT stage="+stage+" phase="+run.phase+" request="+request+" ack="+ack+" ray="+clientRay+" player="+clientPosition);
         require(clientFailure.isEmpty(),"PLACEMENT_CLIENT "+clientFailure);EntityPlayerMP player=run.human;
         if(stage==0&&run.phase.equals("FIGHTING")){
             player.playerNetServerHandler.setPlayerLocation(-10.5,101,810.5,90,45);anchor=new BlockPos(-13,100,810);
