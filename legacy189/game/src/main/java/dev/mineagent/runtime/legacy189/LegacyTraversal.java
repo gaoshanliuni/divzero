@@ -61,12 +61,13 @@ public final class LegacyTraversal implements TraversalEvaluator {
         if(!NativeArena.walkCell(x,z))return Collections.emptyList();
         Node key=new Node(x,(int)Math.round(near*16),z);List<Node> cached=floors.get(key);if(cached!=null)return cached;
         Set<Node> nodes=new LinkedHashSet<Node>();
-        for(int y=(int)Math.floor(near)-7;y<=(int)Math.floor(near)+1;y++) {
+        int descent=maximumDrop();
+        for(int y=(int)Math.floor(near)-descent-1;y<=(int)Math.floor(near)+1;y++) {
             BlockPos pos=new BlockPos(x,y,z);if(!loaded(pos))continue;Block block=state(pos).getBlock();
             if(hazard(block)||block instanceof BlockDoor||block instanceof BlockFenceGate)continue;
             for(AxisAlignedBB shape:shapes(pos,new AxisAlignedBB(x,y,z,x+1,y+2,z+1))) {
                 if(shape.maxX<x+.22||shape.minX>x+.78||shape.maxZ<z+.22||shape.minZ>z+.78)continue;
-                double foot=shape.maxY;if(foot<near-6.01||foot>near+1.251||!clear(new Vec3(x+.5,foot,z+.5),false))continue;
+                double foot=shape.maxY;if(foot<near-descent-.01||foot>near+1.251||!clear(new Vec3(x+.5,foot,z+.5),false))continue;
                 nodes.add(new Node(x,(int)Math.round(foot*16),z));
             }
         }
@@ -80,7 +81,7 @@ public final class LegacyTraversal implements TraversalEvaluator {
         Vec3 a=point(from),b=point(to);double rise=b.yCoord-a.yCoord;boolean wetA=water(from),wetB=water(to),ladder=climb(from)||climb(to),wet=wetA||wetB;
         int horizontal=Math.abs(from.x()-to.x())+Math.abs(from.z()-to.z());
         boolean diagonal=Math.abs(from.x()-to.x())==1&&Math.abs(from.z()-to.z())==1;
-        if(horizontal>1&&!diagonal||horizontal==0&&!ladder&&!wetA||rise>1.251||rise< -6||!acceptableDrop(-rise)||!clear(b,wet))return null;
+        if(horizontal>1&&!diagonal||horizontal==0&&!ladder&&!wetA||rise>1.251||!acceptableDrop(-rise)||!clear(b,wet))return null;
         int samples=Math.max(1,(int)Math.ceil(a.distanceTo(b)*8));
         for(int i=0;i<=samples;i++){double t=i/(double)samples,y=wetA&&wetB||ladder?a.yCoord+rise*t:Math.max(a.yCoord,b.yCoord);if(!clear(new Vec3(a.xCoord+(b.xCoord-a.xCoord)*t,y,a.zCoord+(b.zCoord-a.zCoord)*t),wet))return null;}
         if(rise<-.65&&!wet&&!ladder)for(double y=a.yCoord;y>b.yCoord;y-=.2)if(!clear(new Vec3(b.xCoord,y,b.zCoord),false))return null;
@@ -97,7 +98,8 @@ public final class LegacyTraversal implements TraversalEvaluator {
         int boost=player.isPotionActive(net.minecraft.potion.Potion.jump)?player.getActivePotionEffect(net.minecraft.potion.Potion.jump).getAmplifier()+1:0;
         return ModernCombat.protection(player,DamageSource.fall,(float)Math.max(0,Math.ceil(height-3-boost)));
     }
-    public boolean acceptableDrop(double height){double damage=dropDamage(height);return height<=6.01&&(damage<=0||damage<=3&&damage<=player.getHealth()*.25&&player.getHealth()+player.getAbsorptionAmount()-damage>=4);}
+    public boolean acceptableDrop(double height){double damage=dropDamage(height);return height<=24&&(damage<=0||damage<=3&&damage<=player.getHealth()*.25&&player.getHealth()+player.getAbsorptionAmount()-damage>=4);}
+    private int maximumDrop(){int height=3;while(height<24&&acceptableDrop(height+1))height++;return height;}
     @Override public List<PathStep> neighbors(Node from) {
         List<PathStep> old=cache.get(from);if(old!=null)return old;
         Set<Node> nexts=new LinkedHashSet<Node>();for(int[] d:new int[][]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}})nexts.addAll(positions(from.x()+d[0],from.z()+d[1],from.y()));

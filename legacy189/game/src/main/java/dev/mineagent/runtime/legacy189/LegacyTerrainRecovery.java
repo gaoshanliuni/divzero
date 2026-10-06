@@ -164,7 +164,10 @@ public final class LegacyTerrainRecovery {
             if(NativeFixture.requested()&&pursuit)LegacyMod.logger.info("LEGACY_PURSUIT_PLAN from={} to={} edit={}",point(planned.from()),point(planned.to()),edit==null?"WALK":edit.kind()+":"+pos(edit.cell()));
         }
         if(edit==null){
-            if(actor.getPositionVector().squareDistanceTo(point(planned.to()))<(pursuit?.0001:.16)&&actor.onGround){
+            // Walking prefixes should flow between cells; only an explicit attack-stance
+            // alignment needs centimetre precision. Stopping exactly at every centre stalls pursuit.
+            double arrival=pursuit&&planned.from().equals(planned.to())?.0001:pursuit?.09:.16;
+            if(actor.getPositionVector().squareDistanceTo(point(planned.to()))<arrival&&actor.onGround){
                 if(pursuit&&!approachSteps.isEmpty()){
                     planned=approachSteps.removeFirst();edit=planned.edits().isEmpty()?null:planned.edits().get(0);actionAt=tick;sent=jumped=false;settled=0;progress=0;
                     state=edit==null?"APPROACH_WALK":edit.kind()==Kind.BREAK?"APPROACH_MINE":"APPROACH_PLACE";if(edit!=null)before=signature(pos(edit.cell()));

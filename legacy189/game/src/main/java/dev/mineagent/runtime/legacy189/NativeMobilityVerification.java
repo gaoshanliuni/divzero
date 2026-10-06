@@ -85,7 +85,7 @@ public final class NativeMobilityVerification {
         else if(scenario==3&&run.meleeHits>0){
             // Forge 1.8.9 removes vanilla wool durability consumption from ItemShears.
             // Verify the held tool at the successful native harvest instead.
-            evidence.addProperty("shearsMiningTicks",toolTicks);evidence.addProperty("shearsDurabilityUsed",a.inventory.getStackInSlot(3).getItemDamage());evidence.addProperty("shearsBlocksBroken",run.navigation.sheared());
+            evidence.addProperty("shearsMiningTicks",toolTicks);evidence.addProperty("shearsDurabilityUsed",a.inventory.getStackInSlot(3).getItemDamage());evidence.addProperty("shearsBlocksBroken",run.navigation.sheared());evidence.addProperty("coverApproachTicks",tick-started);
             require(run.navigation.woolBroken>0&&toolTicks>0&&run.navigation.sheared()>0,"SHEARS_NOT_USED_NATIVELY");next(p,tick);
         }
         else if(scenario==4){
