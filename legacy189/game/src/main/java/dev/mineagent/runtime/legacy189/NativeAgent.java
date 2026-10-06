@@ -23,6 +23,9 @@ public final class NativeAgent extends EntityPlayerMP {
     private final ClientlessConnection connection;
     private LegacyPolicy policy = LegacyPolicy.get();
     public double decisionRisk;
+    public boolean sprint45Requested;
+    public int sprint45Ticks;
+    public final LegacyLoadoutController loadout=new LegacyLoadoutController();
     public final LegacyProjectileGuard projectileGuard=new LegacyProjectileGuard();
     public LegacyPolicy policy() { return policy; }
     public void policy(LegacyPolicy value) { if (value == null) throw new IllegalArgumentException("POLICY_MISSING"); policy = value; }
@@ -42,6 +45,7 @@ public final class NativeAgent extends EntityPlayerMP {
         if (lastPhysicsTick == tick || isDead) return;
         lastPhysicsTick = tick;
         double previousY = posY; net.minecraft.world.World previousWorld = worldObj;
+        LegacySprintSteering.apply(this);sprint45Requested=false;
         onUpdateEntity();
         // Vanilla MP players normally receive this calculation from their movement
         // packets. Use the displacement actually produced by our native physics.
@@ -53,7 +57,7 @@ public final class NativeAgent extends EntityPlayerMP {
         super.clearItemInUse();
         if(bowUseSent){NativeNetwork.bowUse(this);bowUseSent=false;}
     }
-    public void stopActions() { moveForward = 0; moveStrafing = 0; setSprinting(false); setSneaking(false); clearItemInUse(); }
+    public void stopActions() { sprint45Requested=false;moveForward = 0; moveStrafing = 0; setSprinting(false); setSneaking(false); clearItemInUse(); }
     public boolean requestJump() {
         long tick = MinecraftServer.getServer().getTickCounter();
         if (!onGround || !isEntityAlive() || tick == lastJumpTick) return false;

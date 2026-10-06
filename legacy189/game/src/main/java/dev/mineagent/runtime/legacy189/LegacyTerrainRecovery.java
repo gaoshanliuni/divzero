@@ -64,6 +64,15 @@ public final class LegacyTerrainRecovery {
         if(actor!=player||goal==null||goal.squareDistanceTo(targetPoint)>4){rejected.clear();}
         actor=player;this.target=target;goal=targetPoint;origin=player.getPositionVector();started=tick;pursuit=pursueTarget;state=pursuit?"SEARCHING_APPROACH":"SEARCHING_ESCAPE";
         final Cell originCell=cell(origin);
+        // PvP may spend real wool on a one-way column. No permanent/reusable exit is required.
+        if(goal.yCoord>origin.yCoord+1.3&&Math.hypot(goal.xCoord-origin.xCoord,goal.zCoord-origin.zCoord)<3.5&&materialSlot()>=0&&mayPlace(pos(originCell))){
+            LegacyTraversal check=new LegacyTraversal(actor);
+            if(check.clear(origin.addVector(0,1.25,0),false)&&!rejected.contains(originCell,Kind.PLACE,()->context(pos(originCell),Kind.PLACE))){
+                edit=new Edit(originCell,Kind.PLACE,signature(pos(originCell)),12);
+                planned=new TerrainPathSearch.Step(originCell,originCell.add(0,1,0),Collections.singletonList(edit),true,22);
+                approachSteps.clear();actionAt=tick;selectedSlot=actor.inventory.currentItem;before=signature(pos(originCell));progress=0;sent=jumped=false;settled=0;attempts++;state="PVP_VERTICAL_BUILD";return true;
+            }
+        }
         if(pursuit){
             Vec3 eye=actor.getPositionEyes(1);MovingObjectPosition obstruction=actor.worldObj.rayTraceBlocks(eye,target.getPositionEyes(1),false,true,false);
             if(obstruction!=null&&eye.squareDistanceTo(obstruction.hitVec)<=4.5*4.5){
@@ -102,16 +111,16 @@ public final class LegacyTerrainRecovery {
                     double progress=origin.distanceTo(goal)-at.distanceTo(goal);
                     double horizontalProgress=Math.hypot(origin.xCoord-goal.xCoord,origin.zCoord-goal.zCoord)-Math.hypot(at.xCoord-goal.xCoord,at.zCoord-goal.zCoord);
                     if(edits.isEmpty()&&Math.abs(at.yCoord-origin.yCoord)<.25&&horizontalProgress>=2&&Math.hypot(at.xCoord-goal.xCoord,at.zCoord-goal.zCoord)>1.4)return true;
-                    if(!edits.isEmpty()&&c.y()>originCell.y()&&goal.yCoord>origin.yCoord+2&&progress>.35)return true;
-                    return progress>=3&&at.distanceTo(goal)>3.5&&(virtual.neighbors(floor).size()>=2||!edits.isEmpty()&&c.y()>originCell.y());
+                    if(!edits.isEmpty()&&c.y()>originCell.y()&&goal.yCoord>origin.yCoord+.5&&progress>.15)return true;
+                    return progress>=2&&at.distanceTo(goal)>3.5;
                 }
-                if(Math.abs(c.x()-originCell.x())+Math.abs(c.z()-originCell.z())<1)return false;
-                Cell below=c.add(0,-1,0);if(edits.containsKey(below)||!block(below).supports())return false;
-                Vec3 at=point(c);LegacyTraversal check=new LegacyTraversal(actor);Node n=check.closest(at);
+                if(c.equals(originCell))return false;
+                Map<BlockPos,Kind> overlay=new HashMap<BlockPos,Kind>();for(Map.Entry<Cell,Kind> entry:edits.entrySet())overlay.put(pos(entry.getKey()),entry.getValue());
+                Vec3 at=point(c);LegacyTraversal check=new LegacyTraversal(actor,overlay);Node n=check.closest(at);
                 if(n==null||Math.abs(n.y()-at.yCoord)>.251||!check.clear(LegacyTraversal.point(n),false))return false;
-                if(check.neighbors(n).stream().filter(e->Math.abs(e.to().y()-n.y())<=1.25).count()<2)return false;
+                if(c.y()>originCell.y()&&goal.yCoord>origin.yCoord+.5&&at.distanceTo(goal)<origin.distanceTo(goal)-.15)return true;
                 Vec3 delta=goal.subtract(at), nextGoal=goal.squareDistanceTo(at)>256?at.addVector(delta.normalize().xCoord*16,delta.normalize().yCoord*16,delta.normalize().zCoord*16):goal;
-                Node end=check.closest(nextGoal);return end!=null&&new SurfacePathfinder.Search(n,end,check).advance(96).status()==Status.FOUND;
+                Node end=check.closest(nextGoal);return end!=null&&new SurfacePathfinder.Search(n,end,check).advance(192).status()==Status.FOUND;
             }
             public double risk(Cell c){double risk=Math.max(0,4-point(c).distanceTo(target.getPositionVector()))*2;return actor.getHealth()<6?risk*2:risk;}
             public double learnedCost(TerrainPathSearch.Step step,double risk){
@@ -144,8 +153,8 @@ public final class LegacyTerrainRecovery {
         if(!actor.isEntityAlive()||actor.worldObj!=target.worldObj||goal.squareDistanceTo(target.getPositionVector())>4){cancel();return null;}
         if(tick-started>300){fail("ESCAPE_CONTEXT_RECHECK_TIMEOUT");return null;}
         if(search!=null){
-            final long deadline=System.nanoTime()+3_000_000L;
-            TerrainPathSearch.Result found=search.advance(96,()->System.nanoTime()<deadline);
+            final long deadline=System.nanoTime()+2_000_000L;
+            TerrainPathSearch.Result found=search.advance(192,()->System.nanoTime()<deadline);
             if(found.state().equals("SEARCHING"))return null;
             search=null;if(!found.state().equals("FOUND")){state=found.state();if(NativeFixture.requested())LegacyMod.logger.info("LEGACY_TERRAIN_SEARCH_END state={} expanded={} origin={} goal={}",state,found.expanded(),origin,goal);return null;}
             planned=found.steps().get(0);approachSteps.clear();if(pursuit)for(int i=1;i<found.steps().size();i++)approachSteps.addLast(found.steps().get(i));edit=planned.edits().isEmpty()?null:planned.edits().get(0);

@@ -30,7 +30,7 @@ public final class LegacyRangedController {
             double nx=-dx/Math.max(.01,distance),nz=-dz/Math.max(.01,distance);
             if(LegacyMeleeController.safeMotion(actor,nx*1.3,nz*1.3,false)&&!(escapeUntil-tick<5&&distance<escapeDistance+.35)){
                 cancel(actor);actor.rotationYaw=(float)Math.toDegrees(Math.atan2(nz,nx))-90;actor.rotationYawHead=actor.rotationYaw;
-                actor.moveForward=1;actor.moveStrafing=0;actor.setSprinting(true);phase="ESCAPE_REPOSITION";escapeTicks++;return;
+                actor.moveForward=1;actor.moveStrafing=0;actor.setSprinting(true);actor.sprint45Requested=true;phase="ESCAPE_REPOSITION";escapeTicks++;return;
             }
             escapeUntil=-1;
         }

@@ -19,11 +19,13 @@ public final class ArenaNavigator {
     private int index,stuck;
     private boolean pursuing;
     public int plans,stuckRecoveries,woolBroken;
+    public int directPlans,expandedNodes,searchTicks;
+    public double maxSliceMillis;
     public String reason="IDLE";
     public boolean recovering(){return recovery.active();}
     public int placed(){return recovery.placed;}
     public int consumed(){return recovery.consumed;}
-    public void reset(NativeAgent actor){stop(actor);recovery.reset(actor);plans=stuckRecoveries=woolBroken=0;retry.reset(0);plannedTarget=lastPosition=null;}
+    public void reset(NativeAgent actor){stop(actor);recovery.reset(actor);plans=stuckRecoveries=woolBroken=directPlans=expandedNodes=searchTicks=0;maxSliceMillis=0;retry.reset(0);plannedTarget=lastPosition=null;}
     public void stop(NativeAgent actor){recovery.cancel();steps=Collections.emptyList();search=null;index=stuck=0;pursuing=false;actor.stopActions();}
     private void recheck(int tick){steps=Collections.emptyList();search=null;index=0;retry.reset(tick);reason="TERRAIN_CHANGED_RECHECK";}
     public boolean move(NativeAgent actor,EntityPlayerMP target,int tick,boolean bow){
@@ -52,6 +54,9 @@ public final class ArenaNavigator {
         if(step.action()==Action.CLIMB&&actor.isOnLadder())actor.motionY=offset.yCoord>0?Math.min(.2,Math.max(.12,offset.yCoord)):Math.max(-.15,offset.yCoord);
         if((step.action()==Action.SWIM||step.action()==Action.ENTER_WATER)&&actor.isInWater())actor.motionY=Math.max(-.1,Math.min(.1,offset.yCoord));
         if(step.action()==Action.LEAVE_WATER&&actor.isInWater()&&offset.yCoord>0)actor.motionY=.25;
+        if(!recovery.active()&&length>.65&&step.action()==Action.WALK&&actor.getFoodStats().getFoodLevel()>6&&!actor.isUsingItem()){
+            actor.setSprinting(true);actor.sprint45Requested=true;
+        }
         return true;
     }
     private PathStep route(NativeAgent actor,EntityPlayerMP target,Vec3 goal,int tick){
@@ -60,10 +65,10 @@ public final class ArenaNavigator {
         boolean moved=plannedTarget!=null&&plannedTarget.squareDistanceTo(goal)>2.25;
         if(moved)pursuing=false;
         if(pursuing&&actor.onGround){recovery.request(actor,target,tick,true);reason="APPROACH_BLOCKED_TARGET";return null;}
-        if(stuck>=30&&actor.onGround&&recovery.request(actor,target,tick)){
+        if(stuck>=12&&actor.onGround&&recovery.request(actor,target,tick)){
             stuckRecoveries++;search=null;steps=Collections.emptyList();index=stuck=0;reason="REPEATED_ROUTE_OBSTRUCTION";return null;
         }
-        if(moved||stuck>=30){search=null;steps=Collections.emptyList();index=0;if(stuck>=30){reason="TEMPORARY_CONGESTION";retry.waitUntil(tick+10);}stuck=0;}
+        if(moved||stuck>=12){search=null;steps=Collections.emptyList();index=0;retry.reset(tick);if(stuck>=12){reason="TEMPORARY_CONGESTION";retry.waitUntil(tick+3);}stuck=0;}
         while(index<steps.size()){
             Vec3 next=LegacyTraversal.point(steps.get(index).to());double dx=next.xCoord-actor.posX,dz=next.zCoord-actor.posZ;
             if(dx*dx+dz*dz<.04&&Math.abs(next.yCoord-actor.posY)<.26)index++;else break;
@@ -76,17 +81,22 @@ public final class ArenaNavigator {
             if(segment&&end==null){for(int radius=1;radius<=3&&end==null;radius++)for(int dx=-radius;dx<=radius&&end==null;dx++)for(int dz=-radius;dz<=radius;dz++){
                 Node candidate=evaluator.closest(routeGoal.addVector(dx,0,dz));if(candidate!=null&&LegacyTraversal.point(candidate).squareDistanceTo(position)>4){end=candidate;break;}
             }}
-            if(start==null||end==null){reason=evaluator.encounteredUnloaded()?"WAITING_CHUNKS":"INVALID_TARGET";if(evaluator.encounteredUnloaded())retry.waitUntil(tick+20);else{retry.failed(tick);if(start!=null&&recovery.request(actor,target,tick,!evaluator.neighbors(start).isEmpty()))reason="APPROACH_BLOCKED_TARGET";}return null;}
-            search=new SurfacePathfinder.Search(start,end,evaluator);
+            if(start==null||end==null){reason=evaluator.encounteredUnloaded()?"WAITING_CHUNKS":"INVALID_TARGET";if(evaluator.encounteredUnloaded())retry.waitUntil(tick+20);else{retry.reset(tick+4);if(start!=null&&recovery.request(actor,target,tick,true))reason="APPROACH_BLOCKED_TARGET";}return null;}
+            List<PathStep> direct=directRoute(start,end,evaluator);
+            if(direct!=null&&!direct.isEmpty()){steps=direct;index=0;directPlans++;retry.succeeded(tick);reason="DIRECT_CHECKED_ROUTE";}
+            else{
+                final Node destination=end;
+                search=new SurfacePathfinder.Search(start,destination::equals,n->Math.hypot(n.x()-destination.x(),n.z()-destination.z())+Math.abs(n.y()-destination.y())*.12,evaluator);
+            }
         }
         if(search!=null){
-            evaluator.beginSlice();final long deadline=System.nanoTime()+3_000_000L;
-            Result result=search.advance(96,()->System.nanoTime()<deadline);reason=result.status().name();
+            evaluator.beginSlice();final long slice=System.nanoTime(),deadline=slice+2_000_000L;
+            Result result=search.advance(256,()->System.nanoTime()<deadline);searchTicks++;expandedNodes=Math.max(expandedNodes,result.expanded());maxSliceMillis=Math.max(maxSliceMillis,(System.nanoTime()-slice)/1e6);reason=result.status().name();
             if(result.status()==Status.FOUND){steps=result.steps();index=0;search=null;retry.succeeded(tick);}
             else if(result.status()!=Status.BUDGET_EXHAUSTED){
                 search=null;
                 if(evaluator.encounteredUnloaded()){retry.waitUntil(tick+20);return null;}
-                retry.failed(tick);
+                retry.reset(tick+4);
                 Node current=evaluator.closest(position);boolean pursue=current!=null&&!evaluator.neighbors(current).isEmpty();
                 if(result.status()==Status.NO_PATH&&recovery.request(actor,target,tick,pursue)){pursuing=pursue;reason=pursue?"APPROACH_BLOCKED_TARGET":"NO_ORDINARY_PATH";}
                 return null;
@@ -97,5 +107,16 @@ public final class ArenaNavigator {
             steps=Collections.emptyList();index=0;reason=check.encounteredUnloaded()?"WAITING_CHUNKS":"ROUTE_CHANGED";retry.waitUntil(tick+5);return null;
         }
         return step;
+    }
+    private static List<PathStep> directRoute(Node start,Node end,LegacyTraversal world){
+        if(start.equals(end))return Collections.emptyList();List<PathStep> result=new ArrayList<PathStep>();Node at=start;
+        int count=Math.max(Math.abs(end.x()-start.x()),Math.abs(end.z()-start.z()));if(count==0)return null;
+        for(int i=1;i<=count;i++){
+            int x=start.x()+(int)Math.round((end.x()-start.x())*i/(double)count),z=start.z()+(int)Math.round((end.z()-start.z())*i/(double)count);
+            PathStep best=null;double cost=Double.POSITIVE_INFINITY;
+            for(Node next:world.positions(x,z,at.y())){PathStep step=world.transition(at,next);if(step==null)continue;double score=step.cost()+Math.abs(next.y()-end.y())*.2;if(score<cost){cost=score;best=step;}}
+            if(best==null)return null;result.add(best);at=best.to();
+        }
+        return at.equals(end)?result:null;
     }
 }

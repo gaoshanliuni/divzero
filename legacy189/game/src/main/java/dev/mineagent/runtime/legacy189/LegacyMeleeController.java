@@ -67,7 +67,7 @@ public final class LegacyMeleeController {
         }
         if(escapeUntil>=tick&&escapeDirection!=null&&(tick-lastEscape<5||distance<4.8)&&safeMotion(actor,escapeDirection.xCoord*1.3+actor.motionX*2,escapeDirection.zCoord*1.3+actor.motionZ*2,!actor.onGround)){
             actor.clearItemInUse();actor.rotationYaw=(float)Math.toDegrees(Math.atan2(escapeDirection.zCoord,escapeDirection.xCoord))-90;actor.rotationYawHead=actor.rotationYaw;
-            actor.moveForward=1;actor.moveStrafing=0;actor.setSneaking(false);actor.setSprinting(actor.getFoodStats().getFoodLevel()>6);phase=drop?"DROP_ESCAPE":"CONTACT_ESCAPE";evasiveTicks++;escapeTicks++;return;
+            actor.moveForward=1;actor.moveStrafing=0;actor.setSneaking(false);actor.setSprinting(actor.getFoodStats().getFoodLevel()>6);actor.sprint45Requested=true;phase=drop?"DROP_ESCAPE":"CONTACT_ESCAPE";evasiveTicks++;escapeTicks++;return;
         }
         escapeUntil=-1;
         boolean direct=safeMotion(actor,nx*Math.min(distance,1.2),nz*Math.min(distance,1.2),false);

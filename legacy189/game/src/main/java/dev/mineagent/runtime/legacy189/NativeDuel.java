@@ -21,7 +21,7 @@ import java.util.concurrent.*;
 
 /** Single-owner arena rounds. Ordinary worlds never receive this controller. */
 public final class NativeDuel {
-    public static final String[] SLOTS = {"head", "chest", "legs", "feet", "mainhand", "offhand"};
+    public static final String[] SLOTS = {"head", "chest", "legs", "feet", "mainhand", "offhand", "secondary"};
     private static final Map<UUID, Session> SESSIONS = new HashMap<UUID, Session>();
     private static final Map<UUID, EntityPlayerMP> BUILD_INVENTORY_SYNC = new HashMap<UUID, EntityPlayerMP>();
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().create();
@@ -38,13 +38,14 @@ public final class NativeDuel {
         value.human = player; return value;
     }
     public static List<String> choices(int slot) {
-        if (slot < 0 || slot >= 6) throw new IllegalArgumentException("DUEL_SLOT");
+        if (slot < 0 || slot >= 7) throw new IllegalArgumentException("DUEL_SLOT");
         List<String> result = new ArrayList<String>(); result.add("minecraft:air");
         if (slot < 4) for (String material : new String[] {"leather", "chainmail", "iron", "golden", "diamond"})
             result.add("minecraft:" + material + "_" + new String[] {"helmet", "chestplate", "leggings", "boots"}[slot]);
-        else if (slot == 4) {
+        else if (slot == 4 || slot == 6) {
             for (String type : new String[] {"sword", "axe"}) for (String material : new String[] {"wooden", "stone", "iron", "golden", "diamond"}) result.add("minecraft:" + material + "_" + type);
             result.add("minecraft:bow");
+            if(slot==6){result.add("minecraft:ender_pearl");result.add("minecraft:shears");}
         } else { result.add("minecraft:golden_apple"); result.add("minecraft:cooked_beef"); }
         return result;
     }
@@ -81,17 +82,18 @@ public final class NativeDuel {
         player.clearItemInUse();
         if(player.openContainer!=player.inventoryContainer)player.closeScreen();
         player.inventory.clear(); player.inventory.setItemStack(null); NativeOffhand.get(player).set(null);
-        for (int slot = 0; slot < 6; slot++) {
+        for (int slot = 0; slot < gear.length; slot++) {
             if (!choices(slot).contains(gear[slot])) throw new IllegalArgumentException("DUEL_EQUIPMENT");
             ItemStack stack = stack(gear[slot]);
             if (slot < 4) player.setCurrentItemOrArmor(4 - slot, stack);
             else if (slot == 4) player.inventory.setInventorySlotContents(0, stack);
+            else if (slot == 6) {if(stack!=null&&stack.getItem()==Items.ender_pearl)stack.stackSize=16;player.inventory.setInventorySlotContents(3,stack);}
             else if (stack != null && stack.getItem() instanceof ItemFood) {
                 // 1.8.9 uses food from the selected main-hand hotbar slot.
                 stack.stackSize = 16; player.inventory.setInventorySlotContents(2, stack);
             } else NativeOffhand.get(player).set(stack);
         }
-        if (gear[4].equals("minecraft:bow")) for (int slot = 9; slot < 13; slot++) player.inventory.setInventorySlotContents(slot, new ItemStack(Items.arrow, 64));
+        if (gear[4].equals("minecraft:bow") || gear.length>6&&gear[6].equals("minecraft:bow")) for (int slot = 9; slot < 13; slot++) player.inventory.setInventorySlotContents(slot, new ItemStack(Items.arrow, 64));
         if (wool) player.inventory.setInventorySlotContents(1, new ItemStack(Blocks.wool, 64, woolColor));
         player.clearActivePotions(); player.setAbsorptionAmount(0); player.extinguish();
         player.inventory.currentItem = 0; player.setHealth(player.getMaxHealth()); player.getFoodStats().setFoodLevel(20);
@@ -164,7 +166,7 @@ public final class NativeDuel {
         for (EntityPlayerMP actor : new EntityPlayerMP[] {run.human, run.ai}) { actor.motionX = actor.motionY = actor.motionZ = 0; actor.fallDistance = 0; }
         run.lastX = run.ai.posX; run.lastZ = run.ai.posZ;
     }
-    private static boolean inside(Entity entity) { return entity != null && entity.posX > -17 && entity.posX < 18 && entity.posZ > 783 && entity.posZ < 818 && entity.posY >= 97; }
+    private static boolean inside(Entity entity) { return NativeArena.containsFighter(entity); }
     private static void brain(Session run, int tick) {
         NativeAgent actor=run.ai;
         run.travel+=Math.hypot(actor.posX-run.lastX,actor.posZ-run.lastZ);run.lastX=actor.posX;run.lastZ=actor.posZ;
@@ -245,7 +247,7 @@ public final class NativeDuel {
         Session(EntityPlayerMP player) { owner = player.getUniqueID(); human = player; }
         public boolean active() { return phase.equals("CLEANING") || phase.equals("COUNTDOWN") || phase.equals("FIGHTING"); }
         public double seconds() { return (System.nanoTime() - started) / 1_000_000_000d; }
-        private static String[] defaults() { return new String[] {"minecraft:iron_helmet", "minecraft:iron_chestplate", "minecraft:iron_leggings", "minecraft:iron_boots", "minecraft:diamond_sword", "minecraft:air"}; }
+        private static String[] defaults() { return new String[] {"minecraft:iron_helmet", "minecraft:iron_chestplate", "minecraft:iron_leggings", "minecraft:iron_boots", "minecraft:diamond_sword", "minecraft:air", "minecraft:air"}; }
     }
     public static final class Events {
         @SubscribeEvent public void drops(LivingDropsEvent event) {

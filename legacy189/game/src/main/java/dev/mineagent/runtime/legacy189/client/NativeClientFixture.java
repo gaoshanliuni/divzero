@@ -25,6 +25,7 @@ public final class NativeClientFixture {
         Minecraft mc = Minecraft.getMinecraft();
         if (!new File(mc.mcDataDir, "divzero-native-fixture-allow").isFile()) return;
         ticks++;
+        if(Boolean.getBoolean("divzero.legacyMobilityFixture")&&!NativeFixture.finished)MobilityClientFixture.tick();
         if(Boolean.getBoolean("divzero.legacyPlacementFixture")&&!NativeFixture.finished)PlacementClientFixture.tick();
         if(Boolean.getBoolean("divzero.legacyPredictionFixture")){
             if(NativeFixture.finished)dev.mineagent.runtime.legacy189.NativePredictionVerification.mode=-1;

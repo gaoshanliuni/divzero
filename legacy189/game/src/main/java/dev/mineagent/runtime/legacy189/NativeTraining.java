@@ -130,6 +130,6 @@ public final class NativeTraining {
         }
         void dispose(){pending.clear();if(left!=null){navLeft.stop(left);NativeRuntime.removeBody(left);left=null;}if(right!=null){navRight.stop(right);NativeRuntime.removeBody(right);right=null;}}
         void complete(EntityPlayerMP ownerPlayer,String phase,String reason){this.phase=phase;this.reason=reason;last=summary();last.addProperty("active",false);lastReceipt=new JsonParser().parse(last.toString()).getAsJsonObject();lastReceipt.add("games",games);lastReceipt.add("replay",new Gson().toJsonTree(replay));LegacyModelStore.receipt("selfplay-"+id,lastReceipt);current=null;ownerPlayer.addChatMessage(new ChatComponentText("[DivZero] 模型训练结束："+(phase.equals("PROMOTED")?"已验证并升级至 v"+candidate.version():"保留原模型")+"（"+reason+"）"));}
-        boolean inside(Entity entity){return entity.posX> -17&&entity.posX<18&&entity.posZ>783&&entity.posZ<818&&entity.posY>=97;}
+        boolean inside(Entity entity){return NativeArena.containsFighter(entity);}
     }
 }

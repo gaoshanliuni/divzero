@@ -30,6 +30,9 @@ public final class NativeArena {
     public static int verified() { return verified; }
     public static boolean field(BlockPos pos) { return pos.getX() >= -16 && pos.getX() <= 16 && pos.getZ() >= 784 && pos.getZ() <= 816 && pos.getY() >= 101 && pos.getY() < 256; }
     public static boolean protectedArea(BlockPos pos) { return pos.getX() >= -18 && pos.getX() <= 18 && pos.getZ() >= 754 && pos.getZ() <= 818 && pos.getY() >= 97; }
+    /** Walking bounds include the rim. Editing bounds remain the smaller field(). */
+    public static boolean containsFighter(net.minecraft.entity.Entity entity){return entity!=null&&entity.posX>=-17.7&&entity.posX<=18.7&&entity.posZ>=783.3&&entity.posZ<=818.7&&entity.posY>=97;}
+    public static boolean walkCell(int x,int z){return x>=-18&&x<=18&&z>=783&&z<=818;}
     public static void start(EntityPlayerMP owner) {
         if (!owner.canCommandSenderUseCommand(2, "ai") || owner.dimension != 0) throw new SecurityException("导入竞技场需要主世界管理权限");
         if (active != null) throw new IllegalStateException("竞技场导入正在进行");

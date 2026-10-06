@@ -17,7 +17,8 @@ public final class DuelClient {
     private static JsonObject state;
     private static boolean openPending;
     static final int MENU_BUTTON = 18930;
-    private static final String[] LABELS = {"头盔", "胸甲", "护腿", "靴子", "主手", "副手/补给"};
+    private static final String[] LABELS = {"头盔", "胸甲", "护腿", "靴子", "主手", "gui.divzero.duel.supplies", "gui.divzero.duel.secondary"};
+    private static String slotName(int slot){return slot>=5?I18n.format(LABELS[slot]):LABELS[slot];}
     public static void receive(String json) {
         final JsonObject value = new JsonParser().parse(json).getAsJsonObject();
         Minecraft.getMinecraft().addScheduledTask(() -> { state = value; openPending |= value.get("open").getAsBoolean(); });
@@ -100,13 +101,13 @@ public final class DuelClient {
             revision = state.get("revision").getAsLong(); enabled = state.get("enabled").getAsBoolean(); buttonList.clear();
             trainingActive=state.get("trainingActive").getAsBoolean();
             int panelWidth = Math.min(490, width - 20); columnWidth = (panelWidth - 12) / 2; left = (width - panelWidth) / 2;
-            slotGap = height < 280 ? 21 : 24; top = Math.max(4, (height - (107 + slotGap * 6)) / 2); woolY = top + 37 + slotGap * 6; footerY = woolY + 40;
+            slotGap = height < 280 ? 20 : 24; top = Math.max(2, (height - (92 + slotGap * 7)) / 2); woolY = top + 32 + slotGap * 7; footerY = woolY + 34;
             boolean training = trainingActive;
             boolean ready = state.get("phase").getAsString().equals("READY") && !training;
-            for (int actor = 0; actor < 2; actor++) for (int slot = 0; slot < 6; slot++) {
+            for (int actor = 0; actor < 2; actor++) for (int slot = 0; slot < 7; slot++) {
                 String id = state.getAsJsonArray(actor == 0 ? "human" : "ai").get(slot).getAsString();
-                GuiButton button = new ItemButton(actor * 10 + slot, left + actor * (columnWidth + 12), top + 34 + slot * slotGap, columnWidth,
-                        fontRendererObj.trimStringToWidth(LABELS[slot] + " · " + itemName(id), columnWidth - 30), NativeDuel.stack(id));
+                GuiButton button = new ItemButton(actor * 10 + slot, left + actor * (columnWidth + 12), top + 29 + slot * slotGap, columnWidth,
+                        fontRendererObj.trimStringToWidth(slotName(slot) + " · " + itemName(id), columnWidth - 30), NativeDuel.stack(id));
                 button.enabled = ready; buttonList.add(button);
             }
             for (int actor = 0; actor < 2; actor++) {
@@ -130,14 +131,15 @@ public final class DuelClient {
         }
         @Override public void drawScreen(int mouseX, int mouseY, float partialTicks) {
             drawDefaultBackground(); drawCenteredString(fontRendererObj, "PvP 训练场 · 双方装备", width / 2, top + 3, 0xffffff);
-            drawString(fontRendererObj, "玩家", left, top + 20, 0xe2e2e2); drawString(fontRendererObj, "AI", left + columnWidth + 12, top + 20, 0xe2e2e2);
-            drawCenteredString(fontRendererObj, I18n.format(enabled ? "gui.divzero.duel.rules" : "gui.divzero.duel.enableStart"), width / 2, woolY + 26, 0xc3c3c3);
+            drawString(fontRendererObj, "玩家", left, top + 17, 0xe2e2e2); drawString(fontRendererObj, "AI", left + columnWidth + 12, top + 17, 0xe2e2e2);
+            drawCenteredString(fontRendererObj, I18n.format(enabled ? "gui.divzero.duel.rules" : "gui.divzero.duel.enableStart"), width / 2, woolY + 23, 0xc3c3c3);
             super.drawScreen(mouseX, mouseY, partialTicks);
         }
         @Override public boolean doesGuiPauseGame() { return false; }
         public boolean fixtureLayoutFits() {
-            if (buttonList.size() != 18) return false;
+            if (buttonList.size() != 20) return false;
             for (GuiButton button : buttonList) if (button.xPosition < 0 || button.yPosition < 0 || button.xPosition + button.getButtonWidth() > width || button.yPosition + 20 > height) return false;
+            for(int i=0;i<buttonList.size();i++)for(int j=i+1;j<buttonList.size();j++){GuiButton a=buttonList.get(i),b=buttonList.get(j);if(a.xPosition<b.xPosition+b.getButtonWidth()&&a.xPosition+a.getButtonWidth()>b.xPosition&&a.yPosition<b.yPosition+20&&a.yPosition+20>b.yPosition)return false;}
             return true;
         }
         public void fixtureSelect(int id) throws IOException { for (GuiButton button : buttonList) if (button.id == id && button.enabled) { int x = button.xPosition + button.getButtonWidth() / 2, y = button.yPosition + 10; mouseClicked(x, y, 0); mouseReleased(x, y, 0); return; } throw new IllegalArgumentException("FIXTURE_BUTTON_MISSING"); }
@@ -159,7 +161,7 @@ public final class DuelClient {
             mc.displayGuiScreen(parent);
         }
         @Override public void handleMouseInput() throws IOException { super.handleMouseInput(); int wheel = Mouse.getEventDWheel(); if (wheel != 0) { page = Math.max(0, Math.min((choices.size() - 1) / 12, page + (wheel < 0 ? 1 : -1))); initGui(); } }
-        @Override public void drawScreen(int mouseX, int mouseY, float ticks) { drawDefaultBackground(); drawCenteredString(fontRendererObj, (actor == 0 ? "玩家 · " : "AI · ") + LABELS[slot], width / 2, 12, 0xffffff); super.drawScreen(mouseX, mouseY, ticks); }
+        @Override public void drawScreen(int mouseX, int mouseY, float ticks) { drawDefaultBackground(); drawCenteredString(fontRendererObj, (actor == 0 ? "玩家 · " : "AI · ") + slotName(slot), width / 2, 12, 0xffffff); super.drawScreen(mouseX, mouseY, ticks); }
         @Override public boolean doesGuiPauseGame() { return false; }
         private void fixtureSelect(int id) throws IOException { for (GuiButton button : buttonList) if (button.id == id) { int x = button.xPosition + button.getButtonWidth() / 2, y = button.yPosition + 10; mouseClicked(x, y, 0); mouseReleased(x, y, 0); return; } throw new IllegalArgumentException("FIXTURE_ITEM_BUTTON"); }
     }

@@ -29,6 +29,7 @@ public final class NativeFixture {
     private static NativeAdvancedVerification advancedVerification;
     private static NativePredictionVerification predictionVerification;
     private static NativePlacementVerification placementVerification;
+    private static NativeMobilityVerification mobilityVerification;
     public static volatile boolean trainingReady,trainingUiClicked;
     private static boolean trainingStarted,trainingReload;
     private static String trainedHash;
@@ -130,6 +131,10 @@ public final class NativeFixture {
         }
     }
     private static void packed(MinecraftServer server, EntityPlayerMP human) throws Exception {
+        if(Boolean.getBoolean("divzero.legacyMobilityFixture")){
+            if(mobilityVerification==null)mobilityVerification=new NativeMobilityVerification(evidence);
+            if(mobilityVerification.tick(NativeDuel.session(human),server.getTickCounter())){evidence.addProperty("source","FIXTURE_ONLY");complete(server,true,"NATIVE_MOBILITY_SECONDARY_PASSED");}return;
+        }
         if(Boolean.getBoolean("divzero.legacyPlacementFixture")){
             if(placementVerification==null)placementVerification=new NativePlacementVerification(human,evidence);
             if(placementVerification.tick(NativeDuel.session(human),server.getTickCounter())){evidence.addProperty("source","FIXTURE_ONLY");complete(server,true,"NATIVE_RESTART_PLACEMENT_PASSED");}return;
