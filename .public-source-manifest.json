@@ -4614,8 +4614,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainRecovery.java",
-      "sha256": "4bd1423bedb6375203695d812ae4d5703101c60110a6231d5debfa99b063d4f0",
-      "bytes": 21923
+      "sha256": "bfd54335f3a19d6a31f128f53d255de68e6415dda3eeac8d4e98b14d14c62b55",
+      "bytes": 22059
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTraversalEvaluator.java",
@@ -6469,8 +6469,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPositioning.java",
-      "sha256": "f4f1a9df83aff4c37837b62a9853978d875f4c04c9ba7cb7dd28e122b1c5176d",
-      "bytes": 32245
+      "sha256": "8cdf5e7626d07c044ec0e176260587e821c5de617015e25929dc122edd6c010a",
+      "bytes": 32281
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatPrediction.java",
@@ -6519,8 +6519,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ModernPvpVerification.java",
-      "sha256": "983ec26d323e550f32c4ca50feffe47e9d7a2d6322fddf1d352ae1cceaa5a252",
-      "bytes": 9460
+      "sha256": "c63cfca57d2f093e86b55f747d62e89ef48bcd7fda9bdac382057c423c720977",
+      "bytes": 10214
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/MovementSkills.java",

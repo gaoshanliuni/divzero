@@ -22,6 +22,7 @@ final class ModernPvpVerification {
         if(!Boolean.getBoolean("mineagent.modernPvpFixture")||!Files.isRegularFile(Path.of("human-duel-instance.json")))return;
         int tick=ai.level().getServer().getTickCount();
         try{
+            if(tick%10==0){var state=new LinkedHashMap<String,Object>();state.put("phase",phase);state.put("tick",tick);state.put("position",ai.position().toString());state.put("grounded",ai.onGround());state.put("held",ai.getMainHandItem().toString());state.put("wool",ai.getInventory().countItem(Items.LIGHT_BLUE_WOOL));state.put("movement",ai.movementController().evidence());Files.writeString(viewer.level().getServer().getServerDirectory().resolve("modern-pvp-progress.json"),new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(state));}
             viewer.setInvulnerable(true);
             if(phase==0){
                 SkillRuntime.cancelForBody(viewer,ai.agentId());
@@ -82,7 +83,7 @@ final class ModernPvpVerification {
     private static void place(MineAgentPlayer p,Vec3 at){p.teleportTo(p.level(),at.x,at.y,at.z,Set.of(),0,0,true);p.setDeltaMovement(Vec3.ZERO);p.fallDistance=0;p.setOnGround(true);}
     private static void require(boolean pass,String message){if(!pass)throw new IllegalStateException(message);}
     private static void finish(ServerPlayer p,MineAgentPlayer ai,String status,String error){
-        done=true;ai.movementController().stop();ai.stopUsingItem();ai.controls().release(TOKEN);RESULTS.put("source","FIXTURE_ONLY");RESULTS.put("status",status);RESULTS.put("error",error);RESULTS.put("phase",phase);
+        RESULTS.put("failureMovementBeforeStop",ai.movementController().evidence());done=true;ai.movementController().stop();ai.stopUsingItem();ai.controls().release(TOKEN);RESULTS.put("source","FIXTURE_ONLY");RESULTS.put("status",status);RESULTS.put("error",error);RESULTS.put("phase",phase);RESULTS.put("finalPosition",ai.position().toString());RESULTS.put("finalMovement",ai.movementController().evidence());
         try{Files.writeString(p.level().getServer().getServerDirectory().resolve("modern-pvp-fixture.json"),new com.fasterxml.jackson.databind.ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(RESULTS));}catch(Exception e){throw new IllegalStateException(e);}
         NativeHumanDuel.command(p,"stop");
     }
