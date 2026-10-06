@@ -4154,8 +4154,8 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeFixture.java",
-      "sha256": "ef99141737ec7e1d7b25bf09e97fbe2f6406472339e7e593d67729770f67cec2",
-      "bytes": 19078
+      "sha256": "f5313c76ebfa13571a2b67d5822f09f71ff70136cc546a855d861b7ba02b42c9",
+      "bytes": 19543
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeGuiHandler.java",
@@ -4171,6 +4171,11 @@
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativeOffhand.java",
       "sha256": "032b3ac5b473f8a332088190b1ac7fb3dee639cef7c18390f8221adddb980bb7",
       "bytes": 6192
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativePlacementVerification.java",
+      "sha256": "7697617bcb5b286c83eeda07b709aeb5a45c90337e2979159077b780e6e5cdba",
+      "bytes": 4610
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/NativePredictionVerification.java",
@@ -4224,8 +4229,13 @@
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/NativeClientFixture.java",
-      "sha256": "365815bc0b13ae18b9b719e13e71caa57eeccb7ffd1a02ce54614054893b1914",
-      "bytes": 12691
+      "sha256": "e068d8084a5863c2d1177b5636f25b412f004ce7f46a2932b4aa10737d41f769",
+      "bytes": 12811
+    },
+    {
+      "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/PlacementClientFixture.java",
+      "sha256": "c7ce439573db03f860f1a7aae803c55e4c29166f7db0442752ec01db5d89d874",
+      "bytes": 2893
     },
     {
       "path": "legacy189/game/src/main/java/dev/mineagent/runtime/legacy189/client/PredictionClientFixture.java",
@@ -4419,8 +4429,8 @@
     },
     {
       "path": "legacy189/tools/run_native.py",
-      "sha256": "8a4a595d75529f6a73a81cae9f73589240e9c1c1dc1a09767dd7425c536a34d5",
-      "bytes": 14318
+      "sha256": "28bfedf094cbcf9cf274194dc3c3a7d0aefcd3e5a713d713a5b57d26a94096db",
+      "bytes": 14723
     },
     {
       "path": "neoforge/build.gradle",
