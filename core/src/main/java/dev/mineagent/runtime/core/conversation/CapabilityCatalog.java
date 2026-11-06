@@ -56,9 +56,9 @@ public final class CapabilityCatalog {
         group("host",dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled()?"本机 Python、程序和依赖操作":"此版本不支持Python",
             "仅处理玩家明确提出的电脑操作（运行Python、处理本机文件、打开应用等）。不能把制作游戏物品、实体、建筑或界面自动转换为本机编程任务；此时使用content/items/entities/building/ui。电脑操作与 Minecraft 命令、服务器 OP 完全分离。先 inspect_host；只在支持的本机身份与原生代码确认下执行。使用 Java 管理的专用 Python 环境，不让服务器静默执行客户端机器命令。读取真实进程回执和输出，失败/未知不盲目重放。",
             dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled()?"inspect_host read_host_output python_execute python_install_packages":""),
-        group("rules","互动回调、推土机与方块纹理替换",
-            "上锁等交互必须使用实际回调规则，不改提示或换门冒充。推土机需要明确作用域，核对真实清除计数，结束后停止，不把空心建筑当自动清场。纹理替换先查来源和实际纹理，再等真实图集像素校验，下载成功不等于换肤成功。",
-            "inspect_interaction_rules set_interaction_rule delete_interaction_rule inspect_bulldozers set_bulldozer control_bulldozer inspect_block_textures set_block_texture clear_block_texture"),
+        group("rules","原生事件能力、互动回调、推土机与方块纹理替换",
+            "可复用原版事件能力先inspect_event_abilities查询实际支持的事件和动作，define_event_ability保存模板，bind_event_ability绑定对象，control_event_ability管理启停和解绑；沿用真实权限及版本检查，不用Python，不每次事件调用大模型，不假装任意原版代码均可改写。上锁等交互必须使用实际回调规则，不改提示或换门冒充。推土机需要明确作用域，核对真实清除计数，结束后停止，不把空心建筑当自动清场。纹理替换先查来源和实际纹理，再等真实图集像素校验，下载成功不等于换肤成功。",
+            "inspect_event_abilities define_event_ability bind_event_ability control_event_ability inspect_interaction_rules set_interaction_rule delete_interaction_rule inspect_bulldozers set_bulldozer control_bulldozer inspect_block_textures set_block_texture clear_block_texture"),
         group("chat","聊天显示、颜色、思考展示与默认响应设置",
             "保留原生点击动作、签名消息和完整 F2 历史。显示设置只改变展示，不改原文字；时间放在悬停中。只展示 Provider 实际返回的思考，不制造缺失内容。默认响应和公开消息按当前玩家及 AI 权限设置。",
             "inspect_chat_messages set_chat_messages inspect_chat_settings set_chat_settings send_chat_message set_chat_color")

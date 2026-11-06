@@ -11,7 +11,7 @@ import java.util.function.BooleanSupplier;
 /** A unified catalog over existing owner-scoped stores, without inventing packages or changing ownership. */
 final class ServerCreatedContents {
     private static final ObjectMapper JSON=new ObjectMapper();
-    static final List<String> TYPES=List.of("packages","creatures","native_entities","entity_rules","interaction_rules");
+    static final List<String> TYPES=List.of("packages","creatures","native_entities","entity_rules","interaction_rules","event_abilities");
     private ServerCreatedContents(){}
     static CompletableFuture<Map<String,Object>> handle(ServerPlayer p,UUID operation,Map<String,String> args,boolean write,BooleanSupplier permit)throws Exception{
         String kind=args.get("kind"),type=args.get("type");
@@ -34,14 +34,16 @@ final class ServerCreatedContents {
         if(kind.equals("save")){
             ServerWorkspaceModules.keys(args,"module","kind","type","id","revision","source");var node=JSON.createObjectNode().put("source",args.get("source")).put("expected_revision",expected);
             return switch(type){
-                case "creatures"->CompletableFuture.completedFuture(RuntimeCreatures.define(p,operation,node.put("species_id",id.toString())));
+                case "creatures"->CreatureModelAssets.define(p,null,operation,node.put("species_id",id.toString()),permit);
                 case "native_entities"->NativeEntityTemplates.define(p,operation,node.put("template_id",id.toString()));
                 case "entity_rules"->{String ruleKind=ServerEntityInterop.ownedRules(p).stream().filter(r->r.id().equals(id)).findFirst().orElseThrow().kind();yield ServerEntityInterop.set(p,operation,node.put("rule_id",id.toString()),ruleKind,false);}
+                case "event_abilities"->CompletableFuture.completedFuture(ServerEventAbilities.define(p,operation,node.put("ability_id",id.toString())));
                 case "interaction_rules"->CompletableFuture.completedFuture(ServerInteractionRules.set(p,operation,node.put("rule_id",id.toString()),false));
                 default->throw new IllegalArgumentException("CONTENT_TYPE");
             };
         }
         ServerWorkspaceModules.keys(args,"module","kind","type","id","revision");
+        if(kind.equals("delete")&&type.equals("event_abilities"))return CompletableFuture.completedFuture(ServerEventAbilities.control(p,JSON.createObjectNode().put("ability_id",id.toString()).put("expected_revision",expected).put("action","remove")));
         if(kind.equals("delete")&&type.equals("entity_rules"))return ServerEntityInterop.set(p,operation,JSON.createObjectNode().put("rule_id",id.toString()).put("expected_revision",expected),"logic",true);
         if(kind.equals("delete")&&type.equals("interaction_rules"))return CompletableFuture.completedFuture(ServerInteractionRules.set(p,operation,JSON.createObjectNode().put("rule_id",id.toString()).put("expected_revision",expected),true));
         if(kind.equals("preview")&&type.equals("creatures"))return ServerPreviews.open(p,null,JSON.createObjectNode().put("kind","creature").put("species_id",id.toString()).put("expected_revision",expected),permit);
@@ -53,6 +55,7 @@ final class ServerCreatedContents {
         var rows=new ArrayList<Map<String,Object>>();
         if(type.equals("native_entities"))for(var template:NativeEntityTemplates.ownedTemplates(p)){var definition=template.definition();rows.add(Map.of("id",template.id(),"revision",template.revision(),"name",definition.name(),"target",definition.type(),"state","SAVED"));}
         else if(type.equals("entity_rules"))for(var rule:ServerEntityInterop.ownedRules(p))rows.add(rule(rule.id(),rule.revision(),rule.source(),rule.kind()));
+        else if(type.equals("event_abilities"))for(var ability:ServerEventAbilities.owned(p))rows.add(rule(ability.id(),ability.revision(),ability.source(),"ability"));
         else if(type.equals("interaction_rules"))for(var rule:ServerInteractionRules.ownedRules(p))rows.add(rule(rule.id(),rule.revision(),rule.source(),"interaction"));
         else throw new IllegalArgumentException("CONTENT_TYPE");
         return ServerWorkspaceModules.page(rows.stream().filter(r->(r.get("name")+" "+r.get("id")+" "+r.get("target")).toLowerCase(Locale.ROOT).contains(query)).sorted(Comparator.comparing(r->r.get("id").toString())).toList(),offset);
@@ -64,6 +67,7 @@ final class ServerCreatedContents {
             case "creatures"->{var value=RuntimeCreatures.get(p.level().getServer()).get(p.getUUID(),id).orElseThrow(()->new SecurityException("CONTENT_NOT_OWNED"));source=value.source();current=value.revision();}
             case "native_entities"->{var value=NativeEntityTemplates.ownedTemplates(p).stream().filter(r->r.id().equals(id)).findFirst().orElseThrow(()->new SecurityException("CONTENT_NOT_OWNED"));source=value.source();current=value.revision();}
             case "entity_rules"->{var value=ServerEntityInterop.ownedRules(p).stream().filter(r->r.id().equals(id)).findFirst().orElseThrow(()->new SecurityException("CONTENT_NOT_OWNED"));source=value.source();current=value.revision();}
+            case "event_abilities"->{var value=ServerEventAbilities.owned(p).stream().filter(r->r.id().equals(id)).findFirst().orElseThrow(()->new SecurityException("CONTENT_NOT_OWNED"));source=value.source();current=value.revision();}
             case "interaction_rules"->{var value=ServerInteractionRules.ownedRules(p).stream().filter(r->r.id().equals(id)).findFirst().orElseThrow(()->new SecurityException("CONTENT_NOT_OWNED"));source=value.source();current=value.revision();}
             default->throw new IllegalArgumentException("CONTENT_TYPE");
         }

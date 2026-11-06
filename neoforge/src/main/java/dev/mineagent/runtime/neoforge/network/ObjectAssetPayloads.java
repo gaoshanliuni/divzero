@@ -24,13 +24,23 @@ public final class ObjectAssetPayloads {
         @Override public Type<Chunk> type(){return TYPE;}
     }
     private static final Map<ServerPlayer,long[]> rate=new WeakHashMap<>();
-    public static void register(RegisterPayloadHandlersEvent event){var r=event.registrar("object-assets-1");r.playToServer(Request.TYPE,Request.CODEC,(p,c)->c.enqueueWork(()->send((ServerPlayer)c.player(),p)));r.playToClient(Chunk.TYPE,Chunk.CODEC);}
+    public static void register(RegisterPayloadHandlersEvent event){var r=event.registrar("object-assets-2");r.playToServer(Request.TYPE,Request.CODEC,(p,c)->c.enqueueWork(()->send((ServerPlayer)c.player(),p)));r.playToClient(Chunk.TYPE,Chunk.CODEC);}
     private static void send(ServerPlayer viewer,Request p){
         String error="OBJECT_ASSET_UNAVAILABLE";
         try{
             if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(viewer.level().getServer()))throw new IllegalStateException("WORLD_IDENTITY_NOT_READY");
             if(viewer instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)throw new SecurityException();long tick=viewer.level().getServer().getTickCount();var window=rate.computeIfAbsent(viewer,k->new long[]{tick,0});if(tick-window[0]>=20){window[0]=tick;window[1]=0;}if(++window[1]>96)throw new IllegalStateException("OBJECT_RATE_LIMIT");
-            var entity=viewer.level().getEntity(p.entity());if(!(entity instanceof RuntimeObjectEntity object)||object.header()==null||!object.header().asset().equals(p.hash())||viewer.distanceToSqr(object)>128*128)throw new SecurityException();
+            var entity=viewer.level().getEntity(p.entity());
+            if(entity instanceof RuntimeCreatureEntity creature){
+                if(viewer.distanceToSqr(creature)>256*256||creature.definition()==null||!creature.definition().modelAssets().containsValue(p.hash()))throw new SecurityException();
+                var server=viewer.level().getServer();var level=viewer.level();
+                dev.mineagent.runtime.neoforge.ui.CreatureModelAssets.read(server,creature,p.hash()).whenComplete((bundle,failed)->server.execute(()->{
+                    if(server.getPlayerList().getPlayer(viewer.getUUID())!=viewer||viewer.level()!=level)return;
+                    try{if(failed!=null||!creature.isAlive()||creature.definition()==null||!creature.definition().modelAssets().containsValue(p.hash())||viewer.distanceToSqr(creature)>256*256)throw new IllegalStateException();PacketDistributor.sendToPlayer(viewer,new Chunk(p.request(),p.entity(),p.hash(),bundle.size(),p.offset(),bundle.chunk(p.offset(),24576),""));}
+                    catch(Exception invalid){PacketDistributor.sendToPlayer(viewer,new Chunk(p.request(),p.entity(),p.hash(),0,0,new byte[0],"CREATURE_ASSET_UNAVAILABLE"));}
+                }));return;
+            }
+            if(!(entity instanceof RuntimeObjectEntity object)||object.header()==null||!object.header().asset().equals(p.hash())||viewer.distanceToSqr(object)>128*128)throw new SecurityException();
             var bundle=WorldContentRuntime.get(viewer.level().getServer()).objectBundle(object);var bytes=bundle.chunk(p.offset(),24576);PacketDistributor.sendToPlayer(viewer,new Chunk(p.request(),p.entity(),p.hash(),bundle.size(),p.offset(),bytes,""));return;
         }catch(Exception failed){if("OBJECT_RATE_LIMIT".equals(failed.getMessage()))error="OBJECT_RATE_LIMIT";}
         PacketDistributor.sendToPlayer(viewer,new Chunk(p.request(),p.entity(),p.hash(),0,0,new byte[0],error));

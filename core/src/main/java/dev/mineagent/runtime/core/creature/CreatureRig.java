@@ -21,16 +21,20 @@ public final class CreatureRig {
             if (!n.path("pivot").isArray() || n.path("pivot").size() != 3) throw new IllegalArgumentException("CREATURE_RIG_PIVOT");
             for (var x : n.path("pivot")) {
                 double v=x.asDouble();
-                if (!x.isNumber() || !Double.isFinite(v) || Math.abs(v)>16) throw new IllegalArgumentException("CREATURE_RIG_PIVOT");
+                if (!x.isNumber() || !Double.isFinite(v) || Math.abs(v)>RuntimeMesh.MAX_AXIS) throw new IllegalArgumentException("CREATURE_RIG_PIVOT");
                 pivot.add(v);
             }
             RuntimeMesh mesh = n.has("model") ? RuntimeMesh.parse(n.get("model").toString()) : null;
             if (mesh != null) {
-                if (!mesh.texture().isEmpty() || mesh.physics().dynamic()) throw new IllegalArgumentException("CREATURE_RIG_MODEL");
+                if (mesh.physics().dynamic()) throw new IllegalArgumentException("CREATURE_RIG_MODEL");
                 vertices+=mesh.vertices().size();triangles+=mesh.triangles().size();
                 if(vertices>RuntimeMesh.MAX_VERTICES || triangles>RuntimeMesh.MAX_TRIANGLES) throw new IllegalArgumentException("CREATURE_RIG_BUDGET");
             }
             names.add(name);out.add(new Bone(name,parent,List.copyOf(pivot),mesh));
+        }
+        var origins=new HashMap<String,double[]>();double[] low={Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY},high={Double.NEGATIVE_INFINITY,Double.NEGATIVE_INFINITY,Double.NEGATIVE_INFINITY};
+        for(var bone:out){var parent=origins.getOrDefault(bone.parent(),new double[3]);double[] origin={parent[0]+bone.pivot().get(0),parent[1]+bone.pivot().get(1),parent[2]+bone.pivot().get(2)};origins.put(bone.name(),origin);
+            if(bone.mesh()!=null)for(var v:bone.mesh().vertices()){double[] xyz={origin[0]+v.x(),origin[1]+v.y(),origin[2]+v.z()};for(int axis=0;axis<3;axis++){low[axis]=Math.min(low[axis],xyz[axis]);high[axis]=Math.max(high[axis],xyz[axis]);if(Math.abs(xyz[axis])>RuntimeMesh.MAX_AXIS||high[axis]-low[axis]>RuntimeMesh.MAX_AXIS+1e-5)throw new IllegalArgumentException("CREATURE_RIG_BOUNDS at bones."+bone.name()+": combined rest-pose extent exceeds 100 blocks");}}
         }
         return List.copyOf(out);
     }

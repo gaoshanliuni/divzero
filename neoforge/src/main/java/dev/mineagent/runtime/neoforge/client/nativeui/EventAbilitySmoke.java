@@ -1,0 +1,32 @@
+package dev.mineagent.runtime.neoforge.client.nativeui;
+import com.fasterxml.jackson.databind.*;import dev.mineagent.runtime.neoforge.ui.*;import net.minecraft.client.Minecraft;import net.minecraft.server.level.ServerPlayer;import net.minecraft.world.item.*;import net.minecraft.world.level.GameType;import java.util.*;import java.util.concurrent.*;import java.util.function.*;
+/** Zero-model native regression; enabled only by an isolated fixture launcher. */
+public final class EventAbilitySmoke {
+ private static final ObjectMapper JSON=new ObjectMapper();private static UUID agent,ability,binding;private static final List<Object> evidence=new ArrayList<>();
+ private static <T> CompletableFuture<T> server(Function<ServerPlayer,T> f){var mc=Minecraft.getInstance();var s=mc.getSingleplayerServer();var owner=mc.player.getUUID();return s.submit(()->f.apply(s.getPlayerList().getPlayer(owner)));}
+ private static void check(boolean ok,String why){if(!ok)throw new IllegalStateException(why);}
+ private static CompletableFuture<Map<String,Object>> tool(String name,Map<String,Object> args){return server(p->{try{return ConversationAgentTools.execute(p,agent,UUID.randomUUID(),name,JSON.writeValueAsString(args),()->true);}catch(Exception e){throw new CompletionException(e);}}).thenCompose(f->f).thenApply(r->{evidence.add(Map.of("tool",name,"receipt",r));return r;});}
+ private static String source(String event,Map<String,Object> action){try{return JSON.writeValueAsString(Map.of("name","Native ability fixture","events",List.of(event),"decision","continue","on_allowed",List.of(action)));}catch(Exception e){throw new CompletionException(e);}}
+ private static CompletableFuture<Map<String,Object>> define(String source){return tool("define_event_ability",Map.of("source",source)).thenApply(r->{check("APPLIED".equals(r.get("status")),"DEFINE_"+r);ability=UUID.fromString(r.get("abilityId").toString());return r;});}
+ private static CompletableFuture<Map<String,Object>> bind(){return server(p->p.getUUID()).thenCompose(owner->tool("bind_event_ability",Map.of("ability_id",ability,"ability_revision",1,"entity_id",owner))).thenApply(r->{check("APPLIED".equals(r.get("status")),"BIND_"+r);binding=UUID.fromString(r.get("bindingId").toString());return r;});}
+ public static CompletableFuture<Map<String,Object>> run(UUID id){
+  if(!Boolean.getBoolean("mineagent.skillSmoke")||!System.getProperty("mineagent.skillSmokeMode","").equals("event_abilities"))throw new IllegalStateException("SMOKE_DISABLED");agent=id;
+  return server(p->{p.level().getServer().getPlayerList().op(p.nameAndId());p.setGameMode(GameType.SURVIVAL);p.getInventory().clearContent();p.removeAllEffects();p.setHealth(20);return true;})
+  .thenCompose(v->define(source("living_jump",Map.of("type","effect","id","minecraft:speed","level",2,"duration_ticks",100))))
+  .thenCompose(v->bind()).thenCompose(v->server(p->{p.jumpFromGround();check(p.hasEffect(net.minecraft.world.effect.MobEffects.SPEED),"NATIVE_JUMP_NO_EFFECT");return true;}))
+  .thenCompose(v->tool("define_event_ability",Map.of("ability_id",ability,"expected_revision",1,"source",source("living_jump",Map.of("type","damage_scale","value",.5)))))
+  .thenCompose(r->{check("REJECTED".equals(r.get("status")),"INVALID_CANDIDATE_ACCEPTED");check(r.toString().contains("on_allowed[0]"),"NO_FIELD_DIAGNOSTIC_"+r);return tool("inspect_event_abilities",Map.of());})
+  .thenCompose(r->{check(r.toString().contains("revision=1"),"FAILED_EDIT_REPLACED_ACTIVE");return tool("control_event_ability",Map.of("ability_id",ability,"expected_revision",1,"action","disable"));})
+  .thenCompose(v->server(p->{p.removeAllEffects();p.jumpFromGround();check(!p.hasEffect(net.minecraft.world.effect.MobEffects.SPEED),"DISABLED_ABILITY_STILL_EXECUTES");return true;}))
+  .thenCompose(v->tool("control_event_ability",Map.of("ability_id",ability,"expected_revision",2,"action","remove")))
+  .thenCompose(v->define(source("incoming_damage",Map.of("type","damage_scale","value",.5)))).thenCompose(v->bind())
+  .thenCompose(v->server(p->{p.invulnerableTime=0;p.setHealth(20);p.hurtServer(p.level(),p.damageSources().generic(),4);check(Math.abs(p.getHealth()-18)<.01,"NATIVE_DAMAGE_SCALE_"+p.getHealth());return true;}))
+  .thenCompose(v->tool("control_event_ability",Map.of("binding_id",binding,"expected_revision",1,"action","remove")))
+  .thenCompose(v->server(p->{p.invulnerableTime=0;p.setHealth(20);p.hurtServer(p.level(),p.damageSources().generic(),4);check(Math.abs(p.getHealth()-16)<.01,"UNBIND_DID_NOT_RESTORE_DAMAGE");return true;}))
+  .thenCompose(v->define(source("item_use_start",Map.of("type","use_duration","value",8)))).thenCompose(v->bind())
+  .thenCompose(v->server(p->{p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,new ItemStack(Items.APPLE));p.getFoodData().setFoodLevel(6);p.startUsingItem(net.minecraft.world.InteractionHand.MAIN_HAND);check(p.getUseItemRemainingTicks()==8,"NATIVE_USE_DURATION_"+p.getUseItemRemainingTicks());p.stopUsingItem();return true;}))
+  .thenCompose(v->tool("control_event_ability",Map.of("ability_id",ability,"expected_revision",1,"action","remove")))
+  .thenCompose(v->server(p->{try{var pos=p.blockPosition().offset(2,0,0);p.level().setBlock(pos,net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(),3);String src=JSON.writeValueAsString(Map.of("position",List.of(pos.getX(),pos.getY(),pos.getZ()),"events",List.of("block_break"),"key_item","minecraft:stick"));var rule=ServerInteractionRules.set(p,UUID.randomUUID(),JSON.createObjectNode().put("source",src),false);p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,ItemStack.EMPTY);check(ServerInteractionRules.denied(p,pos,null,"block_break",true),"LOCK_MISSING");p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,new ItemStack(Items.STICK));check(!ServerInteractionRules.denied(p,pos,null,"block_break",true),"KEY_CANNOT_BYPASS");p.setGameMode(GameType.CREATIVE);return Map.<String,Object>of("status","PASS","paidModelCalls",0,"nativeJump",true,"nativeDamage",true,"nativeUseDuration",true,"failedCandidatePreserved",true,"disableAndUnbind",true,"keyRuleRegression",true,"evidence",evidence);}catch(Exception e){throw new CompletionException(e);}}));
+ }
+ private EventAbilitySmoke(){}
+}

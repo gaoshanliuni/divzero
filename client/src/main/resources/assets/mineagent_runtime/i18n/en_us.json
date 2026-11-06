@@ -129,7 +129,7 @@
   "AI 接管本人 · ": "AI Takeover self · ",
   "AI 接管本人 · 审核完整操作计划": "AI Takeover self · Review full action plan",
   "AI 数量已达上限。": "AI count has reached the limit.",
-  "AI 模型": "AI Model",
+  "AI 模型": "AI model",
   "AI 正在判断悬浮方式；将调用当前配置模型，不重复请求。": "AI is determining pin method; will call the currently configured model, without duplicate requests.",
   "AI 玩家": "AI players",
   "AI 玩家: ": "AI Player: ",
@@ -3525,5 +3525,14 @@
   "已安排：退出游戏后修复 Python，工作目录和历史记录会保留。": "Scheduled: repair Python after exit, preserving the workspace and operation history.",
   "仅本机当前账号执行；输出返回 AI。首次从模组内本地解压完整 Python 与固定库并校验，无需联网下载解释器；可点停止。": "Runs for this local account; output is returned to AI. Full Python and pinned libraries are extracted from the Mod and verified locally, with no interpreter download. You can stop it.",
   "第二物品": "Secondary item",
-  "补给物品": "Supplies"
+  "补给物品": "Supplies",
+  "AI 玩家模型": "AI player models",
+  "分别设置每个 AI 的模型，可使用列表外模型 ID。": "Choose a model for each AI; custom IDs are supported.",
+  "设置此 AI 的模型": "Set this AI model",
+  "Python 环境": "Python environment",
+  "已有环境直接复用；修复在退出游戏后执行，保留脚本与输出。": "Reuse the installed environment. Repair runs after exit and preserves scripts and output.",
+  "退出后修复 Python 环境": "Repair Python after exit",
+  "请在本机单人世界中安排修复。": "Schedule repair from a local singleplayer world.",
+  "[本机 Python] 正在执行已确认的请求…": "[Local Python] Executing the approved request…",
+  "原生事件能力": "Native event abilities"
 }

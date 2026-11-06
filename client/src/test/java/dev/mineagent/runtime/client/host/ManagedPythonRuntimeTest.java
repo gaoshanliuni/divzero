@@ -14,4 +14,10 @@ class ManagedPythonRuntimeTest {
   assertEquals("\\\\?\\UNC\\server\\share\\python.exe",ManagedPythonRuntime.commandPath(Path.of("\\\\server\\share\\python.exe")));
   var module=ManagedPythonRuntime.process(java.util.List.of(path.toString(),"-I","-B","-X","utf8","-m","pip","--version"),root).command();assertEquals("-c",module.get(5));assertEquals(java.util.List.of("-m","pip","--version"),module.subList(7,module.size()));
  }
+
+ @Test void existingEnvironmentUsesPresenceChecksWithoutHashingInstalledLibraries()throws Exception{
+  org.junit.jupiter.api.Assumptions.assumeTrue(ManagedPythonRuntime.supported());var runtime=new ManagedPythonRuntime(root);runtime.prepareRoot();Path base=Path.of(runtime.inspect().get("runtimeDirectory").toString());String env="env-12345",vendor="runtime-"+ManagedPythonRuntime.VERSION+"-"+ManagedPythonRuntime.RELEASE;
+  for(String file:java.util.List.of(env+"/Scripts/python.exe",env+"/pyvenv.cfg",vendor+"/python/python.exe",vendor+"/python/python313.dll",vendor+"/installed.json")){Path target=base.resolve(file);Files.createDirectories(target.getParent());Files.writeString(target,"fixture content, not executed");}
+  Files.writeString(base.resolve("ready-"+runtime.bundleId()+".json"),"{\"directory\":\""+env+"\",\"bundleId\":\""+runtime.bundleId()+"\"}");var phases=new java.util.ArrayList<String>();assertEquals(base.resolve(env+"/Scripts/python.exe"),runtime.ensure(()->true,phases::add));assertTrue(phases.isEmpty(),"already prepared environments must not be rehashed");
+ }
 }

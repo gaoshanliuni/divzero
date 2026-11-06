@@ -45,6 +45,6 @@ class JavaMaintenanceTest {
     }
     @Test void repairKeepsScriptsAndHistoryAndNeverFollowsPointerOutsideRoot()throws Exception{
         org.junit.jupiter.api.Assumptions.assumeTrue(dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled());Path root=Files.createDirectories(PythonMaintenance.runtimeRoot(game));Files.writeString(root.resolve("game.owner"),game.toRealPath().toString());Path user=Files.createDirectories(game.resolve("mineagent-host/workspace"));Files.writeString(user.resolve("player.py"),"preserved");String bundle="a".repeat(64);Files.writeString(root.resolve("environment-"+bundle+".json"),"{\"directory\":\"../world\",\"bundleId\":\""+bundle+"\"}");
-        assertEquals("REPAIR_STAGED_FOR_NEXT_USE",PythonMaintenance.repair(game,bundle).get("status"));assertEquals("preserved",Files.readString(user.resolve("player.py")));assertFalse(Files.exists(root.resolve("environment-"+bundle+".json")));
+        Files.writeString(root.resolve("ready-"+bundle+".json"),"{}");assertEquals("REPAIR_STAGED_FOR_NEXT_USE",PythonMaintenance.repair(game,bundle).get("status"));assertFalse(Files.exists(root.resolve("ready-"+bundle+".json")));assertEquals("preserved",Files.readString(user.resolve("player.py")));assertFalse(Files.exists(root.resolve("environment-"+bundle+".json")));
     }
 }

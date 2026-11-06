@@ -48,7 +48,7 @@ public final class CapabilitySession {
         if(act&&matches(text,"文件|上传|下载|file|upload|download"))chosen.add("files");
         if(matches(text,"网上|上网|联网|搜索|网页|图片|search|website|web page"))chosen.add("web");
         if(GameContentRouting.hostRequested(text))chosen.add("host");
-        if(act&&matches(text,"推土机|贴图|纹理|回调|上锁|bulldozer|texture|callback|lock"))chosen.add("rules");
+        if(act&&matches(text,"原版事件|事件能力|跳跃效果|受到伤害|推土机|贴图|纹理|回调|上锁|bulldozer|texture|callback|lock"))chosen.add("rules");
         if(act&&matches(text,"聊天|消息|思考|默认响应|chat|message|thinking"))chosen.add("chat");
         if(act&&matches(text,"命令|游戏规则|容器|箱子|方块|坐标|世界状态|command|gamerule|container|chest|block|coordinates"))chosen.add("world");
         // Stable catalog order for initial preloads; later discoveries append without reshuffling existing tools.

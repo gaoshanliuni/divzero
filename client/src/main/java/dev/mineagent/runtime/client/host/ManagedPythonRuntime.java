@@ -79,6 +79,7 @@ else:
    Path runtime=root.resolve("runtime-"+VERSION+"-"+RELEASE),proof=runtime.resolve("installed.json");
    try(var lease=java.nio.channels.FileChannel.open(safe(root,"runtime.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);var lock=lease.tryLock()){
    if(lock==null)throw new IOException("PYTHON_RUNTIME_IN_USE");
+   Path existing=existingEnvironment(runtime);if(existing!=null){current(live);return existing;}
    if(!Files.exists(runtime,LinkOption.NOFOLLOW_LINKS)){
     Path cache=safe(root,"cache");Files.createDirectories(cache);Path archive=cache.resolve(SHA256+".tar.gz");
     if(!Files.exists(archive,LinkOption.NOFOLLOW_LINKS)){progress.accept("READING_BUNDLED_RUNTIME");if(archiveSource!=null){verifyArchive(archiveSource);Files.copy(archiveSource,archive);}else BundledPythonResources.copyRuntime(archive,live);}
@@ -106,10 +107,24 @@ else:
    var configuration=new HashMap<String,String>();for(String line:Files.readAllLines(cfg)){int i=line.indexOf('=');if(i>0)configuration.put(line.substring(0,i).strip(),line.substring(i+1).strip());}if(!"false".equals(configuration.get("include-system-site-packages"))||!Path.of(configuration.getOrDefault("home","")).toRealPath().equals(base.getParent().toRealPath()))throw new IOException("PYTHON_ENV_CONFIGURATION_CHANGED");
    var installed=JSON.readTree(Files.readString(pointer));if(!installed.path("files").isObject()||installed.path("files").size()<100)throw new IOException("PYTHON_ENV_PROOF_INVALID");
    for(var entry:installed.path("files").properties()){current(live);var file=safe(env,entry.getKey());if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)||!hash(file).equals(entry.getValue().asText()))throw new IOException("PYTHON_ENV_INTEGRITY_FAILED");}
-   BundledPythonResources.wheels(root,live);current(live);return exe;
+   BundledPythonResources.wheels(root,live);writeReady(env);current(live);return exe;
    }
   }
  }
+ /** Normal use checks owned paths and required files, never rehashes the installed distribution. */
+ private Path existingEnvironment(Path runtime)throws Exception{
+  Path ready=root.resolve("ready-"+BundledPythonResources.ID+".json"),pointer=pointer();
+  if(!Files.exists(ready,LinkOption.NOFOLLOW_LINKS)&&!Files.exists(pointer,LinkOption.NOFOLLOW_LINKS))return null;
+  Path record=Files.exists(ready,LinkOption.NOFOLLOW_LINKS)?ready:pointer;
+  if(!Files.isRegularFile(record,LinkOption.NOFOLLOW_LINKS)||Files.size(record)>4*1024*1024)throw new IOException("PYTHON_ENV_PROOF_INVALID");
+  var state=JSON.readTree(Files.readString(record));String directory=state.path("directory").asText();
+  if(!directory.matches("(?:environment-[a-f0-9-]{36}|env-[0-9]{1,20})")||!BundledPythonResources.ID.equals(state.path("bundleId").asText()))throw new IOException("PYTHON_ENV_PROOF_INVALID");
+  Path env=safe(root,directory),exe=safe(env,"Scripts/python.exe");
+  for(Path file:List.of(exe,safe(env,"pyvenv.cfg"),safe(runtime,"python/python.exe"),safe(runtime,"python/python313.dll"),safe(runtime,"installed.json")))if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS))throw new IOException("PYTHON_ENV_INCOMPLETE");
+  if(!Files.exists(ready,LinkOption.NOFOLLOW_LINKS))writeReady(env);
+  return exe;
+ }
+ private void writeReady(Path env)throws IOException{Files.writeString(root.resolve("ready-"+BundledPythonResources.ID+".json"),JSON.writeValueAsString(Map.of("directory",env.getFileName().toString(),"bundleId",BundledPythonResources.ID)),StandardCharsets.UTF_8,StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);}
  private Path pointer(){return root.resolve("environment-"+BundledPythonResources.ID+".json");}
  public String bundleId(){return BundledPythonResources.ID;}
  public Path constraints(BooleanSupplier live)throws Exception{return BundledPythonResources.wheels(root,live).resolve("constraints.txt");}

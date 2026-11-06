@@ -27,12 +27,17 @@ public final class RuntimeObjectAssets {
         if(entity.header()==null)return null;String hash=entity.header().asset();var old=loaded.get(hash);if(old!=null){loaded.put(hash,new Entry(old.asset(),ticks));return old.asset();}
         if(!errors.containsKey(hash)&&pending.size()<4)pending.computeIfAbsent(hash,k->new Pending(entity.getId(),hash));return null;
     }
+    public static Asset get(dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity entity,String hash){
+        if(hash==null||hash.isEmpty())return null;var old=loaded.get(hash);if(old!=null){loaded.put(hash,new Entry(old.asset(),ticks));return old.asset();}
+        if(!errors.containsKey(hash)&&pending.size()<4)pending.computeIfAbsent(hash,k->new Pending(entity.getId(),hash));return null;
+    }
+    private static boolean bound(net.minecraft.world.entity.Entity entity,String hash){return entity instanceof RuntimeObjectEntity object&&object.header()!=null&&object.header().asset().equals(hash)||entity instanceof dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity creature&&creature.definition()!=null&&creature.definition().modelAssets().containsValue(hash);}
     public static String diagnostic(String hash){return loaded.containsKey(hash)?"READY":errors.getOrDefault(hash,"LOADING");}
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
         ticks++;var mc=Minecraft.getInstance();Object current=mc.getConnection()==null?null:mc.getConnection().getConnection();if(current!=connection){clear();connection=current;}
         if(current==null||mc.level==null)return;int budget=4;
         for(var p:List.copyOf(pending.values())){
-            var e=mc.level.getEntity(p.entity);if(!(e instanceof RuntimeObjectEntity object)||object.header()==null||!object.header().asset().equals(p.hash)){pending.remove(p.hash);continue;}
+            var e=mc.level.getEntity(p.entity);if(!bound(e,p.hash)){pending.remove(p.hash);continue;}
             if(p.waiting&&ticks-p.sent>100){fail(p,"OBJECT_ASSET_TIMEOUT");continue;}
             if(!p.waiting&&budget-->0){p.waiting=true;p.sent=ticks;ClientPacketDistributor.sendToServer(new ObjectAssetPayloads.Request(p.request,p.entity,p.hash,p.bytes.size()));}
         }

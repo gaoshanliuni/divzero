@@ -109,6 +109,7 @@ public final class ConversationAgentTools {
             if(tool.equals("derive_creature_template")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(EntityLogicTools.template(p,args));}
             if(tool.equals("inspect_entity_rules")){keys(args,"offset");return CompletableFuture.completedFuture(ServerEntityInterop.inspectRules(p,args.path("offset").asInt(0)));}
             if(tool.equals("inspect_entity_animation")){keys(args,"entity_id","part_index","offset");return EntityAnimationProbe.request(p,args);}
+            if(tool.equals("inspect_event_abilities")){keys(args,"offset");return CompletableFuture.completedFuture(ServerEventAbilities.inspect(p,args.path("offset").asInt(0)));}
             if(tool.equals("inspect_interaction_rules")){keys(args,"offset");return CompletableFuture.completedFuture(ServerInteractionRules.inspect(p,args.path("offset").asInt(0)));}
             if(tool.equals("inspect_chat_messages")){keys(args);return ServerChatMessageSettings.request(p,null,null,null,permit);}
             if(tool.equals("inspect_chat_settings")){keys(args);return CompletableFuture.completedFuture(ServerChatSettings.inspect(p,agent));}
@@ -216,13 +217,16 @@ public final class ConversationAgentTools {
             case "apply_building"->{keys(a,"id","revision");return ServerBuildings.apply(p,agent,a,permit);}
             case "control_building"->{keys(a,"id","revision","action");return ServerBuildings.control(p,agent,a,text(a,"action",16),permit);}
             case "apply_world_geometry"->{return ConversationWorldGeometry.apply(p,agent,a,permit);}
-            case "define_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.define(p,operation,a);}
+            case "define_creature"->{return CreatureModelAssets.define(p,agent,operation,a,permit);}
             case "control_creature"->{result=dev.mineagent.runtime.neoforge.content.RuntimeCreatures.control(p,a);}
             case "set_entity_rule","set_entity_animation","delete_entity_rule"->{keys(a,"source","rule_id","expected_revision");return ServerEntityInterop.set(p,operation,a,tool.equals("set_entity_animation")?"visual":"logic",tool.equals("delete_entity_rule"));}
             case "define_native_entity"->{keys(a,"source","template_id","expected_revision");return NativeEntityTemplates.define(p,operation,a);}
             case "control_native_entity"->{keys(a,"action","template_id","entity_id","position","encounter","expected_revision");result=NativeEntityTemplates.control(p,operation,a);}
             case "replace_entity_part"->{keys(a,"entity_id","entity_type","part_index","target_part","source_type","source_part","translation","rotation","scale","rule_id","expected_revision");return EntityModelProbe.replace(p,operation,a);}
             case "set_entity_state"->{keys(a,"entity_id","attributes","no_ai","native_action");result=EntityLogicTools.state(p,a);}
+            case "define_event_ability"->{keys(a,"source","ability_id","expected_revision");result=ServerEventAbilities.define(p,operation,a);}
+            case "bind_event_ability"->{keys(a,"ability_id","ability_revision","binding_id","expected_revision","position","entity_id");result=ServerEventAbilities.bind(p,operation,a);}
+            case "control_event_ability"->{keys(a,"ability_id","binding_id","expected_revision","action");result=ServerEventAbilities.control(p,a);}
             case "set_interaction_rule","delete_interaction_rule"->{keys(a,"source","rule_id","expected_revision");result=ServerInteractionRules.set(p,operation,a,tool.equals("delete_interaction_rule"));}
             case "set_chat_settings"->{keys(a,"show_thinking","thinking_depth","default_reply","response_agent");result=ServerChatSettings.set(p,agent,a);}
             case "set_persona"->{keys(a,"expected_revision","text");if(!a.path("expected_revision").canConvertToLong()||!a.path("expected_revision").isIntegralNumber()||a.path("expected_revision").asLong()<0||!a.path("text").isTextual()||a.path("text").asText().length()>8192)throw new IllegalArgumentException("PERSONA_ARGUMENTS");result=ConversationIdentityTools.setPersona(p,agent,operation,a.path("expected_revision").longValue(),a.path("text").textValue());}

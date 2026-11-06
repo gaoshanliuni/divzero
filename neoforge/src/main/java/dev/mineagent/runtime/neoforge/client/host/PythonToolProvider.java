@@ -27,6 +27,7 @@ public final class PythonToolProvider implements HostToolBridge.Provider {
         var result=LocalHostCommands.request(p,request);synchronized(RUNNING){RUNNING.add(new Running(p,agent,operation,current,result));}return result;
     }
     public boolean legacySmokeTick(net.minecraft.server.MinecraftServer server)throws Exception{if(!dev.mineagent.runtime.neoforge.ui.PythonHostSmokeServer.active())return false;dev.mineagent.runtime.neoforge.ui.PythonHostSmokeServer.tick(server);return true;}
+    public boolean repair(){return ClientHostCommands.repair()==1;}
     public Map<String,Object> pending(){return ClientHostCommands.smokePending();}
     public void observe(String tool,JsonNode args,Map<String,Object> result){dev.mineagent.runtime.neoforge.ui.PythonHostSmokeServer.observe(tool,args,result);}
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){synchronized(RUNNING){RUNNING.removeIf(r->{if(r.player.level().getServer()!=event.getServer())return false;if(r.result.isDone())return true;String reason=event.getServer().getPlayerList().getPlayer(r.player.getUUID())!=r.player?"HOST_PLAYER_SESSION_CHANGED":!ServerTaskStart.allowed(r.player,r.agent)?"HOST_PERMISSION_CHANGED":!r.live.getAsBoolean()?"HOST_CONVERSATION_CANCELLED":"";if(!reason.isEmpty())LocalHostCommands.cancel(r.operation,reason);return r.result.isDone();});}}

@@ -38,7 +38,7 @@ public final class WorldContentPrompt {
         模型总展开预算4096顶点/8192三角形，对raw、boxes、所有primitives累加，超限拒绝；不能每个primitive分别取满预算。一个64×32球加三个64×8细圆环可落在总预算内。装饰圆环略露出球面时，必须给centerY留出余量，避免物品几何穿出y=0；collision也按总体尺寸合理声明，保持独立AABB的事实。
         v2同样可混用boxes与自由vertices/triangles。自由顶点可用[x,y,z,u,v]保留平面法线，或[x,y,z,u,v,nx,ny,nz]使用归一化后显式法线。smooth=false可有意保留低多边形效果，但用户要求圆润球面时应为true。不要加入材质shader脚本或任何未声明的primitive字段。
         physics 可省略（静态），或完整写 {dynamic:true,mass:1,gravity:0.04,restitution:0.7,drag:0.99}；重力按20Hz服务端Tick，gravity/restitution/drag为0..1，mass>0且<=10000。最大速度4块/Tick，Native AABB 扫掠碰撞有界分步，不把它描述成任意刚体引擎。
-        texture 可省略（原生白底乘顶点颜色），或指向真实 PNG。PNG 文件<=1MiB，尺寸<=1024×1024。没有有效 PNG 时使用几何颜色，不能虚构合法图片字节。
+        模型每轴范围最多100格（100×100×100），颜色可用#RRGGBB/#AARRGGBB或RGB/RGBA整数数组[0..255,0..255,0..255]。texture 可省略（原生白底乘顶点颜色），或指向真实 PNG。PNG 文件<=1MiB，尺寸<=1024×1024。没有有效 PNG 时使用几何颜色，不能虚构合法图片字节。
         content.object(partKey) 获取本实例已加载的实际实体；entity.velocity(vx,vy,vz) 设置有界速度；entity.spring(worldX,worldY,worldZ,stiffness,damping) 增加到世界坐标固定锚点的弹簧约束，后两参数0..1；clearSpring() 清除。位置可读 getX()/getY()/getZ()，setYRot(degrees) 改视觉朝向，轴对齐碰撞箱不旋转。
         通用 HOT 物品：content.giveItem(partKey,modelPath,count,displayName) 给本实例 Owner 背包真实物品栈，返回实际插入数，0..count；count=1..64。主体只有 mineagent_runtime:runtime_item 通用 Registry 载体，独立包提供模型/脚本，不是原版物品改名，更不是新 FML Registry ID。
         生成/发布包不会执行脚本；instance.create 只有在玩家已明确批准启用时才执行。用户要求批准后给予物品时，应在 instance.create 调用 giveItem 一次；不要漏掉发放，也不要等待不存在的额外“外部执行器发放”接口。

@@ -38,8 +38,12 @@ final class WorkspacePanels {
         draw[0]=()->{
             fields.clearAllScrollViewChildren();tabs.clearAllChildren();if(snapshot[0]==null)return;
             var groups=new LinkedHashSet<String>();for(var raw:snapshot[0].getAsJsonArray("fields"))groups.add(raw.getAsJsonObject().get("group").getAsString());
-            var groupSelect=new Selector<String>();NativeUiTheme.options(groupSelect);groupSelect.setCandidates(List.copyOf(groups));groupSelect.setValue(group[0],false);groupSelect.setOnValueChanged(value->{group[0]=value;draw[0].run();});groupSelect.getLayout().flex(1);tabs.addChild(groupSelect);
+            groups.add("AI 玩家模型");var groupSelect=new Selector<String>();NativeUiTheme.options(groupSelect);groupSelect.setCandidates(List.copyOf(groups));groupSelect.setValue(group[0],false);groupSelect.setOnValueChanged(value->{group[0]=value;draw[0].run();});groupSelect.getLayout().flex(1);tabs.addChild(groupSelect);
             tabs.addChild(NativeUiTheme.button(t("刷新"),load[0]));
+            if(group[0].equals("AI 玩家模型")){
+                notice.setText(Component.literal(t("分别设置每个 AI 的模型，可使用列表外模型 ID。")));
+                agentModels(host,window,fields,notice,()->group[0].equals("AI 玩家模型")&&!window.closed());return;
+            }
             if(group[0].equals("Provider")){var provider=card(fields,t("模型服务状态"));var actions=row();actions.getLayout().height(25);provider.addChild(actions);actions.addChild(NativeUiTheme.button(t("API 密钥"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host))));actions.addChild(NativeUiTheme.button(t("选择模型"),()->Minecraft.getInstance().setScreen(new ProviderModelScreen(host))));provider.addChild(text(snapshot[0].get("keyConfigured").getAsBoolean()?t("API 密钥已配置"):t("API 密钥未配置")));provider.addChild(text(t("配置状态不代表连接测试；读取与保存不会调用模型。")));provider.addChild(NativeUiTheme.button(t("路由、预算与运行状态"),()->NativeReadout.show(host,"provider-state","路由、预算与运行状态",snapshot[0])));}
             if(group[0].equals("ComfyUI")){var workflow=card(fields,t("ComfyUI 工作流"));workflow.addChild(text(snapshot[0].get("workflowConfigured").getAsBoolean()?t("工作流已配置"):t("尚未配置 ComfyUI 工作流")));workflow.addChild(NativeUiTheme.button(t("编辑工作流"),()->NativeWorkflowPanel.open(host)));}
             for(var raw:snapshot[0].getAsJsonArray("fields")){
@@ -64,6 +68,10 @@ final class WorkspacePanels {
         var display=card(scroll,t("界面与显示"));var options=row();options.getLayout().heightAuto().minHeight(25).flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);display.addChild(options);options.addChild(NativeUiTheme.button(t("界面尺寸"),host::scaleSettings));options.addChild(NativeUiTheme.button(t("语言"),()->Minecraft.getInstance().setScreen(new dev.mineagent.runtime.neoforge.client.screen.LanguageScreen(host))));options.addChild(NativeUiTheme.button(t("关于"),()->Minecraft.getInstance().setScreen(new dev.mineagent.runtime.neoforge.client.screen.AboutScreen(host))));
         var world=card(scroll,t("世界与权限"));world.addChild(NativeUiTheme.button(t("此世界启用设置"),()->{Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);}));world.addChild(NativeUiTheme.button(t("权限与信任"),()->permissions(host)));
         var voices=card(scroll,t("模型与语音"));voices.addChild(NativeUiTheme.button(t("API 密钥"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host))));voices.addChild(NativeUiTheme.button(t("语音识别密钥"),()->Minecraft.getInstance().setScreen(new NativeSecretScreen(host,"provider.asr.apiKey"))));voices.addChild(NativeUiTheme.button(t("选择模型"),()->Minecraft.getInstance().setScreen(new ProviderModelScreen(host))));
+        if(dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled()){
+            var python=card(scroll,t("Python 环境"));python.addChild(text(t("已有环境直接复用；修复在退出游戏后执行，保留脚本与输出。")));
+            var repair=NativeUiTheme.button(t("退出后修复 Python 环境"),()->{if(!dev.mineagent.runtime.neoforge.hostsupport.HostToolBridge.repair())python.addChild(text(t("请在本机单人世界中安排修复。")));});repair.setId("repair-python-runtime");python.addChild(repair);
+        }
         var body=card(scroll,t("工具与管理"));
         var shortcuts=new LinkedHashMap<String,Runnable>();
         shortcuts.put(t("本机资源包"),()->NativeLifecyclePanel.open(host,null,NativeLifecyclePanel.Kind.RESOURCE));
@@ -84,6 +92,18 @@ final class WorkspacePanels {
                 card.addChild(NativeUiTheme.button(t("保存权限"),()->Dialog.showCheckBox(t("保存权限"),player.get("name").getAsString(),yes->{if(yes)request("settings.write",Map.of("kind","permissions","revision",data.get("revision").getAsString(),"playerId",id,"actions",JSON.toJson(selected),"confirmed","true")).whenComplete((r,e)->{if(e!=null)failure(notice,e);else{window.close();permissions(host);}});}).show(window.body)));
             }
             notice.setText(Component.literal(t("权限由服务器检查。")));
+        });
+    }
+    private static void agentModels(NativeWorkspaceScreen host,WorkspaceWindow window,ScrollerView list,TextElement notice,java.util.function.BooleanSupplier current){
+        request("shell.read",Map.of()).whenComplete((receipt,error)->{
+            if(!current.getAsBoolean())return;if(error!=null){failure(notice,error);return;}
+            var data=JsonParser.parseString(receipt.values().get("agentManagement")).getAsJsonObject();list.clearAllScrollViewChildren();
+            for(var raw:data.getAsJsonArray("agents")){var value=raw.getAsJsonObject();String id=value.get("id").getAsString(),name=value.get("name").getAsString();var entry=card(list,name);
+                var configure=NativeUiTheme.button(t("设置此 AI 的模型"),()->AgentModelPanel.open(host,id,name));configure.setId("settings-ai-model-"+id);entry.addChild(configure);
+            }
+            var paging=row();paging.getLayout().height(25);int offset=data.get("offset").getAsInt(),next=data.get("nextOffset").getAsInt();
+            if(offset>0)paging.addChild(NativeUiTheme.button(t("上一页"),()->request("agent.manage",Map.of("kind","page","offset",Integer.toString(Math.max(0,offset-16)))).thenRun(()->agentModels(host,window,list,notice,current))));
+            if(next>=0)paging.addChild(NativeUiTheme.button(t("下一页"),()->request("agent.manage",Map.of("kind","page","offset",Integer.toString(next))).thenRun(()->agentModels(host,window,list,notice,current))));list.addScrollViewChild(paging);
         });
     }
     static void agents(NativeWorkspaceScreen host){
