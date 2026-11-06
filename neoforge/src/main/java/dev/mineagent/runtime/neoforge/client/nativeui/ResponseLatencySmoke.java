@@ -21,7 +21,7 @@ public final class ResponseLatencySmoke {
     private static final ObjectMapper JSON=new ObjectMapper();
     private static final List<Object> evidence=new ArrayList<>();
     private static final AtomicInteger rounds=new AtomicInteger(),summaries=new AtomicInteger();
-    private static volatile CountDownLatch release=new CountDownLatch(1);
+    private static volatile CountDownLatch release=new CountDownLatch(1),summaryEntered=new CountDownLatch(1);
     private static volatile Throwable failure;private static volatile int phase;
     private static HttpServer http;private static UUID agent,conversation;private static CompletableFuture<Map<String,Object>> result;private static int ticks;private static boolean polling,chatStarted;
     private static Minecraft mc(){return Minecraft.getInstance();}
@@ -32,14 +32,14 @@ public final class ResponseLatencySmoke {
     private static void request(HttpExchange e){try{
         JsonNode input=JSON.readTree(e.getRequestBody());
         if(!input.path("stream").asBoolean()){
-            var gate=release;summaries.incrementAndGet();String prompt=input.path("messages").toString();
+            var gate=release;summaries.incrementAndGet();summaryEntered.countDown();String prompt=input.path("messages").toString();
             require(!prompt.contains("minecraft:stone")&&!prompt.contains("tool_call_id")&&!prompt.contains("RAW_TOOL_SENTINEL"),"SUMMARY_CONTAINS_TOOL_RESULT");
             require(gate.await(25,TimeUnit.SECONDS),"SUMMARY_WAS_AWAITED_BY_MAIN_RESPONSE");
             byte[] bytes=JSON.writeValueAsBytes(Map.of("model","latency-fixture","choices",List.of(Map.of("message",Map.of("content",prompt.contains("CONVERSATION_SUMMARY_V1")?"{\"summary\":\"Assistant prose only\"}":"Assistant prose only")))));e.sendResponseHeaders(200,bytes.length);e.getResponseBody().write(bytes);return;
         }
         int round=rounds.getAndIncrement();e.getResponseHeaders().set("Content-Type","text/event-stream");e.sendResponseHeaders(200,0);
         if(phase==0&&round<2){String tool=round==0?"scan_blocks":"observe";Object args=round==0?Map.of("blocks",List.of("minecraft:stone"),"min",List.of(80,111,80),"max",List.of(115,111,115)):Map.of();event(e,Map.of("content",round==0?"开始读取。":"读取之后继续。","tool_calls",List.of(Map.of("index",0,"id","latency-"+round,"type","function","function",Map.of("name",tool,"arguments",JSON.writeValueAsString(args))))));}
-        else event(e,Map.of("content","主响应已经完成。"));
+        else {require(summaryEntered.await(10,TimeUnit.SECONDS),"SUMMARY_NOT_CONCURRENT");event(e,Map.of("content","主响应已经完成。"));}
         e.getResponseBody().write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
     }catch(Exception error){if(!(error instanceof java.io.IOException))failure=error;}finally{e.close();}}
     public static CompletableFuture<Map<String,Object>> run(UUID id){
@@ -66,7 +66,7 @@ public final class ResponseLatencySmoke {
         if(!chatStarted||polling||ticks%5!=0)return;polling=true;
         server(p->{try{var conversations=ServerConversations.get(p.level().getServer());var store=conversations.store();var context=store.context(p.getUUID(),agent,conversation,null).orElseThrow();require(!Set.of("FAILED","CANCELLED","INTERRUPTED").contains(context.requestState()),"MAIN_REPLY_FAILED_"+context.errorCode());if(!context.requestState().equals("COMPLETE")||summaries.get()==0)return false;
             require(release.getCount()==1,"SUMMARY_NOT_BLOCKED");evidence.add(Map.of("phase",phase,"mainCompletedWhileSummaryBlocked",true,"mainRounds",rounds.get(),"summaries",summaries.get()));release.countDown();
-            if(phase==0){phase=1;rounds.set(0);summaries.set(0);release=new CountDownLatch(1);for(int i=0;i<24;i++){var turn=store.begin(p.getUUID(),agent,conversation,UUID.randomUUID(),1,"Old user "+i,0);store.finish(turn.operationId(),"COMPLETE","Old assistant "+i+" "+"n".repeat(1600),"");}conversations.submitNative(p,agent,"history-fixture: 请直接回答",true,UUID.randomUUID());return false;}return true;
+            if(phase==0){phase=1;rounds.set(0);summaries.set(0);release=new CountDownLatch(1);summaryEntered=new CountDownLatch(1);for(int i=0;i<24;i++){var turn=store.begin(p.getUUID(),agent,conversation,UUID.randomUUID(),1,"Old user "+i,0);store.finish(turn.operationId(),"COMPLETE","Old assistant "+i+" "+"n".repeat(1600),"");}conversations.submitNative(p,agent,"history-fixture: 请直接回答",true,UUID.randomUUID());return false;}return true;
         }catch(Exception e){throw new CompletionException(e);}}).whenComplete((complete,error)->{polling=false;if(error!=null){failure=error;return;}if(complete){http.stop(0);result.complete(Map.of("status","PASS","provider","CONTROLLED_LOCAL_HTTP_NOT_MODEL","paidModelCalls",0,"evidence",evidence));}});
     }
     private ResponseLatencySmoke(){}
