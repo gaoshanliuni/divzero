@@ -4874,8 +4874,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "a93b30f0126802767dc2e00462a45d8d44c4deb4beed44270f7692fc9133e19a",
-      "bytes": 243185
+      "sha256": "a0dd65ab4229d07ff4133c08ab4b3707ceae334398ef6aae972ba12830d3b8cb",
+      "bytes": 243496
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5109,8 +5109,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/EventAbilitySmoke.java",
-      "sha256": "9c08452c3dc6641bfb0539a997f12b07a67366110c2c9c4d48113de7d7b7280a",
-      "bytes": 8182
+      "sha256": "70bb5d4280fbeddb1b55bb3d8ef7566a86579da7d748081dcff874a252865228",
+      "bytes": 8402
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/KubeInterfaceRenderer.java",
