@@ -3934,8 +3934,8 @@
     },
     {
       "path": "docs/releases/1.0.33.md",
-      "sha256": "4307d154696f6efc1e51ce0071e62f23351d4528607d0456bb0ec6fcb25ad09f",
-      "bytes": 668
+      "sha256": "d07f8710a94644e919c4822ac65fd59f6724756589dfabee0f912960204a9ad8",
+      "bytes": 2954
     },
     {
       "path": "gradle.properties",
