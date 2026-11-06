@@ -5354,8 +5354,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
-      "sha256": "0e540fdc44231385f2bf5ae45483a53bd87579646d18c5390590593a009bc328",
-      "bytes": 7870
+      "sha256": "682de777e43b8efcb8961cff927ef70022ffe550651c081b51ccf8ce7bd4022f",
+      "bytes": 7880
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewCapture.java",
@@ -5409,8 +5409,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ResponseLatencySmoke.java",
-      "sha256": "bb20986a1b8165ec2fc2bca4c276d43019ccc8776d8b96dc0a1abe90e36f9a00",
-      "bytes": 9570
+      "sha256": "e3a05366baf1b42eedf76cab7cf196a2fdf115fa6565b1e443cecd36abaf1a32",
+      "bytes": 10277
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
@@ -7334,8 +7334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildings.java",
-      "sha256": "71f81aad232104e89d471779ad8e6e32f87cb4b9fe7dd0a4add1055d4e6c7c5f",
-      "bytes": 26762
+      "sha256": "684002b0f86af7324e9cce68647bb0ae4cfdb498a5ab3e1a3c1f53d55e89c7b1",
+      "bytes": 27069
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBulldozers.java",

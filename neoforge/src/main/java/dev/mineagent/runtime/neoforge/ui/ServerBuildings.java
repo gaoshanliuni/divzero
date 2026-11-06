@@ -143,6 +143,7 @@ public final class ServerBuildings {
         public CompletableFuture<?> pending(){return done?result:read;}
         private boolean current(){return permit.getAsBoolean()&&level.getServer().getPlayerList().getPlayer(player.getUUID())==player&&player.level()==level&&player.isAlive()&&ServerTaskStart.allowed(player,agent)&&player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)&&MineAgentRuntimeServices.permissions(level.getServer()).actionRevision(player.getUUID(),PermissionAction.RUN_CODE)==permission;}
         private BlockState parse(String value)throws Exception {var old=states.get(value);if(old!=null)return old;var parsed=ConversationWorldGeometry.parse(player,value,false);states.put(value,parsed);return parsed;}
+        private void expect(BlockPos pos,String expected,String observed,String code){if(!Objects.equals(expected,observed))throw new dev.mineagent.runtime.core.geometry.GeometryDiagnostic("BUILDING_"+code,Map.of("position",List.of(pos.getX(),pos.getY(),pos.getZ()),"expected",expected,"observed",observed,"phase",phase,"diagnostic",code+" at "+pos.toShortString()));}
         private String actual(BlockPos pos){ConversationWorldGeometry.location(level,pos);require(level.getBlockEntity(pos)==null,"EXISTING_BLOCK_ENTITY");return BlockStateParser.serialize(level.getBlockState(pos));}
         private boolean undo(){return Set.of("UNDO","ROLLBACK").contains(initial.mode());}
         private boolean selected(ConstructionLedger.Cell c){return c.changed()&&(!initial.mode().equals("ROLLBACK")||c.written());}
@@ -170,21 +171,21 @@ public final class ServerBuildings {
                     if(phase.equals("PREFLIGHT")){
                         String actual=actual(pos);
                         if(initial.mode().equals("APPLY")){
-                            require(cell.expected()==null||actual.equals(cell.expected()),"WORLD_CONFLICT_AT_"+cell.x()+"_"+cell.y()+"_"+cell.z());
+                            if(cell.expected()!=null)expect(pos,cell.expected(),actual,"WORLD_CONFLICT");
                             String after=BlockStateParser.serialize(ConversationWorldGeometry.oriented(parse(cell.material()),cell.orientation()));
                             if(!actual.equals(after))ConversationWorldGeometry.writable(level,pos,parse(after));
                             samples.add(new ConstructionLedger.Sample(cell.sequence(),actual,after,cell.baseline()==null?actual:cell.baseline()));
-                        }else if(selected(cell)){require(actual.equals(expected(cell)),"HISTORY_CONFLICT");ConversationWorldGeometry.writable(level,pos,parse(target(cell)));}
+                        }else if(selected(cell)){expect(pos,expected(cell),actual,"HISTORY_CONFLICT");ConversationWorldGeometry.writable(level,pos,parse(target(cell)));}
                     }else if(phase.equals("RECOVER")){
                         if(cell.before()==null)continue;String actual=actual(pos);require(actual.equals(cell.before())||actual.equals(cell.after()),"RECOVERY_CONFLICT");if(cell.changed()&&actual.equals(cell.after()))written.add(cell.sequence());
                     }else if(selected(cell)){
                         if(phase.equals("WRITE")){
-                            require(actual(pos).equals(expected(cell)),"HISTORY_CONFLICT");var after=parse(target(cell));ConversationWorldGeometry.writable(level,pos,after);
+                            expect(pos,expected(cell),actual(pos),"HISTORY_CONFLICT");var after=parse(target(cell));ConversationWorldGeometry.writable(level,pos,after);
                             level.setBlock(pos,after,Block.UPDATE_CLIENTS|Block.UPDATE_KNOWN_SHAPE);
                             if(!after.isAir())dev.mineagent.runtime.neoforge.body.TerrainProvenance.record(level,pos,player.getUUID());
-                            String actual=actual(pos);if(!actual.equals(expected(cell)))written.add(cell.sequence());require(actual.equals(target(cell)),"WRITE_READBACK_MISMATCH");
+                            String actual=actual(pos);if(!actual.equals(expected(cell)))written.add(cell.sequence());expect(pos,target(cell),actual,"WRITE_READBACK_MISMATCH");
                         }else if(phase.equals("NOTIFY")){var state=level.getBlockState(pos);state.updateNeighbourShapes(level,pos,Block.UPDATE_ALL);level.updateNeighborsAt(pos,state.getBlock());}
-                        else require(actual(pos).equals(target(cell)),"POST_PHYSICS_MISMATCH");
+                        else expect(pos,target(cell),actual(pos),"POST_PHYSICS_MISMATCH");
                     }
                 }
                 cursor=batch.getLast().sequence();long next=cursor,tick=level.getGameTime();String completedPhase=phase;reserved=false;
