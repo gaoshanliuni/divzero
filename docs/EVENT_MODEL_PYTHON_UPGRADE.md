@@ -45,6 +45,6 @@
 
 截图为 UI 尺寸 4，已滚动到模型输入和保存区域；`fixture/custom-*` 是专门验证列表外名称的测试 ID，不代表真实模型服务。
 
-![设置分类打开的独立模型编辑器](images/native-model-settings.png)
+![设置分类打开的独立模型编辑器](images/native-model-settings-1.0.34.png)
 
 ![AI 专属面板中的模型编辑器](images/native-profile-model.png)

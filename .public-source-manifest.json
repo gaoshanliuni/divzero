@@ -3629,8 +3629,8 @@
     },
     {
       "path": "docs/EVENT_MODEL_PYTHON_UPGRADE.md",
-      "sha256": "eee80dd1d97f573a6daec87b2fb7fba943a2ec9c70c6590990ae7f6ecdda7bd1",
-      "bytes": 4937
+      "bytes": 4944,
+      "sha256": "75a220546a311303a6068b85085a9c3c50e459aba778be448ba1c6345b6d0613"
     },
     {
       "path": "docs/FEATURES.md",
@@ -3813,9 +3813,14 @@
       "bytes": 328813
     },
     {
+      "path": "docs/images/native-model-settings-1.0.34.png",
+      "bytes": 170244,
+      "sha256": "b456ec523c06202fd03c0588bdf4eb30da395043825d281d1a9ca2c70f966323"
+    },
+    {
       "path": "docs/images/native-model-settings.png",
-      "sha256": "b456ec523c06202fd03c0588bdf4eb30da395043825d281d1a9ca2c70f966323",
-      "bytes": 170244
+      "bytes": 407474,
+      "sha256": "cadfc927ff188bf506531bdd79a27e88ba27043a0e138afe586154cbe4dfcf6a"
     },
     {
       "path": "docs/images/native-neural-selfplay-arena.png",
