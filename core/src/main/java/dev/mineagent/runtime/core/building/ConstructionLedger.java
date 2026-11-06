@@ -67,14 +67,14 @@ public final class ConstructionLedger implements AutoCloseable {
             long[] emitted={0};int[] pending={0};
             try(var p=db.prepareStatement("INSERT INTO targets(revision,component,x,y,z,material,orientation) VALUES(?,?,?,?,?,?,?) ON CONFLICT(revision,x,y,z) DO UPDATE SET component=excluded.component,material=excluded.material,orientation=excluded.orientation,present=1")) {
                 for(String component:design.order()) {
-                    var geometry=WorldGeometry.stream(design.geometry(component),cell->{
+                    WorldGeometry.StreamSummary geometry;try{geometry=WorldGeometry.stream(design.geometry(component),cell->{
                         try {
                             if(!permit.getAsBoolean())throw new IllegalStateException("BUILDING_CANCELLED");
                             if(cell.state().matches("minecraft:(?:air|cave_air|void_air)(?:\\[.*])?")&&!design.clearExisting())throw new IllegalArgumentException("BUILDING_AIR_REQUIRES_CLEAR_EXISTING");
                             p.setLong(1,next);p.setString(2,component);p.setInt(3,cell.pos().x());p.setInt(4,cell.pos().y());p.setInt(5,cell.pos().z());p.setString(6,cell.state());p.setString(7,String.join(",",cell.orientation()));p.addBatch();
                             emitted[0]++;if(++pending[0]==4096){p.executeBatch();pending[0]=0;}
                         }catch(Exception failure){throw new IllegalStateException("BUILDING_RASTER_FAILED",failure);}
-                    });
+                    });}catch(dev.mineagent.runtime.core.geometry.GeometryDiagnostic invalid){throw invalid.rebase(design.componentPath(component),component);}
                     try(var bounds=db.prepareStatement("INSERT INTO component_bounds VALUES(?,?,?,?,?,?,?,?)")){bounds.setLong(1,next);bounds.setString(2,component);bounds.setInt(3,geometry.min().x());bounds.setInt(4,geometry.max().x());bounds.setInt(5,geometry.min().y());bounds.setInt(6,geometry.max().y());bounds.setInt(7,geometry.min().z());bounds.setInt(8,geometry.max().z());bounds.executeUpdate();}
                 }
                 p.executeBatch();

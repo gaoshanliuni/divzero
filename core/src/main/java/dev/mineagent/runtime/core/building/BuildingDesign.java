@@ -51,6 +51,7 @@ public final class BuildingDesign {
     public JsonNode checks(){return document.path("checks").deepCopy();}
     public List<Integer> origin(){return List.of(document.path("origin").get(0).intValue(),document.path("origin").get(1).intValue(),document.path("origin").get(2).intValue());}
     public List<String> order(){var order=new ArrayList<String>();var seen=new HashSet<String>();for(String id:components.keySet().stream().sorted().toList())visit(id,new HashSet<>(),seen,order);return List.copyOf(order);}
+    public String componentPath(String id){for(int i=0;i<document.path("components").size();i++)if(document.path("components").get(i).path("id").asText().equals(id))return "/components/"+i;throw bad("COMPONENT_NOT_FOUND");}
     public String geometry(String id){
         JsonNode c=component(id);var out=JSON.createObjectNode();out.set("origin",document.get("origin").deepCopy());var parts=out.putArray("parts");
         JsonNode source=c.has("template")?document.path("templates").path(c.get("template").asText()):c.path("parts");

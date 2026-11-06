@@ -17,7 +17,7 @@ public final class AgentModelSettings {
   var data=request.payload();if(!data.containsKey("agentId")||!data.containsKey("worldId"))return request;
   var snapshot=config.snapshot();UUID world=UUID.fromString(data.get("worldId").toString()),agent=UUID.fromString(data.get("agentId").toString());
   var payload=new LinkedHashMap<String,Object>(data);payload.put("agentThinking",AgentThinkingSettings.read(snapshot.values(),world,agent));
-  var choice=read(snapshot.values(),world,agent);String role=ExplicitModelRoles.role(request),override=snapshot.values().getOrDefault("provider.openai.role."+role,"").strip();payload.put("modelRole",role);
+  var choice=read(snapshot.values(),world,agent);String role=ExplicitModelRoles.role(request),override=snapshot.values().getOrDefault("provider.openai.role."+role,"").strip();payload.put("modelRole",role);if(choice.mode().equals("CUSTOM")&&role.equals("chat"))override="";
   if(override.isEmpty()&&choice.mode().equals("DEFAULT"))return new WorkerEnvelope(request.protocolVersion(),request.requestId(),request.type(),payload);
   String base=choice.baseUrl(),model=choice.model();long revision=choice.revision();
   if(!override.isEmpty()){

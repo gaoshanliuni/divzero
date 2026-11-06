@@ -29,4 +29,13 @@ class ExecutionContextTest {
         }
         assertFalse(ToolExecutionTraits.of("run_game_command").dimensionIndependent());
     }
+    @Test void backgroundSummaryInputContainsOnlyAssistantProse(){
+        var history=List.of(Map.<String,Object>of("role","user","content","user source"),Map.<String,Object>of("role","assistant","content","Keep the roof","reasoning_content","private reasoning","tool_calls",List.of(Map.of("id","c","function",Map.of("name","scan_blocks","arguments","hidden args")))),Map.<String,Object>of("role","tool","tool_call_id","c","content","{\"status\":\"UNKNOWN\",\"record_id\":\"receipt-1\",\"blocks\":\"raw world output\"}"));
+        assertEquals(List.of("Keep the roof"),ExecutionContext.narrative(history));var ledger=ExecutionContext.receipts(history);assertEquals(1,ledger.size());assertEquals("receipt-1",ledger.getFirst().get("record_id"));assertEquals("UNKNOWN",((Map<?,?>)ledger.getFirst().get("critical")).get("$.status"));assertFalse(ledger.toString().contains("raw world output"));
+    }
+    @Test void expandedObservationPagesAreNotReplacedWithAnIncompletePreview(){
+        var hits=new ArrayList<Object>();for(int i=0;i<1024;i++)hits.add(Map.of("block","minecraft:water","position",List.of(i,60,0)));
+        var result=ExecutionContext.observation(Map.of("found",hits,"nextOffset",1024,"totalCells",4096),UUID.randomUUID());
+        assertEquals(hits,result.get("found"));assertFalse(result.containsKey("preview"));assertEquals(1024,result.get("nextOffset"));
+    }
 }

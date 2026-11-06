@@ -87,7 +87,7 @@ public final class ServerBuildings {
                 if(!before.equals(ledger.head()))throw failure;Throwable cause=failure;while(cause.getCause()!=null)cause=cause.getCause();
                 if(!(cause instanceof IllegalArgumentException||cause instanceof IllegalStateException))throw failure;
                 String error=Objects.toString(cause.getMessage(),"BUILDING_PLAN_REJECTED");
-                return Map.<String,Object>of("id",design.id(),"status","REJECTED","error",error,"revision",before.revision(),"persistentStatus",before.status(),"planCommitted",false,"worldModified",false,"retryGuidance","Correct the definition and explicitly submit a new plan with the unchanged revision.");
+                return dev.mineagent.runtime.core.geometry.GeometryDiagnostic.merge(Map.<String,Object>of("id",design.id(),"status","REJECTED","error",error,"revision",before.revision(),"persistentStatus",before.status(),"planCommitted",false,"worldModified",false,"executionState","NOT_STARTED","retryGuidance","Correct the definition and explicitly submit a new plan with the unchanged revision."),failure);
             }
         }));
         h.job=new Work(){public boolean completed(){return future.isDone();}public boolean tick(){if(!permit.getAsBoolean()||p.level()!=level||server.getPlayerList().getPlayer(p.getUUID())!=p||!ServerTaskStart.allowed(p,agent)||MineAgentRuntimeServices.permissions(server).actionRevision(p.getUUID(),PermissionAction.RUN_CODE)!=generation)valid.set(false);return future.isDone();}public void pause(){valid.set(false);}public CompletableFuture<?> pending(){return future;}};
@@ -194,7 +194,7 @@ public final class ServerBuildings {
                     else {if(completedPhase.equals("RECOVER"))ledger.reconcile(written);ledger.progress(completedPhase.equals("PREFLIGHT")?"PREPARING":"APPLYING",completedPhase,next,0);}
                     return ledger.page(initial.revision(),next,false);
                 });return false;
-            }catch(Exception failure){String detail=Objects.toString(failure.getMessage(),failure.getClass().getSimpleName());return end(reserved?"UNKNOWN":phase.equals("PREFLIGHT")?"CONFLICT":"PARTIAL",detail);}
+            }catch(Exception failure){String detail=Objects.toString(failure.getMessage(),failure.getClass().getSimpleName());var located=dev.mineagent.runtime.core.geometry.GeometryDiagnostic.details(failure);if(!located.isEmpty())try{detail=JSON.writeValueAsString(located);}catch(Exception ignored){}return end(reserved?"UNKNOWN":phase.equals("PREFLIGHT")?"CONFLICT":"PARTIAL",detail);}
         }
     }
     public static CompletableFuture<Map<String,Object>> verify(ServerPlayer p,UUID agent,JsonNode args,BooleanSupplier permit){

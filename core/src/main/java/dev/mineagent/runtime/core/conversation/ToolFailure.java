@@ -31,7 +31,7 @@ public final class ToolFailure {
         out.put("diagnostic",detail.isBlank()?"The tool returned no result; its outcome could not be confirmed.":detail);out.put("causes",causes);
         if(notStarted||read)out.put("worldModified",false);out.put("replayAllowed",false);
         if(line>0){out.put("field","arguments");out.put("line",line);out.put("column",column);}
-        return ToolErrors.explain(out);
+        out.putAll(dev.mineagent.runtime.core.geometry.GeometryDiagnostic.details(failure));return ToolErrors.explain(out);
     }
     public static String safe(String text){String clean=SecretRedactor.redact(Objects.toString(text,""));return clean.substring(0,Math.min(clean.length(),4096));}
     /** Circuit breakers retain diagnostics and identities, never complete scan/file/package bodies. */

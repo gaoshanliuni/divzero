@@ -321,13 +321,23 @@ public final class ConversationAgentTools {
         String command=value.startsWith("/")?value.substring(1):value;if(command.codePoints().anyMatch(Character::isISOControl))throw new IllegalArgumentException("AGENT_COMMAND_ARGUMENTS");var server=p.level().getServer();var parse=server.getCommands().getDispatcher().parse(command,p.createCommandSourceStack());try{net.minecraft.commands.Commands.validateParseResults(parse);}catch(com.mojang.brigadier.exceptions.CommandSyntaxException invalid){String message=invalid.getRawMessage().getString();return CompletableFuture.completedFuture(Map.of("status","COMMAND_REJECTED","error","AGENT_COMMAND_SYNTAX","message",message.substring(0,Math.min(512,message.length())),"cursor",invalid.getCursor(),"command",command,"field","command","executionState","NOT_STARTED","worldModified",false));}if(parse.getContext().getLastChild().getCommand()==null)return CompletableFuture.completedFuture(Map.of("status","COMMAND_REJECTED","error","AGENT_COMMAND_INCOMPLETE","command",command,"diagnostic","The command ended before all required arguments were supplied.","field","command","cursor",command.length(),"executionState","NOT_STARTED","worldModified",false));for(var c=parse.getContext();c!=null;c=c.getChild())for(var n:c.getNodes())if(n.getNode().getName().equals("ai"))throw new IllegalArgumentException("AGENT_COMMAND_RECURSION");
         var feedback=new ConversationCommandFeedback(p.commandSource());var future=new CompletableFuture<Map<String,Object>>();var level=p.level();
         WORK.computeIfAbsent(server,k->new ArrayList<>()).add(new Work(){
-            int at=-1;boolean observed,success=true;long count;
+            int at=-1;boolean observed,drained,success=true;long count;
             private void failed(String code,String diagnostic){var value=new LinkedHashMap<String,Object>();value.put("status",at<0?"REJECTED":"UNKNOWN");value.put("error",code);value.put("diagnostic",diagnostic);value.put("executionState",at<0?"NOT_STARTED":"UNKNOWN");value.put("command",command);value.put("output",retainOutput(p,feedback.messages()));future.complete(value);}
             public void cancel(){failed("AGENT_COMMAND_CANCELLED","The command request was cancelled before a final command result was received.");}
             public boolean tick(){
                 if(!current(p,permit)||p.level()!=level){failed("AGENT_COMMAND_CONTEXT_CHANGED","The player connection, permission or bound dimension changed before the command result was received.");return true;}
-                if(at<0){at=server.getTickCount();server.getCommands().performPrefixedCommand(p.createCommandSourceStack().withSource(feedback).withCallback((ok,n)->{observed=true;success&=ok;count+=n;}),command);return false;}
+                if(at<0){
+                    at=server.getTickCount();var source=p.createCommandSourceStack().withSource(feedback).withCallback((ok,n)->{observed=true;success&=ok;count+=n;});
+                    // A zero-target execute fork never invokes a leaf result callback. Observe queue completion too.
+                    net.minecraft.commands.Commands.executeCommandInContext(source,context->{
+                        server.getCommands().performPrefixedCommand(source,command);
+                        context.queueNext(new net.minecraft.commands.execution.CommandQueueEntry<>(
+                            new net.minecraft.commands.execution.Frame(0,net.minecraft.commands.CommandResultCallback.EMPTY,()->{}),
+                            (finished,frame)->drained=true));
+                    });return false;
+                }
                 if(server.getTickCount()-at<2)return false;
+                if(drained&&!observed){future.complete(Map.of("status","NO_RESULT","executionState","COMPLETED","success",false,"result",0,"command",command,"output",retainOutput(p,feedback.messages()),"diagnostic","Minecraft finished the command queue without a result: the selector may have no matching targets, a condition may be false, or the server may have cancelled the command. No successful world change is claimed."));return true;}
                 if(observed){var value=new LinkedHashMap<String,Object>();value.put("status",success?"APPLIED":"COMMAND_REJECTED");value.put("success",success);value.put("result",count);value.put("command",command);value.put("output",retainOutput(p,feedback.messages()));value.put("outputTruncated",false);value.put("executionState",success?"COMPLETED":"UNKNOWN");if(!success){value.put("error","AGENT_COMMAND_REJECTED");value.put("diagnostic",feedback.messages().isEmpty()?"Minecraft reported an unsuccessful command callback without a diagnostic message.":ToolFailure.safe(String.join("\n",feedback.messages())));}future.complete(value);return true;}
                 if(server.getTickCount()-at>200){failed("AGENT_COMMAND_CALLBACK_TIMEOUT","Minecraft did not provide a command result callback within 200 server ticks. The captured command output is attached; execution cannot be confirmed.");return true;}return false;
             }
@@ -359,32 +369,34 @@ public final class ConversationAgentTools {
     }
     private static long cursor(JsonNode a,long volume){var n=a.path("offset");long value=n.isMissingNode()?0:n.asLong(-1);if(!n.isMissingNode()&&(!n.isIntegralNumber()||!n.canConvertToLong())||value<0||value>volume)throw new IllegalArgumentException("AGENT_BLOCK_CURSOR");return value;}
     private static CompletableFuture<Map<String,Object>> inspectBlocks(ServerPlayer p,JsonNode a,BooleanSupplier permit){
-        keys(a,"min","max","after_ticks","offset");var lo=coordinates(a,"min");var hi=coordinates(a,"max");
+        keys(a,"min","max","after_ticks","offset","limit");int pageLimit=a.has("limit")?number(a,"limit",1,65536):16384;var lo=coordinates(a,"min");var hi=coordinates(a,"max");
         var region=new BlockObservationRegion(lo[0],lo[1],lo[2],hi[0],hi[1],hi[2],a.has("after_ticks")?number(a,"after_ticks",0,200):0);long start=cursor(a,region.volume());
         var level=p.level();long at=level.getGameTime()+region.afterTicks(),deadline=System.currentTimeMillis()+30000;var future=new CompletableFuture<Map<String,Object>>();
         WORK.computeIfAbsent(level.getServer(),k->new ArrayList<>()).add(new Work(){
+            final ArrayList<Map<String,Object>> palette=new ArrayList<>();final HashMap<String,Integer> indices=new HashMap<>();final ArrayList<List<Integer>> runs=new ArrayList<>();int represented,unknown;long next=start;boolean pageFull;
             public void cancel(){future.completeExceptionally(new IllegalStateException("AGENT_BLOCK_OBSERVATION_INTERRUPTED"));}
             public boolean tick()throws Exception{
                 if(!current(p,permit)||p.level()!=level||System.currentTimeMillis()>deadline){cancel();return true;}if(level.getGameTime()<at)return false;
-                var palette=new ArrayList<Map<String,Object>>();var indices=new HashMap<String,Integer>();var runs=new ArrayList<List<Integer>>();int represented=0,unknown=0;long next=start;
-                while(next<region.volume()&&represented<4096){
+                int tickCells=0;
+                while(next<region.volume()&&represented<pageLimit&&tickCells++<4096){
                     var xyz=region.at(next);var pos=new BlockPos(xyz[0],xyz[1],xyz[2]);int index;
                     if(!level.isInWorldBounds(pos))index=-2;
                     else if(!level.getChunkSource().hasChunk(xyz[0]>>4,xyz[2]>>4))index=-1;
                     else{
                         var block=level.getBlockState(pos);String state=net.minecraft.commands.arguments.blocks.BlockStateParser.serialize(block);index=indices.getOrDefault(state,-3);
-                        if(index==-3){if(palette.size()>=32)break;index=palette.size();indices.put(state,index);var fluid=block.getFluidState();palette.add(Map.of("state",state,"stateHash",RuntimePackageCanonicalizer.sha256(state.getBytes(java.nio.charset.StandardCharsets.UTF_8)),"fluid",BuiltInRegistries.FLUID.getKey(fluid.getType()).toString(),"fluidSource",fluid.isSource()));}
+                        if(index==-3){if(palette.size()>=128){pageFull=true;break;}index=palette.size();indices.put(state,index);var fluid=block.getFluidState();palette.add(Map.of("state",state,"stateHash",RuntimePackageCanonicalizer.sha256(state.getBytes(java.nio.charset.StandardCharsets.UTF_8)),"fluid",BuiltInRegistries.FLUID.getKey(fluid.getType()).toString(),"fluidSource",fluid.isSource()));}
                     }
                     if(!runs.isEmpty()&&runs.getLast().getFirst()==index){var old=runs.removeLast();runs.add(List.of(index,old.get(1)+1));}
-                    else{if(runs.size()>=256)break;runs.add(List.of(index,1));}
+                    else{if(runs.size()>=1024){pageFull=true;break;}runs.add(List.of(index,1));}
                     represented++;next++;if(index<0)unknown++;
                 }
-                var result=new LinkedHashMap<String,Object>();result.put("status","OBSERVED");result.put("min",List.of(lo[0],lo[1],lo[2]));result.put("max",List.of(hi[0],hi[1],hi[2]));result.put("order","X_Z_Y");result.put("palette",palette);result.put("runs",runs);result.put("totalCells",region.volume());result.put("offset",start);result.put("nextOffset",next<region.volume()?next:-1);result.put("representedCells",represented);result.put("unknownCells",unknown);result.put("truncated",false);result.put("observedGameTick",level.getGameTime());result.put("waitedTicks",region.afterTicks());result.put("scope","LOADED_BLOCKS_ONLY_NO_BLOCK_ENTITY_NBT; each page is a fresh observation");future.complete(result);return true;
+                if(!pageFull&&next<region.volume()&&represented<pageLimit)return false;
+                var result=new LinkedHashMap<String,Object>();result.put("pageLimit",pageLimit);result.put("status","OBSERVED");result.put("min",List.of(lo[0],lo[1],lo[2]));result.put("max",List.of(hi[0],hi[1],hi[2]));result.put("order","X_Z_Y");result.put("palette",palette);result.put("runs",runs);result.put("totalCells",region.volume());result.put("offset",start);result.put("nextOffset",next<region.volume()?next:-1);result.put("representedCells",represented);result.put("unknownCells",unknown);result.put("truncated",false);result.put("observedGameTick",level.getGameTime());result.put("waitedTicks",region.afterTicks());result.put("scope","LOADED_BLOCKS_ONLY_NO_BLOCK_ENTITY_NBT; each page is a fresh observation");future.complete(result);return true;
             }
         });return future;
     }
     private static CompletableFuture<Map<String,Object>> scan(ServerPlayer p,JsonNode a,BooleanSupplier permit){
-        keys(a,"blocks","radius","y_min","y_max","min","max","offset");int radius=a.has("radius")?number(a,"radius",2,2047):0;var center=p.blockPosition();
+        keys(a,"blocks","radius","y_min","y_max","min","max","offset","limit");int pageLimit=a.has("limit")?number(a,"limit",1,4096):1024;int radius=a.has("radius")?number(a,"radius",2,2047):0;var center=p.blockPosition();
         int[] lo=a.has("min")?coordinates(a,"min"):new int[]{center.getX()-radius,number(a,"y_min",-30000000,30000000),center.getZ()-radius};
         int[] hi=a.has("max")?coordinates(a,"max"):new int[]{center.getX()+radius,number(a,"y_max",-30000000,30000000),center.getZ()+radius};
         if(!a.has("min")&&radius==0)throw new IllegalArgumentException("AGENT_SCAN_BOUNDS");var region=new BlockObservationRegion(lo[0],lo[1],lo[2],hi[0],hi[1],hi[2],0);long start=cursor(a,region.volume());
@@ -393,11 +405,11 @@ public final class ConversationAgentTools {
         var level=p.level();var future=new CompletableFuture<Map<String,Object>>();WORK.computeIfAbsent(level.getServer(),k->new ArrayList<>()).add(new Work(){int checked,unloaded;long next=start;final List<Object> found=new ArrayList<>();final long deadline=System.currentTimeMillis()+30000;
             public void cancel(){future.completeExceptionally(new IllegalStateException("AGENT_SCAN_INTERRUPTED"));}
             public boolean tick(){if(!current(p,permit)||p.level()!=level||System.currentTimeMillis()>deadline){cancel();return true;}
-                for(int i=0;i<4096&&next<region.volume()&&found.size()<64&&next-start<262144;i++){
+                for(int i=0;i<4096&&next<region.volume()&&found.size()<pageLimit&&next-start<262144;i++){
                     var xyz=region.at(next++);var pos=new BlockPos(xyz[0],xyz[1],xyz[2]);if(!level.isInWorldBounds(pos)||!level.getChunkSource().hasChunk(pos.getX()>>4,pos.getZ()>>4)){unloaded++;continue;}checked++;var state=level.getBlockState(pos);if(wanted.contains(state.getBlock()))found.add(Map.of("block",BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString(),"position",List.of(pos.getX(),pos.getY(),pos.getZ())));
                 }
-                if(next<region.volume()&&found.size()<64&&next-start<262144)return false;
-                var out=new LinkedHashMap<String,Object>();out.put("found",found);out.put("checked",checked);out.put("unloadedOrOutOfWorld",unloaded);out.put("resultsTruncated",false);out.put("radius",radius);out.put("yMin",lo[1]);out.put("yMax",hi[1]);out.put("center",List.of(center.getX(),center.getY(),center.getZ()));out.put("min",List.of(lo[0],lo[1],lo[2]));out.put("max",List.of(hi[0],hi[1],hi[2]));out.put("offset",start);out.put("nextOffset",next<region.volume()?next:-1);out.put("totalCells",region.volume());out.put("scope","LOADED_BLOCKS_ONLY; continue with identical min/max/blocks and nextOffset");future.complete(out);return true;
+                if(next<region.volume()&&found.size()<pageLimit&&next-start<262144)return false;
+                var out=new LinkedHashMap<String,Object>();out.put("pageLimit",pageLimit);out.put("found",found);out.put("checked",checked);out.put("unloadedOrOutOfWorld",unloaded);out.put("resultsTruncated",false);out.put("radius",radius);out.put("yMin",lo[1]);out.put("yMax",hi[1]);out.put("center",List.of(center.getX(),center.getY(),center.getZ()));out.put("min",List.of(lo[0],lo[1],lo[2]));out.put("max",List.of(hi[0],hi[1],hi[2]));out.put("offset",start);out.put("nextOffset",next<region.volume()?next:-1);out.put("totalCells",region.volume());out.put("scope","LOADED_BLOCKS_ONLY; continue with identical min/max/blocks and nextOffset");future.complete(out);return true;
             }});return future;
     }
     @SubscribeEvent public static void tick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post e){var jobs=WORK.get(e.getServer());if(jobs==null)return;for(var work:List.copyOf(jobs)){try{if(work.tick())jobs.remove(work);}catch(Exception failed){work.cancel();jobs.remove(work);}}}

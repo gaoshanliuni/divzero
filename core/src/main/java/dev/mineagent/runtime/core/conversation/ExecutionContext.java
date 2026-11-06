@@ -20,6 +20,23 @@ public final class ExecutionContext {
         if(!pending.isEmpty())throw new IllegalArgumentException("EXECUTION_INCOMPLETE_TOOL_GROUP");
         if(!current.isEmpty())groups.add(List.copyOf(current));return List.copyOf(groups);
     }
+    /** Only model-visible prose is sent to the background summarizer. Never tool payloads or reasoning. */
+    public static List<String> narrative(List<Map<String,Object>> history){
+        var texts=new ArrayList<String>();
+        for(var message:history)if("assistant".equals(message.get("role"))&&message.get("content") instanceof String text&&!text.isBlank())texts.add(text);
+        return List.copyOf(texts);
+    }
+    /** Authoritative receipts are carried locally, outside generated prose summaries. */
+    public static List<Map<String,Object>> receipts(List<Map<String,Object>> history){
+        var result=new ArrayList<Map<String,Object>>();
+        for(var message:history)if("tool".equals(message.get("role"))){
+            try{var value=JSON.readTree(Objects.toString(message.get("content"),"{}"));var item=new LinkedHashMap<String,Object>();
+                item.put("tool_call_id",message.get("tool_call_id"));item.put("historical",true);item.put("critical",critical(value));
+                if(value.has("record_id"))item.put("record_id",value.get("record_id").asText());result.add(item);
+            }catch(Exception invalid){result.add(Map.of("tool_call_id",Objects.toString(message.get("tool_call_id")),"status","UNKNOWN","error","ARCHIVED_RECEIPT_UNREADABLE"));}
+        }
+        return List.copyOf(result);
+    }
     /** Keep every nested status/identity/version/error verbatim, including unknown and unverified. */
     public static Map<String,Object> critical(Object value){
         var out=new LinkedHashMap<String,Object>();collect(JSON.valueToTree(value),"$",out);return out;
@@ -34,7 +51,7 @@ public final class ExecutionContext {
     }
     public static Map<String,Object> observation(Map<String,Object> full,UUID record){
         var result=new LinkedHashMap<String,Object>(full);result.put("record_id",record.toString());
-        try{String raw=JSON.writeValueAsString(result);if(raw.length()<=6000)return result;
+        try{String raw=JSON.writeValueAsString(result);if(raw.length()<=6000||full.containsKey("nextOffset")&&(full.containsKey("found")||full.containsKey("runs"))&&raw.length()<=524288)return result;
             var compact=new LinkedHashMap<String,Object>();compact.put("record_id",record.toString());compact.put("detailsArchived",true);compact.put("critical",critical(result));
             compact.put("preview",raw.substring(0,Math.min(2400,raw.length())));compact.put("originalCharacters",raw.length());
             compact.put("readMore","Use read_execution_record with record_id and nextOffset; this preview is incomplete, not a complete scan or file.");return compact;

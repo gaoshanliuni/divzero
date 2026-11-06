@@ -220,14 +220,16 @@ public final class WorldGeometry {
     public record StreamSummary(Pos origin,Pos min,Pos max,List<String> replace,int parts,long emissions){}
     /** Same rasterizer/material/transform rules; duplicates resolved last-wins by the consumer. */
     public static StreamSummary stream(String source,java.util.function.Consumer<Cell> sink){
-        try{return new WorldGeometry().streamBuild(JSON.readTree(source),sink);}catch(RuntimeException e){throw e;}catch(Exception e){throw bad("JSON");}
+        try{var root=JSON.readTree(source);GeometryValidation.validate(root);return new WorldGeometry().streamBuild(root,sink);}
+        catch(RuntimeException e){throw e;}catch(com.fasterxml.jackson.core.JsonProcessingException e){var location=e.getLocation();throw new GeometryDiagnostic("GEOMETRY_JSON",Map.of("field","/","line",location==null?-1:location.getLineNr(),"column",location==null?-1:location.getColumnNr(),"diagnostic",e.getOriginalMessage()));}catch(Exception e){throw bad("JSON");}
     }
     private StreamSummary streamBuild(JsonNode n,java.util.function.Consumer<Cell> sink){
         keys(n,"origin","parts","replace");Pos origin=pos(n.path("origin"),30_000_000);JsonNode parts=n.path("parts");if(!parts.isArray()||parts.isEmpty()||parts.size()>64)throw bad("PARTS");var replace=new ArrayList<String>();if(n.has("replace")){var a=n.get("replace");if(!a.isArray()||a.isEmpty()||a.size()>32)throw bad("REPLACE");a.forEach(v->replace.add(text(v)));}
         int[] lo={Integer.MAX_VALUE,Integer.MAX_VALUE,Integer.MAX_VALUE},hi={Integer.MIN_VALUE,Integer.MIN_VALUE,Integer.MIN_VALUE};long[] emitted={0};
-        for(var s:parts){Material material=new Material(s.path("material"));JsonNode ts=s.path("transforms");if(s.has("transforms")&&(!ts.isArray()||ts.size()>32))throw bad("TRANSFORMS");
+        for(int partIndex=0;partIndex<parts.size();partIndex++){var s=parts.get(partIndex);try{Material material=new Material(s.path("material"));JsonNode ts=s.path("transforms");if(s.has("transforms")&&(!ts.isArray()||ts.size()>32))throw bad("TRANSFORMS");
             positionSink=p->transformStream(new Cell(p,material.at(p),List.of()),ts,0,c->{checkRange(c.pos,lo,hi);sink.accept(new Cell(c.pos.add(origin),c.state,c.orientation));emitted[0]++;});
             shape(s);
+            }catch(GeometryDiagnostic located){throw located;}catch(IllegalArgumentException invalid){String code=Objects.toString(invalid.getMessage(),"GEOMETRY_INVALID");if(!code.startsWith("GEOMETRY_"))throw invalid;String field="/parts/"+partIndex+(code.contains("HOLE")?"/holes":code.contains("POLYGON")?"/points":"");throw new GeometryDiagnostic(code,field,"valid geometry for "+s.path("kind").asText(),code);}
         }
         return new StreamSummary(origin,new Pos(lo[0],lo[1],lo[2]).add(origin),new Pos(hi[0],hi[1],hi[2]).add(origin),List.copyOf(replace),parts.size(),emitted[0]);
     }

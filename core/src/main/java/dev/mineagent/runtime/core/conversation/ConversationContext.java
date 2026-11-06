@@ -24,7 +24,7 @@ public final class ConversationContext {
         }
         History history=gather(store,viewer,agent.agentId(),conversation,historyEnd,covered,Math.max(0,budget-base-(summary==null?0:summaryBudget)));
         if(summary==null&&history.omitted()>0)history=gather(store,viewer,agent.agentId(),conversation,historyEnd,0,Math.max(0,budget-base-summaryBudget));
-        String notice=history.omitted()>0?"[早期消息 1.."+history.omitted()+" 需要摘要；在摘要校验成功之前不得声称已记住。]\n":"";
+        String notice=history.omitted()>0?"[早期消息 1.."+history.omitted()+" 正在后台整理；当前回复继续使用现有上下文，缺失的旧细节不能假称已记住。]\n":"";
         String prompt=head+clause+notice+String.join("",history.blocks())+tail;
         if(cost(prompt)+128>budget)throw new IllegalArgumentException("SUMMARY_CONTEXT_BUDGET");
         var messages=new ArrayList<Map<String,Object>>();
