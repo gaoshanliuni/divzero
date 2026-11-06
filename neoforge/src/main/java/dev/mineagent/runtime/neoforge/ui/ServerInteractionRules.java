@@ -31,20 +31,20 @@ public final class ServerInteractionRules {
   var level=context.level();var server=level.getServer();if(CALLBACK.get()||!server.isSameThread()||!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server))return false;var c=cache(server);boolean denied=false;var player=context.actor() instanceof ServerPlayer p?p:null;var target=pos==null?null:event.equals("block_place")?pos:normalize(player,pos);
   for(var entry:c.rules.entrySet()){
    var spec=c.specs.get(entry.getKey());if(!spec.enabled()||!spec.dimension().equals(level.dimension().identifier().toString())||!spec.events().contains(event)||!spec.damageType().isEmpty()&&!spec.damageType().equals(context.damageType()))continue;
-   var owner=server.getPlayerList().getPlayer(entry.getValue().owner());if(owner==null||!owner.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))continue;
+   var owner=server.getPlayerList().getPlayer(entry.getValue().owner());if(owner!=null&&!owner.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))continue;
    if(target!=null){if(spec.position().isEmpty())continue;var bound=new BlockPos(spec.position().get(0),spec.position().get(1),spec.position().get(2));if(!target.equals(event.equals("block_place")?bound:normalize(player,bound)))continue;}else if(context.subject()==null||!context.subject().getUUID().toString().equals(spec.entityId()))continue;
    boolean hasKey=key(context.actor(),context.item(),spec);if(spec.requireKey()&&!hasKey)continue;boolean blocked=spec.decision().equals("cancel")&&(context.actor()==null||!spec.allow().contains(context.actor().getUUID()))&&(!hasKey||spec.requireKey());denied|=blocked;
    if(!execute)continue;String dedup=entry.getKey()+":"+(context.actor()==null?context.subject().getUUID():context.actor().getUUID())+":"+event;long tick=level.getGameTime(),previous=c.last.getOrDefault(dedup,Long.MIN_VALUE);if(previous!=Long.MIN_VALUE&&tick>=previous&&tick-previous<Math.max(1,spec.cooldownTicks()))continue;c.last.put(dedup,tick);if(c.last.size()>4096)c.last.entrySet().removeIf(v->tick-v.getValue()>72000);c.counts.computeIfAbsent(entry.getKey(),k->new long[2])[blocked?0:1]++;
    if(blocked&&player!=null)player.sendSystemMessage(Component.literal("["+spec.name()+"] 已阻止交互。"));CALLBACK.set(true);
-   try{for(var action:blocked?spec.deniedActions():spec.allowedActions())applyAction(context,owner,action);}catch(RuntimeException error){owner.sendSystemMessage(Component.literal("["+spec.name()+"] 事件动作失败："+Objects.toString(error.getMessage(),error.getClass().getSimpleName())));}finally{CALLBACK.remove();}
+   try{for(var action:blocked?spec.deniedActions():spec.allowedActions())applyAction(context,owner,action);}catch(RuntimeException error){if(owner!=null)owner.sendSystemMessage(Component.literal("["+spec.name()+"] 事件动作失败："+Objects.toString(error.getMessage(),error.getClass().getSimpleName())));}finally{CALLBACK.remove();}
   }return denied;
  }
  private static void applyAction(Context c,ServerPlayer owner,Map<String,String> a){
   var subject=c.subject()==null?c.actor():c.subject();var recipient=c.actor() instanceof ServerPlayer p?p:subject instanceof ServerPlayer p?p:owner;var target=a.getOrDefault("target","subject").equals("actor")?c.actor():subject;
   switch(a.get("type")){
-   case "message"->recipient.sendSystemMessage(Component.literal(a.get("value")));
-   case "sound"->{var sound=net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(a.get("value")));if(sound!=null)c.level().playSound(null,subject==null?recipient.blockPosition():subject.blockPosition(),sound,net.minecraft.sounds.SoundSource.BLOCKS,1,1);}
-   case "command"->{if(c.actor()==owner)c.level().getServer().getCommands().performPrefixedCommand(owner.createCommandSourceStack(),a.get("value"));}
+   case "message"->{if(recipient!=null)recipient.sendSystemMessage(Component.literal(a.get("value")));}
+   case "sound"->{var sound=net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(a.get("value")));if(sound!=null&&(subject!=null||recipient!=null))c.level().playSound(null,subject==null?recipient.blockPosition():subject.blockPosition(),sound,net.minecraft.sounds.SoundSource.BLOCKS,1,1);}
+   case "command"->{if(owner!=null&&c.actor()==owner)c.level().getServer().getCommands().performPrefixedCommand(owner.createCommandSourceStack(),a.get("value"));}
    case "effect"->{if(target instanceof net.minecraft.world.entity.LivingEntity living){var effect=net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.get(net.minecraft.resources.Identifier.parse(a.get("id"))).orElseThrow();living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect,Integer.parseInt(a.get("duration_ticks")),Integer.parseInt(a.get("level"))-1));}}
    case "velocity"->{if(target!=null){target.push(Double.parseDouble(a.get("x")),Double.parseDouble(a.get("y")),Double.parseDouble(a.get("z")));target.hurtMarked=true;}}
    case "damage_scale"->{if(c.damage()!=null)c.damage().applyAsDouble(Double.parseDouble(a.get("value")));}

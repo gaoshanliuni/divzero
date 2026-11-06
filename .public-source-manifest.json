@@ -3948,6 +3948,11 @@
       "bytes": 2954
     },
     {
+      "path": "docs/releases/1.0.34.md",
+      "sha256": "5a93264d8b0f678baf0b8234ab1b1b3402cb91010d10892ae98c5237b795f386",
+      "bytes": 1029
+    },
+    {
       "path": "gradle.properties",
       "sha256": "221fc0187958ef2b1c4b54163201600842adc6bbff783087f232e15576cfc85c",
       "bytes": 496
@@ -7424,8 +7429,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerInteractionRules.java",
-      "sha256": "a64817ac3738b8d511bb8eca400cc7883b65ec880a891020e21c19cfbaf531d0",
-      "bytes": 20807
+      "sha256": "564c6d82f4f1077fbc29f0073bc2dee869e7f3b07917455572d3faf0f8bcfbef",
+      "bytes": 20890
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerJavaDependencies.java",
