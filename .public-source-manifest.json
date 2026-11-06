@@ -5074,8 +5074,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentModelPanel.java",
-      "sha256": "3d528b5a74f2e03327b66016ec0a34e42d20bf4969481dae0751629acd38edde",
-      "bytes": 6218
+      "sha256": "21bb63867a9af5e58f151e6b15ed289114cba930198b4125072e0f91d5e96517",
+      "bytes": 6256
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",
@@ -5409,8 +5409,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ResponseLatencySmoke.java",
-      "sha256": "7259474066f6b4b428176cce8ebad08923a3bd0afc98bd5bd9db561bdef90551",
-      "bytes": 10456
+      "sha256": "43d50510707027c8efe256dad9958ee010cb22255721942e26fce3c7af5b5303",
+      "bytes": 12855
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
