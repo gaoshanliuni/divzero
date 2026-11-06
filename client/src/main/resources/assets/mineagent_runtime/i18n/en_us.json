@@ -3551,5 +3551,6 @@
   "速度变化": "Velocity change",
   "伤害倍率": "Damage scale",
   "物品使用时长": "Item use duration",
-  "继续原生处理": "Continue native processing"
+  "继续原生处理": "Continue native processing",
+  "请先在设置中填写模型 API 地址。": "First set the model API URL in Settings."
 }
