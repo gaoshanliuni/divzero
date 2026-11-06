@@ -5409,8 +5409,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ResponseLatencySmoke.java",
-      "sha256": "cbdd23c8f856d22fe85f8db72070d38e8d807ffe0ed88396cec499ce1a227366",
-      "bytes": 13180
+      "sha256": "b7566aa22ec9aa18088b889159a8d688448d54cfa8e616e325ecec4d0a0ca3bd",
+      "bytes": 13231
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
