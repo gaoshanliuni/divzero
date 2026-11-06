@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.phys.AABB;
 import java.util.*;
 public final class RuntimeCreatureRenderer extends EntityRenderer<RuntimeCreatureEntity,RuntimeCreatureRenderer.State> {
+    public static final Set<UUID> texturedDrawn=new HashSet<>();
     public static final Map<UUID,Integer> drawn=new HashMap<>();public static final Map<UUID,Set<String>> animationsSeen=new HashMap<>();
     public static final class State extends EntityRenderState{BorrowedCreatureVisuals.View borrowed;RuntimeMesh mesh;Map<String,net.minecraft.resources.Identifier> textures=Map.of();UUID entity;float yaw;boolean baby;String animationEvent="idle";List<dev.mineagent.runtime.core.creature.CreatureRig.Bone> bones=List.of();dev.mineagent.runtime.core.creature.CreatureAnimation.Clip clip;double animationAge;double[] transform={0,0,0,0,0,0,1,1,1};}
     public RuntimeCreatureRenderer(EntityRendererProvider.Context context){super(context);shadowRadius=0.2F;}
@@ -34,6 +35,7 @@ public final class RuntimeCreatureRenderer extends EntityRenderer<RuntimeCreatur
     }
     private static void drawMesh(RuntimeMesh mesh,State state,PoseStack poses,SubmitNodeCollector collector,String key){
         collector.submitCustomGeometry(poses,RenderTypes.entityTranslucent(state.textures.getOrDefault(key,net.minecraft.resources.Identifier.fromNamespaceAndPath("mineagent_runtime","textures/entity/creature_white.png"))),(pose,buffer)->{
+            if(Boolean.getBoolean("mineagent.skillSmoke")&&System.getProperty("mineagent.skillSmokeMode","").equals("event_abilities")&&state.textures.containsKey(key))texturedDrawn.add(state.entity);
             for(var t:mesh.triangles()){
                 var a=mesh.vertices().get(t.a());var b=mesh.vertices().get(t.b());var c=mesh.vertices().get(t.c());
                 float x=(b.y()-a.y())*(c.z()-a.z())-(b.z()-a.z())*(c.y()-a.y()),y=(b.z()-a.z())*(c.x()-a.x())-(b.x()-a.x())*(c.z()-a.z()),z=(b.x()-a.x())*(c.y()-a.y())-(b.y()-a.y())*(c.x()-a.x());float n=(float)Math.sqrt(x*x+y*y+z*z);x/=n;y/=n;z/=n;

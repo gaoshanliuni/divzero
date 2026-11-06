@@ -50,9 +50,9 @@ final class NativeContentCatalogPanel {
             NativeEvidenceView.add(host,list,summary);notice.setText(Component.literal(label(source)));
         });
         var actions=WorkspacePanels.row();actions.getLayout().heightAuto().minHeight(25).flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP);panel.body.addChild(actions);
-        if(!source.equals("entity_rules")||!text(item,"ruleKind").equals("visual"))actions.addChild(button("重命名",()->Dialog.stringEditorDialog(t("重命名"),text(item,"name"),value->!value.isBlank()&&value.length()<=(source.equals("creatures")?48:80),name->change(source,item,"rename",Map.of("name",name),notice,()->{panel.close();signature="";poll=0;})).show(panel.body)));
+        if(!item.has("abilityId")&&(!source.equals("entity_rules")||!text(item,"ruleKind").equals("visual")))actions.addChild(button("重命名",()->Dialog.stringEditorDialog(t("重命名"),text(item,"name"),value->!value.isBlank()&&value.length()<=(source.equals("creatures")?48:80),name->change(source,item,"rename",Map.of("name",name),notice,()->{panel.close();signature="";poll=0;})).show(panel.body)));
         if(source.equals("creatures"))actions.addChild(button("预览",()->change(source,item,"preview",Map.of(),notice,()->{})));
-        actions.addChild(button("高级源码编辑",()->editor(source,item)));
+        if(item.has("abilityId"))actions.addChild(button("编辑所属事件能力",()->{panel.close();select("event_abilities");}));else actions.addChild(button("高级源码编辑",()->editor(source,item)));
     }
     private void editor(String source,JsonObject item){
         var panel=host.window("content-edit-"+source+text(item,"id"),text(item,"name"),520,390);panel.body.clearAllChildren();var status=WorkspacePanels.text(t("正在读取…"));panel.body.addChild(status);var input=new TextArea();input.setId("content-source-editor");input.getLayout().flex(1).minHeight(0).widthPercent(100);panel.body.addChild(input);final boolean[] ready={false};source(source,item,0,new StringBuilder()).whenComplete((value,error)->{if(panel.closed()||!live())return;if(error!=null){WorkspacePanels.failure(status,error);return;}input.setValue(value.split("\n",-1),false);ready[0]=true;status.setText(Component.literal(t("修改内容保留原 ID；保存前检查实际版本。")));});

@@ -3534,5 +3534,6 @@
   "退出后修复 Python 环境": "Repair Python after exit",
   "请在本机单人世界中安排修复。": "Schedule repair from a local singleplayer world.",
   "[本机 Python] 正在执行已确认的请求…": "[Local Python] Executing the approved request…",
-  "原生事件能力": "Native event abilities"
+  "原生事件能力": "Native event abilities",
+  "编辑所属事件能力": "Edit parent event ability"
 }

@@ -31,7 +31,7 @@ public final class ServerEventAbilities {
  public static Map<String,Object> define(ServerPlayer p,UUID operation,JsonNode a)throws Exception{
   permission(p);var s=p.level().getServer();var abilities=load(s,"abilities",Ability.class);UUID id=a.has("ability_id")?UUID.fromString(a.path("ability_id").asText()):operation;var old=abilities.get(id);long expected=revision(a);check(p,old==null?null:old.owner(),old==null?0:old.revision(),expected);
   if(old==null&&abilities.size()>=512)throw new IllegalStateException("EVENT_ABILITY_CAPACITY");var spec=InteractionRuleSpec.template(a.path("source").asText());ServerInteractionRules.validateRegistry(spec);
-  var next=new Ability(id,p.getUUID(),expected+1,old==null||old.enabled(),spec.source());var edits=new LinkedHashMap<String,String>();edits.put(prefix(s,"abilities")+id,JSON.writeValueAsString(next));
+  var template=(ObjectNode)JSON.readTree(spec.source());boolean enabled=template.has("enabled")?spec.enabled():old==null||old.enabled();template.remove("enabled");var next=new Ability(id,p.getUUID(),expected+1,enabled,template.toString());var edits=new LinkedHashMap<String,String>();edits.put(prefix(s,"abilities")+id,JSON.writeValueAsString(next));
   for(var b:load(s,"bindings",Binding.class).values())if(b.abilityId().equals(id)){var updated=new Binding(b.id(),b.owner(),id,b.revision()+1,b.enabled(),b.dimension(),b.position(),b.entityId());materialize(s,next,updated,edits);}
   apply(s,edits);return Map.of("status","APPLIED","abilityId",id,"revision",next.revision(),"nativeCallback",true);
  }

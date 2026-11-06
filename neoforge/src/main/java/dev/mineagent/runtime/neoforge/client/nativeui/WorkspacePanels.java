@@ -38,7 +38,7 @@ final class WorkspacePanels {
         draw[0]=()->{
             fields.clearAllScrollViewChildren();tabs.clearAllChildren();if(snapshot[0]==null)return;
             var groups=new LinkedHashSet<String>();for(var raw:snapshot[0].getAsJsonArray("fields"))groups.add(raw.getAsJsonObject().get("group").getAsString());
-            groups.add("AI 玩家模型");var groupSelect=new Selector<String>();NativeUiTheme.options(groupSelect);groupSelect.setCandidates(List.copyOf(groups));groupSelect.setValue(group[0],false);groupSelect.setOnValueChanged(value->{group[0]=value;draw[0].run();});groupSelect.getLayout().flex(1);tabs.addChild(groupSelect);
+            groups.add("AI 玩家模型");var groupSelect=new Selector<String>();groupSelect.setId("settings-category");NativeUiTheme.options(groupSelect);groupSelect.setCandidates(List.copyOf(groups));groupSelect.setValue(group[0],false);groupSelect.setOnValueChanged(value->{group[0]=value;draw[0].run();});groupSelect.getLayout().flex(1);tabs.addChild(groupSelect);
             tabs.addChild(NativeUiTheme.button(t("刷新"),load[0]));
             if(group[0].equals("AI 玩家模型")){
                 notice.setText(Component.literal(t("分别设置每个 AI 的模型，可使用列表外模型 ID。")));
@@ -99,7 +99,7 @@ final class WorkspacePanels {
             if(!current.getAsBoolean())return;if(error!=null){failure(notice,error);return;}
             var data=JsonParser.parseString(receipt.values().get("agentManagement")).getAsJsonObject();list.clearAllScrollViewChildren();
             for(var raw:data.getAsJsonArray("agents")){var value=raw.getAsJsonObject();String id=value.get("id").getAsString(),name=value.get("name").getAsString();var entry=card(list,name);
-                var configure=NativeUiTheme.button(t("设置此 AI 的模型"),()->AgentModelPanel.open(host,id,name));configure.setId("settings-ai-model-"+id);entry.addChild(configure);
+                var configure=NativeUiTheme.button(t("设置此 AI 的模型"),()->AgentModelPanel.open(host,id,name));configure.setId("settings-ai-model-"+id);configure.setActive(value.get("canConfigureModel").getAsBoolean());entry.addChild(configure);
             }
             var paging=row();paging.getLayout().height(25);int offset=data.get("offset").getAsInt(),next=data.get("nextOffset").getAsInt();
             if(offset>0)paging.addChild(NativeUiTheme.button(t("上一页"),()->request("agent.manage",Map.of("kind","page","offset",Integer.toString(Math.max(0,offset-16)))).thenRun(()->agentModels(host,window,list,notice,current))));
