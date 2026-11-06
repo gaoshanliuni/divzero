@@ -979,8 +979,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "sha256": "22810e52a4a18239c6813f1130099342a5c955fdc7cdeed2bec7dc46ac8917e4",
-      "bytes": 322865
+      "sha256": "0dd03ea0a6ab4959a5685f04f29b2ab83b5ccd5a6b8b666ee639ccca1295d5c1",
+      "bytes": 323561
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -4874,8 +4874,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "b23082cf1e26852137dcd14189ce8013fabd25592c7d525da1ef2992a36fbc54",
-      "bytes": 243142
+      "sha256": "a93b30f0126802767dc2e00462a45d8d44c4deb4beed44270f7692fc9133e19a",
+      "bytes": 243185
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5139,8 +5139,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ModelSettingsSmoke.java",
-      "sha256": "487d08522d423ea0d2ada86e537ba9df5f0d487ad955fdc100b635257b8b5fd9",
-      "bytes": 5057
+      "sha256": "801a6edf3293a51ae902535373b9dcced0b0598df3554e3eb30a72c0c30cd4c0",
+      "bytes": 5237
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeApiPanel.java",
@@ -5229,8 +5229,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeEvidenceView.java",
-      "sha256": "a398a0527d80a4893a956e0cc02d470e5bd341eb71b4b141a847a88b47ba2c26",
-      "bytes": 15297
+      "sha256": "bbe1f529d82b45bef7e3bc6506d058619a466680007cad7c17a6fd459d87a721",
+      "bytes": 16049
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeExtrasSmokeClient.java",
@@ -8494,8 +8494,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldContentPrompt.java",
-      "sha256": "567c47a208184ccae7ff2bb567d194f8eadac01073ee50104e96b6c225f0cc8a",
-      "bytes": 25850
+      "sha256": "640278034633611ef3f40efa41f16ef72d6539028d0bcf8aaf16762aed00a132",
+      "bytes": 25878
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldPackagePatchBuilder.java",

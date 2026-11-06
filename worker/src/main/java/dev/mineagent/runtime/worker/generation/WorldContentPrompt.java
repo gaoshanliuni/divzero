@@ -28,8 +28,8 @@ public final class WorldContentPrompt {
         content.blockCount() 是当前仍与实际原版方块匹配的受管块数，不是模型声明成功。
         通用 3D 世界物件：content.createObject(partKey,modelPath,dx,dy,dz) 从本定义声明的模型资源创建 RuntimeObjectEntity，返回真实 Native 实体；最多32件/实例、128件/世界，偏移绝对值<=32。
         模型 JSON 文件 side=COMMON、mediaType=application/json；其路径必须列入 definition.resourcePaths。可选 texture PNG 也必须是 COMMON/CLIENT 的 image/png 资源且列入 resourcePaths。不能读 SERVER 源码作为可公开模型。
-        模型严格 JSON version=1（旧几何）或version=2（参数化几何/显式法线）；collision 为[-width/2,0,-depth/2,width/2,height,depth/2]，各尺寸0.05..32。这是独立轴对齐碰撞箱，不是三角形精确碰撞；空心通道应拆成多个受管物件，不伪称一个大包围盒有洞。
-        几何可混用 boxes:[{from:[x,y,z],to:[x,y,z],color:'#RRGGBB'}]（最多128盒）与 vertices:[[x,y,z,u,v],...]、triangles:[[a,b,c,'#RRGGBB'],...]。坐标绝对值<=32，最多4096顶点/8192三角形，不允许退化三角形；color 也可用 #AARRGGBB。
+        模型严格 JSON version=1（旧几何）或version=2（参数化几何/显式法线）；collision 为[-width/2,0,-depth/2,width/2,height,depth/2]，各尺寸0.05..100。这是独立轴对齐碰撞箱，不是三角形精确碰撞；空心通道应拆成多个受管物件，不伪称一个大包围盒有洞。
+        几何可混用 boxes:[{from:[x,y,z],to:[x,y,z],color:'#RRGGBB'}]（最多128盒）与 vertices:[[x,y,z,u,v],...]、triangles:[[a,b,c,'#RRGGBB'],...]。坐标绝对值<=100且整体每轴跨度<=100，最多4096顶点/8192三角形，不允许退化三角形；color 也可用 #AARRGGBB。
         对需要接近真球/光滑圆环的需求，必须优先使用 version=2 的 primitives 数组，由数学算法生成正确网格与解析平滑法线，不能改用分层boxes或手工猜三角形索引来冒充球体。这是通用数学几何，不是固定篮球成品或玩法模板。
         v2常用基本形状全部可混合在primitives数组中：box（立方体/长方体，size:[宽,高,深]）；plane（平面，size:[宽,深]）；disc（圆盘，radius）；annulus（平面圆环，innerRadius/outerRadius且内<外）；cylinder（圆柱，radius/height）；cone（圆锥，radius/height）；frustum（圆台，radiusBottom/radiusTop/height，单端可为0但不能同时0）；prism/pyramid（棱柱/棱锥，radius/height/sides，sides=3三角形、4正方形，radius为外接圆半径）；ellipsoid（椭球，radii:[x半轴,y半轴,z半轴]）；capsule（胶囊，radius/height，height含两端半球且>=2*radius）。以上必需type、center:[x,y,z]、color；center统一是几何中心，不是底部。
         新形状的axis=x/y/z默认y，指平面的法向/旋转体长轴；右手旋转，大小向量是局部轴。圆盘/平面/平面环doubleSided默认true；圆柱/圆锥/圆台/棱柱/棱锥capped默认true。圆盘/环/柱/锥/台segments默认48、3..96，棱柱/棱锥用sides（默认6，3..96）而不是segments；capsule用segments（默认48，8..96）、hemisphereRings（默认8，2..24）。ellipsoid沿用sphere的segments/rings；大多数smooth默认true，box/plane/prism/pyramid默认false。所有预算仍跨整个模型共享，碰撞仍独立AABB，形状中心高度要留在物品y=0..1之内；不要把圆台/圆环渲染面误称三角网格碰撞。

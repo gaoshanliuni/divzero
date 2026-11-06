@@ -3535,5 +3535,21 @@
   "请在本机单人世界中安排修复。": "Schedule repair from a local singleplayer world.",
   "[本机 Python] 正在执行已确认的请求…": "[Local Python] Executing the approved request…",
   "原生事件能力": "Native event abilities",
-  "编辑所属事件能力": "Edit parent event ability"
+  "编辑所属事件能力": "Edit parent event ability",
+  "触发间隔（游戏刻）": "Trigger interval (ticks)",
+  "需要持有指定物品": "Require the specified item",
+  "伤害类型": "Damage type",
+  "持续时间（游戏刻）": "Duration (ticks)",
+  "效果等级": "Effect level",
+  "所属事件能力": "Parent event ability",
+  "绑定标识": "Binding ID",
+  "贴图资源": "Texture assets",
+  "对空使用物品": "Use item in air",
+  "开始使用物品": "Start using item",
+  "完成使用物品": "Finish using item",
+  "受到伤害": "Incoming damage",
+  "速度变化": "Velocity change",
+  "伤害倍率": "Damage scale",
+  "物品使用时长": "Item use duration",
+  "继续原生处理": "Continue native processing"
 }
