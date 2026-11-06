@@ -1184,8 +1184,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/BuildingDesign.java",
-      "sha256": "480ea037f16e9c038956efd5d474d0e2984659a008492431b1b9ce1b692c5fbd",
-      "bytes": 12834
+      "sha256": "be38e050f0e097d34aa200f5d6aa99eb3ea9013e9f3d4f9fd28d122e6f1b42a5",
+      "bytes": 14593
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/BuildingDesignStore.java",
@@ -5409,7 +5409,7 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ResponseLatencySmoke.java",
-      "sha256": "7381ac52421d1763767242df1d271b4008d17496446b00d92c193c411eae4590",
+      "sha256": "7259474066f6b4b428176cce8ebad08923a3bd0afc98bd5bd9db561bdef90551",
       "bytes": 10456
     },
     {
@@ -7374,8 +7374,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "7f7858c1ccdcd904ef344afbaa4b77df05ecf5663a62f6c11489149ea9ea27ef",
-      "bytes": 98830
+      "sha256": "4d44a9bb4db164fe99478d53914ff932fb821c19bd0352d2ded2aa6e87dc02a0",
+      "bytes": 99078
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",

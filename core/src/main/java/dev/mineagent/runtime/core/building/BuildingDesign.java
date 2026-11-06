@@ -106,10 +106,22 @@ public final class BuildingDesign {
     public static List<Map<String,Object>> fieldIssues(String source){
         var issues=new ArrayList<Map<String,Object>>();
         try{var root=JSON.readTree(source);fieldIssues(root,"/",Set.of("id","name","dimension","origin","templates","components","checks","clear_existing"),issues);
-            int i=0;for(var component:root.path("components"))fieldIssues(component,"/components/"+i++,Set.of("id","name","parts","template","material","transforms","depends_on","parent"),issues);
+            for(String key:List.of("id","name","dimension"))if(!root.path(key).isTextual()||root.path(key).asText().isBlank())issues.add(Map.of("path","/"+key,"expected","nonempty string","actual",root.path(key).toString()));
+            positionIssues(root.path("origin"),"/origin",issues);
+            if(!root.path("components").isArray()||root.path("components").isEmpty())issues.add(Map.of("path","/components","expected","nonempty array"));
+            int i=0;for(var component:root.path("components")){String path="/components/"+i++;fieldIssues(component,path,Set.of("id","name","parts","template","material","transforms","depends_on","parent"),issues);
+                if(!component.path("id").asText().matches("[A-Za-z][A-Za-z0-9_-]{0,95}"))issues.add(Map.of("path",path+"/id","expected","stable identifier starting with a letter"));
+                if(component.has("parts")==component.has("template"))issues.add(Map.of("path",path,"expected","exactly one of parts or template"));
+                if(component.has("parts")&&(!component.get("parts").isArray()||component.get("parts").isEmpty()))issues.add(Map.of("path",path+"/parts","expected","nonempty array"));
+                if(component.has("template")&&!root.path("templates").has(component.path("template").asText()))issues.add(Map.of("path",path+"/template","expected","an existing template identifier","actual",component.path("template").asText()));
+            }
             i=0;for(var check:root.path("checks"))fieldIssues(check,"/checks/"+i++,Set.of("id","component","kind","min","max","expected","path","headroom","allow_floating","description"),issues);
         }catch(Exception invalid){issues.add(Map.of("path","/","expected","One valid JSON object with unique keys"));}
         return issues.stream().limit(16).toList();
+    }
+    private static void positionIssues(JsonNode node,String path,List<Map<String,Object>> issues){
+        if(!node.isArray()||node.size()!=3){issues.add(Map.of("path",path,"expected","three integer coordinates","actual",node.toString()));return;}
+        for(int i=0;i<3;i++)if(!node.get(i).isIntegralNumber()||!node.get(i).canConvertToInt()||Math.abs(node.get(i).longValue())>30000000)issues.add(Map.of("path",path+"/"+i,"expected","integer coordinate in [-30000000, 30000000]","actual",node.get(i).toString()));
     }
     private static void fieldIssues(JsonNode node,String path,Set<String> allowed,List<Map<String,Object>> issues){
         if(node==null||!node.isObject()){issues.add(Map.of("path",path,"expected","object"));return;}

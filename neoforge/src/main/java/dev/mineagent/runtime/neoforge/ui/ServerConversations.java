@@ -370,11 +370,12 @@ public final class ServerConversations implements AutoCloseable {
         thread();if(!flight.permit.get()||!store.pending(flight.op)){retire(flight);return;}
         if(previous==null)previous=summaries.latest(store,g.viewer(),g.agent().agentId(),g.conversation(),g.initial().historyEnd(),g.initial().summaryBudget()).orElse(null);
         // A completed, validated prefix can be reused immediately. Missing summary coverage never blocks this reply.
-        if(previous!=null&&previous.endOffset()!=0)previous=null;
-        var plan=previous==null?g.initial():ConversationContext.build(store,g.viewer(),g.agent(),g.conversation(),g.turn(),g.persona(),g.original(),g.budget(),previous,g.preferences().section()+"\n"+g.memories());
+        var usable=previous;
+        while(usable!=null&&usable.endOffset()!=0)usable=summaries.latest(store,g.viewer(),g.agent().agentId(),g.conversation(),usable.endSequence()-1,g.initial().summaryBudget()).orElse(null);
+        var plan=usable==null?g.initial():ConversationContext.build(store,g.viewer(),g.agent(),g.conversation(),g.turn(),g.persona(),g.original(),g.budget(),usable,g.preferences().section()+"\n"+g.memories());
         startReply(flight,g,plan);
         if(plan.omittedThrough()>0&&g.policy().summaryMaxCalls()>0&&!historyJobs.containsKey(g.conversation())){
-            historyJobs.put(g.conversation(),flight);backgroundHistory(flight,g,previous,plan.omittedThrough());
+            historyJobs.put(g.conversation(),flight);backgroundHistory(flight,g,previous,previous!=null&&previous.endOffset()!=0?Math.max(plan.omittedThrough(),previous.endSequence()):plan.omittedThrough());
         }
     }
     private boolean historyCurrent(Flight f){
