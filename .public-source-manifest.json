@@ -5089,8 +5089,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentModelPanel.java",
-      "sha256": "a3950778966710da8a912ac8d2abccd1bf40519736e9b68cc7a50e5d3e50c853",
-      "bytes": 7164
+      "sha256": "8c0f477ccf83a52b91387019b04539b33f4c7612eb2f92e7eac6ff69cd512a06",
+      "bytes": 7151
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",

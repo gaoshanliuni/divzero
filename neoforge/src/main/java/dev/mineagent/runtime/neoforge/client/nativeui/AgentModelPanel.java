@@ -14,7 +14,7 @@ final class AgentModelPanel {
     private final TextField custom=new TextField(),search=new TextField();private final UIElement specific=new UIElement();
     private JsonObject saved;private boolean saving,loading;private int offset;private long epoch;private long pollAt;
     private record Choice(String id,String label){@Override public String toString(){return label;}}
-    static void open(NativeWorkspaceScreen host,String id,String name){if(host.revealWindow("model-"+id))return;var window=host.window("model-"+id,name+" · "+t("模型"),450,345);new AgentModelPanel(window.body,id,()->!window.closed());}
+    static void open(NativeWorkspaceScreen host,String id,String name){if(host.revealWindow("model-"+id))return;var window=host.window("model-"+id,name+" · "+t("模型"),450,345);attach(window.body,id,()->!window.closed());}
     static void attach(UIElement parent,String agent,java.util.function.BooleanSupplier current){var scroll=WorkspacePanels.scroller(parent);scroll.getLayout().minHeight(0);var panel=new UIElement();panel.setId("agent-model-editor");panel.getLayout().widthPercent(100).heightAuto().minHeight(245).gapAll(6);scroll.addScrollViewChild(panel);new AgentModelPanel(panel,agent,current);}
     private AgentModelPanel(UIElement body,String agent,java.util.function.BooleanSupplier current){
         this.current=current;this.agent=agent;body.addChild(WorkspacePanels.text(t("仅影响这个 AI；使用现有 API URL / Key。")));body.addChild(status);
