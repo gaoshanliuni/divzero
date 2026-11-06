@@ -7374,8 +7374,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "sha256": "4d44a9bb4db164fe99478d53914ff932fb821c19bd0352d2ded2aa6e87dc02a0",
-      "bytes": 99078
+      "sha256": "71c3e69e2c07fd2a54fc1d42f4ffd21a1223f5d402240d53d1f1b36d551b1172",
+      "bytes": 99246
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
