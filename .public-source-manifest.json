@@ -3629,8 +3629,8 @@
     },
     {
       "path": "docs/EVENT_MODEL_PYTHON_UPGRADE.md",
-      "sha256": "3a7003b9bd4893987f7dfdd4597f4f30da80ac38d6440ffcf3589d0220acb182",
-      "bytes": 1917
+      "sha256": "eee80dd1d97f573a6daec87b2fb7fba943a2ec9c70c6590990ae7f6ecdda7bd1",
+      "bytes": 4937
     },
     {
       "path": "docs/FEATURES.md",
@@ -3813,6 +3813,11 @@
       "bytes": 328813
     },
     {
+      "path": "docs/images/native-model-settings.png",
+      "sha256": "b456ec523c06202fd03c0588bdf4eb30da395043825d281d1a9ca2c70f966323",
+      "bytes": 170244
+    },
+    {
       "path": "docs/images/native-neural-selfplay-arena.png",
       "sha256": "fc2349e2a0f389a7377856d032f3c0d401aad930fddbcc5be53114e7ad437d2e",
       "bytes": 2226828
@@ -3821,6 +3826,11 @@
       "path": "docs/images/native-preview.png",
       "sha256": "058360c4bcef3896702d88b4c10c464137c04946df123b5e7e22f191d1ddc44b",
       "bytes": 221630
+    },
+    {
+      "path": "docs/images/native-profile-model.png",
+      "sha256": "c985c76139375460b75e38d039d518c2209fc448c22a7cd870b84e9e8d914f92",
+      "bytes": 202013
     },
     {
       "path": "docs/images/native-pvp-loadouts.png",
@@ -3949,8 +3959,8 @@
     },
     {
       "path": "docs/releases/1.0.34.md",
-      "sha256": "5a93264d8b0f678baf0b8234ab1b1b3402cb91010d10892ae98c5237b795f386",
-      "bytes": 1029
+      "sha256": "f4ca841fd4e04b00d3f502c9dd13fded953eec7db7fdfb50b7714011caedc0db",
+      "bytes": 1298
     },
     {
       "path": "gradle.properties",
