@@ -5109,8 +5109,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/EventAbilitySmoke.java",
-      "sha256": "6c1222ffa713f0bf550a016c92cedd31e04c1a13dc9341b24ec397521e10aae4",
-      "bytes": 8180
+      "sha256": "9c08452c3dc6641bfb0539a997f12b07a67366110c2c9c4d48113de7d7b7280a",
+      "bytes": 8182
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/KubeInterfaceRenderer.java",
@@ -6984,8 +6984,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "sha256": "3dd8f93f8f230444cc65154386ed52603a417c2b2a202fe92397ed5d695f99ab",
-      "bytes": 77579
+      "sha256": "1357c2b3fa9eaf8be05fe43b04b89c89de207ad48c49c826db45396e5ba816e0",
+      "bytes": 78133
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7109,8 +7109,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreatureModelAssets.java",
-      "sha256": "354bb9f35c4d071cf8bab058a1211efc7453be709647954f355d637ef65017a2",
-      "bytes": 6736
+      "sha256": "5c012d33dea4e943377161bd6535f42efbf7907600b37f364d93690fb8390047",
+      "bytes": 7032
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreatureTextureSmoke.java",

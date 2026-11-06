@@ -47,11 +47,11 @@ public final class CreatureModelAssets {
                 source.set("model_assets",JSON.valueToTree(assets));var updated=(ObjectNode)args.deepCopy();updated.remove("textures");updated.put("source",source.toString());return updated;
             }catch(Exception error){throw new CompletionException(error);}},IO);
             prepared.whenComplete((updated,error)->server.execute(()->{try{
-                if(error!=null)throw new CompletionException(error);
+                if(error!=null){result.complete(dev.mineagent.runtime.core.conversation.ToolFailure.result("define_creature",operation,error,dev.mineagent.runtime.core.conversation.ToolFailure.Phase.VALIDATION));return;}
                 if(!permit.getAsBoolean()||server.getPlayerList().getPlayer(owner)!=p||p.level()!=level||!allowed(p,agent))throw new IllegalStateException("CREATURE_CONTEXT_CHANGED");
                 result.complete(RuntimeCreatures.definePrepared(p,operation,updated));
             }catch(Exception failure){result.completeExceptionally(failure);}}));
-        }catch(Exception error){result.completeExceptionally(error);}return result;
+        }catch(Exception error){result.complete(dev.mineagent.runtime.core.conversation.ToolFailure.result("define_creature",operation,error,dev.mineagent.runtime.core.conversation.ToolFailure.Phase.VALIDATION));}return result;
     }
     public static CompletableFuture<RuntimeModelBundle> read(MinecraftServer server,RuntimeCreatureEntity entity,String hash){
         var definition=entity.definition();if(definition==null||!definition.modelAssets().containsValue(hash)||entity.owner()==null)return CompletableFuture.failedFuture(new SecurityException("CREATURE_ASSET_NOT_BOUND"));

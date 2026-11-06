@@ -20,7 +20,7 @@ public final class EventAbilitySmoke {
   .thenCompose(v->define(source("living_jump",Map.of("type","effect","id","minecraft:speed","level",2,"duration_ticks",100))))
   .thenCompose(v->bind()).thenCompose(v->server(p->{p.jumpFromGround();check(p.hasEffect(net.minecraft.world.effect.MobEffects.SPEED),"NATIVE_JUMP_NO_EFFECT");return true;}))
   .thenCompose(v->tool("define_event_ability",Map.of("ability_id",ability,"expected_revision",1,"source",source("living_jump",Map.of("type","damage_scale","value",.5)))))
-  .thenCompose(r->{check("REJECTED".equals(r.get("status")),"INVALID_CANDIDATE_ACCEPTED");check(r.toString().contains("on_allowed[0]"),"NO_FIELD_DIAGNOSTIC_"+r);return tool("inspect_event_abilities",Map.of());})
+  .thenCompose(r->{check("REJECTED".equals(r.get("status")),"INVALID_CANDIDATE_RECEIPT_"+r);check(r.toString().contains("on_allowed[0]"),"NO_FIELD_DIAGNOSTIC_"+r);return tool("inspect_event_abilities",Map.of());})
   .thenCompose(r->{check(r.toString().contains("revision=1"),"FAILED_EDIT_REPLACED_ACTIVE");return tool("control_event_ability",Map.of("ability_id",ability,"expected_revision",1,"action","disable"));})
   .thenCompose(v->server(p->{p.removeAllEffects();p.jumpFromGround();check(!p.hasEffect(net.minecraft.world.effect.MobEffects.SPEED),"DISABLED_ABILITY_STILL_EXECUTES");return true;}))
   .thenCompose(v->tool("control_event_ability",Map.of("ability_id",ability,"expected_revision",2,"action","remove")))

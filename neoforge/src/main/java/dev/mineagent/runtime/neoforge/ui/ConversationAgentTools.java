@@ -224,9 +224,11 @@ public final class ConversationAgentTools {
             case "control_native_entity"->{keys(a,"action","template_id","entity_id","position","encounter","expected_revision");result=NativeEntityTemplates.control(p,operation,a);}
             case "replace_entity_part"->{keys(a,"entity_id","entity_type","part_index","target_part","source_type","source_part","translation","rotation","scale","rule_id","expected_revision");return EntityModelProbe.replace(p,operation,a);}
             case "set_entity_state"->{keys(a,"entity_id","attributes","no_ai","native_action");result=EntityLogicTools.state(p,a);}
-            case "define_event_ability"->{keys(a,"source","ability_id","expected_revision");result=ServerEventAbilities.define(p,operation,a);}
-            case "bind_event_ability"->{keys(a,"ability_id","ability_revision","binding_id","expected_revision","position","entity_id");result=ServerEventAbilities.bind(p,operation,a);}
-            case "control_event_ability"->{keys(a,"ability_id","binding_id","expected_revision","action");result=ServerEventAbilities.control(p,a);}
+            case "define_event_ability","bind_event_ability","control_event_ability"->{
+                try{result=switch(tool){case "define_event_ability"->{keys(a,"source","ability_id","expected_revision");yield ServerEventAbilities.define(p,operation,a);}case "bind_event_ability"->{keys(a,"ability_id","ability_revision","binding_id","expected_revision","position","entity_id");yield ServerEventAbilities.bind(p,operation,a);}default->{keys(a,"ability_id","binding_id","expected_revision","action");yield ServerEventAbilities.control(p,a);}};}
+                catch(IllegalArgumentException|SecurityException invalid){return CompletableFuture.completedFuture(ToolFailure.result(tool,operation,invalid,ToolFailure.Phase.VALIDATION));}
+                catch(IllegalStateException invalid){if(Objects.toString(invalid.getMessage(),"").matches("EVENT_.*(?:STALE|CAPACITY|ID_OR_CAPACITY)"))return CompletableFuture.completedFuture(ToolFailure.result(tool,operation,invalid,ToolFailure.Phase.VALIDATION));throw invalid;}
+            }
             case "set_interaction_rule","delete_interaction_rule"->{keys(a,"source","rule_id","expected_revision");result=ServerInteractionRules.set(p,operation,a,tool.equals("delete_interaction_rule"));}
             case "set_chat_settings"->{keys(a,"show_thinking","thinking_depth","default_reply","response_agent");result=ServerChatSettings.set(p,agent,a);}
             case "set_persona"->{keys(a,"expected_revision","text");if(!a.path("expected_revision").canConvertToLong()||!a.path("expected_revision").isIntegralNumber()||a.path("expected_revision").asLong()<0||!a.path("text").isTextual()||a.path("text").asText().length()>8192)throw new IllegalArgumentException("PERSONA_ARGUMENTS");result=ConversationIdentityTools.setPersona(p,agent,operation,a.path("expected_revision").longValue(),a.path("text").textValue());}
