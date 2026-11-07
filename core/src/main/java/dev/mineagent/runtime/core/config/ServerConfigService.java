@@ -144,6 +144,7 @@ public final class ServerConfigService implements AutoCloseable {
     /** Immutable, cheap tick/creation read; published only after successful persistence. */
     public RuntimeResourceLimits resourceLimits() { return resourceLimits; }
     public synchronized SpeechProviderConfig speechProvider(){return new SpeechProviderConfig(revision,Boolean.parseBoolean(publicValues.getOrDefault("voice.input.enabled","false")),publicValues.getOrDefault("provider.asr.baseUrl",""),publicValues.getOrDefault("provider.asr.model",""),publicValues.getOrDefault("provider.asr.language",""),secretValues.getOrDefault("provider.asr.apiKey",""));}
+    public synchronized SpeechProviderConfig resourceTranscriptionProvider(){return new SpeechProviderConfig(revision,Boolean.parseBoolean(publicValues.getOrDefault("resource.transcription.enabled","false")),publicValues.getOrDefault("provider.asr.baseUrl",""),publicValues.getOrDefault("provider.asr.model",""),publicValues.getOrDefault("provider.asr.language",""),secretValues.getOrDefault("provider.asr.apiKey",""));}
     /** Atomic internal Worker input. Never serialize this object into a UI response or log. */
     public record ProviderSnapshot(long revision,Map<String,String> values){
         public ProviderSnapshot{values=Map.copyOf(values);}

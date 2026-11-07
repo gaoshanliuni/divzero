@@ -26,4 +26,15 @@ public record ConversationBudget(long configRevision, int contextTokenBudget, in
             throw new IllegalArgumentException("CONVERSATION_BUDGET_INVALID", failure);
         }
     }
+    public static ConversationBudget forAgent(PanelSnapshot snapshot,java.util.UUID world,java.util.UUID agent){
+        var policy=from(snapshot);var values=snapshot.values();var choice=AgentModelSettings.read(values,world,agent);
+        String base=values.getOrDefault("provider.openai.baseUrl",""),model=choice.mode().equals("CUSTOM")?choice.model():values.getOrDefault("provider.openai.role.chat","").strip();
+        if(choice.mode().equals("CUSTOM"))base=choice.baseUrl();
+        if(model.isBlank())model=values.getOrDefault("provider.openai.model","");
+        if(!AgentModelSettings.validModel(model)||base.isBlank())return policy;
+        int length=ModelCapabilityProfiles.read(values,base,model).contextTokens();if(length==0)return policy;
+        if(length<2048)throw new IllegalArgumentException("MODEL_CONTEXT_TOO_SMALL");
+        int input=Math.min(policy.contextTokenBudget(),length-Math.max(1024,length/10));
+        return new ConversationBudget(policy.configRevision(),input,policy.summaryMaxCalls(),Math.min(policy.summaryInputBudget(),Math.max(2048,input)));
+    }
 }

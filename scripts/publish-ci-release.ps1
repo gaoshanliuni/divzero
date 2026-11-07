@@ -26,24 +26,23 @@ if(@($info.jars).Count -ne 2 -or @($info.jars | ForEach-Object jar | Sort-Object
 $run=[string]$info.workflowRunId;$attempt=[string]$info.workflowRunAttempt
 if ($run -notmatch '^[1-9][0-9]*$' -or $attempt -notmatch '^[1-9][0-9]*$') { throw 'RELEASE_BUILD_RUN_MISSING' }
 if (-not $DryRun -and ($run -ne $env:GITHUB_RUN_ID -or [long]$attempt -gt [long]$env:GITHUB_RUN_ATTEMPT -or $env:GITHUB_REPOSITORY -ne $repo -or $env:GITHUB_REF -ne 'refs/heads/main')) { throw 'RELEASE_ONLY_FROM_TRUSTED_MAIN_RUN' }
-$manifest=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::Ordinal)
-foreach($line in [IO.File]::ReadAllLines((Join-Path $assets 'SHA256SUMS'))) {
-    if ($line -notmatch '^([a-f0-9]{64})  ([A-Za-z0-9][A-Za-z0-9_.+ -]*)$') { throw 'RELEASE_CHECKSUM_FORMAT' }
-    $hash=$Matches[1];$name=$Matches[2]
-    if ($manifest.ContainsKey($name) -or $name -eq 'SHA256SUMS') { throw 'RELEASE_DUPLICATE_CHECKSUM' }
+$manifest=[Collections.Generic.Dictionary[string,long]]::new([StringComparer]::Ordinal)
+$records=@(Get-Content -LiteralPath (Join-Path $assets 'ASSETS.json') -Raw | ConvertFrom-Json)
+foreach($record in $records) {
+    $name=[string]$record.name;$bytes=[long]$record.bytes
+    if($name -notmatch '^[A-Za-z0-9][A-Za-z0-9_.+ -]*$' -or $name -eq 'ASSETS.json' -or $bytes -lt 0 -or $manifest.ContainsKey($name)){throw 'RELEASE_MANIFEST_FORMAT'}
+    [void][Guid]::Parse([string]$record.resourceId)
     $file=Join-Path $assets $name
-    if (-not (Test-Path -LiteralPath $file -PathType Leaf) -or (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant() -ne $hash) { throw "RELEASE_CHECKSUM_MISMATCH: $name" }
-    $manifest.Add($name,$hash)
+    if(-not (Test-Path -LiteralPath $file -PathType Leaf) -or (Get-Item -LiteralPath $file).Length -ne $bytes){throw "RELEASE_FILE_SIZE_MISMATCH: $name"}
+    $manifest.Add($name,$bytes)
 }
 $files=@(Get-ChildItem -LiteralPath $assets -File | Sort-Object Name)
-if ($files.Count -ne $manifest.Count+1 -or @(Get-ChildItem -LiteralPath $assets -Directory).Count) { throw 'RELEASE_UNEXPECTED_FILES' }
-foreach($file in $files) {
-    if ($file.Extension -notin @('.jar','.json','.txt','.md','') -or $file.Name -ne 'SHA256SUMS' -and -not $manifest.ContainsKey($file.Name)) { throw 'RELEASE_FILE_NOT_ALLOWED' }
-}
+if($files.Count -ne $manifest.Count+1 -or @(Get-ChildItem -LiteralPath $assets -Directory).Count){throw 'RELEASE_UNEXPECTED_FILES'}
+foreach($file in $files){if($file.Extension -notin @('.jar','.json','.txt','.md') -or $file.Name -ne 'ASSETS.json' -and -not $manifest.ContainsKey($file.Name)){throw 'RELEASE_FILE_NOT_ALLOWED'}}
 $required=@($expectedMains)+@('ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar','LICENSE-DIVZERO.txt','DEPENDENCIES.json','README.txt','THIRD-PARTY-NOTICES.md','BUILD-INFO.json')
-foreach($name in $required) { if (-not $manifest.ContainsKey($name)) { throw "RELEASE_REQUIRED_FILE_MISSING: $name" } }
-foreach($edition in $info.jars){if($manifest[[string]$edition.jar] -ne $edition.sha256){throw 'RELEASE_MAIN_JAR_HASH_MISMATCH'}}
-$manifest.Add('SHA256SUMS',(Get-FileHash -LiteralPath (Join-Path $assets 'SHA256SUMS') -Algorithm SHA256).Hash.ToLowerInvariant())
+foreach($name in $required){if(-not $manifest.ContainsKey($name)){throw "RELEASE_REQUIRED_FILE_MISSING: $name"}}
+foreach($edition in $info.jars){if($manifest[[string]$edition.jar] -ne $edition.bytes){throw 'RELEASE_MAIN_JAR_SIZE_MISMATCH'}}
+$manifest.Add('ASSETS.json',(Get-Item -LiteralPath (Join-Path $assets 'ASSETS.json')).Length)
 $short=$Commit.Substring(0,12)
 $tag=[string]$versions.modVersion
 $title=[string]$versions.modVersion
@@ -79,7 +78,7 @@ $changes
 首次进入世界点击聊天中的“启用”即可使用。F2 → 设置 → Provider 配置模型；右键 AI 打开专属面板。
 
 [安装说明](https://github.com/$repo/blob/$Commit/docs/BUILD_JAR.md) · [升级状态](https://github.com/$repo/blob/$Commit/docs/NATIVE_UI_MIGRATION_STATUS.md) · [持续技能实测](https://github.com/$repo/blob/$Commit/docs/PERSISTENT_PLAYER_SKILLS.md)
-[依赖许可与固定对应源码](https://github.com/$repo/blob/$Commit/docs/THIRD_PARTY_NOTICES.md) · [锁定来源与 SHA-256](https://github.com/$repo/blob/$Commit/scripts/stage-native-ui-dependencies.ps1)
+[依赖许可与固定对应源码](https://github.com/$repo/blob/$Commit/docs/THIRD_PARTY_NOTICES.md) · [固定依赖版本与来源](https://github.com/$repo/blob/$Commit/scripts/stage-native-ui-dependencies.ps1)
 
 ![LDLib2 MC 工作区](https://raw.githubusercontent.com/$repo/$Commit/docs/images/native-workspace.png)
 ![原生托管面板](https://raw.githubusercontent.com/$repo/$Commit/docs/images/player-takeover.png)
@@ -101,7 +100,7 @@ if ($selected.Count -ne $publishNames.Count) { throw 'RELEASE_RUNTIME_LIST_MISSI
     return $selected
 }
 $files=@(Select-RuntimeFiles $info $files $manifest)
-$notes+="`n`n### 运行 JAR 的 SHA-256`n`n| 文件 | SHA-256 |`n|---|---|`n"
+$notes+="`n`n### 运行 JAR 与文件大小`n`n| 文件 | 字节数 |`n|---|---|`n"
 foreach ($file in $files) { $notes+='| '+$file.Name+' | `'+$manifest[$file.Name]+'` |'+"`n" }
 $notes+="`n主模组和依赖以独立运行 JAR 提供，可选地图另附独立存档 ZIP。源码、许可证和构建审计使用正文链接或 JAR 内副本；完整提供对应来源信息。`n"
 if ($DryRun) { Write-Output "RELEASE_DRY_RUN_TAG=$tag"; Write-Output "RELEASE_TITLE=$title"; Write-Output $notes; Write-Output "VERIFIED_FILES=$verifiedCount"; Write-Output "PUBLISHED_JARS=$($files.Count)"; foreach ($file in $files) { Write-Output "PUBLISH_JAR=$($file.Name)" }; return }
@@ -152,7 +151,6 @@ function Check-Tag {
 }
 function Check-Asset($Asset,$File) {
     if ($Asset.name -ne $File.Name -or [long]$Asset.size -ne $File.Length) { throw "RELEASE_UPLOADED_ASSET_MISMATCH: $($File.Name)" }
-    if ($Asset.PSObject.Properties['digest'] -and $Asset.digest -and $Asset.digest -ne "sha256:$($manifest[$File.Name])") { throw "RELEASE_UPLOADED_HASH_MISMATCH: $($File.Name)" }
 }
 Check-Tag
 $release=Get-Optional "$api/releases/tags/$tag"
@@ -169,8 +167,8 @@ if ($release.draft) {
         $same=@($existing|Where-Object name -CEQ $file.Name)
         if ($same.Count -gt 1) { throw 'RELEASE_DUPLICATE_REMOTE_ASSET' }
         if ($same.Count -eq 1) {
-            # Only unfinished assets in this build's own draft can be replaced.
-            Invoke-RestMethod -Method Delete -Uri "$api/releases/assets/$($same[0].id)" -Headers $headers -TimeoutSec 60 | Out-Null
+            Check-Asset $same[0] $file
+            continue
         }
         $uploaded=Invoke-RestMethod -Method Post -Uri ($upload+'?name='+[Uri]::EscapeDataString($file.Name)) -Headers $headers -ContentType 'application/octet-stream' -InFile $file.FullName -TimeoutSec 600
         Check-Asset $uploaded $file

@@ -73,7 +73,7 @@ Write-Output "SOURCE_BUILD_VERSION_TEST_PASSED=$buildVersion"
     $function=$ast.Find({param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Select-RuntimeFiles'},$true)
     . ([scriptblock]::Create($function.Extent.Text))
     $info=[pscustomobject]@{jar='DivZero-test-no-python.jar';jars=@([pscustomobject]@{jar='DivZero-test-no-python.jar'},[pscustomobject]@{jar='DivZero-test-with-python.jar'})}
-    $names=@('DivZero-test-no-python.jar','DivZero-test-with-python.jar','ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar','native-sources.jar','BUILD-INFO.json','LICENSE-DIVZERO.txt','SHA256SUMS')
+    $names=@('DivZero-test-no-python.jar','DivZero-test-with-python.jar','ldlib2-neoforge-26.1-26.1.2.41.jar','kubejs-neoforge-26.1.2-8.0.6.jar','better-advanced-tooltips-2601.1.0-build.9.jar','native-sources.jar','BUILD-INFO.json','LICENSE-DIVZERO.txt','ASSETS.json')
     $all=@($names | ForEach-Object {[pscustomobject]@{Name=$_}});$hashes=[Collections.Generic.Dictionary[string,string]]::new()
     foreach($name in $names){$hashes.Add($name,'0'*64)}
     $selected=@(Select-RuntimeFiles $info $all $hashes)
@@ -128,9 +128,9 @@ try {
     Expect-Failure 'CI_ARTIFACT_DIRECTORY_NOT_EMPTY' { & (Join-Path $fixture 'scripts/package-ci-artifact.ps1') -Commit $commit }
     Expect-Failure 'RELEASE_ASSET_PATH_BOUNDARY' { & $publish -Commit $commit -AssetDirectory $fixture -DryRun }
     $extra=Join-Path $assets 'unexpected.zip'; [IO.File]::WriteAllText($extra,'test')
-    try { Expect-Failure 'RELEASE_UNEXPECTED_FILES' { & $publish -Commit $commit -AssetDirectory $assets -DryRun } } finally { Remove-Item -LiteralPath $extra }
+    try { Expect-Failure 'RELEASE_UNEXPECTED_FILES' { & $publish -Commit $commit -AssetDirectory $assets -DryRun } } finally { Move-Item -LiteralPath $extra -Destination (Join-Path $fixture "rejected-unexpected.zip") }
     $readme=Join-Path $assets 'README.txt';$original=[IO.File]::ReadAllBytes($readme)
-    try { [IO.File]::AppendAllText($readme,'tampered'); Expect-Failure 'RELEASE_CHECKSUM_MISMATCH' { & $publish -Commit $commit -AssetDirectory $assets -DryRun } } finally { [IO.File]::WriteAllBytes($readme,$original) }
+    try { [IO.File]::AppendAllText($readme,'tampered'); Expect-Failure 'RELEASE_FILE_SIZE_MISMATCH' { & $publish -Commit $commit -AssetDirectory $assets -DryRun } } finally { [IO.File]::WriteAllBytes($readme,$original) }
     $infoPath=Join-Path $assets 'BUILD-INFO.json';$original=[IO.File]::ReadAllBytes($infoPath)
     try {
         $info=Get-Content -LiteralPath $infoPath -Raw | ConvertFrom-Json; $info.modVersion='999.0'

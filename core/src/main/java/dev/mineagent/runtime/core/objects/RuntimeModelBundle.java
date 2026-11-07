@@ -12,6 +12,7 @@ public final class RuntimeModelBundle {
     private RuntimeModelBundle(byte[] bytes,byte[] texture,RuntimeMesh mesh,String id){this.bytes=bytes;this.texture=texture;this.mesh=mesh;sha256=ResourceIds.require(id);}
     public byte[] bytes(){return bytes.clone();}public byte[] texture(){return texture.clone();}public RuntimeMesh mesh(){return mesh;}public String sha256(){return sha256;}
     public int size(){return bytes.length;}
+    public String modelSource(){var buffer=ByteBuffer.wrap(bytes);int first=buffer.getInt();return first==0x44565A32?new String(bytes,72,buffer.getInt(68),StandardCharsets.UTF_8):new String(bytes,4,first,StandardCharsets.UTF_8);}
     public byte[] chunk(int offset,int length){if(offset<0||offset>=bytes.length||length<1||length>24576)throw new IllegalArgumentException("OBJECT_CHUNK_RANGE");return Arrays.copyOfRange(bytes,offset,Math.min(bytes.length,offset+length));}
     public static RuntimeModelBundle create(byte[] model,byte[] png){return create(model,png,ResourceIds.create());}
     private static RuntimeModelBundle create(byte[] model,byte[] png,String id){
@@ -26,8 +27,12 @@ public final class RuntimeModelBundle {
         if(length<1||length>RuntimeMesh.MAX_BYTES||length>bytes.length-offset)throw new IllegalArgumentException("OBJECT_ASSET_LENGTH");var parsed=create(Arrays.copyOfRange(bytes,offset,offset+length),Arrays.copyOfRange(bytes,offset+length,bytes.length),expected);return new RuntimeModelBundle(bytes.clone(),parsed.texture,parsed.mesh,expected);
     }
     public static RuntimeModelBundle load(RuntimePackage pack,RuntimeDefinition definition,String path,ContentAddressedStore store)throws Exception{
+        return load(pack,definition,path,store,null);
+    }
+    /** A persisted object's explicit asset reference is retained when decoding legacy worlds. */
+    public static RuntimeModelBundle load(RuntimePackage pack,RuntimeDefinition definition,String path,ContentAddressedStore store,String persistedId)throws Exception{
         var model=read(pack,definition,path,"application/json",RuntimeMesh.MAX_BYTES,store);var mesh=RuntimeMesh.parse(new String(model,StandardCharsets.UTF_8));
-        var refs=new ArrayList<String>();refs.add(pack.canonicalSha256());refs.add(pack.resources().get(path).sha256());if(!mesh.texture().isEmpty())refs.add(pack.resources().get(mesh.texture()).sha256());return create(model,mesh.texture().isEmpty()?new byte[0]:read(pack,definition,mesh.texture(),"image/png",MAX_TEXTURE_BYTES,store),store.namedId("render_bundle",refs));
+        var refs=new ArrayList<String>();refs.add(pack.canonicalSha256());refs.add(pack.resources().get(path).sha256());if(!mesh.texture().isEmpty())refs.add(pack.resources().get(mesh.texture()).sha256());return create(model,mesh.texture().isEmpty()?new byte[0]:read(pack,definition,mesh.texture(),"image/png",MAX_TEXTURE_BYTES,store),persistedId==null?store.namedId("render_bundle",refs):ResourceIds.require(persistedId));
     }
     private static byte[] read(RuntimePackage pack,RuntimeDefinition definition,String path,String media,int max,ContentAddressedStore store)throws Exception{
         RuntimeEntrypoint.requireRelativePath(path);var ref=pack.resources().get(path);

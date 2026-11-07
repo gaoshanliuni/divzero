@@ -221,7 +221,7 @@ public final class WorldContentRuntime implements AutoCloseable {
     private boolean itemBindingActive(ServerLevel level,dev.mineagent.runtime.core.objects.RuntimeItemBinding binding){
         if(binding==null||!binding.world().equals(MineAgentRuntimeServices.worldId(server)))return false;
         var host=hosts.get(binding.instance());if(host==null||host.phase!=Phase.ACTIVE||host.level!=level||!host.current())return false;
-        try{var i=host.currentInstance();var saved=i.state().get("_item."+binding.part());if(saved==null)return false;var part=json.readValue(saved,ItemPart.class);var pack=packages.worldLibrary().get(i.packageId()).orElseThrow();return part.state().equals("ACTIVE")&&part.chargeTicks()==binding.chargeTicks()&&pack.canonicalSha256().equals(binding.packageHash())&&model(pack,pack.definitions().get(i.definitionId()),binding.modelPath()).sha256().equals(binding.assetHash());}catch(Exception invalid){return false;}
+        try{var i=host.currentInstance();var saved=i.state().get("_item."+binding.part());if(saved==null)return false;var part=json.readValue(saved,ItemPart.class);var pack=packages.worldLibrary().get(i.packageId()).orElseThrow();return part.state().equals("ACTIVE")&&part.chargeTicks()==binding.chargeTicks()&&pack.canonicalSha256().equals(binding.packageHash())&&part.model().equals(binding.modelPath())&&model(pack,pack.definitions().get(i.definitionId()),binding.modelPath()).modelSource().equals(binding.modelSource());}catch(Exception invalid){return false;}
     }
     public boolean flightActive(RuntimeThrownItemEntity flight){requireThread();flights.values().removeIf(e->e.isRemoved());if(flight.isRemoved()||!(flight.level() instanceof ServerLevel level)||!itemBindingActive(level,flight.binding()))return false;if(!flights.containsKey(flight.getUUID())&&flights.size()>=128)return false;return flights.putIfAbsent(flight.getUUID(),flight)==null||flights.get(flight.getUUID())==flight;}
     public boolean useItem(ServerPlayer player,net.minecraft.world.InteractionHand hand){return itemEvent(player,hand,-1);}
@@ -265,15 +265,18 @@ public final class WorldContentRuntime implements AutoCloseable {
     private ObjectPart part(RuntimeInstance instance,String key)throws Exception{String value=instance.state().get("_object."+key);return value==null?null:json.readValue(value,ObjectPart.class);}
     private boolean matches(RuntimeObjectEntity entity,ObjectPart part){return entity.getUUID().equals(part.entity())&&entity.modelPath().equals(part.model())&&entity.header()!=null&&entity.header().asset().equals(part.hash());}
     private dev.mineagent.runtime.core.objects.RuntimeModelBundle model(RuntimePackage pack,RuntimeDefinition definition,String path)throws Exception{
-        String key=pack.canonicalSha256()+"|"+definition.definitionId()+"|"+path;var bundle=objectAssets.get(key);if(bundle!=null)return bundle;
-        bundle=dev.mineagent.runtime.core.objects.RuntimeModelBundle.load(pack,definition,path,packages.worldContent());
+        return model(pack,definition,path,null);
+    }
+    private dev.mineagent.runtime.core.objects.RuntimeModelBundle model(RuntimePackage pack,RuntimeDefinition definition,String path,String persistedId)throws Exception{
+        String key=pack.canonicalSha256()+"|"+definition.definitionId()+"|"+path+"|"+Objects.toString(persistedId,"");var bundle=objectAssets.get(key);if(bundle!=null)return bundle;
+        bundle=dev.mineagent.runtime.core.objects.RuntimeModelBundle.load(pack,definition,path,packages.worldContent(),persistedId);
         if(objectAssets.size()>=128||objectAssets.values().stream().mapToLong(dev.mineagent.runtime.core.objects.RuntimeModelBundle::size).sum()+bundle.size()>64L*1024*1024)throw new IllegalStateException("OBJECT_ASSET_BUDGET");objectAssets.put(key,bundle);return bundle;
     }
     public dev.mineagent.runtime.core.objects.RuntimeModelBundle objectBundle(RuntimeObjectEntity entity)throws Exception{
         requireThread();if(entity.header()==null)throw new IllegalStateException("OBJECT_UNBOUND");var instance=instances.get(entity.header().instance()).orElseThrow();
         var activation=ledger.all().stream().filter(a->a.instanceId().equals(instance.instanceId())).findFirst().orElseThrow();var pack=packages.worldVersion(instance.packageId(),activation.canonicalSha256()).orElseThrow();
         var record=part(instance,entity.header().part());if(record==null||!matches(entity,record)||!pack.canonicalSha256().equals(activation.canonicalSha256())||!instance.worldId().equals(MineAgentRuntimeServices.worldId(server)))throw new SecurityException("OBJECT_RESOURCE_BINDING");
-        var bundle=model(pack,pack.definitions().get(instance.definitionId()),record.model());if(!bundle.sha256().equals(entity.header().asset())||!bundle.mesh().collision().equals(entity.header().collision())||!bundle.mesh().physics().equals(entity.header().physics()))throw new IllegalStateException("OBJECT_RESOURCE_CHANGED");return bundle;
+        var bundle=model(pack,pack.definitions().get(instance.definitionId()),record.model(),record.hash());if(!bundle.sha256().equals(entity.header().asset())||!bundle.mesh().collision().equals(entity.header().collision())||!bundle.mesh().physics().equals(entity.header().physics()))throw new IllegalStateException("OBJECT_RESOURCE_CHANGED");return bundle;
     }
     private boolean objectsLoaded(RuntimeInstance instance,ServerLevel level)throws Exception{
         for(var entry:instance.state().entrySet())if(entry.getKey().startsWith("_object.")){var part=json.readValue(entry.getValue(),ObjectPart.class);if(!part.state().equals("ACTIVE"))throw new IllegalStateException("OBJECT_OUTCOME_UNKNOWN");var entity=level.getEntity(part.entity());if(entity==null)return false;if(!(entity instanceof RuntimeObjectEntity object)||!matches(object,part))throw new IllegalStateException("OBJECT_RESTORE_MISMATCH");}return true;
@@ -575,8 +578,8 @@ public final class WorldContentRuntime implements AutoCloseable {
         private dev.mineagent.runtime.core.objects.RuntimeItemBinding itemBinding(String part,String modelPath)throws Exception{var value=currentInstance().state().get("_item."+part);return itemBinding(part,modelPath,value==null?0:json.readValue(value,ItemPart.class).chargeTicks());}
         private dev.mineagent.runtime.core.objects.RuntimeItemBinding itemBinding(String part,String modelPath,int chargeTicks)throws Exception{
             var instance=currentInstance();var pack=packages.worldLibrary().get(instance.packageId()).orElseThrow();var bundle=model(pack,pack.definitions().get(instance.definitionId()),modelPath);
-            var bytes=bundle.bytes();int size=java.nio.ByteBuffer.wrap(bytes).getInt();if(bundle.texture().length!=0||size>dev.mineagent.runtime.core.objects.RuntimeItemBinding.MAX_SOURCE)throw new IllegalArgumentException("RUNTIME_ITEM_MODEL_BUDGET");
-            return dev.mineagent.runtime.core.objects.RuntimeItemBinding.create(MineAgentRuntimeServices.worldId(server),instance.instanceId(),part,pack.canonicalSha256(),modelPath,new String(bytes,4,size,java.nio.charset.StandardCharsets.UTF_8),chargeTicks);
+            String source=bundle.modelSource();if(bundle.texture().length!=0||source.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>dev.mineagent.runtime.core.objects.RuntimeItemBinding.MAX_SOURCE)throw new IllegalArgumentException("RUNTIME_ITEM_MODEL_BUDGET");
+            return new dev.mineagent.runtime.core.objects.RuntimeItemBinding(MineAgentRuntimeServices.worldId(server),instance.instanceId(),part,pack.canonicalSha256(),modelPath,bundle.sha256(),source,chargeTicks);
         }
         /** One durable issuance per part. Full inventories return partial counts; unknown issuance never replays. */
         public int giveItem(String part,String modelPath,int count,String name)throws Exception{return give(part,modelPath,count,name,0);}
@@ -620,7 +623,7 @@ public final class WorldContentRuntime implements AutoCloseable {
         public int score(String key,String holder){scoreText(holder);var value=server.getScoreboard().getPlayerScoreInfo(net.minecraft.world.scores.ScoreHolder.forNameOnly(holder),scoreObjective(key));return value==null?0:value.value();}
         public RuntimeObjectEntity createObject(String partKey,String modelPath,double dx,double dy,double dz)throws Exception{
             var instance=currentInstance();writable();if(partKey==null||!partKey.matches("[A-Za-z0-9_.-]{1,64}"))throw new IllegalArgumentException("OBJECT_PART_KEY");for(double value:new double[]{dx,dy,dz})if(!Double.isFinite(value)||Math.abs(value)>32)throw new IllegalArgumentException("OBJECT_PART_POSITION");
-            var pack=packages.worldLibrary().get(instance.packageId()).orElseThrow();var bundle=model(pack,pack.definitions().get(instance.definitionId()),modelPath);var old=part(instance,partKey);
+            var pack=packages.worldLibrary().get(instance.packageId()).orElseThrow();var old=part(instance,partKey);var bundle=model(pack,pack.definitions().get(instance.definitionId()),modelPath,old==null?null:old.hash());
             if(old!=null){if(!old.model().equals(modelPath)||!old.hash().equals(bundle.sha256())||old.dx()!=dx||old.dy()!=dy||old.dz()!=dz)throw new IllegalStateException("OBJECT_PART_REUSED");if(!old.state().equals("ACTIVE"))throw new IllegalStateException("OBJECT_OUTCOME_UNKNOWN");var e=level.getEntity(old.entity());if(!(e instanceof RuntimeObjectEntity object)||!matches(object,old))throw new IllegalStateException("OBJECT_NOT_LOADED");object.bind(instance.instanceId(),partKey,modelPath,bundle);return object;}
             if(phase==Phase.RESTORING)throw new IllegalStateException("RESTORE_CANNOT_CREATE_PART");
             if(instance.state().keySet().stream().filter(k->k.startsWith("_object.")).count()>=32)throw new IllegalStateException("OBJECT_PART_BUDGET");

@@ -59,10 +59,10 @@ $suffix=if($edition -eq 'none'){'no-python'}else{'with-python'}
 $name = "DivZero-mineagent-$($versions.modVersion)-$suffix.jar"
 $destination = Join-Path $out $name
 Copy-Item -LiteralPath $jar.FullName -Destination $destination
-$sha = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
-$editionJars += [pscustomobject]@{edition=$suffix;jar=$name;sha256=$sha}
+$size = (Get-Item -LiteralPath $destination).Length
+$editionJars += [pscustomobject]@{edition=$suffix;jar=$name;bytes=$size}
 }
-$name=$editionJars[0].jar;$sha=$editionJars[0].sha256
+$name=$editionJars[0].jar;$size=$editionJars[0].bytes
 & (Join-Path $PSScriptRoot 'stage-native-ui-dependencies.ps1') -OutputDirectory $out
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $out 'LICENSE-DIVZERO.txt')
 Copy-Item -LiteralPath (Join-Path $root 'docs/THIRD_PARTY_NOTICES.md') -Destination (Join-Path $out 'THIRD-PARTY-NOTICES.md')
@@ -73,7 +73,7 @@ $info = [ordered]@{
     builtAtUtc = [DateTime]::UtcNow.ToString('o')
     jars = $editionJars
     jar = $name
-    sha256 = $sha
+    bytes = $size
     modId = $versions.modId
     modVersion = $versions.modVersion
     minecraftVersion = $versions.minecraftVersion
@@ -104,18 +104,18 @@ GitHub Source code archives are development sources, not installable Mods.
 See https://github.com/gaoshanliuni/divzero/blob/$Commit/docs/NATIVE_INSTALLATION.md
 Replace the previous same-Mod JAR in a separate, backed-up test instance.
 This is a CI build, not a formal Release or full V1 acceptance.
-Standard builds do not include optional Windows media binaries.
-SHA-256 is recorded in SHA256SUMS and BUILD-INFO.json.
+Windows media decoders are bundled in both Python editions; resource operations do not execute Python.
+Source revision, build run, file names and sizes are recorded in ASSETS.json and BUILD-INFO.json. No project content digests are calculated.
 "@
 [IO.File]::WriteAllText((Join-Path $out 'README.txt'), $readme, [Text.UTF8Encoding]::new($false))
-$checksums = foreach ($file in Get-ChildItem -LiteralPath $out -File | Sort-Object Name) {
-    '{0}  {1}' -f (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $file.Name
-}
-[IO.File]::WriteAllText((Join-Path $out 'SHA256SUMS'), (($checksums -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
+$records = @(foreach ($file in Get-ChildItem -LiteralPath $out -File | Sort-Object Name) {
+    [ordered]@{name=$file.Name;bytes=$file.Length;resourceId=[Guid]::NewGuid().ToString()}
+})
+[IO.File]::WriteAllText((Join-Path $out 'ASSETS.json'),(ConvertTo-Json -InputObject $records -Depth 4),[Text.UTF8Encoding]::new($false))
 if ($env:GITHUB_OUTPUT) {
     "short-sha=$short" >> $env:GITHUB_OUTPUT
     "variant=$Variant" >> $env:GITHUB_OUTPUT
     "artifact-name=release-files-$Variant-$short-$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)" >> $env:GITHUB_OUTPUT
 }
 Write-Output "CI_JAR=$destination"
-Write-Output "SHA256=$sha"
+Write-Output "BYTES=$size"

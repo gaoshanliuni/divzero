@@ -271,7 +271,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
             var order=dev.mineagent.runtime.core.config.ProviderOrder.parse(values.getOrDefault("provider.priority",dev.mineagent.runtime.core.config.ProviderOrder.DEFAULT));
             long revision=Long.parseLong(String.valueOf(request.payload().getOrDefault("revision",0)));if(revision<0)throw new IllegalArgumentException();
             for(String prefix:java.util.List.of("provider.openai.","provider.ollama.","provider.comfyui."))if(!java.util.Set.of("true","false").contains(values.getOrDefault(prefix+"enabled","true")))throw new IllegalArgumentException();
-            String fingerprint=dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(values));
+            String fingerprint=new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(values);
             if(fingerprint.equals(configurationFingerprint)){configurationRevision=revision;return new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"provider.snapshotApplied",Map.of("unchanged",true,"configured",providers.keySet().stream().toList()));}
             var next=new WorkerRequestHandler(speechSynthesizer,mediaBackendFactory,mediaAddressPolicy);
             for(String kind:java.util.List.of("openai-compatible","ollama","comfyui")){
@@ -288,7 +288,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
     }
 
     private void requireModelCapabilities(WorkerEnvelope request,ModelRequest model){
-        if(!(request.payload().get("modelCapabilities") instanceof Map<?,?> traits))return;
+        Map<?,?> traits=request.payload().get("modelCapabilities") instanceof Map<?,?> supplied?supplied:Map.of();
         if(!model.images().isEmpty()&&!"YES".equals(traits.get("vision")))throw new IllegalArgumentException("MODEL_VISION_"+("NO".equals(traits.get("vision"))?"UNSUPPORTED":"UNCONFIRMED"));
         if(Boolean.TRUE.equals(request.payload().get("conversationTools"))&&"NO".equals(traits.get("tools")))throw new IllegalArgumentException("MODEL_TOOLS_UNSUPPORTED");
     }
