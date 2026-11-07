@@ -12,7 +12,7 @@ public final class ExecutionProgress {
     public record Decision(boolean warn,boolean blocked,int repetitions){}
     /** Suppress another identical failed write, while leaving the assistant and all other tools running. */
     public synchronized Optional<Map<String,Object>> suppressedWrite(String name,String raw,String context){
-        try{JsonNode args;try{args=JSON.readTree(raw);}catch(Exception malformed){args=JSON.getNodeFactory().textNode(raw);}var repeat=observations.get(hash(List.of(name,hash(canonical(args)),context)));
+        try{JsonNode args;try{args=JSON.readTree(raw);}catch(Exception malformed){args=JSON.getNodeFactory().textNode(raw);}var repeat=observations.get(snapshot(List.of(name,snapshot(canonical(args)),context)));
             if(repeat==null||repeat.count<4)return Optional.empty();
             return Optional.of(Map.of("status","REJECTED","error","UNCHANGED_CALL_RESULT","executionState","NOT_STARTED","repeatSuppressed",true,"repetitions",repeat.count,"diagnostic","The same tool arguments and observed context repeatedly produced the same failure. This duplicate call was not executed.","previousResult",repeat.result));
         }catch(Exception invalid){return Optional.empty();}
@@ -24,8 +24,8 @@ public final class ExecutionProgress {
         if(!candidate){observations.clear();return new Decision(false,false,0);}
         try{
             JsonNode args;try{args=JSON.readTree(raw);}catch(Exception malformed){args=JSON.getNodeFactory().textNode(raw);}
-            String parameters=hash(canonical(args));var input=Map.<String,Object>of("canonicalArgumentsSha256",parameters);
-            String key=hash(List.of(name,parameters,context)),outcome=hash(canonical(JSON.valueToTree(result)));
+            String parameters=snapshot(canonical(args));var input=Map.<String,Object>of("canonicalArguments",parameters);
+            String key=snapshot(List.of(name,parameters,context)),outcome=snapshot(canonical(JSON.valueToTree(result)));
             var repeat=observations.computeIfAbsent(key,k->new Repeat());while(observations.size()>128)observations.remove(observations.keySet().iterator().next());
             if(!outcome.equals(repeat.outcome)){repeat.outcome=outcome;repeat.count=0;repeat.parts.clear();}
             repeat.result=readOnly?Map.of():dev.mineagent.runtime.core.conversation.ToolFailure.summary(result);repeat.count++;repeat.parts.add(Map.of("type","tool","tool",name,"state",Map.of("status","completed","input",input)));
@@ -34,7 +34,8 @@ public final class ExecutionProgress {
             return new Decision(repeated,repeated&&repeat.count>=4,repeat.count);
         }catch(Exception error){throw new IllegalStateException("EXECUTION_PROGRESS_CHECK_FAILED",error);}
     }
-    private static String hash(Object value)throws Exception{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(JSON.writeValueAsBytes(value)));}
+    // Compare bounded canonical snapshots directly; Java map implementation details are not content checksums.
+    private static String snapshot(Object value)throws Exception{return JSON.writeValueAsString(value);}
     private static Object canonical(JsonNode node){
         if(node==null||node.isNull())return null;
         if(node.isObject()){var out=new TreeMap<String,Object>();for(var field:node.properties())if(!VOLATILE.contains(field.getKey()))out.put(field.getKey(),canonical(field.getValue()));return out;}

@@ -69,7 +69,7 @@ public final class AgentPersonaService implements AutoCloseable {
         authorize(agent,viewer,operator);Objects.requireNonNull(operation);
         if(expected<0||text==null||text.length()>8192)throw new IllegalArgumentException("PERSONA_INPUT_LIMIT");
         String encoded=new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(List.of(agent.agentId(),viewer,expected,text));
-        String fingerprint=HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(encoded.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        String fingerprint="exact-v2:"+encoded;
         try(var begin=db.createStatement()){begin.execute("BEGIN IMMEDIATE");}
         try{
             Persona current=load(agent.agentId());Result result=null;

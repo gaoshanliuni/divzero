@@ -85,7 +85,7 @@ public final class ConversationStore implements AutoCloseable {
     private static UUID uuid(String s){return s==null?null:UUID.fromString(s);}
     private static void text(String text,int max,boolean blank){if(text==null||text.length()>max||!blank&&text.isBlank())throw new IllegalArgumentException("CONVERSATION_TEXT_LIMIT");}
     private static void limit(int limit){if(limit<1||limit>20)throw new IllegalArgumentException("CONVERSATION_PAGE_LIMIT");}
-    private String fingerprint(Object...values)throws Exception{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(Arrays.asList(values))));}
+    private String fingerprint(Object...values)throws Exception{return "exact-v2:"+new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(Arrays.asList(values));}
     private Operation operation(UUID id,String fingerprint)throws SQLException{var list=query("SELECT * FROM mineagent_conversation_operations_v1 WHERE world_id=? AND id=?",r->new Operation(r.getString("fingerprint"),r.getString("kind"),uuid(r.getString("conversation_id")),uuid(r.getString("user_message_id")),uuid(r.getString("assistant_message_id")),r.getLong("persona_revision")),world,id);if(list.isEmpty())return null;var old=list.getFirst();if(fingerprint!=null&&!old.fingerprint().equals(fingerprint))throw new IllegalArgumentException("OPERATION_ID_REUSED");return old;}
     private void remember(UUID id,String fp,String kind,UUID conversation,UUID user,UUID assistant,long persona)throws SQLException{execute("INSERT INTO mineagent_conversation_operations_v1 VALUES(?,?,?,?,?,?,?,?)",world,id,fp,kind,conversation,user,assistant,persona);}
     private Conversation conversation(ResultSet r)throws SQLException{
@@ -96,8 +96,18 @@ public final class ConversationStore implements AutoCloseable {
     public synchronized Conversation nativeConversation(UUID viewer,UUID agent)throws Exception{
         var rows=query("SELECT conversation_id FROM mineagent_native_conversation_v1 WHERE world_id=? AND player_id=? AND agent_id=?",r->uuid(r.getString(1)),world,viewer,agent);
         if(!rows.isEmpty()){var current=get(viewer,agent,rows.getFirst());if(current.state().equals("ACTIVE"))return current;}
-        else {UUID legacy=UUID.nameUUIDFromBytes(("native-mention-v1|"+world+"|"+viewer+"|"+agent).getBytes(java.nio.charset.StandardCharsets.UTF_8));var operation=operation(legacy,null);if(operation!=null&&operation.kind().equals("create")){var current=get(viewer,agent,operation.conversation());if(current.state().equals("ACTIVE")){bindNative(viewer,agent,current.conversationId());return current;}}}
+        else {UUID legacy=legacyNativeOperation(viewer,agent);var operation=legacy==null?null:operation(legacy,null);if(operation!=null&&operation.kind().equals("create")){var current=get(viewer,agent,operation.conversation());if(current.state().equals("ACTIVE")){bindNative(viewer,agent,current.conversationId());return current;}}}
         var created=create(viewer,agent,UUID.randomUUID(),"原生 @ 对话",true);bindNative(viewer,agent,created.conversationId());return created;
+    }
+    private UUID legacyNativeOperation(UUID viewer,UUID agent)throws Exception{
+        execute("CREATE TABLE IF NOT EXISTS mineagent_native_scope_migrations_v2(world TEXT NOT NULL,owner TEXT NOT NULL,agent TEXT NOT NULL,legacy TEXT NOT NULL,PRIMARY KEY(world,owner,agent))");
+        return transaction(()->{
+            var rows=query("SELECT legacy FROM mineagent_native_scope_migrations_v2 WHERE world=? AND owner=? AND agent=?",r->r.getString(1),world,viewer,agent);
+            if(!rows.isEmpty())return rows.getFirst().isEmpty()?null:UUID.fromString(rows.getFirst());
+            boolean old=!query("SELECT 1 FROM mineagent_conversation_operations_v1 o JOIN mineagent_conversations_v1 c ON c.world_id=o.world_id AND c.id=o.conversation_id WHERE o.world_id=? AND c.player_id=? AND c.agent_id=? AND o.kind='create' AND length(o.fingerprint)=64 LIMIT 1",r->r.getInt(1),world,viewer,agent).isEmpty();
+            UUID legacy=old?dev.mineagent.runtime.core.content.LegacyNamespaceIds.nativeConversationForMigration(world,viewer,agent):null;
+            execute("INSERT INTO mineagent_native_scope_migrations_v2 VALUES(?,?,?,?)",world,viewer,agent,legacy==null?"":legacy.toString());return legacy;
+        });
     }
     public synchronized void bindNative(UUID viewer,UUID agent,UUID conversation)throws SQLException{var c=get(viewer,agent,conversation);if(!c.state().equals("ACTIVE"))throw new IllegalStateException("CONVERSATION_READ_ONLY");execute("INSERT INTO mineagent_native_conversation_v1 VALUES(?,?,?,?) ON CONFLICT(world_id,player_id,agent_id) DO UPDATE SET conversation_id=excluded.conversation_id",world,viewer,agent,conversation);}
     public synchronized Conversation create(UUID viewer,UUID agent,UUID op,String title)throws Exception{return create(viewer,agent,op,title,false);}

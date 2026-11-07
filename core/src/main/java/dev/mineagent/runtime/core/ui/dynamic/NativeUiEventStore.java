@@ -16,8 +16,8 @@ public final class NativeUiEventStore implements AutoCloseable {
     private static String key(NativeUiStore.Scope scope,UUID id){return scope.owner()+":"+id;}
     public Claim begin(NativeUiStore.Scope scope,String view,long revision,UUID id,String node,String action,String tool,String arguments)throws Exception{
         if(revision<1||view==null||!view.matches("[A-Za-z][A-Za-z0-9_-]{0,95}")||arguments==null||arguments.length()>65536)throw new IllegalArgumentException("NATIVE_EVENT_INPUT");
-        String material=JSON.writeValueAsString(List.of(scope,view,revision,node,action,tool,arguments));String fingerprint=HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(material.getBytes(StandardCharsets.UTF_8)));
-        UUID operation=UUID.nameUUIDFromBytes((scope.world()+"|native-ui-event|"+scope.owner()+"|"+id).getBytes(StandardCharsets.UTF_8));var next=new Event(scope,view,revision,id,operation,fingerprint,tool,"DISPATCHING","");
+        String fingerprint="exact-v2:"+JSON.writeValueAsString(List.of(scope,view,revision,node,action,tool,arguments));
+        UUID operation=UUID.randomUUID();var next=new Event(scope,view,revision,id,operation,fingerprint,tool,"DISPATCHING","");
         var row=db.compareAndSet(scope.world(),NS,key(scope,id),0,JSON.writeValueAsString(next),System.currentTimeMillis());if(row.accepted())return new Claim(true,next);
         var previous=JSON.readValue(row.record().payload(),Event.class);if(!previous.scope.equals(scope)||!previous.fingerprint.equals(fingerprint))throw new IllegalStateException("NATIVE_EVENT_ID_REUSED");return new Claim(false,previous);
     }

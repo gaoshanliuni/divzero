@@ -34,7 +34,7 @@ class ConversationSummaryStoreTest {
             var failure=assertThrows(IllegalArgumentException.class,()->s.complete(m,prepared.summaryId(),"{\"summary\":\"split\"}","fixture","fixture"));assertEquals("SUMMARY_SOURCE_CHANGED",failure.getMessage());assertEquals("FAILED",s.get(viewer,agent,c.conversationId(),prepared.summaryId()).state());
         }
     }
-    private static String sha(String text)throws Exception{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)));}
+    private static String sha(String text){return dev.mineagent.runtime.api.packages.ResourceIds.create();}
     @Test void boundedBatchesHaveVersionedSourceRangesAndNeverReplaceOriginals()throws Exception{
         Path db=dir.resolve("db");try(var messages=ConversationStore.open(db,world,Clock.systemUTC());var summaries=ConversationSummaryStore.open(db,world,Clock.systemUTC())){
             var c=messages.create(viewer,agent,UUID.randomUUID(),"A");var t=messages.begin(viewer,agent,c.conversationId(),UUID.randomUUID(),1,"😀原文".repeat(900),0);messages.finish(t.operationId(),"COMPLETE","reply","");

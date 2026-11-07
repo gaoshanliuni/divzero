@@ -31,7 +31,7 @@ public final class SpeechInputStore implements AutoCloseable {
     public synchronized Optional<Job> find(UUID viewer,UUID agent,UUID conversation,UUID op)throws SQLException{var job=raw(op);return job==null?Optional.empty():Optional.of(get(viewer,agent,conversation,op));}
     public synchronized Started begin(UUID operation,Scope scope,SpeechProviderConfig config,String audioHash,int audioBytes)throws Exception{
         if(!config.configured()||audioHash==null||!audioHash.matches("[a-f0-9]{64}")||audioBytes<3244||audioBytes>SpeechWav.MAX_BYTES)throw new IllegalArgumentException("ASR_BEGIN_INVALID");
-        String fp=hash(json.writeValueAsString(List.of(scope,config.revision(),config.baseUrl(),config.model(),config.language(),audioHash,audioBytes)));
+        String fp="exact-v2:"+json.writeValueAsString(List.of(scope,config.revision(),config.baseUrl(),config.model(),config.language(),audioHash,audioBytes));
         var old=raw(operation);if(old!=null){get(scope.viewer(),scope.agent(),scope.conversation(),operation);try(var q=db.prepareStatement("SELECT fingerprint FROM mineagent_speech_inputs_v1 WHERE world_id=? AND operation_id=?")){q.setString(1,world.toString());q.setString(2,operation.toString());try(var r=q.executeQuery()){if(!r.next()||!r.getString(1).equals(fp))throw new IllegalArgumentException("ASR_OPERATION_REUSED");}}return new Started(old,false);}
         long now=clock.millis();var job=new Job(operation,scope,config.revision(),audioHash,audioBytes,config.model(),"","UPLOADING","","",now,now);
         try(var q=db.prepareStatement("INSERT INTO mineagent_speech_inputs_v1 VALUES(?,?,?,?,?,?,?,?)")){q.setString(1,world.toString());q.setString(2,operation.toString());q.setString(3,scope.viewer().toString());q.setString(4,scope.agent().toString());q.setString(5,scope.conversation().toString());q.setString(6,fp);q.setString(7,job.state());q.setString(8,json.writeValueAsString(job));q.executeUpdate();}return new Started(job,true);
@@ -43,6 +43,5 @@ public final class SpeechInputStore implements AutoCloseable {
         var next=new Job(old.operation(),old.scope(),old.configRevision(),old.audioHash(),old.audioBytes(),old.requestedModel(),dev.mineagent.runtime.api.model.ModelResponse.safeModelName(responseModel),state,state.equals("READY")?text:"",error,old.createdAt(),clock.millis());
         try(var q=db.prepareStatement("UPDATE mineagent_speech_inputs_v1 SET state=?,payload=? WHERE world_id=? AND operation_id=? AND state=?")){q.setString(1,state);try{q.setString(2,json.writeValueAsString(next));}catch(Exception invalid){throw new SQLException("ASR_JOB_ENCODING_FAILED",invalid);}q.setString(3,world.toString());q.setString(4,operation.toString());q.setString(5,old.state());return q.executeUpdate()==1;}
     }
-    private static String hash(String text)throws Exception{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8)));}
     @Override public synchronized void close()throws SQLException{db.close();}
 }
