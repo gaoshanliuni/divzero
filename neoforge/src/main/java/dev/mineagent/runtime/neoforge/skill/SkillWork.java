@@ -67,11 +67,19 @@ final class SkillWork {
     boolean at(Vec3 target){return player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<.35;}
     boolean move(Vec3 target){if(at(target)){actor.stop(token());return true;}String state=actor.move(token(),target);if(state.equals("ARRIVED")&&player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<1.251){actor.stop(token());return true;}if(state.equals("UNREACHABLE")||state.equals("INTERACTION_BLOCKED")||state.equals("SEARCH_LIMIT")){session.add("unreachable",1);waitFor(state,60);abandonTarget();wanderTarget=null;wanderSearch=null;}return false;}
     boolean reach(BlockPos target,InteractionTargetResolver.Kind kind){
-        if(stand!=null)return move(stand);
-        if(search==null)search=InteractionTargetResolver.block(player(),target,kind);
+        return reach(target,kind,null);
+    }
+    private boolean interactionMove(Vec3 target,InteractionTargetResolver.Kind kind){
+        if(kind!=InteractionTargetResolver.Kind.PLACE)return move(target);
+        if(player().position().subtract(target).horizontalDistanceSqr()<=.040001&&Math.abs(player().getY()-target.y)<.2){actor.stop(token());return true;}
+        String result=actor.move(token(),target);if(Set.of("UNREACHABLE","INTERACTION_BLOCKED","SEARCH_LIMIT").contains(result)){session.add("unreachable",1);waitFor(result,60);abandonTarget();}return false;
+    }
+    boolean reach(BlockPos target,InteractionTargetResolver.Kind kind,net.minecraft.world.level.block.state.BlockState desired){
+        if(stand!=null)return interactionMove(stand,kind);
+        if(search==null)search=InteractionTargetResolver.block(player(),target,kind,desired);
         if(search.search()==null){waitFor(search.evaluator().encounteredUnloaded()?"WAITING_CHUNKS":"NO_INTERACTION_POSITION",60);search=null;return false;}
         var budget=NativeNavigationBudget.get(runtime.server);int allowed=budget.claim(token(),tick());if(allowed==0)return false;search.evaluator().beginSlice();var result=search.search().advance(allowed,budget::timeAvailable);
-        if(result.status()==SurfacePathfinder.Status.FOUND){stand=result.steps().isEmpty()?player().position():NativeTraversalEvaluator.point(result.steps().getLast().to());search=null;return move(stand);}
+        if(result.status()==SurfacePathfinder.Status.FOUND){stand=result.steps().isEmpty()&&kind==InteractionTargetResolver.Kind.PLACE?search.candidates().stream().min(Comparator.comparingDouble(at->at.distanceToSqr(player().position()))).orElseThrow():result.steps().isEmpty()?player().position():NativeTraversalEvaluator.point(result.steps().getLast().to());search=null;return interactionMove(stand,kind);}
         if(result.status()!=SurfacePathfinder.Status.BUDGET_EXHAUSTED){if(result.status()==SurfacePathfinder.Status.NO_PATH&&actor.recover(token(),Vec3.atCenterOf(target))){session.phase("TERRAIN_ESCAPE");search=null;return false;}session.add("unreachable",1);search=null;waitFor(result.status().name(),60);}return false;
     }
     int count(Item item){return player().getInventory().countItem(item);}

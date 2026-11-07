@@ -199,11 +199,17 @@ public final class NativeTerrainRecovery {
         }return null;
     }
     public static BlockHitResult placementHit(ServerPlayer p,BlockPos target){
-        var hit=placementHitFrom(p,target,p.getEyePosition());
+        return placementHit(p,target,null);
+    }
+    public static BlockHitResult placementHit(ServerPlayer p,BlockPos target,net.minecraft.world.level.block.state.BlockState desired){
+        var hit=placementHitFrom(p,target,p.getEyePosition(),desired);
         return hit!=null&&p.isWithinBlockInteractionRange(hit.getBlockPos(),0)?hit:null;
     }
     /** Evaluates the actual support face from a prospective eye position without moving the body. */
     public static BlockHitResult placementHitFrom(ServerPlayer p,BlockPos target,Vec3 eye){
+        return placementHitFrom(p,target,eye,null);
+    }
+    public static BlockHitResult placementHitFrom(ServerPlayer p,BlockPos target,Vec3 eye,net.minecraft.world.level.block.state.BlockState desired){
         for(var face:Direction.values()){
             var anchor=target.relative(face.getOpposite());if(!NativeTerrainPolicy.loaded(p,anchor)||p.level().getBlockState(anchor).getCollisionShape(p.level(),anchor).isEmpty())continue;
             var hit=Vec3.atCenterOf(anchor).add(new Vec3(face.getStepX(),face.getStepY(),face.getStepZ()).scale(.5));
@@ -213,8 +219,25 @@ public final class NativeTerrainRecovery {
             if(eye.distanceTo(hit)>Math.min(4.25,p.blockInteractionRange()-.15))continue;
             var clip=p.level().clip(new ClipContext(eye,hit,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
             if(clip.getType()!=HitResult.Type.MISS&&(!clip.getBlockPos().equals(anchor)||clip.getDirection()!=face))continue;
-            return new BlockHitResult(hit,face,anchor,false);
+            var candidate=new BlockHitResult(hit,face,anchor,false);
+            if(!placementMatches(p,target,eye,candidate,desired))continue;
+            return candidate;
         }return null;
+    }
+    private static boolean placementMatches(ServerPlayer p,BlockPos target,Vec3 eye,BlockHitResult hit,net.minecraft.world.level.block.state.BlockState desired){
+        if(desired==null)return true;
+        var item=p.getMainHandItem();if(!(item.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)||blockItem.getBlock()!=desired.getBlock())return false;
+        var direction=hit.getLocation().subtract(eye);float yaw=(float)(Math.atan2(direction.z,direction.x)*180/Math.PI-90);
+        var nearest=Arrays.stream(Direction.values()).sorted(Comparator.comparingDouble((Direction d)->direction.dot(new Vec3(d.getStepX(),d.getStepY(),d.getStepZ()))).reversed()).toArray(Direction[]::new);
+        var context=new net.minecraft.world.item.context.BlockPlaceContext(p,net.minecraft.world.InteractionHand.MAIN_HAND,item,hit){
+            @Override public Direction getHorizontalDirection(){return Direction.fromYRot(yaw);}
+            @Override public float getRotation(){return yaw;}
+            @Override public boolean isSecondaryUseActive(){return true;}
+            @Override public Direction getNearestLookingDirection(){return nearest[0];}
+            @Override public Direction getNearestLookingVerticalDirection(){return direction.y<0?Direction.DOWN:Direction.UP;}
+            @Override public Direction[] getNearestLookingDirections(){var order=new ArrayList<>(Arrays.asList(nearest));if(!replacingClickedOnBlock()){order.remove(hit.getDirection().getOpposite());order.addFirst(hit.getDirection().getOpposite());}return order.toArray(Direction[]::new);}
+        };
+        return context.getClickedPos().equals(target)&&context.canPlace()&&desired.equals(desired.getBlock().getStateForPlacement(context));
     }
     private String signature(BlockPos p){return p.asLong()+":"+net.minecraft.commands.arguments.blocks.BlockStateParser.serialize(player.level().getBlockState(p));}
     private static TerrainPathSearch.Cell cell(BlockPos pos){return new TerrainPathSearch.Cell(pos.getX(),pos.getY(),pos.getZ());}

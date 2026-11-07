@@ -16,18 +16,21 @@ public final class InteractionTargetResolver {
         var hit=p.level().clip(new ClipContext(eye,target,ClipContext.Block.COLLIDER,fluids?ClipContext.Fluid.ANY:ClipContext.Fluid.NONE,p));return hit.getType()==HitResult.Type.MISS||acceptedBlock!=null&&hit.getBlockPos().equals(acceptedBlock);
     }
     public static Query block(ServerPlayer p,BlockPos block,Kind kind){
+        return block(p,block,kind,null);
+    }
+    public static Query block(ServerPlayer p,BlockPos block,Kind kind,net.minecraft.world.level.block.state.BlockState desired){
         var evaluator=new NativeTraversalEvaluator(p);var start=evaluator.closest(p.position());var nodes=new LinkedHashSet<SurfacePathfinder.Node>();var offsets=new ArrayList<int[]>();
         for(int x=-3;x<=3;x++)for(int z=-3;z<=3;z++)if(x!=0||z!=0)offsets.add(new int[]{x,z});offsets.sort(Comparator.comparingDouble(d->p.position().distanceToSqr(Vec3.atBottomCenterOf(block.offset(d[0],0,d[1])))));
         for(var d:offsets){if(nodes.size()>=24)break;for(var n:evaluator.positions(block.getX()+d[0],block.getZ()+d[1],block.getY())){
             if(evaluator.water(n)||evaluator.climb(n))continue;var at=NativeTraversalEvaluator.point(n);
             if(kind==Kind.PLACE){
                 var pose=p.getDimensions(net.minecraft.world.entity.Pose.CROUCHING);
-                // Navigation may settle within 0.4 blocks of a waypoint. A single ray
+                // Placement uses the navigator's 0.2-block precision. A single ray
                 // from its exact centre can be clear while the actual body is occluded.
                 boolean usable=true;
-                placementWindow: for(double x:new double[]{-.4,0,.4})for(double z:new double[]{-.4,0,.4}){
+                placementWindow: for(double x:new double[]{-.2,0,.2})for(double z:new double[]{-.2,0,.2}){
                     var feet=at.add(x,0,z);
-                    if(pose.makeBoundingBox(feet).intersects(new AABB(block))||NativeTerrainRecovery.placementHitFrom(p,block,feet.add(0,pose.eyeHeight(),0))==null){usable=false;break placementWindow;}
+                    if(pose.makeBoundingBox(feet).deflate(.0001).intersects(new AABB(block))||NativeTerrainRecovery.placementHitFrom(p,block,feet.add(0,pose.eyeHeight(),0),desired)==null){usable=false;break placementWindow;}
                 }
                 if(usable)nodes.add(n);
                 continue;
