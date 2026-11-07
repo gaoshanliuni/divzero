@@ -33,7 +33,7 @@ public final class UiFeedbackDataPump {
         for(var item:store.readyConsumers("DETERMINISTIC",limit)){
             if(steps>=limit||active.size()>=4)break;
             if(!item.scope().policy().mode().equals("DETERMINISTIC")||!item.state().equals("ACCEPTED")||!item.exported())continue;
-            steps++;UUID operation=UUID.nameUUIDFromBytes((item.scope().worldId()+"|feedback-data|"+item.id()).getBytes(StandardCharsets.UTF_8));
+            steps++;UUID operation=UUID.randomUUID();
             try{store.processing(item.id(),operation);active.put(item.id(),new Work(operation,"PLAN",null));}
             catch(Exception failure){store.interruptConsumer(item.id(),"FEEDBACK_DATA_PROCESSING_INTERRUPTED");port.failed(item.id(),failure);}
         }

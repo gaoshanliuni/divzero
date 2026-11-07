@@ -1829,13 +1829,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/feedback/FeedbackTransactionPlan.java",
-      "sha256": "976ccbff41c5a41384c34c50d22658ccea93a7070724bd55415d18be6e86a78f",
-      "bytes": 3010
+      "resourceId": "edb5c3de-d140-4473-80fd-f7424f99a121",
+      "bytes": 2819
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/feedback/UiFeedbackDataPump.java",
-      "sha256": "a2fd5260fb66df6c5430172e2f8912cc294487aeac2456d3c0cb77bb75000f4e",
-      "bytes": 2957
+      "resourceId": "945f33d5-fba3-46be-ae6c-e438fb6553cb",
+      "bytes": 2865
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/feedback/UiFeedbackOutbox.java",
@@ -1849,8 +1849,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/feedback/UiFeedbackStore.java",
-      "sha256": "da60e40017846c5ff425d2f29208317f7ad2e7e960d78ba3e5ffc75e8a5c89b8",
-      "bytes": 30921
+      "resourceId": "28e000a0-2a67-4e85-b8c9-ee32a144cba1",
+      "bytes": 32725
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/files/FileLibrary.java",
@@ -3418,9 +3418,29 @@
       "bytes": 1872
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/FeedbackDataBindingTest.java",
+      "resourceId": "b68b3e41-a769-4944-aa3e-f2e0c0e4607b",
+      "bytes": 3873
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/FeedbackTransactionOutcomeTest.java",
+      "resourceId": "2cf2d393-de16-4bc6-8a6a-d10548216a96",
+      "bytes": 1875
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/UiFeedbackDataPumpTest.java",
+      "resourceId": "4b169804-2505-4fad-b65b-6ae8a27fdf66",
+      "bytes": 6790
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/UiFeedbackPolicyTest.java",
       "resourceId": "5eec190c-60f4-4060-a787-5050dffd560b",
       "bytes": 5842
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/UiFeedbackStoreTest.java",
+      "resourceId": "169d29c4-2465-43fa-9041-347c82281de2",
+      "bytes": 18452
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/files/FileLibraryConcurrencyTest.java",
@@ -7934,8 +7954,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiFeedback.java",
-      "sha256": "4db4c990f5aa378f0e51a203928b14682991b35fcc2c76d4373cd07ec674d43f",
-      "bytes": 27671
+      "resourceId": "1869d7d1-2ba8-4385-b1ff-e4b80e9b3ea4",
+      "bytes": 27627
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiRuntime.java",
@@ -9520,5 +9540,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "5e98e84a54055aab08663059e656be32ba3de8d9"
+  "sourceCommit": "c8d421aa89552381107e56ac05bf03892271d536"
 }

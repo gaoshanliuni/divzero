@@ -89,8 +89,8 @@ public final class ServerUiFeedback implements AutoCloseable {
     public Map<String,String> submit(ServerPlayer viewer,Request request)throws Exception{
         authorizeRequest(viewer,request);var session=sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow();var b=session.binding();
         var row=deliveries.feedbackRow(viewer.getUUID(),DeliveryProtocol.deliveryId(b));var origin=row.origin();var policy=deliveries.feedbackPolicy(row);String name=request.arguments().get("event");
-        UUID conversationOp=UUID.nameUUIDFromBytes((origin.world()+"|feedback-conversation|"+row.id()+"|"+viewer.getUUID()).getBytes(StandardCharsets.UTF_8));
-        var conversation=ServerConversations.get(server).store().create(viewer.getUUID(),row.agent(),conversationOp,"页面反馈 · "+row.asset().title().substring(0,Math.min(100,row.asset().title().length())));
+        var conversations=ServerConversations.get(server).store();var priorConversation=store.existingConversation(viewer.getUUID(),row.id());
+        var conversation=priorConversation.isPresent()?conversations.get(viewer.getUUID(),row.agent(),priorConversation.orElseThrow()):conversations.create(viewer.getUUID(),row.agent(),store.conversationOperation(viewer.getUUID(),row.id()),"页面反馈 · "+row.asset().title().substring(0,Math.min(100,row.asset().title().length())));
         var task=MineAgentRuntimeServices.tasks(server).get(origin.task()).orElseThrow();
         var scope=new UiFeedbackStore.Scope(origin.world(),row.id(),viewer.getUUID(),b.viewerPlayerId(),b.actorId(),b.actorKind().name(),row.owner(),row.agent(),origin.task(),origin.intent(),conversation.conversationId(),row.asset().packageId(),row.asset().revision(),row.asset().canonical(),row.asset().entry(),policy.sha256(),name,policy.event(name),deliveries.feedbackToken(row),origin.operation(),MineAgentRuntimeServices.events(server).causalChain(task));
         if(policy.event(name).mode().equals("AGENT_WAKE"))scope=scope.withConsumer(consumer(row,name));
@@ -145,7 +145,7 @@ public final class ServerUiFeedback implements AutoCloseable {
         var s=item.scope();var conversations=ServerConversations.get(server).store();var message=conversations.feedbackReply(s.authorId(),s.agentId(),s.conversationId(),proof.operationId());var data=json.readTree(proof.result());
         if(!message.role().equals("ASSISTANT")||!message.status().equals("COMPLETE")||!message.messageId().toString().equals(data.path("messageId").asText()))return false;
         var text=new StringBuilder();for(int offset=0;offset<message.textLength();offset+=4096)text.append(conversations.chunk(s.authorId(),s.agentId(),s.conversationId(),message.messageId(),message.revision(),offset,4096).text());
-        return text.toString().equals(item.reply().text())&&text.toString().equals(data.path("reply").asText())&&item.reply().sha256().equals(data.path("sha256").asText())&&item.reply().sha256().equals(dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(text.toString().getBytes(StandardCharsets.UTF_8)));
+        return text.toString().equals(item.reply().text())&&text.toString().equals(data.path("reply").asText())&&item.reply().sha256().equals(data.path("sha256").asText());
     }catch(Exception failed){return false;}}
     public void verifyFinish(ManagedTask task,String arguments)throws Exception{var request=FeedbackToolRequest.parse("finish_task",arguments);var item=taskItem(task);if(!item.state().equals("COMPLETED")||item.completion()==null||!request.replyOperation().equals(item.completion().operationId())||!verifyReply(item,item.completion()))throw new IllegalStateException("FEEDBACK_REPLY_NOT_VERIFIED");}
     public Map<String,String> forModel(ManagedTask task,String tool,Map<String,String> after){if(!FeedbackToolRequest.TOOLS.contains(tool))return after;try{taskItem(task);return after;}catch(Exception denied){return Map.of("executionMode","FEEDBACK_OBSERVATION_REDACTED");}}
