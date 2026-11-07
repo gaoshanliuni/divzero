@@ -709,8 +709,8 @@
     },
     {
       "path": "client/build.gradle",
-      "resourceId": "0c954ab4-f86a-47bc-a078-53270ccb048a",
-      "bytes": 3710
+      "resourceId": "1ec1b7dd-5ab5-4cea-948c-30dea974a4cb",
+      "bytes": 3722
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/audio/VoiceChunkAssembler.java",
@@ -784,8 +784,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/BundledPythonResources.java",
-      "sha256": "00328178bc8ddfaed6c616c5001241158424ebee3c5a232a45c373af19c58567",
-      "bytes": 4236
+      "resourceId": "e4ed5c6b-f5aa-4952-b54e-2018596c0fe9",
+      "bytes": 4394
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/LocalPythonExecutor.java",
@@ -794,8 +794,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/host/ManagedPythonRuntime.java",
-      "sha256": "5e7aa08f23587db9c155ee62c252c102f547197d9e0c81500c8ad225c986cd0e",
-      "bytes": 21824
+      "resourceId": "e6fd575a-1f52-48ac-80ac-75e535649fc1",
+      "bytes": 21836
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/maintenance/JavaMaintenanceLauncher.java",
@@ -814,8 +814,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/resources/BlockTextureStore.java",
-      "sha256": "eeba968c11673c79fed70dc67f7435e42f8a899013df83f3b7bf34a97fb8e635",
-      "bytes": 5334
+      "resourceId": "18b986a0-bdc3-4077-97ab-b85d9ba4e9f3",
+      "bytes": 5178
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/resources/LocalResourcePackStore.java",
@@ -984,8 +984,8 @@
     },
     {
       "path": "client/src/main/resources/META-INF/divzero/python/bundle-lock.json",
-      "sha256": "1d1da7d5b1eb84f76709e39c72790867288497df3b3445d191d914d8c4530e38",
-      "bytes": 6364
+      "resourceId": "246e0163-f96b-491b-a090-f4301e79a575",
+      "bytes": 5937
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
@@ -1344,8 +1344,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ModelCapabilityProfiles.java",
-      "resourceId": "a3d9714b-9b24-437c-8348-300d358f7c02",
-      "bytes": 2823
+      "resourceId": "3f185784-2e4d-45c7-b917-fbbc5740e7a7",
+      "bytes": 3457
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/NativeSecretPayload.java",
@@ -1404,13 +1404,23 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
-      "resourceId": "e6b2b059-123a-4813-8c82-95ae1e0a1d6d",
-      "bytes": 3152
+      "resourceId": "a6925b7a-7df9-477a-8385-9b0fbf3a6ae0",
+      "bytes": 3569
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentIntegrityException.java",
       "sha256": "23389a1cdcf4730658654814c00b3043d58de5833dfbb4b7d7a7394a58467d36",
       "bytes": 314
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/content/LegacyNamespaceIds.java",
+      "resourceId": "ce3f0d86-9708-4060-aae2-cfe1febe796d",
+      "bytes": 2889
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/content/ResourceFileLock.java",
+      "resourceId": "c565afcf-13a9-4928-8091-6169bffbb156",
+      "bytes": 994
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/StoredObject.java",
@@ -1894,8 +1904,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/DialogueMemoryStore.java",
-      "resourceId": "e69e9ee4-d391-4ace-b01f-ee1bfabc48f6",
-      "bytes": 6721
+      "resourceId": "2e8a3751-782a-4357-938c-c08120cb5ecb",
+      "bytes": 7532
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/MemoryRelevance.java",
@@ -4804,8 +4814,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientMod.java",
-      "sha256": "42fb5a7c41f4c280a691600460678e348f540e81d00b63f498bd566f25b01e9d",
-      "bytes": 29320
+      "resourceId": "85efbd34-dc49-424d-9a40-691584362c0e",
+      "bytes": 29406
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientNavigation.java",
@@ -5374,8 +5384,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativePreview.java",
-      "sha256": "533457e6aca381ca9339b21dc5d45058b470b9f9bb736263971cf74e0e045e61",
-      "bytes": 13541
+      "resourceId": "bb7f6742-3490-4ec6-a4a9-e0af91459332",
+      "bytes": 15814
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeReadout.java",
@@ -5384,8 +5394,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeResourceView.java",
-      "resourceId": "8475f2fa-1c41-4f4a-813c-ac09048d17f7",
-      "bytes": 5020
+      "resourceId": "dda7fbd3-e917-4b2a-ab57-fd9055461efa",
+      "bytes": 7823
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeRichMessageSmokeClient.java",
@@ -5464,8 +5474,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "sha256": "3d763885233d49d0020109034bb2490c4dd81883bb7e5c2c576e1d9fce331d3c",
-      "bytes": 56116
+      "resourceId": "95bf387b-67fc-42de-8e39-3b6f14ed7bfb",
+      "bytes": 56154
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/OctoberFeedbackSmoke.java",
@@ -5514,8 +5524,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspaceWindow.java",
-      "sha256": "0c0e693df3109fffeb68797cf74eba63cec8137959c27f5d79206cd6ac92f5af",
-      "bytes": 4122
+      "resourceId": "7b91c856-ee11-404b-b3ec-75d773f3a6d1",
+      "bytes": 4420
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/BorrowedCreatureVisuals.java",
@@ -5584,8 +5594,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/resources/BlockTextureClient.java",
-      "sha256": "7800d0e92b09e72f4a8be367a77fad59573e7a6da589536e2772db7f84ffa1b5",
-      "bytes": 21413
+      "resourceId": "3700ee5e-5f8e-414c-a21f-7dffe1275e0b",
+      "bytes": 21370
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/screen/AboutScreen.java",
@@ -7524,8 +7534,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerModelCapabilities.java",
-      "resourceId": "f37e24b4-5f59-49da-8bef-50dbe576be62",
-      "bytes": 7069
+      "resourceId": "f97e735d-dcd8-46d3-b14b-2979807306aa",
+      "bytes": 6800
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerNativeInterfaceRestore.java",
@@ -8339,8 +8349,8 @@
     },
     {
       "path": "scripts/prepare-media-tools.ps1",
-      "sha256": "a77baa086c05e7a01361bcc90df29c75b9468b091d231b6b278d35669aa4ff9b",
-      "bytes": 1938
+      "resourceId": "ad7f0223-e5f6-4566-9a90-ad0391eb91cb",
+      "bytes": 1899
     },
     {
       "path": "scripts/publish-ci-release.ps1",
@@ -8604,8 +8614,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/media/BundledMediaTools.java",
-      "sha256": "5153df1a7b25ea8dc1f37a19666ed7c343080caeeb042e2656cded4191142dbd",
-      "bytes": 12185
+      "resourceId": "03138f11-d298-4c9c-b893-9423419e239b",
+      "bytes": 10642
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/media/CommandRunner.java",
@@ -8644,8 +8654,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/media/MediaToolBundleManifest.java",
-      "sha256": "0901b3e9c60816c0aaf5310b7609394cc76d0ef7f20a5eacb240119871e05582",
-      "bytes": 2326
+      "resourceId": "079d5d0c-ff34-4824-b595-43340a7c0ef7",
+      "bytes": 2023
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/media/MediaToolException.java",
@@ -9004,8 +9014,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/web/ImageTexture.java",
-      "sha256": "6036e145a5e1b16e37ca4658b34d2719c62d055b715f88c97cd229a6d27cb1fd",
-      "bytes": 2797
+      "resourceId": "d1f877ff-b046-41e3-82b3-be8383f30725",
+      "bytes": 2764
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/web/PublicHttpsReader.java",
@@ -9140,5 +9150,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6f8eb8c3de34a6f24f3079a50271fa78d2904054"
+  "sourceCommit": "dd3aa234072282a0995fdc5c618e0fbc5bd6b7c6"
 }

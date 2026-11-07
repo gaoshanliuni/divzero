@@ -11,7 +11,14 @@ public final class DialogueMemoryStore implements AutoCloseable {
     }
     private final SqliteRuntimeRepository db;private final UUID world;private final String namespace;private final Clock clock;
     private static final ObjectMapper JSON=new ObjectMapper();
-    public DialogueMemoryStore(Path file,UUID world,UUID owner,UUID agent,Clock clock)throws Exception{db=new SqliteRuntimeRepository(file);this.world=world;this.namespace="dialogue_memory_"+UUID.nameUUIDFromBytes((owner+"|"+agent).getBytes(java.nio.charset.StandardCharsets.UTF_8));this.clock=clock;}
+    private static final java.util.concurrent.locks.ReentrantLock WRITES=new java.util.concurrent.locks.ReentrantLock(true);
+    public DialogueMemoryStore(Path file,UUID world,UUID owner,UUID agent,Clock clock)throws Exception{
+        db=new SqliteRuntimeRepository(file);this.world=world;this.clock=clock;
+        // Legacy namespace derivation omitted world, but the SQL rows were world-scoped.
+        // Persist a separate migration decision for each database AND world.
+        try{this.namespace=dev.mineagent.runtime.core.content.LegacyNamespaceIds.resolve(file.toAbsolutePath().getParent().resolve("namespace-migrations").resolve(file.getFileName().toString()).resolve(world.toString()),dev.mineagent.runtime.core.content.LegacyNamespaceIds.Kind.DIALOGUE_MEMORY,owner+"|"+agent,candidate->{try{return !db.list(world,candidate).isEmpty();}catch(Exception e){throw new IllegalStateException("MEMORY_LEGACY_LOOKUP",e);}});}
+        catch(Exception error){db.close();throw error;}
+    }
     private List<Entry> all()throws Exception{var out=new ArrayList<Entry>();for(var r:db.list(world,namespace))out.add(JSON.readValue(r.payload(),Entry.class));return out;}
     public Map<String,Object> inspect(String query,int offset)throws Exception{
         if(query==null||query.length()>128||offset<0)throw new IllegalArgumentException("MEMORY_QUERY");long now=clock.millis();String q=query.toLowerCase(Locale.ROOT);
@@ -43,9 +50,9 @@ public final class DialogueMemoryStore implements AutoCloseable {
         if(source==null||source.isBlank()||source.length()>512||aliases==null||aliases.size()>16||aliases.stream().anyMatch(a->a==null||a.length()<2||a.length()>64))throw new IllegalArgumentException("MEMORY_SOURCE_OR_ALIASES");
         if(kind.equals("OBSERVATION")&&ttlSeconds==0)throw new IllegalArgumentException("MEMORY_OBSERVATION_EXPIRY_REQUIRED");
         if(!Set.of("FACT","PREFERENCE","OBSERVATION","EXPERIENCE").contains(kind)||topic==null||topic.isBlank()||topic.length()>128||value==null||value.isBlank()||value.length()>4096||ttlSeconds<0||ttlSeconds>31536000)throw new IllegalArgumentException("MEMORY_VALUE");
-        topic=topic.strip().toLowerCase(Locale.ROOT);UUID id=UUID.nameUUIDFromBytes((kind+"|"+topic).getBytes(java.nio.charset.StandardCharsets.UTF_8));var old=db.get(world,namespace,id.toString());long rev=old.map(r->r.revision()).orElse(0L),now=clock.millis();
+        topic=topic.strip().toLowerCase(Locale.ROOT);WRITES.lock();try{String normalizedTopic=topic;UUID id=all().stream().filter(e->e.kind().equals(kind)&&e.topic().equals(normalizedTopic)).map(Entry::id).findFirst().orElseGet(UUID::randomUUID);var old=db.get(world,namespace,id.toString());long rev=old.map(r->r.revision()).orElse(0L),now=clock.millis();
         if(expectedRevision!=null&&expectedRevision!=rev)throw new IllegalStateException("MEMORY_REVISION_CHANGED");
-        var entry=new Entry(id,kind,topic,value.strip(),rev+1,now,ttlSeconds==0?0:Math.addExact(now,Math.multiplyExact(ttlSeconds,1000)),false,source,kind.equals("OBSERVATION")?now:0,aliases);save(entry,rev);return entry;
+        var entry=new Entry(id,kind,topic,value.strip(),rev+1,now,ttlSeconds==0?0:Math.addExact(now,Math.multiplyExact(ttlSeconds,1000)),false,source,kind.equals("OBSERVATION")?now:0,aliases);save(entry,rev);return entry;}finally{WRITES.unlock();}
     }
     public Entry forget(UUID id,long expected)throws Exception{
         var r=db.get(world,namespace,id.toString()).orElseThrow(()->new IllegalArgumentException("MEMORY_NOT_FOUND"));var old=JSON.readValue(r.payload(),Entry.class);if(r.revision()!=expected)throw new IllegalStateException("MEMORY_REVISION_CHANGED");

@@ -25,9 +25,9 @@ if (rootProject.pythonRuntime == 'bundled') {
             records.each { record ->
                 def uri = java.net.URI.create(record.url)
                 if(uri.scheme!='https' || !(uri.host in ['github.com','files.pythonhosted.org']))throw new GradleException('PYTHON_BUILD_ORIGIN')
-                def stored = new File(cache,record.sha256)
+                def stored = new File(cache,record.resourceId)
                 if(!stored.isFile() || stored.length()!=record.bytes){
-                    def partial=new File(cache,record.sha256+'.partial')
+                    def partial=new File(cache,record.resourceId+'.partial')
                     def connection=uri.toURL().openConnection();connection.connectTimeout=30000;connection.readTimeout=120000
                     connection.inputStream.withCloseable { input -> partial.withOutputStream { output -> input.transferTo(output) } }
                     if(partial.length()!=record.bytes)throw new GradleException('PYTHON_BUILD_SIZE_MISMATCH')
@@ -47,7 +47,7 @@ if (rootProject.pythonRuntime == 'bundled') {
                     }
                 }
             }
-            new File(out,'BUNDLED-LIBRARIES.txt').setText(lock.wheels.collect { "${it.name}==${it.version}\n${it.source}\nSource resource ID ${it.sha256}\n" }.join('\n')+'\nCPython and all bundled native DLL/stdlib licenses are preserved in runtime.tar.gz (python/LICENSE.txt and package license directories).\n','UTF-8')
+            new File(out,'BUNDLED-LIBRARIES.txt').setText(lock.wheels.collect { "${it.name}==${it.version}\n${it.source}\nSource resource ID ${it.resourceId}\n" }.join('\n')+'\nCPython and all bundled native DLL/stdlib licenses are preserved in runtime.tar.gz (python/LICENSE.txt and package license directories).\n','UTF-8')
         }
     }
     sourceSets.main.resources.srcDir(preparePython)

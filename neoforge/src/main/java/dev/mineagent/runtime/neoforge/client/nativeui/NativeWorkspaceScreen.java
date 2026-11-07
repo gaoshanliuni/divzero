@@ -360,6 +360,6 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         if(pinBottom)history.verticalScroller.setNormalizedValue(1);else if(range>0){float current=history.verticalScroller.getNormalizedValue()*range;float target=anchor==null?pinPixel:current+anchor.getPositionY()-history.viewPort.getContentY()-anchorOffset;history.verticalScroller.setNormalizedValue(Math.clamp(target/range,0,1));}
         restoreScrollFrames--;
     }
-    @Override public void removed(){if(active!=this){super.removed();return;}saveDraft();for(var entry:windows.entrySet()){var value=entry.getValue().placement();if(value.width()>0&&value.height()>0)model.placements.put(entry.getKey(),value);}persistState();super.removed();}
+    @Override public void removed(){if(active!=this){super.removed();return;}saveDraft();for(var entry:windows.entrySet()){var value=entry.getValue().placement();if(value.width()>0&&value.height()>0)model.placements.put(entry.getKey(),value);}persistState();NativeResourceView.workspaceRemoved();super.removed();}
     @Override public void onClose(){saveDraft();persistState();closed=true;releaseConversationFocus();super.onClose();}
 }

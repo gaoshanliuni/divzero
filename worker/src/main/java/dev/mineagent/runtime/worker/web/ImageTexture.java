@@ -22,7 +22,7 @@ public final class ImageTexture {
         }
         if(decoded==null)throw new IOException("IMAGE_DECODE_FAILED");var tile=new BufferedImage(size,size,BufferedImage.TYPE_INT_ARGB);var graphics=tile.createGraphics();
         try{graphics.setComposite(AlphaComposite.Src);graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BICUBIC);int w=size,h=size;if(!fit.equals("stretch")){double scale=fit.equals("cover")?Math.max((double)size/width,(double)size/height):Math.min((double)size/width,(double)size/height);w=Math.max(1,(int)Math.round(width*scale));h=Math.max(1,(int)Math.round(height*scale));}graphics.drawImage(decoded,(size-w)/2,(size-h)/2,w,h,null);}finally{graphics.dispose();decoded.flush();}
-        var bytes=new ByteArrayOutputStream();if(!ImageIO.write(tile,"PNG",bytes))throw new IOException("IMAGE_PNG_ENCODER");tile.flush();byte[] png=bytes.toByteArray();if(png.length>2*1024*1024)throw new IOException("IMAGE_OUTPUT_LIMIT");return new Image(png,HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(png)),width,height,size,url);
+        var bytes=new ByteArrayOutputStream();if(!ImageIO.write(tile,"PNG",bytes))throw new IOException("IMAGE_PNG_ENCODER");tile.flush();byte[] png=bytes.toByteArray();if(png.length>2*1024*1024)throw new IOException("IMAGE_OUTPUT_LIMIT");return new Image(png,dev.mineagent.runtime.api.packages.ResourceIds.create(),width,height,size,url);
     }
     private ImageTexture(){}
 }

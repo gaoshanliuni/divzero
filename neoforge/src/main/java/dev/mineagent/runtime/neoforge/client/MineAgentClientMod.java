@@ -113,6 +113,7 @@ public final class MineAgentClientMod {
             dev.mineagent.runtime.neoforge.client.nativeui.NativeInterfacesClient.tick();
             dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.tick();
             dev.mineagent.runtime.neoforge.client.nativeui.NativePreview.tick();
+            dev.mineagent.runtime.neoforge.client.nativeui.NativeResourceView.tick();
             dev.mineagent.runtime.neoforge.client.nativeui.NativePackageViews.tick();
             dev.mineagent.runtime.neoforge.client.webui.PackageContentClient.tick();
             if(Boolean.getBoolean("mineagent.nativeUiSmoke"))dev.mineagent.runtime.neoforge.client.nativeui.NativeUiSmokeClient.tick();
