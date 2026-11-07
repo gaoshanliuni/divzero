@@ -7,6 +7,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class KnownPortalRoutesTest {
     @TempDir Path root;
     private static KnownPortalRoutes.Location at(String dimension,int x){return new KnownPortalRoutes.Location("minecraft:"+dimension,new SkillSpec.Point(x,64,0));}
+    @Test void adoptsTheRecordedLegacyIdAndKeepsItAfterReopenWithoutDerivingIt()throws Exception{
+        var scope=new KnownPortalRoutes.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID());var other=new KnownPortalRoutes.Scope(scope.world(),UUID.randomUUID(),UUID.randomUUID());String id=UUID.randomUUID().toString();
+        var legacy=new KnownPortalRoutes.Link(id,7,at("overworld",20),at("the_nether",91),"minecraft:nether_portal",scope.agent(),100);
+        try(var repo=new dev.mineagent.runtime.core.persistence.SqliteRuntimeRepository(root.resolve("routes.db"))){
+            assertTrue(repo.compareAndSet(scope.world(),"observed_portal_routes_v1",scope.owner()+":"+scope.agent()+":"+id,0,new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(legacy),100).accepted());
+            assertTrue(repo.compareAndSet(other.world(),"observed_portal_routes_v1",other.owner()+":"+other.agent()+":"+id,0,new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(legacy),100).accepted());
+        }
+        try(var store=new KnownPortalRoutes(root.resolve("routes.db"))){var next=store.observe(scope,legacy.entry(),legacy.exit(),legacy.portalBlock(),scope.agent(),200);assertEquals(id,next.id());assertEquals(7,next.revision());assertEquals(id,store.observe(other,legacy.entry(),legacy.exit(),legacy.portalBlock(),other.agent(),200).id());}
+        try(var store=new KnownPortalRoutes(root.resolve("routes.db"))){var next=store.observe(scope,legacy.entry(),at("the_nether",110),legacy.portalBlock(),scope.agent(),300);assertEquals(id,next.id());assertEquals(8,next.revision());assertEquals(1,store.list(scope).size());}
+    }
     @Test void scopedActualDirectedTransitionsDoNotInventReturnPaths()throws Exception{
         var scope=new KnownPortalRoutes.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID());
         try(var store=new KnownPortalRoutes(root.resolve("routes.db"))){

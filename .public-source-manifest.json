@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "ee5f7b81-87c8-4d19-92df-e14d7dbb9679",
-      "bytes": 5134
+      "resourceId": "a80f7de1-3187-4f90-82f3-1b6646cae299",
+      "bytes": 5167
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -2759,8 +2759,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/KnownPortalRoutes.java",
-      "sha256": "141ef06783931ac19e04bdb10bcc52803814cd08ac8bf9f37a88607010b05478",
-      "bytes": 4758
+      "resourceId": "7c75f694-b024-42a6-96cb-a1c7c0527521",
+      "bytes": 5809
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/LocalActionPolicy.java",
@@ -3724,8 +3724,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/KnownPortalRoutesTest.java",
-      "sha256": "e69b604cffbb64ff33d487914af495fa556fa6ec93f057d41d5c94c8dca37506",
-      "bytes": 2324
+      "resourceId": "b4dfb1d0-76e1-4294-a08c-cd1353d5bc5e",
+      "bytes": 3982
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/LocalActionPolicyTest.java",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "d35befb9491205b372da0b6132f30a1e2b5dbfa4"
+  "sourceCommit": "342fde3351b3aaf5dbdfe2e0d4fb1f531b9e3a78"
 }

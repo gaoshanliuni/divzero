@@ -14,11 +14,20 @@ public final class KnownPortalRoutes implements AutoCloseable {
     public record Plan(List<Leg> legs,double estimatedDistance,boolean navigationVerified){public Plan{legs=List.copyOf(legs);}}
     private static final String NS="observed_portal_routes_v1";private static final ObjectMapper JSON=new ObjectMapper();
     private final SqliteRuntimeRepository repository;
-    public KnownPortalRoutes(Path path)throws Exception{repository=new SqliteRuntimeRepository(path);}
+    private final dev.mineagent.runtime.core.content.ContentAddressedStore identities;
+    public KnownPortalRoutes(Path path)throws Exception{repository=new SqliteRuntimeRepository(path);identities=new dev.mineagent.runtime.core.content.ContentAddressedStore(path.toAbsolutePath().resolveSibling(path.getFileName()+".portal-identities"));}
     private static String prefix(Scope scope){return scope.owner+":"+scope.agent+":";}
     public Link observe(Scope scope,Location entry,Location exit,String block,UUID actor,long at)throws Exception{
         if(entry.dimension.equals(exit.dimension)||actor==null||at<0||block==null||!block.matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))throw new IllegalArgumentException("ROUTE_OBSERVATION");
-        String id=UUID.nameUUIDFromBytes(JSON.writeValueAsBytes(entry)).toString(),key=prefix(scope)+id;
+        String reference=identities.namedKeyId("observed_portal",List.of(scope.world().toString(),scope.owner().toString(),scope.agent().toString(),JSON.writeValueAsString(entry)),()->{
+            var matching=list(scope).stream().filter(link->link.entry().equals(entry)).toList();
+            if(matching.size()>1)throw new IllegalStateException("ROUTE_AMBIGUOUS_ENTRY");
+            // Old route IDs were reused in different owner/agent scopes. Preserve that
+            // visible UUID while assigning a distinct mapping ID for each explicit scope.
+            return matching.isEmpty()?null:UUID.fromString(matching.getFirst().id()).toString().replace("-","")+UUID.randomUUID().toString().replace("-","");
+        });
+        var encoded=java.nio.ByteBuffer.wrap(HexFormat.of().parseHex(reference.substring(0,32)));
+        String id=new UUID(encoded.getLong(),encoded.getLong()).toString(),key=prefix(scope)+id;
         var previous=repository.get(scope.world,NS,key);long revision=previous.map(v->v.revision()).orElse(0L);
         var old=previous.isEmpty()?null:JSON.readValue(previous.orElseThrow().payload(),Link.class);
         long topology=old==null?1:old.entry.equals(entry)&&old.exit.equals(exit)&&old.portalBlock.equals(block)?old.revision:old.revision+1;
