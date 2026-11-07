@@ -62,6 +62,12 @@ public record NativeCompilationSnapshot(int schema,String namespace,String physi
         try(var zip=new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(image))){java.util.zip.ZipEntry entry;int scanned=0;long total=0;while((entry=zip.getNextEntry())!=null){if(++scanned>300000)throw new IllegalStateException("NATIVE_CLASSPATH_LIMIT");byte[] body=zip.readNBytes(8*1024*1024+1);total+=body.length;if(body.length>8*1024*1024||total>512L*1024*1024)throw new IllegalStateException("NATIVE_CLASSPATH_LIMIT");if(!entry.isDirectory()&&entry.getName().endsWith(".class")){String name=entry.getName().substring(0,entry.getName().length()-6).replace('/','.');if(name.toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT)))values.add(name);}}}
         if(offset>values.size())throw new IllegalArgumentException("NATIVE_API_OFFSET");return values.stream().sorted().skip(offset).limit(maximum).toList();
     }
+    /** A class belongs to an immutable module ID and binary name, independently of its bytes. */
+    public String classReference(ContentAddressedStore content,String moduleName,String className)throws Exception{
+        byte[] bytes=classBytes(content,moduleName,className);
+        String id=content.namedKeyId("native_class",List.of(module(moduleName).sha256(),className));
+        content.put(id,bytes);return id;
+    }
     public byte[] classBytes(ContentAddressedStore content,String moduleName,String className)throws Exception{
         if(className==null||className.length()>512||className.isBlank()||className.contains("..")||className.startsWith(".")||className.endsWith(".")||className.contains("/")||className.contains("\\")||className.codePoints().anyMatch(c->c<=32))throw new IllegalArgumentException("NATIVE_API_CLASS");String wanted=className.replace('.','/')+".class";byte[] image=bytes(content,module(moduleName));
         try(var zip=new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(image))){java.util.zip.ZipEntry entry;int scanned=0;long total=0;while((entry=zip.getNextEntry())!=null){if(++scanned>300000)throw new IllegalStateException("NATIVE_CLASSPATH_LIMIT");byte[] bytes=zip.readNBytes(8*1024*1024+1);total+=bytes.length;if(bytes.length>8*1024*1024||total>512L*1024*1024)throw new IllegalStateException("NATIVE_API_CLASS_LIMIT");if(entry.getName().equals(wanted))return bytes;}}

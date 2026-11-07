@@ -21,6 +21,7 @@ public final class NativeLiveClassAccess {
     public record Loaded(UUID token,String className,String moduleName,boolean namedModule,String loaderKind,String codeSourceHash,boolean modifiable){}
     public record Page(List<Loaded> classes,int offset,int nextOffset,boolean more,int total){public Page{classes=List.copyOf(classes);}}
     public record Captured(byte[] bytes,String className,String moduleName,String loaderKind,String provenance,String audit){public Captured{bytes=bytes.clone();}public byte[] bytes(){return bytes.clone();}}
+    private static final dev.mineagent.runtime.core.content.ObservationTokens SOURCE_IDS=new dev.mineagent.runtime.core.content.ObservationTokens(512,1024*1024);
     private static final UUID EPOCH=UUID.randomUUID();private static final Object LOCK=new Object();private static final IdentityHashMap<Class<?>,UUID> IDS=new IdentityHashMap<>();private static final Map<UUID,WeakReference<Class<?>>> TOKENS=new LinkedHashMap<>();private static volatile Instrumentation instrumentation;private static volatile String instrumentationError="";
     private record Frozen(UUID id,UUID world,UUID viewer,String snapshot,NativeCoderContext.Overlay overlay,long expires){}
     private static final Map<UUID,Frozen> FROZEN=new LinkedHashMap<>();
@@ -43,5 +44,5 @@ public final class NativeLiveClassAccess {
     private static boolean transformAccess(ClassLoader loader){if(!(loader instanceof TransformingClassLoader))return false;try{return TransformingClassLoader.class.getDeclaredMethod("buildTransformedClassNodeFor",String.class,ProcessorName.class).trySetAccessible();}catch(Exception unavailable){return false;}}
     private static String moduleName(Class<?> value){var module=value.getModule();return module==null||!module.isNamed()?"":Objects.toString(module.getName(),"");}
     private static String loaderKind(Class<?> value){var loader=value.getClassLoader();return loader==null?"BOOTSTRAP":loader.getClass().getName();}
-    private static String codeSource(Class<?> value){try{var source=value.getProtectionDomain()==null?null:value.getProtectionDomain().getCodeSource();return source==null||source.getLocation()==null?"":RuntimePackageCanonicalizer.sha256(source.getLocation().toExternalForm());}catch(Exception unavailable){return "";}}
+    private static String codeSource(Class<?> value){try{var source=value.getProtectionDomain()==null?null:value.getProtectionDomain().getCodeSource();return source==null||source.getLocation()==null?"":SOURCE_IDS.token(source.getLocation().toExternalForm());}catch(Exception unavailable){return "";}}
 }

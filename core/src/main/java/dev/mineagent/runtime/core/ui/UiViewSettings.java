@@ -28,5 +28,5 @@ public final class UiViewSettings {
     }
     private static double number(JsonNode value,String key,Double fallback){if(!value.has(key)&&fallback!=null)return fallback;var field=value.path(key);if(!field.isNumber())throw new IllegalArgumentException("UI_VIEW_SETTINGS_VALUE");return field.doubleValue();}
     private static void fields(JsonNode value,Set<String> allowed){if(value==null||!value.isObject()||!allowed.containsAll(value.properties().stream().map(Map.Entry::getKey).toList()))throw new IllegalArgumentException("UI_VIEW_SETTINGS_FIELDS");}
-    public static String layoutKey(UUID packageId,String entry,String target,boolean candidate){try{return "package:"+RuntimePackageCanonicalizer.sha256(JSON.writeValueAsBytes(List.of(packageId,entry,target,candidate)));}catch(Exception e){throw new IllegalArgumentException("UI_VIEW_SETTINGS_SCOPE",e);}}
+    public static String layoutKey(UUID packageId,String entry,String target,boolean candidate){try{return "package-v2:"+Base64.getUrlEncoder().withoutPadding().encodeToString(JSON.writeValueAsBytes(List.of(packageId,entry,target,candidate)));}catch(Exception e){throw new IllegalArgumentException("UI_VIEW_SETTINGS_SCOPE",e);}}
 }

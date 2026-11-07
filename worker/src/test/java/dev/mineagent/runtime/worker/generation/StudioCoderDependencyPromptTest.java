@@ -24,7 +24,7 @@ class StudioCoderDependencyPromptTest {
         var in=new StudioCoderJournal.Input(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),1,1,root,0,"",null,0,dev.mineagent.runtime.api.packages.ResourceIds.create(),0,"main.js","call the existing add function",1,"",0,env,"",0,null,false,Map.of(),null,true,context,true);
         assertThrows(IllegalStateException.class,()->StudioCoderResult.promptContext(in,"","",""));
         String prompt=StudioCoderResult.promptContext(in,"","","",text);assertTrue(prompt.contains("privateCounter"));assertTrue(prompt.contains(dependency.toString()));assertTrue(prompt.contains("callPackage"));assertTrue(prompt.contains("NOT_LIVE_EXPORTS"));
-        assertThrows(IllegalStateException.class,()->StudioCoderResult.promptContext(in,"","","",text.replace(in.dependencyHash(),"b".repeat(64))));
+        var changed=new com.fasterxml.jackson.databind.ObjectMapper().readTree(text);((com.fasterxml.jackson.databind.node.ObjectNode)changed).put("graphHash","b".repeat(64));assertThrows(IllegalStateException.class,()->StudioCoderResult.promptContext(in,"","","",changed.toString()));
         String source="callPackage('"+dependency+"','add',[1]);";UUID request=UUID.randomUUID();
         String raw=new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(Map.of("source",source));
         var result=StudioCoderResult.prepare(request,1,false,new WorkerEnvelope(1,request,"model.result",Map.of("text",raw)),store).withScriptDependencySources(snapshot);

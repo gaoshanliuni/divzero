@@ -15,13 +15,14 @@ public final class PackageUiStateStore implements AutoCloseable {
     public record Scope(String server,UUID world,UUID viewer,UUID packageId,String entry,String target){
         public Scope{Objects.requireNonNull(world);Objects.requireNonNull(viewer);Objects.requireNonNull(packageId);
             if(server==null||server.isBlank()||server.length()>512||entry==null||!entry.startsWith("ui/")||entry.length()>256||entry.contains("..")||entry.contains("\\")||target==null||target.length()>256)throw new IllegalArgumentException("UI_STATE_SCOPE");}
-        String key()throws Exception{return RuntimePackageCanonicalizer.sha256(JSON.writeValueAsBytes(List.of(server,viewer.toString(),packageId.toString(),entry,target)));}
     }
     public record Snapshot(long revision,boolean exists,String valueJson,long packageRevision){}
     private record Data(int schema,long packageRevision,Map<String,String> entries){}
     private record Loaded(long revision,Data data){}
     private final SqliteRuntimeRepository repo;private final Clock clock;
-    public PackageUiStateStore(Path database,Clock clock)throws Exception{this.repo=new SqliteRuntimeRepository(database);this.clock=Objects.requireNonNull(clock);}
+    private final dev.mineagent.runtime.core.content.ContentAddressedStore identities;
+    private final LinkedHashMap<Scope,String> scopeIds=new LinkedHashMap<>(16,.75f,true);
+    public PackageUiStateStore(Path database,Clock clock)throws Exception{this.repo=new SqliteRuntimeRepository(database);this.clock=Objects.requireNonNull(clock);this.identities=new dev.mineagent.runtime.core.content.ContentAddressedStore(database.toAbsolutePath().resolveSibling(database.getFileName()+".identities"));}
     public synchronized Snapshot get(Scope scope,String key)throws Exception{key(key);return snapshot(load(scope),key);}
     public synchronized Snapshot put(Scope scope,String key,long expected,long packageRevision,String valueJson,BooleanSupplier current)throws Exception{
         key(key);if(valueJson==null||valueJson.getBytes(StandardCharsets.UTF_8).length>32768)throw new IllegalArgumentException("UI_STATE_VALUE_BUDGET");
@@ -38,11 +39,20 @@ public final class PackageUiStateStore implements AutoCloseable {
         var data=new Data(1,packageRevision,entries);String encoded=JSON.writeValueAsString(data);
         if(encoded.getBytes(StandardCharsets.UTF_8).length>262144)throw new IllegalArgumentException("UI_STATE_TOTAL_BUDGET");
         if(!current.getAsBoolean())throw new IllegalStateException("UI_STATE_STALE_VIEW");
-        var result=repo.compareAndSet(scope.world(),NS,scope.key(),expected,encoded,clock.millis());
+        var result=repo.compareAndSet(scope.world(),NS,scopeKey(scope),expected,encoded,clock.millis());
         if(!result.accepted())throw new IllegalStateException("UI_STATE_CONFLICT");return snapshot(new Loaded(result.record().revision(),data),key);
     }
+    private String scopeKey(Scope scope)throws Exception{
+        var cached=scopeIds.get(scope);if(cached!=null)return cached;
+        String id=identities.namedKeyId("package_ui",List.of(scope.world().toString(),scope.server(),scope.viewer().toString(),scope.packageId().toString(),scope.entry(),scope.target()),()->{
+            if(!repo.hasRecords(scope.world(),NS))return null;
+            String legacy=dev.mineagent.runtime.core.content.LegacyNamespaceIds.packageUiStateForMigration(scope.server(),scope.viewer(),scope.packageId(),scope.entry(),scope.target());
+            return repo.get(scope.world(),NS,legacy).isPresent()?legacy:null;
+        });
+        scopeIds.put(scope,id);if(scopeIds.size()>256)scopeIds.remove(scopeIds.keySet().iterator().next());return id;
+    }
     private Loaded load(Scope scope)throws Exception{
-        var row=repo.get(scope.world(),NS,scope.key());if(row.isEmpty())return new Loaded(0,new Data(1,0,Map.of()));
+        var row=repo.get(scope.world(),NS,scopeKey(scope));if(row.isEmpty())return new Loaded(0,new Data(1,0,Map.of()));
         try{var data=JSON.readValue(row.get().payload(),Data.class);
             if(data.schema()!=1||data.packageRevision()<1||data.entries()==null||data.entries().size()>64||row.get().payload().getBytes(StandardCharsets.UTF_8).length>262144)throw new IllegalArgumentException();
             for(var e:data.entries().entrySet()){key(e.getKey());if(e.getValue()==null||e.getValue().getBytes(StandardCharsets.UTF_8).length>32768||JSON.readTree(e.getValue())==null)throw new IllegalArgumentException();}

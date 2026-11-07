@@ -26,7 +26,7 @@ jobs:
           exit $LASTEXITCODE
       - name: Verify resource parsing, immutable IDs and semantic scope contracts
         run: |
-          & ./gradlew.bat -PpythonRuntime=none :core:test --tests '*DependencyReceiptTest' --tests '*ClientDependencyGraphTest' --tests '*NativeCompilationIdentityTest' --tests '*NewWorldIdentityTest' --tests '*PlayerPreferenceIdentityTest' --tests '*PersistentAgentServiceTest' --tests '*NativeEnvironmentIdentityTest' --tests '*SecretChannelTest' --tests '*NativeSecretPayloadTest' --tests '*CodeSourceVersionTest' --tests '*SourceSetPublicationTest' --tests '*ScriptDependencySourcesTest' --tests '*ContentAddressedStoreTest' --tests '*ObservationTokensTest' --tests '*ContainerTransactionTest' --tests '*LegacyNamespaceIdsTest' --tests '*SemanticMemoryIndexTest' --tests '*DialogueMemoryStoreTest' --tests '*PackageSignature*Test' --tests '*GatherSkillContractTest' --tests '*CooperationPlanTest' --tests '*AssignedTaskIdsTest' --tests '*AssignedOperationIdsTest' --tests '*ContentPackageServiceTest' --tests '*LegacyContentPackageMigratorTest' --tests '*ConstructionLedgerTest' --tests '*NativeUiEventStoreTest' --tests '*ConversationSummaryStoreTest' --tests '*ConversationStoreTest' --tests '*PythonPathsTest' --tests '*AgentPersonaServiceTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/core-tests.log
+          & ./gradlew.bat -PpythonRuntime=none :core:test --tests '*NativeClassReferenceTest' --tests '*PackageUiStateStoreTest' --tests '*UiViewSettingsTest' --tests '*DependencyReceiptTest' --tests '*ClientDependencyGraphTest' --tests '*NativeCompilationIdentityTest' --tests '*NewWorldIdentityTest' --tests '*PlayerPreferenceIdentityTest' --tests '*PersistentAgentServiceTest' --tests '*NativeEnvironmentIdentityTest' --tests '*SecretChannelTest' --tests '*NativeSecretPayloadTest' --tests '*CodeSourceVersionTest' --tests '*SourceSetPublicationTest' --tests '*ScriptDependencySourcesTest' --tests '*ContentAddressedStoreTest' --tests '*ObservationTokensTest' --tests '*ContainerTransactionTest' --tests '*LegacyNamespaceIdsTest' --tests '*SemanticMemoryIndexTest' --tests '*DialogueMemoryStoreTest' --tests '*PackageSignature*Test' --tests '*GatherSkillContractTest' --tests '*CooperationPlanTest' --tests '*AssignedTaskIdsTest' --tests '*AssignedOperationIdsTest' --tests '*ContentPackageServiceTest' --tests '*LegacyContentPackageMigratorTest' --tests '*ConstructionLedgerTest' --tests '*NativeUiEventStoreTest' --tests '*ConversationSummaryStoreTest' --tests '*ConversationStoreTest' --tests '*PythonPathsTest' --tests '*AgentPersonaServiceTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/core-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./gradlew.bat -PpythonRuntime=none :scripting:test --tests '*BrowserScriptPreflightTest' --tests '*CodeDraftVersionMigrationTest' --tests '*CodeDraftServiceTest' --tests '*StudioCoderDependencyJournalTest' --tests '*ManagedScriptDependencyTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/source-lifecycle-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -38,6 +38,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./gradlew.bat -PpythonRuntime=none :neoforge:test --tests '*BuildingUiDocumentsTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/building-documents-tests.log
           exit $LASTEXITCODE
+      - name: Package isolated test candidate after selected contracts pass
+        run: |
+          & ./gradlew.bat -PpythonRuntime=none :neoforge:jar --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/candidate-jar.log
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: isolated-candidate-${{ github.run_id }}
+          path: build/editions/none/neoforge/libs/*.jar
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         if: always()
         with:

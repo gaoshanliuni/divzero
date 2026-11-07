@@ -12,6 +12,11 @@ public final class LegacyNamespaceIds {
  public static String worldPathLockForMigration(String path)throws java.security.GeneralSecurityException{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(path.getBytes(StandardCharsets.UTF_8)));}
  public static UUID pendingActivationForMigration(String path,String anchorIds){return UUID.nameUUIDFromBytes((path+"|"+anchorIds).getBytes(StandardCharsets.UTF_8));}
  public static UUID agentCreationForMigration(UUID world,UUID owner,UUID operation){return UUID.nameUUIDFromBytes(("agent-create|"+world+"|"+owner+"|"+operation).getBytes(StandardCharsets.UTF_8));}
+ /** Only invoked while creating a durable scope mapping, and only if legacy state rows exist. */
+ public static String packageUiStateForMigration(String server,UUID viewer,UUID pkg,String entry,String target)throws Exception{
+  byte[] identity=new ObjectMapper().writeValueAsBytes(List.of(server,viewer.toString(),pkg.toString(),entry,target));
+  return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(identity));
+ }
  private record Mapping(String id,boolean migrated){}
  private static final ObjectMapper JSON=new ObjectMapper();private static final Map<Path,Object> LOCKS=new java.util.concurrent.ConcurrentHashMap<>();
  public static String resolve(Path indexRoot,Kind kind,String originalScope,java.util.function.Predicate<String> legacyExists)throws IOException{

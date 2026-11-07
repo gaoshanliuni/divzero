@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "9662be8d-a349-434b-a71d-dc713c3880d0",
-      "bytes": 4469
+      "resourceId": "b9421a0d-d882-4f69-a7d1-7d2aa9efc384",
+      "bytes": 5074
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1289,13 +1289,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeCoderContext.java",
-      "sha256": "59db490ec63eca8318f8963533dafc2dd3c55cc9a0e0228b947e7a3f57b30443",
-      "bytes": 18623
+      "resourceId": "0a511054-6ae8-45fe-a6ed-75a7f1fdc123",
+      "bytes": 18549
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeCompilationSnapshot.java",
-      "resourceId": "e0e2f8b4-2054-44ce-8307-1e8fc94b513b",
-      "bytes": 12617
+      "resourceId": "944513b4-62f3-4797-bcdf-49d53b833bac",
+      "bytes": 13042
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeGenerationContext.java",
@@ -1339,8 +1339,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeOverlaySnapshot.java",
-      "sha256": "fffe52e564f4f5f22f0f5bdfdff1d18ee4c57d35545705881e9da05acc3b91ad",
-      "bytes": 5493
+      "resourceId": "ad7c475f-1b7d-459d-885a-5c569715b3d2",
+      "bytes": 5414
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeSourceArchive.java",
@@ -1459,8 +1459,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/LegacyNamespaceIds.java",
-      "resourceId": "b580f205-14aa-4b7f-bd03-b6088518de63",
-      "bytes": 5645
+      "resourceId": "48144cc0-b9cc-4a5f-909c-64b3556f68b0",
+      "bytes": 6098
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ObservationTokens.java",
@@ -2399,8 +2399,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteRuntimeRepository.java",
-      "resourceId": "3649752f-77fd-4ab1-9416-11aa8aed8ab0",
-      "bytes": 29746
+      "resourceId": "68d422cb-c955-48f9-b2ac-c5eafa66a652",
+      "bytes": 30115
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteWriteGate.java",
@@ -2954,8 +2954,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/PackageUiStateStore.java",
-      "sha256": "9b1e387b3b56a3f2f40d6b715abdf8abe26a300948a2320549c8c59f291693b8",
-      "bytes": 5397
+      "resourceId": "e064c9f0-ac7f-47e7-a0b7-2a373dc5e772",
+      "bytes": 6348
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/ScoreContentPolicy.java",
@@ -3009,8 +3009,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/UiViewSettings.java",
-      "sha256": "fb11a0ec4a2b0eb74ffb774fd14a8729bffa3ba9d6af92acaca18c3d51f90fcd",
-      "bytes": 4315
+      "resourceId": "40bf5a0e-39d6-4059-b612-d5b4e14dcf83",
+      "bytes": 4338
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/WindowPinPlan.java",
@@ -3176,6 +3176,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/ConstructionLedgerTest.java",
       "resourceId": "1f567052-727e-473f-a635-ac3ea47f9280",
       "bytes": 8217
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeClassReferenceTest.java",
+      "resourceId": "8e28a2f3-7ca4-4882-982c-83fb85ae6ec6",
+      "bytes": 3373
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeCompilationIdentityTest.java",
@@ -3801,6 +3806,16 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/ContainerTransactionTest.java",
       "sha256": "1327f139cbb6721da8ebd23e12ae44adbebf1853945fac1eb4f3b6bd395d529e",
       "bytes": 2686
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/ui/PackageUiStateStoreTest.java",
+      "resourceId": "7d2093c5-dcd6-4f47-8e62-9e17987c7073",
+      "bytes": 6890
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/ui/UiViewSettingsTest.java",
+      "resourceId": "6cfd62cf-9151-4aaa-95fc-76aeba784da0",
+      "bytes": 3065
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/dynamic/InterfaceAttachmentTest.java",
@@ -6079,8 +6094,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeApiCatalog.java",
-      "sha256": "6bb0c6a298b9d80060675a97c97f7f54e68e5284d6f99dfa006ef29268c499b2",
-      "bytes": 36513
+      "resourceId": "dc4e953a-d5e5-40da-9e42-4d50057fda70",
+      "bytes": 36735
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeApiSmokeServer.java",
@@ -6094,8 +6109,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeLiveClassAccess.java",
-      "resourceId": "3ef022c4-abda-4f8a-8e87-2670563d70db",
-      "bytes": 12137
+      "resourceId": "67993cab-adf1-4dc4-bba2-3e5e03eee80b",
+      "bytes": 12281
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeLiveSmokeServer.java",
@@ -9369,8 +9384,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/generation/StudioCoderDependencyPromptTest.java",
-      "resourceId": "fb901599-cbe3-4134-ba41-7823896e7067",
-      "bytes": 6207
+      "resourceId": "4e30edfd-6b7b-4e19-a9e3-00fdf9e80fe8",
+      "bytes": 6344
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/media/BundledMediaToolsTest.java",
@@ -9445,5 +9460,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "fca04119acf96dedc04366ca4294a5e405edb4b6"
+  "sourceCommit": "e41e5ec1adb2700bcb8be470458f13eb5498aeb4"
 }
