@@ -5054,8 +5054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "d42e2552-cbaa-4768-a1a6-69b344992b8c",
-      "bytes": 8796
+      "resourceId": "ec17755a-7ee2-40f4-8472-525c0b2df35b",
+      "bytes": 10461
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -5334,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "92055a86-442f-4606-a2e3-2f5172bc807f",
-      "bytes": 276273
+      "resourceId": "032c4e90-9b8b-44ae-aa37-f1a3d1500812",
+      "bytes": 277318
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7054,8 +7054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
-      "resourceId": "e858b2c1-de42-4c88-845d-efe7de48d05c",
-      "bytes": 20440
+      "resourceId": "997d55fe-f94d-4b43-a9de-3176ede04c2b",
+      "bytes": 23624
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
@@ -7239,8 +7239,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "resourceId": "2f369064-ce8a-48cd-9d8e-0341cdd1346a",
-      "bytes": 13341
+      "resourceId": "27565310-cd29-4c12-89e3-5810e2dd9156",
+      "bytes": 13484
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "e9d8f817c5c3bc3660f06840568f41dccc137f33"
+  "sourceCommit": "1c166f29e030716d52ff555563591dd3e574e176"
 }

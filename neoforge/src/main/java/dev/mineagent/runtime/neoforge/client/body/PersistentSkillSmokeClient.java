@@ -1150,6 +1150,13 @@ public final class PersistentSkillSmokeClient {
         String[][] crafts={{"planks","minecraft:oak_planks","4"},{"sticks","minecraft:stick","1"},{"chest","minecraft:chest","1"},{"helmet","minecraft:diamond_helmet","1"},{"chestplate","minecraft:diamond_chestplate","1"},{"leggings","minecraft:diamond_leggings","1"},{"boots","minecraft:diamond_boots","1"}};
         for(var row:crafts)productionStep(row[0],"CRAFT",row[1],Integer.parseInt(row[2]),3);
         productionStep("stone","SMELT","minecraft:stone",2,4);productionStep("glass","SMELT","minecraft:glass",2,4);
+        action("plan-native-jump-column",()->tool("plan_building",JSON.createObjectNode().put("revision",0).put("source","""
+            {"id":"fixture_column","name":"Native jump placement","dimension":"minecraft:overworld","origin":[7,101,6],
+             "components":[{"id":"column","parts":[{"kind":"box","min":[0,0,0],"max":[0,3,0],"material":"minecraft:oak_planks"}]}],
+             "checks":[{"id":"column_states","component":"column","kind":"states","min":[0,0,0],"max":[0,3,0],"expected":"minecraft:oak_planks"}]}
+            """)));
+        action("build-native-jump-column",()->tool("construct_building",start("jump_column","ai").put("building_id","fixture_column").put("building_revision",1)));
+        waitFor("jump-column-real-placement-and-consumption",1800,()->state("jump_column",v->v.path("state").asText().equals("COMPLETED")&&v.path("counters").path("constructionBlocksPlaced").asInt()==4&&v.path("counters").path("constructionMaterialsConsumed").asInt()==4&&v.path("counters").path("constructionPillarJumps").asInt()>=4));
         action("plan-native-crafted-chest",()->tool("plan_building",JSON.createObjectNode().put("revision",0).put("source",productionChestDesign("minecraft:chest"))));
         action("place-native-crafted-chest",()->tool("construct_building",start("place_storage","ai").put("building_id","fixture_storage").put("building_revision",1)));
         waitFor("crafted-chest-really-placed",1600,()->state("place_storage",v->v.path("state").asText().equals("COMPLETED")&&v.path("counters").path("constructionBlocksPlaced").asInt()==1&&v.path("counters").path("constructionMaterialsConsumed").asInt()==1));
@@ -1162,7 +1169,7 @@ public final class PersistentSkillSmokeClient {
             var b=body(p);var chest=(net.minecraft.world.Container)p.level().getBlockEntity(new BlockPos(5,101,6));var actual=new LinkedHashMap<String,Integer>();for(int i=0;i<chest.getContainerSize();i++){var stack=chest.getItem(i);if(!stack.isEmpty())actual.merge(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),stack.getCount(),Integer::sum);}
             require(actual.equals(Map.of("minecraft:diamond_helmet",1,"minecraft:diamond_chestplate",1,"minecraft:diamond_leggings",1,"minecraft:diamond_boots",1)),"PRODUCTION_CHEST_CONTENTS_"+actual);
             require(b.getInventory().countItem(Items.DIAMOND)==0&&b.getInventory().countItem(Items.OAK_LOG)==0&&b.getInventory().countItem(Items.COBBLESTONE)==0&&b.getInventory().countItem(Items.SAND)==0,"PRODUCTION_RAW_INPUTS_NOT_CONSUMED");
-            require(b.getInventory().countItem(Items.STONE)==2&&b.getInventory().countItem(Items.GLASS)==2&&b.getInventory().countItem(Items.CHEST)==0&&b.getInventory().countItem(Items.STICK)==4&&b.getInventory().countItem(Items.OAK_PLANKS)==6,"PRODUCTION_OUTPUT_NOT_ACTUAL");
+            require(b.getInventory().countItem(Items.STONE)==2&&b.getInventory().countItem(Items.GLASS)==2&&b.getInventory().countItem(Items.CHEST)==0&&b.getInventory().countItem(Items.STICK)==4&&b.getInventory().countItem(Items.OAK_PLANKS)==2,"PRODUCTION_OUTPUT_NOT_ACTUAL");
             return Map.of("chest",actual,"inventory",dev.mineagent.runtime.neoforge.task.NativeCraftingAction.inventory(b),"modelCalls",0,"fixtureOnly",true);
         }));
         action("plan-replacement-must-protect-filled-chest",()->tool("plan_building",JSON.createObjectNode().put("revision",1).put("source",productionChestDesign("minecraft:stone"))));

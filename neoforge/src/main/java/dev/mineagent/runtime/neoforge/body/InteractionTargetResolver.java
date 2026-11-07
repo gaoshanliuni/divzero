@@ -10,7 +10,9 @@ import java.util.*;
 /** Interaction targets remain separate from the feet position; all candidates use the route evaluator. */
 public final class InteractionTargetResolver {
     public enum Kind { BLOCK, PLACE, FISH, RANGED }
-    public record Query(NativeTraversalEvaluator evaluator,SurfacePathfinder.Search search,List<Vec3> candidates){}
+    public record Query(NativeTraversalEvaluator evaluator,SurfacePathfinder.Search search,List<Vec3> candidates,SurfacePathfinder.Search fallback){
+        public Query(NativeTraversalEvaluator evaluator,SurfacePathfinder.Search search,List<Vec3> candidates){this(evaluator,search,candidates,null);}
+    }
     public static Vec3 topHit(ServerPlayer player,BlockPos block){double top=player.level().getBlockState(block).getShape(player.level(),block).toAabbs().stream().mapToDouble(b->b.maxY).max().orElse(1);return new Vec3(block.getX()+.5,block.getY()+top-.001,block.getZ()+.5);}
     public static boolean lineOfSight(ServerPlayer p,Vec3 eye,Vec3 target,BlockPos acceptedBlock,boolean fluids){
         var hit=p.level().clip(new ClipContext(eye,target,ClipContext.Block.COLLIDER,fluids?ClipContext.Fluid.ANY:ClipContext.Fluid.NONE,p));return hit.getType()==HitResult.Type.MISS||acceptedBlock!=null&&hit.getBlockPos().equals(acceptedBlock);
@@ -45,7 +47,19 @@ public final class InteractionTargetResolver {
             if(lineOfSight(p,eye,Vec3.atCenterOf(block),block,kind==Kind.FISH))nodes.add(n);
         }}
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
-        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());
+        var all=new SurfacePathfinder.Search(start,nodes::contains,n->nodes.stream().mapToDouble(g->Math.max(Math.abs(g.x()-n.x()),Math.abs(g.z()-n.z()))).min().orElse(0),evaluator);
+        if(kind==Kind.PLACE&&desired!=null&&!desired.hasBlockEntity()&&p.getY()>=block.getY()+.9){
+            var elevated=new LinkedHashSet<SurfacePathfinder.Node>();for(var node:nodes)if(node.y()>=p.getY()-.3)elevated.add(node);
+            if(!elevated.isEmpty()){
+                int minX=Math.min(start.x(),elevated.stream().mapToInt(SurfacePathfinder.Node::x).min().orElseThrow())-8,maxX=Math.max(start.x(),elevated.stream().mapToInt(SurfacePathfinder.Node::x).max().orElseThrow())+8;
+                int minZ=Math.min(start.z(),elevated.stream().mapToInt(SurfacePathfinder.Node::z).min().orElseThrow())-8,maxZ=Math.max(start.z(),elevated.stream().mapToInt(SurfacePathfinder.Node::z).max().orElseThrow())+8;
+                // This is only a preference search. Failure falls back to the complete ordinary route query.
+                SurfacePathfinder.TraversalEvaluator local=n->evaluator.neighbors(n).stream().filter(e->e.to().x()>=minX&&e.to().x()<=maxX&&e.to().z()>=minZ&&e.to().z()<=maxZ).toList();
+                var preferred=new SurfacePathfinder.Search(start,elevated::contains,n->elevated.stream().mapToDouble(g->Math.max(Math.abs(g.x()-n.x()),Math.abs(g.z()-n.z()))).min().orElse(0),local);
+                return new Query(evaluator,preferred,nodes.stream().map(NativeTraversalEvaluator::point).toList(),all);
+            }
+        }
+        return new Query(evaluator,all,nodes.stream().map(NativeTraversalEvaluator::point).toList());
     }
     private InteractionTargetResolver(){}
     /** Reachable delivery positions, with room for navigation's settling tolerance. */

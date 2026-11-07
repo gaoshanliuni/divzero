@@ -23,6 +23,7 @@ public final class ConstructSkill {
     private final SkillWork w;private ServerBuildings.NativeLease lease;private CompletableFuture<ServerBuildings.NativeLease> opening;
     private CompletableFuture<?> pending;private Runnable afterPending;private List<ConstructionLedger.Cell> cells=List.of();private int index;private long cursor;
     private String phase="OPEN",missing="",failure="";private boolean closed,reserved;private int placementJumpUntil,placementJumpAttempts;
+    private boolean pillarPlacement,pillarLanding;private String lastComponent="";private int lastLayer=Integer.MIN_VALUE;
     private final Map<String,Long> materials=new TreeMap<>();
     private final List<ConstructionLedger.Sample> samples=new ArrayList<>();
     private ConstructSkill(SkillWork work){w=work;var staged=STAGED.get(work.runtime.server);lease=staged==null?null:staged.remove(work.token());if(lease!=null)opened();else{
@@ -54,6 +55,7 @@ public final class ConstructSkill {
         if(closed)return;try{
             if(pending!=null){if(!pending.isDone())return;pending.join();var next=afterPending;pending=null;afterPending=null;if(next!=null)next.run();return;}
             if(w.player().hasInfiniteMaterials()){w.waitFor("BUILDING_REQUIRES_FINITE_INVENTORY",100);return;}
+            if(pillarLanding){if(!w.player().onGround())return;pillarLanding=false;}
             if(cells.isEmpty()){
                 if(phase.equals("PREFLIGHT")){phase="WRITE";cursor=0;var next=lease.update(l->{l.prepareNativeWriteOrder(w.token(),w.session.spec().buildingRevision());l.progress("APPLYING","WRITE",0,0);return null;});waitFor(next,this::page);return;}
                 if(phase.equals("WRITE")){phase="VERIFY";cursor=0;var next=lease.update(l->{l.progress("APPLYING","VERIFY",0,0);return null;});waitFor(next,this::page);return;}
@@ -91,7 +93,9 @@ public final class ConstructSkill {
         }
         if(wanted.isAir()){advanceCell(cell,false);return;}
         Item item=wanted.getBlock().asItem();String id=BuiltInRegistries.ITEM.getKey(item).toString();if(w.count(item)<1){missing=id;w.waitFor("BUILDING_MATERIALS_REQUIRED",20);return;}missing="";
-        if(!w.equip(item))return;if(w.tick()>=placementJumpUntil&&!w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted))return;
+        if(!w.equip(item))return;
+        if(preparePillar(cell,pos,wanted))return;
+        if(w.tick()>=placementJumpUntil&&!w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted))return;
         if(!placementSpaceReady(pos,wanted))return;
         w.actor.crouch(w.token(),true);
         if(!w.player().isCrouching())return;
@@ -100,6 +104,24 @@ public final class ConstructSkill {
         w.nativeUsePos=hit.getBlockPos();w.beforeCount=w.count(item);w.expectedState=state(pos);w.actor.aimImmediately(w.token(),hit.getLocation());w.prepare("CONSTRUCT_PLACE",evidence(cell));
     }
     private Map<String,String> evidence(ConstructionLedger.Cell cell){return Map.of("building",w.session.spec().buildingId(),"revision",Long.toString(w.session.spec().buildingRevision()),"sequence",Long.toString(cell.sequence()),"block",position(cell).toShortString(),"before",w.expectedState,"desired",cell.after());}
+    /** Ascend using an intended full block, through a real jump and ordinary underfoot placement. */
+    private boolean preparePillar(ConstructionLedger.Cell cell,BlockPos pos,BlockState wanted){
+        boolean vertical=cell.after().contains("axis=y");
+        if(!vertical&&lastComponent.equals(cell.component())&&lastLayer==pos.getY())return false;
+        var p=w.player();var below=pos.below();var support=p.level().getBlockState(below);
+        if(wanted.hasBlockEntity()||!wanted.isCollisionShapeFullBlock(p.level(),pos)||!support.isCollisionShapeFullBlock(p.level(),below)||!p.level().getFluidState(pos).isEmpty())return false;
+        var feet=Vec3.atBottomCenterOf(pos);var pose=p.getDimensions(net.minecraft.world.entity.Pose.CROUCHING);
+        if(!p.level().noCollision(p,pose.makeBoundingBox(feet).deflate(.0001)))return false;
+        double rise=NativeTerrainRecovery.placementJumpRise(p,feet);if(rise<1.04)return false;
+        var predicted=NativeTerrainRecovery.placementHitFrom(p,pos,feet.add(0,pose.eyeHeight()+rise,0),wanted);
+        if(predicted==null||!predicted.getBlockPos().equals(below)||predicted.getDirection()!=net.minecraft.core.Direction.UP)return false;
+        w.search=null;w.stand=null;w.session.phase("CONSTRUCT_PILLAR_APPROACH");
+        if(!w.movePrecisely(feet)||!p.onGround())return true;
+        w.actor.haltMotion(w.token());if(p.getDeltaMovement().horizontalDistanceSqr()>.0004)return true;
+        w.actor.crouch(w.token(),true);if(!p.isCrouching())return true;
+        pillarPlacement=true;w.nativeUsePos=below;w.beforeCount=w.count(wanted.getBlock().asItem());w.expectedState=state(pos);
+        var receipt=new LinkedHashMap<>(evidence(cell));receipt.put("placementMode","NATIVE_JUMP_UNDERFOOT");w.prepare("CONSTRUCT_PLACE",receipt);return true;
+    }
     private void perform(ConstructionLedger.Cell cell,BlockPos pos,BlockState wanted){
         if(!w.saved.isDone())return;if(!reserved){UUID operation=w.operation;String receipt=new com.google.gson.Gson().toJson(w.session.receipt());long at=cursor;waitFor(lease.update(l->{l.nativePrepared(w.token(),operation,cell.sequence(),receipt);l.reserve(at);return null;}),()->reserved=true);return;}
         if(!w.runtime.reservations.reserve(w.reservation(pos),w.token(),w.tick(),100))throw problem("RESERVATION_LOST",cell,cell.before(),state(pos));
@@ -121,11 +143,21 @@ public final class ConstructSkill {
         if(!w.executed&&!state(pos).equals(w.expectedState))throw problem("PREPARED_TARGET_CHANGED",cell,w.expectedState,state(pos));
         if(w.action.equals("CONSTRUCT_BREAK")){if(!w.executed){w.executed=true;w.startedTick=w.tick();}w.actor.breakBlock(w.token(),w.operation,pos);return;}
         if(w.executed)return; // A submitted placement waits for its real receipt; it is never replayed.
+        if(pillarPlacement&&!pillarWindow(pos,wanted))return;
         if(!placementSpaceReady(pos,wanted))return;
         w.actor.crouch(w.token(),true);if(!w.player().isCrouching())return;
         var hit=NativeTerrainRecovery.placementHit(w.player(),pos,wanted);
         if(hit==null){if(jumpForPlacement(cell,pos,wanted))return;w.stand=null;w.search=null;w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted);return;}
         w.nativeUsePos=hit.getBlockPos();w.actor.aimImmediately(w.token(),hit.getLocation());w.executed=true;w.startedTick=w.tick();w.actor.placeBlock(w.token(),w.operation,hit);
+    }
+    private boolean pillarWindow(BlockPos pos,BlockState wanted){
+        var p=w.player();if(p.getY()>=pos.getY()+1.001&&!p.onGround())return true;
+        if(!p.onGround())return false;
+        var feet=Vec3.atBottomCenterOf(pos);
+        if(p.position().subtract(feet).horizontalDistanceSqr()>.040001||Math.abs(p.getY()-feet.y)>.2)throw new IllegalStateException("BUILDING_PILLAR_STANCE_CHANGED at "+pos.toShortString());
+        if(w.tick()<placementJumpUntil)return false;
+        if(placementJumpAttempts++>=3)throw new IllegalStateException("BUILDING_PILLAR_NATIVE_JUMP_WINDOW_UNAVAILABLE at "+pos.toShortString());
+        w.actor.haltMotion(w.token());w.actor.crouch(w.token(),true);w.actor.aimImmediately(w.token(),Vec3.atCenterOf(pos.below()).add(0,.5,0));w.actor.jump(w.token());placementJumpUntil=w.tick()+24;w.session.phase("CONSTRUCT_PILLAR_NATIVE_JUMP");w.session.add("constructionPillarJumps",1);return false;
     }
     private boolean jumpForPlacement(ConstructionLedger.Cell cell,BlockPos pos,BlockState wanted){
         if(w.tick()<placementJumpUntil)return true;
@@ -138,11 +170,11 @@ public final class ConstructSkill {
     private void finishAction(ConstructionLedger.Cell cell,boolean placed,String status){
         UUID operation=w.operation;String observed=state(position(cell));long tick=w.player().level().getGameTime(),prior=cursor;var detail=Map.of("state",observed,"materialsConsumed",placed?1:0,"tick",tick);String encoded=new com.google.gson.Gson().toJson(detail);
         var future=lease.update(l->{l.nativeObserved(w.token(),operation,status,encoded);if(placed)l.applied(List.of(cell.sequence()),cell.sequence(),tick);else l.progress("APPLYING","WRITE",prior,tick);return null;});
-        waitFor(future,()->{w.confirm(status,Map.of("actual",observed,"materialConsumed",placed?"1":"0"));reserved=false;w.stand=null;w.search=null;if(placed)advanceCell(cell,true);});
+        waitFor(future,()->{if(placed&&pillarPlacement)pillarLanding=true;w.confirm(status,Map.of("actual",observed,"materialConsumed",placed?"1":"0"));reserved=false;w.stand=null;w.search=null;if(placed)advanceCell(cell,true);});
     }
     private void advanceCell(ConstructionLedger.Cell cell,boolean written){
         if(!cell.after().startsWith("minecraft:air")){String item=BuiltInRegistries.ITEM.getKey(ServerBuildings.nativeState(w.player(),cell.after(),List.of()).getBlock().asItem()).toString();materials.computeIfPresent(item,(key,count)->Math.max(0,count-1));}
-        missing="";placementJumpUntil=placementJumpAttempts=0;cursor=cell.sequence();index++;w.abandonTarget();if(index>=cells.size())page();
+        lastComponent=cell.component();lastLayer=cell.y();pillarPlacement=false;missing="";placementJumpUntil=placementJumpAttempts=0;cursor=cell.sequence();index++;w.abandonTarget();if(index>=cells.size())page();
     }
     private void verify(){
         phase="VERIFYING_STRUCTURE";lease.release();var future=ServerBuildings.verifyNative(owner(),w.session.agent(),w.session.spec().buildingId(),w.session.spec().buildingRevision(),w.player().level(),this::current);
