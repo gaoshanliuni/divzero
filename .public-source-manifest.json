@@ -3123,6 +3123,16 @@
       "bytes": 8270
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/content/ContentAddressedStoreTest.java",
+      "resourceId": "d7361871-5d9d-433a-9111-76a9c545533f",
+      "bytes": 3271
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/content/LegacyNamespaceIdsTest.java",
+      "resourceId": "a60b5d92-be6a-4b31-9ed6-68d8105b5f11",
+      "bytes": 2180
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/AgentChatPolicyTest.java",
       "sha256": "885d8db368913fd129b635688fb7b061393bbd93c90c3c88fa264b0841547099",
       "bytes": 1321
@@ -3336,6 +3346,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/memory/DialogueRecallTest.java",
       "sha256": "a63105db6630de5b487e9ee4c8cfc485419e73dae23ac6fb3aacc9a02d674e20",
       "bytes": 5119
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/memory/SemanticMemoryIndexTest.java",
+      "resourceId": "17d69a42-8e5c-40ee-bbda-658172d1c936",
+      "bytes": 1778
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/BasicMeshesTest.java",
@@ -9133,6 +9148,11 @@
       "bytes": 2802
     },
     {
+      "path": "worker/src/test/java/dev/mineagent/runtime/worker/resources/ResourceParserTest.java",
+      "resourceId": "922ffd5f-2358-4aa0-8d37-ce4f6c7861a6",
+      "bytes": 4632
+    },
+    {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/web/ImageTextureTest.java",
       "sha256": "825d2c05e6cf6244c8e8b7ff1e8aa4b378cf8200aca70a7830f6c667c5ab3a9b",
       "bytes": 1155
@@ -9155,5 +9175,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "29c9f539c9a5c396c97d952f858af86cbe0c5925"
+  "sourceCommit": "f467468e116f72bdcc91641253f90d3349c5e2ca"
 }
