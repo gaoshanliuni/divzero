@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.net.URI;
 import java.nio.file.*;
 import java.util.List;
+import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RealProviderSmokeAuditTest {

@@ -9614,8 +9614,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/RealProviderSmokeAuditTest.java",
-      "resourceId": "6c019560-2027-4f69-a539-ce9680e24963",
-      "bytes": 7198
+      "resourceId": "7fe806d9-54d9-4a65-84a4-720786887fcf",
+      "bytes": 7221
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/StreamingToolCallsTest.java",
@@ -9650,5 +9650,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "d32301c673fb5d2f6e5bd4e6ee5ff865e961776a"
+  "sourceCommit": "a2dc4dc2073d6359d0d0d378a82d699e08137726"
 }
