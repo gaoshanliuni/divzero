@@ -20,7 +20,7 @@ public final class FailedCandidatePatch {
             if(selected==null||!selected.path("encoding").asText().equals("utf8"))throw new PackageOutputException("CANDIDATE_EDIT_REJECTED","edits["+index+"].path: expected an existing UTF-8 source file: "+change.path);
             var edited=OpenCodeRuntime.edit(selected.path("content").asText(),change.oldText,change.newText,change.replaceAll);
             if(!edited.accepted())throw new PackageOutputException("CANDIDATE_EDIT_REJECTED",change.path+" edits["+index+"].old_text: "+edited.error());
-            selected.put("content",edited.source());output=GeneratedMetadata.complete(JSON.writeValueAsString(root));
+            selected.put("content",edited.source());selected.remove("sha256");output=GeneratedMetadata.complete(JSON.writeValueAsString(root));
         }return GeneratedMetadata.complete(output);
     }
     private FailedCandidatePatch(){}

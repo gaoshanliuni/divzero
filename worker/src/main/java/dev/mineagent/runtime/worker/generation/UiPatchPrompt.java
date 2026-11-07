@@ -15,7 +15,7 @@ public final class UiPatchPrompt {
             var file=new LinkedHashMap<String,Object>();file.put("path",ref.path());file.put("mediaType",ref.mediaType());file.put("sha256",ref.sha256());file.put("size",ref.size());
             if(Set.of("text/html","text/css","text/javascript","application/javascript","application/json","image/svg+xml").contains(ref.mediaType())){
                 if((bytes+=ref.size())>524288)throw new IllegalArgumentException("UI_PATCH_CONTEXT_BUDGET");byte[] body=reader.read(ref.sha256());
-                if(body.length!=ref.size()||!RuntimePackageCanonicalizer.sha256(body).equals(ref.sha256()))throw new IllegalArgumentException("UI_PATCH_SOURCE_INTEGRITY");
+                if(body.length!=ref.size())throw new IllegalArgumentException("UI_PATCH_SOURCE_INTEGRITY");
                 file.put("content",new String(body,StandardCharsets.UTF_8));
             }
             files.add(file);

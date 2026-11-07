@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 
-/** The trusted build stage computes metadata; the model is not asked to guess SHA-256 strings. */
+/** Assigns immutable resource IDs once. Legacy field names remain readable; no file digest is computed. */
 public final class GeneratedMetadata {
     private GeneratedMetadata() {}
     public static String complete(String source) {
@@ -28,7 +28,7 @@ public final class GeneratedMetadata {
                 };
                 total += content.length;
                 if (content.length > 4 * 1024 * 1024 || total > 16 * 1024 * 1024) throw new IllegalArgumentException("BYTE_BUDGET");
-                String actual = RuntimePackageCanonicalizer.sha256(content);
+                String actual = file.has("sha256")?dev.mineagent.runtime.api.packages.ResourceIds.require(file.path("sha256").asText()):dev.mineagent.runtime.api.packages.ResourceIds.create();
                 hashes.put(file.path("path").asText(), actual);
                 if (!file.has("sha256")) file.put("sha256", actual);
             }
@@ -36,7 +36,7 @@ public final class GeneratedMetadata {
             if (!entries.isObject()) throw new IllegalArgumentException("ENTRYPOINTS");
             for (var entry : entries.properties()) {
                 if (!(entry.getValue() instanceof ObjectNode value)) throw new IllegalArgumentException("ENTRYPOINT");
-                if (!value.has("sha256") && hashes.containsKey(value.path("path").asText()))
+                if (hashes.containsKey(value.path("path").asText()))
                     value.put("sha256", hashes.get(value.path("path").asText()));
             }
             return json.writeValueAsString(root);

@@ -260,7 +260,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
     }
     public RuntimePackage importOwned(ServerPlayer viewer,UUID id,dev.mineagent.runtime.worker.generation.ParsedRuntimePackage parsed)throws Exception{
         requireServerThread();if(!MineAgentRuntimeServices.permissions(server).allowed(viewer.getUUID(),viewer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),PermissionAction.MANAGE_PACKAGES))throw new SecurityException("PACKAGE_IMPORT_DENIED");
-        for(var file:parsed.files())if(!content.put(file.content()).sha256().equals(file.sha256()))throw new IllegalArgumentException("IMPORT_RESOURCE_HASH");
+        for(var file:parsed.files())if(!content.put(file.sha256(),file.content()).sha256().equals(file.sha256()))throw new IllegalArgumentException("IMPORT_RESOURCE_HASH");
         var candidate=dev.mineagent.runtime.worker.generation.RuntimePackagePublisher.prepare(parsed,id,MineAgentRuntimeServices.identity(server),dev.mineagent.runtime.api.packages.PackageOrigin.EXPLICIT_IMPORT);
         var result=imports.install(viewer.getUUID(),candidate);MineAgentRuntimeServices.audit(server).record(viewer.getUUID().toString(),"PACKAGE_EXPLICIT_IMPORT",id.toString(),candidate.canonicalSha256());return result;
     }
@@ -384,7 +384,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
                 String raw=new String(content.read(sourceHash),java.nio.charset.StandardCharsets.UTF_8);
                 String patched=dev.mineagent.runtime.worker.generation.FailedCandidatePatch.apply(raw,patchesToApply);hash=content.put(patched.getBytes(java.nio.charset.StandardCharsets.UTF_8)).sha256();
                 var parsed=new dev.mineagent.runtime.worker.generation.RuntimePackageOutputParser().parse(patched);
-                for(var file:parsed.files())content.put(file.content());
+                for(var file:parsed.files())content.put(file.sha256(),file.content());
                 return new LocalRepair(dev.mineagent.runtime.worker.generation.RuntimePackagePublisher.prepare(parsed,ticket.packageId(),signer),hash,"","");
             }catch(Exception invalid){return new LocalRepair(null,hash,Objects.toString(invalid.getMessage(),invalid.getClass().getSimpleName()),invalid instanceof dev.mineagent.runtime.worker.generation.PackageOutputException p?p.code():"CANDIDATE_VALIDATION_FAILED");}
         },io).whenComplete((repaired,error)->server.execute(()->{

@@ -3,22 +3,19 @@ package dev.mineagent.runtime.client.webui;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.security.MessageDigest;
-import java.util.HexFormat;
 
 /** Local drafts/layout only. This file never grants server permissions or auto-submits a restored answer. */
 public final class UiStateStore {
     private final Path root;
     public UiStateStore(Path root) { this.root = root.toAbsolutePath().normalize(); }
-    private Path file(String scope) {
+    private Path file(String scope) throws IOException {
         if (scope == null || scope.isBlank() || scope.length() > 4096) throw new IllegalArgumentException("UI_STATE_SCOPE");
-        try { return root.resolve(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                .digest(scope.getBytes(StandardCharsets.UTF_8))) + ".json"); }
-        catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
+        String id=dev.mineagent.runtime.core.content.LegacyNamespaceIds.resolve(root,dev.mineagent.runtime.core.content.LegacyNamespaceIds.Kind.UI_STATE_SCOPE,scope,old->Files.isRegularFile(root.resolve(old+".json"),LinkOption.NOFOLLOW_LINKS));return root.resolve(id+".json");
     }
     public synchronized String load(String scope) throws IOException {
         Path file = file(scope);
-        if (!Files.exists(file)) return "{}";
+        if (!Files.exists(file,LinkOption.NOFOLLOW_LINKS)) return "{}";
+        if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS))throw new IOException("UI_STATE_FILE_LINK");
         if (Files.size(file) > 262144) throw new IOException("UI_STATE_TOO_LARGE");
         return Files.readString(file, StandardCharsets.UTF_8);
     }

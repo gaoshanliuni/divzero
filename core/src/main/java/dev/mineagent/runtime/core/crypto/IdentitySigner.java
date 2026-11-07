@@ -9,7 +9,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -68,12 +67,12 @@ public final class IdentitySigner implements AutoCloseable {
     }
 
     public String fingerprint() {
-        try {
-            return HexFormat.of().withUpperCase().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(publicKey.getEncoded()));
-        } catch (GeneralSecurityException impossible) {
-            throw new IllegalStateException("SHA-256 is unavailable", impossible);
-        }
+        try{return keyId(publicKey.getEncoded());}catch(GeneralSecurityException invalid){throw new IllegalStateException("IDENTITY_PUBLIC_KEY_INVALID",invalid);}
+    }
+    /** Ed25519's complete 32-byte public key, encoded losslessly; this is not a digest. */
+    public static String keyId(byte[] encoded)throws GeneralSecurityException{
+        var key=KeyFactory.getInstance("Ed25519").generatePublic(new X509EncodedKeySpec(encoded));byte[] canonical=key.getEncoded();
+        if(canonical.length!=44)throw new GeneralSecurityException("Ed25519 public key encoding");return HexFormat.of().withUpperCase().formatHex(java.util.Arrays.copyOfRange(canonical,canonical.length-32,canonical.length));
     }
 
     public static boolean verify(byte[] publicKeyEncoded, byte[] payload, byte[] signature)

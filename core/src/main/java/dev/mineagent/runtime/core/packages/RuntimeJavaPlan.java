@@ -16,7 +16,7 @@ public final class RuntimeJavaPlan {
     }
     public static String read(RuntimePackage pkg,ContentAddressedStore content)throws Exception {
         var ref=source(pkg);byte[] bytes;try(var stream=java.nio.file.Files.newInputStream(content.pathFor(ref.sha256()))){bytes=stream.readNBytes(64001);}
-        if(bytes.length!=ref.size()||!RuntimePackageCanonicalizer.sha256(bytes).equals(ref.sha256()))throw new IllegalStateException("JAVA_PACKAGE_SOURCE_CHANGED");
+        if(bytes.length!=ref.size())throw new IllegalStateException("JAVA_PACKAGE_SOURCE_CHANGED");
         var decoder=StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT);String result=decoder.decode(java.nio.ByteBuffer.wrap(bytes)).toString();if(result.length()>16000)throw new IllegalArgumentException("JAVA_PACKAGE_SOURCE_LIMIT");return result;
     }
 }

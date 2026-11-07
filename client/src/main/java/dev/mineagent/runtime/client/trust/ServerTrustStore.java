@@ -33,7 +33,11 @@ public final class ServerTrustStore {
         if (trusted == null) {
             return TrustStatus.UNKNOWN;
         }
-        return trusted.equalsIgnoreCase(fingerprint) ? TrustStatus.TRUSTED : TrustStatus.MISMATCH;
+        if(trusted.equalsIgnoreCase(fingerprint))return TrustStatus.TRUSTED;
+        // Existing confirmations saved the full public key. Recognize its lossless ID without
+        // deriving the old digest again or changing old publisher/cache namespaces.
+        try{String encoded=values.getProperty(key(serverId,"publicKey"));if(encoded!=null&&IdentitySigner.keyId(Base64.getDecoder().decode(encoded)).equalsIgnoreCase(fingerprint))return TrustStatus.TRUSTED;}catch(GeneralSecurityException|IllegalArgumentException invalid){return TrustStatus.MISMATCH;}
+        return TrustStatus.MISMATCH;
     }
     public synchronized String trustedFingerprint(String serverId){validateServer(serverId);String value=values.getProperty(key(serverId,"fingerprint"));if(value==null||!value.matches("[a-fA-F0-9]{64}"))throw new IllegalStateException("SERVER_IDENTITY_NOT_TRUSTED");return value.toLowerCase(java.util.Locale.ROOT);}
 
@@ -43,7 +47,8 @@ public final class ServerTrustStore {
                 || publicKey == null || publicKey.length < 32 || publicKey.length > 256) {
             throw new IllegalArgumentException("invalid server identity");
         }
-        values.setProperty(key(serverId, "fingerprint"), fingerprint.toUpperCase(java.util.Locale.ROOT));
+        String previous=values.getProperty(key(serverId,"publicKey"));boolean sameKey=false;try{sameKey=previous!=null&&java.util.Arrays.equals(Base64.getDecoder().decode(previous),publicKey);if(!sameKey&&!IdentitySigner.keyId(publicKey).equalsIgnoreCase(fingerprint))throw new IllegalArgumentException("server public key does not match identity");}catch(GeneralSecurityException e){throw new IllegalArgumentException("invalid server public key",e);}
+        if(!sameKey)values.setProperty(key(serverId, "fingerprint"), fingerprint.toUpperCase(java.util.Locale.ROOT));
         values.setProperty(key(serverId, "publicKey"), Base64.getEncoder().encodeToString(publicKey));
         save();
     }

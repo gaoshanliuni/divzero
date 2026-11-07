@@ -1,7 +1,6 @@
 package dev.mineagent.runtime.client.maintenance;
 
 import java.nio.file.*;
-import java.security.MessageDigest;
 import java.util.*;
 
 /** java -jar DivZero-....jar --maintenance ... also works when a bad extension prevents game startup. */

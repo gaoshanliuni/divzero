@@ -14,7 +14,7 @@ public final class FeedbackPackageContract {
     }
     public static void validate(RuntimePackage p,UiPatchPrompt.Reader reader)throws Exception{
         var f=p.resources().get(UiFeedbackPolicy.RESOURCE);if(f==null)return;byte[] bytes=reader.read(f.sha256());
-        if(bytes.length!=f.size()||!dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(bytes).equals(f.sha256()))throw new IllegalArgumentException("FEEDBACK_POLICY_RESOURCE_INTEGRITY");
+        if(bytes.length!=f.size())throw new IllegalArgumentException("FEEDBACK_POLICY_RESOURCE_INTEGRITY");
         validate(f.side(),f.mediaType(),bytes,p.permissions(),p.entrypoints(),p.definitions().values());
     }
     private static void validate(RuntimeResourceSide side,String media,byte[] bytes,Set<String> permissions,Map<String,RuntimeEntrypoint> entries,Collection<RuntimeDefinition> definitions){

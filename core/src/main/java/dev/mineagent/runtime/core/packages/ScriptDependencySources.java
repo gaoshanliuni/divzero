@@ -43,7 +43,7 @@ public record ScriptDependencySources(ScriptDependencyGraph graph,Map<UUID,Map<S
     public String read(Snapshot snapshot,ContentAddressedStore content)throws Exception {
         if(snapshot==null||!graph.fingerprint().equals(snapshot.graphHash()))throw new IllegalStateException("STUDIO_CODER_SCRIPT_CONTEXT_CHANGED");
         byte[] bytes;try(var in=Files.newInputStream(content.pathFor(snapshot.sha256()))){bytes=in.readNBytes(MAX_BYTES+1);}
-        if(bytes.length!=snapshot.bytes()||!RuntimePackageCanonicalizer.sha256(bytes).equals(snapshot.sha256()))throw new IllegalStateException("STUDIO_CODER_SCRIPT_CONTEXT_CHANGED");
+        if(bytes.length!=snapshot.bytes())throw new IllegalStateException("STUDIO_CODER_SCRIPT_CONTEXT_CHANGED");
         var value=JSON.readTree(bytes);if(value.path("schema").asInt()!=1||!value.path("graphHash").asText().equals(snapshot.graphHash())||!value.path("kind").asText().equals("VERIFIED_RHINO_DEPENDENCY_SOURCES_NOT_LIVE_EXPORTS"))throw new IllegalStateException("STUDIO_CODER_SCRIPT_CONTEXT_CHANGED");
         return StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT).decode(java.nio.ByteBuffer.wrap(bytes)).toString();
     }

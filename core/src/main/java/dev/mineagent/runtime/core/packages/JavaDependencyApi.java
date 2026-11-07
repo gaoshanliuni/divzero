@@ -75,7 +75,7 @@ public final class JavaDependencyApi {
     public static String read(Snapshot snapshot,JavaDependencyGraph graph,ContentAddressedStore content)throws Exception {
         if(snapshot==null||graph==null||!graph.fingerprint().equals(snapshot.graphHash()))throw new IllegalStateException("STUDIO_CODER_DEPENDENCY_API_CHANGED");
         byte[] bytes;try(var in=Files.newInputStream(content.pathFor(snapshot.sha256()))){bytes=in.readNBytes(MAX_BYTES+1);}
-        if(bytes.length!=snapshot.bytes()||!RuntimePackageCanonicalizer.sha256(bytes).equals(snapshot.sha256()))throw new IllegalStateException("STUDIO_CODER_DEPENDENCY_API_CHANGED");
+        if(bytes.length!=snapshot.bytes())throw new IllegalStateException("STUDIO_CODER_DEPENDENCY_API_CHANGED");
         var value=JSON.readTree(bytes);if(value.path("schema").asInt()!=1||!value.path("graphHash").asText().equals(snapshot.graphHash()))throw new IllegalStateException("STUDIO_CODER_DEPENDENCY_API_CHANGED");
         return StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT).decode(java.nio.ByteBuffer.wrap(bytes)).toString();
     }

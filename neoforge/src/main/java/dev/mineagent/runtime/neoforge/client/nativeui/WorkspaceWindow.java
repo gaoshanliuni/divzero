@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 
 /** In-game draggable/resizable window with a dock entry; it never creates a separate OS window. */
 public final class WorkspaceWindow {
-    public final Dialog dialog;public final UIElement body;private final Button dockButton;private boolean closed;private Placement lastPlacement;
+    public final Dialog dialog;public final UIElement body;private final Button dockButton;private boolean closed;private int layer;private Placement lastPlacement;
     private final java.util.List<Runnable> closeListeners=new java.util.ArrayList<>();
     public WorkspaceWindow(UIElement desktop,UIElement dock,String title,float x,float y,float width,float height,Consumer<WorkspaceWindow> onClose){
         lastPlacement=new Placement(x,y,width,height,false);
@@ -21,8 +21,8 @@ public final class WorkspaceWindow {
         dialog.titleBar.addChild(NativeUiTheme.iconButton("×",this::close));
         body=dialog.contentContainer;body.getStyle().backgroundTexture(com.lowdragmc.lowdraglib2.gui.ui.styletemplate.MCSprites.RECT_THIN.copy().setColor(0xedffffff));body.getLayout().flex(1).minHeight(0).minWidth(0).paddingAll(net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth()<540?4:9).alignItems(AlignItems.STRETCH).justifyContent(AlignContent.FLEX_START);
         dialog.buttonContainer.setDisplay(false);dialog.show(desktop);body.setDisplay(true);
-        dockButton=NativeUiTheme.button(title,()->{dialog.setDisplay(true);dialog.getStyle().zIndex(++zOrder);});dock.addChild(dockButton);
-        dialog.setOnClose(()->{closed=true;dockButton.removeSelf();try{onClose.accept(this);}finally{for(var listener:java.util.List.copyOf(closeListeners))listener.run();closeListeners.clear();}});dialog.getStyle().zIndex(++zOrder);
+        dockButton=NativeUiTheme.button(title,()->{dialog.setDisplay(true);dialog.getStyle().zIndex(layer=++zOrder);});dock.addChild(dockButton);
+        dialog.setOnClose(()->{closed=true;dockButton.removeSelf();try{onClose.accept(this);}finally{for(var listener:java.util.List.copyOf(closeListeners))listener.run();closeListeners.clear();}});dialog.getStyle().zIndex(layer=++zOrder);
     }
     private static int zOrder=10;
     public record Placement(float x,float y,float width,float height,boolean minimized){}
@@ -39,7 +39,8 @@ public final class WorkspaceWindow {
     }
     public boolean visible(){return !closed&&dialog.isDisplayed();}
     public boolean closed(){return closed;}
+    public boolean frontmost(){return visible()&&layer==zOrder;}
     public void onClose(Runnable listener){if(closed)listener.run();else closeListeners.add(listener);}
-    public void reveal(){if(!closed){dialog.setDisplay(true);dialog.getStyle().zIndex(++zOrder);}}
+    public void reveal(){if(!closed){dialog.setDisplay(true);dialog.getStyle().zIndex(layer=++zOrder);}}
     public void close(){if(!closed){placement();dialog.close();}}
 }

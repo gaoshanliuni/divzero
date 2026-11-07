@@ -144,11 +144,7 @@ public final class RuntimePackageOutputParser {
             if (content.length > MAX_FILE_BYTES || total > MAX_TOTAL_BYTES) {
                 throw invalid("FILE_LIMIT_EXCEEDED", "generated file payload exceeds size limit");
             }
-            String expectedHash = text(file, "sha256", 64);
-            String actualHash = RuntimePackageCanonicalizer.sha256(content);
-            if (!actualHash.equals(expectedHash)) {
-                throw invalid("HASH_MISMATCH", "generated file hash mismatch: " + path);
-            }
+            String actualHash=dev.mineagent.runtime.api.packages.ResourceIds.require(text(file,"sha256",64));
             if (path.endsWith(".json") || mediaType.equals("application/json")) {
                 try{mapper.readTree(content);}catch(com.fasterxml.jackson.core.JsonProcessingException syntax){throw invalid("PACKAGE_OUTPUT_INVALID",path+":"+syntax.getLocation().getLineNr()+":"+syntax.getLocation().getColumnNr()+": "+syntax.getOriginalMessage());}
             }

@@ -10,6 +10,7 @@ import java.util.concurrent.*;
 import java.util.function.BooleanSupplier;
 
 /** Versioned semantic recall. Indexing is independent from the response and never holds the server thread. */
+@net.neoforged.fml.common.EventBusSubscriber(modid="mineagent_runtime")
 public final class ServerMemoryRecall {
  private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
  private static final Semaphore INDEX_SLOTS=new Semaphore(2);
@@ -23,6 +24,7 @@ public final class ServerMemoryRecall {
  private static final Set<Key> INDEXING=ConcurrentHashMap.newKeySet();
  private static final Map<Key,Long> RETRY_AFTER=new ConcurrentHashMap<>();
  private static final Map<Query,double[]> QUERIES=Collections.synchronizedMap(new LinkedHashMap<>());
+ @net.neoforged.bus.api.SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event){INDEXING.removeIf(key->key.server()==event.getServer());RETRY_AFTER.keySet().removeIf(key->key.server()==event.getServer());synchronized(QUERIES){QUERIES.keySet().removeIf(query->query.scope().server()==event.getServer());}}
  private static Scope scope(MinecraftServer server,UUID owner,UUID agent,BooleanSupplier permit){var values=MineAgentRuntimeServices.config(server).snapshot().values();return new Scope(new Key(server,MineAgentRuntimeServices.worldId(server),owner,agent,values.getOrDefault("provider.openai.baseUrl",""),values.getOrDefault("provider.openai.role.embedding","").strip()),server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db"),permit);}
  private static List<SemanticMemoryIndex.Document> documents(Scope s)throws Exception{
   var docs=new ArrayList<SemanticMemoryIndex.Document>();var k=s.key();

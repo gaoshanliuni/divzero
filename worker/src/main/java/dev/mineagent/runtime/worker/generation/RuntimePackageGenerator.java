@@ -54,7 +54,7 @@ public final class RuntimePackageGenerator {
         }
         ParsedRuntimePackage parsed;
         try {
-            parsed = parser.parse(GeneratedMetadata.complete(output));
+            output=GeneratedMetadata.complete(output);parsed = parser.parse(output);
             var refs=parsed.files().stream().map(f->new dev.mineagent.runtime.api.packages.RuntimeResourceRef(f.path(),f.sha256(),f.side(),f.mediaType(),f.content().length)).toList();
             for(String side:java.util.List.of("SERVER","CLIENT"))if(dev.mineagent.runtime.core.packages.NativeCompatibilityPolicy.required(parsed.activationMode(),parsed.entrypoints(),refs,side)){
                 if(parsed.nativeCompatibility()==null||!parsed.nativeCompatibility().targets().containsKey(side))return failed("NATIVE_COMPATIBILITY_REQUIRED","Generated native code needs a signed target contract",providerId,output);
@@ -78,7 +78,7 @@ public final class RuntimePackageGenerator {
         try {
             var stored = new ArrayList<dev.mineagent.runtime.core.content.StoredObject>();
             for (GeneratedFile file : parsed.files()) {
-                var object = contentStore.put(file.content());
+                var object = contentStore.put(file.sha256(),file.content());
                 if (!object.sha256().equals(file.sha256())) {
                     return failed("CONTENT_STORE_HASH_MISMATCH", file.path(), providerId, output);
                 }
@@ -98,7 +98,7 @@ public final class RuntimePackageGenerator {
         return """
                 为 MineAgent Runtime 生成通用 RuntimePackage。只输出一个严格 JSON 对象，不要 Markdown。
                 根字段仅允许 manifest 与 files。每个文件给出 path、side、mediaType、encoding、content。
-                省略文件和入口的 sha256；可信构建阶段将从准确文件字节计算，不要猜测哈希。
+                省略文件和入口的 sha256 兼容字段；运行时分配资源 ID 并绑定文件，不要生成或计算文件摘要。
                 manifest 给出 name、version、type、activationMode、permissions、entrypoints、definitions、dependencies。
                 type 只能为 CONTENT、SKILL、FEATURE、ADAPTER、EXTENSION。
                 activationMode 只能为 HOT_RUNTIME、RESOURCE_RELOAD、DATA_RELOAD、WORLD_REOPEN、BOOT_EXTENSION。非 ui/ 原生脚本或数据生命周期必须声明 nativeCompatibility:{schema:1,targets:{SERVER:{minecraft,loader,loaderVersion,namespace,javaFeature,requiredMods}}}，具体版本取实际观察环境；CLIENT 原生代码须另声明 CLIENT，ui/ 声明式 JSON 不属于原生代码。
