@@ -224,6 +224,18 @@ public final class NativeTerrainRecovery {
             return candidate;
         }return null;
     }
+    /** Conservative native jump window; execution still waits for the actual airborne eye position. */
+    public static double placementJumpRise(ServerPlayer player,Vec3 feet){
+        if(!(player instanceof dev.mineagent.runtime.neoforge.mixin.CombatJumpAccess access))return 0;
+        double velocity=access.divzero$jumpPower(),gravity=player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY),height=0;
+        if(!Double.isFinite(velocity)||!Double.isFinite(gravity)||velocity<=0||gravity<=0)return 0;
+        var dimensions=player.getDimensions(Pose.CROUCHING);
+        for(int tick=0;tick<30&&velocity>0;tick++){
+            double next=height+velocity;if(next>4||!player.level().noCollision(player,dimensions.makeBoundingBox(feet.add(0,next,0)).deflate(.0001)))break;
+            height=next;velocity=(velocity-gravity)*.98;
+        }
+        return Math.max(0,height-.1);
+    }
     private static boolean placementMatches(ServerPlayer p,BlockPos target,Vec3 eye,BlockHitResult hit,net.minecraft.world.level.block.state.BlockState desired){
         if(desired==null)return true;
         var item=p.getMainHandItem();if(!(item.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)||blockItem.getBlock()!=desired.getBlock())return false;

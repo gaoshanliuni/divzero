@@ -4889,8 +4889,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "91f7f266-2296-4c3e-b1f1-524889375792",
-      "bytes": 6248
+      "resourceId": "ad682a1e-5a36-4585-a4da-608be657cc92",
+      "bytes": 6566
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -4959,8 +4959,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainRecovery.java",
-      "resourceId": "0fc9d522-4845-4a3d-a509-2d13db8c336c",
-      "bytes": 24935
+      "resourceId": "71f0c0f5-86c4-4ff6-86d0-bfa039ad11c0",
+      "bytes": 25852
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTraversalEvaluator.java",
@@ -6884,8 +6884,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
-      "resourceId": "52a0a294-a442-475a-bdc8-b673e99cfb2e",
-      "bytes": 16510
+      "resourceId": "a7990a55-b88c-4ecf-b283-1f6716592208",
+      "bytes": 18543
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "b48dca199ba134b4932c68a673e2f10471f320f2"
+  "sourceCommit": "1bed474012d49136fee7c973f62f30726bebf6a2"
 }

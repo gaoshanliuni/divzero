@@ -30,7 +30,12 @@ public final class InteractionTargetResolver {
                 boolean usable=true;
                 placementWindow: for(double x:new double[]{-.2,0,.2})for(double z:new double[]{-.2,0,.2}){
                     var feet=at.add(x,0,z);
-                    if(pose.makeBoundingBox(feet).deflate(.0001).intersects(new AABB(block))||NativeTerrainRecovery.placementHitFrom(p,block,feet.add(0,pose.eyeHeight(),0),desired)==null){usable=false;break placementWindow;}
+                    if(pose.makeBoundingBox(feet).deflate(.0001).intersects(new AABB(block))){usable=false;break placementWindow;}
+                    var eye=feet.add(0,pose.eyeHeight(),0);
+                    if(NativeTerrainRecovery.placementHitFrom(p,block,eye,desired)==null){
+                        double rise=NativeTerrainRecovery.placementJumpRise(p,feet);
+                        if(rise<=0||NativeTerrainRecovery.placementHitFrom(p,block,eye.add(0,rise,0),desired)==null){usable=false;break placementWindow;}
+                    }
                 }
                 if(usable)nodes.add(n);
                 continue;

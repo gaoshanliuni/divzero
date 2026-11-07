@@ -22,7 +22,7 @@ public final class ConstructSkill {
     private static final Map<MinecraftServer,Map<UUID,ServerBuildings.NativeLease>> STAGED=new IdentityHashMap<>();
     private final SkillWork w;private ServerBuildings.NativeLease lease;private CompletableFuture<ServerBuildings.NativeLease> opening;
     private CompletableFuture<?> pending;private Runnable afterPending;private List<ConstructionLedger.Cell> cells=List.of();private int index;private long cursor;
-    private String phase="OPEN",missing="",failure="";private boolean closed,reserved;
+    private String phase="OPEN",missing="",failure="";private boolean closed,reserved;private int placementJumpUntil,placementJumpAttempts;
     private final Map<String,Long> materials=new TreeMap<>();
     private final List<ConstructionLedger.Sample> samples=new ArrayList<>();
     private ConstructSkill(SkillWork work){w=work;var staged=STAGED.get(work.runtime.server);lease=staged==null?null:staged.remove(work.token());if(lease!=null)opened();else{
@@ -87,10 +87,10 @@ public final class ConstructSkill {
         }
         if(wanted.isAir()){advanceCell(cell,false);return;}
         Item item=wanted.getBlock().asItem();String id=BuiltInRegistries.ITEM.getKey(item).toString();if(w.count(item)<1){missing=id;w.waitFor("BUILDING_MATERIALS_REQUIRED",20);return;}missing="";
-        if(!w.equip(item))return;if(!w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted))return;
+        if(!w.equip(item))return;if(w.tick()>=placementJumpUntil&&!w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted))return;
         w.actor.crouch(w.token(),true);
         if(!w.player().isCrouching())return;
-        var hit=NativeTerrainRecovery.placementHit(w.player(),pos,wanted);if(hit==null){w.waitFor("BUILDING_SUPPORT_FACE_REQUIRED",40);w.stand=null;w.search=null;return;}
+        var hit=NativeTerrainRecovery.placementHit(w.player(),pos,wanted);if(hit==null){if(jumpForPlacement(cell,pos,wanted))return;w.waitFor("BUILDING_SUPPORT_FACE_REQUIRED",40);w.stand=null;w.search=null;return;}
         if(!w.player().mayInteract(w.player().level(),pos)||dev.mineagent.runtime.neoforge.ui.ServerInteractionRules.denied(w.player(),pos,null,"block_place",false))throw problem("PLACE_DENIED",cell,cell.after(),state(pos));
         w.nativeUsePos=hit.getBlockPos();w.beforeCount=w.count(item);w.expectedState=state(pos);w.actor.aimImmediately(w.token(),hit.getLocation());w.prepare("CONSTRUCT_PLACE",evidence(cell));
     }
@@ -101,14 +101,28 @@ public final class ConstructSkill {
         var actual=w.player().level().getBlockState(pos);
         if(w.action.equals("CONSTRUCT_BREAK")&&w.nativeBreak){w.nativeBreak=false;finishAction(cell,false,"VERIFIED_NATIVE_BREAK");return;}
         if(w.action.equals("CONSTRUCT_PLACE")&&actual==wanted&&w.nativeUse&&w.nativeConsumed==1){w.session.add("constructionMaterialsConsumed",1);w.session.add("constructionBlocksPlaced",1);finishAction(cell,true,"VERIFIED_NATIVE_PLACEMENT");return;}
+        if(w.action.equals("CONSTRUCT_PLACE")&&w.nativeUse&&w.nativeConsumed==1&&!actual.isAir()&&actual!=wanted){
+            String observed=state(pos),diagnostic=problem("PLACED_STATE_MISMATCH",cell,cell.after(),observed).getMessage();UUID operation=w.operation;long prior=cursor,tick=w.player().level().getGameTime();
+            w.session.add("constructionMaterialsConsumed",1);w.session.add("constructionBlocksPlaced",1);w.session.add("constructionStateMismatches",1);
+            String detail=new com.google.gson.Gson().toJson(Map.of("actual",observed,"expected",cell.after(),"position",pos.toShortString(),"component",cell.component(),"materialsConsumed",1,"executionState","APPLIED_DIFFERENT_STATE"));
+            waitFor(lease.update(l->{l.nativeObserved(w.token(),operation,"PLACED_STATE_MISMATCH",detail);l.applied(List.of(cell.sequence()),prior,tick);l.fail("PARTIAL",diagnostic);return null;}),()->{w.confirm("PLACED_STATE_MISMATCH",Map.of("actual",observed,"materialConsumed","1","executionState","APPLIED_DIFFERENT_STATE"));failure=diagnostic;w.pause("BUILDING_NATIVE_"+diagnostic);});return;
+        }
         if(w.interruptedOperation||w.executed&&w.tick()-w.startedTick>Math.min(2400,Math.max(240L,(long)NativeTerrainPolicy.breakTicks(w.player(),pos)*3+40)))throw problem("ACTION_OUTCOME_REQUIRES_RECONCILIATION",cell,cell.after(),state(pos));
         if(!w.executed&&!state(pos).equals(w.expectedState))throw problem("PREPARED_TARGET_CHANGED",cell,w.expectedState,state(pos));
         if(w.action.equals("CONSTRUCT_BREAK")){if(!w.executed){w.executed=true;w.startedTick=w.tick();}w.actor.breakBlock(w.token(),w.operation,pos);return;}
         if(w.executed)return; // A submitted placement waits for its real receipt; it is never replayed.
         w.actor.crouch(w.token(),true);if(!w.player().isCrouching())return;
         var hit=NativeTerrainRecovery.placementHit(w.player(),pos,wanted);
-        if(hit==null){w.stand=null;w.search=null;w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted);return;}
+        if(hit==null){if(jumpForPlacement(cell,pos,wanted))return;w.stand=null;w.search=null;w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted);return;}
         w.nativeUsePos=hit.getBlockPos();w.actor.aimImmediately(w.token(),hit.getLocation());w.executed=true;w.startedTick=w.tick();w.actor.placeBlock(w.token(),w.operation,hit);
+    }
+    private boolean jumpForPlacement(ConstructionLedger.Cell cell,BlockPos pos,BlockState wanted){
+        if(w.tick()<placementJumpUntil)return true;
+        if(!w.player().onGround())return true;
+        double rise=NativeTerrainRecovery.placementJumpRise(w.player(),w.player().position());
+        if(rise<=0||NativeTerrainRecovery.placementHitFrom(w.player(),pos,w.player().getEyePosition().add(0,rise,0),wanted)==null)return false;
+        if(placementJumpAttempts++>=3)throw problem("JUMP_PLACEMENT_WINDOW_UNAVAILABLE",cell,cell.after(),state(pos));
+        w.actor.haltMotion(w.token());w.actor.crouch(w.token(),true);w.actor.jump(w.token());placementJumpUntil=w.tick()+30;return true;
     }
     private void finishAction(ConstructionLedger.Cell cell,boolean placed,String status){
         UUID operation=w.operation;String observed=state(position(cell));long tick=w.player().level().getGameTime(),prior=cursor;var detail=Map.of("state",observed,"materialsConsumed",placed?1:0,"tick",tick);String encoded=new com.google.gson.Gson().toJson(detail);
@@ -117,7 +131,7 @@ public final class ConstructSkill {
     }
     private void advanceCell(ConstructionLedger.Cell cell,boolean written){
         if(!cell.after().startsWith("minecraft:air")){String item=BuiltInRegistries.ITEM.getKey(ServerBuildings.nativeState(w.player(),cell.after(),List.of()).getBlock().asItem()).toString();materials.computeIfPresent(item,(key,count)->Math.max(0,count-1));}
-        cursor=cell.sequence();index++;w.abandonTarget();if(index>=cells.size())page();
+        placementJumpUntil=placementJumpAttempts=0;cursor=cell.sequence();index++;w.abandonTarget();if(index>=cells.size())page();
     }
     private void verify(){
         phase="VERIFYING_STRUCTURE";lease.release();var future=ServerBuildings.verifyNative(owner(),w.session.agent(),w.session.spec().buildingId(),w.session.spec().buildingRevision(),w.player().level(),this::current);
