@@ -4119,8 +4119,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "e185799e-9037-4b6c-868f-942c67e07ba8",
-      "bytes": 21260
+      "resourceId": "90179042-1e51-46d3-99a1-21606746f582",
+      "bytes": 22342
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -7024,8 +7024,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
-      "resourceId": "264ff6ec-c665-4080-8837-f35471d4103d",
-      "bytes": 19870
+      "resourceId": "08a5f6b0-473e-4065-be98-7f96f56efe36",
+      "bytes": 19968
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -9625,5 +9625,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "1c5999797af39e48a75a3f90aede368a7446f777"
+  "sourceCommit": "44ba6aeb0bb1a570e9f92b7d89f1a0064cfc67fa"
 }
