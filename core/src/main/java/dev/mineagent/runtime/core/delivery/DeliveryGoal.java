@@ -15,7 +15,7 @@ public record DeliveryGoal(UUID deliveryId,long revision,long dataRevision,Strin
     }catch(Exception invalid){throw new IllegalArgumentException("DELIVERY_GOAL_ARGUMENTS",invalid);}}
     public Map<String,Object> wire(){return Map.of("kind","content_delivery","delivery_id",deliveryId,"expected_revision",revision,"data_revision",dataRevision,"data_sha256",dataSha256,"status",status,"evidence",evidence);}
     public boolean matches(ContentDeliveryStore.Delivery d,boolean liveVisible){
-        if(d==null||!deliveryId.equals(d.id())||revision!=d.revision()||dataRevision!=d.dataRevision()||!dataSha256.equals(ContentDeliveryStore.dataSha256(d.data()))||!status.equals(d.status()))return false;
+        if(d==null||!deliveryId.equals(d.id())||revision!=d.revision()||dataRevision!=d.dataRevision()||!dataSha256.equals(ContentDeliveryStore.dataReference(d))||!status.equals(d.status()))return false;
         if(evidence.equals("RECORD"))return true;
         if(evidence.equals("CODE_STATE"))return d.asset().mode().startsWith("CLIENT_")&&d.status().startsWith("CODE_");
         if(evidence.equals("CLOSE_ACK"))return d.closeConfirmed()&&Set.of("CLOSED","REVOKED","EXPIRED","FAILED").contains(d.status());

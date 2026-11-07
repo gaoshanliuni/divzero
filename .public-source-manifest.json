@@ -1719,13 +1719,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/delivery/ContentDeliveryStore.java",
-      "sha256": "08f472fb81b166c2802dd8ab45dcb082c6651377663a36e08f8ee1c1bfddb9ac",
-      "bytes": 40211
+      "resourceId": "7c7a6fb7-dfdf-4730-9ae1-f3399f2fd396",
+      "bytes": 40549
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/delivery/DeliveryGoal.java",
-      "sha256": "6ce870fe2ea489c785c88a2ba02166e27eab563e280370c17505746c13e30abc",
-      "bytes": 3413
+      "resourceId": "22506e31-3d14-4e07-9ee6-d528f77ed75d",
+      "bytes": 3409
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/delivery/DeliveryGoalCoverage.java",
@@ -3423,6 +3423,21 @@
       "bytes": 1872
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/delivery/ContentDeliveryStoreTest.java",
+      "resourceId": "cd10a4a8-8d0d-4e8b-8a7d-7ac3d571578e",
+      "bytes": 12465
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/delivery/DeliveryGoalCoverageTest.java",
+      "resourceId": "d16bb40a-c8bd-4859-863b-cabf09a4c3c7",
+      "bytes": 3007
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/delivery/DeliveryGoalTest.java",
+      "resourceId": "b39dbd74-67ee-4947-99b9-0154883c186c",
+      "bytes": 6058
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/directory/AudienceStoreTest.java",
       "resourceId": "a5c91092-acdb-4cfe-b2a2-92930f2fb22e",
       "bytes": 10653
@@ -4089,8 +4104,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "e41178cf-3d89-4a58-91a6-a14aa0bc5ec6",
-      "bytes": 18843
+      "resourceId": "d08cf615-03e1-410e-977e-2150a24b3ba8",
+      "bytes": 19581
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -7844,8 +7859,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerContentDeliveries.java",
-      "sha256": "59018277f32477f95980c102aefd015657d266e2dd994ddc18f301d08c07d306",
-      "bytes": 45495
+      "resourceId": "ac668633-382e-4e3a-b745-e801e069ef65",
+      "bytes": 46115
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversationTitles.java",
@@ -9590,5 +9605,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "8d3a51973cd28b3f3d474583db99a881f3254959"
+  "sourceCommit": "2e89e4969546c19df56546bd695682f925568dae"
 }
