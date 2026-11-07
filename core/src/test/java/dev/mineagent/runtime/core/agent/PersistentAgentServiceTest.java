@@ -10,6 +10,11 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PersistentAgentServiceTest {
+    @Test void creationRetryRetainsAssignedIdAcrossReloadAndCannotChangeOriginalRequest()throws Exception{
+        Path path=temporaryDirectory.resolve("requests.db");UUID world=UUID.randomUUID(),owner=UUID.randomUUID(),operation=UUID.randomUUID(),id;
+        try(var service=PersistentAgentService.open(path,world,4)){var created=service.createIdempotent(operation,"伙伴",owner,AgentMode.SURVIVAL);id=created.definition().agentId();assertEquals(id,service.createIdempotent(operation,"伙伴",owner,AgentMode.SURVIVAL).definition().agentId());assertThrows(IllegalArgumentException.class,()->service.createIdempotent(operation,"其他名字",owner,AgentMode.SURVIVAL));}
+        try(var service=PersistentAgentService.open(path,world,4)){assertEquals(id,service.createIdempotent(operation,"伙伴",owner,AgentMode.SURVIVAL).definition().agentId());assertEquals(1,service.all().size());}
+    }
     @Test void legacyNameMigrationKeepsUuidOwnerAuthorityAndSurvivesRestart()throws Exception{
         Path path=temporaryDirectory.resolve("legacy.db");UUID world=UUID.randomUUID(),id=UUID.randomUUID(),owner=UUID.randomUUID();
         var old=new PersistentAgent(1,new dev.mineagent.runtime.api.agent.AgentDefinition(id,"中文伙伴","MA_legacy",owner,AgentMode.SURVIVAL,java.util.Set.of()),7);

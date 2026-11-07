@@ -16,10 +16,10 @@ public final class WorldIdentityRuntime {
     private static final class Entry {WorldSaveIdentity store;String error="",consentKey="";volatile boolean examined,allowed,reopen,initializing,servicesStarted,closed,stopping;CompletableFuture<WorldSaveIdentity.Acceptance> starting;final Map<ServerPlayer,String> notices=new WeakHashMap<>();}
     private WorldIdentityRuntime(){}
     private static Entry open(MinecraftServer server){
-        var entry=new Entry();entry.consentKey=pendingKey(server);
-        try{var legacy=UUID.nameUUIDFromBytes((server.getServerDirectory().toAbsolutePath().normalize()+"|"+server.getWorldData().getLevelName()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        var entry=new Entry();
+        try{entry.consentKey=pendingKey(server);
             var save=server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT);
-            entry.store=WorldSaveIdentity.open(server.getServerDirectory().resolve("mineagent-runtime-data"),save,legacy,knownTemplate(save));entry.consentKey=pendingKey(server);
+            entry.store=WorldSaveIdentity.open(server.getServerDirectory().resolve("mineagent-runtime-data"),save,null,knownTemplate(save));entry.consentKey=pendingKey(server);
         }catch(Exception failure){String message=Objects.toString(failure.getMessage(),"");entry.error=message.matches("WORLD_[A-Z0-9_]{1,70}")?message:"WORLD_IDENTITY_UNAVAILABLE";}
         return entry;
     }
@@ -34,9 +34,15 @@ public final class WorldIdentityRuntime {
     public static boolean ready(MinecraftServer server){var e=entry(server);return e.examined&&e.allowed&&!e.reopen&&!e.initializing&&!e.closed&&e.store!=null&&e.store.ready();}
     public static UUID scope(MinecraftServer server){var e=entry(server);if(!e.examined||!e.allowed||e.reopen||e.closed||e.store==null||!e.store.ready())throw new IllegalStateException("WORLD_IDENTITY_NOT_READY");return e.store.scopeId();}
     private static String pendingKey(MinecraftServer server){
-        var save=server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();String path=save.toString();if(System.getProperty("os.name","").startsWith("Windows"))path=path.toLowerCase(Locale.ROOT);String marker="missing";
-        try{var anchor=save.resolve(WorldSaveIdentity.ANCHOR_FILE);if(java.nio.file.Files.exists(anchor,java.nio.file.LinkOption.NOFOLLOW_LINKS))try(var in=java.nio.file.Files.newInputStream(anchor,java.nio.file.StandardOpenOption.READ,java.nio.file.LinkOption.NOFOLLOW_LINKS)){var raw=in.readNBytes(16385);if(raw.length>16384)marker="oversized";else{try{var n=new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);marker=UUID.fromString(n.path("saveId").asText())+"/"+UUID.fromString(n.path("scopeId").asText())+"/"+UUID.fromString(n.path("token").asText());}catch(Exception invalid){marker=UUID.nameUUIDFromBytes(raw).toString();}}}}catch(Exception unreadable){marker="unreadable";}
-        return "runtime.pendingActivation."+UUID.nameUUIDFromBytes((path+"|"+marker).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        var save=server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toAbsolutePath().normalize();String path=save.toString();if(System.getProperty("os.name","").startsWith("Windows"))path=path.toLowerCase(Locale.ROOT);String marker="missing";boolean legacyCompatible=true;
+        try{var anchor=save.resolve(WorldSaveIdentity.ANCHOR_FILE);if(java.nio.file.Files.exists(anchor,java.nio.file.LinkOption.NOFOLLOW_LINKS))try(var in=java.nio.file.Files.newInputStream(anchor,java.nio.file.StandardOpenOption.READ,java.nio.file.LinkOption.NOFOLLOW_LINKS)){var raw=in.readNBytes(16385);if(raw.length>16384){marker="oversized";legacyCompatible=false;}else try{var n=new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);marker=UUID.fromString(n.path("saveId").asText())+"/"+UUID.fromString(n.path("scopeId").asText())+"/"+UUID.fromString(n.path("token").asText());}catch(Exception invalid){var attributes=java.nio.file.Files.readAttributes(anchor,java.nio.file.attribute.BasicFileAttributes.class,java.nio.file.LinkOption.NOFOLLOW_LINKS);marker="invalid/"+attributes.size()+"/"+attributes.lastModifiedTime();legacyCompatible=false;}}}catch(Exception unreadable){marker="unreadable";legacyCompatible=false;}
+        try{
+            var ids=new dev.mineagent.runtime.core.content.ContentAddressedStore(server.getServerDirectory().resolve("mineagent-runtime-data/bootstrap-identities"));String id=ids.namedKeyId("pending_activation",List.of(path,marker));
+            if(java.nio.file.Files.exists(ids.pathFor(id))){if(java.nio.file.Files.size(ids.pathFor(id))>128)throw new IllegalStateException("WORLD_PENDING_ACTIVATION_ID_INVALID");String saved=new String(ids.read(id),java.nio.charset.StandardCharsets.UTF_8);if(!saved.matches(java.util.regex.Pattern.quote("runtime.pendingActivation.")+"(?:[a-f0-9]{64}|[a-f0-9-]{36})"))throw new IllegalStateException("WORLD_PENDING_ACTIVATION_ID_INVALID");return saved;}
+            String prefix="runtime.pendingActivation."+id;var keys=MineAgentRuntimeServices.config(server).snapshot().values().keySet();
+            if(legacyCompatible&&keys.stream().anyMatch(k->k.matches(java.util.regex.Pattern.quote("runtime.pendingActivation.")+"[a-f0-9-]{36}"+java.util.regex.Pattern.quote(".")+"[a-f0-9-]{36}"))){String old="runtime.pendingActivation."+dev.mineagent.runtime.core.content.LegacyNamespaceIds.pendingActivationForMigration(path,marker);if(keys.stream().anyMatch(k->k.startsWith(old+".")))prefix=old;}
+            ids.put(id,prefix.getBytes(java.nio.charset.StandardCharsets.UTF_8));return prefix;
+        }catch(Exception invalid){throw new IllegalStateException("WORLD_PENDING_ACTIVATION_STORAGE",invalid);}
     }
     public static boolean pendingDisabled(ServerPlayer p){return "DISABLED".equals(MineAgentRuntimeServices.config(p.level().getServer()).snapshot().values().get(entry(p.level().getServer()).consentKey+"."+p.getUUID()));}
     public static void pendingChoice(ServerPlayer p,boolean enabled){

@@ -119,7 +119,7 @@ public final class CodeDraftService implements AutoCloseable {
     public synchronized CodeDraft createIdempotent(UUID operation,UUID owner,UUID task,UUID pkg,long taskRevision,long packageRevision,String path,String source,Map<String,CodeDraft.SourceRef> additional,boolean workspace,Map<UUID,String> dependencies,boolean dependencyDeclaration,CodeDraft.SourceRef primary,String sourceVersion)throws Exception {
         dependencyDeclaration=dependencyDeclaration||!dependencies.isEmpty();workspace=workspace||!additional.isEmpty()||dependencyDeclaration;
         if(dependencyDeclaration&&!CodeDraftSources.java(path)&&!isJavaScript(path))throw new IllegalArgumentException("STUDIO_DEPENDENCY_JAVA_REQUIRED");
-        validate(owner,task,pkg,taskRevision,packageRevision,path,source);if(isJavaScript(path)&&!preflight.inspect(source).accepted())throw new IllegalArgumentException("STUDIO_SCRIPT_PREFLIGHT");UUID id=idempotentDraftId(worldId,owner,operation);
+        validate(owner,task,pkg,taskRevision,packageRevision,path,source);if(isJavaScript(path)&&!preflight.inspect(source).accepted())throw new IllegalArgumentException("STUDIO_SCRIPT_PREFLIGHT");UUID id=idempotentDraftId(owner,operation);
         var old=drafts.get(id);if(old!=null){if(!old.ownerPlayerId().equals(owner)||!old.taskId().equals(task)||!old.packageId().equals(pkg)||!old.path().equals(path)||!old.source().equals(source)||!old.additionalSources().equals(additional)||old.workspace()!=workspace||!old.dependencies().equals(dependencies)||old.dependencyDeclaration()!=dependencyDeclaration)throw new IllegalStateException("JAVA_STUDIO_OPERATION_REUSED");return old;}
         if(drafts.size()>=4096)throw new IllegalStateException("JAVA_STUDIO_DRAFT_BUDGET");var value=new CodeDraft(id,worldId,owner,task,pkg,taskRevision,packageRevision,1,path,source,CodeDraftStatus.DRAFT,List.of(),clock.millis(),additional,List.of(),workspace,dependencies,dependencyDeclaration,primary,sourceVersion);
         if(value.workspace()){CodeDraftSources.validate(path,CodeDraftSources.refs(value));validateSide(path,CodeDraftSources.refs(value).keySet());}
@@ -129,7 +129,11 @@ public final class CodeDraftService implements AutoCloseable {
     public synchronized Optional<CodeDraft> get(UUID draftId) {
         return Optional.ofNullable(drafts.get(draftId));
     }
-    public static UUID idempotentDraftId(UUID world,UUID owner,UUID operation){return UUID.nameUUIDFromBytes(("web-studio|"+world+"|"+owner+"|"+operation).getBytes(java.nio.charset.StandardCharsets.UTF_8));}
+    public synchronized UUID idempotentDraftId(UUID owner,UUID operation)throws Exception{
+        String key=owner+":"+operation;var saved=repository.get(worldId,"code_draft_ids_v2",key);if(saved.isPresent())return UUID.fromString(saved.orElseThrow().payload());
+        var candidates=new ArrayList<UUID>();if(drafts.values().stream().anyMatch(d->d.ownerPlayerId().equals(owner)&&d.draftId().version()==3)){UUID legacy=dev.mineagent.runtime.core.content.LegacyNamespaceIds.codeDraftForMigration(worldId,owner,operation);var old=drafts.get(legacy);if(old!=null&&old.ownerPlayerId().equals(owner))candidates.add(legacy);}
+        return dev.mineagent.runtime.core.persistence.AssignedOperationIds.resolve(repository,worldId,"code_draft_ids_v2",key,candidates);
+    }
 
     public synchronized List<CodeDraft> allFor(UUID playerId, boolean operator) {
         return drafts.values().stream()

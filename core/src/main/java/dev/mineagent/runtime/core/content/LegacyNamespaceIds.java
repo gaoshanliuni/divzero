@@ -7,6 +7,11 @@ public final class LegacyNamespaceIds {
  public static UUID taskStartIdForMigration(UUID world,UUID owner,UUID operation){Objects.requireNonNull(world);Objects.requireNonNull(owner);Objects.requireNonNull(operation);return UUID.nameUUIDFromBytes(("task-start|"+world+"|"+owner+"|"+operation).getBytes(StandardCharsets.UTF_8));}
  /** Called only after ConversationStore has checked its durable one-time migration record. */
  public static UUID nativeConversationForMigration(UUID world,UUID owner,UUID agent){Objects.requireNonNull(world);Objects.requireNonNull(owner);Objects.requireNonNull(agent);return UUID.nameUUIDFromBytes(("native-mention-v1|"+world+"|"+owner+"|"+agent).getBytes(StandardCharsets.UTF_8));}
+ /** Called only when legacy version-3 draft IDs exist and no durable operation mapping has been saved. */
+ public static UUID codeDraftForMigration(UUID world,UUID owner,UUID operation){Objects.requireNonNull(world);Objects.requireNonNull(owner);Objects.requireNonNull(operation);return UUID.nameUUIDFromBytes(("web-studio|"+world+"|"+owner+"|"+operation).getBytes(StandardCharsets.UTF_8));}
+ public static String worldPathLockForMigration(String path)throws java.security.GeneralSecurityException{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(path.getBytes(StandardCharsets.UTF_8)));}
+ public static UUID pendingActivationForMigration(String path,String anchorIds){return UUID.nameUUIDFromBytes((path+"|"+anchorIds).getBytes(StandardCharsets.UTF_8));}
+ public static UUID agentCreationForMigration(UUID world,UUID owner,UUID operation){return UUID.nameUUIDFromBytes(("agent-create|"+world+"|"+owner+"|"+operation).getBytes(StandardCharsets.UTF_8));}
  private record Mapping(String id,boolean migrated){}
  private static final ObjectMapper JSON=new ObjectMapper();private static final Map<Path,Object> LOCKS=new java.util.concurrent.ConcurrentHashMap<>();
  public static String resolve(Path indexRoot,Kind kind,String originalScope,java.util.function.Predicate<String> legacyExists)throws IOException{

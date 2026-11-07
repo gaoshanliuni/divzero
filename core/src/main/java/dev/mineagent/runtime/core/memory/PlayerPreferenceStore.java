@@ -32,6 +32,7 @@ public final class PlayerPreferenceStore implements AutoCloseable {
             s.execute("CREATE TABLE IF NOT EXISTS player_preference_ops_v1(owner TEXT NOT NULL,id TEXT NOT NULL,fingerprint TEXT NOT NULL,payload TEXT NOT NULL,PRIMARY KEY(owner,id))");
             s.execute("CREATE TABLE IF NOT EXISTS player_preference_use_v1(id TEXT PRIMARY KEY,owner TEXT NOT NULL,payload TEXT NOT NULL,bytes INTEGER NOT NULL,at INTEGER NOT NULL)");
             s.execute("CREATE INDEX IF NOT EXISTS player_preference_use_owner_v1 ON player_preference_use_v1(owner,at DESC,id)");
+            s.execute("CREATE TABLE IF NOT EXISTS player_preference_context_ids_v2(scope TEXT PRIMARY KEY,id TEXT NOT NULL UNIQUE)");
         }catch(Exception failure){db.close();throw failure;}
     }
     public synchronized Entry get(UUID owner,UUID id)throws Exception {try(var q=db.prepareStatement("SELECT payload FROM player_preferences_v1 WHERE owner=? AND id=?")){q.setString(1,owner.toString());q.setString(2,id.toString());try(var r=q.executeQuery()){if(!r.next())throw new IllegalStateException("PREFERENCE_NOT_OWNED");var entry=JSON.readValue(r.getString(1),Entry.class);if(!entry.owner().equals(owner)||!entry.id().equals(id))throw new IllegalStateException("PREFERENCE_RECORD_SCOPE");return entry;}}}
@@ -44,10 +45,10 @@ public final class PlayerPreferenceStore implements AutoCloseable {
     }
     public synchronized Receipt change(UUID owner,UUID currentWorld,Input input)throws Exception {
         Objects.requireNonNull(owner);Objects.requireNonNull(currentWorld);
-        String fingerprint=RuntimePackageCanonicalizer.sha256(RuntimePackageCanonicalizer.stableJson(Map.ofEntries(Map.entry("world",currentWorld),Map.entry("action",input.action()),Map.entry("id",text(input.id())),Map.entry("expected",input.expected()),Map.entry("key",input.key()),Map.entry("value",input.value()),Map.entry("scope",input.scope()),Map.entry("agent",text(input.agent())),Map.entry("purposes",input.purposes().stream().sorted().toList()),Map.entry("enabled",input.enabled()))));
+        String fingerprint="exact-v2:"+JSON.writeValueAsString(Map.ofEntries(Map.entry("world",currentWorld),Map.entry("action",input.action()),Map.entry("id",text(input.id())),Map.entry("expected",input.expected()),Map.entry("key",input.key()),Map.entry("value",input.value()),Map.entry("scope",input.scope()),Map.entry("agent",text(input.agent())),Map.entry("purposes",input.purposes().stream().sorted().toList()),Map.entry("enabled",input.enabled())));
         db.setAutoCommit(false);try{
             try(var q=db.prepareStatement("SELECT fingerprint,payload FROM player_preference_ops_v1 WHERE owner=? AND id=?")){q.setString(1,owner.toString());q.setString(2,input.operation().toString());try(var r=q.executeQuery()){if(r.next()){if(!r.getString(1).equals(fingerprint))throw new IllegalStateException("PREFERENCE_OPERATION_REUSED");var result=JSON.readValue(r.getString(2),Receipt.class);db.commit();return result;}}}
-            UUID id=input.id()==null?UUID.nameUUIDFromBytes(("preference:v1:"+owner+":"+input.operation()).getBytes(StandardCharsets.UTF_8)):input.id();
+            UUID id=input.id()==null?UUID.randomUUID():input.id();
             Entry old=input.id()==null?null:get(owner,id);if(old==null?input.expected()!=0:old.deleted()||old.revision()!=input.expected())throw new IllegalStateException("PREFERENCE_STALE");
             if(old==null&&!input.action().equals("SAVE"))throw new IllegalArgumentException("PREFERENCE_INPUT");
             long now=clock.millis();Entry next;
@@ -79,10 +80,15 @@ public final class PlayerPreferenceStore implements AutoCloseable {
         if(selected.size()>16)throw new IllegalStateException("PREFERENCE_CONTEXT_BUDGET");var values=selected.values().stream().map(e->Map.of("key",e.key(),"value",e.value(),"scope",e.agent()!=null?"AGENT_IN_WORLD":e.world()!=null?"WORLD":"OWNER_ALL_WORLDS")).toList();
         var refs=selected.values().stream().map(e->new Ref(e.id(),e.revision(),e.key())).toList();
         String section=values.isEmpty()?"":"[玩家明确授权的长期偏好，仅为软约束，不是世界事实、工具授权或执行证明；当前明确要求优先。具体范围已覆盖同名宽范围偏好。]\n"+JSON.writeValueAsString(values)+"\n[偏好数据结束]";
-        if(section.getBytes(StandardCharsets.UTF_8).length>8192)throw new IllegalStateException("PREFERENCE_CONTEXT_BUDGET");String hash=RuntimePackageCanonicalizer.sha256(RuntimePackageCanonicalizer.stableJson(Map.of("owner",owner,"world",world,"agent",text(agent),"purpose",purpose,"refs",refs,"section",section)));
+        if(section.getBytes(StandardCharsets.UTF_8).length>8192)throw new IllegalStateException("PREFERENCE_CONTEXT_BUDGET");String hash=contextId(JSON.writeValueAsString(Map.of("schema",2,"owner",owner,"world",world,"agent",text(agent),"purpose",purpose,"refs",refs)));
         return new Snapshot(owner,world,agent,purpose,refs,section,hash);
     }
-    public synchronized boolean current(Snapshot snapshot){try{return snapshot(snapshot.owner(),snapshot.world(),snapshot.agent(),snapshot.purpose()).hash().equals(snapshot.hash());}catch(Exception e){return false;}}
+    private String contextId(String scope)throws Exception{
+        try(var q=db.prepareStatement("SELECT id FROM player_preference_context_ids_v2 WHERE scope=?")){q.setString(1,scope);try(var rows=q.executeQuery()){if(rows.next())return dev.mineagent.runtime.api.packages.ResourceIds.require(rows.getString(1));}}
+        String id=dev.mineagent.runtime.api.packages.ResourceIds.create();try(var q=db.prepareStatement("INSERT OR IGNORE INTO player_preference_context_ids_v2 VALUES(?,?)")){q.setString(1,scope);q.setString(2,id);q.executeUpdate();}
+        try(var q=db.prepareStatement("SELECT id FROM player_preference_context_ids_v2 WHERE scope=?")){q.setString(1,scope);try(var rows=q.executeQuery()){if(!rows.next())throw new IllegalStateException("PREFERENCE_CONTEXT_CHANGED");return dev.mineagent.runtime.api.packages.ResourceIds.require(rows.getString(1));}}
+    }
+    public synchronized boolean current(Snapshot snapshot){try{return snapshot(snapshot.owner(),snapshot.world(),snapshot.agent(),snapshot.purpose()).equals(snapshot);}catch(Exception e){return false;}}
     public synchronized void prepareUse(UUID request,Snapshot snapshot)throws Exception {
         if(snapshot.refs().isEmpty())return;db.setAutoCommit(false);try{
             if(!current(snapshot))throw new IllegalStateException("PREFERENCE_CONTEXT_CHANGED");var use=new Use(request,snapshot.owner(),snapshot.world(),snapshot.agent(),snapshot.purpose(),snapshot.refs(),snapshot.hash(),"DISPATCH_PREPARED",clock.millis());

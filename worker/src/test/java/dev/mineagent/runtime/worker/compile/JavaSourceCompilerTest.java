@@ -44,6 +44,10 @@ class JavaSourceCompilerTest {
         assertFalse(result.diagnostics().isEmpty());
         assertFalse(java.nio.file.Files.exists(jar));
     }
+    @Test void invalidCandidateLeavesAnExistingValidArtifactIntact()throws Exception{
+        var compiler=new JavaSourceCompiler();Path jar=temporaryDirectory.resolve("running.jar");assertTrue(compiler.compile("generated.Running","package generated; public class Running {}",jar).success());byte[] before=java.nio.file.Files.readAllBytes(jar);String version=JavaExtensionManager.sha256(jar);
+        var failed=compiler.compile("generated.Running","package generated; public class Running { invalid }",jar);assertFalse(failed.success());assertTrue(failed.diagnostics().stream().anyMatch(d->d.line()>0&&d.column()>0));assertArrayEquals(before,java.nio.file.Files.readAllBytes(jar));assertEquals(version,JavaExtensionManager.sha256(jar));
+    }
 
     @Test void separateCompilationsKeepTheirSourceVersionAndAssignSeparateArtifactIds()throws Exception{
         String source="package generated; public final class Stable {}",version=dev.mineagent.runtime.api.packages.ResourceIds.create();var compiler=new JavaSourceCompiler();Path a=temporaryDirectory.resolve("a.jar"),b=temporaryDirectory.resolve("b.jar");var context=Map.<String,Object>of("physicalSide","CLIENT","environment","fixture","sourceVersion",version);

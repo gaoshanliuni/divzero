@@ -94,7 +94,6 @@ public final class JavaSourceCompiler {
                             (diagnostic.getSource()!=null?diagnostic.getSource().getName()+": ":"")+diagnostic.getMessage(Locale.SIMPLIFIED_CHINESE)))
                     .toList();
             if (!success) {
-                Files.deleteIfExists(absoluteJar);
                 return new JavaCompilationResult(false, absoluteJar, converted);
             }
             Path temporaryJar = Files.createTempFile(absoluteJar.getParent(), ".mineagent-extension-", ".jar");

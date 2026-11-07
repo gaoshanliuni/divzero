@@ -9,6 +9,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NewWorldIdentityTest {
     @TempDir Path directory;
+    @Test void challengeChangesWithActualAnchorBytesAndOldApprovalCannotOverwriteThem()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var save=Files.createDirectory(directory.resolve("save"));Path anchor=save.resolve(WorldSaveIdentity.ANCHOR_FILE);Files.writeString(anchor,"invalid one");
+        try(var id=WorldSaveIdentity.open(home,save,null)){
+            String before=id.status().challenge();assertEquals(before,id.status().challenge());Files.writeString(anchor,"invalid two");assertNotEquals(before,id.status().challenge());assertThrows(IllegalStateException.class,()->id.choose("FRESH",null,before,"SERVER_COMMAND_SOURCE"));assertEquals("invalid two",Files.readString(anchor));
+            id.acceptCurrent("SERVER_COMMAND_SOURCE");assertTrue(id.ready());try(var backups=Files.list(home.resolve("identity-anchor-backups"))){var files=backups.toList();assertEquals(1,files.size());assertEquals("invalid two",Files.readString(files.getFirst()));}
+        }
+    }
+    @Test void reusesAnExistingLegacyPathLeaseWithoutReadingAnyFileDigest()throws Exception{
+        var home=Files.createDirectory(directory.resolve("runtime"));var save=Files.createDirectory(directory.resolve("save"));Path locks=Files.createDirectory(home.resolve("identity-path-locks"));String path=save.toRealPath().toString();if(System.getProperty("os.name","").startsWith("Windows"))path=path.toLowerCase(java.util.Locale.ROOT);String id=dev.mineagent.runtime.core.content.LegacyNamespaceIds.worldPathLockForMigration(path);
+        try(var channel=java.nio.channels.FileChannel.open(locks.resolve(id+".lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);var lock=channel.lock()){assertThrows(IllegalStateException.class,()->WorldSaveIdentity.open(home,save,null));}
+        try(var identity=WorldSaveIdentity.open(home,save,null)){assertTrue(identity.ready());}
+    }
     @Test void explicitAcceptActivatesCopiedAnchorWithoutReopenOrTouchingOriginal()throws Exception{
         var home=Files.createDirectory(directory.resolve("runtime"));var first=Files.createDirectory(directory.resolve("first"));var copy=Files.createDirectory(directory.resolve("copy"));UUID original;
         try(var id=WorldSaveIdentity.open(home,first,UUID.randomUUID())){original=id.scopeId();}

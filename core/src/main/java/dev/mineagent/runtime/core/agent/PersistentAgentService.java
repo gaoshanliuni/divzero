@@ -81,10 +81,11 @@ public final class PersistentAgentService implements AutoCloseable {
     public synchronized PersistentAgent createIdempotent(UUID operation,String name,UUID owner,AgentMode mode)throws Exception{
         java.util.Objects.requireNonNull(operation);java.util.Objects.requireNonNull(owner);java.util.Objects.requireNonNull(mode);
         if(name==null||name.isBlank()||name.strip().codePointCount(0,name.strip().length())>32||name.codePoints().anyMatch(Character::isISOControl))throw new IllegalArgumentException("AGENT_NAME_INVALID");
-        UUID id=UUID.nameUUIDFromBytes(("agent-create|"+worldId+"|"+owner+"|"+operation).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        String fingerprint=dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(mapper.writeValueAsBytes(List.of(name.strip(),owner,mode)));
+        String key=owner+":"+operation;var mapped=repository.get(worldId,"agent_create_ids_v2",key);UUID id;
+        if(mapped.isPresent())id=UUID.fromString(mapped.orElseThrow().payload());else{var old=new java.util.ArrayList<UUID>();if(repository.list(worldId,"agent_create_requests").stream().anyMatch(r->r.payload().matches("[a-f0-9]{64}"))){UUID legacy=dev.mineagent.runtime.core.content.LegacyNamespaceIds.agentCreationForMigration(worldId,owner,operation);if(repository.get(worldId,"agent_create_requests",legacy.toString()).isPresent())old.add(legacy);}id=dev.mineagent.runtime.core.persistence.AssignedOperationIds.resolve(repository,worldId,"agent_create_ids_v2",key,old);}
+        String fingerprint="exact-v2:"+mapper.writeValueAsString(List.of(name.strip(),owner,mode));
         var request=repository.get(worldId,"agent_create_requests",id.toString());
-        if(request.isPresent()){if(!request.get().payload().equals(fingerprint))throw new IllegalArgumentException("AGENT_OPERATION_REUSED");}
+        if(request.isPresent()){if(request.get().payload().matches("[a-f0-9]{64}"))throw new IllegalStateException("AGENT_LEGACY_CREATE_RECEIPT_REQUIRES_OBSERVATION id="+id);if(!request.get().payload().equals(fingerprint))throw new IllegalArgumentException("AGENT_OPERATION_REUSED");}
         else{
             if(repository.list(worldId,"agent_create_requests").size()>=4096)throw new IllegalStateException("AGENT_REQUEST_BUDGET");
             if(!repository.compareAndSet(worldId,"agent_create_requests",id.toString(),0,fingerprint,System.currentTimeMillis()).accepted())throw new IllegalStateException("AGENT_REQUEST_CONFLICT");

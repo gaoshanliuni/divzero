@@ -16,6 +16,7 @@ public final class WorldSaveIdentity implements AutoCloseable {
     private record Lease(FileChannel channel,FileLock lock) implements AutoCloseable{public void close(){try{lock.release();}catch(Exception ignored){}try{channel.close();}catch(Exception ignored){}}}
     private final Path home,save,anchorPath,runtimeDb;private final UUID legacyHint;private final Connection db;private final Lease pathLease;
     private Lease scopeLease;private boolean reopenRequired,closed;
+    private byte[] challengedAnchor;private long challengedRevision=-1;private String challengedState="",challengeToken="";
     private WorldSaveIdentity(Path home,Path save,UUID legacyHint,Connection db,Lease pathLease){this.home=home;this.save=save;this.legacyHint=legacyHint;this.db=db;this.pathLease=pathLease;anchorPath=save.resolve(ANCHOR_FILE);runtimeDb=home.resolve("runtime.db");}
 
     public static WorldSaveIdentity open(Path runtimeDirectory,Path saveDirectory,UUID legacyHint)throws Exception{
@@ -26,7 +27,10 @@ public final class WorldSaveIdentity implements AutoCloseable {
         Files.createDirectories(runtimeDirectory);Path home=runtimeDirectory.toRealPath(),save=saveDirectory.toRealPath();
         if(!Files.isDirectory(save))throw new IllegalStateException("WORLD_SAVE_DIRECTORY_UNAVAILABLE");
         for(Path database:List.of(home.resolve("runtime.db"),home.resolve("world-identities.db")))if(!Files.notExists(database)&&(!Files.isRegularFile(database,LinkOption.NOFOLLOW_LINKS)||Files.isSymbolicLink(database)))throw new IllegalStateException("WORLD_IDENTITY_DATABASE_LINK_UNSUPPORTED");
-        var pathLease=lease(home.resolve("identity-path-locks"),hash(pathKey(save).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        var ids=new dev.mineagent.runtime.core.content.ContentAddressedStore(home.resolve("bootstrap-identities"));String pathId=ids.namedKeyId("world_path_lock",List.of(pathKey(save)),()->{
+            Path oldLocks=home.resolve("identity-path-locks");if(!Files.isDirectory(oldLocks))return null;boolean old;try(var files=Files.list(oldLocks)){old=files.anyMatch(p->p.getFileName().toString().matches("[a-f0-9]{64}\\.lock"));}if(!old)return null;
+            String legacy=dev.mineagent.runtime.core.content.LegacyNamespaceIds.worldPathLockForMigration(pathKey(save));return Files.exists(oldLocks.resolve(legacy+".lock"))?legacy:null;
+        });var pathLease=lease(home.resolve("identity-path-locks"),pathId);
         Connection db=null;
         try{
             db=DriverManager.getConnection("jdbc:sqlite:"+home.resolve("world-identities.db"));var service=new WorldSaveIdentity(home,save,legacyHint,db,pathLease);service.initialize();
@@ -62,7 +66,7 @@ public final class WorldSaveIdentity implements AutoCloseable {
         if(reopenRequired){state="REOPEN_REQUIRED";note="绑定已保存；使用 /ai accept 即可启用，无需重新进入世界。";}
         var discovery=discover(runtimeDb,16);
         long revision;try(var q=db.prepareStatement("SELECT revision FROM identity_meta_v1 WHERE id=1");var r=q.executeQuery()){if(!r.next())throw new SQLException("WORLD_IDENTITY_METADATA");revision=r.getLong(1);}
-        String challenge=hash((pathKey(home)+"\n"+pathKey(save)+"\n"+(raw==null?"ABSENT":hash(raw))+"\n"+revision+"\n"+state).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        if(challengeToken.isEmpty()||!Arrays.equals(challengedAnchor,raw)||challengedRevision!=revision||!challengedState.equals(state)){challengedAnchor=raw==null?null:raw.clone();challengedRevision=revision;challengedState=state;challengeToken=dev.mineagent.runtime.api.packages.ResourceIds.create();}String challenge=challengeToken;
         return new Status(state,challenge,anchor==null?(byPath==null?null:byPath.anchor().saveId()):anchor.saveId(),anchor==null?(byPath==null?null:byPath.anchor().scopeId()):anchor.scopeId(),legacyHint,discovery.ids(),discovery.more(),note);
     }
     public synchronized UUID scopeId(){try{if(scopeLease==null||!scopeLease.lock().isValid()||reopenRequired)throw new IllegalStateException("WORLD_IDENTITY_NOT_READY");var status=status();if(!status.state().equals("READY"))throw new IllegalStateException("WORLD_IDENTITY_CHANGED");return status.scopeId();}catch(RuntimeException failure){throw failure;}catch(Exception failure){throw new IllegalStateException("WORLD_IDENTITY_UNAVAILABLE",failure);}}
@@ -118,7 +122,7 @@ public final class WorldSaveIdentity implements AutoCloseable {
         }
         Lease retained=lease(home.resolve("identity-scope-locks"),next.scopeId().toString());
         try{
-            String previous=oldBytes==null?"ABSENT":hash(oldBytes);
+            String previous=oldBytes==null?"ABSENT":"raw-v2:"+Base64.getEncoder().encodeToString(oldBytes);
             execute("BEGIN IMMEDIATE");try{
                 if(!status().challenge().equals(challenge))throw new IllegalStateException("WORLD_IDENTITY_STALE");
                 if(choice.equals("FRESH")&&replace!=null){try(var q=db.prepareStatement("UPDATE identity_bindings_v1 SET save_path=NULL,state='DETACHED' WHERE save_id=? AND save_path=?")){q.setString(1,replace.anchor().saveId().toString());q.setString(2,pathKey(save));if(q.executeUpdate()!=1)throw new SQLException("WORLD_IDENTITY_BINDING_CHANGED");}}
@@ -141,8 +145,11 @@ public final class WorldSaveIdentity implements AutoCloseable {
     private void writeAnchor(Anchor next,String previous)throws Exception{
         byte[] current=anchorBytes(),bytes=JSON.writeValueAsBytes(next);
         if(current!=null){try{if(JSON.readValue(current,Anchor.class).equals(next))return;}catch(Exception ignored){}}
-        if(!(current==null?"ABSENT":hash(current)).equals(previous))throw new IllegalStateException("WORLD_ANCHOR_CHANGED");
-        if(current!=null){Path backups=home.resolve("identity-anchor-backups");Files.createDirectories(backups);Path backup=backups.resolve(previous+".json");if(!Files.exists(backup))Files.write(backup,current,StandardOpenOption.CREATE_NEW);else if(!Arrays.equals(Files.readAllBytes(backup),current))throw new IllegalStateException("WORLD_ANCHOR_BACKUP_CONFLICT");}
+        boolean matches=current==null&&previous.equals("ABSENT");
+        if(current!=null&&previous.startsWith("raw-v2:"))try{matches=Arrays.equals(current,Base64.getDecoder().decode(previous.substring(7)));}catch(IllegalArgumentException invalid){throw new IllegalStateException("WORLD_ANCHOR_SNAPSHOT_INVALID",invalid);}
+        if(current!=null&&previous.matches("[a-f0-9]{64}")){Path backup=home.resolve("identity-anchor-backups").resolve(previous+".json");if(Files.isRegularFile(backup,LinkOption.NOFOLLOW_LINKS)&&Files.size(backup)<=16384)matches=Arrays.equals(current,Files.readAllBytes(backup));else throw new IllegalStateException("WORLD_LEGACY_PENDING_ANCHOR_REQUIRES_REVIEW");}
+        if(!matches)throw new IllegalStateException("WORLD_ANCHOR_CHANGED");
+        if(current!=null){Path backups=home.resolve("identity-anchor-backups");Files.createDirectories(backups);Path backup=backups.resolve(next.saveId()+"-"+next.token()+".json");if(!Files.exists(backup))Files.write(backup,current,StandardOpenOption.CREATE_NEW);else if(!Arrays.equals(Files.readAllBytes(backup),current))throw new IllegalStateException("WORLD_ANCHOR_BACKUP_CONFLICT");}
         Path temp=Files.createTempFile(save,".mineagent-identity-",".tmp");
         try{
             try(var out=FileChannel.open(temp,StandardOpenOption.WRITE)){var buffer=java.nio.ByteBuffer.wrap(bytes);while(buffer.hasRemaining())out.write(buffer);out.force(true);}
@@ -179,7 +186,6 @@ public final class WorldSaveIdentity implements AutoCloseable {
     private static Lease lease(Path directory,String key)throws Exception{Files.createDirectories(directory);var channel=FileChannel.open(directory.resolve(key+".lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);try{var lock=channel.tryLock();if(lock==null)throw new IllegalStateException("WORLD_IDENTITY_IN_USE");return new Lease(channel,lock);}catch(Exception failure){channel.close();if(failure instanceof java.nio.channels.OverlappingFileLockException)throw new IllegalStateException("WORLD_IDENTITY_IN_USE",failure);throw failure;}}
     private static String pathKey(Path path){String value=path.toAbsolutePath().normalize().toString();return System.getProperty("os.name","").startsWith("Windows")?value.toLowerCase(Locale.ROOT):value;}
     private static String quote(String value){return "\""+value.replace("\"","\"\"")+"\"";}
-    private static String hash(byte[] value)throws Exception{return dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(value);}
     private void execute(String sql)throws SQLException{try(var s=db.createStatement()){s.execute(sql);}}
     private void requireOpen(){if(closed)throw new IllegalStateException("WORLD_IDENTITY_CLOSED");}
     @Override public synchronized void close(){if(closed)return;closed=true;if(scopeLease!=null)scopeLease.close();try{db.close();}catch(Exception ignored){}pathLease.close();}

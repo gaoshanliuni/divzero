@@ -10,6 +10,11 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ContentAddressedStoreTest {
+    @Test void metadataIdentityMigrationRunsOnlyOnceAndPreservesScope()throws Exception{
+        var attempts=new java.util.concurrent.atomic.AtomicInteger();var legacy=dev.mineagent.runtime.api.packages.ResourceIds.create();var scope=java.util.List.of("fixture-world","source/path.java","revision-3");
+        var first=new ContentAddressedStore(directory).namedKeyId("fixture_scope",scope,()->{attempts.incrementAndGet();return legacy;});assertEquals(legacy,first);
+        assertEquals(first,new ContentAddressedStore(directory).namedKeyId("fixture_scope",scope,()->{attempts.incrementAndGet();throw new IllegalStateException("must not migrate again");}));assertEquals(1,attempts.get());assertNotEquals(first,new ContentAddressedStore(directory).namedKeyId("other_scope",scope));
+    }
     @TempDir
     Path directory;
 

@@ -289,7 +289,7 @@ public final class ServerStudioCoder implements AutoCloseable {
         if(job.last()==null||!job.last().state().equals("ACCEPTED")||!job.last().candidateHash(job.input()).equals(sourceHash))throw new IllegalStateException("STUDIO_CODER_CANDIDATE_CHANGED");
         if(job.state().equals("ADOPTED"))return Map.of("draftId",job.adoptedDraft(),"state",job.state());
         if(job.state().equals("ADOPTING")&&job.revision()==revision){
-            var existing=MineAgentRuntimeServices.codeDrafts(server).get(StudioCoderJournal.targetDraft(job.input())).orElse(null);
+            var existing=MineAgentRuntimeServices.codeDrafts(server).get(journal.targetDraft(job.input())).orElse(null);
             if(existing!=null){var in=job.input();if(!existing.worldId().equals(in.world())||!existing.ownerPlayerId().equals(in.owner())||!existing.taskId().equals(in.task())||!existing.packageId().equals(in.packageId())||!existing.path().equals(in.path()))throw new IllegalStateException("STUDIO_CODER_ADOPTION_CHANGED");journal.adopted(id,existing.draftId());return Map.of("draftId",existing.draftId(),"state","ADOPTION_RECORDED_EXISTING_DRAFT");}
         }
         if(job.revision()!=revision||!Set.of("READY","ADOPTING").contains(job.state())||!currentInput(job.input(),true))throw new IllegalStateException("STUDIO_CODER_ADOPTION_CONTEXT_CHANGED");
@@ -300,7 +300,7 @@ public final class ServerStudioCoder implements AutoCloseable {
         var in=job.input();var tasks=MineAgentRuntimeServices.tasks(server);var task=tasks.get(in.task()).orElseThrow();
         if(task.revision()==in.taskRevision()){var result=tasks.completeStep(task.taskId(),task.revision(),"generate");if(!result.accepted())throw new IllegalStateException("STUDIO_CODER_ADOPTION_TASK");task=result.task();}
         if(task.revision()!=in.taskRevision()+1||!task.runnableStepIds().contains("publish")||!currentInput(in,true))throw new IllegalStateException("STUDIO_CODER_ADOPTION_TASK");
-        UUID operation=StudioCoderJournal.adoptionOperation(in);
+        UUID operation=journal.adoptionOperation(in);
         var draft=MineAgentRuntimeServices.codeDrafts(server).createIdempotent(operation,in.owner(),in.task(),in.packageId(),task.revision(),Math.max(1,in.packageRevision()),in.path(),source,job.last().additionalSources(),in.workspace(),in.dependencies(),in.dependencyDeclaration(),new CodeDraft.SourceRef(job.last().sourceHash(),job.last().sourceBytes()),job.last().candidateHash(in));
         journal.adopted(id,draft.draftId());
         return Map.of("draftId",draft.draftId(),"state","ADOPTED_DRAFT_NOT_PUBLISHED");

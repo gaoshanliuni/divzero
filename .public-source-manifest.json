@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "5db1ae7a-6627-40a1-b303-d43cacf945ef",
-      "bytes": 3690
+      "resourceId": "879c40dd-86a7-4853-9289-01d872f1a22c",
+      "bytes": 3800
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1124,8 +1124,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/agent/PersistentAgentService.java",
-      "sha256": "98cc7e5179d35fb28cbf1d2edc797b80b459b7d22d181efa54b5b494d4a66776",
-      "bytes": 11304
+      "resourceId": "a2b1de0e-2ddc-477e-8e3e-e5d780342cbd",
+      "bytes": 11930
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/agent/PersonaPrompt.java",
@@ -1429,8 +1429,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
-      "resourceId": "2b303da6-b8f9-40d2-8b96-8ec433b3b2bc",
-      "bytes": 5397
+      "resourceId": "958e1f47-dd45-4c09-aa4a-c4366df28a08",
+      "bytes": 5728
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentIntegrityException.java",
@@ -1439,8 +1439,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/LegacyNamespaceIds.java",
-      "resourceId": "44f73537-4d43-45ff-99d9-6f54a64ef3b7",
-      "bytes": 4649
+      "resourceId": "b580f205-14aa-4b7f-bd03-b6088518de63",
+      "bytes": 5645
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ObservationTokens.java",
@@ -1959,8 +1959,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/PlayerPreferenceStore.java",
-      "sha256": "b1dfcd5af4933df56b70c376ca7472bd5c875f3f1e297e6901eee296b26ce6db",
-      "bytes": 18276
+      "resourceId": "102cf2b4-299c-482c-a8e6-69ff0bfc8305",
+      "bytes": 19097
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/SemanticMemoryIndex.java",
@@ -2404,8 +2404,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/WorldSaveIdentity.java",
-      "sha256": "cca34589b6152993fb534b78a8aa170f25b814f25b5e9cc1dd6828c688233f69",
-      "bytes": 23137
+      "resourceId": "3de567f4-3927-4850-9016-ac7338e8d3b8",
+      "bytes": 24551
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/recovery/ChangeJournalService.java",
@@ -3119,8 +3119,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/PersistentAgentServiceTest.java",
-      "sha256": "5e8163a4e50dc301c00ae42b28a1ec1b5d10eeab1176bfeb3e9b785776e2fde3",
-      "bytes": 3969
+      "resourceId": "59ca4bc7-6247-405e-a7e3-63b1113620fe",
+      "bytes": 4863
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/SkinImageTest.java",
@@ -3199,8 +3199,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/content/ContentAddressedStoreTest.java",
-      "resourceId": "d7361871-5d9d-433a-9111-76a9c545533f",
-      "bytes": 3271
+      "resourceId": "2746aadc-754f-4508-bb83-8933c79560f2",
+      "bytes": 4060
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/content/LegacyNamespaceIdsTest.java",
@@ -3433,6 +3433,11 @@
       "bytes": 5119
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/memory/PlayerPreferenceIdentityTest.java",
+      "resourceId": "ee798556-d5f3-44a9-a6c6-77087edf6b35",
+      "bytes": 1646
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/memory/SemanticMemoryIndexTest.java",
       "resourceId": "17d69a42-8e5c-40ee-bbda-658172d1c936",
       "bytes": 1778
@@ -3544,8 +3549,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/NewWorldIdentityTest.java",
-      "sha256": "1f45c86b91201c33a688e08545855b1c76066f52c9bb3d2d85a665ba3ecc4057",
-      "bytes": 8700
+      "resourceId": "12dfda22-c1e7-41aa-92fe-ad671d34ad00",
+      "bytes": 10592
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/SqliteConcurrentJournalTest.java",
@@ -4774,8 +4779,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/WorldIdentityRuntime.java",
-      "sha256": "b85c6864774870d7929f363ee82d9474410d85aba97bf33109fb4fd582a579b1",
-      "bytes": 14791
+      "resourceId": "67b1695a-e38b-4870-9f4d-cbec085cbfa3",
+      "bytes": 16188
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/basketball/BasketballEntity.java",
@@ -7799,8 +7804,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerStudioCoder.java",
-      "resourceId": "a0ecbf73-7b9c-469f-8a02-6e60f0bf29a7",
-      "bytes": 44908
+      "resourceId": "f6af5c3d-6d7a-43e5-8520-b84ccf7dcd28",
+      "bytes": 44886
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiAgentTasks.java",
@@ -8424,8 +8429,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/CodeDraftService.java",
-      "resourceId": "9ea8a9ed-a2c1-47d7-8b50-5cbd59d2e3bb",
-      "bytes": 22886
+      "resourceId": "1599ef89-3570-4c3c-97f0-83295cf6fd0b",
+      "bytes": 23437
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/JavaPublicationJournal.java",
@@ -8434,8 +8439,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/StudioCoderJournal.java",
-      "resourceId": "cbb1f0b8-39ed-4a91-bf6f-9c3d03f58e59",
-      "bytes": 32543
+      "resourceId": "043d9760-3162-4a8b-b6c2-1b8b63777d76",
+      "bytes": 32904
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/StudioScriptJournal.java",
@@ -8519,8 +8524,8 @@
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/studio/StudioCoderDependencyJournalTest.java",
-      "resourceId": "5e19bc65-03c1-480b-adfc-52fd0cec1f3f",
-      "bytes": 10023
+      "resourceId": "ae306709-daeb-4059-8ade-82ed431320fa",
+      "bytes": 10001
     },
     {
       "path": "scripts/edit-feature-films.py",
@@ -8639,8 +8644,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/JavaSourceCompiler.java",
-      "resourceId": "c11d0a8a-3c19-44c2-9c25-0d167a59eabb",
-      "bytes": 12035
+      "resourceId": "3c128391-6840-40fd-9532-689ceea31504",
+      "bytes": 11984
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/FailedCandidatePatch.java",
@@ -9289,8 +9294,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/compile/JavaSourceCompilerTest.java",
-      "resourceId": "464aea77-d151-4060-bafe-6c4219b33f13",
-      "bytes": 3499
+      "resourceId": "84d75749-4af6-4d4b-b3f3-f76780f0c2e4",
+      "bytes": 4243
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/generation/NativePackageMigrationTest.java",
@@ -9380,5 +9385,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "46605fbaee78c0771b1daaffe3cb2a31e7e67951"
+  "sourceCommit": "5fab3ae83031f4ea49c8cec1399b988499ebffdf"
 }

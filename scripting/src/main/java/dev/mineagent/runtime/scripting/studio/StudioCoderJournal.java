@@ -139,9 +139,9 @@ public final class StudioCoderJournal {
     }
     public synchronized List<Job> list(UUID owner){return jobs.values().stream().filter(j->j.input().owner().equals(owner)).sorted(Comparator.comparingLong(Job::updatedAt).reversed().thenComparing(Job::id)).toList();}
     public synchronized List<Job> interrupted(){return jobs.values().stream().filter(j->j.state().equals("INTERRUPTED")).toList();}
-    public static UUID adoptionOperation(Input in){return UUID.nameUUIDFromBytes(("studio-coder-adopt|"+in.world()+"|"+in.operation()).getBytes(StandardCharsets.UTF_8));}
-    public static UUID targetDraft(Input in){return CodeDraftService.idempotentDraftId(in.world(),in.owner(),adoptionOperation(in));}
-    public synchronized Optional<Job> sourceJob(dev.mineagent.runtime.api.packages.CodeDraft draft){return jobs.values().stream().filter(j->Set.of("ADOPTING","ADOPTED").contains(j.state())&&targetDraft(j.input()).equals(draft.draftId())&&j.input().owner().equals(draft.ownerPlayerId())&&j.input().packageId().equals(draft.packageId())&&j.input().task().equals(draft.taskId())).findFirst();}
+    public synchronized UUID adoptionOperation(Input in){try{return dev.mineagent.runtime.core.persistence.AssignedOperationIds.resolve(repo,world,"studio_adoption_ids_v2",in.owner()+":"+in.operation(),List.of());}catch(Exception error){throw new IllegalStateException("STUDIO_ADOPTION_ID_STORAGE",error);}}
+    public synchronized UUID targetDraft(Input in){try{var job=jobs.get(in.operation());return dev.mineagent.runtime.core.persistence.AssignedOperationIds.resolve(repo,world,"code_draft_ids_v2",in.owner()+":"+adoptionOperation(in),job!=null&&job.adoptedDraft()!=null?List.of(job.adoptedDraft()):List.of());}catch(Exception error){throw new IllegalStateException("STUDIO_DRAFT_ID_STORAGE",error);}}
+    public synchronized Optional<Job> sourceJob(dev.mineagent.runtime.api.packages.CodeDraft draft){return jobs.values().stream().filter(j->Set.of("ADOPTING","ADOPTED").contains(j.state())&&j.input().owner().equals(draft.ownerPlayerId())&&j.input().packageId().equals(draft.packageId())&&j.input().task().equals(draft.taskId())&&(j.adoptedDraft()!=null?j.adoptedDraft():targetDraft(j.input())).equals(draft.draftId())).findFirst();}
     public synchronized Optional<Job> nativePublicationSource(dev.mineagent.runtime.api.packages.CodeDraft draft){return sourceJob(draft).filter(j->{try{return j.state().equals("ADOPTED")&&j.input().nativeSelection()!=null&&j.last()!=null&&j.last().state().equals("ACCEPTED")&&j.last().nativeContext()!=null&&j.last().candidateHash(j.input()).equals(CodeDraftSources.fingerprint(draft))&&j.input().path().equals(draft.path())&&j.input().dependencies().equals(draft.dependencies())&&CodeDraftSources.sameReferences(j.last().files(j.input().path()),CodeDraftSources.refs(draft));}catch(Exception invalid){throw new IllegalStateException("STUDIO_CODER_NATIVE_PUBLICATION_SOURCE",invalid);}});}
     public synchronized void capacity(int sourceBytes)throws Exception {
         if(jobs.size()>=4096||metadataUsage()+RECORD_RESERVE>META_BUDGET||rawUsage()+sourceBytes+MAX_RAW_BYTES+CodeDraftSources.MAX_BYTES+JavaDependencyApi.MAX_BYTES+NativeCoderContext.MAX_BYTES>RAW_BUDGET)
@@ -163,7 +163,7 @@ public final class StudioCoderJournal {
                 ||job.last()!=null&&!job.last().state().equals("REJECTED"))throw new IllegalStateException("STUDIO_CODER_ATTEMPT_STATE");
         if(rawUsage()+MAX_RAW_BYTES+CodeDraftSources.MAX_BYTES+JavaDependencyApi.MAX_BYTES+NativeCoderContext.MAX_BYTES>RAW_BUDGET)throw new IllegalStateException("STUDIO_CODER_STORAGE_BUDGET");
         int ordinal=job.attempts().size()+1;
-        UUID attempt=UUID.nameUUIDFromBytes(("studio-coder|"+world+"|"+id+"|"+ordinal).getBytes(StandardCharsets.UTF_8));
+        UUID attempt=UUID.randomUUID();
         var attempts=new ArrayList<>(job.attempts());attempts.add(new Attempt(attempt,ordinal,"REQUESTING","",0,"",0,"","","","","",""));
         return save(job,"GENERATING","",attempts,null);
     }
