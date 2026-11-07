@@ -24,7 +24,7 @@ class DependencyReceiptTest {
     }
     @Test void comparesVersionMetadataAcrossSerializationAndRejectsChangedClosure()throws Exception{
         UUID pkg=UUID.randomUUID(),owner=UUID.randomUUID();var node=node(pkg,ResourceIds.create(),ResourceIds.create(),ResourceIds.create());var graph=new JavaDependencyGraph(1,owner,Map.of(pkg,"1"),List.of(node));
-        assertTrue(graph.receiptHash().startsWith("dependencies-v2:"));assertEquals(graph.fingerprint(),json.readValue(json.writeValueAsBytes(graph),JavaDependencyGraph.class).fingerprint());
+        assertTrue(graph.receiptHash().startsWith("dependencies-v2:"));assertEquals(64,DependencyReceipt.observationId(graph.fingerprint()).length());assertEquals(DependencyReceipt.observationId(graph.fingerprint()),DependencyReceipt.observationId(graph.fingerprint()));assertEquals(graph.fingerprint(),json.readValue(json.writeValueAsBytes(graph),JavaDependencyGraph.class).fingerprint());
         var changed=new JavaDependencyGraph.Node(pkg,"1",2,node.canonical(),node.publication(),1,node.artifact(),node.sourceHash(),node.className(),node.nativeClasspath(),Map.of());
         assertNotEquals(graph.fingerprint(),new JavaDependencyGraph(1,owner,Map.of(pkg,"1"),List.of(changed)).fingerprint());
         assertTrue(DependencyReceipt.readable("a".repeat(64)));assertNotEquals("a".repeat(64),graph.fingerprint());assertFalse(DependencyReceipt.readable("not-a-receipt"));

@@ -2084,8 +2084,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/DependencyReceipt.java",
-      "resourceId": "4a50deba-b6bd-4d99-91f5-e366cbbb0bd8",
-      "bytes": 1296
+      "resourceId": "dd41735c-2127-4174-ba8f-698054086040",
+      "bytes": 1837
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ExampleImportReceipt.java",
@@ -3559,8 +3559,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/DependencyReceiptTest.java",
-      "resourceId": "fe9ea88f-461e-47a4-8c73-2f325b67b272",
-      "bytes": 4055
+      "resourceId": "d82486f1-b545-46db-8093-98bb733bc692",
+      "bytes": 4254
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/LegacyContentPackageMigratorTest.java",
@@ -7789,8 +7789,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerJavaStudio.java",
-      "resourceId": "3d60902c-53ba-4fd1-9132-e5dcdbb81038",
-      "bytes": 42539
+      "resourceId": "3e1e910f-5f09-4fd4-b37b-6a768e158dbd",
+      "bytes": 42638
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerMemoryRecall.java",
@@ -7884,8 +7884,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerStudioCoder.java",
-      "resourceId": "9b8b5970-1a52-4f1f-8386-bbe133d5bfc5",
-      "bytes": 45029
+      "resourceId": "f5df1721-d643-40fd-bb24-3ea76c3dc966",
+      "bytes": 45062
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiAgentTasks.java",
@@ -8844,8 +8844,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/StudioCoderResult.java",
-      "resourceId": "1e3cda09-3aa0-4b60-aa7e-749ecd57ca84",
-      "bytes": 18251
+      "resourceId": "68b9b38a-0b9b-4e2f-8aa5-c3009b798c34",
+      "bytes": 18575
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/UiPackagePatchBuilder.java",
@@ -9399,8 +9399,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/generation/StudioCoderDependencyPromptTest.java",
-      "resourceId": "4e30edfd-6b7b-4e19-a9e3-00fdf9e80fe8",
-      "bytes": 6344
+      "resourceId": "9def8bb4-5bac-4a9b-bd50-2a418649f020",
+      "bytes": 6469
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/media/BundledMediaToolsTest.java",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "c685d10f803d45bd5da9681bc99002b9f051b6b2"
+  "sourceCommit": "d35befb9491205b372da0b6132f30a1e2b5dbfa4"
 }

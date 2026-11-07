@@ -55,13 +55,13 @@ public final class ServerJavaStudio {
         for(var r:drafts.javaPublications().forPackage(viewer.getUUID(),d.packageId()))all.add(Map.ofEntries(
                 Map.entry("id",r.id()),Map.entry("draft",r.draft()),Map.entry("revision",r.revision()),Map.entry("state",r.state()),Map.entry("error",r.error()),Map.entry("uncertain",r.uncertain()),
                 Map.entry("loaded",MineAgentRuntimeServices.javaExtensions(server).isLoaded(r.id())),Map.entry("artifact",r.artifact()),Map.entry("nativeClasspath",r.nativeClasspath()),
-                Map.entry("dependencyHash",r.dependencies()==null?"":r.dependencies().receiptHash()),Map.entry("dependencyCount",r.dependencies()==null?0:r.dependencies().nodes().size()),Map.entry("consumerCount",MineAgentRuntimeServices.javaExtensions(server).consumers(r.id()).size()),Map.entry("packageHash",r.runtimePackageHash()),Map.entry("language","JAVA"),Map.entry("updatedAt",r.updatedAt())));
+                Map.entry("dependencyHash",r.dependencies()==null?"":DependencyReceipt.observationId(r.dependencies().receiptHash())),Map.entry("dependencyCount",r.dependencies()==null?0:r.dependencies().nodes().size()),Map.entry("consumerCount",MineAgentRuntimeServices.javaExtensions(server).consumers(r.id()).size()),Map.entry("packageHash",r.runtimePackageHash()),Map.entry("language","JAVA"),Map.entry("updatedAt",r.updatedAt())));
         for(var r:drafts.scriptPublications().forPackage(viewer.getUUID(),d.packageId())){
             var status=StudioScriptRuntime.status(server,r.id());all.add(Map.ofEntries(
                     Map.entry("id",r.id()),Map.entry("draft",r.draft()),Map.entry("revision",r.revision()),Map.entry("state",r.state()),Map.entry("error",r.error()),Map.entry("uncertain",r.uncertain()),
                     Map.entry("loaded",status.get("loaded")),Map.entry("suspended",status.get("suspended")),Map.entry("metadataPending",status.get("metadataPending")),
                     Map.entry("packageHash",r.packageHash()),Map.entry("packageRevision",r.packageRevision()),Map.entry("sourceHash",r.sourceHash()),
-                    Map.entry("dependencyHash",r.dependencies()==null?"":r.dependencies().receiptHash()),Map.entry("dependencyCount",r.dependencies()==null?0:r.dependencies().nodes().size()),Map.entry("consumerCount",StudioScriptRuntime.consumers(server,r.id()).size()),Map.entry("language","RHINO"),Map.entry("legacyStop",r.legacyStop()),Map.entry("source",r.source()),Map.entry("line",r.line()),Map.entry("column",r.column()),Map.entry("updatedAt",r.updatedAt())));
+                    Map.entry("dependencyHash",r.dependencies()==null?"":DependencyReceipt.observationId(r.dependencies().receiptHash())),Map.entry("dependencyCount",r.dependencies()==null?0:r.dependencies().nodes().size()),Map.entry("consumerCount",StudioScriptRuntime.consumers(server,r.id()).size()),Map.entry("language","RHINO"),Map.entry("legacyStop",r.legacyStop()),Map.entry("source",r.source()),Map.entry("line",r.line()),Map.entry("column",r.column()),Map.entry("updatedAt",r.updatedAt())));
         }
         return all.stream().sorted(Comparator.<Map<String,Object>>comparingLong(r->((Number)r.get("updatedAt")).longValue()).reversed().thenComparing(r->r.get("id").toString())).toList();
     }
@@ -187,7 +187,7 @@ public final class ServerJavaStudio {
                 Map.entry("nextOffset",offset+page.size()),
                 Map.entry("more",offset+page.size()<required.size()),
                 Map.entry("resolution",resolution),
-                Map.entry("graphHash",graphHash),
+                Map.entry("graphHash",DependencyReceipt.observationId(graphHash)),
                 Map.entry("java",java),
                 Map.entry("targetSide",client?"CLIENT":"SERVER"),
                 Map.entry("supported",true));

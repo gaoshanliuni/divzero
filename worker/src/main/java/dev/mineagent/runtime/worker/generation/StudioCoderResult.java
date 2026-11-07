@@ -29,6 +29,8 @@ public record StudioCoderResult(StudioCoderJournal.Attempt attempt,String source
         else if(input.scriptDependencies()!=null){
             var data=JSON.readTree(dependencyApi);if(!input.shareScriptDependencySources()||!data.path("graphHash").asText().equals(input.dependencyHash())||!data.path("kind").asText().equals("VERIFIED_RHINO_DEPENDENCY_SOURCES_NOT_LIVE_EXPORTS"))throw new IllegalStateException("STUDIO_CODER_SCRIPT_CONTEXT_CHANGED");
         }else if(!dependencyApi.isEmpty())throw new IllegalStateException("STUDIO_CODER_DEPENDENCY_API_CHANGED");
+        // Keep exact validation metadata in the archive, not duplicated inside the model's API/source context.
+        if(!dependencyApi.isEmpty()){var projection=(com.fasterxml.jackson.databind.node.ObjectNode)JSON.readTree(dependencyApi);projection.remove("graphHash");dependencyApi=JSON.writeValueAsString(projection);}
         String contract=input.javaSource()?"""
                 Java 25，主文件 public 顶层类实现 dev.mineagent.runtime.scripting.javaext.RuntimeExtension：
                 Object start(java.util.Map<String,Object> bindings) throws Exception;

@@ -8,6 +8,7 @@ public final class DependencyReceipt {
     private static final String PREFIX="dependencies-v2:";
     public static final int MAX_CHARACTERS=512*1024;
     private static final ObjectMapper JSON=new ObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+    private static final dev.mineagent.runtime.core.content.ObservationTokens OBSERVATIONS=new dev.mineagent.runtime.core.content.ObservationTokens(256,16*1024*1024);
     private DependencyReceipt(){}
 
     public static String encode(Object graph){
@@ -23,4 +24,9 @@ public final class DependencyReceipt {
         return value!=null&&(value.matches("[a-f0-9]{64}")||value.startsWith(PREFIX)&&value.length()<=MAX_CHARACTERS);
     }
     public static boolean optional(String value){return "".equals(value)||readable(value);}
+    /** Compact display/observation reference only. Compilation still compares the complete receipt. */
+    public static String observationId(String value){
+        if(value==null||value.isEmpty())return "";if(!readable(value))throw new IllegalArgumentException("DEPENDENCY_RECEIPT_METADATA");
+        return value.startsWith(PREFIX)?OBSERVATIONS.token(value):value;
+    }
 }
