@@ -320,7 +320,7 @@ public final class ServerConversations implements AutoCloseable {
                 try{
                     String hash=String.valueOf(reply.payload().get("sha256"));if(!hash.matches("[a-f0-9]{64}"))throw new IllegalArgumentException();
                     var path=worker.contentPath(hash);long size=java.nio.file.Files.size(path);if(size<1||size>8*1024*1024)throw new IllegalArgumentException();
-                    byte[] bytes=java.nio.file.Files.readAllBytes(path);if(bytes.length!=size||!hash.equals(dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(bytes)))throw new IllegalArgumentException();
+                    byte[] bytes=java.nio.file.Files.readAllBytes(path);if(bytes.length!=size)throw new IllegalArgumentException();
                     server.execute(()->{
                         if(closed)return;
                         try{

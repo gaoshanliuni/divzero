@@ -76,6 +76,7 @@ public final class ConversationAgentTools {
         var s=p.level().getServer();try{
             if(!s.isSameThread()||!current(p,permit)||!ConversationTools.NAMES.contains(tool)||arguments.length()>ConversationTools.maxArgumentCharacters(tool))throw new IllegalArgumentException("AGENT_TOOL_CONTEXT");
             JsonNode args=ToolArguments.parse(tool,arguments);
+            if(tool.equals("read_web_page"))return ServerResourceTools.execute(p,agent,operation,"read_resource",args,permit);
             if(Set.of("search_resources","inspect_resources","read_resource","download_resource","preview_resource","inspect_image","compare_images","transcribe_resource","capture_game_view").contains(tool))return ServerResourceTools.execute(p,agent,operation,tool,args,permit);
             if(tool.equals("inspect_model_capabilities"))return ServerModelCapabilities.inspect(p,agent,args,permit);
             if(tool.equals("inspect_owned_agents")){keys(args,"query","offset");return CompletableFuture.completedFuture(ConversationAgentScope.list(p,agent,args));}

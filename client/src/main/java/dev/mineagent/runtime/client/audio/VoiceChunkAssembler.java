@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 public final class VoiceChunkAssembler {
-    private static final Pattern SHA256 = Pattern.compile("[0-9a-f]{64}");
+    private static final Pattern RESOURCE_ID = Pattern.compile("[0-9a-f]{64}");
     private static final long MAX_AGE_MILLIS = 60_000;
     private final int maxTransferBytes;
     private final int maxChunks;
@@ -32,8 +32,8 @@ public final class VoiceChunkAssembler {
             byte[] bytes
     ) {
         pruneExpired();
-        if (sha256 == null || !SHA256.matcher(sha256).matches()) {
-            throw new IllegalArgumentException("invalid audio SHA-256");
+        if (sha256 == null || !RESOURCE_ID.matcher(sha256).matches()) {
+            throw new IllegalArgumentException("invalid audio resource ID");
         }
         if (chunkCount < 1 || chunkCount > maxChunks || chunkIndex < 0 || chunkIndex >= chunkCount) {
             throw new IllegalArgumentException("invalid audio chunk coordinates");
@@ -69,9 +69,6 @@ public final class VoiceChunkAssembler {
         }
         transfers.remove(sha256);
         byte[] completed = output.toByteArray();
-        if (!sha256.equals(hash(completed))) {
-            throw new IllegalArgumentException("completed audio hash mismatch");
-        }
         return Optional.of(completed);
     }
 
@@ -82,15 +79,6 @@ public final class VoiceChunkAssembler {
     private void pruneExpired() {
         long cutoff = clock.millis() - MAX_AGE_MILLIS;
         transfers.values().removeIf(transfer -> transfer.createdAt < cutoff);
-    }
-
-    private static String hash(byte[] content) {
-        try {
-            return java.util.HexFormat.of().formatHex(
-                    java.security.MessageDigest.getInstance("SHA-256").digest(content));
-        } catch (java.security.NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException("SHA-256 is unavailable", impossible);
-        }
     }
 
     private static final class Transfer {

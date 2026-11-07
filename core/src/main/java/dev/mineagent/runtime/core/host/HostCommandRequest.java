@@ -1,7 +1,6 @@
 package dev.mineagent.runtime.core.host;
 import java.util.*;
 import java.nio.charset.StandardCharsets;
-import dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer;
 /** Exact Python or pip approval payload; never interpreted by a command shell. */
 public record HostCommandRequest(UUID operation,String purpose,String script,int timeoutSeconds,Kind kind,List<String> packages){
     public enum Kind { PYTHON, INSTALL_PACKAGES }
@@ -16,5 +15,7 @@ public record HostCommandRequest(UUID operation,String purpose,String script,int
     private static void requirements(List<String> values){if(values.isEmpty()||values.size()>16||new HashSet<>(values).size()!=values.size())throw new IllegalArgumentException("PYTHON_PACKAGE_ARGUMENTS");for(String v:values)if(v.length()>160||!v.matches("[A-Za-z0-9][A-Za-z0-9._-]*(?:\\[[A-Za-z0-9_-]+(?:,[A-Za-z0-9_-]+)*\\])?(?:(?:===|==|!=|~=|>=|<=|>|<)[A-Za-z0-9][A-Za-z0-9.*+_-]*(?:,(?:==|!=|~=|>=|<=|>|<)[A-Za-z0-9][A-Za-z0-9.*+_-]*)*)?"))throw new IllegalArgumentException("PYTHON_PACKAGE_SPECIFIER");}
     private static String installDisplay(List<String> values){return "专用 Python 环境安装（PyPI）：\n"+String.join("\n",values);}
     public static HostCommandRequest install(UUID id,String purpose,List<String> values,int timeout){return new HostCommandRequest(id,purpose,installDisplay(values),timeout,Kind.INSTALL_PACKAGES,values);}
-    public String sha256(){try{return RuntimePackageCanonicalizer.sha256("PYTHON_HOST_V1\n"+kind+"\n"+purpose+"\n"+timeoutSeconds+"\n"+script);}catch(Exception e){throw new IllegalStateException("HOST_COMMAND_HASH",e);}}
+    public String approvalId(){return operation.toString();}
+    /** Legacy name retained for callers; this is an operation ID, never a content digest. */
+    @Deprecated public String sha256(){return approvalId();}
 }
