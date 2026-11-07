@@ -28,6 +28,7 @@ public final class ConstructionLedger implements AutoCloseable {
             s.execute("CREATE TABLE IF NOT EXISTS document_ids(kind TEXT NOT NULL,revision INTEGER NOT NULL,resource_id TEXT NOT NULL UNIQUE,PRIMARY KEY(kind,revision))");
             s.execute("CREATE TABLE IF NOT EXISTS native_execution(id INTEGER PRIMARY KEY CHECK(id=1),session TEXT NOT NULL,revision INTEGER NOT NULL)");
             s.execute("CREATE TABLE IF NOT EXISTS native_receipts(operation TEXT PRIMARY KEY,session TEXT NOT NULL,sequence INTEGER NOT NULL,phase TEXT NOT NULL,detail TEXT NOT NULL)");
+            s.execute("CREATE TABLE IF NOT EXISTS native_ordering(revision INTEGER PRIMARY KEY,format INTEGER NOT NULL)");
             s.execute("CREATE TABLE IF NOT EXISTS component_bounds(revision INTEGER NOT NULL,component TEXT NOT NULL,min_x INTEGER,max_x INTEGER,min_y INTEGER,max_y INTEGER,min_z INTEGER,max_z INTEGER,PRIMARY KEY(revision,component))");
             s.execute("CREATE TABLE IF NOT EXISTS targets(seq INTEGER PRIMARY KEY,revision INTEGER NOT NULL,component TEXT NOT NULL,x INTEGER NOT NULL,y INTEGER NOT NULL,z INTEGER NOT NULL,material TEXT NOT NULL,orientation TEXT NOT NULL,expected TEXT,baseline TEXT,before_state TEXT,after_state TEXT,present INTEGER NOT NULL DEFAULT 1,changed INTEGER NOT NULL DEFAULT 0,written INTEGER NOT NULL DEFAULT 0,UNIQUE(revision,x,y,z))");
             s.execute("CREATE INDEX IF NOT EXISTS targets_pages ON targets(revision,seq)");
@@ -110,7 +111,39 @@ public final class ConstructionLedger implements AutoCloseable {
         else if(h.status().equals("PAUSED"))h=resume();
         else if(Set.of("PARTIAL","CONFLICT").contains(h.status())&&h.mode().equals("APPLY")&&h.phase().equals("WRITE"))h=progress("APPLYING","WRITE",h.cursor(),h.mutationTick());
         else if(!Set.of("UNVERIFIED","VERIFIED").contains(h.status())&&!(nativeOwned(session,revision)&&Set.of("PREPARING","APPLYING").contains(h.status())))throw new IllegalStateException("BUILDING_NATIVE_BUSY");
-        try(var q=db.prepareStatement("INSERT INTO native_execution VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET session=excluded.session,revision=excluded.revision")){q.setString(1,session.toString());q.setLong(2,revision);q.executeUpdate();}return h;
+        try(var q=db.prepareStatement("INSERT INTO native_execution VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET session=excluded.session,revision=excluded.revision")){q.setString(1,session.toString());q.setLong(2,revision);q.executeUpdate();}
+        orderUnstartedNativeTargets(revision);return h;
+    }
+    /** Repair old alphabetic target schedules only before any world effect or referenced native operation exists. */
+    private void orderUnstartedNativeTargets(long revision)throws Exception{
+        var h=head();if(!h.phase().equals("PREFLIGHT")||h.cursor()!=0||h.mutationTick()!=0||h.activeRevision()!=0)return;
+        try(var q=db.prepareStatement("SELECT 1 FROM native_ordering WHERE revision=?")){q.setLong(1,revision);try(var rows=q.executeQuery()){if(rows.next())return;}}
+        try(var q=db.prepareStatement("SELECT 1 FROM targets t WHERE t.revision=? AND (t.written=1 OR EXISTS(SELECT 1 FROM native_receipts n WHERE n.sequence=t.seq)) LIMIT 1")){
+            q.setLong(1,revision);try(var rows=q.executeQuery()){if(rows.next())throw new IllegalStateException("BUILDING_NATIVE_ORDER_REQUIRES_RECONCILIATION");}
+        }
+        var order=design(revision).order();var positions=new HashMap<String,Integer>();for(int i=0;i<order.size();i++)positions.put(order.get(i),i);
+        boolean ordered=true;int previousRank=-1;long previousLast=-1;
+        try(var q=db.prepareStatement("SELECT component,MIN(seq),MAX(seq) FROM targets WHERE revision=? GROUP BY component ORDER BY MIN(seq)")){
+            q.setLong(1,revision);try(var rows=q.executeQuery()){while(rows.next()){int current=positions.getOrDefault(rows.getString(1),order.size());if(current<previousRank||rows.getLong(2)<=previousLast)ordered=false;previousRank=current;previousLast=rows.getLong(3);}}
+        }
+        if(ordered){try(var mark=db.prepareStatement("INSERT INTO native_ordering VALUES(?,1)")){mark.setLong(1,revision);mark.executeUpdate();}return;}
+        var rank=new StringBuilder("CASE component");for(int i=0;i<order.size();i++)rank.append(" WHEN ? THEN ").append(i);rank.append(" ELSE ").append(order.size()).append(" END");
+        db.setAutoCommit(false);
+        try{
+            long base,count;try(var statement=db.createStatement();var rows=statement.executeQuery("SELECT COALESCE(MAX(seq),0) FROM targets")){rows.next();base=rows.getLong(1);}
+            try(var statement=db.createStatement()){
+                statement.execute("DROP TABLE IF EXISTS temp.native_order_rows");
+                statement.execute("CREATE TEMP TABLE native_order_rows(ordinal INTEGER PRIMARY KEY,previous_seq INTEGER UNIQUE NOT NULL)");
+            }
+            try(var insert=db.prepareStatement("INSERT INTO temp.native_order_rows(previous_seq) SELECT seq FROM targets WHERE revision=? ORDER BY "+rank+",seq")){
+                insert.setLong(1,revision);for(int i=0;i<order.size();i++)insert.setString(i+2,order.get(i));insert.executeUpdate();
+            }
+            try(var statement=db.createStatement();var rows=statement.executeQuery("SELECT COUNT(*) FROM temp.native_order_rows")){rows.next();count=rows.getLong(1);}Math.addExact(base,count);
+            try(var update=db.prepareStatement("UPDATE targets SET seq=?+(SELECT ordinal FROM temp.native_order_rows WHERE previous_seq=targets.seq) WHERE revision=?")){update.setLong(1,base);update.setLong(2,revision);update.executeUpdate();}
+            try(var mark=db.prepareStatement("INSERT INTO native_ordering VALUES(?,1)")){mark.setLong(1,revision);mark.executeUpdate();}
+            db.commit();
+        }catch(Exception failure){db.rollback();throw failure;}
+        finally{db.setAutoCommit(true);try(var statement=db.createStatement()){statement.execute("DROP TABLE IF EXISTS temp.native_order_rows");}}
     }
     public synchronized boolean nativeOwned(UUID session,long revision)throws SQLException{try(var q=db.prepareStatement("SELECT session,revision FROM native_execution WHERE id=1");var row=q.executeQuery()){return row.next()&&row.getString(1).equals(session.toString())&&row.getLong(2)==revision;}}
     public synchronized void nativePrepared(UUID session,UUID operation,long sequence,String detail)throws Exception{

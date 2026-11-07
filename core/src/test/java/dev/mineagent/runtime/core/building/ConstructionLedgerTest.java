@@ -7,6 +7,26 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConstructionLedgerTest {
+    @Test void oldAlphabeticScheduleCanBeReorderedOnlyBeforeWorldWritesAndPreservesTargets()throws Exception{
+        Path file=directory.resolve("native-order.db");UUID session=UUID.randomUUID();
+        String source="""
+            {"id":"order","name":"Storage","dimension":"minecraft:overworld","origin":[0,80,0],"components":[
+             {"id":"z_floor","parts":[{"kind":"box","min":[0,0,0],"max":[0,0,0],"material":"minecraft:stone"}]},
+             {"id":"a_chest","parts":[{"kind":"box","min":[0,1,0],"max":[0,1,0],"material":"minecraft:chest"}]}]}
+            """;
+        try(var ledger=new ConstructionLedger(file)){
+            ledger.plan(0,source,()->true);String footprint=ledger.footprintHash(1);
+            // Persist the same targets in the former alphabetic row order, as an existing save would contain them.
+            try(var db=java.sql.DriverManager.getConnection("jdbc:sqlite:"+file.toAbsolutePath());var sql=db.createStatement()){sql.executeUpdate("UPDATE targets SET seq=-seq");sql.executeUpdate("UPDATE targets SET seq=3+seq");}
+            assertEquals("a_chest",ledger.page(1,0,false).getFirst().component());
+            ledger.claimNative(session,1);var rows=ledger.page(1,0,false);
+            assertEquals(List.of("z_floor","a_chest"),rows.stream().map(ConstructionLedger.Cell::component).toList());
+            assertEquals(List.of(80,81),rows.stream().map(ConstructionLedger.Cell::y).toList());assertEquals(2,ledger.count(1));assertEquals(footprint,ledger.footprintHash(1));
+            var ids=rows.stream().map(ConstructionLedger.Cell::sequence).toList();ledger.pause();ledger.claimNative(session,1);assertEquals(ids,ledger.page(1,0,false).stream().map(ConstructionLedger.Cell::sequence).toList());
+            sampled(ledger,1);ledger.progress("APPLYING","WRITE",0,0);ledger.nativePrepared(session,UUID.randomUUID(),rows.getFirst().sequence(),"{}");ledger.reserve(0);
+            assertThrows(IllegalStateException.class,()->ledger.claimNative(session,1));assertEquals(ids,ledger.page(1,0,false).stream().map(ConstructionLedger.Cell::sequence).toList());
+        }
+    }
     @TempDir Path directory;
     private static final String SOURCE="""
         {"id":"house","name":"House","dimension":"minecraft:overworld","origin":[0,80,0],"components":[

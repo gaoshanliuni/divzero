@@ -5,6 +5,15 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BuildingDesignTest {
+    @Test void independentComponentsFollowDeclarationOrderWhileDependenciesStillWin(){
+        String source="""
+            {"id":"ordered","name":"Ordered","dimension":"minecraft:overworld","origin":[0,80,0],"components":[
+             {"id":"z_floor","parts":[{"kind":"box","min":[0,0,0],"max":[0,0,0],"material":"minecraft:stone"}]},
+             {"id":"a_chest","parts":[{"kind":"box","min":[0,1,0],"max":[0,1,0],"material":"minecraft:chest"}]}]}
+            """;
+        assertEquals(List.of("z_floor","a_chest"),BuildingDesign.parse(source).order());
+        assertEquals(List.of("a_chest","z_floor"),BuildingDesign.parse(source.replace("\"id\":\"z_floor\",", "\"id\":\"z_floor\",\"depends_on\":[\"a_chest\"],")).order());
+    }
     @org.junit.jupiter.api.Test void publishedExampleAndFieldDiagnosticsAreUsable(){
         var sample=BuildingDesign.parse(BuildingDesign.MINIMAL_EXAMPLE);
         org.junit.jupiter.api.Assertions.assertEquals(java.util.Set.of("floor"),sample.componentIds());

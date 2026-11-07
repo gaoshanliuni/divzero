@@ -1234,8 +1234,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/BuildingDesign.java",
-      "sha256": "be38e050f0e097d34aa200f5d6aa99eb3ea9013e9f3d4f9fd28d122e6f1b42a5",
-      "bytes": 14593
+      "resourceId": "125277c9-bced-46f6-b3c2-96743a7cee07",
+      "bytes": 14753
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/BuildingDesignStore.java",
@@ -1259,8 +1259,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionLedger.java",
-      "resourceId": "c1eeec65-45e5-4dff-823d-596c4dd7ddd7",
-      "bytes": 24332
+      "resourceId": "94ce24dc-0930-41a5-b954-eb4013d98031",
+      "bytes": 27961
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionVerification.java",
@@ -3194,8 +3194,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/BuildingDesignTest.java",
-      "sha256": "d5562aa536829cd0681991a04139dd7b1fc82291fb42fb9355df98c3fe040429",
-      "bytes": 5469
+      "resourceId": "1b27a25e-0da7-4636-ad4c-335b98227442",
+      "bytes": 6205
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/BuildingFormatsTest.java",
@@ -3209,8 +3209,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/ConstructionLedgerTest.java",
-      "resourceId": "a2b69d8b-c023-47cc-85ee-54425c2e1cc1",
-      "bytes": 9777
+      "resourceId": "eb47b727-c38f-4a1f-b3fa-f4eb6db2375d",
+      "bytes": 11891
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeClassReferenceTest.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "2d37d93c5eccd8fcfa1257ecc577cefa763a4f27"
+  "sourceCommit": "249c3c2539f52136ea71bd49ca5eebfd25e761d0"
 }

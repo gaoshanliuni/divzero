@@ -15,6 +15,7 @@ public final class BuildingDesign {
         No root schema/version/type/metadata fields. No checks nested inside a component.
         Every component is {id, parts:[geometry part,...]} OR {id,template:"templateId"}.
         Optional component fields: name, material, transforms:[geometry transform,...], depends_on:[componentId,...], parent:componentId.
+        Dependencies are built first. Independent components follow their declaration order in the components array, not their identifier spelling.
         Geometry parts use inspect_world_geometry's exact format, for example
         {"kind":"box","min":[0,0,0],"max":[4,0,4],"mode":"solid","material":"minecraft:stone"}.
         All component/check coordinates are RELATIVE to origin. Materials are full block-state strings.
@@ -50,7 +51,7 @@ public final class BuildingDesign {
     public JsonNode component(String id){var component=components.get(id);if(component==null)throw bad("COMPONENT_NOT_FOUND");return component.deepCopy();}
     public JsonNode checks(){return document.path("checks").deepCopy();}
     public List<Integer> origin(){return List.of(document.path("origin").get(0).intValue(),document.path("origin").get(1).intValue(),document.path("origin").get(2).intValue());}
-    public List<String> order(){var order=new ArrayList<String>();var seen=new HashSet<String>();for(String id:components.keySet().stream().sorted().toList())visit(id,new HashSet<>(),seen,order);return List.copyOf(order);}
+    public List<String> order(){var order=new ArrayList<String>();var seen=new HashSet<String>();for(var component:document.path("components"))visit(component.path("id").asText(),new HashSet<>(),seen,order);return List.copyOf(order);}
     public String componentPath(String id){for(int i=0;i<document.path("components").size();i++)if(document.path("components").get(i).path("id").asText().equals(id))return "/components/"+i;throw bad("COMPONENT_NOT_FOUND");}
     public String geometry(String id){
         JsonNode c=component(id);var out=JSON.createObjectNode();out.set("origin",document.get("origin").deepCopy());var parts=out.putArray("parts");
