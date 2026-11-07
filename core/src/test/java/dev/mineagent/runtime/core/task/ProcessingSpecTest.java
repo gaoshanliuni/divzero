@@ -7,6 +7,13 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProcessingSpecTest {
+    @Test void recipeLookupDoesNotExpandExactOutputIntoEveryConsumer() {
+        var ids=List.of("minecraft:oak_planks","minecraft:chest","minecraft:trapped_chest","other:chest");
+        assertEquals(Set.of("minecraft:oak_planks"),RecipeQuery.exactIds(ids,"oak_planks"));
+        assertEquals(Set.of("minecraft:chest"),RecipeQuery.exactIds(ids,"minecraft:chest"));
+        assertEquals(Set.of("minecraft:chest","other:chest"),RecipeQuery.exactIds(ids,"chest"));
+        assertTrue(RecipeQuery.exactIds(ids,"plank").isEmpty());assertTrue(RecipeQuery.exactIds(ids,"").isEmpty());
+    }
     private final ObjectMapper json = new ObjectMapper();
     private com.fasterxml.jackson.databind.node.ObjectNode intent() throws Exception {
         return (com.fasterxml.jackson.databind.node.ObjectNode)json.readTree("""

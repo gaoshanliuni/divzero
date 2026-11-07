@@ -1569,8 +1569,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "82b0ad5b-5ee9-483d-b0cc-c46817dcf4d3",
-      "bytes": 78759
+      "resourceId": "8b22a931-4d14-4e22-82fb-55af63f5cab2",
+      "bytes": 78997
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CooperationTools.java",
@@ -2853,6 +2853,11 @@
       "bytes": 1040
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/RecipeQuery.java",
+      "resourceId": "4d0180cf-00d8-4b4d-af9c-8c46d860075f",
+      "bytes": 789
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/ReusablePathPlan.java",
       "sha256": "b6a3ce8ed875f938e92710964e5a91df324e24d5e2827e09d8c03b4c059e0644",
       "bytes": 1445
@@ -3874,8 +3879,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/ProcessingSpecTest.java",
-      "resourceId": "b23838aa-fd77-4cae-8664-c07800e7dacf",
-      "bytes": 4452
+      "resourceId": "c1d8563c-4e6b-4aec-a868-6bc5abb847cb",
+      "bytes": 5037
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/PvpIntentTest.java",
@@ -7279,8 +7284,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeRecipeCatalog.java",
-      "resourceId": "faf4e4a9-a860-412f-b8f3-c48b9596749a",
-      "bytes": 4563
+      "resourceId": "b4749e6d-efd5-4363-aa12-a42a3dbdf375",
+      "bytes": 5371
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeScheduleRuntime.java",
@@ -7484,8 +7489,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "cbad2d76-3000-4dec-b12c-8a1ce7a4bde3",
-      "bytes": 80332
+      "resourceId": "b3747750-66b8-4287-841b-f2ea609434bf",
+      "bytes": 80340
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -9650,5 +9655,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "dfcedccb423fdbc6ad28d51308cd6e36a8180f3c"
+  "sourceCommit": "238cef830fb79adcb0a3f6016b8e22aac64a1b9d"
 }

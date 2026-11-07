@@ -33,29 +33,36 @@ public final class NativeRecipeCatalog {
         String query = args.path("query").asText("").toLowerCase(Locale.ROOT);
         String kind = args.path("kind").asText("all");
         int offset = args.path("offset").asInt(0);
-        if (query.length() > 128 || offset < 0 || !Set.of("all", "crafting", "smelting", "blasting", "smoking").contains(kind))
+        if (query.length() > 128 || offset < 0 || !Set.of("auto","any").contains(args.path("match").asText("auto")) || !Set.of("all", "crafting", "smelting", "blasting", "smoking").contains(kind))
             throw new IllegalArgumentException("inspect_recipes: invalid query, kind or offset");
+        var catalog=actor.level().recipeAccess().getRecipes().stream().sorted(Comparator.comparing(r -> r.id().identifier().toString())).toList();
+        boolean broad=args.path("match").asText("auto").equals("any");
+        var exact=broad?Set.<String>of():dev.mineagent.runtime.core.task.RecipeQuery.exactIds(catalog.stream().map(r->r.id().identifier().toString()).toList(),query);
         var rows = new ArrayList<Map<String, Object>>(); int found = 0;
-        for (var holder : actor.level().recipeAccess().getRecipes().stream().sorted(Comparator.comparing(r -> r.id().identifier().toString())).toList()) {
+        for (var holder : catalog) {
             var recipe = holder.value();
             String type = recipe instanceof CraftingRecipe ? "crafting" : recipe.getType() == RecipeType.SMELTING ? "smelting"
                     : recipe.getType() == RecipeType.BLASTING ? "blasting" : recipe.getType() == RecipeType.SMOKING ? "smoking" : "";
             if (type.isEmpty() || !kind.equals("all") && !kind.equals(type)) continue;
+            if(!exact.isEmpty()&&!exact.contains(holder.id().identifier().toString()))continue;
             String source = source(actor, holder);
-            if (!source.toLowerCase(Locale.ROOT).contains(query)) continue;
+            if (exact.isEmpty()&&!source.toLowerCase(Locale.ROOT).contains(query)) continue;
             if (found++ < offset || rows.size() >= 48) continue;
             var row = new LinkedHashMap<String, Object>();
             row.put("recipe", holder.id().identifier().toString()); row.put("recipe_reference", references(actor).token(source));
             row.put("type", type); row.put("station", switch(type) { case "crafting" -> "minecraft:crafting_table"; case "blasting" -> "minecraft:blast_furnace"; case "smoking" -> "minecraft:smoker"; default -> "minecraft:furnace"; });
             row.put("definition", JSON.readTree(source.substring(source.indexOf('\n') + 1)));
-            row.put("ingredients", recipe.placementInfo().ingredients().stream().map(i -> i.items().map(h -> Map.of(
-                    "item", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(h.value()).toString(),
-                    "available", actor.getInventory().countItem(h.value()))).toList()).toList());
+            var ingredients=new LinkedHashMap<List<Map<String,Object>>,Integer>();
+            for(var ingredient:recipe.placementInfo().ingredients()){
+                List<Map<String,Object>> options=ingredient.items().map(h -> Map.<String,Object>of("item",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(h.value()).toString(),"available",actor.getInventory().countItem(h.value()))).toList();
+                ingredients.merge(options,1,Integer::sum);
+            }
+            row.put("ingredients",ingredients.entrySet().stream().map(e->Map.of("slots",e.getValue(),"alternatives",e.getKey())).toList());
             if (recipe instanceof AbstractCookingRecipe cooking) row.put("cookingTicks", cooking.cookingTime());
             row.put("special", recipe.isSpecial()); rows.add(row);
         }
         return Map.of("status", "OBSERVED", "recipes", rows, "total", found, "nextOffset", offset + rows.size() < found ? offset + rows.size() : -1,
-                "actorId", actor.getUUID(), "source", "CURRENT_SERVER_RECIPE_REGISTRY");
+                "actorId", actor.getUUID(), "source", "CURRENT_SERVER_RECIPE_REGISTRY", "matchMode", exact.isEmpty()?"CONTENT_SEARCH":"EXACT_RECIPE_ID");
     }
     private NativeRecipeCatalog() {}
 }
