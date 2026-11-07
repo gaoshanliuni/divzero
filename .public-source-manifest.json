@@ -6764,8 +6764,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
-      "resourceId": "14d1a9ec-e304-4df3-ba3e-97c4746eaa64",
-      "bytes": 16803
+      "resourceId": "0b9734d8-f10d-45d4-a2fd-46bc7aebd29d",
+      "bytes": 17297
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -6934,8 +6934,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "resourceId": "2509c913-2da8-49cb-a094-d9ac8cbc7256",
-      "bytes": 61102
+      "resourceId": "bfd5d58d-7c1a-4332-ad46-fd396d5f0766",
+      "bytes": 61354
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
@@ -9310,5 +9310,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "3eb08d1d765fc295e2d4c76db1405d2ec86fd07a"
+  "sourceCommit": "a92bd47999488c823e18eecfe1ebb3e3eefd542a"
 }

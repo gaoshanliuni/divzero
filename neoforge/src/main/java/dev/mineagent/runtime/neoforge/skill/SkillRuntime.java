@@ -54,6 +54,7 @@ public final class SkillRuntime {
     }
     Map<String,Object> cooperativeDetails(UUID operation){var w=work.get(operation);return w==null||w.construct==null?Map.of():w.construct.view();}
     boolean cooperativeIdle(UUID agent){return work.values().stream().noneMatch(w->w.session.agent().equals(agent)&&!w.session.terminal()&&w.session.spec().kind()!=SkillSpec.Kind.IDLE);}
+    boolean cooperativeAvailable(UUID agent,Set<UUID> ownOperations){return work.values().stream().noneMatch(w->w.session.agent().equals(agent)&&!w.session.terminal()&&w.session.spec().kind()!=SkillSpec.Kind.IDLE&&!ownOperations.contains(w.token()));}
     CompletableFuture<Void> controlCooperative(ServerPlayer owner,UUID agent,UUID operation,String action,BooleanSupplier authority){
         return cooperativeSnapshot(owner,agent,operation).thenComposeAsync(snapshot->{if(snapshot==null||Set.of(State.COMPLETED,State.CANCELLED,State.FAILED).contains(snapshot.state()))return CompletableFuture.completedFuture(null);var w=work.get(operation);if(w==null)throw new IllegalStateException("COOP_CHILD_NOT_ACTIVE");w.externalAuthority=authority;w.session.control(w.session.revision(),action);w.release();if(action.equals("resume"))try{w.bind(owner);}catch(Exception error){throw new CompletionException(error);}persist(w);return w.saved;},server::execute);
     }
