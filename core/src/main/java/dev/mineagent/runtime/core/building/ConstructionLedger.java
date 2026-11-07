@@ -26,6 +26,8 @@ public final class ConstructionLedger implements AutoCloseable {
             s.execute("CREATE TABLE IF NOT EXISTS designs(revision INTEGER PRIMARY KEY,base_revision INTEGER NOT NULL,source TEXT NOT NULL)");
             s.execute("CREATE TABLE IF NOT EXISTS footprint_ids(revision INTEGER PRIMARY KEY,resource_id TEXT NOT NULL UNIQUE)");
             s.execute("CREATE TABLE IF NOT EXISTS document_ids(kind TEXT NOT NULL,revision INTEGER NOT NULL,resource_id TEXT NOT NULL UNIQUE,PRIMARY KEY(kind,revision))");
+            s.execute("CREATE TABLE IF NOT EXISTS native_execution(id INTEGER PRIMARY KEY CHECK(id=1),session TEXT NOT NULL,revision INTEGER NOT NULL)");
+            s.execute("CREATE TABLE IF NOT EXISTS native_receipts(operation TEXT PRIMARY KEY,session TEXT NOT NULL,sequence INTEGER NOT NULL,phase TEXT NOT NULL,detail TEXT NOT NULL)");
             s.execute("CREATE TABLE IF NOT EXISTS component_bounds(revision INTEGER NOT NULL,component TEXT NOT NULL,min_x INTEGER,max_x INTEGER,min_y INTEGER,max_y INTEGER,min_z INTEGER,max_z INTEGER,PRIMARY KEY(revision,component))");
             s.execute("CREATE TABLE IF NOT EXISTS targets(seq INTEGER PRIMARY KEY,revision INTEGER NOT NULL,component TEXT NOT NULL,x INTEGER NOT NULL,y INTEGER NOT NULL,z INTEGER NOT NULL,material TEXT NOT NULL,orientation TEXT NOT NULL,expected TEXT,baseline TEXT,before_state TEXT,after_state TEXT,present INTEGER NOT NULL DEFAULT 1,changed INTEGER NOT NULL DEFAULT 0,written INTEGER NOT NULL DEFAULT 0,UNIQUE(revision,x,y,z))");
             s.execute("CREATE INDEX IF NOT EXISTS targets_pages ON targets(revision,seq)");
@@ -100,6 +102,25 @@ public final class ConstructionLedger implements AutoCloseable {
         String operation=UUID.randomUUID().toString();
         try(var p=db.prepareStatement("UPDATE control SET status='PREPARING',mode=?,phase='PREFLIGHT',cursor=0,operation=?,report='' WHERE id=1")){p.setString(1,mode);p.setString(2,operation);p.executeUpdate();}
         rotateDocument("report",revision);history("PREPARING","");return head();
+    }
+    public synchronized Head claimNative(UUID session,long revision)throws Exception{
+        var h=head();if(h.revision()!=revision)throw new IllegalStateException("BUILDING_STALE_REVISION");
+        if(h.phase().equals("RESERVED")||h.status().equals("UNKNOWN"))throw new IllegalStateException("BUILDING_NATIVE_RECONCILIATION_REQUIRED");
+        if(h.status().equals("PLANNED"))h=start(revision,"APPLY");
+        else if(h.status().equals("PAUSED"))h=resume();
+        else if(Set.of("PARTIAL","CONFLICT").contains(h.status())&&h.mode().equals("APPLY")&&h.phase().equals("WRITE"))h=progress("APPLYING","WRITE",h.cursor(),h.mutationTick());
+        else if(!Set.of("UNVERIFIED","VERIFIED").contains(h.status())&&!(nativeOwned(session,revision)&&Set.of("PREPARING","APPLYING").contains(h.status())))throw new IllegalStateException("BUILDING_NATIVE_BUSY");
+        try(var q=db.prepareStatement("INSERT INTO native_execution VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET session=excluded.session,revision=excluded.revision")){q.setString(1,session.toString());q.setLong(2,revision);q.executeUpdate();}return h;
+    }
+    public synchronized boolean nativeOwned(UUID session,long revision)throws SQLException{try(var q=db.prepareStatement("SELECT session,revision FROM native_execution WHERE id=1");var row=q.executeQuery()){return row.next()&&row.getString(1).equals(session.toString())&&row.getLong(2)==revision;}}
+    public synchronized void nativePrepared(UUID session,UUID operation,long sequence,String detail)throws Exception{
+        var h=head();if(!nativeOwned(session,h.revision())||!h.status().equals("APPLYING")||!h.phase().equals("WRITE"))throw new IllegalStateException("BUILDING_NATIVE_LEASE_CHANGED");
+        try(var q=db.prepareStatement("SELECT revision FROM targets WHERE seq=?")){q.setLong(1,sequence);try(var row=q.executeQuery()){if(!row.next()||row.getLong(1)!=h.revision())throw new IllegalArgumentException("BUILDING_NATIVE_CELL_CHANGED");}}
+        try(var q=db.prepareStatement("INSERT INTO native_receipts VALUES(?,?,?,'PREPARED',?)")){q.setString(1,operation.toString());q.setString(2,session.toString());q.setLong(3,sequence);q.setString(4,detail);q.executeUpdate();}
+    }
+    public synchronized void nativeObserved(UUID session,UUID operation,String phase,String detail)throws Exception{
+        if(!nativeOwned(session,head().revision()))throw new IllegalStateException("BUILDING_NATIVE_LEASE_CHANGED");
+        try(var q=db.prepareStatement("UPDATE native_receipts SET phase=?,detail=? WHERE operation=? AND session=? AND phase='PREPARED'")){q.setString(1,phase);q.setString(2,detail);q.setString(3,operation.toString());q.setString(4,session.toString());if(q.executeUpdate()!=1)throw new IllegalStateException("BUILDING_NATIVE_RECEIPT_CHANGED");}
     }
     public synchronized Head progress(String status,String phase,long cursor,long mutationTick)throws Exception {
         try(var p=db.prepareStatement("UPDATE control SET status=?,phase=?,cursor=?,mutation_tick=MAX(mutation_tick,?) WHERE id=1")){p.setString(1,status);p.setString(2,phase);p.setLong(3,cursor);p.setLong(4,mutationTick);p.executeUpdate();}return head();

@@ -45,5 +45,25 @@ class ConstructionLedgerTest {
         try(var ledger=new ConstructionLedger(directory.resolve("house.db"))){ledger.plan(0,SOURCE,()->true);ledger.start(1,"APPLY");sampled(ledger,1);finish(ledger,5);String operation=ledger.head().operation();ledger.verified(operation,1,true,"verified");assertEquals("VERIFIED",ledger.head().status());ledger.start(1,"UNDO");finish(ledger,8);assertEquals(0,ledger.head().activeRevision());ledger.start(1,"REDO");finish(ledger,11);assertEquals(1,ledger.head().activeRevision());assertThrows(IllegalStateException.class,()->ledger.verified(operation,1,true,"stale"));assertEquals("UNVERIFIED",ledger.head().status());assertEquals(3,ledger.history(0).size());}
     }
     @Test void failedRasterLeavesLastDesignIntact()throws Exception {try(var ledger=new ConstructionLedger(directory.resolve("house.db"))){ledger.plan(0,SOURCE,()->true);assertThrows(Exception.class,()->ledger.plan(1,SOURCE,()->false));assertEquals(1,ledger.head().revision());assertEquals(18,ledger.count(1));}}
+    @Test void nativeLeaseSurvivesSafeRestartButNeverReplaysReservedEffects()throws Exception {
+        var session=UUID.randomUUID();var operation=UUID.randomUUID();Path file=directory.resolve("native.db");long cell;
+        try(var ledger=new ConstructionLedger(file)){
+            ledger.plan(0,SOURCE,()->true);ledger.claimNative(session,1);sampled(ledger,1);cell=ledger.page(1,0,false).getFirst().sequence();
+            ledger.progress("APPLYING","WRITE",0,0);
+            assertThrows(IllegalStateException.class,()->ledger.claimNative(UUID.randomUUID(),1));
+            assertThrows(IllegalStateException.class,()->ledger.nativePrepared(UUID.randomUUID(),operation,cell,"not authorized"));
+        }
+        try(var ledger=new ConstructionLedger(file)){
+            assertEquals("WRITE",ledger.claimNative(session,1).phase());
+            ledger.nativePrepared(session,operation,cell,"durable before native use");ledger.reserve(0);
+        }
+        try(var ledger=new ConstructionLedger(file)){
+            assertThrows(IllegalStateException.class,()->ledger.claimNative(session,1));
+            assertThrows(IllegalStateException.class,()->ledger.claimNative(UUID.randomUUID(),1));
+            ledger.nativeObserved(session,operation,"VERIFIED_NATIVE_PLACEMENT","actual state and inventory");
+            assertThrows(IllegalStateException.class,()->ledger.nativeObserved(session,operation,"VERIFIED_NATIVE_PLACEMENT","duplicate"));
+            ledger.applied(List.of(cell),cell,30);assertEquals(cell,ledger.claimNative(session,1).cursor());
+        }
+    }
     @Test void unrelatedInspectionOrRevisionCannotCompleteTheConversation(){var gate=new BuildingCompletionGate();gate.observe("apply_building",Map.of("id","home","revision",2,"operation","op","status","UNVERIFIED"));for(var result:List.of(Map.<String,Object>of("id","other","revision",2,"operation","op","verification","VERIFIED"),Map.<String,Object>of("id","home","revision",1,"operation","op","verification","VERIFIED"),Map.<String,Object>of("id","home","revision",2,"operation","old","verification","VERIFIED"))){gate.observe("verify_building",result);assertTrue(gate.waiting());}var correct=Map.<String,Object>of("id","home","revision",2,"operation","op","verification","VERIFIED");gate.observe("inspect_buildings",correct);assertTrue(gate.waiting());gate.observe("verify_building",correct);assertFalse(gate.waiting());}
 }

@@ -25,9 +25,13 @@ final class BuildingVerifier implements ServerBuildings.VerificationWork {
     private final CompletableFuture<Map<String,Object>> result;private final List<ConstructionVerification.Check> checks=new ArrayList<>();
     private final List<Map<String,Object>> mismatches=new ArrayList<>();private final CompletableFuture<Map<String,int[]>> componentBounds;
     private CompletableFuture<List<ConstructionLedger.Cell>> rows;private long covered,observedTick;private int checkIndex;private long checkCursor;private boolean checkPassed=true,blocksMatch=true,done,paused;private final List<String> checkErrors=new ArrayList<>();
+    private final boolean ownerDimensionBound;
     private static <T> CompletableFuture<T> io(Callable<T> body){return CompletableFuture.supplyAsync(()->{try{return body.call();}catch(Exception error){throw new CompletionException(error);}},IO);}
     BuildingVerifier(ServerPlayer p,UUID agent,String id,ConstructionLedger ledger,ConstructionLedger.Head head,BuildingDesign design,int[] bounds,String hash,long count,BooleanSupplier permit,CompletableFuture<Map<String,Object>> result){
-        player=p;this.agent=agent;this.id=id;level=p.level();world=MineAgentRuntimeServices.worldId(level.getServer());owner=p.getUUID();this.ledger=ledger;this.head=head;this.design=design;this.bounds=bounds;this.hash=hash;expectedCells=count;this.permit=permit;this.result=result;
+        this(p,agent,id,ledger,head,design,bounds,hash,count,permit,result,p.level(),true);
+    }
+    BuildingVerifier(ServerPlayer p,UUID agent,String id,ConstructionLedger ledger,ConstructionLedger.Head head,BuildingDesign design,int[] bounds,String hash,long count,BooleanSupplier permit,CompletableFuture<Map<String,Object>> result,ServerLevel targetLevel,boolean ownerDimensionBound){
+        player=p;this.agent=agent;this.id=id;level=targetLevel;this.ownerDimensionBound=ownerDimensionBound;world=MineAgentRuntimeServices.worldId(level.getServer());owner=p.getUUID();this.ledger=ledger;this.head=head;this.design=design;this.bounds=bounds;this.hash=hash;expectedCells=count;this.permit=permit;this.result=result;
         componentBounds=io(()->{var out=new HashMap<String,int[]>();for(String component:design.componentIds())out.put(component,ledger.bounds(head.revision(),component));return out;});
         rows=io(()->ledger.page(head.revision(),0,true));
     }
@@ -37,12 +41,12 @@ final class BuildingVerifier implements ServerBuildings.VerificationWork {
     public boolean tick(){
         if(done)return result.isDone();if(!rows.isDone()||!componentBounds.isDone()||level.getGameTime()<=head.mutationTick())return false;
         try {
-            if(paused||!permit.getAsBoolean()||player.level()!=level||level.getServer().getPlayerList().getPlayer(player.getUUID())!=player||!ServerTaskStart.allowed(player,agent))throw new IllegalStateException("BUILDING_VERIFICATION_CONTEXT_CHANGED");
+            if(paused||!permit.getAsBoolean()||ownerDimensionBound&&player.level()!=level||level.getServer().getPlayerList().getPlayer(player.getUUID())!=player||!ServerTaskStart.allowed(player,agent))throw new IllegalStateException("BUILDING_VERIFICATION_CONTEXT_CHANGED");
             if(!design.dimension().equals(level.dimension().identifier().toString()))throw new IllegalStateException("BUILDING_VERIFICATION_DIMENSION");
             if(observedTick==0)observedTick=level.getGameTime();
             var batch=rows.join();
             if(!batch.isEmpty()){
-                for(var cell:batch){var pos=new BlockPos(cell.x(),cell.y(),cell.z());ConversationWorldGeometry.location(level,pos);String observed=BlockStateParser.serialize(level.getBlockState(pos));covered++;if(!observed.equals(cell.after())||level.getBlockEntity(pos)!=null){blocksMatch=false;if(mismatches.size()<16)mismatches.add(Map.of("position",List.of(cell.x(),cell.y(),cell.z()),"component",cell.component(),"expected",cell.after(),"observed",observed));}}
+                for(var cell:batch){var pos=new BlockPos(cell.x(),cell.y(),cell.z());ConversationWorldGeometry.location(level,pos);var state=level.getBlockState(pos);var entity=level.getBlockEntity(pos);String observed=BlockStateParser.serialize(state);covered++;if(!observed.equals(cell.after())||state.hasBlockEntity()!=(entity!=null)||entity!=null&&!entity.getType().isValid(state)){blocksMatch=false;if(mismatches.size()<16)mismatches.add(Map.of("position",List.of(cell.x(),cell.y(),cell.z()),"component",cell.component(),"expected",cell.after(),"observed",observed));}}
                 long next=batch.getLast().sequence();rows=io(()->ledger.page(head.revision(),next,true));return false;
             }
             int budget=256;

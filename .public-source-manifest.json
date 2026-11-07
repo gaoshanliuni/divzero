@@ -1234,8 +1234,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionLedger.java",
-      "resourceId": "3539d60a-25b7-4a3d-8e4d-a853bbf8edb3",
-      "bytes": 20383
+      "resourceId": "fec5b8d1-dd74-4db4-8260-3f1d06c2aa22",
+      "bytes": 23510
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionVerification.java",
@@ -1449,8 +1449,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/AgentToolScope.java",
-      "resourceId": "77129016-8913-4ae4-b4c2-9ff1c02099c4",
-      "bytes": 5007
+      "resourceId": "4f9bbaf9-e23e-4744-8998-52bd49e0a15a",
+      "bytes": 5028
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/BlockObservationRegion.java",
@@ -1464,8 +1464,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilityCatalog.java",
-      "resourceId": "a9102a97-6c34-47d6-a78b-2c190dabb054",
-      "bytes": 22375
+      "resourceId": "7ec0aa93-62e5-40ba-ab2c-9b62e84b4bc3",
+      "bytes": 22394
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
@@ -1524,8 +1524,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "1e36bf18-53ed-430a-a367-10df67982046",
-      "bytes": 76593
+      "resourceId": "91bc1635-ad38-4165-9740-a9f3bef72301",
+      "bytes": 76678
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
@@ -2784,18 +2784,18 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSession.java",
-      "sha256": "e13efb264e94ba39287bf4953f978916033f23ac47a0ac11dc58cf025dba1080",
-      "bytes": 6954
+      "resourceId": "629a0b12-f2f4-46e9-aa6a-dab2198cbdb3",
+      "bytes": 7050
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSpec.java",
-      "resourceId": "d450be7d-ee1d-408e-bd74-64ebd21e7cb9",
-      "bytes": 8917
+      "resourceId": "ea24245d-7b33-4f34-ba14-5b26ac01430f",
+      "bytes": 10239
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillTools.java",
-      "resourceId": "b4b8ba2c-c8a1-4f4e-8c3a-f2f1954b83ec",
-      "bytes": 10805
+      "resourceId": "7ee2fec0-3036-44a2-ace6-e5d6661aad0c",
+      "bytes": 11548
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SneakClearance.java",
@@ -3119,8 +3119,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/ConstructionLedgerTest.java",
-      "resourceId": "5a97f38a-065a-4aa7-99a4-da343e72cf95",
-      "bytes": 6649
+      "resourceId": "1f567052-727e-473f-a635-ac3ea47f9280",
+      "bytes": 8217
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/AgentMentionDisplayTest.java",
@@ -3569,8 +3569,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/GatherSkillContractTest.java",
-      "resourceId": "367ceb80-8de5-4bb2-903e-bfc99de8c829",
-      "bytes": 1741
+      "resourceId": "ecce208d-890f-4ce3-bdbe-04fd58d4af95",
+      "bytes": 2862
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/HumanDuelSeriesTest.java",
@@ -5309,8 +5309,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBehaviorPanel.java",
-      "resourceId": "252de11a-2cd7-45da-a1af-819c47abcfe9",
-      "bytes": 32790
+      "resourceId": "b841c264-9b94-4aec-a128-a741bc1ef59d",
+      "bytes": 33385
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",
@@ -6684,8 +6684,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/AiSkillActor.java",
-      "resourceId": "1630340d-fc14-4ce6-a620-7bd8e9f57934",
-      "bytes": 8489
+      "resourceId": "9fb59019-7975-4c40-98ce-d9efa3aab394",
+      "bytes": 9101
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
@@ -6726,6 +6726,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CombatSkill.java",
       "sha256": "517c14bcd6ec172911e57ab4eb69fe824169180c68da04a2e3728f9e827bfa35",
       "bytes": 42938
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
+      "resourceId": "867c3112-b081-45ab-89f7-da631de2a833",
+      "bytes": 16162
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -6849,8 +6854,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "resourceId": "b74387ce-6b96-4de1-aa00-3a4c6c82cd00",
-      "bytes": 14797
+      "resourceId": "f9e0534d-21b1-43a3-a4ef-adb41ee4c46f",
+      "bytes": 15076
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
@@ -6884,8 +6889,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillActor.java",
-      "resourceId": "8790bb19-223e-4f49-b9d9-a5dde53432d7",
-      "bytes": 2044
+      "resourceId": "010edb9d-712c-480c-a1b8-eba64f6fff6c",
+      "bytes": 2138
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillLootCollector.java",
@@ -6894,13 +6899,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "resourceId": "7e1e0903-04c9-49cc-beba-1daf3b8f16db",
-      "bytes": 57697
+      "resourceId": "5b847c6a-08dc-4a85-a354-2ee282456407",
+      "bytes": 58392
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "resourceId": "d0731c68-45fe-4b88-8131-94d84a30206a",
-      "bytes": 11914
+      "resourceId": "bafe7f52-07b8-4950-81b2-c047b0a32162",
+      "bytes": 12191
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",
@@ -7089,8 +7094,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/BuildingVerifier.java",
-      "sha256": "e91ed42ec7ec0a36a65e5e88d2b263228e2bc27e16bc94650369dc5a4c964d7a",
-      "bytes": 11023
+      "resourceId": "e29a8bf7-f8d4-4c28-be61-853d015f18e0",
+      "bytes": 11636
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
@@ -7544,8 +7549,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildings.java",
-      "resourceId": "8c9cf3dc-49f1-4465-b374-9dceee517063",
-      "bytes": 27168
+      "resourceId": "64ee2d01-1ccb-4698-8e8d-5c5b18cb35f3",
+      "bytes": 31761
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBulldozers.java",
@@ -9270,5 +9275,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "f04b54aadaaa784dc852930ebe8200bdba875fa8"
+  "sourceCommit": "6f32fcd2911b3a3e994b006b82ebf864d93538f9"
 }

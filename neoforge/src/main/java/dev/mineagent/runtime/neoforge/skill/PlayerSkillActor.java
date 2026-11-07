@@ -60,6 +60,7 @@ public final class PlayerSkillActor implements SkillActor {
     public void useOnce(UUID session,UUID op,net.minecraft.world.InteractionHand value){hand=value.name();try{useItem(session,op,false);}finally{hand="";}}
     public void breakBlock(UUID session,UUID op,BlockPos target){send(session,"BREAK",op,Vec3.atCenterOf(target),0,-1,"");}
     public void dropItem(UUID session,UUID op,boolean wholeStack){send(session,wholeStack?"DROP_STACK":"DROP_ITEM",op,aim==null?player.position():aim,0,-1,"");}
+    public void placeBlock(UUID session,UUID op,net.minecraft.world.phys.BlockHitResult hit){var face=hit.getDirection();send(session,"PLACE_BLOCK",op,hit.getLocation().subtract(new Vec3(face.getStepX(),face.getStepY(),face.getStepZ()).scale(.001)),0,face.get3DDataValue(),"");}
     public void useBlock(UUID session,UUID op,BlockPos target){send(session,"USE_BLOCK",op,InteractionTargetResolver.topHit(player,target),0,-1,"");}
     public void useItem(UUID session,UUID op,boolean hold){send(session,hold?"HOLD":"USE_ONCE",op,aim==null?player.getEyePosition().add(player.getLookAngle().scale(4)):aim,0,-1,"");}
     public void releaseItem(UUID session,UUID op){send(session,"RELEASE",op,aim==null?player.getEyePosition():aim,0,-1,"");}

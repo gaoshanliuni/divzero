@@ -37,6 +37,7 @@ public final class ConversationTools {
         dev.mineagent.runtime.core.task.SkillTools.definition("farm_area"),
         dev.mineagent.runtime.core.task.SkillTools.definition("gather_resources"),
         dev.mineagent.runtime.core.task.SkillTools.definition("handoff_items"),
+        dev.mineagent.runtime.core.task.SkillTools.definition("construct_building"),
         dev.mineagent.runtime.core.task.SkillTools.definition("fish_at"),
         dev.mineagent.runtime.core.task.SkillTools.definition("wander_area"),
         dev.mineagent.runtime.core.task.SkillTools.definition("combat_entity"),

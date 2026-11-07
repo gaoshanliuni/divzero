@@ -40,27 +40,28 @@ final class SkillWork {
     private String lastNotice="";private int lastNoticeTick=-10000;
     void notice(String key,String fallback){if(key.equals(lastNotice)&&tick()-lastNoticeTick<200)return;lastNotice=key;lastNoticeTick=tick();var owner=runtime.server.getPlayerList().getPlayer(session.owner());if(owner==null)return;String name=MineAgentRuntimeServices.bodies(runtime.server).definitions().stream().filter(d->d.agentId().equals(session.agent())).map(d->d.displayName()).findFirst().orElse("AI");dev.mineagent.runtime.neoforge.chat.AiPlayerChat.send(owner,session.agent(),net.minecraft.network.chat.Component.translatableWithFallback("mineagent.behavior."+key,fallback));}
     final Map<UUID,SkillLootCollector.Drop> loot=new LinkedHashMap<>();final Map<Item,Integer> lootBefore=new HashMap<>();Set<UUID> dropBefore=Set.of();final Set<UUID> pickedDrops=new HashSet<>();int lootRetries;SkillLootCollector.Terrain blockedLootTerrain;
+    ConstructSkill construct;BlockPos nativeUsePos;
     UUID handoffEntity;int handoffQuantity,handoffPicked,handoffDiverted;
     final Map<BlockPos,net.minecraft.world.level.block.state.BlockState> gatherRejected=new LinkedHashMap<>();
     SkillWork(SkillRuntime runtime,SkillSession session,long dbRevision){this.runtime=runtime;this.session=session;this.dbRevision=dbRevision;}
     boolean legacyBaseline(){return Boolean.getBoolean("mineagent.skillSmoke")&&java.util.Set.of("policy_duel","policy_train","policy_eval10").contains(System.getProperty("mineagent.skillSmokeMode",""))&&session.spec().id().startsWith("legacy_");}
     ServerPlayer player(){return actor.player();}int tick(){return runtime.server.getTickCount();}UUID token(){return session.id();}
-    Map<String,Object> view(){var out=new LinkedHashMap<String,Object>();out.put("session",session.snapshot());out.put("actor",actor==null?Map.of():actor.observation());out.put("currentTarget",block==null?List.of():List.of(block.getX(),block.getY(),block.getZ()));out.put("nextCheckTick",nextTick);out.put("pendingReceipt",!saved.isDone());out.put("combat",combat.view());out.put("tactic",tactic);return out;}
+    Map<String,Object> view(){var out=new LinkedHashMap<String,Object>();out.put("session",session.snapshot());out.put("actor",actor==null?Map.of():actor.observation());out.put("currentTarget",block==null?List.of():List.of(block.getX(),block.getY(),block.getZ()));out.put("nextCheckTick",nextTick);out.put("pendingReceipt",!saved.isDone());out.put("combat",combat.view());out.put("tactic",tactic);if(construct!=null)out.put("construction",construct.view());return out;}
     void bind(ServerPlayer owner)throws Exception{release();actor=null;if(session.spec().actor().equals("player"))actor=new PlayerSkillActor(owner,session.agent(),token(),session.spec().title());else{var body=MineAgentRuntimeServices.bodies(runtime.server).body(session.agent()).orElse(null);if(body==null){session.transition(State.WAITING,"BODY_UNAVAILABLE");nextTick=tick()+20;return;}if(!body.canAct()){session.waitForRespawn();runtime.persist(this);return;}actor=new AiSkillActor(body);}block=null;search=null;stand=null;operation=null;executed=false;fighting=null;session.phase("SCAN");runtime.index(this);}
     boolean acquire(){int priority=combatInterrupted||fighting!=null||session.spec().kind()==SkillSpec.Kind.COMBAT?80:session.spec().kind()==SkillSpec.Kind.WANDER?5:30;
         if(actor.controls().acquire(token(),EnumSet.allOf(BodyDomain.class),priority,()->session.runnable()&&actor.current(),()->{actor.stop(token());runtime.reservations.release(token());if(session.runnable())session.transition(State.SUSPENDED,"PREEMPTED");}))return true;
         session.transition(State.SUSPENDED,"HIGHER_PRIORITY_BEHAVIOR");return false;}
-    void release(){if(actor!=null){actor.stop(token());actor.controls().release(token());}runtime.reservations.release(token());}
-    void pause(String reason){release();if(!session.terminal())session.transition(State.PAUSED,reason);if(!ioFailed)runtime.persist(this);}
+    void release(){if(!session.runnable()&&construct!=null){var old=construct;construct=null;saved=CompletableFuture.allOf(saved,old.stop());}if(actor!=null){actor.stop(token());actor.controls().release(token());}runtime.reservations.release(token());}
+    void pause(String reason){if(!session.terminal())session.transition(State.PAUSED,reason);release();if(!ioFailed)runtime.persist(this);}
     void waitFor(String reason,int ticks){release();session.transition(State.WAITING,reason);nextTick=tick()+ticks;if(actor instanceof PlayerSkillActor p)p.report(reason,false);switch(reason){case "SEED_REQUIRED_FOR_REPLANT","SEED_NOT_READY"->notice("seeds","缺少补种种子，等待补充。");case "INVENTORY_FULL"->notice("inventory","背包放不下产物，等待整理。");case "FISHING_ROD_MISSING"->notice("rod","缺少可用鱼竿，等待补充。");case "LOOT_ROUTE_REQUIRES_NEW_APPROACH"->notice("loot_route","产物暂不可达，需要调整拾取路线。");}if(tick()-lastSave>100){runtime.persist(this);lastSave=tick();}}
     net.minecraft.world.entity.LivingEntity creditedDeath;
-    void completed(String reason){LocalPolicyRuntime.completed(this);release();session.transition(State.COMPLETED,reason);if(actor instanceof PlayerSkillActor p)p.report(reason,true);runtime.persist(this);runtime.resumePrevious(this);}
+    void completed(String reason){LocalPolicyRuntime.completed(this);session.transition(State.COMPLETED,reason);release();if(actor instanceof PlayerSkillActor p)p.report(reason,true);runtime.persist(this);runtime.resumePrevious(this);}
     void step()throws Exception{
         session.transition(State.RUNNING,"");
         if(CombatSkill.interruptOrContinue(this))return;
         switch(session.spec().kind()){
             case IDLE->waitFor("IDLE_BY_PLAYER",10);case FOLLOW->MovementSkills.follow(this);case PATROL->MovementSkills.patrol(this);case WANDER->MovementSkills.wander(this);case GUARD->MovementSkills.guard(this);
-            case COMBAT->CombatSkill.combat(this);case FARM->FarmSkill.tick(this);case FISH->FishSkill.tick(this);case GATHER->GatherSkill.tick(this);case HANDOFF->HandoffSkill.tick(this);
+            case COMBAT->CombatSkill.combat(this);case FARM->FarmSkill.tick(this);case FISH->FishSkill.tick(this);case GATHER->GatherSkill.tick(this);case HANDOFF->HandoffSkill.tick(this);case CONSTRUCT->ConstructSkill.tick(this);
         }
     }
     boolean at(Vec3 target){return player().position().subtract(target).horizontalDistanceSqr()<.16&&Math.abs(player().getY()-target.y)<.35;}

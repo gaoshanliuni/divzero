@@ -27,7 +27,7 @@ public final class SkillSession {
     public void combat(long expected,CombatPolicy policy){if(expected!=revision||terminal())throw new IllegalStateException("SKILL_STALE_OR_TERMINAL");spec=spec.withCombat(policy);revision++;}
     public void adjust(long expected,SkillSpec next){
         if(expected!=revision||terminal())throw new IllegalStateException("SKILL_STALE_OR_TERMINAL");
-        if(!next.id().equals(spec.id())||next.kind()!=spec.kind()||!next.actor().equals(spec.actor())||!next.dimension().equals(spec.dimension())||!next.combat().equals(spec.combat()))throw new IllegalArgumentException("SKILL_ADJUST_IDENTITY");
+        if(!next.id().equals(spec.id())||next.kind()!=spec.kind()||!next.actor().equals(spec.actor())||!next.dimension().equals(spec.dimension())||!next.combat().equals(spec.combat())||!next.buildingId().equals(spec.buildingId())||next.buildingRevision()!=spec.buildingRevision())throw new IllegalArgumentException("SKILL_ADJUST_IDENTITY");
         if(uncertain())throw new IllegalStateException("SKILL_RECONCILIATION_REQUIRED");
         if(!Objects.equals(next.area(),spec.area())||!next.crop().equals(spec.crop()))cursor=0;
         if(!next.route().equals(spec.route())&&(waypoint>=next.route().size()||waypoint>=spec.route().size()||!next.route().get(waypoint).equals(spec.route().get(waypoint))))waypoint=0;

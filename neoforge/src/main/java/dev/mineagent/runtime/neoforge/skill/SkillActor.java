@@ -22,6 +22,7 @@ public interface SkillActor {
     void breakBlock(UUID session,UUID operation,BlockPos target);
     void dropItem(UUID session,UUID operation,boolean wholeStack);
     void useBlock(UUID session,UUID operation,BlockPos target);
+    void placeBlock(UUID session,UUID operation,net.minecraft.world.phys.BlockHitResult hit);
     void useItem(UUID session,UUID operation,boolean hold);
     void useHand(UUID session,UUID operation,net.minecraft.world.InteractionHand hand);
     void releaseItem(UUID session,UUID operation);
