@@ -50,7 +50,7 @@ public final class YsmRenderFallback {
             if (file == null || !new dev.mineagent.runtime.integrations.ysm.YsmJarVerifier()
                     .verify(file.getFile().getFilePath())) {
                 gate = Gate.UNSUPPORTED;
-                diagnostic = "CHECKSUM_MISMATCH";
+                diagnostic = "ARTIFACT_UNSUPPORTED";
                 return;
             }
             gate = Gate.SUPPORTED;

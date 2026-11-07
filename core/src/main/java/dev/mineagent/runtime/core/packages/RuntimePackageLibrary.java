@@ -205,6 +205,7 @@ public final class RuntimePackageLibrary implements AutoCloseable {
     public synchronized PackageAssetMetadata.Page<PackageAssetMetadata.Shelf> shelves(UUID owner,boolean active,int offset)throws Exception{return repository.packageShelves(owner,active,offset);}
     public synchronized PackageAssetMetadata.Derivation derivation(UUID owner,UUID pkg)throws Exception{return repository.packageDerivation(owner,pkg);}
     public synchronized boolean copyOwned(UUID world,UUID owner,UUID pkg,long revision,String hash)throws Exception{return repository.packageCopyOwned(world,owner,pkg,revision,hash);}
+    public synchronized UUID assetCopyTarget(PackageAssetMetadata.Input input)throws Exception{return repository.packageAssetCopyTarget(input);}
     public synchronized PackageAssetMetadata.Receipt assetReceipt(UUID world,UUID owner,UUID operation)throws Exception{return repository.packageAssetReceipt(world,owner,operation);}
     public synchronized PackageAssetMetadata.Receipt assetMetadata(PackageAssetMetadata.Input input)throws Exception{return repository.packageAssetMetadata(input,clock.millis());}
     public synchronized RuntimePackage assetSource(PackageAssetMetadata.Shelf shelf)throws Exception{

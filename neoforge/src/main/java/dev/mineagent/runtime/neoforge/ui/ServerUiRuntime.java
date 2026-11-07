@@ -826,7 +826,7 @@ public final class ServerUiRuntime {
             var source=ServerPackageAssets.source(viewer,input);
             var receipt=sessions.begin(viewer.getUUID(),request,capability,true);if(receipt.code()!=Code.OK){send(viewer,packetId,"receipt",receipt);return;}begun=true;
             if(Set.of("COPY","COPY_VERSION","REUSE_ASSET").contains(input.action())){
-                runtime.prepareAssetCopy(source,input.targetId(),input.name()).whenComplete((candidate,failure)->server.execute(()->{
+                runtime.prepareAssetCopy(source,library.assetCopyTarget(input),input.name()).whenComplete((candidate,failure)->server.execute(()->{
                     try{restoreScope(viewer,request);ServerPackageAssets.authorize(viewer);if(generation!=MineAgentRuntimeServices.config(server).permissionGeneration(viewer.getUUID(),dev.mineagent.runtime.api.permission.PermissionAction.MANAGE_PACKAGES)||sessions.checkRead(viewer.getUUID(),request,capability)!=Code.OK)throw new SecurityException("PACKAGE_ASSET_CONTEXT_CHANGED");ServerPackageAssets.source(viewer,input);if(failure!=null)throw new IllegalStateException(ServerPackageAssets.code(failure));
                         var result=library.installAssetCopy(input,candidate);send(viewer,packetId,"receipt",sessions.complete(request,Code.APPLIED,Map.of("state",json.writeValueAsString(result),"executionMode","ASSET_ONLY_NO_RUNTIME_STATE")));
                     }catch(Exception error){send(viewer,packetId,"receipt",sessions.complete(request,Code.FAILED,Map.of("errorCode",ServerPackageAssets.code(error))));}

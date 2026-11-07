@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/** Reflection boundary for the exact, checksum-pinned YSM 2.6.5 NeoForge build. */
+/** Reflection boundary for the exact, version-and-contract-matched YSM 2.6.5 NeoForge build. */
 final class PinnedYsmReflection {
     private static final String ENTRYPOINT = "com.elfmcys.yesstevemodel.YesSteveModel";
     private static final String PLAYER_DATA = "com.elfmcys.yesstevemodel.o0oo0000oooOo0ooOOOo0OOo";

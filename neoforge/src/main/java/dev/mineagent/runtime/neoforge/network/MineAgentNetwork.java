@@ -351,7 +351,7 @@ public final class MineAgentNetwork {
         values.put("ysm.installed", Boolean.toString(ysm.installed()));
         values.put("ysm.version", ysm.version());
         values.put("ysm.runtimeAvailable", Boolean.toString(ysm.runtimeAvailable()));
-        values.put("ysm.checksumVerified", Boolean.toString(ysm.checksumVerified()));
+        values.put("ysm.artifactCompatible", Boolean.toString(ysm.artifactCompatible()));
         values.put("ysm.modelChoices", String.join(",", ysm.availableModels()));
         values.put("ysm.textureChoices", "default,blue");
         values.put("ysm.animationChoices", "idle,gui,stop");
@@ -1835,7 +1835,7 @@ public final class MineAgentNetwork {
         var bridge=new dev.mineagent.runtime.neoforge.integration.NeoForgeYsmRuntimeBridge(server);var models=bridge.availableModels();
         var result=new java.util.LinkedHashMap<String,Object>();result.put("agentId",agentId.toString());result.put("revision",Long.parseLong(values.getOrDefault(prefix+"appearanceRevision","0")));
         result.put("model",values.getOrDefault(prefix+"model",""));result.put("texture",values.getOrDefault(prefix+"texture",""));result.put("animation",values.getOrDefault(prefix+"animation",""));
-        result.put("diagnostic",bridge.diagnosticCode());result.put("runtimeAvailable",bridge.runtimeAvailable());result.put("version",bridge.version());result.put("checksumVerified",bridge.checksumVerified());
+        result.put("diagnostic",bridge.diagnosticCode());result.put("runtimeAvailable",bridge.runtimeAvailable());result.put("version",bridge.version());result.put("artifactCompatible",bridge.artifactCompatible());
         result.put("models",models.stream().limit(128).toList());result.put("catalogTruncated",models.size()>128);result.put("nativeSelection",bridge.currentSelection(agentId).map(v->java.util.Map.of("model",v.modelId(),"texture",v.textureId(),"animation",v.animationId())).orElse(java.util.Map.of()));
         result.put("modelCount",models.size());result.put("selectionChangeRequiresRestart",false);result.put("unloadRequiresRestart",true);result.put("restartMeaning","Only uninstalling YSM itself requires a restart; changing selection is hot-applied");return result;
     }

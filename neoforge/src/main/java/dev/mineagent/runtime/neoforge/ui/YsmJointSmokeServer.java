@@ -23,7 +23,7 @@ public final class YsmJointSmokeServer {
             viewer.setGameMode(net.minecraft.world.level.GameType.CREATIVE);viewer.getAbilities().flying=true;viewer.onUpdateAbilities();viewer.teleportTo(body.level(),body.getX()+3,body.getY()+2,body.getZ()+7,Set.of(),156,12,true);
         }
         if(Boolean.getBoolean("mineagent.ysmJointAbsent")){if(bridge.installed())throw new IllegalStateException("YSM_EXPECTED_ABSENT");return;}
-        if(!bridge.installed()||!bridge.checksumVerified()||!bridge.runtimeAvailable())throw new IllegalStateException("YSM_PRODUCTION_RUNTIME_UNAVAILABLE");
+        if(!bridge.installed()||!bridge.artifactCompatible()||!bridge.runtimeAvailable())throw new IllegalStateException("YSM_PRODUCTION_RUNTIME_UNAVAILABLE");
         if(Boolean.getBoolean("mineagent.appearanceChoiceSmoke")){
             var decisions=MineAgentRuntimeServices.decisions(server);
             for(var question:decisions.allFor(viewer.getUUID())){

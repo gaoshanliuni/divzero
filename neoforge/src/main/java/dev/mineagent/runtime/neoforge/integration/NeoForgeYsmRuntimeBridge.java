@@ -34,13 +34,13 @@ public final class NeoForgeYsmRuntimeBridge implements YsmRuntimeBridge {
 
     @Override
     public boolean runtimeAvailable() {
-        if (!installed() || !checksumVerified()) {
+        if (!installed() || !artifactCompatible()) {
             return false;
         }
         return PinnedYsmReflection.runtimeAvailable(Thread.currentThread().getContextClassLoader());
     }
 
-    public synchronized boolean checksumVerified() {
+    public synchronized boolean artifactCompatible() {
         if (!installed()) {
             return false;
         }
@@ -93,8 +93,8 @@ public final class NeoForgeYsmRuntimeBridge implements YsmRuntimeBridge {
         if (!version().startsWith("2.6.5-neoforge+mc26.1")) {
             return "YSM_VERSION_UNSUPPORTED";
         }
-        if (!checksumVerified()) {
-            return "YSM_CHECKSUM_MISMATCH";
+        if (!artifactCompatible()) {
+            return "YSM_ARTIFACT_UNSUPPORTED";
         }
         return runtimeAvailable() ? "YSM_READY" : "YSM_NATIVE_UNAVAILABLE";
     }

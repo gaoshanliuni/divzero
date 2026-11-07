@@ -41,8 +41,8 @@ class RuntimePackageLibraryTest {
         try(var signer=IdentitySigner.open(temporaryDirectory.resolve("catalog-id"));var library=RuntimePackageLibrary.open(temporaryDirectory.resolve("catalog.db"),clock,signer.publicKeyEncoded())){
             var id=UUID.randomUUID();var world=UUID.randomUUID();var owner=UUID.randomUUID();var source=signed(signer,id,"1.0.0",true);assertTrue(library.install(source).accepted());
             try(var jobs=new SqliteRuntimeRepository(temporaryDirectory.resolve("catalog.db"))){jobs.initializePackageJobRetention(world);}
-            var input=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,source.canonicalSha256(),"独立内容包",null,1);var copy=RuntimePackageAssetCopy.prepare(source,input.targetId(),input.name(),signer);library.installAssetCopy(input,copy);
-            assertEquals(java.util.List.of(input.targetId()),library.catalog(world,owner,"风铃",0,8).ids());
+            var input=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,source.canonicalSha256(),"独立内容包",null,1);var copy=RuntimePackageAssetCopy.prepare(source,library.assetCopyTarget(input),input.name(),signer);library.installAssetCopy(input,copy);
+            assertEquals(java.util.List.of(library.assetCopyTarget(input)),library.catalog(world,owner,"风铃",0,8).ids());
             assertTrue(library.catalog(world,UUID.randomUUID(),"风铃",0,8).ids().isEmpty());assertTrue(library.catalog(UUID.randomUUID(),owner,"风铃",0,8).ids().isEmpty());
             assertTrue(library.setEnabled(copy.packageId(),1,false).accepted());assertEquals(1,library.catalog(world,owner,"风铃",0,8).total());
         }
@@ -52,8 +52,8 @@ class RuntimePackageLibraryTest {
         try(var signer=IdentitySigner.open(temporaryDirectory.resolve("history-id"));var library=RuntimePackageLibrary.open(temporaryDirectory.resolve("history.db"),clock,signer.publicKeyEncoded())){
             UUID id=UUID.randomUUID(),world=UUID.randomUUID(),owner=UUID.randomUUID();var first=signed(signer,id,"1.0.0",true);assertTrue(library.install(first).accepted());assertTrue(library.setEnabled(id,1,false).accepted());
             var source=library.versionByCanonical(id,1,first.canonicalSha256());var input=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,first.canonicalSha256(),"历史副本",null,2);
-            var candidate=RuntimePackageAssetCopy.prepare(source,input.targetId(),input.name(),signer);var receipt=library.installAssetCopy(input,candidate);assertEquals(input.targetId(),receipt.target());assertEquals(2,library.get(id).orElseThrow().revision());assertFalse(library.get(id).orElseThrow().enabled());assertEquals(first.definitions(),library.get(receipt.target()).orElseThrow().definitions());assertEquals(receipt,library.installAssetCopy(input,candidate));
-            assertTrue(library.setEnabled(id,2,true).accepted());var stale=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,first.canonicalSha256(),"旧读取",null,2);var other=RuntimePackageAssetCopy.prepare(source,stale.targetId(),stale.name(),signer);org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,()->library.installAssetCopy(stale,other));assertTrue(library.get(stale.targetId()).isEmpty());
+            var candidate=RuntimePackageAssetCopy.prepare(source,library.assetCopyTarget(input),input.name(),signer);var receipt=library.installAssetCopy(input,candidate);assertEquals(library.assetCopyTarget(input),receipt.target());assertEquals(2,library.get(id).orElseThrow().revision());assertFalse(library.get(id).orElseThrow().enabled());assertEquals(first.definitions(),library.get(receipt.target()).orElseThrow().definitions());assertEquals(receipt,library.installAssetCopy(input,candidate));
+            assertTrue(library.setEnabled(id,2,true).accepted());var stale=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,first.canonicalSha256(),"旧读取",null,2);var other=RuntimePackageAssetCopy.prepare(source,library.assetCopyTarget(stale),stale.name(),signer);org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,()->library.installAssetCopy(stale,other));assertTrue(library.get(library.assetCopyTarget(stale)).isEmpty());
         }
     }
 
@@ -67,11 +67,11 @@ class RuntimePackageLibraryTest {
                 var first=new RuntimePackage(id,unsigned.type(),unsigned.name(),unsigned.version(),mode,unsigned.dependencies(),unsigned.permissions(),unsigned.entrypoints(),unsigned.definitions(),unsigned.resources(),unsigned.origin(),false,1,hash,Base64.getEncoder().encodeToString(signer.sign(hash.getBytes(StandardCharsets.US_ASCII))),0);
                 assertTrue(library.install(first).accepted());assertTrue(library.setEnabled(id,1,true).accepted());assertTrue(library.setEnabled(id,2,false).accepted());
                 var source=library.versionByCanonical(id,1,hash);var input=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,hash,"历史重载副本",null,3);
-                var copy=RuntimePackageAssetCopy.prepare(source,input.targetId(),input.name(),signer);var receipt=library.installAssetCopy(input,copy);var stored=library.get(receipt.target()).orElseThrow();
+                var copy=RuntimePackageAssetCopy.prepare(source,library.assetCopyTarget(input),input.name(),signer);var receipt=library.installAssetCopy(input,copy);var stored=library.get(receipt.target()).orElseThrow();
                 assertEquals(mode,stored.activationMode());assertFalse(stored.enabled());assertEquals(PackageOrigin.REUSED,stored.origin());assertEquals(first.resources(),stored.resources());assertEquals(first.entrypoints(),stored.entrypoints());
                 assertFalse(library.get(id).orElseThrow().enabled());assertEquals(3,library.get(id).orElseThrow().revision());assertEquals(receipt,library.installAssetCopy(input,copy));
                 var stale=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,hash,"过期读取",null,2);
-                var denied=RuntimePackageAssetCopy.prepare(source,stale.targetId(),stale.name(),signer);org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,()->library.installAssetCopy(stale,denied));assertTrue(library.get(stale.targetId()).isEmpty());
+                var denied=RuntimePackageAssetCopy.prepare(source,library.assetCopyTarget(stale),stale.name(),signer);org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,()->library.installAssetCopy(stale,denied));assertTrue(library.get(library.assetCopyTarget(stale)).isEmpty());
             }
         }
     }

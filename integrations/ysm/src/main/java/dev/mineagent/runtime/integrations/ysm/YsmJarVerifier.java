@@ -2,46 +2,49 @@ package dev.mineagent.runtime.integrations.ysm;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.util.HexFormat;
+import java.nio.file.LinkOption;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.jar.JarFile;
 
 public final class YsmJarVerifier {
     public static final String MODRINTH_VERSION_ID = "1rPJlKDJ";
-    public static final String PINNED_SHA512 =
-            "b5e2445022e6c071b49c7eb312bc2e1628980a615506414a6ced06950999b8f6"
-                    + "27829cebe848bd8a2dc025c121abfb4286221bb641ad7648b13446e78dc07df3";
-    private final String expectedSha512;
+    public static final String SUPPORTED_VERSION="2.6.5-neoforge+mc26.1";
+    static final Set<String> REQUIRED_CLASSES=Set.of("com.elfmcys.yesstevemodel.YesSteveModel","com.elfmcys.yesstevemodel.o0oo0000oooOo0ooOOOo0OOo","com.elfmcys.yesstevemodel.ooo000Oo0O0o0oOoO0O00oOO","com.elfmcys.yesstevemodel.OOOOo0ooOooOOOo0O00o0ooo");
+    private final String expectedVersion;
 
     public YsmJarVerifier() {
-        this(PINNED_SHA512);
+        this(SUPPORTED_VERSION);
     }
 
-    public YsmJarVerifier(String expectedSha512) {
-        if (expectedSha512 == null || !expectedSha512.matches("[0-9a-fA-F]{128}")) {
-            throw new IllegalArgumentException("invalid expected SHA-512");
-        }
-        this.expectedSha512 = expectedSha512.toLowerCase(java.util.Locale.ROOT);
+    public YsmJarVerifier(String expectedVersion) {
+        if(expectedVersion==null||!expectedVersion.matches("[A-Za-z0-9_.+-]{1,128}"))throw new IllegalArgumentException("invalid YSM version");
+        this.expectedVersion=expectedVersion;
     }
 
     public boolean verify(Path jar) {
         try {
-            return Files.isRegularFile(jar) && expectedSha512.equals(sha512(jar));
+            if(!Files.isRegularFile(jar,LinkOption.NOFOLLOW_LINKS)||Files.size(jar)>512L*1024*1024)return false;
+            // Compatibility metadata only. Native initialization and reflection contracts remain separate gates.
+            try(var archive=new JarFile(jar.toFile(),false)){
+                var names=new HashSet<String>();var entries=archive.entries();while(entries.hasMoreElements()){if(names.size()>=100000||!names.add(entries.nextElement().getName()))return false;}
+                byte[] metadata=entry(archive,"META-INF/neoforge.mods.toml",65536);boolean selected=false,matched=false;String id="",version="";
+                for(String line:new String(metadata,StandardCharsets.UTF_8).split("\\R")){
+                    String value=line.strip();if(value.startsWith("[")){if(selected&&id.equals("yes_steve_model")&&version.equals(expectedVersion))matched=true;selected=value.equals("[[mods]]");id="";version="";continue;}
+                    if(!selected)continue;var matcher=java.util.regex.Pattern.compile("^(modId|version)\\s*=\\s*\"([^\"]+)\"\\s*(?:#.*)?$").matcher(value);
+                    if(matcher.matches()){if(matcher.group(1).equals("modId"))id=matcher.group(2);else version=matcher.group(2);}
+                }
+                if(selected&&id.equals("yes_steve_model")&&version.equals(expectedVersion))matched=true;if(!matched)return false;
+                for(String name:REQUIRED_CLASSES){var model=java.lang.classfile.ClassFile.of().parse(entry(archive,name.replace('.','/')+".class",2*1024*1024));if(!model.thisClass().asInternalName().equals(name.replace('.','/')))return false;}
+                return true;
+            }
         } catch (Exception failure) {
             return false;
         }
     }
 
-    public static String sha512(Path path) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-512");
-        try (var input = Files.newInputStream(path)) {
-            byte[] buffer = new byte[64 * 1024];
-            int count;
-            while ((count = input.read(buffer)) >= 0) {
-                if (count > 0) {
-                    digest.update(buffer, 0, count);
-                }
-            }
-        }
-        return HexFormat.of().formatHex(digest.digest());
+    private static byte[] entry(JarFile archive,String name,int maximum)throws Exception{
+        var entry=archive.getJarEntry(name);if(entry==null||entry.isDirectory())throw new IllegalArgumentException("YSM_REQUIRED_ENTRY_MISSING");
+        try(var input=archive.getInputStream(entry)){var bytes=input.readNBytes(maximum+1);if(bytes.length<1||bytes.length>maximum)throw new IllegalArgumentException("YSM_METADATA_LIMIT");return bytes;}
     }
 }

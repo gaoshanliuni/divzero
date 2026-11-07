@@ -17,6 +17,8 @@ final class PackageAssetPersistence {
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_asset_aliases_v1(owner TEXT NOT NULL,package_id TEXT NOT NULL,name TEXT NOT NULL,revision INTEGER NOT NULL,updated INTEGER NOT NULL,PRIMARY KEY(owner,package_id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_asset_shelf_v1(id TEXT PRIMARY KEY,owner TEXT NOT NULL,source_package TEXT NOT NULL,active INTEGER NOT NULL,revision INTEGER NOT NULL,payload TEXT NOT NULL,bytes INTEGER NOT NULL,created INTEGER NOT NULL)");
             s.execute("CREATE INDEX IF NOT EXISTS mineagent_asset_shelf_owner_v1 ON mineagent_asset_shelf_v1(owner,created DESC,id)");
+            s.execute("CREATE UNIQUE INDEX IF NOT EXISTS mineagent_asset_shelf_version_v2 ON mineagent_asset_shelf_v1(owner,source_package,json_extract(payload,'$.packageRevision'),json_extract(payload,'$.canonical'))");
+            s.execute("CREATE TABLE IF NOT EXISTS mineagent_asset_targets_v2(world TEXT NOT NULL,owner TEXT NOT NULL,operation TEXT NOT NULL,target TEXT NOT NULL UNIQUE,input TEXT NOT NULL,PRIMARY KEY(world,owner,operation))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_asset_copies_v1(package_id TEXT PRIMARY KEY,owner TEXT NOT NULL,world TEXT NOT NULL,canonical TEXT NOT NULL,payload TEXT NOT NULL,bytes INTEGER NOT NULL)");
             s.execute("CREATE INDEX IF NOT EXISTS mineagent_asset_copy_owner_v1 ON mineagent_asset_copies_v1(world,owner,package_id)");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_asset_operations_v1(world TEXT NOT NULL,owner TEXT NOT NULL,id TEXT NOT NULL,payload TEXT NOT NULL,bytes INTEGER NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(world,owner,id))");
@@ -37,6 +39,17 @@ final class PackageAssetPersistence {
     static Derivation derivation(Connection db,UUID owner,UUID pkg)throws Exception {try(var q=db.prepareStatement("SELECT payload FROM mineagent_asset_copies_v1 WHERE package_id=? AND owner=?")){q.setString(1,pkg.toString());q.setString(2,owner.toString());try(var r=q.executeQuery()){return r.next()?JSON.readValue(r.getString(1),Derivation.class):null;}}}
     static boolean owns(Connection db,UUID world,UUID owner,UUID pkg,long revision,String canonical)throws SQLException {
         try(var q=db.prepareStatement("SELECT 1 FROM mineagent_asset_copies_v1 WHERE package_id=? AND world=? AND owner=? AND canonical=?")){q.setString(1,pkg.toString());q.setString(2,world.toString());q.setString(3,owner.toString());q.setString(4,canonical);try(var r=q.executeQuery()){return revision>=1&&r.next();}}
+    }
+    /** Called inside a writer transaction, before candidate generation or at final publication. */
+    static UUID target(Connection db,Input input)throws Exception{
+        if(!Set.of("COPY","COPY_VERSION","REUSE_ASSET").contains(input.action()))throw new IllegalArgumentException("PACKAGE_COPY_ACTION");
+        try(var query=db.prepareStatement("SELECT target,input FROM mineagent_asset_targets_v2 WHERE world=? AND owner=? AND operation=?")){query.setString(1,input.world().toString());query.setString(2,input.owner().toString());query.setString(3,input.operation().toString());try(var rows=query.executeQuery()){if(rows.next()){if(!JSON.readValue(rows.getString(2),Input.class).equals(input))throw new IllegalStateException("PACKAGE_ASSET_OPERATION_REUSED");return UUID.fromString(rows.getString(1));}}}
+        var old=receipt(db,input.world(),input.owner(),input.operation());if(old!=null&&(!old.input().equals(input)||old.target()==null))throw new IllegalStateException("PACKAGE_ASSET_OPERATION_REUSED");
+        if(count(db,"mineagent_asset_targets_v2")>=131072)throw new IllegalStateException("PACKAGE_COPY_BUDGET");UUID id=old==null?UUID.randomUUID():old.target();
+        try(var insert=db.prepareStatement("INSERT INTO mineagent_asset_targets_v2 VALUES(?,?,?,?,?)")){insert.setString(1,input.world().toString());insert.setString(2,input.owner().toString());insert.setString(3,input.operation().toString());insert.setString(4,id.toString());insert.setString(5,JSON.writeValueAsString(input));insert.executeUpdate();}return id;
+    }
+    static Shelf existingShelf(Connection db,Input input)throws Exception{
+        try(var query=db.prepareStatement("SELECT payload FROM mineagent_asset_shelf_v1 WHERE owner=? AND source_package=? AND json_extract(payload,'$.packageRevision')=? AND json_extract(payload,'$.canonical')=?")){query.setString(1,input.owner().toString());query.setString(2,input.source().toString());query.setLong(3,input.sourceRevision());query.setString(4,input.sourceHash());try(var rows=query.executeQuery()){return rows.next()?JSON.readValue(rows.getString(1),Shelf.class):null;}}
     }
     static Receipt receipt(Connection db,UUID world,UUID owner,UUID id)throws Exception {try(var q=db.prepareStatement("SELECT payload FROM mineagent_asset_operations_v1 WHERE world=? AND owner=? AND id=?")){q.setString(1,world.toString());q.setString(2,owner.toString());q.setString(3,id.toString());try(var r=q.executeQuery()){return r.next()?JSON.readValue(r.getString(1),Receipt.class):null;}}}
     private static PackageLibraryHistory.Version source(Connection db,Input input)throws Exception {
@@ -62,8 +75,7 @@ final class PackageAssetPersistence {
                     try(var q=db.prepareStatement("INSERT INTO mineagent_asset_aliases_v1 VALUES(?,?,?,1,?) ON CONFLICT(owner,package_id) DO UPDATE SET name=excluded.name,revision=mineagent_asset_aliases_v1.revision+1,updated=excluded.updated")){q.setString(1,input.owner().toString());q.setString(2,input.source().toString());q.setString(3,input.name());q.setLong(4,now);q.executeUpdate();}
                     result=new Receipt(input,"LIBRARY_NAME_CHANGED",input.source(),input.sourceHash(),null,alias.revision()+1,null);
                 }else if(input.action().equals("SAVE_ASSET")){
-                    UUID id=UUID.nameUUIDFromBytes((input.owner()+":"+input.source()+":"+input.sourceRevision()+":"+input.sourceHash()).getBytes(StandardCharsets.UTF_8));Shelf existing=null;
-                    try(var q=db.prepareStatement("SELECT payload FROM mineagent_asset_shelf_v1 WHERE id=?")){q.setString(1,id.toString());try(var r=q.executeQuery()){if(r.next())existing=JSON.readValue(r.getString(1),Shelf.class);}}
+                    Shelf existing=existingShelf(db,input);UUID id=existing==null?UUID.randomUUID():existing.id();
                     if(existing!=null&&!existing.active())throw new IllegalStateException("PACKAGE_ASSET_SHELF_WITHDRAWN");
                     var s=existing!=null?existing:new Shelf(id,input.owner(),input.world(),pkg.packageId(),pkg.revision(),pkg.canonicalSha256(),snapshot.payloadHash(),pkg.version(),pkg.name(),pkg.origin().name(),true,1,now);
                     if(existing==null)writeShelf(db,s,true);result=new Receipt(input,existing==null?"ASSET_VERSION_SAVED":"ASSET_VERSION_ALREADY_SAVED",pkg.packageId(),pkg.canonicalSha256(),s.id(),s.revision(),null);
@@ -77,7 +89,7 @@ final class PackageAssetPersistence {
         db.setAutoCommit(false);try{
             var old=receipt(db,input.world(),input.owner(),input.operation());if(old!=null){if(!old.input().equals(input))throw new IllegalStateException("PACKAGE_ASSET_OPERATION_REUSED");db.commit();return old;}
             var source=source(db,input);var candidate=JSON.readValue(payload,RuntimePackage.class);
-            if(!candidate.packageId().equals(input.targetId())||!candidate.name().equals(input.name())||candidate.origin()!=dev.mineagent.runtime.api.packages.PackageOrigin.REUSED||candidate.enabled()||candidate.revision()!=1)throw new IllegalStateException("PACKAGE_COPY_TARGET");
+            if(!candidate.packageId().equals(target(db,input))||!candidate.name().equals(input.name())||candidate.origin()!=dev.mineagent.runtime.api.packages.PackageOrigin.REUSED||candidate.enabled()||candidate.revision()!=1)throw new IllegalStateException("PACKAGE_COPY_TARGET");
             var base=JSON.readValue(source.payload(),RuntimePackage.class);
             if(candidate.type()!=base.type()||!candidate.version().equals(base.version())||candidate.activationMode()!=base.activationMode()||!candidate.dependencies().equals(base.dependencies())||!candidate.permissions().equals(base.permissions())||!candidate.entrypoints().equals(base.entrypoints())||!candidate.definitions().equals(base.definitions())||!candidate.resources().equals(base.resources())||!Objects.equals(candidate.nativeCompatibility(),base.nativeCompatibility()))throw new IllegalStateException("PACKAGE_COPY_ASSET_PARITY");
             var before=PackageLibraryHistory.usage(db);

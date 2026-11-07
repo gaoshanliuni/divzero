@@ -138,6 +138,9 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
     public synchronized dev.mineagent.runtime.core.packages.PackageAssetMetadata.Page<dev.mineagent.runtime.core.packages.PackageAssetMetadata.Shelf> packageShelves(UUID owner,boolean active,int offset)throws Exception{return PackageAssetPersistence.shelves(connection,owner,active,offset,8);}
     public synchronized dev.mineagent.runtime.core.packages.PackageAssetMetadata.Derivation packageDerivation(UUID owner,UUID pkg)throws Exception{return PackageAssetPersistence.derivation(connection,owner,pkg);}
     public synchronized boolean packageCopyOwned(UUID world,UUID owner,UUID pkg,long revision,String hash)throws SQLException{return PackageAssetPersistence.owns(connection,world,owner,pkg,revision,hash);}
+    public synchronized UUID packageAssetCopyTarget(dev.mineagent.runtime.core.packages.PackageAssetMetadata.Input input)throws Exception{
+        beginWrite();try{UUID id=PackageAssetPersistence.target(connection,input);connection.commit();return id;}catch(Exception error){connection.rollback();throw error;}finally{endWrite();}
+    }
     public synchronized dev.mineagent.runtime.core.packages.PackageAssetMetadata.Receipt packageAssetReceipt(UUID world,UUID owner,UUID id)throws Exception{return PackageAssetPersistence.receipt(connection,world,owner,id);}
     public synchronized dev.mineagent.runtime.core.packages.PackageAssetMetadata.Receipt packageAssetMetadata(dev.mineagent.runtime.core.packages.PackageAssetMetadata.Input input,long at)throws Exception{return PackageAssetPersistence.metadata(connection,input,at);}
     public synchronized dev.mineagent.runtime.core.packages.PackageAssetMetadata.Receipt packageAssetCopy(dev.mineagent.runtime.core.packages.PackageAssetMetadata.Input input,String candidate,long at)throws Exception{return PackageAssetPersistence.copy(connection,input,candidate,at);}

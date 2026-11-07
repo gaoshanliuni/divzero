@@ -446,14 +446,14 @@ public final class MineAgentRuntimeMod {
         basketball.setDeltaMovement(0, -0.32, 0);
         level.addFreshEntity(basketball);
         var ysm = new NeoForgeYsmRuntimeBridge(server);
-        LOGGER.info("MINEAGENT_SMOKE_YSM_STATUS installed={} checksumVerified={} runtimeAvailable={} version={}",
-                ysm.installed(), ysm.checksumVerified(), ysm.runtimeAvailable(), ysm.version());
+        LOGGER.info("MINEAGENT_SMOKE_YSM_STATUS installed={} artifactCompatible={} runtimeAvailable={} version={}",
+                ysm.installed(), ysm.artifactCompatible(), ysm.runtimeAvailable(), ysm.version());
         if (Boolean.getBoolean("mineagent.productionYsmSmokeTest")
                 || Boolean.getBoolean("mineagent.productionYsmDedicatedSmokeTest")) {
-            if (!ysm.installed() || !ysm.checksumVerified() || !ysm.runtimeAvailable()) {
+            if (!ysm.installed() || !ysm.artifactCompatible() || !ysm.runtimeAvailable()) {
                 throw new IllegalStateException("Pinned YSM native runtime did not initialize in production");
             }
-            LOGGER.info("MINEAGENT_SMOKE_YSM_RUNTIME_READY version={} native=true checksum=true", ysm.version());
+            LOGGER.info("MINEAGENT_SMOKE_YSM_RUNTIME_READY version={} native=true artifactCompatible=true", ysm.version());
         }
         if (Boolean.getBoolean("mineagent.productionYsmDedicatedSmokeTest")) {
             long appearanceRevision = 1;

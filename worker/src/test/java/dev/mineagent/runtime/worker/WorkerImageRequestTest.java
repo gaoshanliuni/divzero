@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class WorkerImageRequestTest {
     @org.junit.jupiter.api.io.TempDir java.nio.file.Path root;
     final List<WorkerRequestHandler> opened=new ArrayList<>();
-    WorkerRequestHandler worker(){var handler=new WorkerRequestHandler();opened.add(handler);var configured=handler.handle(new WorkerEnvelope(1,UUID.randomUUID(),"storage.configure",Map.of("contentRoot",root.resolve(UUID.randomUUID().toString()).resolve("content").toString())));assertEquals("storage.configured",configured.type());return handler;}
+    WorkerRequestHandler worker()throws Exception{var instance=root.resolve(UUID.randomUUID().toString());try(var config=dev.mineagent.runtime.core.config.ServerConfigService.open(instance.resolve("runtime.db"))){/* Use the same initialized server policy database as production. */}var handler=new WorkerRequestHandler();opened.add(handler);var configured=handler.handle(new WorkerEnvelope(1,UUID.randomUUID(),"storage.configure",Map.of("contentRoot",instance.resolve("content").toString())));assertEquals("storage.configured",configured.type());return handler;}
     @org.junit.jupiter.api.AfterEach void closeWorkers(){opened.forEach(WorkerRequestHandler::close);}
 
     @Test void explicitOnceTextRequestDoesNotRetryProviderFailure()throws Exception{
