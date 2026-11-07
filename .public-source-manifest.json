@@ -1449,8 +1449,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/AgentToolScope.java",
-      "resourceId": "ad6c28ae-b4f1-4143-9b7c-3be64aa98127",
-      "bytes": 4991
+      "resourceId": "77129016-8913-4ae4-b4c2-9ff1c02099c4",
+      "bytes": 5007
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/BlockObservationRegion.java",
@@ -1464,8 +1464,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilityCatalog.java",
-      "resourceId": "123d0a46-9a82-4261-ba8e-50e9dac7525c",
-      "bytes": 22143
+      "resourceId": "a9102a97-6c34-47d6-a78b-2c190dabb054",
+      "bytes": 22375
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
@@ -1524,8 +1524,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "e077e7f4-c709-4c3c-bd41-89ec3f2f2184",
-      "bytes": 76513
+      "resourceId": "1e36bf18-53ed-430a-a367-10df67982046",
+      "bytes": 76593
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
@@ -2784,8 +2784,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillTools.java",
-      "resourceId": "a7bf0921-ee08-4f45-80a4-7b6f87691e15",
-      "bytes": 10481
+      "resourceId": "b4b8ba2c-c8a1-4f4e-8c3a-f2f1954b83ec",
+      "bytes": 10805
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SneakClearance.java",
@@ -5294,8 +5294,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBehaviorPanel.java",
-      "resourceId": "3d15ba6e-9ed8-4c59-9cb7-8ec78890db15",
-      "bytes": 32164
+      "resourceId": "252de11a-2cd7-45da-a1af-819c47abcfe9",
+      "bytes": 32790
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",
@@ -9255,5 +9255,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "467c91773712352696d72db05e17a40682a49198"
+  "sourceCommit": "3dfe2c95aff4b45df5233226c74af37d1659cec5"
 }
