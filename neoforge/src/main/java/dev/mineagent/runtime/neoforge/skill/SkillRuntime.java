@@ -59,6 +59,7 @@ public final class SkillRuntime {
         out.put("stand",w.stand==null?List.of():List.of(w.stand.x,w.stand.y,w.stand.z));out.put("navigation",w.actor.observation().getOrDefault("navigation",""));
         out.put("dimension",w.player().level().dimension().identifier().toString());out.put("mainHand",w.player().getMainHandItem().toString());out.put("health",w.player().getHealth());
         out.put("target",w.block==null?List.of():List.of(w.block.getX(),w.block.getY(),w.block.getZ()));if(w.construct!=null)out.put("construction",w.construct.view());
+        out.put("movement",w.actor.observation().getOrDefault("movement",Map.of()));
         if(w.handoffTarget!=null)out.put("recipientPosition",List.of(w.handoffTarget.x,w.handoffTarget.y,w.handoffTarget.z));
         return Map.copyOf(out);
     }

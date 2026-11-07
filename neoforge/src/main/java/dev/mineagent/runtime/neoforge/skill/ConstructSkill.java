@@ -116,7 +116,7 @@ public final class ConstructSkill {
         var predicted=NativeTerrainRecovery.placementHitFrom(p,pos,feet.add(0,pose.eyeHeight()+rise,0),wanted);
         if(predicted==null||!predicted.getBlockPos().equals(below)||predicted.getDirection()!=net.minecraft.core.Direction.UP)return false;
         w.search=null;w.stand=null;w.session.phase("CONSTRUCT_PILLAR_APPROACH");
-        if(!w.movePrecisely(feet)||!p.onGround())return true;
+        if(!w.movePrecisely(feet,true)||!p.onGround())return true;
         w.actor.haltMotion(w.token());if(p.getDeltaMovement().horizontalDistanceSqr()>.0004)return true;
         w.actor.crouch(w.token(),true);if(!p.isCrouching())return true;
         pillarPlacement=true;w.nativeUsePos=below;w.beforeCount=w.count(wanted.getBlock().asItem());w.expectedState=state(pos);
@@ -168,7 +168,7 @@ public final class ConstructSkill {
         w.actor.haltMotion(w.token());w.actor.crouch(w.token(),true);w.actor.jump(w.token());placementJumpUntil=w.tick()+30;return true;
     }
     private void finishAction(ConstructionLedger.Cell cell,boolean placed,String status){
-        UUID operation=w.operation;String observed=state(position(cell));long tick=w.player().level().getGameTime(),prior=cursor;var detail=Map.of("state",observed,"materialsConsumed",placed?1:0,"tick",tick);String encoded=new com.google.gson.Gson().toJson(detail);
+        UUID operation=w.operation;String observed=state(position(cell));long tick=w.player().level().getGameTime(),prior=cursor;var at=w.player().position();var detail=Map.of("state",observed,"materialsConsumed",placed?1:0,"tick",tick,"actorPosition",List.of(at.x,at.y,at.z),"placementMode",pillarPlacement?"NATIVE_JUMP_UNDERFOOT":"NATIVE_USE");String encoded=new com.google.gson.Gson().toJson(detail);
         var future=lease.update(l->{l.nativeObserved(w.token(),operation,status,encoded);if(placed)l.applied(List.of(cell.sequence()),cell.sequence(),tick);else l.progress("APPLYING","WRITE",prior,tick);return null;});
         waitFor(future,()->{if(placed&&pillarPlacement)pillarLanding=true;w.confirm(status,Map.of("actual",observed,"materialConsumed",placed?"1":"0"));reserved=false;w.stand=null;w.search=null;if(placed)advanceCell(cell,true);});
     }

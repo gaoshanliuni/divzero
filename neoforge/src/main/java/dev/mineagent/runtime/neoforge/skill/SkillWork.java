@@ -72,11 +72,14 @@ final class SkillWork {
     }
     private boolean interactionMove(Vec3 target,InteractionTargetResolver.Kind kind){
         if(kind!=InteractionTargetResolver.Kind.PLACE)return move(target);
-        return movePrecisely(target);
+        return movePrecisely(target,true);
     }
     boolean movePrecisely(Vec3 target){
+        return movePrecisely(target,false);
+    }
+    boolean movePrecisely(Vec3 target,boolean careful){
         if(player().position().subtract(target).horizontalDistanceSqr()<=.040001&&Math.abs(player().getY()-target.y)<.2){actor.stop(token());return true;}
-        String result=actor.move(token(),target);if(Set.of("UNREACHABLE","INTERACTION_BLOCKED","SEARCH_LIMIT").contains(result)){session.add("unreachable",1);waitFor(result,60);abandonTarget();}return false;
+        String result=careful?actor.moveCarefully(token(),target):actor.move(token(),target);if(Set.of("UNREACHABLE","INTERACTION_BLOCKED","SEARCH_LIMIT").contains(result)){session.add("unreachable",1);waitFor(result,60);abandonTarget();}return false;
     }
     boolean reach(BlockPos target,InteractionTargetResolver.Kind kind,net.minecraft.world.level.block.state.BlockState desired){
         if(stand!=null)return interactionMove(stand,kind);
@@ -84,7 +87,7 @@ final class SkillWork {
         if(search.search()==null){waitFor(search.evaluator().encounteredUnloaded()?"WAITING_CHUNKS":"NO_INTERACTION_POSITION",60);search=null;return false;}
         var budget=NativeNavigationBudget.get(runtime.server);int allowed=budget.claim(token(),tick());if(allowed==0)return false;search.evaluator().beginSlice();var result=search.search().advance(allowed,budget::timeAvailable);
         if(result.status()==SurfacePathfinder.Status.FOUND){stand=result.steps().isEmpty()&&kind==InteractionTargetResolver.Kind.PLACE?search.candidates().stream().min(Comparator.comparingDouble(at->at.distanceToSqr(player().position()))).orElseThrow():result.steps().isEmpty()?player().position():NativeTraversalEvaluator.point(result.steps().getLast().to());search=null;return interactionMove(stand,kind);}
-        if(result.status()!=SurfacePathfinder.Status.BUDGET_EXHAUSTED){if(search.fallback()!=null){search=new InteractionTargetResolver.Query(search.evaluator(),search.fallback(),search.candidates());return false;}if(result.status()==SurfacePathfinder.Status.NO_PATH&&actor.recover(token(),Vec3.atCenterOf(target))){session.phase("TERRAIN_ESCAPE");search=null;return false;}session.add("unreachable",1);search=null;waitFor(result.status().name(),60);}return false;
+        if(result.status()!=SurfacePathfinder.Status.BUDGET_EXHAUSTED){if(search.fallback()!=null){session.add("preferredStandFallbacks",1);search=new InteractionTargetResolver.Query(search.evaluator(),search.fallback(),search.candidates());return false;}if(result.status()==SurfacePathfinder.Status.NO_PATH&&actor.recover(token(),Vec3.atCenterOf(target))){session.phase("TERRAIN_ESCAPE");search=null;return false;}session.add("unreachable",1);search=null;waitFor(result.status().name(),60);}return false;
     }
     int count(Item item){return player().getInventory().countItem(item);}
     boolean equip(Item item){if(player().getMainHandItem().is(item))return true;for(int i=0;i<36;i++)if(player().getInventory().getItem(i).is(item)){actor.select(token(),i);return player().getMainHandItem().is(item);}return false;}

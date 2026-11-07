@@ -12,6 +12,7 @@ public interface SkillActor {
     ServerPlayer player();BodyControlCoordinator controls();
     boolean current();boolean inputReady();
     String move(UUID session,Vec3 destination);void aim(UUID session,Vec3 target);
+    default String moveCarefully(UUID session,Vec3 destination){crouch(session,true);return move(session,destination);}
     default void aimImmediately(UUID session,Vec3 target){aim(session,target);}
     default void useOnce(UUID session,UUID operation,net.minecraft.world.InteractionHand hand){if(hand==net.minecraft.world.InteractionHand.MAIN_HAND)useItem(session,operation,false);else useHand(session,operation,hand);}
     void sprint(UUID session,boolean enabled);

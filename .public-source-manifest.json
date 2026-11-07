@@ -7009,8 +7009,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/AiSkillActor.java",
-      "resourceId": "9fb59019-7975-4c40-98ce-d9efa3aab394",
-      "bytes": 9101
+      "resourceId": "01492382-39a5-4f82-9087-91fe3b2f96a3",
+      "bytes": 9418
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
@@ -7054,8 +7054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
-      "resourceId": "997d55fe-f94d-4b43-a9de-3176ede04c2b",
-      "bytes": 23624
+      "resourceId": "c39ab0eb-daf7-4be2-8e5c-aaa66192c9d6",
+      "bytes": 23767
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
@@ -7224,8 +7224,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillActor.java",
-      "resourceId": "010edb9d-712c-480c-a1b8-eba64f6fff6c",
-      "bytes": 2138
+      "resourceId": "8c980db6-3d00-45bf-89ba-1087fbedc505",
+      "bytes": 2258
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillLootCollector.java",
@@ -7234,13 +7234,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "resourceId": "87413afb-5c6e-4c35-b804-7694ce34cce8",
-      "bytes": 62393
+      "resourceId": "2a9f1a32-96cb-4eb8-8f8e-72d9896cea85",
+      "bytes": 62478
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "resourceId": "27565310-cd29-4c12-89e3-5810e2dd9156",
-      "bytes": 13484
+      "resourceId": "46f20d09-2a51-4a90-97bb-d89693d8ca8a",
+      "bytes": 13680
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "1c166f29e030716d52ff555563591dd3e574e176"
+  "sourceCommit": "2ebf8a87ee0068b9593eb7ccd9e3e6043f1fe995"
 }
