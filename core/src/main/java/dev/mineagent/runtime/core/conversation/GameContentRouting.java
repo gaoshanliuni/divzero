@@ -20,6 +20,7 @@ public final class GameContentRouting {
         return false;
     }
     public static boolean hostTool(String name){return Set.of("inspect_host","read_host_output","python_execute","python_install_packages").contains(name);}
+    public static Map<String,Object> productionWorkflow(){return Map.of("status","REJECTED","error","GAME_CONTENT_TOOL_REQUIRED","executionState","NOT_STARTED","worldModified",false,"preferredSkills",List.of("production","cooperation"),"preferredTools",List.of("inspect_recipes","process_items","start_cooperation"),"diagnostic","当前请求是使用现有配方与真实材料加工物品，没有要求本机代码执行或新物品开发。先inspect_recipes读取实际配方，再process_items使用工作台/熔炉/箱子；可将PROCESS节点接入协作计划。无需Python、内容包或物品授予。");}
     public static Map<String,Object> nativeWorkflow(){return Map.of("status","REJECTED","error","GAME_CONTENT_TOOL_REQUIRED","executionState","NOT_STARTED","worldModified",false,"preferredSkills",List.of("content","items","entities"),"preferredTools",List.of("generate_content_package","inspect_modeling","validate_model_geometry","inspect_content_candidate","repair_content_package"),"diagnostic","当前请求是游戏内内容创建，没有要求本机操作。新物品（例如召唤权杖）使用generate_content_package及游戏内脚本/原生API；需要编写代码不等于需要Python。加载content及相关能力，读取契约后继续；候选失败返回具体诊断并局部修正。尚未请求本机执行。" );}
     private GameContentRouting(){}
 }

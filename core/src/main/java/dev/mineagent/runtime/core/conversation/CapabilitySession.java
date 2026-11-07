@@ -5,16 +5,16 @@ import java.util.regex.Pattern;
 
 /** Request/task-local disclosure. It has no reference to skills, bodies or permissions. */
 public final class CapabilitySession {
-    private boolean nativeContentOnly;
+    private boolean nativeContentOnly,productionOnly;
     private final LinkedHashSet<String> groups=new LinkedHashSet<>(),tools=new LinkedHashSet<>(CapabilityCatalog.RESIDENT);
     public synchronized Map<String,Object> load(String name){
-        if(nativeContentOnly&&name.equals("host"))return GameContentRouting.nativeWorkflow();
+        if(nativeContentOnly&&name.equals("host"))return productionOnly?GameContentRouting.productionWorkflow():GameContentRouting.nativeWorkflow();
         if(name.equals("host")&&!dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled())return dev.mineagent.runtime.core.hostsupport.PythonEdition.unavailable();
         var group=CapabilityCatalog.require(name);boolean added=groups.add(name);for(String tool:group.tools())tools.add(CapabilityCatalog.canonical(tool));
         return Map.of("status",added?"LOADED":"ALREADY_LOADED","name",name,"description",group.description(),"tools",group.tools(),"contextOnly",true,"executionAuthorized",false);
     }
     public synchronized List<String> groups(){return List.copyOf(groups);}
-    public synchronized Optional<Map<String,Object>> admission(String tool){if(!dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled()&&GameContentRouting.hostTool(tool)&&!nativeContentOnly)return Optional.of(dev.mineagent.runtime.core.hostsupport.PythonEdition.unavailable());return nativeContentOnly&&GameContentRouting.hostTool(tool)?Optional.of(GameContentRouting.nativeWorkflow()):Optional.empty();}
+    public synchronized Optional<Map<String,Object>> admission(String tool){if(!dev.mineagent.runtime.core.hostsupport.PythonEdition.bundled()&&GameContentRouting.hostTool(tool)&&!nativeContentOnly)return Optional.of(dev.mineagent.runtime.core.hostsupport.PythonEdition.unavailable());return nativeContentOnly&&GameContentRouting.hostTool(tool)?Optional.of(productionOnly?GameContentRouting.productionWorkflow():GameContentRouting.nativeWorkflow()):Optional.empty();}
     public synchronized List<String> tools(){return List.copyOf(tools);}
     public synchronized List<ConversationTools.Definition> definitions(){return CapabilityCatalog.selected(tools);}
     public synchronized void used(String tool){
@@ -26,6 +26,7 @@ public final class CapabilitySession {
     public synchronized void preload(String input,Collection<String> continuation){
         String text=input.toLowerCase(Locale.ROOT);
         nativeContentOnly=GameContentRouting.nativeContent(text)&&!GameContentRouting.hostRequested(text);
+        productionOnly=GameContentRouting.production(text)&&!GameContentRouting.authoredItem(text);
         boolean continues=matches(text,"^(继续|接着|continue|resume)[。.!！\\s]*$|刚才|上次那个|继续之前|继续上次|same task|continue that");
         if(continues&&continuation!=null)for(String group:continuation)load(group);
         boolean act=matches(text,"合成|烧制|组织|创建|生成|建造|搭建|制作|修改|更改|添加|增加|删除|设置|替换|帮我|请你|我要|给我|打开|检查|查看|查询|读取|导入|修复|设计|扩大|缩小|预览|create|build|make|modify|change|add|remove|set |open |inspect|import|fix|show|preview");

@@ -5,6 +5,11 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TaskReferenceContextTest {
+    @Test void recipeInventoryAvailabilityKeepsItsActualActorScope(){
+        var state=new TaskReferenceContext();
+        for(String actor:List.of("builder","courier"))state.observe("inspect_recipes",Map.of("status","OBSERVED","actorId",actor,"recipes",List.of(Map.of("recipe","minecraft:chest","recipe_reference","same-recipe-version"))),UUID.randomUUID(),1);
+        var rows=state.snapshot().path("references");assertEquals(2,rows.size());assertEquals("builder",rows.get(0).path("inventoryActor").asText());assertEquals("courier",rows.get(1).path("inventoryActor").asText());
+    }
     @Test void identityPairAndRecipeVersionSurviveUnrelatedLargeObservations(){
         var state=new TaskReferenceContext();UUID operation=UUID.randomUUID();
         state.observe("inspect_owned_agents",Map.of("status","OBSERVED","agents",List.of(Map.of("agent_id","wood","name","木材伙伴","revision",1,"body_uuid","body-wood"),Map.of("agent_id","stone","name","矿物伙伴","revision",1,"body_uuid","body-stone"))),operation,100);

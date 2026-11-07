@@ -20,8 +20,9 @@ public final class TaskReferenceContext {
         if(tool.equals("inspect_recipes"))for(var recipe:value.path("recipes")){
             if(!recipe.path("recipe").isTextual()||!recipe.path("recipe_reference").isTextual())continue;
             var row=copy(recipe,"recipe","recipe_reference","type","station","cookingTicks","special","ingredients");
+            if(value.has("actorId"))row.set("inventoryActor",value.get("actorId").deepCopy());
             if(recipe.path("definition").has("result"))row.set("output",recipe.path("definition").get("result").deepCopy());
-            put("recipe/"+recipe.path("recipe").asText(),"recipe_observation",row,operation,observedAt);
+            put("recipe/"+value.path("actorId").asText("unknown")+"/"+recipe.path("recipe").asText(),"recipe_observation",row,operation,observedAt);
         }
         trim();
     }

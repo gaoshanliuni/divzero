@@ -1514,8 +1514,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
-      "resourceId": "5cdc0809-eadc-427e-93ef-097e2f7fc97d",
-      "bytes": 6891
+      "resourceId": "a06df3ae-6150-4b05-8e94-b4b2686bf8d6",
+      "bytes": 7116
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationAuditImporter.java",
@@ -1589,8 +1589,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/GameContentRouting.java",
-      "resourceId": "df24463e-d968-4da1-ab1b-73386fb43148",
-      "bytes": 3206
+      "resourceId": "25c63614-6b24-4d3c-a523-5a16f4ee3905",
+      "bytes": 3824
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ModelRequestRecovery.java",
@@ -1624,8 +1624,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/TaskReferenceContext.java",
-      "resourceId": "58fe54e8-4660-41d5-8241-9fa256f6fc62",
-      "bytes": 2996
+      "resourceId": "6387bbe5-35b5-42ab-8408-6e11c20ea989",
+      "bytes": 3135
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolArguments.java",
@@ -3314,8 +3314,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/CapabilitySessionTest.java",
-      "resourceId": "4f218c3c-a668-4216-8a0b-f976ace4332a",
-      "bytes": 3563
+      "resourceId": "6d140182-9ac3-4faa-afbe-fe18cf1e894b",
+      "bytes": 3664
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationAuditIdentityTest.java",
@@ -3409,8 +3409,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/TaskReferenceContextTest.java",
-      "resourceId": "4dcfa4ad-465b-42e9-9234-af024ae50272",
-      "bytes": 2838
+      "resourceId": "ed2958e5-8ea5-45b5-a824-e6c3c3998b37",
+      "bytes": 3425
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolArgumentsTest.java",
@@ -9665,5 +9665,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "c40f9bfd2b305d91e3d6b6ab1c0b8744bdb6844f"
+  "sourceCommit": "fe6d60eb4f32526a567109934ef5bd55a36157c9"
 }
