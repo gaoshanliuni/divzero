@@ -13,7 +13,7 @@ class CodeSourceVersionTest {
         assertEquals(draft,restored);assertEquals(draft.source(),CodeDraftSources.read(content,restored.primarySource()));assertEquals(CodeDraftSources.set(draft),CodeDraftSources.readSet(content,restored.sourceVersion()));
         var changed=new TreeMap<>(CodeDraftSources.refs(draft));changed.put("helper.js",CodeDraftSources.store(content,"exports.n=3;"));
         assertThrows(IllegalStateException.class,()->CodeDraftSources.requireSet(CodeDraftSources.set(draft),draft.path(),changed,Map.of()));
-        assertThrows(java.io.IOException.class,()->CodeDraftSources.storeSet(content,new CodeDraftSources.SourceSet(draft.sourceVersion(),draft.path(),changed,Map.of())));
+        assertThrows(dev.mineagent.runtime.core.content.ContentIntegrityException.class,()->CodeDraftSources.storeSet(content,new CodeDraftSources.SourceSet(draft.sourceVersion(),draft.path(),changed,Map.of())));
         Files.writeString(content.pathFor(helper.sha256()),"exports.n=4;");assertThrows(IllegalStateException.class,()->CodeDraftSources.read(content,helper));
     }
     @Test void legacyDraftIdentityIsDerivedFromItsObjectVersionAndNeverChangesOnRead()throws Exception{
