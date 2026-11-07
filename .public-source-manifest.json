@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "99b18679-1d9b-408c-a7b8-25ba4e9f2287",
-      "bytes": 2163
+      "resourceId": "2ed22bde-0c74-4023-aa26-9607ae48fee4",
+      "bytes": 2318
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -879,8 +879,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/trust/TrustedClientPackageStore.java",
-      "sha256": "72fd29025846bb9e10519c1e8c9970ed60b8d67446dbcf4cf4ce0cc9d628d7b2",
-      "bytes": 4161
+      "resourceId": "512f270e-4992-41e0-a94d-9eb418dc74b2",
+      "bytes": 3859
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/trust/WebSetupNotice.java",
@@ -1054,13 +1054,18 @@
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/resources/BlockTextureStoreTest.java",
-      "sha256": "305f46417f057d4f6dde89ab7dace9e29726bb61a1dd54c94eda2f316caa08f4",
-      "bytes": 1598
+      "resourceId": "762606ab-d52d-469d-b7e9-06b4ad1b791b",
+      "bytes": 1623
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/trust/ServerTrustStoreTest.java",
       "resourceId": "c39ee9cf-a0ca-4d37-b651-44939f8c2c69",
       "bytes": 2740
+    },
+    {
+      "path": "client/src/test/java/dev/mineagent/runtime/client/trust/TrustedClientPackageStoreTest.java",
+      "resourceId": "58bb5854-7d7e-4991-952e-40dfa07d3913",
+      "bytes": 1943
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/webui/UiStateStoreTest.java",
@@ -1643,6 +1648,11 @@
       "bytes": 898
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/crypto/SourceSignature.java",
+      "resourceId": "8574c9fd-0860-4799-9342-0caf5ff1ef5b",
+      "bytes": 1395
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/decision/DecisionChatRouter.java",
       "sha256": "6bc35eeb15ce86d8aa78b30d0146d6d6848bf121f0f69ce40258cf03e3b36a7b",
       "bytes": 5175
@@ -2014,8 +2024,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ContentPackageService.java",
-      "sha256": "e50b3657d3c354ddedf471373cfdcf5cfcb75cd03f8bd6143fc213d9cfda6e13",
-      "bytes": 8579
+      "resourceId": "4fe24856-cb2a-4bfe-b748-4070122d8d43",
+      "bytes": 9848
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/DataPackInstallStore.java",
@@ -3418,6 +3428,16 @@
       "bytes": 2479
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/packages/ContentPackageServiceTest.java",
+      "resourceId": "199f2da4-1213-4df7-902a-97a6a50a8b2e",
+      "bytes": 5098
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/packages/LegacyContentPackageMigratorTest.java",
+      "resourceId": "ebc18c06-eab4-4835-b021-7818e0e45b7f",
+      "bytes": 3529
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/PackageSignatureMigrationTest.java",
       "resourceId": "68f6ee74-0f8d-41de-bb7e-cc54248b5a91",
       "bytes": 2815
@@ -4649,13 +4669,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
-      "sha256": "86a63a74dcf63b07e34ef3cf8fee717550b60fbfd1e3a069012e7b3a07147a7a",
-      "bytes": 56537
+      "resourceId": "462c58bb-6945-4947-9ec4-2aecd121749d",
+      "bytes": 56422
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
-      "sha256": "92a901d50d8f68546eb351917712a9f70c49ff1a7a3f3e822332ccfc50bf96e0",
-      "bytes": 27061
+      "resourceId": "0e47cf07-b294-49c3-b867-a06c717a13db",
+      "bytes": 27042
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/WorldActivationRuntime.java",
@@ -4859,8 +4879,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientMod.java",
-      "resourceId": "85efbd34-dc49-424d-9a40-691584362c0e",
-      "bytes": 29406
+      "resourceId": "4ce54c73-997a-4acd-9dca-d39a87434f80",
+      "bytes": 29326
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/MineAgentClientNavigation.java",
@@ -9220,5 +9240,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "bbc99c7191ae52e6800c12fdb5683798748111da"
+  "sourceCommit": "fb51d98088e86e540a24eb54d296ba9919a9ecb7"
 }

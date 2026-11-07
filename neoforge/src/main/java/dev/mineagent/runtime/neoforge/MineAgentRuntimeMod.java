@@ -676,11 +676,9 @@ public final class MineAgentRuntimeMod {
                 players.size());
         try {
             String source = "'client-ready';";
-            String hash = dev.mineagent.runtime.core.packages.ContentPackageService.sha256(
-                    source.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            String hash=dev.mineagent.runtime.api.packages.ResourceIds.create();
             String signature = java.util.Base64.getEncoder().encodeToString(
-                    MineAgentRuntimeServices.identity(server).sign(
-                            hash.getBytes(java.nio.charset.StandardCharsets.US_ASCII)));
+                    dev.mineagent.runtime.core.crypto.SourceSignature.sign(MineAgentRuntimeServices.identity(server),hash,source));
             var installed = MineAgentRuntimeServices.contentPackages(server).install(
                     new dev.mineagent.runtime.api.packages.ContentPackage(
                             java.util.UUID.randomUUID(), "多人客户端签名测试", "1.0.0",

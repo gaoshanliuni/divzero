@@ -331,8 +331,7 @@ public final class MineAgentClientMod {
                         .resolve("ysm-render-evidence.png");
                 image.writeToFile(screenshot);
                 ysmScreenshotColors = colors.size();
-                ysmScreenshotHash = dev.mineagent.runtime.core.packages.ContentPackageService.sha256(
-                        java.nio.file.Files.readAllBytes(screenshot));
+                ysmScreenshotHash = dev.mineagent.runtime.api.packages.ResourceIds.create();
             } catch (Exception failure) {
                 MineAgentRuntimeMod.LOGGER.error("MINEAGENT_SMOKE_YSM_SCREENSHOT_FAILED", failure);
             }

@@ -8,10 +8,10 @@ import dev.mineagent.runtime.core.persistence.SqliteRuntimeRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.security.MessageDigest;
+
 import java.time.Clock;
 import java.util.Base64;
-import java.util.HexFormat;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +31,7 @@ public final class ContentPackageService implements AutoCloseable {
             SqliteRuntimeRepository repository,
             UUID worldId,
             Clock clock,
-            byte[] trustedPublicKey
+            byte[] trustedPublicKey,IdentitySigner signer
     ) throws Exception {
         this.repository = repository;
         this.worldId = worldId;
@@ -39,6 +39,13 @@ public final class ContentPackageService implements AutoCloseable {
         this.trustedPublicKey = trustedPublicKey.clone();
         for (var record : repository.list(worldId, NAMESPACE)) {
             ContentPackage contentPackage = mapper.readValue(record.payload(), ContentPackage.class);
+            byte[] proof=Base64.getDecoder().decode(contentPackage.signature());
+            if(!dev.mineagent.runtime.core.crypto.SourceSignature.modern(proof)&&signer!=null){
+                if(!IdentitySigner.verify(trustedPublicKey,contentPackage.sha256().getBytes(StandardCharsets.US_ASCII),proof))throw new SecurityException("LEGACY_SOURCE_SIGNATURE_INVALID");
+                String key=contentPackage.packageId()+"_"+contentPackage.revision();var old=repository.get(worldId,"legacy_source_signatures_v2",key);
+                if(old.isPresent()){var receipt=mapper.readTree(old.get().payload());if(!receipt.path("source").asText().equals(contentPackage.source())||!receipt.path("resourceId").asText().equals(contentPackage.sha256()))throw new SecurityException("LEGACY_SOURCE_MIGRATION_CHANGED");contentPackage=contentPackage.withSignature(receipt.path("signature").asText());}
+                else{String signature=Base64.getEncoder().encodeToString(dev.mineagent.runtime.core.crypto.SourceSignature.sign(signer,contentPackage.sha256(),contentPackage.source()));var saved=repository.compareAndSet(worldId,"legacy_source_signatures_v2",key,0,mapper.writeValueAsString(Map.of("source",contentPackage.source(),"resourceId",contentPackage.sha256(),"signature",signature)),clock.millis());if(!saved.accepted())throw new IllegalStateException("LEGACY_SOURCE_MIGRATION_BUSY");contentPackage=contentPackage.withSignature(signature);}
+            }
             packages.put(contentPackage.packageId(), contentPackage);
         }
     }
@@ -51,13 +58,14 @@ public final class ContentPackageService implements AutoCloseable {
     ) throws Exception {
         var repository = new SqliteRuntimeRepository(database);
         try {
-            return new ContentPackageService(repository, worldId, clock, trustedPublicKey);
+            return new ContentPackageService(repository, worldId, clock, trustedPublicKey,null);
         } catch (Exception failure) {
             repository.close();
             throw failure;
         }
     }
 
+    public static ContentPackageService open(Path database,UUID world,Clock clock,IdentitySigner signer)throws Exception{var repository=new SqliteRuntimeRepository(database);try{return new ContentPackageService(repository,world,clock,signer.publicKeyEncoded(),signer);}catch(Exception failure){repository.close();throw failure;}}
     public synchronized ContentPackageResult install(ContentPackage candidate) throws Exception {
         validate(candidate);
         if (packages.containsKey(candidate.packageId())) {
@@ -153,21 +161,7 @@ public final class ContentPackageService implements AutoCloseable {
     }
 
     private String integrityError(ContentPackage candidate) throws Exception {
-        String calculated = sha256(candidate.source().getBytes(StandardCharsets.UTF_8));
-        if (!calculated.equals(candidate.sha256())) {
-            return "HASH_MISMATCH";
-        }
-        boolean signatureValid;
-        try {
-            signatureValid = IdentitySigner.verify(trustedPublicKey,
-                    candidate.sha256().getBytes(StandardCharsets.US_ASCII),
-                    Base64.getDecoder().decode(candidate.signature()));
-        } catch (Exception invalid) {
-            signatureValid = false;
-        }
-        if (!signatureValid) {
-            return "SIGNATURE_INVALID";
-        }
+        try{if(!dev.mineagent.runtime.core.crypto.SourceSignature.verify((bytes,proof)->IdentitySigner.verify(trustedPublicKey,bytes,proof),candidate.sha256(),candidate.source(),Base64.getDecoder().decode(candidate.signature())))return "SIGNATURE_INVALID";}catch(Exception invalid){return "SIGNATURE_INVALID";}
         for (var dependency : candidate.dependencies().entrySet()) {
             ContentPackage installed = packages.get(dependency.getKey());
             if (installed == null) {
@@ -178,10 +172,6 @@ public final class ContentPackageService implements AutoCloseable {
             }
         }
         return "";
-    }
-
-    public static String sha256(byte[] content) throws Exception {
-        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
     }
 
     @Override

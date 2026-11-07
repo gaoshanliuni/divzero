@@ -6,9 +6,9 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
+
 import java.util.Base64;
-import java.util.HexFormat;
+
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
@@ -45,14 +45,7 @@ public final class TrustedClientPackageStore {
         if (trust.status(serverId, fingerprint) != TrustStatus.TRUSTED) {
             return ClientPackageTrustStatus.SERVER_UNTRUSTED;
         }
-        String calculated = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                .digest(source.getBytes(StandardCharsets.UTF_8)));
-        if (!calculated.equals(sha256)) {
-            return ClientPackageTrustStatus.HASH_MISMATCH;
-        }
-        if (!trust.verify(serverId, sha256.getBytes(StandardCharsets.US_ASCII), signature)) {
-            return ClientPackageTrustStatus.SIGNATURE_INVALID;
-        }
+        if(!dev.mineagent.runtime.core.crypto.SourceSignature.verify((bytes,proof)->trust.verify(serverId,bytes,proof),sha256,source,signature))return ClientPackageTrustStatus.SIGNATURE_INVALID;
         String prefix = key(serverId, packageId);
         long current = Long.parseLong(values.getProperty(prefix + ".revision", "0"));
         String currentHash = values.getProperty(prefix + ".sha256", "");

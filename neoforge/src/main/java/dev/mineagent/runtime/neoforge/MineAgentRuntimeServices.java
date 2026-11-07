@@ -402,7 +402,7 @@ public final class MineAgentRuntimeServices {
         try {
             var created = dev.mineagent.runtime.core.packages.ContentPackageService.open(
                     server.getServerDirectory().resolve("mineagent-runtime-data").resolve("runtime.db"),
-                    worldId(server), java.time.Clock.systemUTC(), identity(server).publicKeyEncoded());
+                    worldId(server), java.time.Clock.systemUTC(), identity(server));
             CONTENT_PACKAGES.put(server, created);
             return created;
         } catch (Exception failure) {
