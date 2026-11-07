@@ -133,7 +133,7 @@ final class ProcessingSkill {
                 transfer(menu, body, input, menu.getSlot(0), 1);
                 if (fuelUnits > 0) transfer(menu, body, Objects.requireNonNull(fuel), menu.getSlot(1), fuelUnits);
                 cooking = true; loadedAt = w.tick(); w.session.add("smeltingInputsLoaded", 1);
-                w.session.receipt(merge(w.session.receipt(), Map.of("state", "WAITING_NATIVE_SMELT", "output", expectedOutput.toString(), "loadedTick", Integer.toString(loadedAt))));
+                w.session.receipt(merge(w.session.receipt(), Map.of("state", "PREPARED", "processingPhase", "WAITING_NATIVE_SMELT", "output", expectedOutput.toString(), "loadedTick", Integer.toString(loadedAt))));
                 w.runtime.persist(w);
             } else {
                 if (furnace == null || furnace != body.level().getBlockEntity(pos)) throw new IllegalStateException("SMELT_STATION_REPLACED; outcome=UNKNOWN");

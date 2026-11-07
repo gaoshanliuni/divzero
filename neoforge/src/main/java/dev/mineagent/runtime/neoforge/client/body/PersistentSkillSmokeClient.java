@@ -889,6 +889,7 @@ public final class PersistentSkillSmokeClient {
             agent=MineAgentRuntimeServices.bodies(s).createPersistentAt("持续技能搭档",p.getUUID(),p.level(),new Vec3(.5,101,6.5)).agentId();var b=body(p);b.setGameMode(GameType.SURVIVAL);b.getInventory().clearContent();b.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));b.getInventory().setItem(1,new ItemStack(Items.WHEAT_SEEDS,32));b.getInventory().setItem(2,new ItemStack(Items.IRON_HOE));b.getInventory().setItem(3,new ItemStack(Items.BOW));b.getInventory().setItem(4,new ItemStack(Items.ARROW,32));var rod=new ItemStack(Items.FISHING_ROD);var lure=p.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.LURE);net.minecraft.world.item.enchantment.EnchantmentHelper.updateEnchantments(rod,e->e.set(lure,3));b.getInventory().setItem(5,rod);return Map.of("agent",agent,"mode",b.gameMode.getGameModeForPlayer().name());
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
+        if(mode.equals("cooperative_deepseek")){cooperativeDeepSeek();return;}
         if(mode.equals("native_production")){nativeProduction();return;}
         if(mode.equals("cooperative_building")){cooperativeBuilding();return;}
         if(mode.equals("online_replay")){onlineReplay();return;}
@@ -1035,6 +1036,46 @@ public final class PersistentSkillSmokeClient {
         action("stop-resumed-session",()->tool("control_skill",JSON.createObjectNode().put("id","paused_farm").put("expected_revision",3).put("action","stop")));
     }
     private static UUID cooperativeWood,cooperativeStone,cooperativeRun;private static ObjectNode cooperativePlan;
+    private static UUID productionConversation,productionRequest;
+    private static void cooperativeDeepSeek(){
+        action("real-model-cooperative-raw-material-fixture",()->server(p->{
+            var manager=MineAgentRuntimeServices.bodies(p.level().getServer());body(p).getInventory().clearContent();
+            cooperativeWood=manager.createPersistentAt("木材伙伴",p.getUUID(),p.level(),new Vec3(-4.5,101,15.5)).agentId();
+            cooperativeStone=manager.createPersistentAt("矿物伙伴",p.getUUID(),p.level(),new Vec3(23.5,101,15.5)).agentId();
+            var wood=manager.body(cooperativeWood).orElseThrow();var stone=manager.body(cooperativeStone).orElseThrow();
+            for(var courier:List.of(wood,stone)){courier.setGameMode(GameType.SURVIVAL);courier.getInventory().clearContent();}
+            wood.getInventory().setItem(0,new ItemStack(Items.OAK_LOG,64));wood.getInventory().setItem(1,new ItemStack(Items.OAK_LOG,64));
+            stone.getInventory().setItem(0,new ItemStack(Items.COBBLESTONE,64));stone.getInventory().setItem(1,new ItemStack(Items.SAND,24));stone.getInventory().setItem(2,new ItemStack(Items.DIAMOND,24));stone.getInventory().setItem(3,new ItemStack(Items.COAL,16));
+            p.level().setBlock(new BlockPos(3,101,3),Blocks.CRAFTING_TABLE.defaultBlockState(),3);p.level().setBlock(new BlockPos(5,101,3),Blocks.FURNACE.defaultBlockState(),3);
+            return Map.of("fixtureOnly",true,"builderInitiallyEmpty",body(p).getInventory().isEmpty(),"woodAgent",cooperativeWood,"stoneAgent",cooperativeStone,"rawLogs",128,"rawCobblestone",64,"rawSand",24,"rawDiamonds",24,"fuelCoal",16,"processedItemsGranted",0);
+        }));
+        action("send-natural-goal-to-real-deepseek",()->server(p->{try{
+            var runtime=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(p.level().getServer());
+            productionConversation=runtime.store().create(p.getUUID(),agent,UUID.randomUUID(),"真实协作：加工材料建房并储存盔甲").conversationId();productionRequest=UUID.randomUUID();
+            String prompt="请组织我名下的木材伙伴、矿物伙伴和你合作，在空地 x=10..20,z=5..15,y=101..106 内建一个相对美观的中等大小单间，外部至少7×7、室内净高至少3。要有地板、门洞、窗、屋顶和不同材料的装饰。工作台在(3,101,3)，熔炉在(5,101,3)。先分别向这两个伙伴发真实协作消息确认库存，消息只确认现状，先不要单独启动工作，然后由你设计完整协作计划。木材伙伴有128个橡木原木；矿物伙伴有64圆石、24沙、24钻石和16煤。你的背包为空。伙伴必须亲自把原材料交给你。请查询本世界真实合成表，用工作台将原木制作木板与至少一次木棍，用熔炉将部分圆石烧成石头、部分沙烧成玻璃用于房屋，不必全烧完；用24钻石在工作台制作完整四件钻石盔甲，自己合成并放置一个箱子，最后把四件盔甲实际存入箱子。请计算真实材料数量，将加工、施工和储存依赖放入可持续执行的协作计划，让本地程序执行而不是让模型反复查询等待。建筑需检查门洞、内部通路、净空及屋顶，完成应有实际版本验证。你可以读取工具文档和实际状态，但禁止give、setblock、fill、创造模式、apply_building或直接世界几何写入，必须真实身体消耗材料施工。只提交你实际可执行的计划，提交不等于已经完成。";
+            var receipt=runtime.write(p,productionRequest,Map.of("kind","send","agentId",agent.toString(),"conversationId",productionConversation.toString(),"expectedRevision","1","text",prompt));
+            Files.writeString(root().resolve("real-model-request.json"),JSON.writeValueAsString(Map.of("conversation",productionConversation,"operation",productionRequest,"prompt",prompt,"model","deepseek-flash","source","ACTUAL_SERVER_CONVERSATION_NO_FIXED_PLAN")));return receipt;
+        }catch(Exception e){throw new CompletionException(e);}}));
+        waitFor("real-deepseek-plans-through-actual-tools",36000,()->server(p->{try{
+            var store=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(p.level().getServer()).store();var context=store.context(p.getUUID(),agent,productionConversation,null).orElse(null);if(context==null||Set.of("PENDING","GENERATING").contains(context.requestState()))return false;
+            require(context.operationId().equals(productionRequest)&&context.requestState().equals("COMPLETE"),"REAL_MODEL_NOT_COMPLETE_"+context);EVIDENCE.add(context);
+            var message=store.message(p.getUUID(),agent,productionConversation,context.assistantMessageId());var reply=new StringBuilder();for(int offset=0;offset<message.textLength();){var chunk=store.chunk(p.getUUID(),agent,productionConversation,message.messageId(),message.revision(),offset,4096);reply.append(chunk.text());offset+=chunk.text().length();}Files.writeString(root().resolve("real-model-reply.txt"),reply);return true;
+        }catch(Exception error){throw new CompletionException(error);}}));
+        waitFor("actual-model-plan-native-completion",36000,()->tool("inspect_cooperation",JSON.createObjectNode()).thenApply(value->{
+            lastObservation=value;require(value.path("runs").isArray()&&!value.path("runs").isEmpty(),"REAL_MODEL_DID_NOT_CREATE_COOPERATION_"+value);
+            for(var run:value.path("runs")){if(Set.of("PAUSED","CANCELLED").contains(run.path("status").asText()))throw new IllegalStateException("REAL_COOP_INTERRUPTED_"+run);if(!run.path("status").asText().equals("COMPLETED"))return false;}
+            long placed=0,smelted=0,crafted=0,stored=0,received=0;for(var run:value.path("runs"))for(var step:run.path("steps")){var counters=step.path("observed").path("counters");placed+=counters.path("constructionBlocksPlaced").asLong();smelted+=counters.path("smeltedItems").asLong();crafted+=counters.path("craftedItems").asLong();stored+=counters.path("storedItems").asLong();received+=counters.path("handoffReceived").asLong();}
+            require(placed>=100&&smelted>=8&&crafted>=20&&stored>=4&&received>=40,"REAL_MODEL_NATIVE_EVIDENCE_INCOMPLETE_"+value);EVIDENCE.add(value);return true;
+        }));
+        action("real-model-armor-and-material-world-proof",()->server(p->{
+            var contents=new LinkedHashMap<String,Integer>();int chests=0,stone=0,glass=0,planks=0;for(var at:BlockPos.betweenClosed(10,101,5,20,106,15)){var block=p.level().getBlockState(at);if(block.is(Blocks.CHEST)){chests++;var c=(net.minecraft.world.Container)p.level().getBlockEntity(at);for(int i=0;i<c.getContainerSize();i++){var stack=c.getItem(i);if(!stack.isEmpty())contents.merge(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),stack.getCount(),Integer::sum);}}if(block.is(Blocks.STONE))stone++;if(block.is(Blocks.GLASS))glass++;if(block.is(Blocks.OAK_PLANKS))planks++;}
+            require(chests>=1&&stone>=4&&glass>=4&&planks>=40,"REAL_MODEL_ROOM_MATERIALS_MISSING");for(String armor:List.of("diamond_helmet","diamond_chestplate","diamond_leggings","diamond_boots"))require(contents.getOrDefault("minecraft:"+armor,0)==1,"REAL_MODEL_ARMOR_NOT_STORED_"+armor);
+            require(body(p).getInventory().countItem(Items.STICK)>=4,"REAL_MODEL_STICKS_NOT_CRAFTED");
+            var store=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(p.level().getServer()).store();var peers=store.peers(p.getUUID(),agent,0);require(peers.size()>=2,"REAL_MODEL_PEER_DIALOGUE_MISSING");for(var peer:peers)require(store.messages(p.getUUID(),peer.recipient(),peer.conversationId(),0,8).messages().size()>=2,"REAL_MODEL_PEER_REPLY_MISSING");
+            p.teleportTo(p.level(),15.5,110,23.5,Set.of(),180,28,true);return Map.of("actualChestContents",contents,"chests",chests,"stoneBlocks",stone,"glassBlocks",glass,"planksBlocks",planks,"peerThreads",peers,"modelEvidence","real-provider-audit and real-cooperation-tools.jsonl");
+        }));
+        action("real-model-room-screenshot",()->{screen("deepseek-cooperative-room");return CompletableFuture.completedFuture(true);});
+    }
     private static void nativeProduction(){
         action("production-raw-input-fixture",()->server(p->{
             var b=body(p);b.getInventory().clearContent();b.getInventory().setItem(0,new ItemStack(Items.OAK_LOG,4));b.getInventory().setItem(1,new ItemStack(Items.COBBLESTONE,2));b.getInventory().setItem(2,new ItemStack(Items.SAND,2));b.getInventory().setItem(3,new ItemStack(Items.DIAMOND,24));b.getInventory().setItem(4,new ItemStack(Items.COAL,1));
@@ -1201,7 +1242,7 @@ public final class PersistentSkillSmokeClient {
     }
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){if(!Boolean.getBoolean("mineagent.skillSmoke")||done)return;try{
         if(mc().player==null||mc().getSingleplayerServer()==null)return;ticks++;if(!initialized){initialized=true;prepare();stageAt=ticks;}if(ticks%100==0)Files.writeString(root().resolve("progress.json"),JSON.writeValueAsString(Map.of("stage",STEPS.isEmpty()?"DONE":STEPS.getFirst().name,"ticks",ticks,"busy",busy,"observed",lastObservation==null?Map.of():lastObservation,"input",NativeSkillInput.observation())));
-        if(STEPS.isEmpty()){Files.writeString(root().resolve("result.json"),JSON.writeValueAsString(Map.of("status","PASS","mode",System.getProperty("mineagent.skillSmokeMode","work"),"modelCalls",System.getProperty("mineagent.skillSmokeMode","").equals("design_ui")?"AUDITED_REAL_REQUESTS":0,"evidence",EVIDENCE)));done=true;mc().stop();return;}
+        if(STEPS.isEmpty()){Files.writeString(root().resolve("result.json"),JSON.writeValueAsString(Map.of("status","PASS","mode",System.getProperty("mineagent.skillSmokeMode","work"),"modelCalls",Set.of("design_ui","cooperative_deepseek").contains(System.getProperty("mineagent.skillSmokeMode",""))?"AUDITED_REAL_REQUESTS":0,"evidence",EVIDENCE)));done=true;mc().stop();return;}
         if(ticks-stageAt>STEPS.getFirst().timeout)throw new IllegalStateException("SKILL_SMOKE_TIMEOUT_"+STEPS.getFirst().name);if(busy||ticks%5!=0)return;busy=true;var step=STEPS.getFirst();step.run.get().whenComplete((finished,error)->mc().execute(()->{busy=false;if(error!=null){fail(error);return;}if(finished){EVIDENCE.add(Map.of("completedStep",step.name,"atTick",ticks));STEPS.removeFirst();stageAt=ticks;}}));
     }catch(Exception e){fail(e);}}
     private static void fail(Throwable failure){if(done)return;done=true;try{screen("failure");Files.writeString(root().resolve("failure.json"),JSON.writeValueAsString(Map.of("error",failure.toString(),"stage",STEPS.isEmpty()?"DONE":STEPS.getFirst().name,"evidence",EVIDENCE,"lastObservation",lastObservation==null?Map.of():lastObservation,"input",NativeSkillInput.observation(),"autonomy",AutonomousBodyClient.observe())));}catch(Exception ignored){}AutonomousBodyClient.stop("SMOKE_FAILURE");mc().stop();}

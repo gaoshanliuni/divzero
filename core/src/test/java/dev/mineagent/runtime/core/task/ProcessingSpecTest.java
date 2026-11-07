@@ -42,4 +42,16 @@ class ProcessingSpecTest {
         var n = intent(); n.put("actor","player");
         assertThrows(IllegalArgumentException.class, () -> SkillSpec.parse(n,null));
     }
+    @Test void pendingNativeProcessingNeverReplaysAfterRestartOrRepeatedReadOnlyReconciliation() throws Exception {
+        var spec=SkillSpec.parse(intent(),null);
+        var session=new SkillSession(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),null,spec);
+        session.receipt(Map.of("state","PREPARED","processingPhase","WAITING_NATIVE_SMELT"));
+        var restored=SkillSession.restore(session.snapshot());
+        assertTrue(restored.needsReconciliation());assertFalse(restored.automaticResumeCandidate());
+        assertThrows(IllegalStateException.class,()->restored.control(restored.revision(),"resume"));
+        restored.reconcile(restored.revision(),Map.of("observedInventory","actual inventory"));
+        restored.reconcile(restored.revision(),Map.of("observedInventory","actual inventory again"));
+        assertThrows(IllegalStateException.class,()->restored.control(restored.revision(),"resume"));
+        restored.control(restored.revision(),"stop");assertEquals(SkillSession.State.CANCELLED,restored.state());
+    }
 }

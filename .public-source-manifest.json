@@ -2864,8 +2864,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSession.java",
-      "resourceId": "629a0b12-f2f4-46e9-aa6a-dab2198cbdb3",
-      "bytes": 7050
+      "resourceId": "d3b1db6d-ce3e-453e-9e5e-3209ca58cc6c",
+      "bytes": 7396
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSpec.java",
@@ -3874,8 +3874,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/ProcessingSpecTest.java",
-      "resourceId": "6f98ec52-fc91-4547-8753-9f5979d706a9",
-      "bytes": 3386
+      "resourceId": "b23838aa-fd77-4cae-8664-c07800e7dacf",
+      "bytes": 4452
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/PvpIntentTest.java",
@@ -5314,8 +5314,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "94a0f727-59c3-43f7-9db9-164d85ebc5a1",
-      "bytes": 255726
+      "resourceId": "bc871c15-c920-43ce-b61c-37be77a7af6e",
+      "bytes": 263996
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7174,8 +7174,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ProcessingSkill.java",
-      "resourceId": "89f6a3f9-9517-4bf3-b16d-73630b3b2b95",
-      "bytes": 16520
+      "resourceId": "06943057-ce12-4f9e-98fc-f58fe6c12fa6",
+      "bytes": 16551
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpConsent.java",
@@ -7914,8 +7914,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "resourceId": "d944d208-13b7-4227-af2f-af99a66f60ca",
-      "bytes": 105849
+      "resourceId": "c362b5d0-efa2-424a-a301-850e889304bd",
+      "bytes": 106450
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -9650,5 +9650,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "4aaaf3da5c373700336e2a2b3a3d5b787a2d3fe1"
+  "sourceCommit": "6ec7c8dbedd36d78aba0264efad8cf6d83cb6018"
 }
