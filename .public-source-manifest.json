@@ -3818,6 +3818,11 @@
       "bytes": 3665
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/WorldActionJournalTest.java",
+      "resourceId": "aaa37cac-44ed-4860-b7d4-987e99cb55db",
+      "bytes": 5250
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/BehaviorPanelProjectionTest.java",
       "sha256": "951cd04dba576b025ea4c1f08cd8b5dc0163c2e6fddf23b33e850a9a59ae6208",
       "bytes": 1751
@@ -9490,5 +9495,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "949a059293f92396528f2f5342301a627a7d6296"
+  "sourceCommit": "d35d749d60b39a483ed196886e8d24c84cacb03b"
 }
