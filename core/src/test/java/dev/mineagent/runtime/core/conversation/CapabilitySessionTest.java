@@ -3,6 +3,15 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class CapabilitySessionTest {
+    @Test void vanillaProductionAndPeerMessagesDoNotPreloadAuthoringOrChatSettings(){
+        var scope=new CapabilitySession();scope.preload("请协作，先给伙伴发消息确认材料，用工作台合成现有钻石盔甲，熔炉烧制玻璃，再建房并把盔甲存入箱子。",List.of());
+        assertTrue(scope.groups().containsAll(List.of("cooperation","production","building")));
+        assertFalse(scope.groups().contains("content"));assertFalse(scope.groups().contains("chat"));assertFalse(scope.groups().contains("world"));
+        assertTrue(scope.tools().containsAll(List.of("inspect_recipes","process_items","send_peer_message","stop_actions")));
+        var custom=new CapabilitySession();custom.preload("创建一种自定义新物品召唤权杖，并注册工作台合成配方",List.of());
+        assertTrue(custom.groups().contains("content"));assertTrue(custom.groups().contains("production"));
+        assertEquals("LOADED",scope.load("world").get("status"));
+    }
     @Test void packageActivationIsOnDemandAndDimensionBound(){
         var scope=new CapabilitySession();assertFalse(scope.tools().contains("activate_package_version"));
         scope.load("content");assertTrue(scope.tools().contains("activate_package_version"));

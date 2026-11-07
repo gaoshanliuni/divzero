@@ -1509,13 +1509,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilityCatalog.java",
-      "resourceId": "c264a246-f35d-47ea-9fce-721d350fe795",
-      "bytes": 24847
+      "resourceId": "c757a4cb-31d9-4946-89b9-3d0ec7eff2e7",
+      "bytes": 24829
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
-      "resourceId": "fe5c5f87-911a-4b97-a4eb-6b56f5cde684",
-      "bytes": 6711
+      "resourceId": "5cdc0809-eadc-427e-93ef-097e2f7fc97d",
+      "bytes": 6891
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationAuditImporter.java",
@@ -1589,8 +1589,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/GameContentRouting.java",
-      "sha256": "705fb4d3ce9898fa59573b2821126132e1cdcaf7462ecec7ee811d1566cfe6e3",
-      "bytes": 2767
+      "resourceId": "df24463e-d968-4da1-ab1b-73386fb43148",
+      "bytes": 3206
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ModelRequestRecovery.java",
@@ -3314,8 +3314,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/CapabilitySessionTest.java",
-      "sha256": "d3127451617b86e14405a38132152da27fce04367d717288603c5d956b44b99b",
-      "bytes": 2564
+      "resourceId": "4f218c3c-a668-4216-8a0b-f976ace4332a",
+      "bytes": 3563
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationAuditIdentityTest.java",
@@ -9665,5 +9665,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "57a2863eb2b6573afb3d95a4201f7339c287de51"
+  "sourceCommit": "c40f9bfd2b305d91e3d6b6ab1c0b8744bdb6844f"
 }

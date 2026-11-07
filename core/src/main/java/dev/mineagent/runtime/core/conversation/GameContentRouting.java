@@ -8,7 +8,9 @@ public final class GameContentRouting {
     private static boolean has(String text,String pattern){return Pattern.compile(pattern,Pattern.CASE_INSENSITIVE|Pattern.DOTALL).matcher(text).find();}
     public static boolean creation(String text){return has(text,"创建|生成|制作|做(?:个|一[个把根支件种套柄座栋])|设计|开发|新增|添加|\\b(create|make|build|craft|design)\\b");}
     public static boolean item(String text){return creation(text)&&has(text,"物品|道具|装备|权杖|法杖|魔杖|召唤杖|武器|剑|斧|胸甲|护甲|盾牌|\\b(item|weapon|wand|staff|scepter|armou?r|sword|shield)\\b");}
-    public static boolean nativeContent(String text){return item(text)||creation(text)&&has(text,"建筑|房[子屋]|生物|实体|界面|菜单|内容包|模组|悬浮|\\b(hud|gui|ui|building|house|entity|creature|mod|datapack)\\b");}
+    public static boolean production(String text){return has(text,"合成表|工作台|熔炉|烧成|烧制|合成|存入.{0,12}箱|crafting|smelt|recipe");}
+    public static boolean authoredItem(String text){return item(text)&&(!production(text)||has(text,"自定义|新物品|新道具|新增物品|创建.{0,8}(物品|道具)|注册.{0,8}(物品|配方)|内容包|模组|脚本|custom|new item|datapack|register"));}
+    public static boolean nativeContent(String text){return production(text)||item(text)||creation(text)&&has(text,"建筑|房[子屋]|生物|实体|界面|菜单|内容包|模组|悬浮|\\b(hud|gui|ui|building|house|entity|creature|mod|datapack)\\b");}
     public static boolean hostRequested(String text){
         for(String clause:text.split("[，。；;!?！？\\n]")){
             String host="python|本机|电脑|桌面|终端|操作系统|\\b(pip|terminal|desktop|computer|operating system)\\b|网易云|记事本";

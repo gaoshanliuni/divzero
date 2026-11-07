@@ -13,7 +13,7 @@ public final class CapabilityCatalog {
     public static final List<Group> GROUPS=List.of(
         group("cooperation","多AI协作、依赖、分派采集、真实交接、缺料补给和共同建造",
             "先读取同一所有者的AI及其实际身体UUID、工作、库存与授权采集区。通过plan_building为施工AI保存有验证条件的建筑计划，再start_cooperation提交GATHER→HANDOFF→PROCESS→CONSTRUCT依赖；不同采集者并行、同一身体保序。交接必须真实丢弃并由指定AI拾取，施工消耗实际背包。supplies连接已有采集/交接/施工节点，施工缺料时重新分派已验证完成的补给步骤。不要用give或世界直接填充冒充材料闭环；不要反复让模型查询等待。inspect_cooperation查持久阶段、回执及补给轮次，control_cooperation暂停/恢复/停止。所有者、权限或玩家新意图变化时暂停，结果未知不自动重放。",
-            "send_peer_message inspect_peer_dialogue inspect_recipes process_items start_cooperation inspect_cooperation control_cooperation inspect_owned_agents inspect_behavior inspect_agent_body set_behavior_mode gather_resources handoff_items construct_building inspect_buildings plan_building verify_building"),
+            "send_peer_message inspect_peer_dialogue inspect_recipes process_items start_cooperation inspect_cooperation control_cooperation inspect_owned_agents inspect_behavior inspect_agent_body gather_resources handoff_items construct_building inspect_buildings plan_building verify_building"),
         group("agents","同一玩家的多个AI、批量跟随、AI设置、人设、模型、重生与游戏模式",
             "玩家可通过一个AI管理自己名下其他AI。先inspect_owned_agents遍历全部分页获取agent_id，再按目标读取设置和revision，逐个调用对应工具并带agent_id。所有AI跟随我应对每个目标调用follow_entity(target=$owner)，不只处理当前AI。可与movement/combat/appearance/chat组合；不能改其他所有者AI，协作者和OP身份不扩展同一所有者范围。实际失败按目标报告，不能把STARTED当作已到达或部分成功说成全部完成。",
             "inspect_owned_agents inspect_agent_settings set_agent_setting inspect_behavior set_behavior_mode set_combat_policy control_behavior follow_entity set_actor_enhancements inspect_persona set_persona inspect_appearance set_appearance inspect_skins set_skin_png inspect_chat_settings set_chat_settings set_chat_color"),
