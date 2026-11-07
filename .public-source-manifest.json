@@ -4119,8 +4119,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "cdd25f89-5200-4a0e-bba9-3d0e5050dc21",
-      "bytes": 24226
+      "resourceId": "e1221cd2-1f4c-4200-9658-89494f552927",
+      "bytes": 25832
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -9625,5 +9625,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "aa5ecf07e78b041f3b15caed0ee0f0e2b070f59f"
+  "sourceCommit": "378a3091e8053d2965d74e3e3981aa77f21840bc"
 }
