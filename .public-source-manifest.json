@@ -1504,8 +1504,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilityCatalog.java",
-      "resourceId": "74bbdee0-ad3c-4bda-bc61-39e5d708176d",
-      "bytes": 23586
+      "resourceId": "253d29ee-2932-41bc-9771-216845627c1f",
+      "bytes": 23839
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
@@ -3989,8 +3989,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "e8e22058-b4fc-4ecf-b493-bd594e9761f9",
-      "bytes": 10837
+      "resourceId": "7c731351-dd92-4dc5-967f-0c08161b0140",
+      "bytes": 12046
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "1bed474012d49136fee7c973f62f30726bebf6a2"
+  "sourceCommit": "6545b8fb8bcb4ebd3723ad8aab8a535ada95036b"
 }
