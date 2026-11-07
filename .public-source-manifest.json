@@ -5334,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "4fcb611d-ee18-421f-acb7-49fcb7310e1d",
-      "bytes": 268542
+      "resourceId": "89af9bae-a716-48bd-8165-cbeef52dcc85",
+      "bytes": 274235
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7054,8 +7054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
-      "resourceId": "10f998bf-8441-4c3b-a168-4a67c9b0bb62",
-      "bytes": 20294
+      "resourceId": "582f0a4a-0151-4414-bf99-cfbc5682ba2e",
+      "bytes": 20367
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
@@ -7434,8 +7434,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/BuildingVerifier.java",
-      "resourceId": "e29a8bf7-f8d4-4c28-be61-853d015f18e0",
-      "bytes": 11636
+      "resourceId": "f4fc510a-e811-47f9-8936-3e14811d0d5b",
+      "bytes": 11639
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
@@ -7614,8 +7614,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationWorldGeometry.java",
-      "sha256": "2a4602ed96b29e50cd14541ed450ceddd0ddcad6368df82ebaf978094ef46313",
-      "bytes": 30330
+      "resourceId": "31603b24-cf10-4bea-9d55-edadc75a3576",
+      "bytes": 30595
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreateBlueprintReader.java",
@@ -7894,8 +7894,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildings.java",
-      "resourceId": "16cbf638-fc02-4ec8-afe7-3dc3ee708d2d",
-      "bytes": 32072
+      "resourceId": "bc2d22d8-3fea-4d0d-a5dc-69911f192583",
+      "bytes": 32075
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBulldozers.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "2c54dcb4e027846d2e6c16b0ae882866dfe322b0"
+  "sourceCommit": "6d9aebd4e65d4662c712b592e94d13b36d4ae455"
 }

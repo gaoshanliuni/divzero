@@ -69,7 +69,7 @@ public final class ConstructSkill {
         for(int count=0;index<cells.size()&&count++<32;index++){
             var cell=cells.get(index);var pos=position(cell);loaded(pos);var actual=w.player().level().getBlockState(pos);var wanted=ServerBuildings.nativeState(w.player(),cell.material(),cell.orientation());String before=BlockStateParser.serialize(actual),after=BlockStateParser.serialize(wanted);
             if(!before.equals(after)){
-                if(w.player().level().getBlockEntity(pos)!=null)throw problem("EXISTING_BLOCK_ENTITY_PROTECTED",cell,after,before);
+                if(w.player().level().getBlockEntity(pos)!=null||actual.hasBlockEntity())throw problem("EXISTING_BLOCK_ENTITY_PROTECTED",cell,after,before);
                 if(cell.expected()!=null&&!cell.expected().equals(before))throw problem("CONFLICT_POSITION",cell,cell.expected(),before);
                 if(!actual.isAir()&&!breakable(pos))throw problem("EXISTING_TERRAIN_PROTECTED",cell,after,before);
                 if(!wanted.isAir()){Item item=wanted.getBlock().asItem();if(!(item instanceof BlockItem))throw problem("NO_NATIVE_BLOCK_ITEM",cell,after,before);materials.merge(BuiltInRegistries.ITEM.getKey(item).toString(),1L,Long::sum);}
@@ -150,7 +150,7 @@ public final class ConstructSkill {
     }
     CompletableFuture<Void> stop(){if(closed)return CompletableFuture.completedFuture(null);closed=true;boolean uncertain=w.executed;if(lease==null)return opening==null?CompletableFuture.completedFuture(null):opening.handle((value,error)->value).thenCompose(value->value==null?CompletableFuture.completedFuture(null):park(value,uncertain));return park(lease,uncertain);}
     private CompletableFuture<Void> park(ServerBuildings.NativeLease value,boolean uncertain){return value.park(uncertain,"NATIVE_ACTOR_STOPPED").whenComplete((v,e)->w.runtime.server.execute(value::release));}
-    private boolean breakable(BlockPos pos){var p=w.player();return p.mayInteract(p.level(),pos)&&p.level().getBlockEntity(pos)==null&&p.level().getBlockState(pos).getDestroySpeed(p.level(),pos)>=0&&p.level().getFluidState(pos).isEmpty()&&TerrainProvenance.get(w.runtime.server).available()&&!TerrainProvenance.get(w.runtime.server).knownPlaced(p.level(),pos)&&dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.config(w.runtime.server).flag("autonomy.terrainRecovery.allowUnknownNaturalMaterials",true)&&!dev.mineagent.runtime.neoforge.ui.ServerInteractionRules.denied(p,pos,null,"block_break",false);}
+    private boolean breakable(BlockPos pos){var p=w.player();return p.mayInteract(p.level(),pos)&&p.level().getBlockEntity(pos)==null&&!p.level().getBlockState(pos).hasBlockEntity()&&p.level().getBlockState(pos).getDestroySpeed(p.level(),pos)>=0&&p.level().getFluidState(pos).isEmpty()&&TerrainProvenance.get(w.runtime.server).available()&&!TerrainProvenance.get(w.runtime.server).knownPlaced(p.level(),pos)&&dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.config(w.runtime.server).flag("autonomy.terrainRecovery.allowUnknownNaturalMaterials",true)&&!dev.mineagent.runtime.neoforge.ui.ServerInteractionRules.denied(p,pos,null,"block_break",false);}
     private boolean placementSpaceReady(BlockPos pos,BlockState wanted){
         var shape=wanted.getCollisionShape(w.player().level(),pos).move(pos.getX(),pos.getY(),pos.getZ());
         if(w.player().level().isUnobstructed(null,shape))return true;

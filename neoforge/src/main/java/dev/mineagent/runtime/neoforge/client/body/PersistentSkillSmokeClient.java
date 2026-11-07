@@ -882,6 +882,7 @@ public final class PersistentSkillSmokeClient {
     }
     private static boolean requestHover(net.minecraft.network.chat.Component component,String text){if(component.getString().equals("请求")&&component.getStyle().getHoverEvent() instanceof net.minecraft.network.chat.HoverEvent.ShowText hover&&hover.value().getString().equals(text))return true;return component.getSiblings().stream().anyMatch(c->requestHover(c,text));}
     private static void prepare(){
+        if(System.getProperty("mineagent.skillSmokeMode","").equals("cooperative_resume")){cooperativeResume();return;}
         if(System.getProperty("mineagent.skillSmokeMode","").equals("peer_history_review")){peerHistoryReview();return;}
         if(Boolean.getBoolean("mineagent.skillSmokeResume")){if(System.getProperty("mineagent.skillSmokeMode","").equals("bundled_python")){bundledPython(true);return;}if(System.getProperty("mineagent.skillSmokeMode","").equals("resume_ai")){resumeAi(true);return;}if(System.getProperty("mineagent.skillSmokeMode","").equals("combat_october"))restoreOctoberMode();else if(System.getProperty("mineagent.skillSmokeMode","").equals("policy_checkpoint"))policyCheckpoint(true);else restoreLifecycle();return;}
         action("world-and-real-survival-bodies",()->server(p->{
@@ -1060,6 +1061,26 @@ public final class PersistentSkillSmokeClient {
         action("peer-f2-screenshot",()->{screen("peer-f2-history");return CompletableFuture.completedFuture(true);});
         waitFor("peer-review-final-frame",100,()->CompletableFuture.completedFuture(ticks-stageAt>12));
     }
+    private static JsonNode resumedCooperation;
+    private static void cooperativeResume(){
+        waitFor("restore-actual-model-builder",600,()->server(p->{
+            var server=p.level().getServer();server.getPlayerList().op(p.nameAndId());WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);
+            var found=MineAgentRuntimeServices.bodies(server).definitions().stream().filter(d->d.ownerPlayerId().equals(p.getUUID())&&d.displayName().equals("持续技能搭档")).findFirst();if(found.isEmpty())return false;agent=found.orElseThrow().agentId();return MineAgentRuntimeServices.bodies(server).body(agent).isPresent();
+        }));
+        action("read-persisted-real-model-plan-before-resume",()->tool("inspect_cooperation",JSON.createObjectNode()).thenApply(value->{
+            require(value.path("runs").size()==1,"RESUME_EXPECTED_ONE_SOURCE_PLAN");resumedCooperation=value.path("runs").get(0);cooperativeRun=UUID.fromString(resumedCooperation.path("id").asText());require(resumedCooperation.path("status").asText().equals("PAUSED"),"RESUME_SOURCE_NOT_PAUSED");
+            for(var step:resumedCooperation.path("steps")){
+                JsonNode intent=null;for(var node:resumedCooperation.path("plan").path("nodes"))if(node.path("id").asText().equals(step.path("node").asText()))intent=node.path("intent");require(intent!=null,"RESUME_NODE_REFERENCE");
+                boolean build=intent.path("kind").asText().equals("CONSTRUCT"),storage=intent.path("process").path("action").asText().equals("STORE");
+                if(build){require(step.path("observed").path("counters").path("constructionBlocksPlaced").asLong()==0&&step.path("observed").path("receipt").isEmpty(),"RESUME_HAS_UNCERTAIN_BUILD_MUTATION");}
+                else if(!storage)require(step.path("state").asText().equals("COMPLETED"),"RESUME_WOULD_REPLAY_UNFINISHED_PROCESSING");
+            }
+            EVIDENCE.add(Map.of("source","PERSISTED_REAL_DEEPSEEK_PLAN_AFTER_KNOWN_PREFLIGHT_REJECTION","plan",resumedCooperation,"newMaterialsGranted",0,"newModelCalls",0));return value;
+        }));
+        action("check-building-version-and-no-reserved-write",()->tool("inspect_buildings",JSON.createObjectNode().put("id","partner_cabin")).thenApply(value->{require(value.path("revision").asLong()==2&&value.path("activeRevision").asLong()==0&&value.path("phase").asText().equals("PREFLIGHT")&&value.path("cursor").asLong()==0,"RESUME_BUILDING_NOT_SAFE_PREFLIGHT_"+value);EVIDENCE.add(value);return value;}));
+        action("resume-existing-cooperation-with-live-revision",()->tool("control_cooperation",JSON.createObjectNode().put("id",cooperativeRun.toString()).put("expected_revision",resumedCooperation.path("revision").asLong()).put("action","resume")));
+        cooperativeNativeCompletion();
+    }
     private static UUID productionConversation,productionRequest;
     private static void cooperativeDeepSeek(){
         action("real-model-cooperative-raw-material-fixture",()->server(p->{
@@ -1085,6 +1106,9 @@ public final class PersistentSkillSmokeClient {
             require(context.operationId().equals(productionRequest)&&context.requestState().equals("COMPLETE"),"REAL_MODEL_NOT_COMPLETE_"+context);EVIDENCE.add(context);
             var message=store.message(p.getUUID(),agent,productionConversation,context.assistantMessageId());var reply=new StringBuilder();for(int offset=0;offset<message.textLength();){var chunk=store.chunk(p.getUUID(),agent,productionConversation,message.messageId(),message.revision(),offset,4096);reply.append(chunk.text());offset+=chunk.text().length();}Files.writeString(root().resolve("real-model-reply.txt"),reply);return true;
         }catch(Exception error){throw new CompletionException(error);}}));
+        cooperativeNativeCompletion();
+    }
+    private static void cooperativeNativeCompletion(){
         waitFor("actual-model-plan-native-completion",36000,()->tool("inspect_cooperation",JSON.createObjectNode()).thenApply(value->{
             lastObservation=value;require(value.path("runs").isArray()&&!value.path("runs").isEmpty(),"REAL_MODEL_DID_NOT_CREATE_COOPERATION_"+value);
             for(var run:value.path("runs")){if(Set.of("PAUSED","CANCELLED").contains(run.path("status").asText()))throw new IllegalStateException("REAL_COOP_INTERRUPTED_"+run);if(!run.path("status").asText().equals("COMPLETED"))return false;}
@@ -1103,12 +1127,15 @@ public final class PersistentSkillSmokeClient {
     private static void nativeProduction(){
         action("production-raw-input-fixture",()->server(p->{
             var b=body(p);b.getInventory().clearContent();b.getInventory().setItem(0,new ItemStack(Items.OAK_LOG,4));b.getInventory().setItem(1,new ItemStack(Items.COBBLESTONE,2));b.getInventory().setItem(2,new ItemStack(Items.SAND,2));b.getInventory().setItem(3,new ItemStack(Items.DIAMOND,24));b.getInventory().setItem(4,new ItemStack(Items.COAL,1));
-            p.level().setBlock(new BlockPos(3,101,6),Blocks.CRAFTING_TABLE.defaultBlockState(),3);p.level().setBlock(new BlockPos(4,101,6),Blocks.FURNACE.defaultBlockState(),3);p.level().setBlock(new BlockPos(5,101,6),Blocks.CHEST.defaultBlockState(),3);
+            p.level().setBlock(new BlockPos(3,101,6),Blocks.CRAFTING_TABLE.defaultBlockState(),3);p.level().setBlock(new BlockPos(4,101,6),Blocks.FURNACE.defaultBlockState(),3);p.level().setBlock(new BlockPos(5,101,6),Blocks.AIR.defaultBlockState(),3);
             return Map.of("fixtureOnly",true,"rawLogs",4,"rawCobblestone",2,"rawSand",2,"rawDiamonds",24,"fuelCoal",1,"processedItemsGranted",0);
         }));
         String[][] crafts={{"planks","minecraft:oak_planks","4"},{"sticks","minecraft:stick","1"},{"chest","minecraft:chest","1"},{"helmet","minecraft:diamond_helmet","1"},{"chestplate","minecraft:diamond_chestplate","1"},{"leggings","minecraft:diamond_leggings","1"},{"boots","minecraft:diamond_boots","1"}};
         for(var row:crafts)productionStep(row[0],"CRAFT",row[1],Integer.parseInt(row[2]),3);
         productionStep("stone","SMELT","minecraft:stone",2,4);productionStep("glass","SMELT","minecraft:glass",2,4);
+        action("plan-native-crafted-chest",()->tool("plan_building",JSON.createObjectNode().put("revision",0).put("source",productionChestDesign("minecraft:chest"))));
+        action("place-native-crafted-chest",()->tool("construct_building",start("place_storage","ai").put("building_id","fixture_storage").put("building_revision",1)));
+        waitFor("crafted-chest-really-placed",1600,()->state("place_storage",v->v.path("state").asText().equals("COMPLETED")&&v.path("counters").path("constructionBlocksPlaced").asInt()==1&&v.path("counters").path("constructionMaterialsConsumed").asInt()==1));
         for(String armor:List.of("diamond_helmet","diamond_chestplate","diamond_leggings","diamond_boots")){
             String id="store_"+armor;
             action(id,()->{var n=start(id,"ai");var process=n.putObject("process").put("action","STORE").put("item","minecraft:"+armor).put("count",1);process.putArray("station").add(5).add(101).add(6);return tool("process_items",n);});
@@ -1118,10 +1145,20 @@ public final class PersistentSkillSmokeClient {
             var b=body(p);var chest=(net.minecraft.world.Container)p.level().getBlockEntity(new BlockPos(5,101,6));var actual=new LinkedHashMap<String,Integer>();for(int i=0;i<chest.getContainerSize();i++){var stack=chest.getItem(i);if(!stack.isEmpty())actual.merge(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),stack.getCount(),Integer::sum);}
             require(actual.equals(Map.of("minecraft:diamond_helmet",1,"minecraft:diamond_chestplate",1,"minecraft:diamond_leggings",1,"minecraft:diamond_boots",1)),"PRODUCTION_CHEST_CONTENTS_"+actual);
             require(b.getInventory().countItem(Items.DIAMOND)==0&&b.getInventory().countItem(Items.OAK_LOG)==0&&b.getInventory().countItem(Items.COBBLESTONE)==0&&b.getInventory().countItem(Items.SAND)==0,"PRODUCTION_RAW_INPUTS_NOT_CONSUMED");
-            require(b.getInventory().countItem(Items.STONE)==2&&b.getInventory().countItem(Items.GLASS)==2&&b.getInventory().countItem(Items.CHEST)==1&&b.getInventory().countItem(Items.STICK)==4&&b.getInventory().countItem(Items.OAK_PLANKS)==6,"PRODUCTION_OUTPUT_NOT_ACTUAL");
+            require(b.getInventory().countItem(Items.STONE)==2&&b.getInventory().countItem(Items.GLASS)==2&&b.getInventory().countItem(Items.CHEST)==0&&b.getInventory().countItem(Items.STICK)==4&&b.getInventory().countItem(Items.OAK_PLANKS)==6,"PRODUCTION_OUTPUT_NOT_ACTUAL");
             return Map.of("chest",actual,"inventory",dev.mineagent.runtime.neoforge.task.NativeCraftingAction.inventory(b),"modelCalls",0,"fixtureOnly",true);
         }));
+        action("plan-replacement-must-protect-filled-chest",()->tool("plan_building",JSON.createObjectNode().put("revision",1).put("source",productionChestDesign("minecraft:stone"))));
+        action("attempt-native-replacement-of-filled-chest",()->tool("construct_building",start("protect_storage","ai").put("building_id","fixture_storage").put("building_revision",2)));
+        waitFor("filled-chest-replacement-rejected",800,()->tool("inspect_behavior",JSON.createObjectNode()).thenApply(value->{lastObservation=value;var v=session(value,"protect_storage");if(!v.path("state").asText().equals("PAUSED"))return false;require(v.path("reason").asText().contains("EXISTING_BLOCK_ENTITY_PROTECTED"),"WRONG_CONTAINER_PROTECTION_REASON_"+v);EVIDENCE.add(value);return true;}));
+        action("filled-chest-and-items-preserved",()->server(p->{var at=new BlockPos(5,101,6);require(p.level().getBlockState(at).is(Blocks.CHEST),"FILLED_CHEST_REPLACED");var c=(net.minecraft.world.Container)p.level().getBlockEntity(at);for(var item:List.of(Items.DIAMOND_HELMET,Items.DIAMOND_CHESTPLATE,Items.DIAMOND_LEGGINGS,Items.DIAMOND_BOOTS))require(c.countItem(item)==1,"PROTECTED_ARMOR_REMOVED");boolean rejected=false;try{dev.mineagent.runtime.neoforge.ui.ServerBuildings.nativeState(body(p),"minecraft:chest{Items:[]}",List.of());}catch(IllegalArgumentException expected){rejected=true;}require(rejected,"NATIVE_BLOCK_ENTITY_NBT_INJECTION_ALLOWED");return Map.of("existingChestPreserved",true,"armorPreserved",4,"blockEntityNbtRejected",true);}));
+        action("stop-rejected-replacement",()->stop("protect_storage"));
     }
+    private static String productionChestDesign(String material){return """
+        {"id":"fixture_storage","name":"Native crafted storage","dimension":"minecraft:overworld","origin":[5,101,6],
+         "components":[{"id":"box","parts":[{"kind":"box","min":[0,0,0],"max":[0,0,0],"material":"%s"}]}],
+         "checks":[{"id":"native_state","component":"box","kind":"states","min":[0,0,0],"max":[0,0,0],"expected":"%s"}]}
+        """.formatted(material,material);}
     private static void productionStep(String id,String kind,String recipe,int count,int x){
         action("discover_and_start_"+id,()->tool("inspect_recipes",JSON.createObjectNode().put("query",recipe).put("kind",kind.equals("CRAFT")?"crafting":"smelting")).thenCompose(result->{
             JsonNode found=null;for(var row:result.path("recipes"))if(row.path("recipe").asText().equals(recipe)){found=row;break;}require(found!=null,"PRODUCTION_REGISTERED_RECIPE_MISSING_"+recipe);EVIDENCE.add(found);

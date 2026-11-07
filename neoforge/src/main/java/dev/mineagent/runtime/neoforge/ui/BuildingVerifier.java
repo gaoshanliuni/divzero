@@ -68,7 +68,7 @@ final class BuildingVerifier implements ServerBuildings.VerificationWork {
                     if(checkCursor>=total){complete(check);continue;}
                     long index=checkCursor++;var pos=new BlockPos(min[0]+(int)(index%width),min[1]+(int)(index/(width*depth)),min[2]+(int)((index/width)%depth));inside(pos,check.path("headroom").asInt(1));
                     switch(kind){
-                        case "states"->{var expected=ConversationWorldGeometry.parse(player,check.path("expected").asText(),false);if(level.getBlockState(pos)!=expected)throw new IllegalStateException("EXPECTED_STATE_MISMATCH");}
+                        case "states"->{var expected=ConversationWorldGeometry.parseStateOnly(player,check.path("expected").asText());if(level.getBlockState(pos)!=expected)throw new IllegalStateException("EXPECTED_STATE_MISMATCH");}
                         case "clearance"->{if(!clear(pos,check.path("headroom").asInt(1),false))throw new IllegalStateException("CLEARANCE_BLOCKED");}
                         case "support"->{if(!check.path("allow_floating").asBoolean(false)&&!level.getBlockState(pos).isAir()&&level.getBlockState(pos.below()).getCollisionShape(level,pos.below()).isEmpty())throw new IllegalStateException("SUPPORT_MISSING");}
                         default->throw new IllegalStateException("CHECK_KIND_UNSUPPORTED");
