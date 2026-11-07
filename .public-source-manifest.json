@@ -1463,6 +1463,11 @@
       "bytes": 314
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/content/FileObservationStore.java",
+      "resourceId": "2fe105ff-4ca6-4ede-bc8f-28b1c255fdf2",
+      "bytes": 5333
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/LegacyNamespaceIds.java",
       "resourceId": "8141115f-2935-4c1f-9379-6a43d7dc0c64",
       "bytes": 6885
@@ -1564,8 +1569,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "f4847836-243e-40a0-8c3c-65656ab2d47f",
-      "bytes": 76860
+      "resourceId": "c9c010ff-d93e-4c23-9775-ddd841481491",
+      "bytes": 76981
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CooperationTools.java",
@@ -3263,6 +3268,11 @@
       "bytes": 4060
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/content/FileObservationStoreTest.java",
+      "resourceId": "f5e92187-4594-4e25-84a9-e3cb337356f9",
+      "bytes": 2646
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/content/LegacyNamespaceIdsTest.java",
       "resourceId": "c551aba7-d213-4576-b495-2a8d6e1c2a89",
       "bytes": 2638
@@ -4109,8 +4119,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "8f9698ec-f46c-439c-855e-b864cde7a33c",
-      "bytes": 20597
+      "resourceId": "e185799e-9037-4b6c-868f-942c67e07ba8",
+      "bytes": 21260
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -7564,8 +7574,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreateBlueprintReader.java",
-      "sha256": "f5155e3f48408806e4470c26a46bd8901175efcb2ecb55f771392c5c77c2c8a8",
-      "bytes": 7711
+      "resourceId": "1f928a29-af6b-4ff8-9eb3-f95776fa26cd",
+      "bytes": 8020
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreatureEventsSmokeServer.java",
@@ -9615,5 +9625,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "739403d70c0bb35bfc3e936c2f4883c178130d17"
+  "sourceCommit": "1c5999797af39e48a75a3f90aede368a7446f777"
 }
