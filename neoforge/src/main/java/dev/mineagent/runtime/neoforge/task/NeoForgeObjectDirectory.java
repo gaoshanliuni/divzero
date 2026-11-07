@@ -22,6 +22,9 @@ public final class NeoForgeObjectDirectory implements AutoCloseable {
     private final MinecraftServer server;private final UUID serverEpoch=UUID.randomUUID();private final ObjectMapper json=new ObjectMapper();
     private final ObjectDirectory directory;private volatile boolean closed;
     private final ObjectRevisionLedger revisions=new ObjectRevisionLedger(16384);
+    private final dev.mineagent.runtime.core.content.ObservationTokens observations=new dev.mineagent.runtime.core.content.ObservationTokens(16384,16L*1024*1024);
+    private record InstanceGeneration(UUID activation,String canonical,long revision,UUID generation){}
+    private final Map<UUID,InstanceGeneration> instanceGenerations=new HashMap<>();
     private record Incarnation(WeakReference<Object> instance,UUID generation){}
     private final Map<String,Incarnation> identities=new HashMap<>();private Set<UUID> ownedInstances=Set.of();
     public NeoForgeObjectDirectory(MinecraftServer server){this.server=server;directory=new ObjectDirectory(new NativePort(),System::currentTimeMillis);}
@@ -93,10 +96,15 @@ public final class NeoForgeObjectDirectory implements AutoCloseable {
     private ObjectDirectory.Entry entity(Entity entity){String type=BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString(),dimension=entity.level().dimension().identifier().toString(),name=bounded(entity.getName().getString());return entry(ObjectRef.Kind.ENTITY,entity.getUUID().toString(),entity,name,dimension,point(entity),"",true,type+"|"+dimension+"|"+name);}
     private ObjectDirectory.Entry team(PlayerTeam team){if(team.getPlayers().size()>4096)throw new IllegalStateException("DIRECTORY_TEAM_BUDGET");String name=bounded(team.getDisplayName().getString());return entry(ObjectRef.Kind.TEAM,team.getName(),team,name,"",null,"",true,name+"|"+String.join("\n",team.getPlayers().stream().sorted().toList()));}
     private Optional<ObjectDirectory.Entry> instance(ObjectDirectory.Scope scope,UUID id){
-        if(!ownedInstances.contains(id))return Optional.empty();var world=WorldContentRuntime.get(server);var value=world.instance(id).orElse(null);if(value==null)return Optional.empty();
+        if(!ownedInstances.contains(id))return Optional.empty();var world=WorldContentRuntime.get(server);var value=world.instance(id).orElse(null);if(value==null){instanceGenerations.remove(id);revisions.forget("INSTANCE:"+id);return Optional.empty();}
         var activation=world.list(scope.ownerId()).stream().filter(a->a.instanceId().equals(id)).findFirst().orElse(null);if(activation==null)return Optional.empty();
         var l=value.location();var p=new ObjectQuery.Point(l.dimension(),l.x(),l.y(),l.z());boolean active=world.active(id);
-        var generation=UUID.nameUUIDFromBytes((serverEpoch+"|"+activation.operationId()+"|"+activation.canonicalSha256()+"|"+value.definitionRevision()).getBytes(StandardCharsets.UTF_8));
+        var prior=instanceGenerations.get(id);
+        if(prior==null||!prior.activation().equals(activation.operationId())||!prior.canonical().equals(activation.canonicalSha256())||prior.revision()!=value.definitionRevision()){
+            if(prior==null&&instanceGenerations.size()>=16384){instanceGenerations.keySet().removeIf(key->{boolean gone=world.instance(key).isEmpty();if(gone)revisions.forget("INSTANCE:"+key);return gone;});if(instanceGenerations.size()>=16384)throw new IllegalStateException("DIRECTORY_IDENTITY_BUDGET");}
+            prior=new InstanceGeneration(activation.operationId(),activation.canonicalSha256(),value.definitionRevision(),UUID.randomUUID());instanceGenerations.put(id,prior);
+        }
+        var generation=prior.generation();
         var ref=new ObjectRef(scope.worldId(),ObjectRef.Kind.INSTANCE,id.toString(),generation,revisions.observe("INSTANCE:"+id,generation,signature(value.definitionId()+"|"+value.definitionRevision()+"|"+l+"|"+active)));
         var pack=dev.mineagent.runtime.neoforge.ui.ServerPackageRuntime.get(server).worldLibrary().get(value.packageId()).orElse(null);var definition=pack==null?null:pack.definitions().get(value.definitionId());
         return Optional.of(new ObjectDirectory.Entry(ref,definition==null?value.definitionId().toString():bounded(definition.name()),l.dimension(),p,"",active));
@@ -111,6 +119,6 @@ public final class NeoForgeObjectDirectory implements AutoCloseable {
     }
     private static ObjectQuery.Point point(Entity entity){return new ObjectQuery.Point(entity.level().dimension().identifier().toString(),entity.getX(),entity.getY(),entity.getZ());}
     private static String bounded(String value){return value.length()<=256?value:value.substring(0,value.offsetByCodePoints(0,Math.min(128,value.codePointCount(0,value.length()))));}
-    private static String signature(String value){try{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}catch(java.security.NoSuchAlgorithmException e){throw new IllegalStateException(e);}}
-    @Override public void close(){closed=true;directory.clear();identities.clear();revisions.clear();ownedInstances=Set.of();}
+    private String signature(String value){return observations.token(value);}
+    @Override public void close(){closed=true;directory.clear();identities.clear();instanceGenerations.clear();observations.clear();revisions.clear();ownedInstances=Set.of();}
 }

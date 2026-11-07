@@ -26,7 +26,7 @@ public final class NativeMenuData {
             default->throw new IllegalArgumentException("NATIVE_MENU_SOURCE_FIELD");
         };
     }
-    private record Recipe(String id,String name,String input,List<String> ingredients,String output,ItemStack stack){}
+    private record Recipe(String key,String name,String input,List<String> ingredients,String output,ItemStack stack){}
     private static List<ItemStack> examples(ServerPlayer player,net.minecraft.world.item.crafting.PotionIngredient ingredient){
         var result=new ArrayList<ItemStack>();
         for(var holder:ingredient.ingredient().items().toList()){
@@ -47,17 +47,17 @@ public final class NativeMenuData {
             var names=reagents.stream().map(v->net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(v.getItem()).toString()+" / "+v.getHoverName().getString()).distinct().sorted().toList();
             for(var input:examples(player,recipe.getInput())){
                 var nativeInput=new net.minecraft.world.item.crafting.BrewingInput(input,reagents.getFirst());if(!recipe.matches(nativeInput))continue;
-                var output=recipe.assemble(nativeInput);String id=UUID.nameUUIDFromBytes((holder.id()+"|"+input.getComponents()).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
+                var output=recipe.assemble(nativeInput);String id=(holder.id()+"|"+input.getComponents());
                 result.add(new Recipe(id,output.getHoverName().getString(),input.getHoverName().getString(),names,output.getHoverName().getString(),output));
             }
-        }result.sort(Comparator.comparing(Recipe::id));return result;
+        }result.sort(Comparator.comparing(Recipe::key));return result;
     }
     public static Map<String,Object> inspect(ServerPlayer player,JsonNode args){
         String query=args.path("query").asText("").toLowerCase(Locale.ROOT);int offset=args.path("offset").asInt(0);if(query.length()>128||offset<0)throw new IllegalArgumentException("BREWING_QUERY");
         var rows=recipes(player).stream().filter(r->(r.name()+r.input()+r.ingredients()+r.output()).toLowerCase(Locale.ROOT).contains(query)).toList();
-        var page=rows.stream().skip(offset).limit(24).map(r->Map.of("id",r.id(),"name",r.name(),"input",r.input(),"ingredients",r.ingredients(),"output",r.output(),"container",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(r.stack().getItem()).toString())).toList();
+        var page=rows.stream().skip(offset).limit(24).map(r->Map.of("id",NativeRecipeReferences.reference(player.level().getServer(),r.key()),"name",r.name(),"input",r.input(),"ingredients",r.ingredients(),"output",r.output(),"container",net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(r.stack().getItem()).toString())).toList();
         return Map.of("status","OBSERVED","recipes",page,"total",rows.size(),"nextOffset",offset+24<rows.size()?offset+24:-1,"source","REGISTERED_BREWING_RECIPES");
     }
-    public static ItemStack preview(ServerPlayer player,String id){return recipes(player).stream().filter(recipe->recipe.id().equals(id)).findFirst().orElseThrow(()->new IllegalArgumentException("PREVIEW_RECIPE_CHANGED")).stack().copy();}
+    public static ItemStack preview(ServerPlayer player,String id){String key=NativeRecipeReferences.resolve(player.level().getServer(),id);return recipes(player).stream().filter(recipe->recipe.key().equals(key)).findFirst().orElseThrow(()->new IllegalArgumentException("PREVIEW_RECIPE_CHANGED")).stack().copy();}
     private NativeMenuData(){}
 }

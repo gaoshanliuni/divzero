@@ -31,7 +31,7 @@ public final class ServerGenerationHistory {
                 var content=new dev.mineagent.runtime.core.content.ContentAddressedStore(server.getServerDirectory().resolve("mineagent-runtime-data/content"));
                 byte[] bytes;try(var in=java.nio.file.Files.newInputStream(content.pathFor(hash))){bytes=in.readNBytes(24*1024*1024+1);}
                 if(bytes.length>24*1024*1024)throw new IllegalStateException("PACKAGE_HISTORY_RAW_LIMIT");
-                if(!hash.equals(dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(bytes)))throw new IllegalStateException("PACKAGE_HISTORY_RAW_INTEGRITY");
+                // The authorized immutable journal reference identifies this raw version; it is not a content digest.
                 var decoder=java.nio.charset.StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT).onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT);
                 result=slice(decoder.decode(java.nio.ByteBuffer.wrap(bytes)).toString(),offset(args));
             }

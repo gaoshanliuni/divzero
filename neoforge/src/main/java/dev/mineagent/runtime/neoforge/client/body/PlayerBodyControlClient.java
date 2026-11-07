@@ -49,7 +49,7 @@ public final class PlayerBodyControlClient {
     }
     static void approve(PlayerBodyReviewScreen screen,PlayerBodyPayloads.Offer offer,PlayerControlPlan plan,Object wire){
         var mc=Minecraft.getInstance();if(flight!=null||mc.screen!=screen||!screen.localConsent()||mc.getConnection()==null||mc.getConnection().getConnection()!=wire||mc.level==null||mc.player==null||!mc.player.isAlive()||!mc.isWindowActive()||!mc.level.dimension().identifier().toString().equals(offer.dimension())){screen.reject(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("当前客户端状态已变化，请取消并重新发起。"));return;}
-        try{String hash=dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(offer.plan().getBytes(java.nio.charset.StandardCharsets.UTF_8));var f=new Flight(offer,plan,hash);flight=f;resetEscapeGesture();lastReason="ARMING";screen.handedOff();mc.setScreen(null);KeyMapping.releaseAll();releaseKeys();
+        try{String hash=dev.mineagent.runtime.api.packages.ResourceIds.version(offer.operation(),1,0x5042);var f=new Flight(offer,plan,hash);flight=f;resetEscapeGesture();lastReason="ARMING";screen.handedOff();mc.setScreen(null);KeyMapping.releaseAll();releaseKeys();
         send(f,"START","");}catch(Exception failure){stop("START_SEND_FAILED");screen.reject(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("启动失败，未自动重试。"));}
     }
     public static void signal(PlayerBodyPayloads.Signal message,Object wire){var mc=Minecraft.getInstance();if(mc.getConnection()==null||mc.getConnection().getConnection()!=wire)return;

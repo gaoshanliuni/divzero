@@ -41,7 +41,7 @@ public final class AgentUiTaskLinks implements AutoCloseable {
     }
     public static AgentUiTaskLinks open(Path path,UUID world,Clock clock,TaskManager tasks)throws Exception{return new AgentUiTaskLinks(path,world,clock,tasks);}
     public synchronized Optional<Link> operation(UUID operation){return Optional.ofNullable(links.get(operation));}
-    public synchronized Optional<Link> forTask(UUID parent,long intent){var link=links.get(UUID.nameUUIDFromBytes(("ui-tool|"+world+"|"+parent+"|"+intent).getBytes(StandardCharsets.UTF_8)));if(link!=null&&(!link.parentTaskId().equals(parent)||link.parentIntent()!=intent))throw new IllegalStateException("UI_LINK_CONTEXT");return Optional.ofNullable(link);}
+    public synchronized Optional<Link> forTask(UUID parent,long intent){Objects.requireNonNull(parent);if(intent<1)throw new IllegalArgumentException("UI_LINK_INTENT");var matches=links.page(new dev.mineagent.runtime.core.persistence.PackageJobRetention.Query(null,"ALL","ALL",null,"",parent,intent),0,2);if(matches.size()>1)throw new IllegalStateException("UI_LINK_AMBIGUOUS");var link=matches.isEmpty()?null:matches.getFirst();if(link!=null&&(!link.parentTaskId().equals(parent)||link.parentIntent()!=intent))throw new IllegalStateException("UI_LINK_CONTEXT");return Optional.ofNullable(link);}
     public synchronized List<Link> all(){return links.all();}
     public synchronized List<Link> reconcileCandidates(){
         var result=new LinkedHashMap<UUID,Link>();links.values().forEach(l->result.put(l.operationId(),l));
@@ -60,7 +60,7 @@ public final class AgentUiTaskLinks implements AutoCloseable {
         var prior=forTask(parent.taskId(),parent.intentRevision());if(prior.isPresent()){if(!prior.get().request().equals(request))throw new IllegalArgumentException("UI_TOOL_INTENT_REUSED");return prior.get();}
         if(!parent.worldId().equals(world)||!TaskResultFence.current(parent,tasks.get(parent.taskId()).orElse(null))||Collections.disjoint(parent.runnableStepIds(),Set.of("plan","plan_ui","replan")))throw new IllegalStateException("STALE_PARENT_TASK");
         if(links.size()>=4096)throw new IllegalStateException("UI_TOOL_LEDGER_FULL");
-        UUID operation=UUID.nameUUIDFromBytes(("ui-tool|"+world+"|"+parent.taskId()+"|"+parent.intentRevision()).getBytes(StandardCharsets.UTF_8));
+        UUID operation=dev.mineagent.runtime.core.persistence.AssignedOperationIds.resolve(repo,world,"agent_ui_child_ids_v2",parent.taskId()+"|"+parent.intentRevision(),List.of());
         var link=new Link(operation,world,parent.taskId(),parent.intentRevision(),parent.ownerPlayerId(),parent.agentId(),request,null,request.packageId(),request.baseRevision()+1,"SUBMITTING","",1,clock.millis());
         if(!repo.compareAndSet(world,NS,operation.toString(),0,json.writeValueAsString(link),clock.millis()).accepted())throw new IllegalStateException("UI_TOOL_CAS");links.put(operation,link);return link;
     }

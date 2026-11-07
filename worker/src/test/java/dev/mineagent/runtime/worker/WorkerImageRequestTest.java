@@ -9,9 +9,14 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
 class WorkerImageRequestTest {
+    @org.junit.jupiter.api.io.TempDir java.nio.file.Path root;
+    final List<WorkerRequestHandler> opened=new ArrayList<>();
+    WorkerRequestHandler worker(){var handler=new WorkerRequestHandler();opened.add(handler);var configured=handler.handle(new WorkerEnvelope(1,UUID.randomUUID(),"storage.configure",Map.of("contentRoot",root.resolve(UUID.randomUUID().toString()).resolve("content").toString())));assertEquals("storage.configured",configured.type());return handler;}
+    @org.junit.jupiter.api.AfterEach void closeWorkers(){opened.forEach(WorkerRequestHandler::close);}
+
     @Test void explicitOnceTextRequestDoesNotRetryProviderFailure()throws Exception{
         var count=new AtomicInteger();var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);server.createContext("/v1/chat/completions",e->{count.incrementAndGet();e.getRequestBody().readAllBytes();e.sendResponseHeaders(429,-1);e.close();});server.start();
-        try{var h=new WorkerRequestHandler();h.handle(new WorkerEnvelope(1,UUID.randomUUID(),"provider.configure",Map.of("kind","openai-compatible","baseUrl","http://127.0.0.1:"+server.getAddress().getPort()+"/v1/","model","chosen")));
+        try{var h=worker();h.handle(new WorkerEnvelope(1,UUID.randomUUID(),"provider.configure",Map.of("kind","openai-compatible","baseUrl","http://127.0.0.1:"+server.getAddress().getPort()+"/v1/","model","chosen")));
             var r=h.handle(new WorkerEnvelope(1,UUID.randomUUID(),"model.completeOnce",Map.of("capability","CODING","prompt","patch")));
             assertEquals("MODEL_REQUEST_FAILED",r.payload().get("code"));assertEquals("HTTP_429",r.payload().get("message"));assertEquals(1,count.get());
         }finally{server.stop(0);}
@@ -23,7 +28,7 @@ class WorkerImageRequestTest {
         server.createContext("/v1/chat/completions",e->{first.incrementAndGet();requestBody.set(new String(e.getRequestBody().readAllBytes(),StandardCharsets.UTF_8));e.sendResponseHeaders(400,-1);e.close();});
         server.createContext("/api/chat",e->{fallback.incrementAndGet();e.getRequestBody().readAllBytes();byte[] b="{\"message\":{\"content\":\"fallback\"}}".getBytes(StandardCharsets.UTF_8);e.sendResponseHeaders(200,b.length);e.getResponseBody().write(b);e.close();});server.start();
         try{
-            var handler=new WorkerRequestHandler();String url="http://127.0.0.1:"+server.getAddress().getPort();
+            var handler=worker();String url="http://127.0.0.1:"+server.getAddress().getPort();
             for(String kind:List.of("openai-compatible","ollama"))handler.handle(new WorkerEnvelope(1,UUID.randomUUID(),"provider.configure",Map.of("kind",kind,"baseUrl",url+(kind.equals("ollama")?"/":"/v1/"),"model","requested-model","apiKey","secret")));
             var payload=Map.<String,Object>of("capability","PLANNING","prompt","看图","modelCapabilities",Map.of("vision","YES"),"images",WorkerModelImages.encode(List.of(new ModelImage("image/png",png()))));
             var response=handler.handle(new WorkerEnvelope(1,UUID.randomUUID(),"model.complete",payload));
@@ -47,7 +52,7 @@ class WorkerImageRequestTest {
         var received=new AtomicReference<String>();var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         for(String path:List.of("/v1/chat/completions","/api/chat"))server.createContext(path,e->{received.set(new String(e.getRequestBody().readAllBytes(),StandardCharsets.UTF_8));byte[] body=(path.equals("/api/chat")?"{\"model\":\"visual-test\",\"message\":{\"content\":\"transport fixture\"}}":"{\"model\":\"visual-test\",\"choices\":[{\"message\":{\"content\":\"transport fixture\"}}]}").getBytes(StandardCharsets.UTF_8);e.sendResponseHeaders(200,body.length);e.getResponseBody().write(body);e.close();});server.start();
         try{for(String kind:List.of("openai-compatible","ollama")){
-            var handler=new WorkerRequestHandler();String url="http://127.0.0.1:"+server.getAddress().getPort();
+            var handler=worker();String url="http://127.0.0.1:"+server.getAddress().getPort();
             handler.handle(new WorkerEnvelope(1,UUID.randomUUID(),"provider.configure",Map.of("kind",kind,"baseUrl",url+(kind.equals("ollama")?"/":"/v1/"),"model","visual-test")));
             var response=handler.handle(new WorkerEnvelope(1,UUID.randomUUID(),"model.complete",Map.of("capability","PLANNING","prompt","比较红色和蓝色局部","modelCapabilities",Map.of("vision","YES"),"images",WorkerModelImages.encode(images))));
             assertEquals("model.result",response.type());var message=new com.fasterxml.jackson.databind.ObjectMapper().readTree(received.get()).path("messages").get(0);
