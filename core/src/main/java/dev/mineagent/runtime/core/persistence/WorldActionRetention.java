@@ -23,16 +23,42 @@ public final class WorldActionRetention {
             statement.execute("CREATE TABLE IF NOT EXISTS mineagent_world_planning_index_v1(world TEXT NOT NULL,id TEXT NOT NULL,task TEXT NOT NULL,intent INTEGER NOT NULL,pending INTEGER NOT NULL,uncertain INTEGER NOT NULL,payload_bytes INTEGER NOT NULL,PRIMARY KEY(world,id))");
             statement.execute("CREATE INDEX IF NOT EXISTS mineagent_world_planning_pending_v1 ON mineagent_world_planning_index_v1(world,pending,uncertain)");
             statement.execute("CREATE TABLE IF NOT EXISTS mineagent_world_action_usage_v1(world TEXT NOT NULL,namespace TEXT NOT NULL,row_count INTEGER NOT NULL,payload_bytes INTEGER NOT NULL,reserved_bytes INTEGER NOT NULL,PRIMARY KEY(world,namespace))");
+            migrateOperationIds(db,world);
             for(String ns:List.of(BATCHES,PLANNING)){String table=ns.equals(BATCHES)?"mineagent_world_action_index_v1":"mineagent_world_planning_index_v1";
                 try(var query=db.prepareStatement("SELECT record_id,revision,payload FROM mineagent_runtime_records r WHERE world_id=? AND namespace=? AND deleted=0 AND NOT EXISTS(SELECT 1 FROM "+table+" i WHERE i.world=r.world_id AND i.id=r.record_id)")){query.setString(1,world.toString());query.setString(2,ns);try(var rows=query.executeQuery()){while(rows.next())project(db,world,ns,rows.getString(1),rows.getLong(2),rows.getString(3),false);}}
             }statement.execute("COMMIT");
         }catch(Exception|Error failure){try{statement.execute("ROLLBACK");}catch(Exception rollback){failure.addSuppressed(rollback);}throw failure;}}
     }
+    /** Metadata-only migration runs inside initialize's single writer transaction. Revision/side effects do not change. */
+    private static void migrateOperationIds(Connection db,UUID world)throws Exception{
+        for(;;){
+            String key,original;long revision;
+            try(var query=db.prepareStatement("SELECT record_id,revision,payload FROM mineagent_runtime_records WHERE world_id=? AND namespace=? AND deleted=0 AND (json_type(payload,'$.operationIds') IS NULL OR json_type(payload,'$.operationIds')='null') LIMIT 1")){
+                query.setString(1,world.toString());query.setString(2,BATCHES);try(var rows=query.executeQuery()){if(!rows.next())return;key=rows.getString(1);revision=rows.getLong(2);original=rows.getString(3);}
+            }
+            var batch=JSON.readValue(original,WorldActionJournal.Batch.class);
+            if(!batch.batchId().toString().equals(key)||!batch.worldId().equals(world)||batch.revision()!=revision||batch.actions().isEmpty()||batch.actions().size()>256)throw new IllegalStateException("WORLD_ACTION_MIGRATION_CONTEXT");
+            var ids=new ArrayList<UUID>();for(int i=0;i<batch.actions().size();i++)ids.add(dev.mineagent.runtime.core.content.LegacyNamespaceIds.worldActionForMigration(batch.batchId(),i));
+            var upgraded=new WorldActionJournal.Batch(batch.batchId(),batch.worldId(),batch.taskId(),batch.intent(),batch.agentId(),batch.owner(),batch.dimension(),batch.actions(),batch.cursor(),batch.state(),batch.error(),batch.before(),batch.receipts(),batch.revision(),batch.round(),ids);
+            String payload=JSON.writeValueAsString(upgraded);
+            try(var update=db.prepareStatement("UPDATE mineagent_runtime_records SET payload=? WHERE world_id=? AND namespace=? AND record_id=? AND revision=? AND payload=?")){
+                update.setString(1,payload);update.setString(2,world.toString());update.setString(3,BATCHES);update.setString(4,key);update.setLong(5,revision);update.setString(6,original);if(update.executeUpdate()!=1)throw new IllegalStateException("WORLD_ACTION_MIGRATION_CHANGED");
+            }
+            project(db,world,BATCHES,key,revision,payload,false);indexGeneration(db,world,upgraded);
+        }
+    }
+    private static void indexGeneration(Connection db,UUID world,WorldActionJournal.Batch batch)throws SQLException{
+        for(int i=0;i<batch.actions().size();i++)if(batch.actions().get(i).tool().equals("create_world_package")){
+            String operation=batch.operationId(i).toString();
+            try(var check=db.prepareStatement("SELECT batch FROM mineagent_world_generation_index_v1 WHERE world=? AND operation=?")){check.setString(1,world.toString());check.setString(2,operation);try(var rows=check.executeQuery()){if(rows.next()){if(!rows.getString(1).equals(batch.batchId().toString()))throw new IllegalStateException("WORLD_GENERATION_INDEX_CONFLICT");continue;}}}
+            try(var insert=db.prepareStatement("INSERT INTO mineagent_world_generation_index_v1(world,operation,batch) VALUES(?,?,?)")){insert.setString(1,world.toString());insert.setString(2,operation);insert.setString(3,batch.batchId().toString());insert.executeUpdate();}
+        }
+    }
     static void project(Connection db,UUID world,String namespace,String id,long revision,String payload,boolean enforce)throws Exception{
         boolean batch=namespace.equals(BATCHES);if(!batch&&!namespace.equals(PLANNING))throw new IllegalArgumentException("WORLD_ACTION_NAMESPACE");String table=batch?"mineagent_world_action_index_v1":"mineagent_world_planning_index_v1";
         long previousBytes=0,previousReserve=0;boolean exists=false,previousActive=false;try(var query=db.prepareStatement("SELECT payload_bytes,"+(batch?"reserved_bytes,active":"0,pending")+" FROM "+table+" WHERE world=? AND id=?")){query.setString(1,world.toString());query.setString(2,id);try(var rows=query.executeQuery()){if(rows.next()){exists=true;previousBytes=rows.getLong(1);previousReserve=rows.getLong(2);previousActive=rows.getBoolean(3);}}}
         long bytes=payload.getBytes(StandardCharsets.UTF_8).length,reserve=0;boolean active;WorldActionJournal.Batch b=null;WorldActionJournal.Planning p=null;
-        if(batch){b=JSON.readValue(payload,WorldActionJournal.Batch.class);if(!world.equals(b.worldId())||!id.equals(b.batchId().toString())||b.revision()!=revision||b.intent()<1||b.round()<0||b.round()>=16||b.actions().isEmpty()||b.actions().size()>256||b.cursor()<0||b.cursor()>b.actions().size()||b.receipts().size()>256||!Set.of("READY","EXECUTING","VERIFIED","COMPLETED","FAILED","INTERRUPTED").contains(b.state()))throw new IllegalStateException("WORLD_ACTION_RECORD");active=Set.of("READY","EXECUTING","VERIFIED").contains(b.state());reserve=b.state().equals("EXECUTING")?RECEIPT_RESERVE:0;}
+        if(batch){b=JSON.readValue(payload,WorldActionJournal.Batch.class);if(!world.equals(b.worldId())||!id.equals(b.batchId().toString())||b.revision()!=revision||b.intent()<1||b.round()<0||b.round()>=16||b.actions().isEmpty()||b.actions().size()>256||b.operationIds().size()!=b.actions().size()||b.cursor()<0||b.cursor()>b.actions().size()||b.receipts().size()>256||!Set.of("READY","EXECUTING","VERIFIED","COMPLETED","FAILED","INTERRUPTED").contains(b.state()))throw new IllegalStateException("WORLD_ACTION_RECORD");active=Set.of("READY","EXECUTING","VERIFIED").contains(b.state());reserve=b.state().equals("EXECUTING")?RECEIPT_RESERVE:0;}
         else{p=JSON.readValue(payload,WorldActionJournal.Planning.class);if(!id.equals(p.taskId()+"|"+p.intent())||p.revision()!=revision||p.intent()<1||p.attempts()<1||p.attempts()>16||p.pending()&&p.uncertain())throw new IllegalStateException("WORLD_PLANNING_RECORD");active=p.pending();}
         var usage=usage(db,world,namespace);long delta=bytes+reserve-previousBytes-previousReserve;
         if(enforce){if(!exists&&usage.total()>=MAX_ROWS)throw new IllegalStateException("WORLD_ACTION_RETAINED_ROW_BUDGET");if(active&&!previousActive&&usage.active()>=4096)throw new IllegalStateException("WORLD_ACTION_ACTIVE_BUDGET");
@@ -40,7 +66,7 @@ public final class WorldActionRetention {
         if(batch){
             try(var query=db.prepareStatement("INSERT INTO mineagent_world_action_index_v1 VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(world,id) DO UPDATE SET state=excluded.state,active=excluded.active,payload_bytes=excluded.payload_bytes,reserved_bytes=excluded.reserved_bytes")){query.setString(1,world.toString());query.setString(2,id);query.setString(3,b.taskId().toString());query.setLong(4,b.intent());query.setString(5,b.owner().toString());query.setString(6,b.agentId().toString());query.setInt(7,b.round());query.setString(8,b.state());query.setBoolean(9,active);query.setInt(10,b.actions().size());query.setLong(11,bytes);query.setLong(12,reserve);query.executeUpdate();}
             // Immutable actions: point ownership lookup must survive cursor advance and cache retirement.
-            if(!exists){for(int i=0;i<b.actions().size();i++)if(b.actions().get(i).tool().equals("create_world_package")){var operation=UUID.nameUUIDFromBytes((id+"|"+i).getBytes(StandardCharsets.UTF_8));try(var query=db.prepareStatement("INSERT INTO mineagent_world_generation_index_v1(world,operation,batch) VALUES(?,?,?)")){query.setString(1,world.toString());query.setString(2,operation.toString());query.setString(3,id);query.executeUpdate();}}}
+            if(!exists)indexGeneration(db,world,b);
         }else try(var query=db.prepareStatement("INSERT INTO mineagent_world_planning_index_v1 VALUES(?,?,?,?,?,?,?) ON CONFLICT(world,id) DO UPDATE SET pending=excluded.pending,uncertain=excluded.uncertain,payload_bytes=excluded.payload_bytes")){query.setString(1,world.toString());query.setString(2,id);query.setString(3,p.taskId().toString());query.setLong(4,p.intent());query.setBoolean(5,p.pending());query.setBoolean(6,p.uncertain());query.setLong(7,bytes);query.executeUpdate();}
         try(var query=db.prepareStatement("INSERT INTO mineagent_world_action_usage_v1 VALUES(?,?,?,?,?) ON CONFLICT(world,namespace) DO UPDATE SET row_count=row_count+excluded.row_count,payload_bytes=payload_bytes+excluded.payload_bytes,reserved_bytes=reserved_bytes+excluded.reserved_bytes")){query.setString(1,world.toString());query.setString(2,namespace);query.setInt(3,exists?0:1);query.setLong(4,bytes-previousBytes);query.setLong(5,reserve-previousReserve);query.executeUpdate();}
     }

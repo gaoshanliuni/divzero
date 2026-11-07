@@ -18,6 +18,16 @@ public final class ContentAddressedStore {
  public byte[] read(String id)throws IOException{Path file=pathFor(id);if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)||Files.size(file)>maxObjectSize)throw new IOException("RESOURCE_FILE_INVALID");return Files.readAllBytes(file);}
  public Path pathFor(String id){ResourceIds.require(id);Path path=root.resolve(id.substring(0,2)).resolve(id.substring(2)).normalize();if(!path.startsWith(root))throw new IllegalArgumentException("content path escapes store");return path;}
  /** Persistent identity of small explicit metadata (object/version/path), never of file contents. */
+ public Optional<String> existingNamedKeyId(String namespace,List<String> key)throws IOException{
+  if(namespace==null||!namespace.matches("[a-z_]{1,40}")||key==null||key.isEmpty()||key.size()>16||key.stream().anyMatch(v->v==null||v.length()>1024*1024)||key.stream().mapToLong(String::length).sum()>1024*1024)throw new IllegalArgumentException("RESOURCE_METADATA_KEY");
+  Path folder=root.resolve(".references"),index=folder.resolve("metadata-ids.db");
+  if(Files.isSymbolicLink(folder)||Files.isSymbolicLink(index))throw new IOException("RESOURCE_BINDING_LINK");
+  if(!Files.exists(index,LinkOption.NOFOLLOW_LINKS))return Optional.empty();if(!Files.isRegularFile(index,LinkOption.NOFOLLOW_LINKS))throw new IOException("RESOURCE_BINDING_INVALID");
+  var config=new org.sqlite.SQLiteConfig();config.setReadOnly(true);config.setBusyTimeout(5000);
+  try(var db=java.sql.DriverManager.getConnection("jdbc:sqlite:"+index,config.toProperties());var query=db.prepareStatement("SELECT id FROM resource_metadata_ids WHERE namespace=? AND reference_key=?")){
+   query.setString(1,namespace);query.setString(2,new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(key));try(var rows=query.executeQuery()){return rows.next()?Optional.of(ResourceIds.require(rows.getString(1))):Optional.empty();}
+  }catch(java.sql.SQLException error){throw new IOException("RESOURCE_METADATA_ID_STORAGE",error);}
+ }
  public String namedKeyId(String namespace,List<String> key)throws IOException{
   return namedKeyId(namespace,key,()->null);
  }

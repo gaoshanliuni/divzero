@@ -12,15 +12,24 @@ class PackageUiStateStoreTest {
     PackageUiStateStore.Scope scope(){return new PackageUiStateStore.Scope("local-integrated",world,viewer,pkg,"ui/index.html","");}
     @Test void preservesLegacyScopeDataAndItsRevisionThroughTheDurableIdentityMapping()throws Exception{
         String legacy=dev.mineagent.runtime.core.content.LegacyNamespaceIds.packageUiStateForMigration("local-integrated",viewer,pkg,"ui/index.html","");
+        var other=new PackageUiStateStore.Scope("local-integrated",UUID.randomUUID(),viewer,pkg,"ui/index.html","");
         try(var repo=new dev.mineagent.runtime.core.persistence.SqliteRuntimeRepository(dir.resolve("client.db"))){
             assertTrue(repo.compareAndSet(world,"client_package_ui_state",legacy,0,"{\"schema\":1,\"packageRevision\":2,\"entries\":{\"notes\":\"[1]\"}}",1).accepted());
+            assertTrue(repo.compareAndSet(other.world(),"client_package_ui_state",legacy,0,"{\"schema\":1,\"packageRevision\":2,\"entries\":{\"notes\":\"[9]\"}}",1).accepted());
         }
         try(var store=new PackageUiStateStore(dir.resolve("client.db"),Clock.systemUTC())){
             assertEquals("[1]",store.get(scope(),"notes").valueJson());assertEquals(1,store.get(scope(),"notes").revision());
             store.put(scope(),"notes",1,3,"[2]",()->true);
+            assertEquals("[9]",store.get(other,"notes").valueJson());
         }
         try(var store=new PackageUiStateStore(dir.resolve("client.db"),Clock.systemUTC())){assertEquals("[2]",store.get(scope(),"notes").valueJson());assertEquals(2,store.get(scope(),"notes").revision());}
         try(var repo=new dev.mineagent.runtime.core.persistence.SqliteRuntimeRepository(dir.resolve("client.db"))){assertEquals(1,repo.list(world,"client_package_ui_state").size());assertEquals(2,repo.get(world,"client_package_ui_state",legacy).orElseThrow().revision());}
+    }
+    @Test void adoptsTheEarlierAssignedMappingWithoutLosingExistingState()throws Exception{
+        var previous=new dev.mineagent.runtime.core.content.ContentAddressedStore(dir.resolve("client.db.identities"));
+        String id=previous.namedKeyId("package_ui",java.util.List.of(world.toString(),"local-integrated",viewer.toString(),pkg.toString(),"ui/index.html",""));
+        try(var repo=new dev.mineagent.runtime.core.persistence.SqliteRuntimeRepository(dir.resolve("client.db"))){assertTrue(repo.compareAndSet(world,"client_package_ui_state",id,0,"{\"schema\":1,\"packageRevision\":2,\"entries\":{\"notes\":\"[7]\"}}",1).accepted());}
+        try(var store=new PackageUiStateStore(dir.resolve("client.db"),Clock.systemUTC())){assertEquals("[7]",store.get(scope(),"notes").valueJson());assertEquals(1,store.get(scope(),"notes").revision());}
     }
     @Test void committedJsonSurvivesReopenAndCodeRevisionWithoutBecomingWorldState()throws Exception{
         try(var store=new PackageUiStateStore(dir.resolve("client.db"),Clock.systemUTC())){

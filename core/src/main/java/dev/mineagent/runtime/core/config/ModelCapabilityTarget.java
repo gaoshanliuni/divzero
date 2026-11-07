@@ -6,7 +6,7 @@ import java.util.*;
 public record ModelCapabilityTarget(String kind,String base,String model,ModelCapabilityProfiles.Profile profile) {
     public static ModelCapabilityTarget select(Map<String,String> values,UUID world,UUID agent,String explicitModel,String capability){
         var choice=AgentModelSettings.read(values,world,agent);
-        String vision="vision".equals(capability)?values.getOrDefault("provider.openai.role.vision","").strip():"";
+        String vision=explicitModel.isBlank()&&"vision".equals(capability)?values.getOrDefault("provider.openai.role.vision","").strip():"";
         if(!vision.isEmpty()||choice.mode().equals("CUSTOM")){
             String base=values.getOrDefault("provider.openai.baseUrl","");
             if(!Boolean.parseBoolean(values.getOrDefault("provider.openai.enabled","true"))||!WebSettingsCatalog.safeUrl(base))throw new IllegalStateException("AGENT_MODEL_API_CHANGED");

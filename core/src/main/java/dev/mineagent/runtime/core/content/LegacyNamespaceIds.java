@@ -17,6 +17,8 @@ public final class LegacyNamespaceIds {
   byte[] identity=new ObjectMapper().writeValueAsBytes(List.of(server,viewer.toString(),pkg.toString(),entry,target));
   return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(identity));
  }
+ /** Used only while atomically migrating a legacy world-action row lacking its explicit operation list. */
+ public static UUID worldActionForMigration(UUID batch,int index){if(batch==null||index<0||index>=256)throw new IllegalArgumentException("LEGACY_WORLD_ACTION_ID");return UUID.nameUUIDFromBytes((batch+"|"+index).getBytes(StandardCharsets.UTF_8));}
  private record Mapping(String id,boolean migrated){}
  private static final ObjectMapper JSON=new ObjectMapper();private static final Map<Path,Object> LOCKS=new java.util.concurrent.ConcurrentHashMap<>();
  public static String resolve(Path indexRoot,Kind kind,String originalScope,java.util.function.Predicate<String> legacyExists)throws IOException{

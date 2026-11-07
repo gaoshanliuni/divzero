@@ -38,7 +38,11 @@ public final class ConstructSkill {
     static void tick(SkillWork w){if(w.construct==null)w.construct=new ConstructSkill(w);w.construct.advance();}
     private boolean current(){return !closed&&!w.session.terminal()&&w.actor!=null&&w.actor.current();}
     private ServerPlayer owner(){var owner=w.runtime.server.getPlayerList().getPlayer(w.session.owner());if(owner==null)throw new IllegalStateException("BUILDING_OWNER_OFFLINE");return owner;}
-    Map<String,Object> view(){return Map.of("building",w.session.spec().buildingId(),"revision",w.session.spec().buildingRevision(),"phase",phase,"remainingMaterials",Map.copyOf(materials),"missingItem",missing,"error",failure);}
+    Map<String,Object> view(){
+        String stillMissing=missing;
+        if(!stillMissing.isEmpty()&&(!phase.equals("WRITE")||!current()||w.count(BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse(stillMissing)))>0))stillMissing="";
+        return Map.of("building",w.session.spec().buildingId(),"revision",w.session.spec().buildingRevision(),"phase",phase,"remainingMaterials",Map.copyOf(materials),"missingItem",stillMissing,"error",failure);
+    }
     private void waitFor(CompletableFuture<?> next,Runnable continuation){pending=next;afterPending=continuation;}
     private void opened(){
         if(!lease.design.dimension().equals(w.session.spec().dimension()))throw new IllegalStateException("BUILDING_DIMENSION_CHANGED");
@@ -131,7 +135,7 @@ public final class ConstructSkill {
     }
     private void advanceCell(ConstructionLedger.Cell cell,boolean written){
         if(!cell.after().startsWith("minecraft:air")){String item=BuiltInRegistries.ITEM.getKey(ServerBuildings.nativeState(w.player(),cell.after(),List.of()).getBlock().asItem()).toString();materials.computeIfPresent(item,(key,count)->Math.max(0,count-1));}
-        placementJumpUntil=placementJumpAttempts=0;cursor=cell.sequence();index++;w.abandonTarget();if(index>=cells.size())page();
+        missing="";placementJumpUntil=placementJumpAttempts=0;cursor=cell.sequence();index++;w.abandonTarget();if(index>=cells.size())page();
     }
     private void verify(){
         phase="VERIFYING_STRUCTURE";lease.release();var future=ServerBuildings.verifyNative(owner(),w.session.agent(),w.session.spec().buildingId(),w.session.spec().buildingRevision(),w.player().level(),this::current);

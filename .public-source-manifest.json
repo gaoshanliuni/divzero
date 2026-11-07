@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "a80f7de1-3187-4f90-82f3-1b6646cae299",
-      "bytes": 5167
+      "resourceId": "f0bfea01-07f3-462b-b132-e16f1915e768",
+      "bytes": 5284
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1299,8 +1299,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeGenerationContext.java",
-      "sha256": "6879dfd1e1935063cac4fc4fce83030c6663cd22df720b7352a452b4df547339",
-      "bytes": 6714
+      "resourceId": "a3778f2c-bd3b-47dc-b4f2-0c765f5ebd03",
+      "bytes": 6654
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeKnowledgeArtifact.java",
@@ -1319,8 +1319,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeLiveObservation.java",
-      "sha256": "aa7523396de660fc95bce2705154c03e953a0ac71d6b32a2f656f2563d13176e",
-      "bytes": 1952
+      "resourceId": "1208dc97-b4d5-490c-aa22-6687246c8b9d",
+      "bytes": 1892
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeLiveToolRequest.java",
@@ -1329,8 +1329,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeMethodObservation.java",
-      "sha256": "b7d0822804e700c65ee290ba4a23b0b8811d4b812d94d61dda4f959508e4bc7d",
-      "bytes": 1987
+      "resourceId": "76aebe99-042d-4330-9bc2-9a2024c34cb2",
+      "bytes": 1927
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeObservationSelection.java",
@@ -1349,8 +1349,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeSourceObservation.java",
-      "sha256": "eb0819b95dacd298e899a7328647f8f4a95136ab1a19c27ee47de30869815ca4",
-      "bytes": 1712
+      "resourceId": "97913c37-20bd-46b9-b3c7-560083ba6388",
+      "bytes": 1652
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeSourceView.java",
@@ -1394,8 +1394,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ModelCapabilityTarget.java",
-      "resourceId": "f913f2ed-4300-4a0b-93f9-064c3ee5aec5",
-      "bytes": 2275
+      "resourceId": "52a62a4e-23ec-4954-8944-cbafe190bb93",
+      "bytes": 2300
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/NativeSecretPayload.java",
@@ -1454,8 +1454,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
-      "resourceId": "5972c564-65e0-484c-95c3-c4f4ac334f2c",
-      "bytes": 5738
+      "resourceId": "bd5837b8-7b75-4365-b88e-864f07a8b374",
+      "bytes": 7140
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentIntegrityException.java",
@@ -1464,8 +1464,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/LegacyNamespaceIds.java",
-      "resourceId": "48144cc0-b9cc-4a5f-909c-64b3556f68b0",
-      "bytes": 6098
+      "resourceId": "fbc60f21-c6f0-458f-99a3-67ed852964cc",
+      "bytes": 6453
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ObservationTokens.java",
@@ -2429,8 +2429,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/WorldActionRetention.java",
-      "sha256": "23fb448dd15988709cc919184253dc461c255d6eaa10dd0049fbe4f0e16f2a21",
-      "bytes": 11685
+      "resourceId": "32e65abb-60bd-4c0c-97ad-af67bdd781b9",
+      "bytes": 14568
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/WorldSaveIdentity.java",
@@ -2919,8 +2919,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/WorldActionJournal.java",
-      "sha256": "56faea4a9faa21ca8c3b18bb844dad1b4898764be2d23cca311f781b28e3bd0a",
-      "bytes": 13372
+      "resourceId": "b059c69f-18ff-40e3-8d13-254370ff0cc5",
+      "bytes": 14517
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/WorldActionSpec.java",
@@ -2959,8 +2959,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/PackageUiStateStore.java",
-      "resourceId": "e064c9f0-ac7f-47e7-a0b7-2a373dc5e772",
-      "bytes": 6348
+      "resourceId": "274a71ea-25e6-4218-b5c3-7c74a7bb06d4",
+      "bytes": 6775
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/ui/ScoreContentPolicy.java",
@@ -3193,6 +3193,11 @@
       "bytes": 2785
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeGenerationContextTest.java",
+      "resourceId": "99cf2d0b-5723-4d28-a053-cc068f4d3a80",
+      "bytes": 9269
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/AgentMentionDisplayTest.java",
       "sha256": "b3447420144761fb90657b5d062d8ff2d5556c46a6c152ac0ed62537144985b5",
       "bytes": 2309
@@ -3219,8 +3224,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/ModelCapabilityTargetTest.java",
-      "resourceId": "1954294c-24a6-401e-ba03-a2587c709034",
-      "bytes": 2186
+      "resourceId": "3410bae4-4b43-45a4-b3d4-ad6c26c26820",
+      "bytes": 2288
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/NativeSecretPayloadTest.java",
@@ -3808,6 +3813,11 @@
       "bytes": 1232
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/WorldActionIdentityMigrationTest.java",
+      "resourceId": "3c3968f7-3282-4f11-9a1c-0b6e7db3c313",
+      "bytes": 3665
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/BehaviorPanelProjectionTest.java",
       "sha256": "951cd04dba576b025ea4c1f08cd8b5dc0163c2e6fddf23b33e850a9a59ae6208",
       "bytes": 1751
@@ -3824,8 +3834,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/PackageUiStateStoreTest.java",
-      "resourceId": "7d2093c5-dcd6-4f47-8e62-9e17987c7073",
-      "bytes": 6890
+      "resourceId": "6c2221ba-8a58-4c9e-82b2-e6be18fe56b6",
+      "bytes": 8109
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/ui/UiViewSettingsTest.java",
@@ -3989,8 +3999,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "7c731351-dd92-4dc5-967f-0c08161b0140",
-      "bytes": 12046
+      "resourceId": "b27dc77e-8929-482c-b078-da1796e558d4",
+      "bytes": 13984
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -6884,8 +6894,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
-      "resourceId": "a7990a55-b88c-4ecf-b283-1f6716592208",
-      "bytes": 18543
+      "resourceId": "40d96365-8f1b-4827-bbb2-be929b0a3830",
+      "bytes": 18800
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
@@ -7804,8 +7814,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerModelCapabilities.java",
-      "resourceId": "50a0a5c5-beb7-44f8-a4f1-fa3979b0f7f5",
-      "bytes": 6649
+      "resourceId": "63bbb1dc-fa6d-410a-b679-7fb46471ffd2",
+      "bytes": 6937
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerNativeInterfaceRestore.java",
@@ -9480,5 +9490,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "342fde3351b3aaf5dbdfe2e0d4fb1f531b9e3a78"
+  "sourceCommit": "949a059293f92396528f2f5342301a627a7d6296"
 }

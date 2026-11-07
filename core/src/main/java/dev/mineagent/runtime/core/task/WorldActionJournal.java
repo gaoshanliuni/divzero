@@ -9,7 +9,18 @@ import java.util.*;
 /** Durable dispatch/verification ledger, not a transaction over arbitrary native side effects. */
 public final class WorldActionJournal implements AutoCloseable {
     public record Receipt(UUID operationId,int index,String tool,boolean verified,String code,Map<String,String> before,Map<String,String> after){public Receipt{before=Map.copyOf(before);after=Map.copyOf(after);}}
-    public record Batch(UUID batchId,UUID worldId,UUID taskId,long intent,UUID agentId,UUID owner,String dimension,List<WorldActionSpec> actions,int cursor,String state,String error,Map<String,String> before,List<Receipt> receipts,long revision,int round){public Batch{actions=List.copyOf(actions);before=Map.copyOf(before);receipts=List.copyOf(receipts);}public UUID operationId(){return UUID.nameUUIDFromBytes((batchId+"|"+cursor).getBytes(StandardCharsets.UTF_8));}}
+    public record Batch(UUID batchId,UUID worldId,UUID taskId,long intent,UUID agentId,UUID owner,String dimension,List<WorldActionSpec> actions,int cursor,String state,String error,Map<String,String> before,List<Receipt> receipts,long revision,int round,List<UUID> operationIds){
+        public Batch(UUID batchId,UUID worldId,UUID taskId,long intent,UUID agentId,UUID owner,String dimension,List<WorldActionSpec> actions,int cursor,String state,String error,Map<String,String> before,List<Receipt> receipts,long revision,int round){this(batchId,worldId,taskId,intent,agentId,owner,dimension,actions,cursor,state,error,before,receipts,revision,round,actions.stream().map(a->UUID.randomUUID()).toList());}
+        public Batch{
+            actions=List.copyOf(actions);before=Map.copyOf(before);receipts=List.copyOf(receipts);boolean legacy=operationIds==null;operationIds=legacy?List.of():List.copyOf(operationIds);
+            if(!legacy){
+                if(operationIds.size()!=actions.size()||operationIds.stream().distinct().count()!=operationIds.size())throw new IllegalArgumentException("WORLD_ACTION_OPERATION_IDS");
+                for(var receipt:receipts)if(receipt.index()<0||receipt.index()>=actions.size()||!receipt.operationId().equals(operationIds.get(receipt.index()))||!receipt.tool().equals(actions.get(receipt.index()).tool()))throw new IllegalArgumentException("WORLD_ACTION_RECEIPT_IDENTITY");
+            }
+        }
+        public UUID operationId(){return operationId(cursor);}
+        public UUID operationId(int index){if(operationIds.size()!=actions.size()||index<0||index>=actions.size())throw new IllegalStateException("WORLD_ACTION_OPERATION_ID_UNAVAILABLE");return operationIds.get(index);}
+    }
     public record Planning(UUID taskId,long intent,int attempts,boolean pending,boolean uncertain,long revision){}
     private final Map<String,Planning> planning=new LinkedHashMap<>();private final Map<String,Planning> planningCache=new LinkedHashMap<>(128,.75f,true);private final Map<UUID,Batch> historyCache=new LinkedHashMap<>(128,.75f,true);
     private static final String NS="world_action_batches_v1";private final SqliteRuntimeRepository repo;private final UUID world;private final ObjectMapper json=new ObjectMapper();private final Map<UUID,Batch> batches=new LinkedHashMap<>();
@@ -41,7 +52,7 @@ public final class WorldActionJournal implements AutoCloseable {
         var prior=history(task.taskId(),task.intentRevision());var old=prior.stream().filter(b->b.round()==round).findFirst().orElse(null);if(old!=null){if(!old.agentId().equals(task.agentId())||!old.owner().equals(task.ownerPlayerId())||!old.dimension().equals(dimension)||!old.actions().equals(actions))throw new IllegalArgumentException("WORLD_PLAN_REUSED");return old;}
         var latest=forTask(task.taskId(),task.intentRevision()).orElse(null);if(round>0&&(latest==null||latest.round()!=round-1||!latest.state().equals("COMPLETED")))throw new IllegalStateException("PREVIOUS_ROUND_NOT_COMPLETE");
         if(prior.stream().mapToInt(b->b.actions().size()).sum()+actions.size()>256)throw new IllegalStateException("WORLD_ACTION_BUDGET");
-        var id=UUID.nameUUIDFromBytes(("world-actions|"+world+"|"+task.taskId()+"|"+task.intentRevision()+(round==0?"":"|"+round)).getBytes(StandardCharsets.UTF_8));
+        var id=UUID.randomUUID();
         var b=new Batch(id,world,task.taskId(),task.intentRevision(),task.agentId(),task.ownerPlayerId(),dimension,actions,0,"READY","",Map.of(),List.of(),1,round);store(b,0);return b;
     }
     public synchronized Batch begin(UUID id,Map<String,String> before)throws Exception{var b=get(id);if(!b.state().equals("READY"))throw new IllegalStateException("WORLD_ACTION_NOT_READY");bound(before);return save(b,b.cursor(),"EXECUTING","",before,b.receipts());}
@@ -59,7 +70,7 @@ public final class WorldActionJournal implements AutoCloseable {
     }
     public static boolean resumableWorldWait(Batch b){return b!=null&&b.state().equals("INTERRUPTED")&&b.cursor()<b.actions().size()&&Set.of("SERVER_RESTARTED_NO_REPLAY","TASK_CHANGED").contains(b.error())
             &&b.actions().subList(b.cursor(),b.actions().size()).stream().allMatch(a->Set.of("await_world_activation","inspect_world_content").contains(a.tool()));}
-    private Batch save(Batch b,int cursor,String state,String error,Map<String,String> before,List<Receipt> receipts)throws Exception{var n=new Batch(b.batchId(),world,b.taskId(),b.intent(),b.agentId(),b.owner(),b.dimension(),b.actions(),cursor,state,error,before,receipts,b.revision()+1,b.round());store(n,b.revision());return n;}
+    private Batch save(Batch b,int cursor,String state,String error,Map<String,String> before,List<Receipt> receipts)throws Exception{var n=new Batch(b.batchId(),world,b.taskId(),b.intent(),b.agentId(),b.owner(),b.dimension(),b.actions(),cursor,state,error,before,receipts,b.revision()+1,b.round(),b.operationIds());store(n,b.revision());return n;}
     private static String key(UUID task,long intent){return task+"|"+intent;}
     public synchronized Planning beginPlanning(ManagedTask task)throws Exception{var k=key(task.taskId(),task.intentRevision());var old=planning(task.taskId(),task.intentRevision());if(old!=null&&(old.pending()||old.uncertain()||old.attempts()>=16))throw new IllegalStateException("WORLD_PLANNING_NOT_REPLAYABLE");var p=new Planning(task.taskId(),task.intentRevision(),old==null?1:old.attempts()+1,true,false,old==null?1:old.revision()+1);savePlanning(p,old==null?0:old.revision());return p;}
     public synchronized List<Planning> planningRecords(){return readPlanning("PLANNING_ALL");}

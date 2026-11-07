@@ -20,9 +20,9 @@ public final class PackageUiStateStore implements AutoCloseable {
     private record Data(int schema,long packageRevision,Map<String,String> entries){}
     private record Loaded(long revision,Data data){}
     private final SqliteRuntimeRepository repo;private final Clock clock;
-    private final dev.mineagent.runtime.core.content.ContentAddressedStore identities;
+    private final dev.mineagent.runtime.core.content.ContentAddressedStore identities;private final Path identityRoot;
     private final LinkedHashMap<Scope,String> scopeIds=new LinkedHashMap<>(16,.75f,true);
-    public PackageUiStateStore(Path database,Clock clock)throws Exception{this.repo=new SqliteRuntimeRepository(database);this.clock=Objects.requireNonNull(clock);this.identities=new dev.mineagent.runtime.core.content.ContentAddressedStore(database.toAbsolutePath().resolveSibling(database.getFileName()+".identities"));}
+    public PackageUiStateStore(Path database,Clock clock)throws Exception{this.repo=new SqliteRuntimeRepository(database);this.clock=Objects.requireNonNull(clock);identityRoot=database.toAbsolutePath().resolveSibling(database.getFileName()+".identities");this.identities=new dev.mineagent.runtime.core.content.ContentAddressedStore(identityRoot);}
     public synchronized Snapshot get(Scope scope,String key)throws Exception{key(key);return snapshot(load(scope),key);}
     public synchronized Snapshot put(Scope scope,String key,long expected,long packageRevision,String valueJson,BooleanSupplier current)throws Exception{
         key(key);if(valueJson==null||valueJson.getBytes(StandardCharsets.UTF_8).length>32768)throw new IllegalArgumentException("UI_STATE_VALUE_BUDGET");
@@ -44,7 +44,11 @@ public final class PackageUiStateStore implements AutoCloseable {
     }
     private String scopeKey(Scope scope)throws Exception{
         var cached=scopeIds.get(scope);if(cached!=null)return cached;
-        String id=identities.namedKeyId("package_ui",List.of(scope.world().toString(),scope.server(),scope.viewer().toString(),scope.packageId().toString(),scope.entry(),scope.target()),()->{
+        var key=List.of(scope.world().toString(),scope.server(),scope.viewer().toString(),scope.packageId().toString(),scope.entry(),scope.target());
+        // Historical row keys could repeat across worlds; each world needs its own ID mapping domain.
+        var scoped=new dev.mineagent.runtime.core.content.ContentAddressedStore(identityRoot.resolve(scope.world().toString()));
+        String id=scoped.namedKeyId("package_ui",key,()->{
+            var assigned=identities.existingNamedKeyId("package_ui",key);if(assigned.isPresent())return assigned.get();
             if(!repo.hasRecords(scope.world(),NS))return null;
             String legacy=dev.mineagent.runtime.core.content.LegacyNamespaceIds.packageUiStateForMigration(scope.server(),scope.viewer(),scope.packageId(),scope.entry(),scope.target());
             return repo.get(scope.world(),NS,legacy).isPresent()?legacy:null;
