@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "3982829d-4f3e-4c37-b018-4e7eca51825a",
-      "bytes": 3014
+      "resourceId": "a161bc37-5139-47f8-bb29-9935d2dbf0cf",
+      "bytes": 3050
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -2293,6 +2293,11 @@
       "bytes": 934
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/AssignedOperationIds.java",
+      "resourceId": "078b4694-63fb-4b73-bca6-0a2fb5b7051e",
+      "bytes": 1424
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/AssignedTaskIds.java",
       "resourceId": "f6c50522-98fc-473c-b547-17e8bac75d6a",
       "bytes": 5308
@@ -3496,6 +3501,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/permission/WorldActivationTest.java",
       "sha256": "c1ed44371921e9c08789ebf8e4f9f7aa028ac28e1f360ffa84f0c00fe5691247",
       "bytes": 4036
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/AssignedOperationIdsTest.java",
+      "resourceId": "d6456046-35af-4235-8654-175b8dd93427",
+      "bytes": 1545
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/AssignedTaskIdsTest.java",
@@ -8389,8 +8399,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/JavaPublicationJournal.java",
-      "sha256": "4215d4ff7182c51b8eabe3391dfad5185660dc11730a803ba09143865967490b",
-      "bytes": 13229
+      "resourceId": "4eaa8441-bb30-4b70-a0b8-eb454ec6b815",
+      "bytes": 13406
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/StudioCoderJournal.java",
@@ -8399,8 +8409,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/StudioScriptJournal.java",
-      "sha256": "86766dd1f7e7a15e0c1fc5c64c51e76d989d91c5ff9293b28a40087bed9adb3a",
-      "bytes": 8576
+      "resourceId": "01e0ba30-7b35-455d-95a4-0fd72a0187fb",
+      "bytes": 8762
     },
     {
       "path": "scripting/src/main/resources/dev/mineagent/runtime/opencode/LICENSE",
@@ -9310,5 +9320,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "a92bd47999488c823e18eecfe1ebb3e3eefd542a"
+  "sourceCommit": "20646a341aa57d668d1d1e055c91cd1c658df2cc"
 }
