@@ -41,7 +41,7 @@ final class SkillWork {
     void notice(String key,String fallback){if(key.equals(lastNotice)&&tick()-lastNoticeTick<200)return;lastNotice=key;lastNoticeTick=tick();var owner=runtime.server.getPlayerList().getPlayer(session.owner());if(owner==null)return;String name=MineAgentRuntimeServices.bodies(runtime.server).definitions().stream().filter(d->d.agentId().equals(session.agent())).map(d->d.displayName()).findFirst().orElse("AI");dev.mineagent.runtime.neoforge.chat.AiPlayerChat.send(owner,session.agent(),net.minecraft.network.chat.Component.translatableWithFallback("mineagent.behavior."+key,fallback));}
     final Map<UUID,SkillLootCollector.Drop> loot=new LinkedHashMap<>();final Map<Item,Integer> lootBefore=new HashMap<>();Set<UUID> dropBefore=Set.of();final Set<UUID> pickedDrops=new HashSet<>();int lootRetries;SkillLootCollector.Terrain blockedLootTerrain;
     ConstructSkill construct;BlockPos nativeUsePos;
-    UUID handoffEntity;int handoffQuantity,handoffPicked,handoffDiverted;
+    UUID handoffEntity;Vec3 handoffTarget;int handoffQuantity,handoffPicked,handoffDiverted;
     final Map<BlockPos,net.minecraft.world.level.block.state.BlockState> gatherRejected=new LinkedHashMap<>();
     SkillWork(SkillRuntime runtime,SkillSession session,long dbRevision){this.runtime=runtime;this.session=session;this.dbRevision=dbRevision;}
     boolean legacyBaseline(){return Boolean.getBoolean("mineagent.skillSmoke")&&java.util.Set.of("policy_duel","policy_train","policy_eval10").contains(System.getProperty("mineagent.skillSmokeMode",""))&&session.spec().id().startsWith("legacy_");}

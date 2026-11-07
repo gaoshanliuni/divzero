@@ -20,11 +20,27 @@ public final class HandoffSkill {
         if(w.operation!=null){verify(w,recipient,item);return;}
         long remaining=w.session.spec().limit()-w.session.count("handoffReceived");if(remaining<=0){w.completed("HANDOFF_RECEIVED_BY_TARGET");return;}
         if(w.count(item)==0){w.waitFor("HANDOFF_MATERIALS_REQUIRED",40);return;}
-        Vec3 delta=w.player().position().subtract(recipient.position());if(delta.horizontalDistanceSqr()<.01)delta=new Vec3(1,0,0);Vec3 at=recipient.position().add(delta.normalize().scale(1.5));
-        if(w.player().distanceToSqr(recipient)>4||Math.abs(w.player().getY()-recipient.getY())>1){var node=new dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator(w.player()).closest(at);if(node==null){w.waitFor("HANDOFF_NO_SAFE_STAND",40);return;}w.session.phase("HANDOFF_APPROACH");w.move(dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator.point(node));return;}
+        if(!inDeliveryRange(w,recipient)){approach(w,recipient);return;}
+        w.stand=null;w.search=null;w.handoffTarget=null;
         w.actor.haltMotion(w.token());if(!w.equip(item))return;w.actor.aimImmediately(w.token(),recipient.position().add(0,.5,0));
         int amount=w.player().getMainHandItem().getCount()<=remaining?w.player().getMainHandItem().getCount():1;w.beforeCount=w.count(item);w.handoffEntity=null;w.handoffQuantity=amount;w.handoffPicked=0;w.handoffDiverted=0;
         w.prepare("HANDOFF_DROP",Map.of("recipient",recipient.getUUID().toString(),"item",w.session.spec().crop(),"quantity",Integer.toString(amount),"inventoryBefore",Integer.toString(w.beforeCount)));
+    }
+    private static boolean inDeliveryRange(SkillWork w,ServerPlayer recipient){
+        return w.player().distanceToSqr(recipient)<=4&&Math.abs(w.player().getY()-recipient.getY())<=1&&dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.lineOfSight(w.player(),w.player().getEyePosition(),recipient.position().add(0,.5,0),null,false);
+    }
+    private static void approach(SkillWork w,ServerPlayer recipient){
+        if(w.handoffTarget==null||w.handoffTarget.distanceToSqr(recipient.position())>.0625){w.stand=null;w.search=null;w.handoffTarget=recipient.position();}
+        w.session.phase("HANDOFF_APPROACH");
+        if(w.stand!=null){if(w.move(w.stand)&&!inDeliveryRange(w,recipient)){w.stand=null;w.search=null;}return;}
+        if(w.search==null)w.search=dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.handoff(w.player(),recipient);
+        if(w.search.search()==null){w.search=null;w.waitFor("HANDOFF_NO_SAFE_STAND",40);return;}
+        var budget=dev.mineagent.runtime.neoforge.body.NativeNavigationBudget.get(w.runtime.server);int allowance=budget.claim(w.token(),w.tick());if(allowance==0)return;
+        w.search.evaluator().beginSlice();var result=w.search.search().advance(allowance,budget::timeAvailable);
+        if(result.status()==dev.mineagent.runtime.core.task.SurfacePathfinder.Status.FOUND){
+            w.stand=result.steps().isEmpty()?w.search.candidates().stream().min(Comparator.comparingDouble(at->at.distanceToSqr(w.player().position()))).orElseThrow():dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator.point(result.steps().getLast().to());
+            w.search=null;w.move(w.stand);
+        }else if(result.status()!=dev.mineagent.runtime.core.task.SurfacePathfinder.Status.BUDGET_EXHAUSTED){w.search=null;w.waitFor("HANDOFF_"+result.status().name(),40);}
     }
     private static void verify(SkillWork w,ServerPlayer recipient,Item item){
         if(!w.saved.isDone())return;
@@ -34,7 +50,7 @@ public final class HandoffSkill {
         }
         if(w.interruptedOperation){w.pause("HANDOFF_PENDING_RECEIPT_RECONCILE");return;}
         if(!w.executed){
-            if(w.player().distanceToSqr(recipient)>6.25||!w.player().getMainHandItem().is(item)||w.count(item)!=w.beforeCount){w.confirm("NOT_EXECUTED_TARGET_OR_ITEMS_CHANGED",Map.of());return;}
+            if(!inDeliveryRange(w,recipient)||!w.player().getMainHandItem().is(item)||w.count(item)!=w.beforeCount){w.confirm("NOT_EXECUTED_TARGET_OR_ITEMS_CHANGED",Map.of());return;}
             w.executed=true;w.startedTick=w.tick();w.session.phase("HANDOFF_WAITING_PICKUP");
         }
         if(w.handoffEntity==null&&w.tick()-w.startedTick<60)w.actor.dropItem(w.token(),w.operation,w.player().getMainHandItem().getCount()==w.handoffQuantity);

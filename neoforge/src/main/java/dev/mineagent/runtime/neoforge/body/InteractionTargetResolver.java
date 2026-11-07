@@ -40,6 +40,19 @@ public final class InteractionTargetResolver {
         return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());
     }
     private InteractionTargetResolver(){}
+    /** Reachable delivery positions, with room for navigation's settling tolerance. */
+    public static Query handoff(ServerPlayer player,ServerPlayer recipient){
+        var evaluator=new NativeTraversalEvaluator(player);var start=evaluator.closest(player.position());
+        var nodes=new LinkedHashSet<SurfacePathfinder.Node>();var base=recipient.blockPosition();
+        for(int x=-2;x<=2;x++)for(int z=-2;z<=2;z++)for(var node:evaluator.positions(base.getX()+x,base.getZ()+z,recipient.getY())){
+            var at=NativeTraversalEvaluator.point(node);
+            if(evaluator.water(node)||evaluator.climb(node)||at.distanceToSqr(recipient.position())>1.45*1.45||Math.abs(at.y-recipient.getY())>1)continue;
+            if(player.getDimensions(player.getPose()).makeBoundingBox(at).intersects(recipient.getBoundingBox()))continue;
+            if(lineOfSight(player,at.add(0,player.getEyeHeight(),0),recipient.position().add(0,.5,0),null,false))nodes.add(node);
+        }
+        if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
+        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());
+    }
     /** Candidate feet positions must allow a real attack; the target's occupied block is not a waypoint. */
     public static Query melee(ServerPlayer p,net.minecraft.world.entity.LivingEntity target){
         var evaluator=new NativeTraversalEvaluator(p);var nodes=new LinkedHashSet<SurfacePathfinder.Node>();
