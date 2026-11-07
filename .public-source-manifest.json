@@ -3848,6 +3848,11 @@
       "bytes": 3488
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/CraftingInventoryProofTest.java",
+      "resourceId": "0cfcfce0-813f-483e-8baf-1e90dac99925",
+      "bytes": 740
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/DamageSweepTest.java",
       "sha256": "2f3193393394f43c9ad8f460dd239d9f59d753e1230623b4836edf988b83f912",
       "bytes": 1235
@@ -9665,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "aa7c67b0ca1619f8773f82ed535616487a120c07"
+  "sourceCommit": "af6d92ea87d99349a824f031db7f614169fc438b"
 }
