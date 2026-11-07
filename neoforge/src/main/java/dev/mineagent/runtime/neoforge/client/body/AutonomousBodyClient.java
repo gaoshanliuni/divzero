@@ -21,7 +21,7 @@ import java.util.*;
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class AutonomousBodyClient {
     private static final ObjectMapper JSON=new ObjectMapper();private static Flight flight;private static String last="NONE";public static int localApprovals,hudDraws;
-    private static final class Flight {final AutonomyPayloads.Offer offer;final UUID consent=UUID.randomUUID();final Object wire,level,player;final boolean pauseOnLostFocus;long sequence,updated=now(),revision=-1;JsonNode state=JSON.createObjectNode();boolean paused,grant,resuming,clicked;int beats;Flight(AutonomyPayloads.Offer offer,Object wire){this.offer=offer;this.wire=wire;var mc=Minecraft.getInstance();level=mc.level;player=mc.player;pauseOnLostFocus=mc.options.pauseOnLostFocus;mc.options.pauseOnLostFocus=false;}}
+    private static final class Flight {final AutonomyPayloads.Offer offer;final UUID consent=UUID.randomUUID();final Object wire,level,player;final boolean pauseOnLostFocus;long sequence,updated=now(),revision=-1,inputRevision=Long.MIN_VALUE;UUID inputOperation;JsonNode state=JSON.createObjectNode();boolean paused,grant,resuming,clicked;int beats;Flight(AutonomyPayloads.Offer offer,Object wire){this.offer=offer;this.wire=wire;var mc=Minecraft.getInstance();level=mc.level;player=mc.player;pauseOnLostFocus=mc.options.pauseOnLostFocus;mc.options.pauseOnLostFocus=false;}}
     private AutonomousBodyClient(){}
     private static long now(){return System.nanoTime()/1000000;}
     private static List<KeyMapping> keys(){var o=Minecraft.getInstance().options;return List.of(o.keyUp,o.keyDown,o.keyLeft,o.keyRight,o.keyJump,o.keyShift,o.keySprint,o.keyAttack,o.keyUse);}
@@ -51,7 +51,7 @@ public final class AutonomousBodyClient {
     @SubscribeEvent public static void tick(ClientTickEvent.Pre event){var f=flight;if(f==null)return;if(!identity(f)){stop("CLIENT_CONTEXT_CHANGED");return;}var mc=Minecraft.getInstance();
         if(++f.beats>=5){f.beats=0;send(f,"HEARTBEAT",false);}if(now()-f.updated>(f.grant?3000:8000)){stop("SERVER_LEASE_LOST");return;}release();if(!usable()||!f.grant||f.paused)return;
         var n=f.state;if(n.has("skill")){NativeSkillInput.tick(n.get("skill"));return;}
-        String mode=n.path("mode").asText("WAIT");var command=JSON.createObjectNode().put("operation",UUID.nameUUIDFromBytes((f.offer.session()+"/"+n.path("actionRevision").asLong()).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString()).put("slot",n.path("slot").asInt(0)).put("sneaking",n.path("sneaking").asBoolean());
+        long inputRevision=n.path("actionRevision").asLong();if(f.inputOperation==null||f.inputRevision!=inputRevision){f.inputRevision=inputRevision;f.inputOperation=UUID.randomUUID();}String mode=n.path("mode").asText("WAIT");var command=JSON.createObjectNode().put("operation",f.inputOperation.toString()).put("slot",n.path("slot").asInt(0)).put("sneaking",n.path("sneaking").asBoolean());
         String action=switch(mode){case "WAIT","IDLE"->"HALT";case "ATTACK"->"BREAK";case "USE"->"USE_BLOCK";default->mode;};command.put("action",action);command.set("target",n.path("target"));
         if(mode.equals("MOVE")){var route=n.path("route");int index=0;while(index<route.size()&&vector(route.get(index)).distanceToSqr(mc.player.position())<.28)index++;if(index>=route.size())return;command.set("target",route.get(index));}
         NativeSkillInput.tick(command);

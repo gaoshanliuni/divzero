@@ -3864,8 +3864,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "ec2c616e-0512-4e36-896d-16aa730415dd",
-      "bytes": 3251
+      "resourceId": "c2313c35-477a-4c6a-b67b-c0bbd799ece7",
+      "bytes": 6112
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -4999,8 +4999,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomousBodyClient.java",
-      "sha256": "291ad2cafea322b6da5817b48c3db3776b3331d5b9828c4c388638e6cf618397",
-      "bytes": 14174
+      "resourceId": "6993f3be-46bd-496a-b6db-dcd2604c562b",
+      "bytes": 14286
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/AutonomyVirtualInput.java",
@@ -5929,8 +5929,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/WorldBoardClient.java",
-      "sha256": "31c30607a68bd846ffa61d905461a37933ceb206a1a51e96236ab73babf95d14",
-      "bytes": 6946
+      "resourceId": "c8b0cf72-2eca-4561-85ee-64f5ab39ab8b",
+      "bytes": 6848
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/WorldUiAgentClient.java",
@@ -5999,8 +5999,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeLiveClassAccess.java",
-      "sha256": "c4446625f4e73a95622bf73ecc6477d836dc4361626d27a9269723065bc7870e",
-      "bytes": 12235
+      "resourceId": "3ef022c4-abda-4f8a-8e87-2670563d70db",
+      "bytes": 12137
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeLiveSmokeServer.java",
@@ -9310,5 +9310,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "d9f8428daca0d748927c998bf1fd4f828511eda2"
+  "sourceCommit": "3eb08d1d765fc295e2d4c76db1405d2ec86fd07a"
 }

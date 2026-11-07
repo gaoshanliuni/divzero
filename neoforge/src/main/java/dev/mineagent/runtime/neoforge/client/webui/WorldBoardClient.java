@@ -53,7 +53,7 @@ public final class WorldBoardClient {
                 ((dev.mineagent.runtime.neoforge.mixin.client.WorldBoardTextAccess)entity).mineagent$setText(Component.literal(board.text()).withColor(0xeff2e9));
                 if(old==null||entity!=old.entity()){
                     while(level.getEntity(nextId)!=null)nextId--;
-                    entity.setId(nextId--);entity.setUUID(UUID.nameUUIDFromBytes(("mineagent-world-board:"+board.viewId()).getBytes(java.nio.charset.StandardCharsets.UTF_8)));level.addEntity(entity);
+                    entity.setId(nextId--);entity.setUUID(UUID.randomUUID());level.addEntity(entity);
                 }
                 shown.put(board.viewId(),new Owned(entity,board));
             }catch(RuntimeException invalid){remove(board.viewId());failedRevisions.put(board.viewId(),board.revision());dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("WORLD_BOARD_RENDER_FAILED view={} code={}",board.viewId(),invalid.getClass().getSimpleName());}
