@@ -39,6 +39,9 @@ public final class AgentProfileScreen extends NativeInputScreen {
     public static void open(UUID agent,String name){if(!dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()){Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.ChatScreen("",false));dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.showChoice(true);return;}Minecraft.getInstance().setScreen(new AgentProfileScreen(agent,name));NativeWorkspaceConnection.open();}
     public void smokeInventoryTab(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");tab="inventory";draw();}
     public void smokeBehaviorTab(boolean release){NativeBehaviorPanel.smokeClickElement(root,t("行为模式"),release);}
+    public void smokePeerTab(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");NativeBehaviorPanel.smokeClickElement(root,t("协作对话"),false);NativeBehaviorPanel.smokeClickElement(root,t("协作对话"),true);}
+    public boolean smokePeerReady(boolean messages){return current()&&PeerDialoguePanel.smokeReady(agent.toString(),messages);}
+    public void smokePeerOpenFirst(){if(!current())throw new IllegalStateException("PEER_UI_SCREEN_CHANGED");PeerDialoguePanel.smokeOpenFirst(agent.toString());}
     UIElement smokeRoot(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return root;}
     private static String t(String text){return ClientLanguage.t(text);}
     private boolean current(){return connection==Minecraft.getInstance().getConnection()&&Minecraft.getInstance().screen==this;}

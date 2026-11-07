@@ -882,6 +882,7 @@ public final class PersistentSkillSmokeClient {
     }
     private static boolean requestHover(net.minecraft.network.chat.Component component,String text){if(component.getString().equals("请求")&&component.getStyle().getHoverEvent() instanceof net.minecraft.network.chat.HoverEvent.ShowText hover&&hover.value().getString().equals(text))return true;return component.getSiblings().stream().anyMatch(c->requestHover(c,text));}
     private static void prepare(){
+        if(System.getProperty("mineagent.skillSmokeMode","").equals("peer_history_review")){peerHistoryReview();return;}
         if(Boolean.getBoolean("mineagent.skillSmokeResume")){if(System.getProperty("mineagent.skillSmokeMode","").equals("bundled_python")){bundledPython(true);return;}if(System.getProperty("mineagent.skillSmokeMode","").equals("resume_ai")){resumeAi(true);return;}if(System.getProperty("mineagent.skillSmokeMode","").equals("combat_october"))restoreOctoberMode();else if(System.getProperty("mineagent.skillSmokeMode","").equals("policy_checkpoint"))policyCheckpoint(true);else restoreLifecycle();return;}
         action("world-and-real-survival-bodies",()->server(p->{
             var s=p.level().getServer();s.getPlayerList().op(p.nameAndId());p.setGameMode(GameType.CREATIVE);WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);p.teleportTo(p.level(),.5,101,-3.5,Set.of(),0,0,true);
@@ -1036,6 +1037,29 @@ public final class PersistentSkillSmokeClient {
         action("stop-resumed-session",()->tool("control_skill",JSON.createObjectNode().put("id","paused_farm").put("expected_revision",3).put("action","stop")));
     }
     private static UUID cooperativeWood,cooperativeStone,cooperativeRun;private static ObjectNode cooperativePlan;
+    private static void peerHistoryReview(){
+        waitFor("restore-existing-peer-history-without-model",600,()->server(p->{try{
+            var server=p.level().getServer();server.getPlayerList().op(p.nameAndId());WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);
+            var candidate=MineAgentRuntimeServices.bodies(server).definitions().stream().filter(d->d.ownerPlayerId().equals(p.getUUID())&&d.displayName().equals("持续技能搭档")).findFirst();if(candidate.isEmpty())return false;agent=candidate.orElseThrow().agentId();
+            var store=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).store();var peers=store.peers(p.getUUID(),agent,0);require(peers.size()>=2,"PEER_REVIEW_SOURCE_MISSING");EVIDENCE.add(Map.of("source","PERSISTED_REAL_PROVIDER_DIALOGUE_READ_ONLY","threads",peers,"modelCalls",0));return true;
+        }catch(Exception failure){throw new CompletionException(failure);}}));
+        waitFor("peer-review-client-enabled",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});
+        action("peer-profile-at-ui-scale-four",()->{mc().options.guiScale().set(4);mc().resizeGui();dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen.open(agent,"持续技能搭档");return CompletableFuture.completedFuture(true);});
+        waitFor("peer-profile-connected",300,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen&&dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready()));
+        action("peer-profile-click-tab",()->{((dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen)mc().screen).smokePeerTab();return CompletableFuture.completedFuture(true);});
+        waitFor("peer-profile-history-list",400,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen profile&&profile.smokePeerReady(false)));
+        action("peer-profile-click-first-conversation",()->{((dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen)mc().screen).smokePeerOpenFirst();return CompletableFuture.completedFuture(true);});
+        waitFor("peer-profile-real-message-cards",400,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.AgentProfileScreen profile&&profile.smokePeerReady(true)));
+        action("peer-profile-screenshot",()->{screen("peer-profile-scale-four");return CompletableFuture.completedFuture(true);});
+        action("peer-f2-at-ui-scale-two",()->{mc().setScreen(null);mc().options.guiScale().set(2);mc().resizeGui();dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.openForAgent(agent.toString(),"持续技能搭档");return CompletableFuture.completedFuture(true);});
+        waitFor("peer-f2-connected",300,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen&&dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready()));
+        action("peer-f2-click-tab",()->{((dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen)mc().screen).smokePeerTab();return CompletableFuture.completedFuture(true);});
+        waitFor("peer-f2-history-list",400,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen workspace&&workspace.smokePeerReady(false)));
+        action("peer-f2-click-first-conversation",()->{((dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen)mc().screen).smokePeerOpenFirst();return CompletableFuture.completedFuture(true);});
+        waitFor("peer-f2-real-message-cards",400,()->CompletableFuture.completedFuture(mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen workspace&&workspace.smokePeerReady(true)));
+        action("peer-f2-screenshot",()->{screen("peer-f2-history");return CompletableFuture.completedFuture(true);});
+        waitFor("peer-review-final-frame",100,()->CompletableFuture.completedFuture(ticks-stageAt>12));
+    }
     private static UUID productionConversation,productionRequest;
     private static void cooperativeDeepSeek(){
         action("real-model-cooperative-raw-material-fixture",()->server(p->{

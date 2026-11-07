@@ -64,6 +64,9 @@ public final class NativeWorkspaceScreen extends NativeInputScreen {
         var mc=Minecraft.getInstance();float w=mc.getWindow().getGuiScaledWidth(),h=mc.getWindow().getGuiScaledHeight();int cascade=windows.size()%5;
         var value=new WorkspaceWindow(desktop,dock,title,compact?0:16+cascade*18,compact?0:48+cascade*12,Math.max(240,Math.min(width,w-(compact?8:36))),Math.max(150,Math.min(height,h-(compact?65:105))),closed->{model.placements.put(id,closed.placement());windows.remove(id);saveAt=System.currentTimeMillis()+300;});windows.put(id,value);var placement=model.placements.getOrDefault(id,new WorkspaceWindow.Placement(compact?4:16+cascade*18,compact?36:48+cascade*12,Math.min(width,w-(compact?8:36)),Math.min(height,h-(compact?65:105)),false));value.dialog.overlay.addEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.LAYOUT_CHANGED,event->{value.restore(placement);event.currentElement.removeEventListener(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents.LAYOUT_CHANGED,event.currentListener);});return value;
     }
+    public void smokePeerTab(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");NativeBehaviorPanel.smokeClickElement(root,t("协作对话"),false);NativeBehaviorPanel.smokeClickElement(root,t("协作对话"),true);}
+    public boolean smokePeerReady(boolean messages){return PeerDialoguePanel.smokeReady(model.agent,messages);}
+    public void smokePeerOpenFirst(){PeerDialoguePanel.smokeOpenFirst(model.agent);}
     public static void openForAgent(String id,String name){open();if(!name.equals("AI")||!active.knownAgents.containsKey(id))active.knownAgents.put(id,name);active.conversationWith(id);}
     public static void openConversation(String agent,String name,String conversation){openForAgent(agent,name);active.select(conversation);}
     static NativeWorkspaceScreen previewHost(){open();return active;}

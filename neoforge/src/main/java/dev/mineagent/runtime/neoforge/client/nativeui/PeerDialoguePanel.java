@@ -9,6 +9,8 @@ import java.util.function.BooleanSupplier;
 
 /** Readable transcript backed by the same persistent messages as the actual model exchange. */
 final class PeerDialoguePanel {
+    private static PeerDialoguePanel smoke;
+    private int renderedThreads,renderedMessages;
     private final UIElement parent;
     private final String agent;
     private final BooleanSupplier current;
@@ -17,7 +19,9 @@ final class PeerDialoguePanel {
     private String conversation = "";
     private final Deque<Long> pages = new ArrayDeque<>();
     private long before;
-    private PeerDialoguePanel(UIElement parent, String agent, BooleanSupplier current) { this.parent=parent;this.agent=agent;this.current=current;show(); }
+    private PeerDialoguePanel(UIElement parent, String agent, BooleanSupplier current) { this.parent=parent;this.agent=agent;this.current=current;if(Boolean.getBoolean("mineagent.skillSmoke"))smoke=this;show(); }
+    static boolean smokeReady(String agent,boolean messages){return Boolean.getBoolean("mineagent.skillSmoke")&&smoke!=null&&smoke.agent.equals(agent)&&smoke.current.getAsBoolean()&&(messages?smoke.renderedMessages:smoke.renderedThreads)>0;}
+    static void smokeOpenFirst(String agent){if(!smokeReady(agent,false))throw new IllegalStateException("PEER_UI_NOT_READY");NativeBehaviorPanel.smokeClickElement(smoke.parent,t("查看对话"),false);NativeBehaviorPanel.smokeClickElement(smoke.parent,t("查看对话"),true);}
     static void attach(UIElement parent, String agent, BooleanSupplier current) { new PeerDialoguePanel(parent,agent,current); }
     static void open(NativeWorkspaceScreen host, String agent) {
         if(agent.isBlank())return;var window=host.window("peer-dialogues-"+agent,t("协作对话"),600,400);window.body.clearAllChildren();
@@ -25,7 +29,7 @@ final class PeerDialoguePanel {
     }
     private static String t(String value) { return ClientLanguage.t(value); }
     private void show() {
-        if(!current.getAsBoolean())return;long ticket=++epoch;parent.clearAllChildren();
+        if(!current.getAsBoolean())return;long ticket=++epoch;renderedThreads=renderedMessages=0;parent.clearAllChildren();
         var top=WorkspacePanels.row();top.getLayout().height(25).flexShrink(0);parent.addChild(top);
         top.addChild(NativeUiTheme.text(t("协作对话"),NativeUiTheme.ACCENT,11));
         top.addChild(NativeUiTheme.button(t("刷新"),this::show));
@@ -44,6 +48,7 @@ final class PeerDialoguePanel {
                     var card=WorkspacePanels.card(list,thread.get("senderName").getAsString()+" ↔ "+thread.get("recipientName").getAsString());
                     card.addChild(WorkspacePanels.text(t(row.get("active").getAsBoolean()?"正在回复":"消息已保存")+" · "+row.get("messageCount").getAsLong()));
                     card.addChild(NativeUiTheme.button(t("查看对话"),()->{conversation=thread.get("conversationId").getAsString();before=0;pages.clear();show();}));
+                    renderedThreads++;
                 }
                 if(data.getAsJsonArray("threads").isEmpty())list.addScrollViewChild(WorkspacePanels.text(t("暂无 AI 协作对话")));
                 var nav=WorkspacePanels.row();nav.getLayout().height(25).flexShrink(0);parent.addChild(nav);
@@ -53,6 +58,7 @@ final class PeerDialoguePanel {
                 for(var raw:data.getAsJsonArray("messages")){var row=raw.getAsJsonObject();var meta=row.getAsJsonObject("message");
                     var card=WorkspacePanels.card(list,row.get("senderName").getAsString()+" → "+row.get("recipientName").getAsString());
                     String body=row.get("text").getAsString();var text=WorkspacePanels.text(body);card.addChild(text);
+                    if(!body.isBlank())renderedMessages++;
                     String state=meta.get("status").getAsString();if(Set.of("PENDING","GENERATING").contains(state))card.addChild(WorkspacePanels.text(t("正在回复")));
                     if(!meta.get("errorCode").getAsString().isBlank())card.addChild(WorkspacePanels.text(t("本条未完成")+": "+meta.get("errorCode").getAsString()));
                     if(meta.get("textLength").getAsInt()>body.length()){
