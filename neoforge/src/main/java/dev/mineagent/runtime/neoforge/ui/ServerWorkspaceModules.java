@@ -62,7 +62,7 @@ final class ServerWorkspaceModules implements AutoCloseable {
             if(!write){int offset=offset(args);var inspected=store.inspect(args.get("query"),offset);var result=new LinkedHashMap<String,Object>(page((List<?>)inspected.get("entries"),0));int count=((List<?>)result.get("items")).size(),total=(Integer)inspected.get("total");result.put("total",total);result.put("nextOffset",offset+count<total?offset+count:-1);return result;}
             if(args.get("kind").equals("forget"))return Map.<String,Object>of("status","APPLIED","entry",store.forget(UUID.fromString(args.get("id")),Long.parseLong(args.get("revision"))));
             return Map.<String,Object>of("status","APPLIED","entry",store.remember(args.get("type"),args.get("topic"),args.get("value"),Long.parseLong(args.get("ttlSeconds")),"player:workspace",List.of(),Long.parseLong(args.get("revision"))));
-        }catch(Exception failure){throw new CompletionException(failure);}},io);
+        }catch(Exception failure){throw new CompletionException(failure);}},io).thenApply(result->{if(write)server.execute(()->ServerMemoryRecall.changed(server,owner,agent));return result;});
     }
     private Map<String,Object> media(ServerPlayer viewer,Map<String,String> args,boolean write)throws Exception{
         var service=MineAgentRuntimeServices.media(server);service.setExplicitlyAllowedHosts(MineAgentRuntimeServices.mediaAllowedHosts(server));

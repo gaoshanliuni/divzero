@@ -32,8 +32,8 @@ public final class DialogueMemoryStore implements AutoCloseable {
         if(query==null||maxBytes<256||maxBytes>24000)throw new IllegalArgumentException("MEMORY_CONTEXT");
         long now=clock.millis();
         var entries=all().stream().filter(e->!e.forgotten()&&(e.expiresAt()==0||e.expiresAt()>now))
-                .filter(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.topic(),e.value(),e.aliases()),semantic.get("dialogue_"+e.id()),e.updatedAt(),now,e.source())>0)
-                .sorted(Comparator.<Entry>comparingDouble(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.topic(),e.value(),e.aliases()),semantic.get("dialogue_"+e.id()),e.updatedAt(),now,e.source())).reversed()
+                .filter(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.topic(),e.value(),e.aliases()),semantic.get("dialogue_"+e.id()+"_r"+e.revision()),e.updatedAt(),now,e.source())>0)
+                .sorted(Comparator.<Entry>comparingDouble(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.topic(),e.value(),e.aliases()),semantic.get("dialogue_"+e.id()+"_r"+e.revision()),e.updatedAt(),now,e.source())).reversed()
                         .thenComparing(Comparator.comparingLong(Entry::updatedAt).reversed()).thenComparing(e->e.id().toString())).toList();
         var out=new StringBuilder();int used=0;for(var entry:entries){String line=JSON.writeValueAsString(entry)+"\n";int bytes=line.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;if(used+bytes>maxBytes)continue;out.append(line);used+=bytes;}
         if(out.isEmpty())return "";

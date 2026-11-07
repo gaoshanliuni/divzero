@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "a9c719ee-5879-4aaa-ae4a-ec96031f6263",
-      "bytes": 1065
+      "resourceId": "73612a4f-6a89-49d7-9a0a-d73f65407d32",
+      "bytes": 1825
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1384,8 +1384,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServerConfigService.java",
-      "sha256": "ba1f0a390abcfd0040d1972f16b0f711284eeeddaf7e32febdd395c9779078e8",
-      "bytes": 17123
+      "resourceId": "35fbb18d-8b00-454e-bf9d-b6671c7bafde",
+      "bytes": 17156
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServiceCallBudget.java",
@@ -1399,8 +1399,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/WebSettingsCatalog.java",
-      "resourceId": "95828d29-1140-4ab9-bd06-ad8ce0c41b3e",
-      "bytes": 8027
+      "resourceId": "da725504-cbee-48e3-8cc3-61656ae8f9d7",
+      "bytes": 8586
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
@@ -1789,8 +1789,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/files/FileLibrary.java",
-      "sha256": "8d41ab3aa1fa0e4c110e4f4d9ecc113054af423dd7617b227ae5c91b587d049d",
-      "bytes": 13593
+      "resourceId": "38474c4e-d427-490b-8690-bde50588434b",
+      "bytes": 13012
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/files/LocalFileTransferServer.java",
@@ -1904,8 +1904,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/DialogueMemoryStore.java",
-      "resourceId": "2e8a3751-782a-4357-938c-c08120cb5ecb",
-      "bytes": 7532
+      "resourceId": "149db2b6-06e9-42c3-a818-4895624c64d9",
+      "bytes": 7568
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/MemoryRelevance.java",
@@ -1914,8 +1914,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/MemoryService.java",
-      "resourceId": "0a0b377c-ca11-4280-b310-484106fdde4c",
-      "bytes": 7601
+      "resourceId": "f282ae1a-4c86-432d-9f99-4163aefa332c",
+      "bytes": 7637
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/PlayerPreferenceStore.java",
@@ -1924,8 +1924,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/SemanticMemoryIndex.java",
-      "resourceId": "9a551dd4-7319-4d09-b128-0a8767551054",
-      "bytes": 3397
+      "resourceId": "80d2aa6b-473a-4194-9d95-abf7fb8c014b",
+      "bytes": 3505
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/BasicMeshes.java",
@@ -2359,8 +2359,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/resources/ResourceLibrary.java",
-      "resourceId": "a6f84674-53bf-49d9-83d5-f936218663a4",
-      "bytes": 4242
+      "resourceId": "3bab47c8-e228-4764-ae19-ee4860034818",
+      "bytes": 4341
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scheduling/PersistentScheduleStore.java",
@@ -7054,8 +7054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "f40ae7f1-e25f-4256-a929-3abe02508dc6",
-      "bytes": 78657
+      "resourceId": "5932f4b3-aa77-4bcf-8cd4-9d5a58ddda50",
+      "bytes": 78745
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7524,8 +7524,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerMemoryRecall.java",
-      "resourceId": "92b02625-69e3-420f-9bd5-924b0426eeab",
-      "bytes": 6740
+      "resourceId": "20ccd169-992e-4694-aa7c-7fbba9c6dc04",
+      "bytes": 8379
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerMentionDisplay.java",
@@ -7584,8 +7584,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerResourceTools.java",
-      "resourceId": "de12a106-422d-4f86-8192-aa76e03b19c9",
-      "bytes": 10245
+      "resourceId": "cefdf8c7-8d14-4dc6-86a1-fd2ed5ff5dd1",
+      "bytes": 10875
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerResourceViews.java",
@@ -7634,8 +7634,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerWorkspaceModules.java",
-      "sha256": "687187fbad359b9fa49857b6a1f20b8dd92265f30a019ec0a220ce3f22354902",
-      "bytes": 13252
+      "resourceId": "bae79ab1-b845-4a94-9864-89234709487c",
+      "bytes": 13364
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerWorldUiRuntime.java",
@@ -8404,8 +8404,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/WorkerRequestHandler.java",
-      "resourceId": "dfe05d19-2c3d-49ba-81f8-c08d1b3bc4ad",
-      "bytes": 110315
+      "resourceId": "79843e92-c096-497a-9189-c89dddab78fc",
+      "bytes": 110358
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/BootDependencyClasspath.java",
@@ -8774,8 +8774,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/OpenAiCompatibleProvider.java",
-      "resourceId": "45fee479-8db8-4950-9557-28963ef859eb",
-      "bytes": 18404
+      "resourceId": "e57d0b26-8d7a-42d0-8c44-58ffbb54d4ae",
+      "bytes": 18454
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/OpenAiSpeechTranscriber.java",
@@ -8849,8 +8849,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/resources/NativeMediaDecoder.java",
-      "resourceId": "82c93fa7-cca5-40b5-a576-6302dd6725ac",
-      "bytes": 2554
+      "resourceId": "b37ecacb-d0e8-4ed7-a172-d473b3d4806f",
+      "bytes": 2694
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/resources/OnlineResources.java",
@@ -8869,8 +8869,13 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/resources/ResourceParser.java",
-      "resourceId": "88aab7a8-71a4-4fdb-8e79-5987f59ba076",
-      "bytes": 11265
+      "resourceId": "ea1b89c6-4a9a-4616-813b-eae44279db97",
+      "bytes": 11636
+    },
+    {
+      "path": "worker/src/main/java/dev/mineagent/runtime/worker/resources/ResourceTables.java",
+      "resourceId": "ee5b91bc-4500-4505-b9c8-a00995637850",
+      "bytes": 6412
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/smoke/AgentManagementControlledProvider.java",
@@ -9084,8 +9089,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/media/BundledMediaToolsTest.java",
-      "sha256": "5c2b3c4acb2caa858819646f11f79945d2b35be30e2a1d726805d910e2d5d331",
-      "bytes": 5259
+      "resourceId": "96e2039a-d98b-46be-b3c8-7e7883e1a10f",
+      "bytes": 4976
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/process/ManagedWorkerProcessTest.java",
@@ -9150,5 +9155,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "dd3aa234072282a0995fdc5c618e0fbc5bd6b7c6"
+  "sourceCommit": "29c9f539c9a5c396c97d952f858af86cbe0c5925"
 }

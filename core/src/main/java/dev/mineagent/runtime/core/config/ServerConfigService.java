@@ -196,7 +196,7 @@ public final class ServerConfigService implements AutoCloseable {
                         errors.put(key, "应为 true 或 false");
                     }
                 }
-                case "web.enabled","provider.openai.enabled","provider.ollama.enabled","provider.comfyui.enabled" -> {
+                case "web.enabled","resource.transcription.enabled","provider.openai.enabled","provider.ollama.enabled","provider.comfyui.enabled" -> {
                     if(!java.util.Set.of("true","false").contains(value))errors.put(key,"应为 true 或 false");
                 }
                 case "provider.priority" -> {

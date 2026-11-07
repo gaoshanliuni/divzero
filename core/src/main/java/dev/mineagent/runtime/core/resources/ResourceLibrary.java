@@ -7,8 +7,9 @@ import java.nio.file.*;import java.io.*;import java.time.*;import java.util.*;
 public final class ResourceLibrary {
  public static final long MAX_BYTES=64L*1024*1024;
  public record Resource(UUID id,UUID world,UUID owner,long revision,String name,String mime,String source,long fetchedAt,long bytes,UUID parent,Map<String,String> selection){}
- private static final ObjectMapper JSON=new ObjectMapper();private final Path root;private final UUID world,owner;
- public ResourceLibrary(Path data,UUID world,UUID owner)throws IOException{this.world=Objects.requireNonNull(world);this.owner=Objects.requireNonNull(owner);root=data.toAbsolutePath().normalize().resolve("resources").resolve(world.toString()).resolve(owner.toString());Files.createDirectories(root);if(Files.isSymbolicLink(root)||!root.toRealPath().equals(root))throw new IOException("RESOURCE_ROOT_CHANGED");}
+ private static final ObjectMapper JSON=new ObjectMapper();private final Path root,dataRoot;private final UUID world,owner;
+ public ResourceLibrary(Path data,UUID world,UUID owner)throws IOException{this.dataRoot=data.toAbsolutePath().normalize();this.world=Objects.requireNonNull(world);this.owner=Objects.requireNonNull(owner);root=data.toAbsolutePath().normalize().resolve("resources").resolve(world.toString()).resolve(owner.toString());Files.createDirectories(root);if(Files.isSymbolicLink(root)||!root.toRealPath().equals(root))throw new IOException("RESOURCE_ROOT_CHANGED");}
+ public Path dataRoot(){return dataRoot;}
  public Resource save(String name,String mime,String source,byte[] bytes,UUID parent,Map<String,String> selection)throws IOException{
   if(name==null||name.isBlank()||name.length()>240||name.codePoints().anyMatch(Character::isISOControl)||mime==null||mime.length()>120||source==null||source.length()>4096||bytes==null||bytes.length>MAX_BYTES)throw new IllegalArgumentException("RESOURCE_INPUT_INVALID");if(parent!=null)get(parent);
   UUID id=UUID.randomUUID();Path stage=Files.createDirectory(root.resolve("pending-"+id)),target=root.resolve(id.toString());var resource=new Resource(id,world,owner,1,name,mime,source,Instant.now().toEpochMilli(),bytes.length,parent,Map.copyOf(selection));

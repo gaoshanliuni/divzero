@@ -71,8 +71,8 @@ public final class MemoryService implements AutoCloseable {
     public synchronized String context(UUID playerId,String query,int maxBytes)throws Exception{return context(playerId,query,maxBytes,Map.of());}
     public synchronized String context(UUID playerId,String query,int maxBytes,Map<String,Double> semantic)throws Exception {
         var relevant=visibleTo(playerId,false).stream()
-                .filter(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.key(),e.value(),List.of()),semantic.get("shared_"+e.memoryId()),e.updatedAtEpochMillis(),clock.millis(),"world_note")>0)
-                .sorted(java.util.Comparator.<MemoryEntry>comparingDouble(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.key(),e.value(),List.of()),semantic.get("shared_"+e.memoryId()),e.updatedAtEpochMillis(),clock.millis(),"world_note")).reversed()
+                .filter(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.key(),e.value(),List.of()),semantic.get("shared_"+e.memoryId()+"_r"+e.revision()),e.updatedAtEpochMillis(),clock.millis(),"world_note")>0)
+                .sorted(java.util.Comparator.<MemoryEntry>comparingDouble(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.key(),e.value(),List.of()),semantic.get("shared_"+e.memoryId()+"_r"+e.revision()),e.updatedAtEpochMillis(),clock.millis(),"world_note")).reversed()
                         .thenComparing(java.util.Comparator.comparingLong(MemoryEntry::updatedAtEpochMillis).reversed())).toList();
         var text=new StringBuilder();int used=0;
         for(var entry:relevant){String line=mapper.writeValueAsString(entry)+"\n";int size=line.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;if(used+size>maxBytes)continue;text.append(line);used+=size;}

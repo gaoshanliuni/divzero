@@ -19,6 +19,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         return "openai-compatible";
     }
     public OpenAiCompatibleProvider withModel(String value,String expectedBase){if(!dev.mineagent.runtime.core.config.AgentModelSettings.validModel(value)||!normalize(baseUri).equals(normalize(URI.create(expectedBase))))throw new IllegalArgumentException("AGENT_MODEL_PROVIDER_CHANGED");return new OpenAiCompatibleProvider(baseUri,apiKey,value,timeout).withThinking(thinkingLevel);}
+    public String requestedModel(){return model;}
     public OpenAiCompatibleProvider withTimeout(Duration timeout){return new OpenAiCompatibleProvider(baseUri,apiKey,model,timeout).withThinking(thinkingLevel);}
 
     public OpenAiCompatibleProvider withThinking(String level){if(!dev.mineagent.runtime.core.config.AgentThinkingSettings.LEVELS.contains(level))throw new IllegalArgumentException("THINKING_LEVEL_INVALID");var copy=new OpenAiCompatibleProvider(baseUri,apiKey,model,timeout);copy.thinkingLevel=level;return copy;}

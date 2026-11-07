@@ -7,8 +7,8 @@ import java.io.OutputStream;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.util.HexFormat;
+
+
 import java.util.Map;
 import java.time.Duration;
 import java.util.zip.ZipEntry;
@@ -40,10 +40,10 @@ class BundledMediaToolsTest {
             entry(zip, "fake-ffmpeg/doc/unneeded.html", "large documentation".getBytes());
         }
         var manifest = new MediaToolBundleManifest(
-                "test-bundle", "bundle/yt-dlp.exe", sha256(ytDlp),
-                "bundle/ffmpeg.zip", sha256(Files.readAllBytes(archive)), "fake-ffmpeg",
-                Map.of("bin/ffmpeg.exe", sha256(ffmpeg), "bin/ffprobe.exe", sha256(ffprobe),
-                        "LICENSE.txt", sha256(license)));
+                "test-bundle", "bundle/yt-dlp.exe", (long)ytDlp.length,
+                "bundle/ffmpeg.zip", Files.size(archive), "fake-ffmpeg",
+                Map.of("bin/ffmpeg.exe", (long)ffmpeg.length, "bin/ffprobe.exe", (long)ffprobe.length,
+                        "LICENSE.txt", (long)license.length));
 
         try (var loader = new URLClassLoader(new java.net.URL[]{resources.toUri().toURL()})) {
             var tools = new BundledMediaTools(temporaryDirectory.resolve("installed"), loader, manifest,
@@ -64,9 +64,9 @@ class BundledMediaToolsTest {
     @Test
     void rejectsUnsupportedPlatformBeforeExtraction() {
         var manifest = new MediaToolBundleManifest(
-                "test-bundle", "missing", "0".repeat(64), "missing", "0".repeat(64), "root",
-                Map.of("bin/ffmpeg.exe", "0".repeat(64), "bin/ffprobe.exe", "0".repeat(64),
-                        "LICENSE.txt", "0".repeat(64)));
+                "test-bundle", "missing", 1L, "missing", 1L, "root",
+                Map.of("bin/ffmpeg.exe", 1L, "bin/ffprobe.exe", 1L,
+                        "LICENSE.txt", 1L));
         var tools = new BundledMediaTools(temporaryDirectory.resolve("installed"), getClass().getClassLoader(),
                 manifest, "Linux", "amd64");
 
@@ -96,7 +96,4 @@ class BundledMediaToolsTest {
         zip.closeEntry();
     }
 
-    private static String sha256(byte[] value) throws Exception {
-        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value));
-    }
 }
