@@ -4,7 +4,9 @@ import java.util.Arrays;
 
 /** Immutable bounded image input. Encoded bytes belong in Provider image parts, never prompt text or toString logs. */
 public record ModelImage(String mimeType,byte[] bytes) {
-    public static final int MAX_BYTES=2_097_152,MAX_PIXELS=1_048_576;
+    public static final int MAX_BYTES=4_194_304,MAX_PIXELS=4_194_304;
+    public static final int MAX_COUNT=8,MAX_TOTAL_BYTES=16_777_216;
+    public static void validateBatch(java.util.List<ModelImage> images){if(images==null||images.size()>MAX_COUNT||images.stream().mapToLong(i->i.bytes.length).sum()>MAX_TOTAL_BYTES)throw new IllegalArgumentException("MODEL_IMAGE_BATCH_LIMIT");}
     private static final byte[] PNG={(byte)137,80,78,71,13,10,26,10};
     public ModelImage {
         if(!"image/png".equals(mimeType)||bytes==null||bytes.length<33||bytes.length>MAX_BYTES||!Arrays.equals(Arrays.copyOf(bytes,8),PNG))throw new IllegalArgumentException("MODEL_IMAGE_FORMAT");

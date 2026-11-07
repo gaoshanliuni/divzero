@@ -42,7 +42,7 @@ public final class CreatureModelAssets {
                     }
                     var bundle=RuntimeModelBundle.create(entry.getValue().getBytes(StandardCharsets.UTF_8),png);
                     var image=javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(png));if(image==null)throw new IllegalArgumentException("CREATURE_TEXTURE_INVALID_PNG");image.flush();
-                    bundles.put(bundle.bytes());assets.put(entry.getKey(),bundle.sha256());
+                    bundles.put(bundle.sha256(),bundle.bytes());assets.put(entry.getKey(),bundle.sha256());
                 }
                 source.set("model_assets",JSON.valueToTree(assets));var updated=(ObjectNode)args.deepCopy();updated.remove("textures");updated.put("source",source.toString());return updated;
             }catch(Exception error){throw new CompletionException(error);}},IO);

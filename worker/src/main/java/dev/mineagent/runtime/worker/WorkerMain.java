@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 public final class WorkerMain {
     private WorkerMain() {}
     public static void main(String[] args) {
-        var codec=new WorkerFrameCodec(8*1024*1024);var output=new Object();
+        var codec=new WorkerFrameCodec(24*1024*1024);var output=new Object();
         var tasks=new ConcurrentHashMap<UUID,FutureTask<Void>>();
         var seen=ConcurrentHashMap.<UUID>newKeySet();
         var pool=Executors.newVirtualThreadPerTaskExecutor();

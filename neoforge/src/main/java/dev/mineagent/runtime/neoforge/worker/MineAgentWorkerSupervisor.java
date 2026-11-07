@@ -103,6 +103,10 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
         }, requests);
     }
 
+    public CompletableFuture<WorkerEnvelope> embedMemory(ServerConfigService config,UUID world,UUID agent,java.util.List<String> inputs,java.util.function.BooleanSupplier permit){if(config.snapshot().values().getOrDefault("provider.openai.role.embedding","").isBlank())return CompletableFuture.failedFuture(new IllegalStateException("MEMORY_EMBEDDING_MODEL_NOT_CONFIGURED"));return completeSingle(config,dev.mineagent.runtime.core.config.AgentModelSettings.context(new WorkerEnvelope(1,UUID.randomUUID(),"model.embed",Map.of("capability","EMBEDDING","modelRole","embedding","inputs",java.util.List.copyOf(inputs))),world,agent),permit);}
+    public CompletableFuture<WorkerEnvelope> inspectImages(ServerConfigService config,UUID operation,UUID world,UUID agent,String prompt,java.util.List<dev.mineagent.runtime.api.model.ModelImage> images,java.util.function.BooleanSupplier permit){
+        dev.mineagent.runtime.api.model.ModelImage.validateBatch(images);var request=dev.mineagent.runtime.core.config.AgentModelSettings.context(new WorkerEnvelope(1,operation,"model.complete",Map.of("capability","VISION","modelRole","vision","prompt",prompt,"images",dev.mineagent.runtime.worker.WorkerModelImages.encode(images))),world,agent);return completeSingle(config,request,permit);
+    }
     static WorkerEnvelope summaryRequest(UUID jobId,String prompt){return new WorkerEnvelope(1,jobId,"model.completeOnce",Map.of("capability","SEMANTIC","prompt",prompt,"modelRole","small"));}
     static WorkerEnvelope presentationRequest(UUID id,String prompt){return new WorkerEnvelope(1,id,"model.completeOnce",Map.of("capability","PLANNING","prompt",prompt,"modelRole","review"));}
     public CompletableFuture<WorkerEnvelope> planPresentation(ServerConfigService config,UUID id,String prompt,java.util.function.BooleanSupplier permit){return completeSingle(config,presentationRequest(id,prompt),permit);}

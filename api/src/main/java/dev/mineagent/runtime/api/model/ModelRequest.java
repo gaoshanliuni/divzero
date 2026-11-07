@@ -8,7 +8,7 @@ public record ModelRequest(ModelCapability capability, String prompt, java.util.
         Objects.requireNonNull(capability, "capability");
         Objects.requireNonNull(prompt, "prompt");
         images=java.util.List.copyOf(images);
-        if(images.size()>1)throw new IllegalArgumentException("MODEL_IMAGE_COUNT");
+        ModelImage.validateBatch(images);
         if (prompt.isBlank()) {
             throw new IllegalArgumentException("prompt must not be blank");
         }

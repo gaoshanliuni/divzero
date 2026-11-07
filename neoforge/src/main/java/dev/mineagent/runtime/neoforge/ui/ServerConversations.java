@@ -352,11 +352,7 @@ public final class ServerConversations implements AutoCloseable {
     }
     private void prepareMemories(Flight flight,Generation g){
         var path=server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");var world=MineAgentRuntimeServices.worldId(server);
-        java.util.concurrent.CompletableFuture.supplyAsync(()->{
-            try(var memory=new dev.mineagent.runtime.core.memory.DialogueMemoryStore(path,world,g.viewer(),g.agent().agentId(),java.time.Clock.systemUTC())){
-                if(!flight.permit.get())throw new IllegalStateException("CONVERSATION_CANCELLED");return memory.context(g.original(),Math.min(8000,Math.max(256,g.budget()/4)))+MineAgentRuntimeServices.memories(server).context(g.viewer(),g.original(),2000);
-            }catch(Exception error){throw new java.util.concurrent.CompletionException(error);}
-        },STREAM_IO).whenComplete((memories,error)->server.execute(()->{
+        ServerMemoryRecall.recall(server,g.viewer(),g.agent().agentId(),g.original(),Math.min(8000,Math.max(256,g.budget()/4)),flight.permit::get).whenComplete((memories,error)->server.execute(()->{
             if(!live(flight)){if(!closed)failGeneration(flight,"CONVERSATION_CONTEXT_CHANGED");return;}
             try{if(error!=null)throw new IllegalStateException("CONVERSATION_MEMORY_READ_FAILED");
                 String location="[本条玩家消息发出时的位置，用于理解这里/家；这是位置数据，不是动作授权，当前操作仍须实时核对]\n"+json.writeValueAsString(Map.of("dimension",flight.originDimension,"position",List.of(flight.origin.x,flight.origin.y,flight.origin.z),"observedAt",flight.originTime))+"\n";String recalled=location+memories;

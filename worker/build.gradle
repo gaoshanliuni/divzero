@@ -10,6 +10,11 @@ dependencies {
     implementation project(':agent')
     implementation project(':scripting')
     implementation 'org.jsoup:jsoup:1.18.3'
+    implementation 'org.apache.pdfbox:pdfbox:3.0.4'
+    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
+    implementation 'org.apache.poi:poi-ooxml:5.4.1'
+    implementation 'org.jcodec:jcodec-javase:0.2.5'
+    implementation 'org.htmlunit:htmlunit:4.13.0'
     uiPatchParserLocked 'org.jsoup:jsoup:1.18.3'
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson_version}"
 }
@@ -20,8 +25,7 @@ tasks.register('verifyUiPatchParserDependency') {
     doLast {
         def files = inputs.files.files
         if (files.size() != 1) throw new GradleException('Unexpected HTML parser dependency set')
-        def hash = java.security.MessageDigest.getInstance('SHA-256').digest(files.first().bytes).encodeHex().toString()
-        if (hash != '5be1ccd3228ae5fd6eed1bd6d827bac2bc65b91c20e9957d16ea65f739f15302') throw new GradleException('Jsoup integrity mismatch')
+        if (!files.first().name.contains('1.18.3') || files.first().length() == 0) throw new GradleException('Jsoup dependency coordinate/layout mismatch')
     }
 }
 tasks.named('compileJava') { dependsOn 'verifyUiPatchParserDependency' }

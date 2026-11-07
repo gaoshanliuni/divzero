@@ -7,7 +7,7 @@ import java.util.Map;
 public final class PanelConfigProjection {
     public static Map<String,String> global(Map<String,String> values){
         var result=new LinkedHashMap<>(values);
-        result.keySet().removeIf(key->key.startsWith("chat.")||key.startsWith("ai.thinking.")
+        result.keySet().removeIf(key->key.startsWith("model.capability.")||key.startsWith("resource.capture.")||key.startsWith("chat.")||key.startsWith("ai.thinking.")
                 ||key.startsWith("interaction.rules.")||key.startsWith("interaction.abilities.")||key.startsWith("interaction.bindings.")||key.startsWith("enhancements.")||key.startsWith("behavior.region.")||key.startsWith("runtime.pendingActivation."));
         return result;
     }

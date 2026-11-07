@@ -39,6 +39,7 @@ public final class CapabilitySession {
         if(matches(text,"战斗|跑打|对打|警戒|守住|格挡|反击|jump.?tap|w.?tap|s.?tap|pvp|combat|fight|guard|kite"))chosen.add("combat");
         if(matches(text,"(建|盖|造).{0,8}(房|屋|楼|桥)"))chosen.add("building");
         if(matches(text,"(创建|做|建).{0,8}商店")){chosen.add("ui");chosen.add("items");}
+        if(matches(text,"图片|看图|截图|对比图|pdf|PDF|视频|音频|转写|表格|网页|下载|image|photo|video|audio|resource|spreadsheet"))chosen.add("resources");
         if(act&&matches(text,"建筑|房子|房屋|屋顶|地基|楼梯|阳台|窗户|蓝图|搭桥|几何|house|building|roof|foundation|balcony|blueprint|bridge"))chosen.add("building");
         if(act&&matches(text,"界面|菜单|工作区|悬浮|血条|hud|\\bui\\b|gui|panel|desktop|overlay"))chosen.add("ui");
         if(act&&matches(text,"物品|装备|胸甲|裤子|护腿|武器|附魔|药水|剑|斧|钻石|item|armor|equipment|sword|enchant"))chosen.add("items");

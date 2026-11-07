@@ -1,0 +1,32 @@
+name: Development compile (no project content digests)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile active source without running incomplete migrations
+        run: |
+          New-Item -ItemType Directory -Force build/development-logs | Out-Null
+          & ./gradlew.bat -PpythonRuntime=none :neoforge:compileJava --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/compile.log
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: development-compile-${{ github.run_id }}
+          path: build/development-logs/*
+          retention-days: 7

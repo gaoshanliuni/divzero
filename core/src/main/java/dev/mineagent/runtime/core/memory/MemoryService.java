@@ -68,10 +68,11 @@ public final class MemoryService implements AutoCloseable {
     }
 
     /** Shared facts and the requesting player's old notes. Operator access is never a recall scope. */
-    public synchronized String context(UUID playerId,String query,int maxBytes)throws Exception {
+    public synchronized String context(UUID playerId,String query,int maxBytes)throws Exception{return context(playerId,query,maxBytes,Map.of());}
+    public synchronized String context(UUID playerId,String query,int maxBytes,Map<String,Double> semantic)throws Exception {
         var relevant=visibleTo(playerId,false).stream()
-                .filter(e->MemoryRelevance.score(query,e.key(),e.value(),List.of())>=MemoryRelevance.MINIMUM)
-                .sorted(java.util.Comparator.<MemoryEntry>comparingInt(e->MemoryRelevance.score(query,e.key(),e.value(),List.of())).reversed()
+                .filter(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.key(),e.value(),List.of()),semantic.get("shared_"+e.memoryId()),e.updatedAtEpochMillis(),clock.millis(),"world_note")>0)
+                .sorted(java.util.Comparator.<MemoryEntry>comparingDouble(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.key(),e.value(),List.of()),semantic.get("shared_"+e.memoryId()),e.updatedAtEpochMillis(),clock.millis(),"world_note")).reversed()
                         .thenComparing(java.util.Comparator.comparingLong(MemoryEntry::updatedAtEpochMillis).reversed())).toList();
         var text=new StringBuilder();int used=0;
         for(var entry:relevant){String line=mapper.writeValueAsString(entry)+"\n";int size=line.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;if(used+size>maxBytes)continue;text.append(line);used+=size;}

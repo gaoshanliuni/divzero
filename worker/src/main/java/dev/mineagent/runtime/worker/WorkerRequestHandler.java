@@ -177,7 +177,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
         var sequence = new java.util.concurrent.atomic.AtomicInteger();
         try {
             ModelCapability capability = ModelCapability.valueOf(required(request, "capability"));
-            var modelRequest = new ModelRequest(capability, required(request, "prompt"),WorkerModelImages.decode(request.payload().getOrDefault("images",java.util.List.of())));
+            var modelRequest = new ModelRequest(capability, required(request, "prompt"),WorkerModelImages.decode(request.payload().getOrDefault("images",java.util.List.of())));requireModelCapabilities(request,modelRequest);
             java.util.function.Consumer<String> emit = delta -> deltaConsumer.accept(new WorkerEnvelope(
                     PROTOCOL_VERSION, request.requestId(), "model.stream.delta",
                     Map.of("sequence", sequence.getAndIncrement(), "delta", delta)));
@@ -287,6 +287,11 @@ public final class WorkerRequestHandler implements AutoCloseable {
         }catch(Exception invalid){return error(request,"PROVIDER_CONFIG_INVALID","Provider configuration snapshot rejected");}
     }
 
+    private void requireModelCapabilities(WorkerEnvelope request,ModelRequest model){
+        if(!(request.payload().get("modelCapabilities") instanceof Map<?,?> traits))return;
+        if(!model.images().isEmpty()&&!"YES".equals(traits.get("vision")))throw new IllegalArgumentException("MODEL_VISION_"+("NO".equals(traits.get("vision"))?"UNSUPPORTED":"UNCONFIRMED"));
+        if(Boolean.TRUE.equals(request.payload().get("conversationTools"))&&"NO".equals(traits.get("tools")))throw new IllegalArgumentException("MODEL_TOOLS_UNSUPPORTED");
+    }
     private WorkerEnvelope completeModelOnce(WorkerEnvelope request){
         try{
             ModelProvider selected=selectProvider(ModelCapability.valueOf(required(request,"capability")));
@@ -303,7 +308,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
         try {
             ModelCapability capability = ModelCapability.valueOf(required(request, "capability"));
             String prompt = required(request, "prompt");
-            var modelRequest=new ModelRequest(capability,prompt,WorkerModelImages.decode(request.payload().getOrDefault("images",java.util.List.of())));
+            var modelRequest=new ModelRequest(capability,prompt,WorkerModelImages.decode(request.payload().getOrDefault("images",java.util.List.of())));requireModelCapabilities(request,modelRequest);
             if(!modelRequest.images().isEmpty()){
                 ModelProvider selected=selectProvider(capability);
                 if(selected==null)return error(request,"MODEL_IMAGE_REQUEST_FAILED","PROVIDER_NOT_CONFIGURED");
@@ -502,23 +507,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
         }
     }
 
-    private WorkerEnvelope embed(WorkerEnvelope request) {
-        if (openAiProvider == null) {
-            return error(request, "EMBEDDING_PROVIDER_UNAVAILABLE", "OpenAI-compatible Provider 未配置");
-        }
-        try {
-            String input = required(request, "input");
-            double[] vector = service("EMBEDDING", openAiProvider.id(), () -> openAiProvider.embed(input));
-            var values = new java.util.ArrayList<Double>(vector.length);
-            for (double value : vector) {
-                values.add(value);
-            }
-            return new WorkerEnvelope(PROTOCOL_VERSION, request.requestId(), "embedding.result", Map.of(
-                    "providerId", openAiProvider.id(), "vector", values, "dimensions", vector.length));
-        } catch (RuntimeException failure) {
-            return error(request, "EMBEDDING_FAILED", failure.getMessage());
-        }
-    }
+    private WorkerEnvelope embed(WorkerEnvelope request){try{var provider=agentOpenAi();if(provider==null)return error(request,"EMBEDDING_PROVIDER_UNAVAILABLE","Embedding provider is not configured");if(request.payload().get("inputs") instanceof List<?> inputs){var text=inputs.stream().map(v->{if(!(v instanceof String s))throw new IllegalArgumentException("EMBEDDING_INPUT");return s;}).toList();var vectors=service("EMBEDDING",provider.id(),()->provider.embedBatch(text));return new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"embedding.result",Map.of("providerId",provider.id(),"vectors",vectors));}double[] vector=service("EMBEDDING",provider.id(),()->provider.embed(required(request,"input")));return new WorkerEnvelope(PROTOCOL_VERSION,request.requestId(),"embedding.result",Map.of("providerId",provider.id(),"vector",vector,"dimensions",vector.length));}catch(RuntimeException e){return error(request,"EMBEDDING_FAILED",e.getMessage());}}
 
     private WorkerEnvelope generateImage(WorkerEnvelope request) {
         if (openAiProvider == null && comfyUiProvider == null) {

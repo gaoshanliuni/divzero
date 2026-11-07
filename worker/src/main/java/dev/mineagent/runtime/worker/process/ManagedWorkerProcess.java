@@ -13,7 +13,7 @@ import java.util.function.*;
 public final class ManagedWorkerProcess implements AutoCloseable {
     private final List<String> command;
     private final Duration timeout;
-    private final WorkerFrameCodec codec = new WorkerFrameCodec(8 * 1024 * 1024);
+    private final WorkerFrameCodec codec = new WorkerFrameCodec(24 * 1024 * 1024);
     private final Object writer = new Object();
     private final ConcurrentMap<UUID, Pending> pending = new ConcurrentHashMap<>();
     private volatile Process process;

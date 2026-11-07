@@ -1,82 +1,21 @@
 package dev.mineagent.runtime.core.content;
-
-import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
-
+import dev.mineagent.runtime.api.packages.ResourceIds;
+import java.nio.file.*;import java.io.*;import java.util.*;
+/** Immutable object storage. Historical class/field names remain readable; new keys are assigned resource IDs. */
 public final class ContentAddressedStore {
-    private static final long DEFAULT_MAX_OBJECT_SIZE = 512L * 1024 * 1024;
-    private static final java.util.regex.Pattern HASH = java.util.regex.Pattern.compile("[0-9a-f]{64}");
-    private final Path root;
-    private final long maxObjectSize;
-
-    public ContentAddressedStore(Path root) {
-        this(root, DEFAULT_MAX_OBJECT_SIZE);
-    }
-
-    public ContentAddressedStore(Path root, long maxObjectSize) {
-        if (root == null || maxObjectSize < 1) {
-            throw new IllegalArgumentException("invalid content store configuration");
-        }
-        this.root = root.toAbsolutePath().normalize();
-        this.maxObjectSize = maxObjectSize;
-    }
-
-    public StoredObject put(byte[] content) throws IOException {
-        if (content == null || content.length > maxObjectSize) {
-            throw new IllegalArgumentException("content exceeds object limit");
-        }
-        String hash = sha256(content);
-        Path target = pathFor(hash);
-        Files.createDirectories(target.getParent());
-        if (!Files.exists(target)) {
-            Path temporary = Files.createTempFile(target.getParent(), ".incoming-", ".tmp");
-            try {
-                Files.write(temporary, content);
-                try {
-                    Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException unsupported) {
-                    Files.move(temporary, target);
-                } catch (java.nio.file.FileAlreadyExistsException raced) {
-                    Files.deleteIfExists(temporary);
-                }
-            } finally {
-                Files.deleteIfExists(temporary);
-            }
-        }
-        return new StoredObject(hash, content.length, target);
-    }
-
-    public byte[] read(String hash) throws IOException {
-        Path path = pathFor(hash);
-        byte[] content = Files.readAllBytes(path);
-        if (!hash.equals(sha256(content))) {
-            throw new ContentIntegrityException("content hash mismatch for " + hash);
-        }
-        return content;
-    }
-
-    public Path pathFor(String hash) {
-        if (hash == null || !HASH.matcher(hash).matches()) {
-            throw new IllegalArgumentException("invalid SHA-256 hash");
-        }
-        Path resolved = root.resolve(hash.substring(0, 2)).resolve(hash.substring(2)).normalize();
-        if (!resolved.startsWith(root)) {
-            throw new IllegalArgumentException("content path escapes store");
-        }
-        return resolved;
-    }
-
-    private static String sha256(byte[] content) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
-        } catch (NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException("SHA-256 is unavailable", impossible);
-        }
-    }
+ private static final long DEFAULT_MAX_OBJECT_SIZE=512L*1024*1024;private final Path root;private final long maxObjectSize;
+ public ContentAddressedStore(Path root){this(root,DEFAULT_MAX_OBJECT_SIZE);}
+ public ContentAddressedStore(Path root,long maxObjectSize){if(root==null||maxObjectSize<1)throw new IllegalArgumentException("invalid content store configuration");this.root=root.toAbsolutePath().normalize();this.maxObjectSize=maxObjectSize;}
+ public StoredObject put(byte[] content)throws IOException{return put(ResourceIds.create(),content);}
+ public StoredObject put(String id,byte[] content)throws IOException{
+  ResourceIds.require(id);if(content==null||content.length>maxObjectSize)throw new IllegalArgumentException("content exceeds object limit");Path target=pathFor(id);Files.createDirectories(target.getParent());
+  if(Files.exists(target,LinkOption.NOFOLLOW_LINKS)){if(!Arrays.equals(read(id),content))throw new ContentIntegrityException("immutable resource ID already contains different bytes");return new StoredObject(id,content.length,target);}
+  Path temporary=Files.createTempFile(target.getParent(),".incoming-",".tmp");Files.write(temporary,content);
+  try{Files.move(temporary,target,StandardCopyOption.ATOMIC_MOVE);}catch(AtomicMoveNotSupportedException unsupported){Files.move(temporary,target);}catch(FileAlreadyExistsException race){if(!Arrays.equals(read(id),content))throw new ContentIntegrityException("immutable resource ID conflict");/* Retain private staging evidence; do not destroy a conflicting file. */}
+  return new StoredObject(id,content.length,target);
+ }
+ public byte[] read(String id)throws IOException{Path file=pathFor(id);if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)||Files.size(file)>maxObjectSize)throw new IOException("RESOURCE_FILE_INVALID");return Files.readAllBytes(file);}
+ public Path pathFor(String id){ResourceIds.require(id);Path path=root.resolve(id.substring(0,2)).resolve(id.substring(2)).normalize();if(!path.startsWith(root))throw new IllegalArgumentException("content path escapes store");return path;}
+ /** Stable named bindings refer to explicit version/resource IDs, not to file contents. */
+ public String namedId(String namespace,List<String> ids)throws IOException{if(!namespace.matches("[a-z_]{1,40}")||ids.isEmpty()||ids.size()>8)throw new IllegalArgumentException("RESOURCE_BINDING");Path folder=root.resolve(".references").resolve(namespace);for(String id:ids)folder=folder.resolve(ResourceIds.require(id));Files.createDirectories(folder);Path marker=folder.resolve("id");if(Files.exists(marker))return ResourceIds.require(Files.readString(marker));String id=ResourceIds.create();try{Files.writeString(marker,id,StandardOpenOption.CREATE_NEW);}catch(FileAlreadyExistsException raced){return ResourceIds.require(Files.readString(marker));}return id;}
 }

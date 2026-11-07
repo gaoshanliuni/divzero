@@ -36,7 +36,7 @@ public final class SharedMultiplayerSmokeServer {
     private static Path root(MinecraftServer s){return s.getServerDirectory().resolve("shared-multiplayer-evidence").resolve(RUN);}
     private static void write(MinecraftServer s,String name,Object value)throws Exception{Files.createDirectories(root(s));Files.writeString(root(s).resolve(name),JSON.writeValueAsString(value));}
     @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent e){if(enabled()&&e.getEntity() instanceof ServerPlayer p&&!role(p).isEmpty()){players.put(role(p),p.getUUID());joins.merge(role(p),1,Integer::sum);}}
-    private static GeneratedFile file(String path,RuntimeResourceSide side,String media,String value){byte[] bytes=value.getBytes(StandardCharsets.UTF_8);return new GeneratedFile(path,side,media,dev.mineagent.runtime.core.objects.RuntimeModelBundle.hash(bytes),bytes);}
+    private static GeneratedFile file(String path,RuntimeResourceSide side,String media,String value){byte[] bytes=value.getBytes(StandardCharsets.UTF_8);return new GeneratedFile(path,side,media,dev.mineagent.runtime.api.packages.ResourceIds.create(),bytes);}
     private static void prepare(MinecraftServer server,ServerPlayer owner)throws Exception{
         if(!server.isDedicatedServer())throw new IllegalStateException("SHARED_MULTI_REQUIRES_DEDICATED");
         var config=MineAgentRuntimeServices.config(server);var actions=new HashSet<>(MineAgentRuntimeServices.permissions(server).trustedActions(owner.getUUID()));actions.addAll(Set.of(PermissionAction.RUN_CODE,PermissionAction.MANAGE_PACKAGES));

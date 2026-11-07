@@ -74,6 +74,8 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         return new ToolCompletion(text, calls, model, responseModel(json),responseMessage.path("reasoning_content").asText(""));
     }
 
+    public java.util.List<double[]> embedBatch(java.util.List<String> inputs){if(inputs.isEmpty()||inputs.size()>16||inputs.stream().anyMatch(v->v==null||v.isBlank()||v.length()>32768))throw new IllegalArgumentException("EMBEDDING_INPUT");var body=mapper.createObjectNode().put("model",model);var values=body.putArray("input");inputs.forEach(values::add);var response=post(baseUri.resolve("embeddings"),body,apiKey);var rows=response.path("data");if(!rows.isArray()||rows.size()!=inputs.size())throw new IllegalArgumentException("EMBEDDING_COUNT");double[][] result=new double[inputs.size()][];for(var row:rows){int index=row.path("index").asInt(-1);var vector=row.path("embedding");if(index<0||index>=result.length||result[index]!=null||!vector.isArray()||vector.size()<2||vector.size()>8192)throw new IllegalArgumentException("EMBEDDING_RESPONSE");var array=new double[vector.size()];for(int n=0;n<array.length;n++){if(!vector.get(n).isNumber()||!Double.isFinite(vector.get(n).doubleValue()))throw new IllegalArgumentException("EMBEDDING_VALUE");array[n]=vector.get(n).doubleValue();}result[index]=array;}return java.util.List.of(result);}
+
     public double[] embed(String input) {
         if (input == null || input.isBlank() || input.length() > 32_768) {
             throw new IllegalArgumentException("invalid embedding input");

@@ -31,7 +31,7 @@ public final class SharedAgentSmokeServer {
     private static void write(MinecraftServer s,String name,Object value)throws Exception{Files.createDirectories(root(s));Files.writeString(root(s).resolve(name),JSON.writeValueAsString(value));}
     private static void require(boolean value,String code){if(!value)throw new IllegalStateException(code);}
     private static int calls(MinecraftServer s)throws Exception{return JSON.readTree(s.getServerDirectory().resolve("shared-agent-provider-count.json").toFile()).path("calls").asInt();}
-    private static GeneratedFile file(String path,RuntimeResourceSide side,String media,String source){byte[] bytes=source.getBytes(StandardCharsets.UTF_8);return new GeneratedFile(path,side,media,dev.mineagent.runtime.core.objects.RuntimeModelBundle.hash(bytes),bytes);}
+    private static GeneratedFile file(String path,RuntimeResourceSide side,String media,String source){byte[] bytes=source.getBytes(StandardCharsets.UTF_8);return new GeneratedFile(path,side,media,dev.mineagent.runtime.api.packages.ResourceIds.create(),bytes);}
     public static final String SCRIPT="""
         var at=0;var fired=false;
         on('instance.create',function(){

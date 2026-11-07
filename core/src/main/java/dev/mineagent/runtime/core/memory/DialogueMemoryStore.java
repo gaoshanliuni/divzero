@@ -19,12 +19,14 @@ public final class DialogueMemoryStore implements AutoCloseable {
         return Map.of("status","OBSERVED","entries",rows.stream().skip(offset).limit(16).toList(),"total",rows.size(),"nextOffset",offset+16<rows.size()?offset+16:-1,"observedAt",now);
     }
     /** Recall before a new turn, including facts from other conversations with this same AI. */
-    public String context(String query,int maxBytes)throws Exception{
+    public List<Entry> activeEntries()throws Exception{long now=clock.millis();return all().stream().filter(e->!e.forgotten()&&(e.expiresAt()==0||e.expiresAt()>now)).toList();}
+    public String context(String query,int maxBytes)throws Exception{return context(query,maxBytes,Map.of());}
+    public String context(String query,int maxBytes,Map<String,Double> semantic)throws Exception{
         if(query==null||maxBytes<256||maxBytes>24000)throw new IllegalArgumentException("MEMORY_CONTEXT");
         long now=clock.millis();
         var entries=all().stream().filter(e->!e.forgotten()&&(e.expiresAt()==0||e.expiresAt()>now))
-                .filter(e->MemoryRelevance.score(query,e.topic(),e.value(),e.aliases())>=MemoryRelevance.MINIMUM)
-                .sorted(Comparator.<Entry>comparingInt(e->MemoryRelevance.score(query,e.topic(),e.value(),e.aliases())).reversed()
+                .filter(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.topic(),e.value(),e.aliases()),semantic.get("dialogue_"+e.id()),e.updatedAt(),now,e.source())>0)
+                .sorted(Comparator.<Entry>comparingDouble(e->SemanticMemoryIndex.hybrid(MemoryRelevance.score(query,e.topic(),e.value(),e.aliases()),semantic.get("dialogue_"+e.id()),e.updatedAt(),now,e.source())).reversed()
                         .thenComparing(Comparator.comparingLong(Entry::updatedAt).reversed()).thenComparing(e->e.id().toString())).toList();
         var out=new StringBuilder();int used=0;for(var entry:entries){String line=JSON.writeValueAsString(entry)+"\n";int bytes=line.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;if(used+bytes>maxBytes)continue;out.append(line);used+=bytes;}
         if(out.isEmpty())return "";
@@ -40,7 +42,7 @@ public final class DialogueMemoryStore implements AutoCloseable {
     public Entry remember(String kind,String topic,String value,long ttlSeconds,String source,List<String> aliases,Long expectedRevision)throws Exception{
         if(source==null||source.isBlank()||source.length()>512||aliases==null||aliases.size()>16||aliases.stream().anyMatch(a->a==null||a.length()<2||a.length()>64))throw new IllegalArgumentException("MEMORY_SOURCE_OR_ALIASES");
         if(kind.equals("OBSERVATION")&&ttlSeconds==0)throw new IllegalArgumentException("MEMORY_OBSERVATION_EXPIRY_REQUIRED");
-        if(!Set.of("FACT","PREFERENCE","OBSERVATION").contains(kind)||topic==null||topic.isBlank()||topic.length()>128||value==null||value.isBlank()||value.length()>4096||ttlSeconds<0||ttlSeconds>31536000)throw new IllegalArgumentException("MEMORY_VALUE");
+        if(!Set.of("FACT","PREFERENCE","OBSERVATION","EXPERIENCE").contains(kind)||topic==null||topic.isBlank()||topic.length()>128||value==null||value.isBlank()||value.length()>4096||ttlSeconds<0||ttlSeconds>31536000)throw new IllegalArgumentException("MEMORY_VALUE");
         topic=topic.strip().toLowerCase(Locale.ROOT);UUID id=UUID.nameUUIDFromBytes((kind+"|"+topic).getBytes(java.nio.charset.StandardCharsets.UTF_8));var old=db.get(world,namespace,id.toString());long rev=old.map(r->r.revision()).orElse(0L),now=clock.millis();
         if(expectedRevision!=null&&expectedRevision!=rev)throw new IllegalStateException("MEMORY_REVISION_CHANGED");
         var entry=new Entry(id,kind,topic,value.strip(),rev+1,now,ttlSeconds==0?0:Math.addExact(now,Math.multiplyExact(ttlSeconds,1000)),false,source,kind.equals("OBSERVATION")?now:0,aliases);save(entry,rev);return entry;

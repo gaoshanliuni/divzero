@@ -18,7 +18,7 @@ public final class AgentModelSettings {
   var snapshot=config.snapshot();UUID world=UUID.fromString(data.get("worldId").toString()),agent=UUID.fromString(data.get("agentId").toString());
   var payload=new LinkedHashMap<String,Object>(data);payload.put("agentThinking",AgentThinkingSettings.read(snapshot.values(),world,agent));
   var choice=read(snapshot.values(),world,agent);String role=ExplicitModelRoles.role(request),override=snapshot.values().getOrDefault("provider.openai.role."+role,"").strip();payload.put("modelRole",role);if(choice.mode().equals("CUSTOM")&&role.equals("chat"))override="";
-  if(override.isEmpty()&&choice.mode().equals("DEFAULT"))return new WorkerEnvelope(request.protocolVersion(),request.requestId(),request.type(),payload);
+  if(override.isEmpty()&&choice.mode().equals("DEFAULT"))return traits(config,new WorkerEnvelope(request.protocolVersion(),request.requestId(),request.type(),payload),snapshot.values().getOrDefault("provider.openai.baseUrl",""),snapshot.values().getOrDefault("provider.openai.model",""));
   String base=choice.baseUrl(),model=choice.model();long revision=choice.revision();
   if(!override.isEmpty()){
    if(!validModel(override)||!Boolean.parseBoolean(snapshot.values().getOrDefault("provider.openai.enabled","true")))throw new IllegalArgumentException("MODEL_ROLE_UNAVAILABLE");
@@ -27,7 +27,8 @@ public final class AgentModelSettings {
    model=override;base=current;revision=Math.max(1,snapshot.revision());
   }
   payload.put("agentModel",Map.of("world",world.toString(),"agent",agent.toString(),"model",model,"baseUrl",base,"revision",revision));
-  return new WorkerEnvelope(request.protocolVersion(),request.requestId(),request.type(),payload);
+  return traits(config,new WorkerEnvelope(request.protocolVersion(),request.requestId(),request.type(),payload),base,model);
  }
+ private static WorkerEnvelope traits(ServerConfigService config,WorkerEnvelope request,String base,String model){if(!WebSettingsCatalog.safeUrl(base)||!validModel(model))return request;var data=new LinkedHashMap<String,Object>(request.payload());data.put("modelCapabilities",ModelCapabilityProfiles.wire(ModelCapabilityProfiles.read(config.snapshot().values(),base,model)));return new WorkerEnvelope(request.protocolVersion(),request.requestId(),request.type(),data);}
  public static WorkerEnvelope context(WorkerEnvelope request,UUID world,UUID agent){if(world==null||agent==null)return request;var p=new LinkedHashMap<String,Object>(request.payload());p.put("worldId",world.toString());p.put("agentId",agent.toString());return new WorkerEnvelope(request.protocolVersion(),request.requestId(),request.type(),p);}
 }

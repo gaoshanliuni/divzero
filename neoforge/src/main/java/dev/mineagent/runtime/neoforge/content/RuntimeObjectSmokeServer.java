@@ -51,7 +51,7 @@ public final class RuntimeObjectSmokeServer {
         on('tick',function(tick){if(content.objectCount()===3)content.object('stand').setYRot(Number(tick)*2);if(Number(tick)%20===0)content.state('pulse',String(Number(content.state('pulse'))+1));});
         on('object.interact',function(event){if(String(event.part())==='stand'){content.state('clicks',String(Number(content.state('clicks'))+1));content.object('free').velocity(0,0.45,0);}});
         """;
-    private static GeneratedFile file(String path,String media,byte[] bytes,RuntimeResourceSide side){return new GeneratedFile(path,side,media,dev.mineagent.runtime.core.objects.RuntimeModelBundle.hash(bytes),bytes);}
+    private static GeneratedFile file(String path,String media,byte[] bytes,RuntimeResourceSide side){return new GeneratedFile(path,side,media,dev.mineagent.runtime.api.packages.ResourceIds.create(),bytes);}
     @SubscribeEvent public static void tick(ServerTickEvent.Post event)throws Exception{
         if(!enabled()||failure!=null)return;var server=event.getServer();var viewer=server.getPlayerList().getPlayers().stream().filter(p->!(p instanceof MineAgentPlayer)).findFirst().orElse(null);if(viewer==null)return;Path root=server.getServerDirectory().resolve("runtime-object-evidence");Files.createDirectories(root);
         if(disabled){

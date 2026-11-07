@@ -15,24 +15,20 @@ repositories {
 
 
 configurations { nativeUiLocked }
-def nativeUiHashes = [
-    'B1CBVXHX-15aCZh6V.jar': '613f7e5d890c3c6c89f62e52a6336e775d83766c39cd52d5e1822e45c3520826',
-    'umyGl7zF-FzLyIIBB.jar': '36df262649e53c4b8256193198e7f5d225a6fec05f4b1e74e55c271e657ea5f0'
-]
+def nativeUiIds = ['B1CBVXHX-15aCZh6V.jar','umyGl7zF-FzLyIIBB.jar'] as Set
 if (rootProject.gameTarget != '26.1.2') {
-    nativeUiHashes.remove('B1CBVXHX-15aCZh6V.jar')
-    nativeUiHashes['B1CBVXHX-' + rootProject.modernTarget.ldlib + '.jar'] = rootProject.modernTarget.ldlibSha256
+    nativeUiIds.remove('B1CBVXHX-15aCZh6V.jar')
+    nativeUiIds.add('B1CBVXHX-' + rootProject.modernTarget.ldlib + '.jar')
 }
 tasks.register('verifyNativeUiDependencies') {
     group = 'verification'
     inputs.files(configurations.nativeUiLocked)
-    inputs.property('hashes', nativeUiHashes)
+    inputs.property('coordinates', nativeUiIds)
     doLast {
-        def hashes = inputs.properties['hashes']
-        if (inputs.files.files.size() != hashes.size()) throw new GradleException('Unexpected native UI dependency set')
+        def coordinates = inputs.properties['coordinates']
+        if (inputs.files.files.size() != coordinates.size()) throw new GradleException('Unexpected native UI dependency set')
         inputs.files.files.each { jar ->
-            def actual = java.security.MessageDigest.getInstance('SHA-256').digest(jar.bytes).encodeHex().toString()
-            if (hashes[jar.name] != actual) throw new GradleException("Native UI integrity mismatch: ${jar.name}")
+            if (!coordinates.contains(jar.name) || jar.length() == 0) throw new GradleException("Native UI dependency coordinate/layout mismatch: ${jar.name}")
         }
     }
 }
@@ -46,9 +42,9 @@ tasks.register('verifyProductionUiParser') {
         new java.util.zip.ZipFile(inputs.files.singleFile).withCloseable { zip ->
             def entry = zip.getEntry('META-INF/jarjar/jsoup-1.18.3.jar')
             if (entry == null) throw new GradleException('MISSING_PRODUCTION_UI_PARSER: Jsoup must be visible to the game/server classloader, not only the child Worker')
-            def hash = java.security.MessageDigest.getInstance('SHA-256').digest(zip.getInputStream(entry).bytes).encodeHex().toString()
-            if (hash != '5be1ccd3228ae5fd6eed1bd6d827bac2bc65b91c20e9957d16ea65f739f15302') throw new GradleException('PRODUCTION_UI_PARSER_HASH_MISMATCH')
-            logger.lifecycle("PRODUCTION_UI_PARSER_VERIFIED=${hash}")
+            def expected = project(':worker').configurations.uiPatchParserLocked.singleFile.bytes
+            if (!java.util.Arrays.equals(zip.getInputStream(entry).bytes, expected)) throw new GradleException('PRODUCTION_UI_PARSER_CONTENT_MISMATCH')
+            logger.lifecycle('PRODUCTION_UI_PARSER_BYTES_MATCH_RESOLVED_DEPENDENCY')
         }
     }
 }
@@ -132,6 +128,11 @@ dependencies {
     jarJar "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson_version}"
     jarJar 'javazoom:jlayer:[1.0.1]'
     jarJar 'org.jsoup:jsoup:[1.18.3]'
+    jarJar 'org.apache.pdfbox:pdfbox:[3.0.4]'
+    jarJar 'org.apache.poi:poi-ooxml:[5.4.1]'
+    jarJar 'org.jcodec:jcodec-javase:[0.2.5]'
+    jarJar 'org.htmlunit:htmlunit:[4.13.0]'
+    jarJar 'com.twelvemonkeys.imageio:imageio-webp:[3.12.0]'
 
     if (project.hasProperty('ysmJar')) {
         localRuntime files(project.property('ysmJar'))

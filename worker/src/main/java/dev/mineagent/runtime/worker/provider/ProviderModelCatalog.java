@@ -12,8 +12,10 @@ import java.util.concurrent.Flow;
 /** Credentialed GET only. No chat/completions, redirects, raw error bodies or credential logging. */
 public final class ProviderModelCatalog {
     public static final int MAX_BYTES=2*1024*1024, MAX_MODELS=4096;
-    public record Result(List<String> models,String error,int httpStatus) {
-        public Result { models=List.copyOf(models); }
+    public record Capability(String model,String vision,String tools,int contextTokens){}
+    public record Result(List<String> models,String error,int httpStatus,List<Capability> capabilities) {
+        public Result(List<String> models,String error,int httpStatus){this(models,error,httpStatus,List.of());}
+        public Result { models=List.copyOf(models);capabilities=List.copyOf(capabilities); }
     }
     private static final ObjectMapper JSON=new ObjectMapper();
     private ProviderModelCatalog(){}
@@ -34,15 +36,21 @@ public final class ProviderModelCatalog {
                 if(status!=200)return new Result(List.of(),status==401||status==403?"MODELS_AUTH_FAILED":status==404||status==405?"MODELS_UNSUPPORTED":status==429?"MODELS_RATE_LIMITED":status>=300&&status<400?"MODELS_REDIRECT_DENIED":"MODELS_HTTP_ERROR",status);
                 var root=JSON.readTree(response.body());var rows=root==null?null:root.get("data");
                 if(rows==null||!rows.isArray()||rows.size()>MAX_MODELS)return new Result(List.of(),"MODELS_INVALID_RESPONSE",status);
-                var models=new TreeSet<String>();
+                var models=new TreeSet<String>();var capabilities=new ArrayList<Capability>();
                 for(var row:rows){var node=row.get("id");if(node==null||!node.isTextual())return new Result(List.of(),"MODELS_INVALID_RESPONSE",status);String id=node.textValue();
-                    if(id.isBlank()||id.length()>256||id.codePoints().anyMatch(Character::isISOControl)||(key!=null&&!key.isBlank()&&id.contains(key))||id.startsWith("sk-"))return new Result(List.of(),"MODELS_INVALID_RESPONSE",status);models.add(id);
+                    if(id.isBlank()||id.length()>256||id.codePoints().anyMatch(Character::isISOControl)||(key!=null&&!key.isBlank()&&id.contains(key))||id.startsWith("sk-"))return new Result(List.of(),"MODELS_INVALID_RESPONSE",status);models.add(id);capabilities.add(capability(id,row));
                 }
-                return new Result(List.copyOf(models),models.isEmpty()?"MODELS_EMPTY":"",status);
+                return new Result(List.copyOf(models),models.isEmpty()?"MODELS_EMPTY":"",status,capabilities);
             }
         }catch(InterruptedException interrupted){Thread.currentThread().interrupt();return new Result(List.of(),"MODELS_INTERRUPTED",0);}
         catch(HttpTimeoutException timeout){return new Result(List.of(),"MODELS_TIMEOUT",0);}
         catch(Exception failed){return new Result(List.of(),"MODELS_UNAVAILABLE",0);}
+    }
+    static Capability capability(String id,com.fasterxml.jackson.databind.JsonNode row){
+        String vision="UNKNOWN",tools="UNKNOWN";var caps=row.path("capabilities");if(caps.path("vision").isBoolean())vision=caps.get("vision").booleanValue()?"YES":"NO";if(caps.path("tool_calls").isBoolean())tools=caps.get("tool_calls").booleanValue()?"YES":"NO";else if(caps.path("tools").isBoolean())tools=caps.get("tools").booleanValue()?"YES":"NO";
+        var modalities=row.has("input_modalities")?row.path("input_modalities"):row.path("architecture").path("input_modalities");if(modalities.isArray()&&!modalities.isEmpty()){boolean image=false;for(var value:modalities)if(Set.of("image","vision").contains(value.asText()))image=true;vision=image?"YES":"NO";}
+        var parameters=row.path("supported_parameters");if(parameters.isArray()&&!parameters.isEmpty()){boolean functions=false;for(var value:parameters)if(Set.of("tools","tool_choice","function_calling").contains(value.asText()))functions=true;tools=functions?"YES":"NO";}
+        int context=0;for(String key:List.of("context_length","context_window","max_context_tokens"))if(row.path(key).canConvertToInt()&&row.path(key).isIntegralNumber()&&row.path(key).intValue()>0&&row.path(key).intValue()<=16_777_216){context=row.path(key).intValue();break;}return new Capability(id,vision,tools,context);
     }
     private static final class LimitedBody implements HttpResponse.BodySubscriber<byte[]> {
         private final HttpResponse.BodySubscriber<byte[]> next=HttpResponse.BodySubscribers.ofByteArray();private Flow.Subscription subscription;private long bytes;private boolean failed;

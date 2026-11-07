@@ -5,9 +5,11 @@ import java.util.*;
 
 /** Optional explicit models for existing phases; blank settings preserve the agent's live selection. */
 public final class ExplicitModelRoles {
-    public static final List<String> ROLES=List.of("chat","research","code","review","small");
+    public static final List<String> ROLES=List.of("chat","research","code","review","small","vision","embedding");
     public static String role(WorkerEnvelope request){
         var payload=request.payload();String explicit=Objects.toString(payload.getOrDefault("modelRole",""),"");if(ROLES.contains(explicit))return explicit;
+        if(Objects.toString(payload.get("capability"),"").equals("VISION"))return "vision";
+        if(Objects.toString(payload.get("capability"),"").equals("EMBEDDING"))return "embedding";
         if(Objects.toString(payload.get("capability"),"").equals("CODING")||request.type().startsWith("runtime_package.")||request.type().contains("patch.generate"))return "code";
         if(Objects.toString(payload.get("capability"),"").equals("PLANNING"))return "review";
         if(payload.get("toolHistory") instanceof List<?> history)for(int index=history.size()-1;index>=0;index--){

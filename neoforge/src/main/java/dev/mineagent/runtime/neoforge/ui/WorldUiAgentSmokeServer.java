@@ -37,7 +37,7 @@ public final class WorldUiAgentSmokeServer {
         on('ui.read',function(e){e.reply(projection(e));});
         on('ui.action',function(e){if(e.action()!=='rename')throw new Error('UNSUPPORTED');var data=JSON.parse(e.payload());if(typeof data.label!=='string')throw new Error('LABEL_REQUIRED');content.state('label',data.label);content.state('count',String(Number(content.state('count'))+1));content.state('actionActor',String(e.player().getUUID()));content.object('console').setYRot(77);e.reply(projection(e));});
         """;
-    private static GeneratedFile file(String path,RuntimeResourceSide side,String media,byte[] data){return new GeneratedFile(path,side,media,dev.mineagent.runtime.core.objects.RuntimeModelBundle.hash(data),data);}
+    private static GeneratedFile file(String path,RuntimeResourceSide side,String media,byte[] data){return new GeneratedFile(path,side,media,dev.mineagent.runtime.api.packages.ResourceIds.create(),data);}
     @SubscribeEvent public static void tick(ServerTickEvent.Post event)throws Exception{
         if(!enabled()||done||failure!=null)return;var server=event.getServer();var viewer=server.getPlayerList().getPlayers().stream().filter(p->!(p instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)).findFirst().orElse(null);if(viewer==null)return;
         Path root=Files.createDirectories(server.getServerDirectory().resolve(directory()));var world=WorldContentRuntime.get(server);

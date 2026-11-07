@@ -37,7 +37,7 @@ public final class WorldUiSmokeServer {
         on('ui.read',function(e){var denied=false;try{content.state('forbidden','write');}catch(error){denied=String(error).indexOf('WORLD_UI_READ_ONLY')>=0;}e.reply(projection(e,denied));});
         on('ui.action',function(e){if(e.action()!=='rename')throw new Error('UNKNOWN_ACTION');var data=JSON.parse(e.payload());if(typeof data.label!=='string'||data.label.length>128)throw new Error('LABEL_INVALID');content.state('label',data.label);content.state('count',String(Number(content.state('count'))+1));content.object('console').setYRot(55);e.reply(projection(e,false));});
         """;
-    private static GeneratedFile file(String path,RuntimeResourceSide side,String media,byte[] bytes){return new GeneratedFile(path,side,media,dev.mineagent.runtime.core.objects.RuntimeModelBundle.hash(bytes),bytes);}
+    private static GeneratedFile file(String path,RuntimeResourceSide side,String media,byte[] bytes){return new GeneratedFile(path,side,media,dev.mineagent.runtime.api.packages.ResourceIds.create(),bytes);}
     @SubscribeEvent public static void tick(ServerTickEvent.Post event)throws Exception{
         if(!enabled()||failure!=null||done)return;var server=event.getServer();var player=server.getPlayerList().getPlayers().stream().filter(p->!(p instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)).findFirst().orElse(null);if(player==null)return;
         var root=server.getServerDirectory().resolve(directory());Files.createDirectories(root);var world=WorldContentRuntime.get(server);
