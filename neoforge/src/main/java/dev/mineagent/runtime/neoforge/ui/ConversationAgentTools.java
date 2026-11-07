@@ -79,6 +79,7 @@ public final class ConversationAgentTools {
             if(tool.equals("read_web_page"))return ServerResourceTools.execute(p,agent,operation,"read_resource",args,permit);
             if(Set.of("search_resources","inspect_resources","read_resource","download_resource","preview_resource","inspect_image","compare_images","transcribe_resource","capture_game_view").contains(tool))return ServerResourceTools.execute(p,agent,operation,tool,args,permit);
             if(tool.equals("inspect_model_capabilities"))return ServerModelCapabilities.inspect(p,agent,args,permit);
+            if(tool.equals("inspect_cooperation"))return dev.mineagent.runtime.neoforge.skill.CooperationRuntime.get(s).inspect(p,agent,args);
             if(tool.equals("inspect_owned_agents")){keys(args,"query","offset");return CompletableFuture.completedFuture(ConversationAgentScope.list(p,agent,args));}
             if(tool.equals("inspect_agent_settings")){keys(args);return CompletableFuture.completedFuture(ConversationAgentScope.settings(p,agent));}
             if(tool.equals("inspect_host")||tool.equals("read_host_output"))return dev.mineagent.runtime.neoforge.hostsupport.HostToolBridge.execute(p,agent,operation,tool,args,permit);
@@ -193,6 +194,8 @@ public final class ConversationAgentTools {
         if(result.isEmpty()||result.getCount()>result.getMaxStackSize())throw new IllegalArgumentException("AGENT_ITEM_COUNT");return result;
     }
     private static CompletableFuture<Map<String,Object>> mutate(ServerPlayer p,UUID agent,UUID operation,String tool,JsonNode a,BooleanSupplier permit,UUID conversation)throws Exception{
+        if(tool.equals("start_cooperation"))return dev.mineagent.runtime.neoforge.skill.CooperationRuntime.get(p.level().getServer()).start(p,agent,operation,a,permit);
+        if(tool.equals("control_cooperation"))return dev.mineagent.runtime.neoforge.skill.CooperationRuntime.get(p.level().getServer()).control(p,agent,a,permit);
         if(tool.equals("set_agent_setting"))return ConversationAgentScope.set(p,agent,operation,a,permit);
         if(tool.equals("set_combat_policy")){dev.mineagent.runtime.core.task.SkillTools.canonical(tool,a.toString());return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).policy(p,agent,a,permit);}
         if(dev.mineagent.runtime.core.task.SkillTools.START.contains(tool)){dev.mineagent.runtime.core.task.SkillTools.canonical(tool,a.toString());return dev.mineagent.runtime.neoforge.skill.SkillRuntime.get(p.level().getServer()).start(p,agent,operation,null,a,dev.mineagent.runtime.core.task.SkillTools.kind(tool),permit);}

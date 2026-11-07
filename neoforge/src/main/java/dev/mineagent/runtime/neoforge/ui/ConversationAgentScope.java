@@ -24,7 +24,7 @@ public final class ConversationAgentScope {
         var all=bodies.definitions().stream().filter(a->a.ownerPlayerId().equals(player.getUUID())).filter(a->a.displayName().toLowerCase(Locale.ROOT).contains(query)||a.agentId().toString().contains(query)).sorted(Comparator.comparing(a->a.agentId().toString())).toList();
         var rows=new ArrayList<Map<String,Object>>();for(var a:all.stream().skip(offset).limit(16).toList()){
             var row=new LinkedHashMap<String,Object>();row.put("agent_id",a.agentId());row.put("name",a.displayName());row.put("revision",bodies.revision(a.agentId()));row.put("bodyState",bodies.bodyState(a.agentId()));row.put("current",a.agentId().equals(source));row.put("canConfigure",ServerTaskStart.allowed(player,a.agentId()));
-            var body=bodies.body(a.agentId()).orElse(null);row.put("dimension",body==null?"":body.level().dimension().identifier().toString());row.put("position",body==null?List.of():List.of(body.getX(),body.getY(),body.getZ()));row.put("gameMode",body==null?"NOT_LOADED":body.gameMode.getGameModeForPlayer().name());rows.add(row);
+            var body=bodies.body(a.agentId()).orElse(null);row.put("body_uuid",body==null?"":body.getUUID().toString());row.put("dimension",body==null?"":body.level().dimension().identifier().toString());row.put("position",body==null?List.of():List.of(body.getX(),body.getY(),body.getZ()));row.put("gameMode",body==null?"NOT_LOADED":body.gameMode.getGameModeForPlayer().name());rows.add(row);
         }
         return Map.of("status","OBSERVED","ownerId",player.getUUID(),"agents",rows,"total",all.size(),"nextOffset",(long)offset+rows.size()<all.size()?offset+rows.size():-1);
     }

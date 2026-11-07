@@ -49,6 +49,6 @@ public final class BehaviorAuthority {
             SkillRuntime.get(p.level().getServer()).start(p,agent,operation,null,n,dev.mineagent.runtime.core.task.SkillSpec.Kind.FOLLOW,()->current(p,agent,operation)).whenComplete((v,e)->p.level().getServer().execute(()->{if(e!=null)reply.completeExceptionally(e);else if(!current(p,agent,operation))reply.completeExceptionally(new IllegalStateException("SKILL_CONTEXT_CHANGED"));else reply.complete(Component.translatableWithFallback("mineagent.behavior.follow","已切换为跟随。").getString());}));
         }
     }
-    public static boolean bodyTool(String name){return dev.mineagent.runtime.core.task.SkillTools.TOOLS.contains(name)&&!Set.of("inspect_skills","inspect_behavior").contains(name)||Set.of("control_agent_body","request_player_control","control_player_session","build_agent_path","start_world_task").contains(name);}
+    public static boolean bodyTool(String name){return dev.mineagent.runtime.core.task.SkillTools.TOOLS.contains(name)&&!Set.of("inspect_skills","inspect_behavior").contains(name)||Set.of("start_cooperation","control_cooperation","control_agent_body","request_player_control","control_player_session","build_agent_path","start_world_task").contains(name);}
     private BehaviorAuthority(){}
 }

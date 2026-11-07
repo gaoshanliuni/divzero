@@ -30,6 +30,7 @@ public final class CapabilitySession {
         if(continues&&continuation!=null)for(String group:continuation)load(group);
         boolean act=matches(text,"创建|生成|建造|搭建|制作|修改|更改|添加|增加|删除|设置|替换|帮我|请你|我要|给我|打开|检查|查看|查询|读取|导入|修复|设计|扩大|缩小|预览|create|build|make|modify|change|add|remove|set |open |inspect|import|fix|show|preview");
         var chosen=new LinkedHashSet<String>();
+        if(act&&matches(text,"协作|合作|分工|派.*(砍|采|收集|寻找)|cooperat|collaborat|delegate"))chosen.add("cooperation");
         if(GameContentRouting.item(text)){chosen.add("items");chosen.add("content");if(matches(text,"召唤|summon|spawn"))chosen.add("entities");}
         if(matches(text,"所有.*ai|全部.*ai|其他.*ai|其它.*ai|另一个.*ai|ai.*(设置|调整|改|跟随|模式)|all.*agents|other.*agents|another.*ai"))chosen.add("agents");
         if(matches(text,"ldlib|kubejs|ui wiki|界面文档|HUD文档"))chosen.add("ui");
