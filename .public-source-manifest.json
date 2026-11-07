@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "2ed22bde-0c74-4023-aa26-9607ae48fee4",
-      "bytes": 2318
+      "resourceId": "f47f0d7d-83dd-4b81-81f4-0804f73745cc",
+      "bytes": 2353
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1464,13 +1464,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilityCatalog.java",
-      "resourceId": "0e73dfbf-1cc8-4421-9a1c-c07fa1948148",
-      "bytes": 21306
+      "resourceId": "123d0a46-9a82-4261-ba8e-50e9dac7525c",
+      "bytes": 22143
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
-      "resourceId": "dd3201cb-d128-40e2-bf55-ba080dbd7fae",
-      "bytes": 6322
+      "resourceId": "e62c1133-6efa-4e17-b2a9-f1cccfd97194",
+      "bytes": 6438
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationAuditImporter.java",
@@ -1524,8 +1524,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "1547fe80-498a-4fbe-98c4-4e3cc5bfeaf5",
-      "bytes": 76430
+      "resourceId": "e077e7f4-c709-4c3c-bd41-89ec3f2f2184",
+      "bytes": 76513
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
@@ -2779,13 +2779,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSpec.java",
-      "sha256": "6b5e462ca158546fea389996c01ef86cce663c98465c0148739e8f4c5f7b330f",
-      "bytes": 8526
+      "resourceId": "e8b94768-054d-4e5a-8fb7-bde52d60d377",
+      "bytes": 8713
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillTools.java",
-      "sha256": "47db9c5188fcb41d5170304ef92c57e018205e1df24cdeabdeb5bf9a37dd2530",
-      "bytes": 10037
+      "resourceId": "a7bf0921-ee08-4f45-80a4-7b6f87691e15",
+      "bytes": 10481
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SneakClearance.java",
@@ -3551,6 +3551,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/DamageSweepTest.java",
       "sha256": "2f3193393394f43c9ad8f460dd239d9f59d753e1230623b4836edf988b83f912",
       "bytes": 1235
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/GatherSkillContractTest.java",
+      "resourceId": "7f33b7bc-5f73-4030-8cb1-c98745356af9",
+      "bytes": 1172
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/HumanDuelSeriesTest.java",
@@ -5289,8 +5294,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBehaviorPanel.java",
-      "sha256": "52b4a62f65d2835ca5a6c394e3c7ee88233c65fb4c125a8fcfd3c12cc5c55e41",
-      "bytes": 30972
+      "resourceId": "3d15ba6e-9ed8-4c59-9cb7-8ec78890db15",
+      "bytes": 32164
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",
@@ -6728,6 +6733,11 @@
       "bytes": 1514
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/GatherSkill.java",
+      "resourceId": "08cd5b69-88df-4f59-ba1f-ca75bf27d198",
+      "bytes": 7567
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/IsolatedCombatArena.java",
       "sha256": "50adad9150f611ae64bbc89517aaef1e6ca905d911e7a5f7c8fcfa11e2152f79",
       "bytes": 7441
@@ -6869,8 +6879,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "sha256": "4e2600ba869683212b9ccd6d9b6c018b1992e1256b0ab9816a0eaac91b1aa441",
-      "bytes": 11633
+      "resourceId": "3e74ebb0-eba2-4826-9594-429a4002e271",
+      "bytes": 11780
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",
@@ -9240,5 +9250,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "2ee2692d77de31eae3c9d3497765950bde13d1f9"
+  "sourceCommit": "36784da2d4d641dd603a00b25be5f4e681872f37"
 }

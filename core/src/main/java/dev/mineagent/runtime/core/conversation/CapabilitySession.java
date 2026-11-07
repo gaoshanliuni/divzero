@@ -35,6 +35,7 @@ public final class CapabilitySession {
         if(matches(text,"ldlib|kubejs|ui wiki|界面文档|HUD文档"))chosen.add("ui");
         if(matches(text,"记住|记忆|我喜欢|偏好|喜欢的|回家|remember|preference|my home|go home"))chosen.add("memory");
         if(matches(text,"跟着|跟随|巡逻|漫步|接管|托管|回家|follow|patrol|take over|autopilot"))chosen.add("movement");
+        if(matches(text,"采集|砍树|收集资源|gather|chop|collect.*wood|mine stone"))chosen.add("gathering");
         if(matches(text,"种田|种地|收割|补种|钓鱼|耕田|farm|fishing|harvest|replant"))chosen.add("farming");
         if(matches(text,"战斗|跑打|对打|警戒|守住|格挡|反击|jump.?tap|w.?tap|s.?tap|pvp|combat|fight|guard|kite"))chosen.add("combat");
         if(matches(text,"(建|盖|造).{0,8}(房|屋|楼|桥)"))chosen.add("building");

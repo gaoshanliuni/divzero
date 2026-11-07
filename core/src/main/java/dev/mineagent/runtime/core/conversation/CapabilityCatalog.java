@@ -20,6 +20,9 @@ public final class CapabilityCatalog {
         group("ui","原生界面、面板、HUD 血条、菜单附加、交互、三维预览",
             "先 read_ui_wiki 按需查询LDLib2/KubeJS编码资料，inspect_native_ui 发现当前定义与契约。HUD根控件必须在root.style显式写正数height（如height: 54;），同时给出width并避免flex-grow拉伸；普通状态面板不能用100%高度。KubeJS 构建 LDLib2 原生控件和交互，不生成 HTML/MCEF。悬浮层默认 HUD，不抢鼠标；结构热更验证成功后替换，失败保留旧界面和匹配输入，数据用增量更新。菜单附加先 inspect_native_screen，实体血条用 ENTITY_HUD 的实际实体数据，酿造配方可接 open_preview。提交定义不等于交易完成；核对客户端 attachment/painted/error 回执。",
             "read_ui_wiki inspect_native_ui edit_native_ui set_native_ui patch_native_ui_data control_native_ui inspect_native_screen inspect_brewing_recipes open_preview"),
+        group("gathering","原生采集木头、石料和已适配的方块物品",
+            "gather_resources 提交一次本地采集：min/max 是授权采集区，crop 是目标物品 ID，limit 是背包实际目标数量。木头直接采原木，圆石从石头挖取；用实际工具、挖掘时间和原生掉落拾取，不使用 give。避开已知玩家放置方块、容器和保护规则；缺工具或资源时报告真实等待原因。允许与 agents 组合给同一玩家的其他 AI 派采集任务，不能把破坏方块计数当作收到材料。后续可用真实背包操作交接。",
+            "gather_resources inspect_behavior control_behavior inspect_agent_body control_agent_body inspect_registry inspect_owned_agents"),
         group("farming","持续农务、钓鱼与补给",
             "提交一次本地持续技能，模型不逐格种植或反复等待咬钩。默认 actor=ai；真人必须明确要求接管。农务按真实成熟度、种子、工具、站位和库存收获补种；钓鱼用真实浮漂咬钩及物品消耗。缺物资、背包满等交给本地等待/补给；遇敌保存工作进度，防御后重检恢复。只改战斗方式用 set_combat_policy，不替换主工作。",
             "farm_area fish_at inspect_behavior control_behavior set_combat_policy inspect_registry inspect_container quick_move_container close_container interact_block"),
@@ -84,6 +87,7 @@ public final class CapabilityCatalog {
             var json=new ObjectMapper();var schema=(ObjectNode)json.readTree(value.parameters());var properties=(ObjectNode)schema.get("properties");
             var keep=new HashSet<>(List.of("agent_id","id","actor","dimension","expected_revision","combat","defend","resume_previous","only_if_idle"));
             switch(kind){
+                case GATHER->keep.addAll(List.of("min","max","crop","limit"));
                 case FARM->keep.addAll(List.of("min","max","crop","till","limit","repeat"));
                 case FISH->keep.addAll(List.of("min","max","limit","repeat"));
                 case FOLLOW->keep.addAll(List.of("target","start_distance","stop_distance","allow_teleport"));

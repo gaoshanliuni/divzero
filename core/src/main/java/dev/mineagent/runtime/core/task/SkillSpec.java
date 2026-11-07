@@ -7,9 +7,9 @@ import java.util.*;
 public record SkillSpec(String id,Kind kind,String actor,String dimension,String target,Area area,
                         List<Point> route,boolean repeat,boolean defend,boolean allowTeleport,boolean pingPong,boolean till,
                         double startDistance,double stopDistance,int dwellTicks,int limit,String crop,CombatPolicy combat,boolean resumePrevious) {
-    public enum Kind { IDLE, WANDER, FOLLOW, PATROL, GUARD, COMBAT, FARM, FISH }
+    public enum Kind { IDLE, WANDER, FOLLOW, PATROL, GUARD, COMBAT, FARM, FISH, GATHER }
     public SkillSpec(String id,Kind kind,String actor,String dimension,String target,Area area,List<Point> route,boolean repeat,boolean defend,boolean allowTeleport,boolean pingPong,boolean till,double startDistance,double stopDistance,int dwellTicks,int limit,String crop){this(id,kind,actor,dimension,target,area,route,repeat,defend,allowTeleport,pingPong,till,startDistance,stopDistance,dwellTicks,limit,crop,null,false);}
-    public String title(){return switch(kind){case IDLE->"待命";case WANDER->"区域漫步";case FOLLOW->"持续跟随";case PATROL->"路线巡逻";case GUARD->"区域警戒";case COMBAT->"战斗";case FARM->"维护农田";case FISH->"钓鱼";};}
+    public String title(){return switch(kind){case IDLE->"待命";case WANDER->"区域漫步";case FOLLOW->"持续跟随";case PATROL->"路线巡逻";case GUARD->"区域警戒";case COMBAT->"战斗";case FARM->"维护农田";case FISH->"钓鱼";case GATHER->"采集资源";};}
     public SkillSpec withCombat(CombatPolicy policy){return new SkillSpec(id,kind,actor,dimension,target,area,route,repeat,policy.engagement()!=CombatPolicy.Engagement.NONE,allowTeleport,pingPong,till,startDistance,stopDistance,dwellTicks,limit,crop,policy,resumePrevious);}
     public SkillSpec afterFollowRespawn(String nextDimension){
         if(!kind.equals(Kind.FOLLOW)||!actor.equals("ai")||area!=null||combat.area()!=null)throw new IllegalArgumentException("RESPAWN_REGION_REQUIRES_RECHECK");
@@ -27,9 +27,10 @@ public record SkillSpec(String id,Kind kind,String actor,String dimension,String
         target=target==null?"":target;crop=crop==null?"":crop;route=List.copyOf(route);
         if(!target.isEmpty()&&!target.equals("$owner"))UUID.fromString(target);
         if(!Double.isFinite(startDistance)||!Double.isFinite(stopDistance)||stopDistance<1||startDistance<=stopDistance||startDistance>128||dwellTicks<0||dwellTicks>72000||limit<0||route.size()>128)throw new IllegalArgumentException("SKILL_POLICY");
-        if(kind==Kind.FOLLOW&&target.isEmpty()||kind==Kind.PATROL&&route.isEmpty()||Set.of(Kind.FARM,Kind.WANDER,Kind.FISH).contains(kind)&&area==null||kind==Kind.GUARD&&area==null&&target.isBlank())throw new IllegalArgumentException("SKILL_TARGET_REQUIRED");
+        if(kind==Kind.FOLLOW&&target.isEmpty()||kind==Kind.PATROL&&route.isEmpty()||Set.of(Kind.FARM,Kind.WANDER,Kind.FISH,Kind.GATHER).contains(kind)&&area==null||kind==Kind.GUARD&&area==null&&target.isBlank())throw new IllegalArgumentException("SKILL_TARGET_REQUIRED");
         if(kind==Kind.FOLLOW&&actor.equals("player")&&target.equals("$owner"))throw new IllegalArgumentException("SKILL_CANNOT_FOLLOW_SELF");
         if(!crop.isBlank()&&!crop.matches("[a-z0-9_.-]+:[a-z0-9_./-]+"))throw new IllegalArgumentException("SKILL_CROP_ID");
+        if(kind==Kind.GATHER&&(crop.isBlank()||limit<1))throw new IllegalArgumentException("GATHER_RESOURCE_AND_POSITIVE_LIMIT_REQUIRED");
         combat=combat==null?CombatPolicy.defaults(kind,defend,target):combat;
         if(combat.engagement()==CombatPolicy.Engagement.CLEAR_AREA&&combat.area()==null)combat=combat.withArea(area);
         if(combat.engagement()==CombatPolicy.Engagement.SPECIFIED&&combat.target().isBlank())throw new IllegalArgumentException("COMBAT_SPECIFIED_TARGET_REQUIRED");
