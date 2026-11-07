@@ -66,4 +66,20 @@ class ConstructionLedgerTest {
         }
     }
     @Test void unrelatedInspectionOrRevisionCannotCompleteTheConversation(){var gate=new BuildingCompletionGate();gate.observe("apply_building",Map.of("id","home","revision",2,"operation","op","status","UNVERIFIED"));for(var result:List.of(Map.<String,Object>of("id","other","revision",2,"operation","op","verification","VERIFIED"),Map.<String,Object>of("id","home","revision",1,"operation","op","verification","VERIFIED"),Map.<String,Object>of("id","home","revision",2,"operation","old","verification","VERIFIED"))){gate.observe("verify_building",result);assertTrue(gate.waiting());}var correct=Map.<String,Object>of("id","home","revision",2,"operation","op","verification","VERIFIED");gate.observe("inspect_buildings",correct);assertTrue(gate.waiting());gate.observe("verify_building",correct);assertFalse(gate.waiting());}
+    @Test void knownRejectedNativeUseKeepsCursorAndResumesWithoutReplayingTheOldOperation()throws Exception{
+        Path file=directory.resolve("rejected-native.db");UUID session=UUID.randomUUID(),operation=UUID.randomUUID();long cell;
+        try(var ledger=new ConstructionLedger(file)){
+            ledger.plan(0,SOURCE,()->true);ledger.claimNative(session,1);sampled(ledger,1);ledger.progress("APPLYING","WRITE",0,0);cell=ledger.page(1,0,false).getFirst().sequence();
+            ledger.nativePrepared(session,operation,cell,"before native use");ledger.reserve(0);
+            assertThrows(IllegalStateException.class,()->ledger.nativeNotApplied(UUID.randomUUID(),operation,"not applied","wrong lease"));assertEquals("RESERVED",ledger.head().phase());
+            ledger.nativeNotApplied(session,operation,"actual=air; materialsConsumed=0; nativeAccepted=false","PLACE_REJECTED_NO_CHANGE component=floor position=[0,80,0]");
+            assertEquals("PARTIAL",ledger.head().status());assertEquals("WRITE",ledger.head().phase());assertEquals(0,ledger.head().cursor());assertEquals(0,ledger.head().mutationTick());
+        }
+        try(var ledger=new ConstructionLedger(file)){
+            UUID next=UUID.randomUUID();assertEquals("WRITE",ledger.claimNative(next,1).phase());assertEquals(0,ledger.head().cursor());
+            assertThrows(Exception.class,()->ledger.nativePrepared(next,operation,cell,"cannot reuse settled operation"));
+            ledger.nativePrepared(next,UUID.randomUUID(),cell,"new observation and explicit retry");
+        }
+    }
+
 }

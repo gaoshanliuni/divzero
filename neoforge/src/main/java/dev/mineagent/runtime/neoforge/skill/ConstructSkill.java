@@ -115,7 +115,7 @@ public final class ConstructSkill {
         if(w.action.equals("CONSTRUCT_PLACE")&&w.executed&&w.nativeUseObserved&&!w.nativeUse&&w.nativeConsumed==0&&actual.isAir()&&w.count(wanted.getBlock().asItem())==w.beforeCount){
             String diagnostic=problem("PLACE_REJECTED_NO_CHANGE",cell,cell.after(),state(pos)).getMessage();UUID operation=w.operation;
             String detail=new com.google.gson.Gson().toJson(Map.of("executionState","NOT_APPLIED","nativeAccepted",false,"actual",state(pos),"expected",cell.after(),"position",pos.toShortString(),"component",cell.component(),"materialsConsumed",0));
-            waitFor(lease.update(l->{l.nativeObserved(w.token(),operation,"NOT_APPLIED_NATIVE_REJECTED",detail);l.fail("PARTIAL",diagnostic);return null;}),()->{w.confirm("NOT_APPLIED_NATIVE_REJECTED",Map.of("actual",state(pos),"materialConsumed","0","executionState","NOT_APPLIED"));failure=diagnostic;w.pause("BUILDING_NATIVE_"+diagnostic);});return;
+            waitFor(lease.update(l->{l.nativeNotApplied(w.token(),operation,detail,diagnostic);return null;}),()->{w.confirm("NOT_APPLIED_NATIVE_REJECTED",Map.of("actual",state(pos),"materialConsumed","0","executionState","NOT_APPLIED"));failure=diagnostic;w.pause("BUILDING_NATIVE_"+diagnostic);});return;
         }
         if(w.interruptedOperation||w.executed&&w.tick()-w.startedTick>Math.min(2400,Math.max(240L,(long)NativeTerrainPolicy.breakTicks(w.player(),pos)*3+40)))throw problem("ACTION_OUTCOME_REQUIRES_RECONCILIATION",cell,cell.after(),state(pos));
         if(!w.executed&&!state(pos).equals(w.expectedState))throw problem("PREPARED_TARGET_CHANGED",cell,w.expectedState,state(pos));

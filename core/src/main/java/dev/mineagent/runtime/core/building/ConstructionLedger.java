@@ -122,6 +122,14 @@ public final class ConstructionLedger implements AutoCloseable {
         if(!nativeOwned(session,head().revision()))throw new IllegalStateException("BUILDING_NATIVE_LEASE_CHANGED");
         try(var q=db.prepareStatement("UPDATE native_receipts SET phase=?,detail=? WHERE operation=? AND session=? AND phase='PREPARED'")){q.setString(1,phase);q.setString(2,detail);q.setString(3,operation.toString());q.setString(4,session.toString());if(q.executeUpdate()!=1)throw new IllegalStateException("BUILDING_NATIVE_RECEIPT_CHANGED");}
     }
+    /** A real rejected native use with unchanged block and inventory is known not applied, not an unknown reservation. */
+    public synchronized void nativeNotApplied(UUID session,UUID operation,String detail,String diagnostic)throws Exception{
+        var before=head();if(!before.status().equals("APPLYING")||!before.phase().equals("RESERVED"))throw new IllegalStateException("BUILDING_NATIVE_RECEIPT_CHANGED");
+        db.setAutoCommit(false);try{
+            nativeObserved(session,operation,"NOT_APPLIED_NATIVE_REJECTED",detail);
+            progress("APPLYING","WRITE",before.cursor(),before.mutationTick());fail("PARTIAL",diagnostic);db.commit();
+        }catch(Exception|Error error){try{db.rollback();}catch(Exception rollback){error.addSuppressed(rollback);}throw error;}finally{db.setAutoCommit(true);}
+    }
     public synchronized Head progress(String status,String phase,long cursor,long mutationTick)throws Exception {
         try(var p=db.prepareStatement("UPDATE control SET status=?,phase=?,cursor=?,mutation_tick=MAX(mutation_tick,?) WHERE id=1")){p.setString(1,status);p.setString(2,phase);p.setLong(3,cursor);p.setLong(4,mutationTick);p.executeUpdate();}return head();
     }

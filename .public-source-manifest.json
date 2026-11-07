@@ -1259,8 +1259,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionLedger.java",
-      "resourceId": "fec5b8d1-dd74-4db4-8260-3f1d06c2aa22",
-      "bytes": 23510
+      "resourceId": "c1eeec65-45e5-4dff-823d-596c4dd7ddd7",
+      "bytes": 24332
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionVerification.java",
@@ -3194,8 +3194,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/ConstructionLedgerTest.java",
-      "resourceId": "1f567052-727e-473f-a635-ac3ea47f9280",
-      "bytes": 8217
+      "resourceId": "a2b69d8b-c023-47cc-85ee-54425c2e1cc1",
+      "bytes": 9777
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeClassReferenceTest.java",
@@ -4119,8 +4119,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "2a58e2fc-a089-40ca-9e33-9edf08802ccf",
-      "bytes": 23590
+      "resourceId": "e57a934e-4bae-4d1d-a7fb-506ba7ae60d6",
+      "bytes": 23983
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -7019,8 +7019,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
-      "resourceId": "671b21ff-0e58-4d4b-aa82-8e5fd2c5d729",
-      "bytes": 20340
+      "resourceId": "10f998bf-8441-4c3b-a168-4a67c9b0bb62",
+      "bytes": 20294
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
@@ -9625,5 +9625,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "02b947292bdb571cfeedc74e0210549bc4c4e347"
+  "sourceCommit": "afa13d4c62e7f1bf9a56894eb252299f6925f3a4"
 }
