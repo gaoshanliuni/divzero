@@ -757,7 +757,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
             }else result=compiler.compile(required(request,"className"),required(request,"source"),temporaryJar,nativePaths,compileContext);
             if(snapshot!=null)snapshot.verifyMaterialized(nativePaths);
             if(dependencyGraph!=null){
-                dev.mineagent.runtime.core.packages.JavaDependencyArtifacts.verify(dependencyGraph,dependencyArtifacts.paths());
+                dependencyArtifacts.verify();
                 if(result.success())try{dev.mineagent.runtime.core.packages.JavaDependencyArtifacts.rejectCollisions(java.util.List.of(temporaryJar),dependencyArtifacts.classOwners().keySet());}
                 catch(IllegalStateException collision){
                     if(!"JAVA_DEPENDENCY_CLASS_COLLISION".equals(collision.getMessage()))throw collision;

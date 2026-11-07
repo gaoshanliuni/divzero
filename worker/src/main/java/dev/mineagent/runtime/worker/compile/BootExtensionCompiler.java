@@ -55,7 +55,7 @@ public final class BootExtensionCompiler {
                 for(var e:entries.entrySet()){var entry=new JarEntry(e.getKey());entry.setTime(0);jar.putNextEntry(entry);jar.write(e.getValue());jar.closeEntry();if(buffer.size()>BootExtensionPlan.MAX_ARCHIVE)throw new IllegalStateException("BOOT_ARCHIVE_LIMIT");}
             }
             byte[] bytes=buffer.toByteArray();BootArtifact.inspect(bytes);snapshot.verifyMaterialized(allPaths);dependencyInputs.verify();var stored=content.put(bytes);
-            if(!RuntimePackageCanonicalizer.sha256(NativeCompilationSnapshot.read(stored.path(),BootExtensionPlan.MAX_ARCHIVE)).equals(stored.sha256()))throw new IllegalStateException("BOOT_ARTIFACT_HASH");
+            if(!java.util.Arrays.equals(NativeCompilationSnapshot.read(stored.path(),BootExtensionPlan.MAX_ARCHIVE),bytes))throw new IllegalStateException("BOOT_ARTIFACT_HASH");
             return new Result(true,stored.sha256(),snapshotHash,plan.modId(),messages);
         }finally{try(var paths=Files.walk(output)){for(var path:paths.sorted(Comparator.reverseOrder()).toList())Files.deleteIfExists(path);}}
     }

@@ -24,7 +24,7 @@ public record ScriptDependencyGraph(int schema,UUID root,Map<UUID,String> requir
     private static boolean sha(String s){return s!=null&&s.matches("[a-f0-9]{64}");}
     public static ScriptDependencyGraph empty(UUID root){return new ScriptDependencyGraph(1,root,Map.of(),List.of());}
     public void require(RuntimePackage pkg){if(!root.equals(pkg.packageId())||!required.equals(pkg.dependencies()))throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_SOURCE_CHANGED");}
-    public String fingerprint(){try{return RuntimePackageCanonicalizer.sha256(new com.fasterxml.jackson.databind.ObjectMapper().enable(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsBytes(this));}catch(Exception e){throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_HASH");}}
+    public String fingerprint(){try{return DependencyReceipt.encode(this);}catch(Exception e){throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_HASH");}}
     public String receiptHash(){return nodes.isEmpty()?"":fingerprint();}
     public ScriptDependencyGraph embedded(Node node){
         var ids=new HashSet<UUID>();collect(node.dependencies().keySet(),ids);

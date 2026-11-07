@@ -12,7 +12,7 @@ public record ScriptDependencySources(ScriptDependencyGraph graph,Map<UUID,Map<S
     public static final int MAX_BYTES=512*1024;
     private static final ObjectMapper JSON=new ObjectMapper().enable(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
     public record Snapshot(String graphHash,String sha256,int bytes){
-        public Snapshot{if(graphHash==null||!graphHash.matches("[a-f0-9]{64}")||sha256==null||!sha256.matches("[a-f0-9]{64}")||bytes<1||bytes>MAX_BYTES)throw new IllegalArgumentException("STUDIO_CODER_SCRIPT_CONTEXT_REF");}
+        public Snapshot{if(!DependencyReceipt.readable(graphHash)||sha256==null||!sha256.matches("[a-f0-9]{64}")||bytes<1||bytes>MAX_BYTES)throw new IllegalArgumentException("STUDIO_CODER_SCRIPT_CONTEXT_REF");}
     }
     public ScriptDependencySources {
         Objects.requireNonNull(graph);Objects.requireNonNull(files);

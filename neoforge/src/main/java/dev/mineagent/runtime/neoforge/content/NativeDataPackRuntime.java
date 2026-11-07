@@ -40,7 +40,8 @@ public final class NativeDataPackRuntime implements AutoCloseable {
         var hidden=server.getPackRepository().getSelectedPacks().stream().filter(net.minecraft.server.packs.repository.Pack::isHidden).map(net.minecraft.server.packs.repository.Pack::getId).collect(java.util.stream.Collectors.toSet());
         return server.getResourceManager().listPacks().map(PackResources::packId).filter(id->!hidden.contains(id)).toList();
     }
-    private String selection()throws Exception{return RuntimePackageCanonicalizer.sha256(RuntimePackageCanonicalizer.stableJson(Map.of("selected",selected())));}
+    private final dev.mineagent.runtime.core.content.ObservationTokens selectionIds=new dev.mineagent.runtime.core.content.ObservationTokens(256,1024*1024);
+    private String selection()throws Exception{return selectionIds.token(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(selected()));}
     private RuntimePackage owned(ServerPlayer player,UUID pkg,long revision){return packages.ownedPackage(player.getUUID(),pkg,revision).orElseThrow(()->new SecurityException("DATA_PACK_OWNER"));}
     public Map<String,Object> read(ServerPlayer player,Map<String,String> args)throws Exception{
         viewer(player);if(!args.keySet().equals(Set.of("packageId","packageRevision","offset","operationId")))throw new IllegalArgumentException("DATA_PACK_ARGUMENTS");
@@ -172,7 +173,8 @@ public final class NativeDataPackRuntime implements AutoCloseable {
             int split=e.getKey().indexOf('/',5);var id=net.minecraft.resources.Identifier.fromNamespaceAndPath(e.getKey().substring(5,split),e.getKey().substring(split+1));
             var resource=server.getResourceManager().getResource(id).orElseThrow(()->new IllegalStateException("DATA_PACK_RESOURCE_NOT_SELECTED"));
             if(!resource.sourcePackId().equals(plan.packId()))throw new IllegalStateException("DATA_PACK_RESOURCE_OVERRIDDEN");
-            byte[] data;try(var in=resource.open()){data=in.readNBytes(4*1024*1024+1);}if(data.length!=e.getValue().size()||!RuntimePackageCanonicalizer.sha256(data).equals(e.getValue().sha256()))throw new IllegalStateException("DATA_PACK_RESOURCE_HASH");
+            byte[] data;try(var in=resource.open()){data=in.readNBytes(4*1024*1024+1);}
+            PackageSignatures.requireResource(plan.manifest(),e.getValue(),data);
         }
     }
     private void verifySavedConfiguration(List<String> enabled,List<String> disabled)throws Exception{var actual=savedConfiguration();if(!WorldReopenBootstrap.same(actual,enabled,disabled))throw new IllegalStateException("WORLD_REOPEN_SAVE_UNVERIFIED");}

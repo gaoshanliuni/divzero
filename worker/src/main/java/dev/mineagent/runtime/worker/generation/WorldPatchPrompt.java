@@ -13,7 +13,7 @@ public final class WorldPatchPrompt {
         for(var ref:base.resources().values().stream().filter(r->!r.path().startsWith("ui/")).sorted(Comparator.comparing(RuntimeResourceRef::path)).toList()){
             var file=new LinkedHashMap<String,Object>();file.put("path",ref.path());file.put("side",ref.side());file.put("mediaType",ref.mediaType());file.put("sha256",ref.sha256());file.put("size",ref.size());
             if(ref.path().endsWith(".java")||ref.path().endsWith(".cfg")||Set.of("application/javascript","text/javascript","application/json","text/plain").contains(ref.mediaType())){
-                if((size+=ref.size())>524288)throw new IllegalArgumentException("WORLD_PATCH_CONTEXT_BUDGET");var bytes=reader.read(ref.sha256());if(bytes.length!=ref.size()||!RuntimePackageCanonicalizer.sha256(bytes).equals(ref.sha256()))throw new IllegalArgumentException("WORLD_PATCH_SOURCE_INTEGRITY");file.put("content",new String(bytes,StandardCharsets.UTF_8));
+                if((size+=ref.size())>524288)throw new IllegalArgumentException("WORLD_PATCH_CONTEXT_BUDGET");var bytes=reader.read(ref.sha256());PackageSignatures.requireResource(base,ref,bytes);file.put("content",new String(bytes,StandardCharsets.UTF_8));
             }files.add(file);
         }
         if(base.activationMode()==ActivationMode.BOOT_EXTENSION)return """

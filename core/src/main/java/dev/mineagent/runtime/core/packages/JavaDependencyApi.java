@@ -14,7 +14,7 @@ public final class JavaDependencyApi {
     private static final ObjectMapper JSON=new ObjectMapper().enable(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
     private JavaDependencyApi(){}
     public record Snapshot(String graphHash,String sha256,int bytes){
-        public Snapshot{if(graphHash==null||!graphHash.matches("[a-f0-9]{64}")||sha256==null||!sha256.matches("[a-f0-9]{64}")||bytes<1||bytes>MAX_BYTES)throw new IllegalArgumentException("STUDIO_CODER_DEPENDENCY_API_REF");}
+        public Snapshot{if(!DependencyReceipt.readable(graphHash)||sha256==null||!sha256.matches("[a-f0-9]{64}")||bytes<1||bytes>MAX_BYTES)throw new IllegalArgumentException("STUDIO_CODER_DEPENDENCY_API_REF");}
     }
     public record Member(String kind,String name,String descriptor,String signature,int flags,List<String> exceptions){}
     public record Nesting(String outer,String sourceName,int flags){}
@@ -29,7 +29,7 @@ public final class JavaDependencyApi {
         for(var node:graph.nodes()){
             if(!permit.getAsBoolean())throw new IllegalStateException("STUDIO_CODER_CANCELLED_BEFORE_DISPATCH");
             byte[] image;try(var in=Files.newInputStream(content.pathFor(node.artifact()))){image=in.readNBytes(16*1024*1024+1);}
-            if(image.length>16*1024*1024||!RuntimePackageCanonicalizer.sha256(image).equals(node.artifact()))throw new IllegalStateException("JAVA_DEPENDENCY_ARTIFACT");
+            if(image.length>16*1024*1024)throw new IllegalStateException("JAVA_DEPENDENCY_ARTIFACT");
             var types=new ArrayList<Type>();
             try(var zip=new ZipInputStream(new java.io.ByteArrayInputStream(image))){ZipEntry entry;long expanded=0;int entries=0;
                 while((entry=zip.getNextEntry())!=null){
@@ -69,7 +69,7 @@ public final class JavaDependencyApi {
         }
         byte[] encoded=JSON.writeValueAsBytes(Map.of("schema",1,"graphHash",graph.fingerprint(),"kind","DECLARED_PUBLIC_PROTECTED_METADATA_NO_INITIALIZATION","packages",packages));
         if(encoded.length>MAX_BYTES)throw new IllegalStateException("STUDIO_CODER_DEPENDENCY_API_CONTEXT_LIMIT");
-        JavaDependencyArtifacts.verify(graph,verified.paths());if(!permit.getAsBoolean())throw new IllegalStateException("STUDIO_CODER_CANCELLED_BEFORE_DISPATCH");
+        verified.verify();if(!permit.getAsBoolean())throw new IllegalStateException("STUDIO_CODER_CANCELLED_BEFORE_DISPATCH");
         return new Snapshot(graph.fingerprint(),content.put(encoded).sha256(),encoded.length);
     }
     public static String read(Snapshot snapshot,JavaDependencyGraph graph,ContentAddressedStore content)throws Exception {

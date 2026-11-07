@@ -34,7 +34,10 @@ public final class ManagedClientResourcePackGuard {
             var store=LocalResourcePackStore.get(net.neoforged.fml.loading.FMLPaths.GAMEDIR.get());var a=store.get(file.getFileName().toString());
             if(!a.globalConsent()||!Path.of(a.directory()).toRealPath().equals(file.getParent().toRealPath()))throw new IllegalStateException("RESOURCE_PACK_LOCAL_CONSENT_REQUIRED");
             if(!a.state().equals("ENABLED")){var live=LIVE.get(a.filename());if(!a.state().equals("DISPATCHING")||live==null||!store.job(live).filter(j->j.phase().equals("DISPATCHING")&&j.input().filename().equals(a.filename())).isPresent())throw new IllegalStateException("RESOURCE_PACK_NOT_APPROVED");}
-            trusted(a);if(!a.environment().equals(environment().fingerprint()))throw new IllegalStateException("RESOURCE_PACK_ENVIRONMENT_CHANGED");byte[] bytes=ResourcePackPlan.readArchive(file);if(!RuntimePackageCanonicalizer.sha256(bytes).equals(a.archiveHash()))throw new IllegalStateException("RESOURCE_PACK_ARCHIVE_HASH");return new Snapshot(location,ResourcePackPlan.inspect(a.manifest()).snapshot(bytes));
+            trusted(a);if(!a.environment().equals(environment().fingerprint()))throw new IllegalStateException("RESOURCE_PACK_ENVIRONMENT_CHANGED");byte[] bytes=ResourcePackPlan.readArchive(file);
+            // The archive ID names the signed package version. Every extracted resource is
+            // authenticated by snapshot(); it is not a digest of the ZIP container.
+            return new Snapshot(location,ResourcePackPlan.inspect(a.manifest()).snapshot(bytes));
         }catch(Exception failure){throw new IllegalStateException("RESOURCE_PACK_OPEN_REJECTED",failure);}
     }
     public static Pack metadata(LocalResourcePackStore.Asset asset,byte[] archive)throws Exception{

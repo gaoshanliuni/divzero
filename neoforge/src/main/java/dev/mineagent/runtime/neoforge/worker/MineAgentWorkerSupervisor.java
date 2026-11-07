@@ -428,7 +428,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                     var context=result.payload().get("compileContext");if(!(context instanceof Map<?,?> map)||!snapshot.hash().equals(map.get("nativeClasspath"))||!inputSet.version().equals(map.get("sourceVersion")))throw new IllegalStateException("NATIVE_CLASSPATH_RESPONSE_CHANGED");
                     if(dependencies!=null){
                         if(!dependencies.receiptHash().equals(map.get("javaDependencies")))throw new IllegalStateException("JAVA_DEPENDENCY_RECEIPT");
-                        dev.mineagent.runtime.core.packages.JavaDependencyArtifacts.verify(dependencies,artifacts.paths());
+                        artifacts.verify();
                         if(Boolean.TRUE.equals(result.payload().get("success")))dev.mineagent.runtime.core.packages.JavaDependencyArtifacts.rejectCollisions(List.of(contentPath(String.valueOf(result.payload().get("sha256")))),artifacts.classOwners().keySet());
                         var local=new java.util.LinkedHashMap<String,Object>(result.payload());local.put("localDependencyClassOwners",artifacts.classOwners());
                         result=new WorkerEnvelope(result.protocolVersion(),result.requestId(),result.type(),local);

@@ -39,16 +39,21 @@ public record NativeCompilationSnapshot(int schema,String namespace,String physi
         }
         if(total!=classBytes||count!=classCount||!classes.containsKey("net/minecraft/server/MinecraftServer.class")||!classes.containsKey("net/neoforged/neoforge/common/NeoForge.class")||!classes.containsKey("dev/mineagent/runtime/api/packages/RuntimePackage.class"))throw new IllegalStateException("NATIVE_CLASSPATH_INCOMPLETE");synchronized(ORIGINALS){var originals=new HashMap<String,Path>();for(var module:modules)originals.put(module.sha256(),content.pathFor(module.sha256()));ORIGINALS.put(this,Map.copyOf(originals));}verifyMaterialized(result);return List.copyOf(result);
     }
+    private static com.fasterxml.jackson.databind.JsonNode receipt(Path jar)throws Exception{
+        try(var file=new JarFile(jar.toFile(),false)){
+            var entry=file.getJarEntry("META-INF/mineagent/compilation.json");if(entry==null)throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");
+            try(var in=file.getInputStream(entry)){byte[] bytes=in.readNBytes(2*1024*1024+1);if(bytes.length>2*1024*1024)throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT_LIMIT");return new ObjectMapper().enable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY).readTree(bytes);}
+        }
+    }
     public static void verifyReceipt(Path jar,String className,String sourceHash,String snapshot)throws Exception{
-        try(var file=new JarFile(jar.toFile(),false)){var entry=file.getJarEntry("META-INF/mineagent/compilation.json");if(entry==null)throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");byte[] bytes;try(var in=file.getInputStream(entry)){bytes=in.readNBytes(65537);}if(bytes.length>65536)throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");var value=new ObjectMapper().readTree(bytes);
-            if(!value.path("className").asText().equals(className)||!value.path("sourceSha256").asText().equals(sourceHash)||!value.path("nativeClasspath").asText().equals(snapshot))throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");}
+        verifyReceiptContext(receipt(jar),className,sourceHash,snapshot);
+    }
+    private static void verifyReceiptContext(com.fasterxml.jackson.databind.JsonNode value,String className,String sourceHash,String snapshot){
+        if(!value.path("className").asText().equals(className)||!value.path("sourceSha256").asText().equals(sourceHash)||!value.path("nativeClasspath").asText().equals(snapshot))throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");
     }
     public static void verifyReceipt(Path jar,String className,String sourceHash,String snapshot,String dependencies)throws Exception{
-        verifyReceipt(jar,className,sourceHash,snapshot);
-        try(var file=new JarFile(jar.toFile(),false);var in=file.getInputStream(file.getJarEntry("META-INF/mineagent/compilation.json"))){
-            var value=new ObjectMapper().readTree(in.readNBytes(65537));
-            if(!value.path("javaDependencies").asText("").equals(dependencies))throw new IllegalStateException("JAVA_DEPENDENCY_RECEIPT");
-        }
+        var value=receipt(jar);verifyReceiptContext(value,className,sourceHash,snapshot);
+        if(!value.path("javaDependencies").asText("").equals(dependencies))throw new IllegalStateException("JAVA_DEPENDENCY_RECEIPT");
     }
     private static final Map<NativeCompilationSnapshot,Map<String,Path>> ORIGINALS=new WeakHashMap<>();
     public void verifyMaterialized(List<Path> paths)throws Exception{Map<String,Path> originals;synchronized(ORIGINALS){originals=ORIGINALS.get(this);}if(originals==null)throw new IllegalStateException("NATIVE_CLASSPATH_NOT_MATERIALIZED");if(paths.size()!=modules.size())throw new IllegalStateException("NATIVE_CLASSPATH_PATH_COUNT");for(int i=0;i<paths.size();i++){var module=modules.get(i);byte[] image=read(paths.get(i),256*1024*1024);if(image.length!=module.size()||!Arrays.equals(image,read(originals.get(module.sha256()),256*1024*1024)))throw new IllegalStateException("NATIVE_CLASSPATH_SOURCE_CHANGED");}}
