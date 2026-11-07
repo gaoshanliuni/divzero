@@ -10,6 +10,17 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RealProviderSmokeAuditTest {
+    @Test void auditRetainsAnExplicitRequestIdentityWithoutContentDigest(@TempDir Path directory)throws Exception {
+        var first=RealProviderSmokeAudit.begin(directory,URI_REAL,body());
+        var started=JSON.readTree(directory.resolve("1-started.json").toFile());
+        UUID.fromString(started.path("requestId").asText());
+        assertFalse(started.has("requestSha256"));assertTrue(started.path("requestBytes").asInt()>0);
+        first.complete("deepseek-flash",null,List.of(),"private text");
+        assertEquals(started.path("requestId"),JSON.readTree(directory.resolve("1-completed.json").toFile()).path("requestId"));
+        var second=RealProviderSmokeAudit.begin(directory,URI_REAL,body());
+        assertNotEquals(started.path("requestId"),JSON.readTree(directory.resolve("2-started.json").toFile()).path("requestId"));
+        second.complete("deepseek-flash",null,List.of(),"private text");
+    }
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final URI URI_REAL = URI.create("https://api.deepseek.com/v1/chat/completions");
     private ObjectNode body(){return JSON.createObjectNode().put("model","deepseek-flash").put("stream",true).put("privatePrompt","never-log-this");}

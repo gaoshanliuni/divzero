@@ -59,7 +59,7 @@ final class RealProviderSmokeAudit {
         evidence.put("endpoint", uri.toString());
         evidence.put("requestedModel", body.path("model").asText());
         evidence.put("requestBytes", request.length);
-        evidence.put("requestSha256", HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(request)));
+        evidence.put("requestId", UUID.randomUUID().toString());
         evidence.put("outputLimitMode", "PROVIDER_DEFAULT_NOT_SET");
         evidence.put("thinkingEnabled", "enabled".equals(body.path("thinking").path("type").asText()));
         evidence.put("reasoningEffort",body.path("reasoning_effort").asText(""));

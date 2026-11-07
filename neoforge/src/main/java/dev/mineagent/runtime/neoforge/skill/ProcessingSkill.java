@@ -123,7 +123,7 @@ final class ProcessingSkill {
                 long availableBurn = Math.max(0, lit) + (long)existingFuel.getCount() * existingFuel.getBurnTime(recipe.getType(), body.level().fuelValues());
                 long neededBurn = Math.max(0L, recipe.cookingTime() - availableBurn);
                 int fuelUnits = neededBurn == 0 || fuel == null ? 0 : (int)((neededBurn - 1) / fuel.getItem().getBurnTime(recipe.getType(), body.level().fuelValues()) + 1);
-                if (neededBurn > 0 && (fuel == null || fuel.getItem().getCount() < fuelUnits || !existingFuel.isEmpty() && !ItemStack.isSameItemSameComponents(existingFuel, fuel.getItem())
+                if (neededBurn > 0 && (fuel == null || fuel.getItem().getCount() < fuelUnits + (fuel == input ? 1 : 0) || !existingFuel.isEmpty() && !ItemStack.isSameItemSameComponents(existingFuel, fuel.getItem())
                         || fuelUnits > menu.getSlot(1).getMaxStackSize(fuel.getItem()) - existingFuel.getCount())) {
                     w.confirm("NOT_EXECUTED_FUEL_MISSING", Map.of("recipe", holder.id().identifier().toString())); w.waitFor("PROCESS_FUEL_REQUIRED", 40); return;
                 }

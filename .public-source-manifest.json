@@ -1634,8 +1634,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolExecutionTraits.java",
-      "resourceId": "c1a50d34-230d-4ab3-8bae-4b3e675fad21",
-      "bytes": 2484
+      "resourceId": "70537e23-4220-4064-85a1-abfda3fee3af",
+      "bytes": 2524
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolFailure.java",
@@ -5314,8 +5314,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "bc871c15-c920-43ce-b61c-37be77a7af6e",
-      "bytes": 263996
+      "resourceId": "872c5622-b83e-4d2f-a8d3-30fc95fba76d",
+      "bytes": 264062
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5609,8 +5609,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBehaviorPanel.java",
-      "resourceId": "b841c264-9b94-4aec-a128-a741bc1ef59d",
-      "bytes": 33385
+      "resourceId": "163e8709-9117-4020-97d8-156d9c07e540",
+      "bytes": 33564
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",
@@ -7174,8 +7174,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ProcessingSkill.java",
-      "resourceId": "06943057-ce12-4f9e-98fc-f58fe6c12fa6",
-      "bytes": 16551
+      "resourceId": "4b6430a3-a3eb-49d7-8312-b8460ee4984d",
+      "bytes": 16577
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpConsent.java",
@@ -9269,8 +9269,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/RealProviderSmokeAudit.java",
-      "sha256": "d82fcb49020ad031590669cfc90227bfe86c55601b603b90849293afe3e55bd1",
-      "bytes": 6853
+      "resourceId": "1a88a8fa-4e7d-43cf-855c-faf562391a0c",
+      "bytes": 6785
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/ScheduleDeliverySchemas.java",
@@ -9614,8 +9614,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/RealProviderSmokeAuditTest.java",
-      "sha256": "5b353a36a9f995f2c48c1e700df976ccbc3a22a081f9de8add9bb4c7bc690ee0",
-      "bytes": 6277
+      "resourceId": "6c019560-2027-4f69-a539-ce9680e24963",
+      "bytes": 7198
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/StreamingToolCallsTest.java",
@@ -9650,5 +9650,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6ec7c8dbedd36d78aba0264efad8cf6d83cb6018"
+  "sourceCommit": "d32301c673fb5d2f6e5bd4e6ee5ff865e961776a"
 }

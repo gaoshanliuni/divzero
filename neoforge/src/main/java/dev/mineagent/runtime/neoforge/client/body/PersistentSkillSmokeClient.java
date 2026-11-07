@@ -1067,13 +1067,13 @@ public final class PersistentSkillSmokeClient {
             long placed=0,smelted=0,crafted=0,stored=0,received=0;for(var run:value.path("runs"))for(var step:run.path("steps")){var counters=step.path("observed").path("counters");placed+=counters.path("constructionBlocksPlaced").asLong();smelted+=counters.path("smeltedItems").asLong();crafted+=counters.path("craftedItems").asLong();stored+=counters.path("storedItems").asLong();received+=counters.path("handoffReceived").asLong();}
             require(placed>=100&&smelted>=8&&crafted>=20&&stored>=4&&received>=40,"REAL_MODEL_NATIVE_EVIDENCE_INCOMPLETE_"+value);EVIDENCE.add(value);return true;
         }));
-        action("real-model-armor-and-material-world-proof",()->server(p->{
+        action("real-model-armor-and-material-world-proof",()->server(p->{try{
             var contents=new LinkedHashMap<String,Integer>();int chests=0,stone=0,glass=0,planks=0;for(var at:BlockPos.betweenClosed(10,101,5,20,106,15)){var block=p.level().getBlockState(at);if(block.is(Blocks.CHEST)){chests++;var c=(net.minecraft.world.Container)p.level().getBlockEntity(at);for(int i=0;i<c.getContainerSize();i++){var stack=c.getItem(i);if(!stack.isEmpty())contents.merge(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),stack.getCount(),Integer::sum);}}if(block.is(Blocks.STONE))stone++;if(block.is(Blocks.GLASS))glass++;if(block.is(Blocks.OAK_PLANKS))planks++;}
             require(chests>=1&&stone>=4&&glass>=4&&planks>=40,"REAL_MODEL_ROOM_MATERIALS_MISSING");for(String armor:List.of("diamond_helmet","diamond_chestplate","diamond_leggings","diamond_boots"))require(contents.getOrDefault("minecraft:"+armor,0)==1,"REAL_MODEL_ARMOR_NOT_STORED_"+armor);
             require(body(p).getInventory().countItem(Items.STICK)>=4,"REAL_MODEL_STICKS_NOT_CRAFTED");
             var store=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(p.level().getServer()).store();var peers=store.peers(p.getUUID(),agent,0);require(peers.size()>=2,"REAL_MODEL_PEER_DIALOGUE_MISSING");for(var peer:peers)require(store.messages(p.getUUID(),peer.recipient(),peer.conversationId(),0,8).messages().size()>=2,"REAL_MODEL_PEER_REPLY_MISSING");
             p.teleportTo(p.level(),15.5,110,23.5,Set.of(),180,28,true);return Map.of("actualChestContents",contents,"chests",chests,"stoneBlocks",stone,"glassBlocks",glass,"planksBlocks",planks,"peerThreads",peers,"modelEvidence","real-provider-audit and real-cooperation-tools.jsonl");
-        }));
+        }catch(Exception error){throw new CompletionException(error);}}));
         action("real-model-room-screenshot",()->{screen("deepseek-cooperative-room");return CompletableFuture.completedFuture(true);});
     }
     private static void nativeProduction(){
