@@ -3503,6 +3503,11 @@
       "bytes": 2479
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/packages/ClientDependencyGraphTest.java",
+      "resourceId": "27ed5fda-6960-43fd-8e71-bf6ccbaaf4bb",
+      "bytes": 1761
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/CodeSourceVersionTest.java",
       "resourceId": "55f0775e-1d46-4907-b465-07e038f903a7",
       "bytes": 3662
@@ -9415,5 +9420,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "41e65934217560fb59abeff2f1c985f4f1a969c1"
+  "sourceCommit": "00cf638d51887df4d70eca87bb41a6def47a70c8"
 }
