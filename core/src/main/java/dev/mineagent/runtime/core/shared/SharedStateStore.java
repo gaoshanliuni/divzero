@@ -85,7 +85,7 @@ public final class SharedStateStore implements AutoCloseable {
     private String address(String key,String subject){return key+"/"+subject;}
     private Namespace owned(Context c)throws Exception{var n=load(c.scope());if(n==null)throw new IllegalStateException("SHARED_NAMESPACE_MISSING");if(!n.owner().equals(c.owner()))throw new SecurityException("SHARED_OWNER_MISMATCH");return n;}
     private String fingerprint(Context c,String method,Object arguments)throws Exception{
-        byte[] bytes=SharedJson.JSON.writeValueAsBytes(List.of(c,method,arguments));return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes));
+        return dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.encode(List.of(c,method,arguments));
     }
     /** Definition/migration requires the owning package's trusted management context. Existing data is never coerced. */
     public synchronized Receipt define(Context c,UUID operation,long expectedRevision,String schemaJson)throws Exception{

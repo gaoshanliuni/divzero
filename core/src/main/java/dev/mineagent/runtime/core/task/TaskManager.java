@@ -21,7 +21,7 @@ import java.util.UUID;
 
 public final class TaskManager implements AutoCloseable {
     private static final String NAMESPACE = "tasks";
-    private final SqliteRuntimeRepository repository;
+    private final SqliteRuntimeRepository repository;private final Path database;
     private final UUID worldId;
     private final Clock clock;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -31,8 +31,8 @@ public final class TaskManager implements AutoCloseable {
     public AutoCloseable onChange(java.util.function.Consumer<ManagedTask> listener){java.util.Objects.requireNonNull(listener);changeListeners.add(listener);return ()->changeListeners.remove(listener);}
     private void notifyChanged(ManagedTask task){for(var listener:changeListeners)try{listener.accept(task);}catch(RuntimeException failure){System.getLogger(TaskManager.class.getName()).log(System.Logger.Level.WARNING,"Task listener failed: "+failure.getClass().getSimpleName());}}
 
-    private TaskManager(SqliteRuntimeRepository repository, UUID worldId, Clock clock) throws Exception {
-        this.repository = repository;
+    private TaskManager(SqliteRuntimeRepository repository, UUID worldId, Clock clock,Path database) throws Exception {
+        this.repository = repository;this.database=database.toAbsolutePath().normalize();
         this.worldId = worldId;
         this.clock = clock;
         repository.initializeTaskRetention(worldId);
@@ -42,7 +42,7 @@ public final class TaskManager implements AutoCloseable {
     public static TaskManager open(Path database, UUID worldId, Clock clock) throws Exception {
         var repository = new SqliteRuntimeRepository(database);
         try {
-            return new TaskManager(repository, worldId, clock);
+            return new TaskManager(repository, worldId, clock,database);
         } catch (Exception failure) {
             repository.close();
             throw failure;
@@ -72,7 +72,7 @@ public final class TaskManager implements AutoCloseable {
         var request=new java.util.TreeMap<String,Object>();request.put("agent",agentId);request.put("owner",ownerPlayerId);request.put("title",title.strip());request.put("priority",priority);
         request.put("plan",plan.stream().map(s->{var value=new java.util.TreeMap<String,Object>();value.put("id",s.stepId());value.put("dependencies",s.dependencies().stream().sorted().toList());return value;}).toList());
         if(parent!=null)request.put("budgetParent",List.of(parent.taskId(),parent.intent(),parent.relation()));
-        String fingerprint=dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(mapper.writeValueAsBytes(request));
+        String fingerprint=dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.encode(request);
         String payload=mapper.writeValueAsString(java.util.Map.of("fingerprint",fingerprint));var old=repository.getIncludingDeleted(worldId,"task_start_requests",taskId.toString());
         if(old.isPresent()){if(old.get().deleted())throw new IllegalStateException("TASK_CREATION_REMOVED");if(!old.get().payload().equals(payload))throw new IllegalArgumentException("TASK_OPERATION_REUSED");}
         else{
@@ -115,7 +115,7 @@ public final class TaskManager implements AutoCloseable {
         for(String code:List.of("TASK_RETAINED_ROW_BUDGET","TASK_RETAINED_BYTE_BUDGET","TASK_ACTIVE_BUDGET","TASK_START_LEDGER_FULL","TASK_BUDGET_TASK_MISSING","TASK_BUDGET_PARENT_CONTEXT","TASK_BUDGET_PARENT_CHANGED","TASK_BUDGET_LINEAGE_DEPTH"))if(message.contains(code))throw new IllegalStateException(code,failure);
         return failure;
     }
-    public UUID startTaskId(UUID owner,UUID operation){return UUID.nameUUIDFromBytes(("task-start|"+worldId+"|"+java.util.Objects.requireNonNull(owner)+"|"+java.util.Objects.requireNonNull(operation)).getBytes(java.nio.charset.StandardCharsets.UTF_8));}
+    public UUID startTaskId(UUID owner,UUID operation){return dev.mineagent.runtime.core.persistence.AssignedTaskIds.resolve(database,worldId,owner,operation);}
     public record ReplanSource(String fingerprint,ManagedTask original,String goal,String note){}
     public synchronized Optional<ReplanSource> replanSource(UUID taskId)throws Exception{
         var row=repository.getIncludingDeleted(worldId,"task_replan_sources",taskId.toString());if(row.isPresent()&&row.get().deleted())throw new IllegalStateException("TASK_REPLAN_SOURCE_REMOVED");return row.isEmpty()?Optional.empty():Optional.of(mapper.readValue(row.get().payload(),ReplanSource.class));
@@ -124,7 +124,7 @@ public final class TaskManager implements AutoCloseable {
     public synchronized ManagedTask createReplanned(UUID operation,UUID owner,UUID sourceId,long expectedRevision,String goal,String note)throws Exception{
         var current=require(sourceId);if(!current.ownerPlayerId().equals(owner))throw new SecurityException("TASK_OWNER");
         if(goal==null||goal.isBlank()||goal.strip().codePointCount(0,goal.strip().length())>256||note==null||note.length()>2048)throw new IllegalArgumentException("REPLAN_INPUT_INVALID");
-        UUID id=startTaskId(owner,operation);String fingerprint=dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(mapper.writeValueAsBytes(List.of(sourceId,expectedRevision,goal.strip(),note.strip(),owner)));
+        UUID id=startTaskId(owner,operation);String fingerprint=dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.encode(List.of(sourceId,expectedRevision,goal.strip(),note.strip(),owner));
         var stored=replanSource(id);
         if(stored.isPresent()&&!stored.get().fingerprint().equals(fingerprint))throw new IllegalArgumentException("TASK_OPERATION_REUSED");
         var existing=get(id).orElse(null);if(stored.isPresent()&&existing!=null)return existing;

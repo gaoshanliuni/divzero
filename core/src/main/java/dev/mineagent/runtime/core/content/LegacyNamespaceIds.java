@@ -3,6 +3,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;import java.nio.file.*;import
 /** User-approved ONE-TIME migration of old namespace identifiers. Never accepts or hashes file contents. */
 public final class LegacyNamespaceIds {
  public enum Kind { DIALOGUE_MEMORY, BLOCK_TEXTURE_SCOPE, UI_STATE_SCOPE }
+ /** Used only under AssignedTaskIds' durable migration transaction when old request records exist. */
+ public static UUID taskStartIdForMigration(UUID world,UUID owner,UUID operation){Objects.requireNonNull(world);Objects.requireNonNull(owner);Objects.requireNonNull(operation);return UUID.nameUUIDFromBytes(("task-start|"+world+"|"+owner+"|"+operation).getBytes(StandardCharsets.UTF_8));}
  private record Mapping(String id,boolean migrated){}
  private static final ObjectMapper JSON=new ObjectMapper();private static final Map<Path,Object> LOCKS=new java.util.concurrent.ConcurrentHashMap<>();
  public static String resolve(Path indexRoot,Kind kind,String originalScope,java.util.function.Predicate<String> legacyExists)throws IOException{

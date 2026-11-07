@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "f47f0d7d-83dd-4b81-81f4-0804f73745cc",
-      "bytes": 2353
+      "resourceId": "107205ac-6c99-4351-8cb8-4b73c4c07ea6",
+      "bytes": 2384
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1429,8 +1429,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/LegacyNamespaceIds.java",
-      "resourceId": "096c2e2f-befe-4212-bf72-4a0dcad866ee",
-      "bytes": 3873
+      "resourceId": "72068e5d-5640-4ec8-abae-a42feb5ab874",
+      "bytes": 4264
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ResourceFileLock.java",
@@ -1739,8 +1739,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/events/RuntimeEventStore.java",
-      "sha256": "9b7d4ac8086ba7d16c1123e4d8be33dbce7f188d2c24af6a82aa0a506e03ba7e",
-      "bytes": 74659
+      "resourceId": "6921c4e4-9d82-43cf-be98-b709a170fd7b",
+      "bytes": 74657
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/events/ScoreEventFilter.java",
@@ -2283,9 +2283,19 @@
       "bytes": 934
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/AssignedTaskIds.java",
+      "resourceId": "5dfd8674-562d-4fc3-acee-c81cd12f6dd4",
+      "bytes": 4980
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/AuditRecord.java",
       "sha256": "8469efa3f4c6a6d9225677ae52ce5ff915fd72a63d6e277327720da64521151f",
       "bytes": 277
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/ExactRequestSnapshot.java",
+      "resourceId": "e687e61d-0f90-4ded-827e-7aadf73c8bc1",
+      "bytes": 805
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/JavaStudioPersistence.java",
@@ -2394,8 +2404,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scheduling/PersistentScheduleStore.java",
-      "sha256": "2f7adc021fdedc7c259ba1ffa31175bb99d05438eecf24f5a921687f170a7aab",
-      "bytes": 50650
+      "resourceId": "751b0bce-e78c-4e94-8a3a-7af11fe53397",
+      "bytes": 50573
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scheduling/ScheduleDeliveryConsumer.java",
@@ -2569,8 +2579,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/shared/SharedStateStore.java",
-      "sha256": "fadcacff4b0ccbfb843e11942979e7c5d7ac05055084480d7d5f551106acb6c3",
-      "bytes": 47678
+      "resourceId": "bdaf369b-de6e-4add-8fc9-c0e67e89c66b",
+      "bytes": 47607
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/shared/SharedStateTarget.java",
@@ -2819,8 +2829,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/TaskManager.java",
-      "sha256": "e57d1c9781ed9f1d896ffdc31868003a4c85ca31d403a2471892b89a7522767b",
-      "bytes": 24727
+      "resourceId": "1d84b80b-aa31-45db-b87c-008340851deb",
+      "bytes": 24677
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/TaskResultFence.java",
@@ -3461,6 +3471,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/permission/WorldActivationTest.java",
       "sha256": "c1ed44371921e9c08789ebf8e4f9f7aa028ac28e1f360ffa84f0c00fe5691247",
       "bytes": 4036
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/AssignedTaskIdsTest.java",
+      "resourceId": "5736a548-fde0-4117-b268-3e6303210c38",
+      "bytes": 1932
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/NewWorldIdentityTest.java",
@@ -9255,5 +9270,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "3dfe2c95aff4b45df5233226c74af37d1659cec5"
+  "sourceCommit": "f5e100e85db74e928df1af72ec6e277df7c40000"
 }
