@@ -19,6 +19,7 @@ public final class NativePackageViews {
     private static final Map<String,View> VIEWS=new LinkedHashMap<>();
     private static Object connection,level,player;private static long tick;
     private static final class View {
+        final dev.mineagent.runtime.core.content.ObservationTokens observationIds=new dev.mineagent.runtime.core.content.ObservationTokens(64,4*1024*1024);
         final String id,document=UUID.randomUUID().toString();final PackagePreviewTransfer.Resolved asset;final InterfaceSession<LdInterfaceRenderer.Rendered> content;
         NativePackageDefinition definition;NativePackageResources resources;Session session;Transport transport;WorkspaceWindow window;NativeWorkspaceScreen host;HudScreen projection;boolean ready,blocked,closed,visible=true,observedVisibility;long paintedTick=-1,culledTick=-1,lifecycle=1;
         String hostDocument=UUID.randomUUID().toString(),layoutSignature="",layoutSource="PLAYER";long layoutRevision=1,layoutSaveAt,presentAfter,presentDeadline;double opacity=1;boolean savingPresentation;CompletableFuture<com.google.gson.JsonObject> presentation;dev.mineagent.runtime.core.ui.UiPresentationAction presentAction;boolean agentDispatch;Map<String,Object> sealedDraft;final Set<String> refreshing=new HashSet<>();final Map<String,Long> nextRead=new HashMap<>();final Set<String> reading=new HashSet<>();final Map<String,UUID> writes=new HashMap<>();String error="";
@@ -217,7 +218,7 @@ public final class NativePackageViews {
     }
     public static void refresh(String id,String action){var view=VIEWS.get(id);if(view==null)return;for(var read:view.definition.reads().entrySet())if(read.getValue().action().equals(action))view.nextRead.put(read.getKey(),0L);}
     public static void refreshWorld(String id){var view=VIEWS.get(id);if(view==null)return;for(var read:view.definition.reads().entrySet())if(read.getValue().action().equals("worldui.read")){view.refreshing.add(read.getKey());view.nextRead.put(read.getKey(),0L);}}
-    public static String identity(String id){var view=require(id);return dev.mineagent.runtime.api.ui.UiCapture.sha256((view.document+"|"+view.content.revision()+"|"+view.content.dataRevision()+"|"+inspect(id).get("viewport")+"|"+inspect(id).get("elements")).getBytes(StandardCharsets.UTF_8));}
+    public static String identity(String id){var view=require(id);var state=inspect(id);return view.observationIds.token(view.document+"|"+view.content.revision()+"|"+view.content.dataRevision()+"|"+state.get("viewport")+"|"+state.get("elements"));}
     public static CompletableFuture<NativeViewCapture.Captured> capture(String id){
         try{var view=require(id);if(!rendered(id))throw new IllegalStateException("VIEW_NOT_RENDERED");if(view.content.rendered().popupOpen())throw new IllegalStateException("VIEW_POPUP_ACTIVE");var sensitive=new boolean[1];InterfaceDefinition.walk(view.definition.view().root(),n->{if(secret(n)&&view.definition.view().interactiveNode(n.path("id").asText(),view.content.data()))sensitive[0]=true;});if(sensitive[0])throw new SecurityException("SENSITIVE_VIEW");
             String expected=identity(id);var root=view.content.rendered().root;int width=(int)Math.ceil(root.getSizeWidth()),height=(int)Math.ceil(root.getSizeHeight());

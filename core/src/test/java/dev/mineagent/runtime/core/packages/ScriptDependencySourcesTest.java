@@ -19,7 +19,7 @@ class ScriptDependencySourcesTest {
     @Test void capturesEveryVerifiedFileAsDataAndSurvivesRecordSerialization()throws Exception {
         var store=new ContentAddressedStore(temporary);var source=context(Map.of("main.js","throw new Error('must not evaluate');","helper.js","({privateImplementation: 7});"),store);
         var snapshot=source.capture(store,()->true);String json=source.read(snapshot,store);
-        assertTrue(json.contains("must not evaluate"));assertTrue(json.contains("privateImplementation"));assertTrue(json.contains(source.graph().fingerprint()));
+        assertTrue(json.contains("must not evaluate"));assertTrue(json.contains("privateImplementation"));assertEquals(source.graph().fingerprint(),new com.fasterxml.jackson.databind.ObjectMapper().readTree(json).path("graphHash").asText());
         var mapper=new com.fasterxml.jackson.databind.ObjectMapper();assertEquals(source,mapper.readValue(mapper.writeValueAsBytes(source),ScriptDependencySources.class));
         assertEquals(json,new String(store.read(snapshot.sha256()),java.nio.charset.StandardCharsets.UTF_8));
     }

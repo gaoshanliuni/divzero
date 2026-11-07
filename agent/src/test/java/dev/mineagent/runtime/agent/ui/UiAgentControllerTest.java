@@ -14,8 +14,8 @@ class UiAgentControllerTest {
     }
     @Test void coordinateActionKeepsTheModelsOriginalCaptureIdentityAndPixelCoordinates()throws Exception{
         var calls=new AtomicInteger();var acts=new AtomicInteger();String viewport="{\"width\":1,\"height\":1}";var id=java.util.UUID.randomUUID();
-        var image=dev.mineagent.runtime.api.ui.UiCapture.image(id,"doc",dev.mineagent.runtime.api.ui.UiCapture.sha256(viewport.getBytes(java.nio.charset.StandardCharsets.UTF_8)),"0".repeat(64),0,0,1,1,java.util.Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lZsAAAAASUVORK5CYII="));
-        var port=new UiAgentController.Port(){public CompletableFuture<String> inspect(){return CompletableFuture.completedFuture("{\"status\":\"OBSERVED\",\"documentId\":\"doc\",\"viewport\":"+viewport+"}");}
+        var image=dev.mineagent.runtime.api.ui.UiCapture.image(id,"doc","2".repeat(64),"0".repeat(64),0,0,1,1,java.util.Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lZsAAAAASUVORK5CYII="));
+        var port=new UiAgentController.Port(){public CompletableFuture<String> inspect(){return CompletableFuture.completedFuture("{\"status\":\"OBSERVED\",\"documentId\":\"doc\",\"observationId\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"viewportId\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"viewport\":"+viewport+"}");}
             public CompletableFuture<dev.mineagent.runtime.api.ui.UiCapture.Image> capture(){return CompletableFuture.completedFuture(image);}
             public CompletableFuture<String> act(String a){try{var n=new com.fasterxml.jackson.databind.ObjectMapper().readTree(a);assertEquals(id.toString(),n.path("captureId").asText());assertEquals(0.4,n.path("x").asDouble());assertEquals(0.3,n.path("y").asDouble());acts.incrementAndGet();return CompletableFuture.completedFuture("{\"status\":\"APPLIED_DOM\"}");}catch(Exception e){throw new AssertionError(e);}}
             public void cancel(){}public void onInterrupt(Runnable r){}
@@ -27,8 +27,8 @@ class UiAgentControllerTest {
     @Test void interruptedOrStaleCaptureObservationNeverReachesTheImageProvider()throws Exception{
         for(String status:java.util.List.of("USER_INTERRUPTED","STALE_VIEW")){
             var calls=new AtomicInteger();var captured=new java.util.concurrent.atomic.AtomicBoolean();String viewport="{\"width\":1,\"height\":1}";
-            var image=dev.mineagent.runtime.api.ui.UiCapture.image(java.util.UUID.randomUUID(),"d",dev.mineagent.runtime.api.ui.UiCapture.sha256(viewport.getBytes(java.nio.charset.StandardCharsets.UTF_8)),"0".repeat(64),0,0,1,1,java.util.Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lZsAAAAASUVORK5CYII="));
-            var port=new UiAgentController.Port(){public CompletableFuture<String> inspect(){return CompletableFuture.completedFuture("{\"status\":\""+(captured.get()?status:"OBSERVED")+"\",\"documentId\":\"d\",\"viewport\":"+viewport+"}");}
+            var image=dev.mineagent.runtime.api.ui.UiCapture.image(java.util.UUID.randomUUID(),"d","2".repeat(64),"0".repeat(64),0,0,1,1,java.util.Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lZsAAAAASUVORK5CYII="));
+            var port=new UiAgentController.Port(){public CompletableFuture<String> inspect(){return CompletableFuture.completedFuture("{\"status\":\""+(captured.get()?status:"OBSERVED")+"\",\"documentId\":\"d\",\"observationId\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"viewportId\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"viewport\":"+viewport+"}");}
                 public CompletableFuture<dev.mineagent.runtime.api.ui.UiCapture.Image> capture(){captured.set(true);return CompletableFuture.completedFuture(image);}public CompletableFuture<String> act(String a){throw new AssertionError("no action");}public void cancel(){}public void onInterrupt(Runnable r){}
             };
             try(var controller=new UiAgentController(port,model(r->calls.incrementAndGet()==1?"{\"action\":\"capture\"}":"{\"action\":\"done\"}"))){
@@ -39,8 +39,8 @@ class UiAgentControllerTest {
     @Test void captureFeedsAnActualImageToTheNextModelRequestWithoutLoggingItsBytes()throws Exception{
         var calls=new AtomicInteger();var writes=new AtomicInteger();String viewport="{\"width\":1,\"height\":1}";
         byte[] png=java.util.Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lZsAAAAASUVORK5CYII=");
-        var image=dev.mineagent.runtime.api.ui.UiCapture.image(java.util.UUID.randomUUID(),"d",dev.mineagent.runtime.api.ui.UiCapture.sha256(viewport.getBytes(java.nio.charset.StandardCharsets.UTF_8)),"0".repeat(64),0,0,1,1,png);
-        var port=new UiAgentController.Port(){public CompletableFuture<String> inspect(){return CompletableFuture.completedFuture("{\"status\":\"OBSERVED\",\"documentId\":\"d\",\"viewport\":"+viewport+"}");}
+        var image=dev.mineagent.runtime.api.ui.UiCapture.image(java.util.UUID.randomUUID(),"d","2".repeat(64),"0".repeat(64),0,0,1,1,png);
+        var port=new UiAgentController.Port(){public CompletableFuture<String> inspect(){return CompletableFuture.completedFuture("{\"status\":\"OBSERVED\",\"documentId\":\"d\",\"observationId\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"viewportId\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"viewport\":"+viewport+"}");}
             @Override public CompletableFuture<dev.mineagent.runtime.api.ui.UiCapture.Image> capture(){return CompletableFuture.completedFuture(image);}
             public CompletableFuture<String> act(String a){writes.incrementAndGet();return CompletableFuture.completedFuture("{\"status\":\"APPLIED_DOM\"}");}public void cancel(){}public void onInterrupt(Runnable r){}
         };

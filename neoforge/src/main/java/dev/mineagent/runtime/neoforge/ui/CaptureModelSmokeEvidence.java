@@ -15,7 +15,7 @@ public final class CaptureModelSmokeEvidence {
         if(!Boolean.getBoolean("mineagent.captureAgentSmoke")||request.images().isEmpty())return 0;
         try{
             int index=sequence.incrementAndGet();Path root=server.getServerDirectory().resolve("capture-model-evidence").resolve(task.toString());Files.createDirectories(root);
-            var image=request.images().getFirst();String sha=UiCapture.sha256(image.bytes());Files.write(root.resolve("image-"+sha+".png"),image.bytes());
+            var image=request.images().getFirst();String sha=dev.mineagent.runtime.api.packages.ResourceIds.create();Files.write(root.resolve("image-"+sha+".png"),image.bytes());
             Files.writeString(root.resolve("request-"+index+".json"),new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(Map.of("taskId",task,"configuredModel",configuredModel,
                     "imageSha256",sha,"bytes",image.bytes().length,"width",image.width(),"height",image.height(),"prompt",request.prompt(),"mode","ACTUAL_CAPTURE_RPC_TO_WORKER_IMAGE_INPUT")));
             return index;

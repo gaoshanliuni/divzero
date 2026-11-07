@@ -85,7 +85,7 @@ public final class ContentDeliveryClient {
             try{
                 var current=PackageContentClient.session(e.launch.viewId());if(!ReadOnlyUiLease.sameContext(context,current)||lifecycle!=PackageContentClient.lifecycle(e.launch.viewId())){e.painting=false;return;}
                 if(data!=null&&(data.read().lifecycle()!=lifecycle||!data.document().equals(shot.documentId()))){if(e.data==data)e.data=null;e.painting=false;return;}
-                var args=new LinkedHashMap<>(identity(e));args.put("documentId",shot.documentId());args.put("layoutHash",dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(shot.layoutIdentity().getBytes(StandardCharsets.UTF_8)));args.put("paintSequence",Long.toString(++e.sequence));
+                var args=new LinkedHashMap<>(identity(e));args.put("documentId",shot.documentId());args.put("layoutHash",shot.layoutIdentity());args.put("paintSequence",Long.toString(++e.sequence));
                 if(data!=null){args.put("dataRevision",Long.toString(data.read().revision()));args.put("dataSha256",data.read().sha256());}
                 UiClientSessions.command("delivery.painted",args,UUID.randomUUID()).whenComplete((r,fail)->mc.execute(()->{
                     e.painting=false;var live=PackageContentClient.session(e.launch.viewId());if(entries.get(e.launch.viewId())!=e||e.closed||!ReadOnlyUiLease.sameContext(context,live)||lifecycle!=PackageContentClient.lifecycle(e.launch.viewId()))return;

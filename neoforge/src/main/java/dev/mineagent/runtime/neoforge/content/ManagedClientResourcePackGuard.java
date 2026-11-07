@@ -26,7 +26,7 @@ public final class ManagedClientResourcePackGuard {
     public static void trusted(LocalResourcePackStore.Asset asset)throws Exception{
         Path root=net.neoforged.fml.loading.FMLPaths.GAMEDIR.get();var trust=new ServerTrustStore(root.resolve("config/mineagent-trusted-servers.properties"));
         if(!trust.trustedFingerprint(asset.serverId()).equals(asset.fingerprint()))throw new IllegalStateException("RESOURCE_PACK_TRUST_CHANGED");ResourcePackPlan.verify(asset.manifest(),(value,sig)->trust.verify(asset.serverId(),value,sig));
-        String filename=ResourcePackPlan.inspect(asset.manifest()).filename(LocalResourcePackStore.publisher(asset.serverId(),asset.fingerprint()));if(!filename.equals(asset.filename()))throw new IllegalStateException("RESOURCE_PACK_IDENTITY");
+        String filename=ResourcePackPlan.inspect(asset.manifest()).filename(LocalResourcePackStore.get(root).publisher(asset.serverId(),asset.fingerprint()));if(!filename.equals(asset.filename()))throw new IllegalStateException("RESOURCE_PACK_IDENTITY");
         var check=NativeCompatibilityPolicy.check(asset.manifest(),environment(),"CLIENT");if(!check.allowed())throw new IllegalStateException(check.code());
     }
     private static PackResources open(Path file,PackLocationInfo location){

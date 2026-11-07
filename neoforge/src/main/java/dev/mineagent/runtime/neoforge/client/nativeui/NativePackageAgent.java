@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 /** Observes only a single native content root. The workspace and permission controls are never targets. */
 public final class NativePackageAgent {
     private static final Gson JSON=new Gson();
+    private static final dev.mineagent.runtime.core.content.ObservationTokens VIEWPORTS=new dev.mineagent.runtime.core.content.ObservationTokens(256,1024*1024);
     private static final Map<String,Port> controls=new HashMap<>();
     private NativePackageAgent(){}
     public static UiAgentController.Port control(String id,boolean presentationOnly){
@@ -23,6 +24,7 @@ public final class NativePackageAgent {
     public static CompletableFuture<String> inspect(String id){return onClient(()->CompletableFuture.completedFuture(observe(id).toString()));}
     private static JsonObject observe(String id){
         var result=JSON.toJsonTree(NativePackageViews.inspect(id)).getAsJsonObject();if(!result.get("status").getAsString().equals("OBSERVED"))throw new IllegalStateException("VIEW_NOT_RENDERED");
+        result.addProperty("viewportId",VIEWPORTS.token(result.getAsJsonObject("viewport").toString()));
         result.add("hostPresentation",UiPresentationClient.observe(id));result.addProperty("observationId",NativePackageViews.identity(id));result.addProperty("title",NativePackageViews.asset(id).runtimePackage().name());
         if(result.toString().length()>60000)throw new IllegalStateException("NATIVE_OBSERVATION_BUDGET");return result;
     }
@@ -41,9 +43,9 @@ public final class NativePackageAgent {
         @Override public CompletableFuture<String> inspectPresentation(){return inspect();}
         @Override public CompletableFuture<UiCapture.Image> capture(){
             if(presentationOnly)return CompletableFuture.failedFuture(new SecurityException("PRESENTATION_ONLY"));
-            return inspect().thenCompose(ignored->onClient(()->NativePackageViews.capture(id))).thenApply(shot->{current();image=UiCapture.image(UUID.randomUUID(),shot.documentId(),viewport(),UiCapture.sha256(shot.layoutIdentity().getBytes(StandardCharsets.UTF_8)),shot.frameX(),shot.frameY(),shot.scaleX(),shot.scaleY(),shot.png());deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(120);return image;});
+            return inspect().thenCompose(ignored->onClient(()->NativePackageViews.capture(id))).thenApply(shot->{current();if(!shot.layoutIdentity().equals(observation.get("observationId").getAsString()))throw new IllegalStateException("STALE_CAPTURE");image=UiCapture.image(UUID.randomUUID(),shot.documentId(),viewport(),shot.layoutIdentity(),shot.frameX(),shot.frameY(),shot.scaleX(),shot.scaleY(),shot.png());deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(120);return image;});
         }
-        String viewport(){return UiCapture.sha256(observation.getAsJsonObject("viewport").toString().getBytes(StandardCharsets.UTF_8));}
+        String viewport(){return observation.get("viewportId").getAsString();}
         @Override public CompletableFuture<String> act(String encoded){return onClient(()->{
             current();var action=JsonParser.parseString(encoded).getAsJsonObject();String operation=action.get("operationId").getAsString();UUID.fromString(operation);
             var old=operations.get(operation);if(old!=null)return old.action.equals(encoded)?old.result:CompletableFuture.completedFuture("{\"status\":\"OPERATION_ID_REUSED\"}");
@@ -60,7 +62,7 @@ public final class NativePackageAgent {
         });}
         CompletableFuture<String> coordinate(JsonObject action){
             var captured=image;if(captured==null||System.nanoTime()>=deadline)throw new IllegalStateException("STALE_CAPTURE");var manifest=captured.manifest();
-            var point=dev.mineagent.runtime.client.webui.UiCaptureCoordinates.point(manifest,UUID.fromString(action.get("captureId").getAsString()),action.get("x").getAsDouble(),action.get("y").getAsDouble(),document,viewport(),UiCapture.sha256(NativePackageViews.identity(id).getBytes(StandardCharsets.UTF_8)));
+            var point=dev.mineagent.runtime.client.webui.UiCaptureCoordinates.point(manifest,UUID.fromString(action.get("captureId").getAsString()),action.get("x").getAsDouble(),action.get("y").getAsDouble(),document,viewport(),NativePackageViews.identity(id));
             JsonObject target=null;for(var entry:observation.getAsJsonArray("elements")){var element=entry.getAsJsonObject();var b=element.getAsJsonObject("bounds");if(element.get("visible").getAsBoolean()&&!element.get("disabled").getAsBoolean()&&!element.get("sensitive").getAsBoolean()&&point.x()>=b.get("x").getAsDouble()&&point.y()>=b.get("y").getAsDouble()&&point.x()<b.get("x").getAsDouble()+b.get("width").getAsDouble()&&point.y()<b.get("y").getAsDouble()+b.get("height").getAsDouble())target=element;}
             if(target==null)throw new IllegalStateException("NOT_INTERACTABLE");var selected=target;var b=target.getAsJsonObject("bounds");var bounds=new dev.mineagent.runtime.client.webui.UiCaptureCoordinates.Bounds(b.get("x").getAsDouble(),b.get("y").getAsDouble(),b.get("width").getAsDouble(),b.get("height").getAsDouble());
             return NativePackageViews.capture(id).thenCompose(fresh->PackageViewCapture.sameTarget(captured.png().bytes(),fresh.png(),manifest,bounds)).thenCompose(same->onClient(()->{

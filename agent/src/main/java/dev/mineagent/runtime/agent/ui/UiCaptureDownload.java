@@ -7,7 +7,7 @@ import java.util.Base64;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-/** Sequential bounded transport with exact id/index/size/hash validation, no browser assumptions on the server. */
+/** Sequential bounded transport with exact capture/version/index/size validation over authenticated session RPC, no browser assumptions on the server. */
 public final class UiCaptureDownload {
     private UiCaptureDownload(){}
     public static CompletableFuture<UiCapture.Image> download(UiCapture.Manifest manifest,IntFunction<CompletableFuture<UiCapture.Chunk>> source,BooleanSupplier cancelled,Duration timeout){

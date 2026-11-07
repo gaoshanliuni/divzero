@@ -27,7 +27,14 @@ public final class LocalResourcePackStore implements AutoCloseable {
         }catch(Exception failure){if(connection!=null)connection.close();if(acquired!=null)acquired.release();channel.close();throw failure;}
     }
     public Path cacheDirectory(){return root.resolve("mineagent-runtime-data/client-resource-cache");}
-    public static String publisher(String server,String fingerprint)throws Exception{return RuntimePackageCanonicalizer.sha256(RuntimePackageCanonicalizer.stableJson(Map.of("server",server,"fingerprint",fingerprint)));}
+    public synchronized String publisher(String server,String fingerprint)throws Exception{
+        if(server==null||server.isBlank()||server.length()>512||fingerprint==null||!fingerprint.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("CLIENT_PUBLISHER_SCOPE");
+        var identityStore=new dev.mineagent.runtime.core.content.ContentAddressedStore(root.resolve("mineagent-runtime-data/client-publisher-identities"));
+        return identityStore.namedKeyId("publisher",List.of(server,fingerprint),()->{
+            var known=assets.values().stream().filter(a->a.serverId().equals(server)&&a.fingerprint().equals(fingerprint)).map(a->{int start=ResourcePackPlan.PREFIX.length();return a.filename().substring(start,start+64);}).distinct().toList();
+            if(known.size()>1)throw new IllegalStateException("CLIENT_PUBLISHER_IDENTITY_CONFLICT");return known.isEmpty()?null:known.getFirst();
+        });
+    }
     public synchronized Asset get(String filename){var value=assets.get(filename);if(value==null)throw new IllegalStateException("RESOURCE_PACK_NOT_CACHED");return value;}
     public synchronized List<Asset> list(){return List.copyOf(assets.values());}
     public synchronized Optional<Job> job(UUID id)throws Exception{try(var q=db.prepareStatement("SELECT payload FROM resource_jobs_v1 WHERE id=?")){q.setString(1,id.toString());try(var r=q.executeQuery()){return r.next()?Optional.of(json.readValue(r.getString(1),Job.class)):Optional.empty();}}}
@@ -58,5 +65,5 @@ public final class LocalResourcePackStore implements AutoCloseable {
     private void write(Asset a)throws Exception{String raw=json.writeValueAsString(a);try(var q=db.prepareStatement("INSERT INTO resource_assets_v1 VALUES(?,?,?,?) ON CONFLICT(filename) DO UPDATE SET payload=excluded.payload,bytes=excluded.bytes")){q.setString(1,a.filename());q.setString(2,raw);q.setInt(3,raw.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);q.setLong(4,ResourcePackPlan.inspect(a.manifest()).bytes());q.executeUpdate();}}
     private void write(Job j)throws Exception{String raw=json.writeValueAsString(j);if(raw.length()>65536)throw new IllegalStateException("RESOURCE_PACK_JOB_BUDGET");try(var q=db.prepareStatement("INSERT INTO resource_jobs_v1 VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,phase=excluded.phase,bytes=excluded.bytes,updated=excluded.updated")){q.setString(1,j.input().operation().toString());q.setString(2,j.input().filename());q.setString(3,raw);q.setString(4,j.phase());q.setInt(5,raw.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);q.setLong(6,System.currentTimeMillis());q.executeUpdate();}}
     private long aggregate(String table,String expression)throws SQLException{try(var q=db.prepareStatement("SELECT "+expression+" FROM "+table);var r=q.executeQuery()){return r.next()?r.getLong(1):0;}}
-    @Override public synchronized void close()throws Exception{db.close();lock.release();channel.close();}
+    @Override public synchronized void close()throws Exception{db.close();lock.release();channel.close();synchronized(LocalResourcePackStore.class){OPEN.remove(root,this);}}
 }

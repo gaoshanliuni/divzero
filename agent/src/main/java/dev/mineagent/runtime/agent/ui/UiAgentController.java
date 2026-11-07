@@ -178,8 +178,8 @@ public final class UiAgentController implements AutoCloseable {
         var capture=lastCapture;if(capture==null)return List.of();
         try{
             var value=json.readTree(observation);var m=capture.manifest();
-            String viewport=dev.mineagent.runtime.api.ui.UiCapture.sha256(value.path("viewport").toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            if(!value.path("status").asText().equals("OBSERVED")||!m.documentId().equals(value.path("documentId").asText())||!m.viewportHash().equals(viewport))throw new IllegalStateException("STALE_CAPTURE");
+            String viewport=value.path("viewportId").asText();
+            if(!value.path("status").asText().equals("OBSERVED")||!m.documentId().equals(value.path("documentId").asText())||!m.viewportHash().equals(viewport)||!m.layoutHash().equals(value.path("observationId").asText()))throw new IllegalStateException("STALE_CAPTURE");
             return List.of(capture.png());
         }catch(java.io.IOException invalid){throw new IllegalStateException("STALE_CAPTURE");}
     }

@@ -4,14 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.ContextFactory;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 
 /** Acorn parses browser ECMAScript as data. Rhino executes only the pinned trusted parser, never the target source. */
 public final class BrowserScriptPreflight {
-    private static final String HASH = "fdb08546776ec6228b03e8d02b40d4ab3255bae5f401adba7ff5dad927ac5c9c";
     private static final String PARSER = loadParser();
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final String INSPECT = """
@@ -84,10 +81,9 @@ public final class BrowserScriptPreflight {
     private static String loadParser() {
         try (var in = BrowserScriptPreflight.class.getResourceAsStream("acorn-8.15.0.js")) {
             if (in == null) throw new IllegalStateException("MISSING_ACORN");
-            byte[] bytes = in.readAllBytes();
-            if (!HASH.equals(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes))))
-                throw new IllegalStateException("ACORN_HASH_MISMATCH");
+            byte[] bytes = in.readNBytes(1024*1024+1);
+            if(bytes.length==0||bytes.length>1024*1024)throw new IllegalStateException("ACORN_RESOURCE_SIZE");
             return new String(bytes, StandardCharsets.UTF_8);
-        } catch (Exception failure) { throw new IllegalStateException("Cannot load verified Acorn parser", failure); }
+        } catch (Exception failure) { throw new IllegalStateException("Cannot load bundled Acorn 8.15.0 parser", failure); }
     }
 }
