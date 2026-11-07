@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "8b96cf40-c8ba-4cc1-94d8-d69f8a31012f",
-      "bytes": 5135
+      "resourceId": "86530a8c-12cf-41a1-90fa-75b8448e8ef2",
+      "bytes": 5172
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1391,6 +1391,11 @@
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ModelCapabilityProfiles.java",
       "resourceId": "3f185784-2e4d-45c7-b917-fbbc5740e7a7",
       "bytes": 3457
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/config/ModelCapabilityTarget.java",
+      "resourceId": "f913f2ed-4300-4a0b-93f9-064c3ee5aec5",
+      "bytes": 2275
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/NativeSecretPayload.java",
@@ -3213,6 +3218,11 @@
       "bytes": 2932
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/config/ModelCapabilityTargetTest.java",
+      "resourceId": "1954294c-24a6-401e-ba03-a2587c709034",
+      "bytes": 2186
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/NativeSecretPayloadTest.java",
       "resourceId": "7d8cd975-3a2d-44ab-b609-372a91d19d1c",
       "bytes": 1178
@@ -3979,8 +3989,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "a9ec980c-79bb-4c33-bc84-75db4afd2b4b",
-      "bytes": 6513
+      "resourceId": "2dd93694-893d-49d9-b73d-2521e094c51f",
+      "bytes": 9214
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -7794,8 +7804,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerModelCapabilities.java",
-      "resourceId": "f97e735d-dcd8-46d3-b14b-2979807306aa",
-      "bytes": 6800
+      "resourceId": "50a0a5c5-beb7-44f8-a4f1-fa3979b0f7f5",
+      "bytes": 6649
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerNativeInterfaceRestore.java",
@@ -9470,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "f21e61023859c5a6fb8b16a5f49bc3ee0e128655"
+  "sourceCommit": "409db192bfaf4e6f5b99fda6baf9c4374e6fbdde"
 }
