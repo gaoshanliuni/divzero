@@ -67,11 +67,23 @@ public final class AudienceStore implements AutoCloseable {
     private boolean samePrincipal(Context a,Context b){return a.scope().worldId().equals(b.scope().worldId())&&a.scope().ownerId().equals(b.scope().ownerId())&&a.scope().agentId().equals(b.scope().agentId());}
     private String base(Context c){var s=c.scope();return s.worldId()+"|"+s.ownerId()+"|"+s.agentId()+"|"+s.taskId()+"|"+s.intentRevision();}
     private String fingerprint(Context c,String kind,Object request)throws Exception{return hash(base(c)+"|"+kind+"|"+json.writeValueAsString(request));}
-    private static String hash(String value)throws Exception{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}
-    private static UUID id(String prefix,UUID world,UUID operation){return UUID.nameUUIDFromBytes((prefix+"|"+world+"|"+operation).getBytes(StandardCharsets.UTF_8));}
+    private static String hash(String value)throws Exception{return dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.encode(value);}
     private void active(Definition d,long expected){if(d.revision()!=expected)throw new IllegalStateException("AUDIENCE_REVISION_CHANGED");if(!d.state().equals("ACTIVE"))throw new IllegalStateException("AUDIENCE_REVOKED");if(clock.millis()>=d.expiresAt())throw new IllegalStateException("AUDIENCE_EXPIRED");}
     private Definition owned(Context c,UUID audience)throws Exception{var d=definition(audience);if(d==null||!d.worldId().equals(world)||!d.ownerId().equals(c.scope().ownerId())||!d.agentId().equals(c.scope().agentId()))throw new SecurityException("AUDIENCE_NOT_OWNED");return d;}
-    private Operation prior(Context c,String kind,Object request)throws Exception{var old=op(c.operationId());if(old!=null&&!old.fingerprint().equals(fingerprint(c,kind,request)))throw new IllegalArgumentException("AUDIENCE_OPERATION_REUSED");return old;}
+    private Operation prior(Context c,String kind,Object request)throws Exception{
+        var old=op(c.operationId());if(old==null)return null;String expected=fingerprint(c,kind,request);
+        if(dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.legacy(old.fingerprint())){
+            Object original;
+            if(old.kind().equals("RESOLVE")){var snapshot=snapshot(old.subjectId());if(snapshot==null)throw new IllegalStateException("AUDIENCE_LEGACY_REQUEST_INPUT_UNAVAILABLE_INSPECT_RECEIPT");original=List.of(snapshot.audienceId(),snapshot.definitionRevision(),snapshot.triggerId());}
+            else if(Set.of("CREATE","REVOKE").contains(old.kind())&&old.state().equals("APPLIED")&&!old.result().isEmpty()){
+                var definition=json.readValue(old.result(),Definition.class);
+                if(!definition.audienceId().equals(old.subjectId()))throw new IllegalStateException("AUDIENCE_LEGACY_RECEIPT_CONFLICT");
+                original=old.kind().equals("CREATE")?new Create(definition.mode(),definition.query(),Math.toIntExact((definition.expiresAt()-definition.createdAt())/1000)):List.of(definition.audienceId(),definition.revision()-1);
+            }else throw new IllegalStateException("AUDIENCE_LEGACY_REQUEST_INPUT_UNAVAILABLE_INSPECT_RECEIPT");
+            if(!old.kind().equals(kind)||!fingerprint(old.context(),old.kind(),original).equals(expected))throw new IllegalArgumentException("AUDIENCE_OPERATION_REUSED");
+            old=new Operation(old.operationId(),old.kind(),old.context(),expected,old.state(),old.subjectId(),old.result(),old.error(),old.createdAt());writeOperation(old);
+        }else if(!old.fingerprint().equals(expected))throw new IllegalArgumentException("AUDIENCE_OPERATION_REUSED");return old;
+    }
     private void budget(String table,int maximum)throws Exception{RetainedRows.requireCapacity(db,world,table);if(RetainedRows.usage(db,world,table).hot()>=maximum)archive(table,null,null);if(RetainedRows.usage(db,world,table).hot()>=maximum)throw new IllegalStateException("AUDIENCE_STORAGE_BUDGET");}
     private int archive(String table,UUID owner,UUID agent)throws Exception{
         String condition=table.equals("mineagent_audience_definitions_v1")?" AND (state='REVOKED' OR expires_at<=?)":table.equals("mineagent_audience_snapshots_v1")?" AND state IN ('RESOLVED','FAILED','INTERRUPTED')":" AND state IN ('APPLIED','FAILED','INTERRUPTED')";
@@ -84,7 +96,7 @@ public final class AudienceStore implements AutoCloseable {
         authorize(c);return tx(()->{authorize(c);var old=prior(c,"CREATE",request);if(old!=null)return new PreparedCreate(old,request,false);
             budget("mineagent_audience_operations_v1",8192);budget("mineagent_audience_definitions_v1",4096);
             ownerBudget(c);
-            var operation=new Operation(c.operationId(),"CREATE",c,fingerprint(c,"CREATE",request),"PENDING",id("audience",world,c.operationId()),"","",clock.millis());writeOperation(operation);return new PreparedCreate(operation,request,true);});
+            var operation=new Operation(c.operationId(),"CREATE",c,fingerprint(c,"CREATE",request),"PENDING",UUID.randomUUID(),"","",clock.millis());writeOperation(operation);return new PreparedCreate(operation,request,true);});
     }
     public synchronized Definition create(Context c,Create request)throws Exception{
         var prepared=beginCreate(c,request);if(!prepared.dispatch()){applied(prepared.operation());return owned(c,prepared.operation().subjectId());}
@@ -104,7 +116,7 @@ public final class AudienceStore implements AutoCloseable {
             budget("mineagent_audience_operations_v1",8192);var existing=trigger(audience,trigger);
             if(existing!=null){if(existing.definitionRevision()!=expected||!base(existing.context()).equals(base(c)))throw new IllegalArgumentException("AUDIENCE_TRIGGER_CONTEXT_REUSED");
                 String state=existing.state().equals("RESOLVED")?"APPLIED":existing.state().equals("RESOLVING")?"LINKED":existing.state();var operation=new Operation(c.operationId(),"RESOLVE",c,fingerprint(c,"RESOLVE",request),state,existing.snapshotId(),json.writeValueAsString(existing),existing.error(),clock.millis());writeOperation(operation);return new PreparedResolve(operation,d,existing,false);}
-            budget("mineagent_audience_snapshots_v1",4096);UUID snapshotId=id("audience-snapshot",world,c.operationId());
+            budget("mineagent_audience_snapshots_v1",4096);UUID snapshotId=UUID.randomUUID();
             var snapshot=new Snapshot(snapshotId,audience,trigger,expected,c,"RESOLVING",List.of(),0,d.expiresAt(),"");var operation=new Operation(c.operationId(),"RESOLVE",c,fingerprint(c,"RESOLVE",request),"PENDING",snapshotId,"","",clock.millis());writeSnapshot(snapshot);writeOperation(operation);return new PreparedResolve(operation,d,snapshot,true);
         });
     }

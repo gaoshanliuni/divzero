@@ -69,13 +69,16 @@ public final class PersistentScheduleStore implements AutoCloseable {
     private void authorize(Context c){if(!world.equals(c.scope().worldId()))throw new SecurityException("SCHEDULE_WORLD_MISMATCH");port.authorize(c);}
     private Definition owned(Context c,UUID id)throws Exception{var d=definition(id);if(d==null||!d.creator().scope().ownerId().equals(c.scope().ownerId())||!d.creator().scope().agentId().equals(c.scope().agentId()))throw new SecurityException("SCHEDULE_NOT_OWNED");return d;}
     private String fingerprint(Context c,String kind,Object value)throws Exception{var s=c.scope();return dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.encode(Arrays.asList(world,s.ownerId(),s.agentId(),s.taskId(),s.intentRevision(),kind,value));}
-    private UUID stable(String prefix,String id){return UUID.nameUUIDFromBytes((world+"|"+prefix+"|"+id).getBytes(StandardCharsets.UTF_8));}
     public synchronized Definition create(Context c,ScheduleSpec spec)throws Exception{
-        authorize(c);return tx(()->{authorize(c);String fp=fingerprint(c,"CREATE",spec);var old=operation(c.operation());if(old!=null){if(!old.fingerprint().equals(fp))throw new IllegalArgumentException("SCHEDULE_OPERATION_REUSED");return owned(c,old.scheduleId());}
+        authorize(c);return tx(()->{authorize(c);String fp=fingerprint(c,"CREATE",spec);var old=operation(c.operation());if(old!=null){var previous=owned(c,old.scheduleId());
+                if(dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.legacy(old.fingerprint())){
+                    if(!previous.creator().operation().equals(c.operation())||!fingerprint(old.context(),"CREATE",previous.spec()).equals(fp))throw new IllegalArgumentException("SCHEDULE_LEGACY_REQUEST_INPUT_UNAVAILABLE_INSPECT_RECEIPT");
+                    try(var update=db.prepareStatement("UPDATE mineagent_schedule_operations_v1 SET payload=? WHERE world=? AND id=?")){update.setString(1,json.writeValueAsString(new Operation(old.context(),fp,old.scheduleId())));update.setString(2,world.toString());update.setString(3,c.operation().toString());if(update.executeUpdate()!=1)throw new IllegalStateException("SCHEDULE_MIGRATION_CONFLICT");}
+                }else if(!old.fingerprint().equals(fp))throw new IllegalArgumentException("SCHEDULE_OPERATION_REUSED");return previous;}
             budget("mineagent_schedule_operations_v1",8192);budget("mineagent_schedules_v1",128);if(ownerHotCount(c)>=32){archiveDefinitions(c.scope().ownerId(),c.scope().agentId(),128);if(ownerHotCount(c)>=32)throw new IllegalStateException("SCHEDULE_OWNER_BUDGET");}
             long now=wall.getAsLong(),tick=ticks.getAsLong(),start=spec.kind().startsWith("WALL")?(spec.atMillis()==null?Math.addExact(now,spec.delay()):spec.atMillis()):spec.kind().startsWith("TICK")?Math.addExact(tick,spec.delay()):0;
             long last=spec.kind().startsWith("WALL")?Math.addExact(start,Math.multiplyExact(spec.period(),spec.maxOccurrences()-1)):now;long expires=Math.addExact(last,spec.ttlMillis());
-            var d=new Definition(stable("schedule",c.operation().toString()),c,spec,start,expires,-1,tick,0,0,"ACTIVE",1,"");
+            var d=new Definition(UUID.randomUUID(),c,spec,start,expires,-1,tick,0,0,"ACTIVE",1,"");
             if((spec.script()!=null||spec.push()!=null||spec.delivery()!=null)&&port.authority(d)==null)throw new SecurityException("SCHEDULE_SCRIPT_TARGET_UNAVAILABLE");
             if(spec.kind().equals("EVENT_CONDITION")){var initial=port.signal(d);if(!spec.initiallyMatched())d=update(d,-1,tick,initial.sequence(),0,"ACTIVE",1,"");}
             writeDefinition(d);writeOperation(c.operation(),new Operation(c,fp,d.id()));authorize(c);if((spec.script()!=null||spec.push()!=null||spec.delivery()!=null)&&port.authority(d)==null)throw new SecurityException("SCHEDULE_SCRIPT_TARGET_UNAVAILABLE");return d;});
@@ -105,7 +108,7 @@ public final class PersistentScheduleStore implements AutoCloseable {
                         if(d.spec().kind().endsWith("PERIODIC")&&d.spec().missedPolicy().equals("SKIP")&&time-due>(d.spec().kind().startsWith("WALL")?d.spec().lateness():0)){writeDefinition(update(d,index,tick,condition,skipped+1,d.state(),d.revision(),"SKIPPED_LATE"));continue;}}
                 }}
             if(index<0)continue;
-            budget("mineagent_schedule_occurrences_v1",8192);UUID id=stable("occurrence",d.id()+"|"+index);UUID task=(d.spec().mode().equals("AGENT_WAKE")||d.spec().delivery()!=null)?dev.mineagent.runtime.core.persistence.AssignedTaskIds.resolve(database,world,d.creator().scope().ownerId(),id):null;
+            budget("mineagent_schedule_occurrences_v1",8192);UUID id=UUID.randomUUID();UUID task=(d.spec().mode().equals("AGENT_WAKE")||d.spec().delivery()!=null)?dev.mineagent.runtime.core.persistence.AssignedTaskIds.resolve(database,world,d.creator().scope().ownerId(),id):null;
             writeOccurrence(new Occurrence(id,d.id(),index,d.revision(),signal,d.spec().delivery()!=null?"DELIVERY_QUEUED":d.spec().push()!=null?"PUSH_QUEUED":d.spec().script()!=null?"SCRIPT_QUEUED":task==null?"RECORDED":"QUEUED",authority,task,0,d.spec().maxModelCalls(),due,now,""));writeDefinition(update(d,index,tick,condition,skipped,d.state(),d.revision(),""));
         }return null;});}
     private Definition update(Definition d,long cursor,long tick,long condition,int skipped,String state,long revision,String error){return new Definition(d.id(),d.creator(),d.spec(),d.start(),d.expires(),cursor,tick,condition,skipped,state,revision,error);}
@@ -141,7 +144,7 @@ public final class PersistentScheduleStore implements AutoCloseable {
         var selected=List.copyOf(targets);if(selected.size()>32||selected.stream().map(s->s.sessionId()).distinct().count()!=selected.size())throw new IllegalArgumentException("SCHEDULE_PUSH_RECIPIENT_BUDGET");
         tx(()->{var o=occurrence(id);if(o==null||!o.state().equals("PUSH_DISPATCHING")||!valid(o))throw new SecurityException("SCHEDULE_PUSH_STALE");var d=definition(o.scheduleId());var destination=Objects.requireNonNull(d.spec().push());
             for(var session:selected){var b=session.binding();if(!dev.mineagent.runtime.api.ui.WorldUiProtocol.bound(b)||!b.worldId().equals(world)||!b.ownerPackageId().equals(destination.packageId())||b.packageRevision()!=destination.packageRevision()||!b.entryPath().equals(destination.entryPath())||!b.targetObjectId().equals("world:"+destination.instanceId())||session.status()!=dev.mineagent.runtime.api.ui.UiProtocol.Status.RENDERED)throw new SecurityException("SCHEDULE_PUSH_TARGET_SCOPE");}
-            for(var session:selected){budget("mineagent_schedule_push_v1",8192);UUID delivery=stable("schedule-state-push",id+"|"+session.sessionId()+"|"+session.pageGeneration()+"|"+session.controlEpoch());long at=wall.getAsLong();writePush(new PushDelivery(delivery,id,d.id(),session,"PLANNED",at,Math.min(Math.min(at+15000,session.expiresAtMillis()),d.expires()),0,0,0,""));}
+            for(var session:selected){budget("mineagent_schedule_push_v1",8192);UUID delivery=UUID.randomUUID();long at=wall.getAsLong();writePush(new PushDelivery(delivery,id,d.id(),session,"PLANNED",at,Math.min(Math.min(at+15000,session.expiresAtMillis()),d.expires()),0,0,0,""));}
             writeOccurrence(change(o,selected.isEmpty()?"PUSH_NO_RECIPIENTS":"PUSH_WAITING",""));return null;
         });
     }
@@ -221,6 +224,10 @@ public final class PersistentScheduleStore implements AutoCloseable {
             try(var query=db.prepareStatement("INSERT INTO mineagent_schedule_management_v1(world,id,payload) VALUES(?,?,?)")){query.setString(1,world.toString());query.setString(2,operation.toString());query.setString(3,json.writeValueAsString(new ManagementOperation(context.owner(),fp,receipt)));query.executeUpdate();}
             management(context,d,action.equals("ACTIVE"));return new ManagementResult(receipt,false,d.state(),d.revision());
         });
+    }
+    public synchronized UUID deliveryStageId(UUID id,String stage)throws Exception{
+        if(!Set.of("audience","offer").contains(stage))throw new IllegalArgumentException("SCHEDULE_DELIVERY_STAGE");
+        return tx(()->{var value=occurrence(id);if(value==null||!value.state().equals("DELIVERY_DISPATCHING"))throw new IllegalStateException("SCHEDULE_DELIVERY_NOT_DISPATCHING");return dev.mineagent.runtime.core.persistence.SqlScopeIds.resolve(db,world,"schedule_delivery_stage",id+"|"+stage,null);});
     }
     public synchronized Definition definitionForRuntime(UUID id)throws Exception{return definition(id);}
     public synchronized List<Occurrence> bindings()throws Exception{return allOccurrences().stream().filter(o->o.taskId()!=null).toList();}

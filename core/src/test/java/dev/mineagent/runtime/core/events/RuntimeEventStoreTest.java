@@ -40,7 +40,16 @@ class RuntimeEventStoreTest {
             var event=event();store.ingest(event);var changed=new RuntimeEventStore.Event(event.id(),world,epoch,event.source(),owner,event.subject(),event.occurredAt()+1,null,List.of());assertThrows(IllegalArgumentException.class,()->store.ingest(changed));}
     }
     @Test void backpressureAndCausalCyclesAreVisibleAndDoNotCreateExtraTasks()throws Exception{
-        try(var store=open()){var sub=store.subscribe(context(UUID.randomUUID()),request("AGENT_WAKE",4,1));var first=event();var cycle=new RuntimeEventStore.Event(first.id(),world,epoch,first.source(),owner,first.subject(),now.get(),null,List.of(sub.id()));store.ingest(cycle);assertEquals("CYCLE_REJECTED",store.triggers(context(UUID.randomUUID()),sub.id()).getFirst().state());store.ingest(event());store.ingest(event());assertEquals("PAUSED",store.inspect(context(UUID.randomUUID()),sub.id()).state());assertTrue(store.triggers(context(UUID.randomUUID()),sub.id()).stream().anyMatch(t->t.state().equals("BACKPRESSURE")));assertTrue(store.claim().isEmpty());}
+        try(var store=open()){
+            var sub=store.subscribe(context(UUID.randomUUID()),request("AGENT_WAKE",4,1));var first=event();
+            var cycle=new RuntimeEventStore.Event(first.id(),world,epoch,first.source(),owner,first.subject(),now.get(),null,List.of(sub.id()));
+            store.ingest(cycle);assertEquals("CYCLE_REJECTED",store.triggers(context(UUID.randomUUID()),sub.id()).getFirst().state());
+            store.ingest(event());store.ingest(event());
+            // Per-event queue pressure records the rejected wake; it does not revoke the already queued task.
+            assertEquals("ACTIVE",store.inspect(context(UUID.randomUUID()),sub.id()).state());var rows=store.triggers(context(UUID.randomUUID()),sub.id());
+            assertEquals(1,rows.stream().filter(t->t.state().equals("BACKPRESSURE")).count());assertEquals(1,rows.stream().filter(t->t.state().equals("QUEUED")).count());
+            assertTrue(store.claim().isPresent());assertTrue(store.claim().isEmpty());
+        }
     }
     @Test void oldEventsAreNotRetroactivelyConsumedAndExpiredSubscriptionsCannotWake()throws Exception{
         try(var store=open()){var old=event();store.ingest(old);var sub=store.subscribe(context(UUID.randomUUID()),request("AGENT_WAKE",2,4));store.ingest(old);assertTrue(store.triggers(context(UUID.randomUUID()),sub.id()).isEmpty());now.set(4_000_000);store.ingest(event());assertTrue(store.claim().isEmpty());}

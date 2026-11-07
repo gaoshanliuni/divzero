@@ -41,7 +41,7 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         configureConversationThinking(baseUri,model,body,thinkingLevel);
         var messages=body.putArray("messages");
         if(structuredMessages.isEmpty()){var message=messages.addObject();message.put("role","user");content(message,request);}
-        else for(var value:structuredMessages)messages.add(mapper.valueToTree(ConversationMessageAdapter.adapt(value,baseUri,model,body.path("thinking").path("type").asText().equals("enabled"))));
+        else {for(var value:structuredMessages)messages.add(mapper.valueToTree(ConversationMessageAdapter.adapt(value,baseUri,model,body.path("thinking").path("type").asText().equals("enabled"))));attachImages(messages,request);}
         if (!tools.isEmpty()) {
             var toolArray = body.putArray("tools");
             for (ToolDefinition tool : tools) {
@@ -144,10 +144,10 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
         configureConversationThinking(baseUri,model,body,thinkingLevel);
         var wireMessages=body.putArray("messages");
         if(messages.isEmpty()){var message=wireMessages.addObject();message.put("role","user");content(message,request);}
-        else for(var value:messages){
+        else {for(var value:messages){
             String role=String.valueOf(value.get("role"));if(!java.util.Set.of("system","developer","user","assistant","tool").contains(role))throw new IllegalArgumentException("MODEL_MESSAGE_ROLE");
             var message=mapper.valueToTree(ConversationMessageAdapter.adapt(value,baseUri,model,body.path("thinking").path("type").asText().equals("enabled")));wireMessages.add(message);
-        }
+        }attachImages(wireMessages,request);}
         if(!tools.isEmpty()){
             var declarations=body.putArray("tools");for(var tool:tools){try{var fn=declarations.addObject().put("type","function").putObject("function");fn.put("name",tool.name());fn.put("description",tool.description());fn.set("parameters",mapper.readTree(tool.parametersJson()));}catch(Exception invalid){throw new IllegalArgumentException("TOOL_SCHEMA",invalid);}}
         }
@@ -253,6 +253,18 @@ public final class OpenAiCompatibleProvider extends AbstractHttpModelProvider {
     private static void content(com.fasterxml.jackson.databind.node.ObjectNode message,ModelRequest request){
         if(request.images().isEmpty()){message.put("content",request.prompt());return;}
         var parts=message.putArray("content");parts.addObject().put("type","text").put("text",request.prompt());
+        for(var image:request.images())parts.addObject().put("type","image_url").putObject("image_url")
+                .put("url","data:"+image.mimeType()+";base64,"+java.util.Base64.getEncoder().encodeToString(image.bytes())).put("detail","high");
+    }
+    /** Attach request pixels without replacing layered instructions, user text or paired tool messages. */
+    private static void attachImages(com.fasterxml.jackson.databind.node.ArrayNode messages,ModelRequest request){
+        if(request.images().isEmpty())return;
+        com.fasterxml.jackson.databind.node.ObjectNode target=null;
+        for(int i=messages.size()-1;i>=0;i--)if(messages.get(i).path("role").asText().equals("user")){target=(com.fasterxml.jackson.databind.node.ObjectNode)messages.get(i);break;}
+        if(target==null){target=messages.addObject().put("role","user");target.put("content",request.prompt());}
+        var prior=target.get("content");com.fasterxml.jackson.databind.node.ArrayNode parts;
+        if(prior!=null&&prior.isArray())parts=(com.fasterxml.jackson.databind.node.ArrayNode)prior;
+        else{if(prior!=null&&!prior.isNull()&&!prior.isTextual())throw new IllegalArgumentException("MODEL_IMAGE_MESSAGE_CONTENT");parts=target.putArray("content");if(prior!=null&&prior.isTextual())parts.addObject().put("type","text").put("text",prior.asText());}
         for(var image:request.images())parts.addObject().put("type","image_url").putObject("image_url")
                 .put("url","data:"+image.mimeType()+";base64,"+java.util.Base64.getEncoder().encodeToString(image.bytes())).put("detail","high");
     }

@@ -1739,8 +1739,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/directory/AudienceStore.java",
-      "sha256": "4eee884406b75987815d3cca2bdefbe5ff3951fed81cc0ae15523317e87bcd81",
-      "bytes": 26125
+      "resourceId": "c0757a0a-17e7-4883-b35c-f3bcc453c039",
+      "bytes": 27371
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/directory/AudienceToolRequest.java",
@@ -2469,8 +2469,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scheduling/PersistentScheduleStore.java",
-      "resourceId": "751b0bce-e78c-4e94-8a3a-7af11fe53397",
-      "bytes": 50573
+      "resourceId": "99e50c3d-c231-472d-b889-6f4f5d0c3bde",
+      "bytes": 51599
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scheduling/ScheduleDeliveryConsumer.java",
@@ -3423,14 +3423,19 @@
       "bytes": 1872
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/directory/AudienceStoreTest.java",
+      "resourceId": "a5c91092-acdb-4cfe-b2a2-92930f2fb22e",
+      "bytes": 10653
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/events/EventIdentityTest.java",
       "resourceId": "e7b9f539-d02b-4fca-83bc-e85f45c4c534",
       "bytes": 4715
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/events/RuntimeEventStoreTest.java",
-      "resourceId": "7d91fadf-4b05-4bd7-9b39-a63359877cae",
-      "bytes": 7159
+      "resourceId": "7091e3c7-61c8-49d8-b4d4-898d8d2d3fe1",
+      "bytes": 7508
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/FeedbackDataBindingTest.java",
@@ -3701,6 +3706,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/recovery/ConditionalBlockEditsTest.java",
       "sha256": "15524aaecb9bce367e2a6895dedee0feea7e24f07224f02790e1e9f0ee4a15ee",
       "bytes": 3168
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/scheduling/PersistentScheduleStoreTest.java",
+      "resourceId": "66b7bdcf-9eda-4fb6-9587-07db15eb389d",
+      "bytes": 9501
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/scoreboard/ScoreboardReadGuardTest.java",
@@ -4074,8 +4084,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "cc280cd4-60f6-49f6-a2f3-7ed109456a85",
-      "bytes": 15996
+      "resourceId": "21ba979f-cc56-4440-962e-70d224673be8",
+      "bytes": 17391
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -7209,8 +7219,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeScheduleRuntime.java",
-      "sha256": "439cf304a3b6be0cc9c65ee10ea227b21b00720060319b7d0a8e4d4dd34d59fb",
-      "bytes": 42196
+      "resourceId": "7f769038-7f91-4635-99ac-1a94ec57a525",
+      "bytes": 42068
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeScoreEventSource.java",
@@ -9159,8 +9169,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/OpenAiCompatibleProvider.java",
-      "resourceId": "e57d0b26-8d7a-42d0-8c44-58ffbb54d4ae",
-      "bytes": 18454
+      "resourceId": "e9f5482a-9cf1-4db5-b89f-2715bf4d97bc",
+      "bytes": 19868
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/OpenAiSpeechTranscriber.java",
@@ -9458,6 +9468,11 @@
       "bytes": 4107
     },
     {
+      "path": "worker/src/test/java/dev/mineagent/runtime/worker/WorkerImageRequestTest.java",
+      "resourceId": "48a0050e-2d63-44c4-be13-336357ca9e11",
+      "bytes": 9123
+    },
+    {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/WorkerThinkingTest.java",
       "sha256": "af587b6e45ca699c20100cfac68d798a5ccfe9340d90234daa505c00bdbab6ea",
       "bytes": 2192
@@ -9565,5 +9580,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "42382eba3449ea4d097ffdd239ebd7a56acb0705"
+  "sourceCommit": "19f4817f75f04bcb36ee3628ecf2573c20d625b6"
 }
