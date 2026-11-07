@@ -19,7 +19,7 @@ public final class LegacyCompatibilityPins implements AutoCloseable {
     public synchronized Pin get(Key key){return pins.get(key);}
     public synchronized boolean allowed(Key key,long run,long manage){var p=pins.get(key);return p!=null&&p.active()&&p.runGeneration()==run&&p.manageGeneration()==manage;}
     public synchronized Result change(UUID operation,Key key,long expected,boolean approve,long run,long manage)throws Exception{
-        String fingerprint=RuntimePackageCanonicalizer.sha256(RuntimePackageCanonicalizer.stableJson(Map.of("owner",key.owner().toString(),"package",key.pkg().toString(),"hash",key.hash(),"environment",key.environment(),"expected",expected,"approve",approve,"run",run,"manage",manage)));
+        String fingerprint="exact-v2:"+new String(RuntimePackageCanonicalizer.stableJson(Map.of("owner",key.owner().toString(),"package",key.pkg().toString(),"hash",key.hash(),"environment",key.environment(),"expected",expected,"approve",approve,"run",run,"manage",manage)),java.nio.charset.StandardCharsets.UTF_8);
         db.setAutoCommit(false);Pin next=null;
         try{
             try(var q=db.prepareStatement("SELECT owner,fingerprint,code,revision FROM mineagent_native_compat_operations_v1 WHERE world=? AND id=?")){q.setString(1,world.toString());q.setString(2,operation.toString());try(var r=q.executeQuery()){if(r.next()){if(!key.owner().toString().equals(r.getString(1))||!fingerprint.equals(r.getString(2)))throw new IllegalStateException("NATIVE_COMPATIBILITY_OPERATION_REUSED");var result=new Result(r.getString(3),r.getLong(4),true);db.rollback();return result;}}}

@@ -13,7 +13,7 @@ public final class GenerationRepairPrompt {
         try{
             if(request==null||request.isBlank()||request.length()>8192||source==null)throw new IllegalArgumentException();
             byte[] bytes=reader.read(source.rawOutputSha256());
-            if(bytes==null||bytes.length==0||bytes.length>524288||!RuntimePackageCanonicalizer.sha256(bytes).equals(source.rawOutputSha256()))throw new IllegalArgumentException();
+            if(bytes==null||bytes.length==0||bytes.length>524288)throw new IllegalArgumentException();
             String raw=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
             return """
                 本次是玩家明确提交的一次新的失败生成修复，不是重放原请求，也不是已发布包的增量patch。
@@ -24,6 +24,6 @@ public final class GenerationRepairPrompt {
                 UNPUBLISHED_GENERATION_REPAIR_DATA:
                 """+new ObjectMapper().writeValueAsString(Map.of("source_operation_id",source.operationId(),"source_job_revision",source.jobRevision(),
                         "source_raw_sha256",source.rawOutputSha256(),"failure_code",source.errorCode(),"diagnostic",source.diagnostic(),"original_generation_request",source.originalPrompt(),"repair_request",request,"untrusted_raw_output",raw));
-        }catch(Exception invalid){throw new PackageOutputException("REPAIR_SOURCE_INVALID","Failed raw is missing, changed, invalid UTF-8 or over the 512 KiB repair context limit.");}
+        }catch(Exception invalid){throw new PackageOutputException("REPAIR_SOURCE_INVALID","Referenced raw is missing, empty, invalid UTF-8 or over the 512 KiB repair context limit.");}
     }
 }

@@ -43,7 +43,7 @@ public record BootExtensionPlan(RuntimePackage manifest, RuntimeResourceSide sid
         for(var ref:pkg.resources().values()) {
             if(ref.path().startsWith("ui/"))continue;
             byte[] bytes=NativeCompilationSnapshot.read(content.pathFor(ref.sha256()),4*1024*1024);
-            if(bytes.length!=ref.size()||!RuntimePackageCanonicalizer.sha256(bytes).equals(ref.sha256()))throw new IllegalStateException("BOOT_RESOURCE_HASH");
+            dev.mineagent.runtime.core.packages.PackageSignatures.requireResource(pkg,ref,bytes);
             if(ref.path().equals(DESCRIPTOR))descriptor=bytes;
             else if(ref.path().startsWith("boot/src/")){javaBytes+=bytes.length;source.put(ref.path().substring(9),utf8(bytes));}
             else resources.put(ref.path().substring(15),bytes);

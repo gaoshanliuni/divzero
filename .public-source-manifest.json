@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "b9421a0d-d882-4f69-a7d1-7d2aa9efc384",
-      "bytes": 5074
+      "resourceId": "8b96cf40-c8ba-4cc1-94d8-d69f8a31012f",
+      "bytes": 5135
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1194,8 +1194,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootExtensionPlan.java",
-      "sha256": "d0e4bf550952348a35c17fd235fbc97361290790190d2969a1262215a2b9a103",
-      "bytes": 7793
+      "resourceId": "55b046b1-d7c0-435d-bbf9-b44fccf53725",
+      "bytes": 7731
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootFiles.java",
@@ -1839,8 +1839,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/feedback/UiFeedbackPolicy.java",
-      "sha256": "12181beb5da111de2e526cd07652b03e7a8f6f02fea6d40706149ed509f11ec3",
-      "bytes": 9656
+      "resourceId": "9658d1d3-a34d-46ef-97a8-4c51e03a811a",
+      "bytes": 9731
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/feedback/UiFeedbackStore.java",
@@ -2124,8 +2124,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/LegacyCompatibilityPins.java",
-      "sha256": "8dc8a506aa0324168300cbcf28365b00ec9424dfe4ea3f945102c00dd9322f2f",
-      "bytes": 5920
+      "resourceId": "b89f8a63-4768-4786-bdfd-84376cd8f672",
+      "bytes": 5948
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/LegacyContentPackageMigrator.java",
@@ -3391,6 +3391,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/crypto/SecretChannelTest.java",
       "resourceId": "e5072495-e8fe-4d5e-a228-7cea4afed4c5",
       "bytes": 1872
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/UiFeedbackPolicyTest.java",
+      "resourceId": "5eec190c-60f4-4060-a787-5050dffd560b",
+      "bytes": 5842
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/files/FileLibraryConcurrencyTest.java",
@@ -7734,8 +7739,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "resourceId": "fbabcf41-5537-4ba2-bf68-b0f89cd1e703",
-      "bytes": 98754
+      "resourceId": "73f6ff0e-3b84-46af-88ad-8582590cb368",
+      "bytes": 98568
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -8744,8 +8749,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/GenerationRepairPrompt.java",
-      "sha256": "3606ad784c4749dd9d229d3c4e0b137579710be5b70897a7dd1884eb26807e9a",
-      "bytes": 2699
+      "resourceId": "9dee905e-f7ab-4793-ba85-49815893478a",
+      "bytes": 2624
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/NativePackageContract.java",
@@ -8979,8 +8984,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/modindex/ModJarIndexer.java",
-      "sha256": "653ea549e5ab9558aff5a20ecf5030d5d99e53933041bd6dde2e605e429d70fe",
-      "bytes": 4610
+      "resourceId": "b96cb2d5-b866-45f6-920c-535fb8b86713",
+      "bytes": 4680
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/process/ManagedWorkerProcess.java",
@@ -9379,8 +9384,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/generation/SignedResourcePromptTest.java",
-      "resourceId": "c3d0ae2b-0a73-44e8-a16c-fa82c61c31ec",
-      "bytes": 1872
+      "resourceId": "62bb8a11-26c1-4ca0-95f4-c1b5fd63d898",
+      "bytes": 2913
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/generation/StudioCoderDependencyPromptTest.java",
@@ -9391,6 +9396,11 @@
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/media/BundledMediaToolsTest.java",
       "resourceId": "96e2039a-d98b-46be-b3c8-7e7883e1a10f",
       "bytes": 4976
+    },
+    {
+      "path": "worker/src/test/java/dev/mineagent/runtime/worker/modindex/ModJarIndexerTest.java",
+      "resourceId": "29e3fe19-4d43-48ab-a64b-cac8cc6c1beb",
+      "bytes": 2441
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/process/ManagedWorkerProcessTest.java",
@@ -9460,5 +9470,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "e41e5ec1adb2700bcb8be470458f13eb5498aeb4"
+  "sourceCommit": "6be143f706ef20dc083d1b7a6db0510900cd39cf"
 }

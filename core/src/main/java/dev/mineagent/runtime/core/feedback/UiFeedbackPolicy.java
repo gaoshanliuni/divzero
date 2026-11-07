@@ -42,10 +42,11 @@ public record UiFeedbackPolicy(String entry,String sha256,Map<String,Event> even
         var ref=pkg.resources().get(RESOURCE);
         if(ref==null||!ref.path().equals(RESOURCE)||ref.side()!=RuntimeResourceSide.CLIENT||!ref.mediaType().equals("application/json")||ref.size()<1||ref.size()>32768)throw invalid("RESOURCE");
         byte[] bytes=reader.read(ref.sha256());
-        if(bytes.length!=ref.size()||!RuntimePackageCanonicalizer.sha256(bytes).equals(ref.sha256()))throw invalid("RESOURCE_INTEGRITY");
-        return parse(bytes,entry);
+        dev.mineagent.runtime.core.packages.PackageSignatures.requireResource(pkg,ref,bytes);
+        return parse(bytes,entry,ref.sha256());
     }
-    public static UiFeedbackPolicy parse(byte[] bytes,String entry) {
+    public static UiFeedbackPolicy parse(byte[] bytes,String entry) {return parse(bytes,entry,ResourceIds.create());}
+    private static UiFeedbackPolicy parse(byte[] bytes,String entry,String resourceId) {
         try {
             if(bytes==null||bytes.length<1||bytes.length>32768)throw invalid("BUDGET");
             var root=JSON.readTree(bytes);keys(root,Set.of("schema","entries"),Set.of("schema","entries"));
@@ -71,7 +72,7 @@ public record UiFeedbackPolicy(String entry,String sha256,Map<String,Event> even
                 }
                 if(path.equals(entry))selected=parsed;
             }
-            return new UiFeedbackPolicy(entry,RuntimePackageCanonicalizer.sha256(bytes),selected);
+            return new UiFeedbackPolicy(entry,resourceId,selected);
         }catch(Exception e){throw new IllegalArgumentException("FEEDBACK_POLICY_INVALID",e);}
     }
     public Event event(String name){var value=events.get(name);if(value==null)throw invalid("UNDECLARED_EVENT");return value;}

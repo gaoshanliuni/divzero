@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.LinkOption;
+import java.util.Objects;
+import dev.mineagent.runtime.api.packages.ResourceIds;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
@@ -28,9 +30,10 @@ public final class ModJarIndexer {
 
     public ModJarIndex index(Path jarPath) throws Exception {
         Path absolute = jarPath.toAbsolutePath().normalize();
-        if (!Files.isRegularFile(absolute) || !absolute.getFileName().toString().toLowerCase().endsWith(".jar")) {
+        if (!Files.isRegularFile(absolute,LinkOption.NOFOLLOW_LINKS) || Files.isSymbolicLink(absolute) || !absolute.getFileName().toString().toLowerCase().endsWith(".jar")) {
             throw new IllegalArgumentException("not a readable JAR");
         }
+        var before=Files.readAttributes(absolute,BasicFileAttributes.class,LinkOption.NOFOLLOW_LINKS);
         var classes = new ArrayList<String>();
         var sources = new ArrayList<String>();
         String metadata = "";
@@ -66,13 +69,15 @@ public final class ModJarIndexer {
         if (metadata.isBlank()) {
             throw new IllegalArgumentException("NeoForge metadata is missing");
         }
+        var after=Files.readAttributes(absolute,BasicFileAttributes.class,LinkOption.NOFOLLOW_LINKS);
+        if(!Objects.equals(before.fileKey(),after.fileKey())||before.size()!=after.size()||!before.lastModifiedTime().equals(after.lastModifiedTime()))throw new IOException("MOD_INDEX_SOURCE_CHANGED");
         classes.sort(String::compareTo);
         sources.sort(String::compareTo);
         return new ModJarIndex(
                 capture(MOD_ID, metadata, "modId"),
                 capture(VERSION, metadata, "version"),
                 capture(DISPLAY_NAME, metadata, "displayName"),
-                sha256(absolute),
+                ResourceIds.create(),
                 Files.size(absolute),
                 classes,
                 sources
@@ -87,17 +92,4 @@ public final class ModJarIndexer {
         return matcher.group(1);
     }
 
-    private static String sha256(Path path) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        try (var input = Files.newInputStream(path)) {
-            byte[] buffer = new byte[64 * 1024];
-            int read;
-            while ((read = input.read(buffer)) >= 0) {
-                if (read > 0) {
-                    digest.update(buffer, 0, read);
-                }
-            }
-        }
-        return HexFormat.of().formatHex(digest.digest());
-    }
 }
