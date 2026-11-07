@@ -37,8 +37,7 @@ public final class ConversationAuditImporter {
     private <T>T transaction(java.util.concurrent.Callable<T> action)throws Exception{
         try(var s=db.createStatement()){s.execute("BEGIN IMMEDIATE");try{T result=action.call();s.execute("COMMIT");return result;}catch(Exception failed){try{s.execute("ROLLBACK");}catch(SQLException rollback){failed.addSuppressed(rollback);}throw failed;}}
     }
-    private static String hash(String value)throws Exception{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}
-    private static UUID stable(String value){return UUID.nameUUIDFromBytes(value.getBytes(StandardCharsets.UTF_8));}
+    private static final dev.mineagent.runtime.core.content.ObservationTokens IDENTITIES=new dev.mineagent.runtime.core.content.ObservationTokens(4096,4*1024*1024);
     private static String canonical(String value){if(value==null)return "";try{var id=UUID.fromString(value);return id.toString().equalsIgnoreCase(value)?id.toString():"";}catch(IllegalArgumentException invalid){return "";}}
     private boolean archiveEligible(UUID viewer,UUID agent,UUID destination)throws SQLException{
         return number("SELECT COUNT(*) FROM mineagent_conversations_v1 c WHERE c.world_id=? AND c.id=? AND c.player_id=? AND c.agent_id=? AND c.state='ARCHIVED' AND NOT EXISTS(SELECT 1 FROM mineagent_conversation_messages_v1 m WHERE m.world_id=c.world_id AND m.conversation_id=c.id AND m.status<>'IMPORTED_AUDIT')",world,destination,viewer,agent)==1;
@@ -61,7 +60,7 @@ public final class ConversationAuditImporter {
         if(foreign>0)return new Preview(source,0,0,"",identity.sourceKind(),"SOURCE_IDENTITY_CONFLICT");
         long upper=number("SELECT COALESCE(MAX(sequence),0) FROM mineagent_runtime_audit WHERE world_id=? AND target=? AND action IN ('CONVERSATION_PROMPT','CONVERSATION_RESPONSE')",world,source);
         long count=number("SELECT COUNT(*) FROM mineagent_runtime_audit WHERE world_id=? AND target=? AND sequence<=? AND action IN ('CONVERSATION_PROMPT','CONVERSATION_RESPONSE')",world,source,upper);
-        return new Preview(source,upper,count,hash(json.writeValueAsString(identity)),identity.sourceKind(),count>0?"VERIFIED":"NO_RECORDS");
+        return new Preview(source,upper,count,IDENTITIES.token(json.writeValueAsString(identity)),identity.sourceKind(),count>0?"VERIFIED":"NO_RECORDS");
     }
     private Job job(ResultSet r)throws SQLException{return new Job(UUID.fromString(r.getString("id")),UUID.fromString(r.getString("source_id")),UUID.fromString(r.getString("conversation_id")),r.getLong("upper_sequence"),r.getLong("expected_records"),r.getLong("cursor"),r.getLong("seen_records"),r.getLong("imported_records"),r.getString("state"),r.getString("error_code"),r.getLong("updated_at"));}
     Job get(UUID viewer,UUID agent,UUID id)throws SQLException{
@@ -76,9 +75,14 @@ public final class ConversationAuditImporter {
             var preview=preview(viewer,agent,source,identity);
             if(!preview.state().equals("VERIFIED"))throw new IllegalStateException("AUDIT_"+preview.state());
             if(preview.upperSequence()!=expectedUpper||preview.availableRecords()!=expectedCount||!preview.identityHash().equals(expectedIdentityHash))throw new IllegalStateException("AUDIT_PREVIEW_CHANGED");
-            UUID id=stable("audit-import|"+world+"|"+viewer+"|"+agent+"|"+source+"|"+expectedUpper);
-            if(number("SELECT COUNT(*) FROM mineagent_conversation_import_jobs_v1 WHERE world_id=? AND id=?",world,id)>0)return get(viewer,agent,id);
-            UUID destination=stable("audit-archive|"+world+"|"+viewer+"|"+agent+"|"+source);
+            try(var query=db.prepareStatement("SELECT * FROM mineagent_conversation_import_jobs_v1 WHERE world_id=? AND player_id=? AND agent_id=? AND source_id=? AND upper_sequence=?")){
+                bind(query,world,viewer,agent,source,expectedUpper);try(var rows=query.executeQuery()){if(rows.next()){var existing=job(rows);if(rows.next())throw new IllegalStateException("AUDIT_IMPORT_IDENTITY_CONFLICT");return existing;}}
+            }
+            UUID id=UUID.randomUUID(),destination=null;
+            try(var query=db.prepareStatement("SELECT DISTINCT conversation_id FROM mineagent_conversation_import_jobs_v1 WHERE world_id=? AND player_id=? AND agent_id=? AND source_id=?")){
+                bind(query,world,viewer,agent,source);try(var rows=query.executeQuery()){if(rows.next()){destination=UUID.fromString(rows.getString(1));if(rows.next())throw new IllegalStateException("AUDIT_ARCHIVE_IDENTITY_CONFLICT");}}
+            }
+            if(destination==null)destination=UUID.randomUUID();
             if(number("SELECT COUNT(*) FROM mineagent_conversations_v1 WHERE world_id=? AND id=?",world,destination)==0){
                 execute("INSERT INTO mineagent_conversations_v1(world_id,id,player_id,agent_id,title,revision,state,message_count,created_at,updated_at) VALUES(?,?,?,?,?,1,'ARCHIVED',0,?,?)",world,destination,viewer,agent,"旧审计片段 · "+source.toString().substring(0,8),clock.millis(),clock.millis());
             }else if(!archiveEligible(viewer,agent,destination))throw new IllegalStateException("AUDIT_ARCHIVE_NOT_ARCHIVED");
@@ -106,17 +110,17 @@ public final class ConversationAuditImporter {
             for(var row:rows){if(!(row.action().equals("CONVERSATION_PROMPT")?row.actor().equals(viewer.toString()):row.actor().equals("worker")))return stop(viewer,agent,job,"BLOCKED","AUDIT_SOURCE_IDENTITY_CONFLICT");
                 if(row.payload()==null||row.payload().isBlank()||row.payload().length()>131072||row.createdAt()<0)return stop(viewer,agent,job,"BLOCKED","AUDIT_SOURCE_UNSUPPORTED");}
             // Validate the entire batch before writing any message; changed evidence cannot partially commit.
-            for(var row:rows){String digest=hash(json.writeValueAsString(Arrays.asList(world,row.sequence(),row.actor(),row.action(),row.target(),row.payload(),row.createdAt())));
-                try(var q=db.prepareStatement("SELECT conversation_id,source_hash FROM mineagent_conversation_import_sources_v1 WHERE world_id=? AND audit_sequence=?")){bind(q,world,row.sequence());try(var r=q.executeQuery()){
-                    if(r.next()&&(!r.getString(1).equals(job.conversationId().toString())||!r.getString(2).equals(digest)))return stop(viewer,agent,job,"BLOCKED","AUDIT_SOURCE_CHANGED");
+            for(var row:rows){String sourceJson=json.writeValueAsString(Arrays.asList(world,row.sequence(),row.actor(),row.action(),row.target(),row.payload(),row.createdAt()));
+                try(var q=db.prepareStatement("SELECT conversation_id,source_json FROM mineagent_conversation_import_sources_v1 WHERE world_id=? AND audit_sequence=?")){bind(q,world,row.sequence());try(var r=q.executeQuery()){
+                    if(r.next()&&(!r.getString(1).equals(job.conversationId().toString())||!r.getString(2).equals(sourceJson)))return stop(viewer,agent,job,"BLOCKED","AUDIT_SOURCE_CHANGED");
                 }}
             }
             long next=number("SELECT message_count FROM mineagent_conversations_v1 WHERE world_id=? AND id=?",world,job.conversationId()),added=0;
-            for(var row:rows){String sourceJson=json.writeValueAsString(Arrays.asList(world,row.sequence(),row.actor(),row.action(),row.target(),row.payload(),row.createdAt()));String digest=hash(sourceJson);
-                try(var q=db.prepareStatement("SELECT conversation_id,source_hash FROM mineagent_conversation_import_sources_v1 WHERE world_id=? AND audit_sequence=?")){bind(q,world,row.sequence());try(var r=q.executeQuery()){if(r.next()){if(!r.getString(1).equals(job.conversationId().toString())||!r.getString(2).equals(digest))throw new IllegalStateException("AUDIT_SOURCE_CHANGED");continue;}}}
-                UUID message=stable("audit-message|"+world+"|"+row.sequence());String role=row.action().equals("CONVERSATION_PROMPT")?"USER":"ASSISTANT";
+            for(var row:rows){String sourceJson=json.writeValueAsString(Arrays.asList(world,row.sequence(),row.actor(),row.action(),row.target(),row.payload(),row.createdAt()));
+                try(var q=db.prepareStatement("SELECT conversation_id,source_json FROM mineagent_conversation_import_sources_v1 WHERE world_id=? AND audit_sequence=?")){bind(q,world,row.sequence());try(var r=q.executeQuery()){if(r.next()){if(!r.getString(1).equals(job.conversationId().toString())||!r.getString(2).equals(sourceJson))throw new IllegalStateException("AUDIT_SOURCE_CHANGED");continue;}}}
+                String reference=dev.mineagent.runtime.api.packages.ResourceIds.create();UUID message=UUID.randomUUID();String role=row.action().equals("CONVERSATION_PROMPT")?"USER":"ASSISTANT";
                 execute("INSERT INTO mineagent_conversation_messages_v1(world_id,conversation_id,id,sequence,role,text,status,revision,text_length,error_code,persona_revision,created_at,updated_at) VALUES(?,?,?,?,?,?,'IMPORTED_AUDIT',1,?,'AUDIT_TEXT_NOT_ORIGINAL',0,?,?)",world,job.conversationId(),message,++next,role,row.payload(),row.payload().length(),row.createdAt(),row.createdAt());
-                execute("INSERT INTO mineagent_conversation_import_sources_v1 VALUES(?,?,?,?,?,?,?)",world,row.sequence(),job.conversationId(),message,digest,sourceJson,id);added++;
+                execute("INSERT INTO mineagent_conversation_import_sources_v1 VALUES(?,?,?,?,?,?,?)",world,row.sequence(),job.conversationId(),message,reference,sourceJson,id);added++;
             }
             if(added>0)execute("UPDATE mineagent_conversations_v1 SET message_count=?,revision=revision+1,updated_at=? WHERE world_id=? AND id=?",next,clock.millis(),world,job.conversationId());
             execute("UPDATE mineagent_conversation_import_jobs_v1 SET cursor=?,seen_records=seen_records+?,imported_records=imported_records+?,updated_at=? WHERE world_id=? AND id=?",rows.getLast().sequence(),rows.size(),added,clock.millis(),world,id);

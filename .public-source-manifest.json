@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "d4614faf-3d98-49b2-b20b-34a39c210ae6",
-      "bytes": 5317
+      "resourceId": "92a2c768-5837-4c01-9f16-6c8ec0d4ce06",
+      "bytes": 5358
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1514,8 +1514,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationAuditImporter.java",
-      "sha256": "b28124caeae2e230e1b0bd6db02c9d66d89c1e039437662031fabe5a9a6b9c80",
-      "bytes": 17014
+      "resourceId": "2c99d492-77a8-48c1-b155-e9ec727cbafd",
+      "bytes": 17560
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationCallbackFence.java",
@@ -3281,6 +3281,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/CapabilitySessionTest.java",
       "sha256": "d3127451617b86e14405a38132152da27fce04367d717288603c5d956b44b99b",
       "bytes": 2564
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationAuditIdentityTest.java",
+      "resourceId": "48d64a71-ae19-4527-ac11-0dbb165b73b5",
+      "bytes": 4558
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationFocusRegistryTest.java",
@@ -9495,5 +9500,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "20ce1c85affdc2831fcdcbab9be24ba005707474"
+  "sourceCommit": "3f6026f72a133ab1b247c7d1d92b0f5aa9077bac"
 }
