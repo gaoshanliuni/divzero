@@ -814,8 +814,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/resources/BlockTextureStore.java",
-      "resourceId": "18b986a0-bdc3-4077-97ab-b85d9ba4e9f3",
-      "bytes": 5178
+      "resourceId": "ed9d4d89-7ede-48db-a847-470b7f865c63",
+      "bytes": 5255
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/resources/LocalResourcePackStore.java",
@@ -969,8 +969,8 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/UiStateStore.java",
-      "resourceId": "f0579dd0-ba3c-4f72-bb1f-d393dfd02de0",
-      "bytes": 2006
+      "resourceId": "2dd846d0-afc2-4f14-8367-2e55ac330a05",
+      "bytes": 2084
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/WorkspaceShortcut.java",
@@ -1429,8 +1429,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/LegacyNamespaceIds.java",
-      "resourceId": "ce3f0d86-9708-4060-aae2-cfe1febe796d",
-      "bytes": 2889
+      "resourceId": "096c2e2f-befe-4212-bf72-4a0dcad866ee",
+      "bytes": 3873
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ResourceFileLock.java",
@@ -1924,8 +1924,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/DialogueMemoryStore.java",
-      "resourceId": "149db2b6-06e9-42c3-a818-4895624c64d9",
-      "bytes": 7568
+      "resourceId": "d0dd94ab-67cf-46b7-8920-a2eb2893a7b5",
+      "bytes": 7602
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/memory/MemoryRelevance.java",
@@ -2339,8 +2339,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteRuntimeRepository.java",
-      "sha256": "70dbbf3c260d129afdb4aa42707aefed64f45fd8ecf79eba2eea2f3fcc6bbb15",
-      "bytes": 29379
+      "resourceId": "3649752f-77fd-4ab1-9416-11aa8aed8ab0",
+      "bytes": 29746
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteWriteGate.java",
@@ -3159,8 +3159,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/content/LegacyNamespaceIdsTest.java",
-      "resourceId": "a60b5d92-be6a-4b31-9ed6-68d8105b5f11",
-      "bytes": 2180
+      "resourceId": "c551aba7-d213-4576-b495-2a8d6e1c2a89",
+      "bytes": 2638
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/AgentChatPolicyTest.java",
@@ -9240,5 +9240,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "fb51d98088e86e540a24eb54d296ba9919a9ecb7"
+  "sourceCommit": "2ee2692d77de31eae3c9d3497765950bde13d1f9"
 }

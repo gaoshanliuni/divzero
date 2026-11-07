@@ -16,7 +16,7 @@ public final class DialogueMemoryStore implements AutoCloseable {
         db=new SqliteRuntimeRepository(file);this.world=world;this.clock=clock;
         // Legacy namespace derivation omitted world, but the SQL rows were world-scoped.
         // Persist a separate migration decision for each database AND world.
-        try{this.namespace=dev.mineagent.runtime.core.content.LegacyNamespaceIds.resolve(file.toAbsolutePath().getParent().resolve("namespace-migrations").resolve(file.getFileName().toString()).resolve(world.toString()),dev.mineagent.runtime.core.content.LegacyNamespaceIds.Kind.DIALOGUE_MEMORY,owner+"|"+agent,candidate->{try{return !db.list(world,candidate).isEmpty();}catch(Exception e){throw new IllegalStateException("MEMORY_LEGACY_LOOKUP",e);}});}
+        try{this.namespace=dev.mineagent.runtime.core.content.LegacyNamespaceIds.resolve(file.toAbsolutePath().getParent().resolve("namespace-migrations").resolve(file.getFileName().toString()).resolve(world.toString()),dev.mineagent.runtime.core.content.LegacyNamespaceIds.Kind.DIALOGUE_MEMORY,owner+"|"+agent,db.hasLegacyDialogueMemory(world),candidate->{try{return !db.list(world,candidate).isEmpty();}catch(Exception e){throw new IllegalStateException("MEMORY_LEGACY_LOOKUP",e);}});}
         catch(Exception error){db.close();throw error;}
     }
     private List<Entry> all()throws Exception{var out=new ArrayList<Entry>();for(var r:db.list(world,namespace))out.add(JSON.readValue(r.payload(),Entry.class));return out;}

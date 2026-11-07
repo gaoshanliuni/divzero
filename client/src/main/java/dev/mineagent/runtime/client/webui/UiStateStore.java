@@ -10,7 +10,7 @@ public final class UiStateStore {
     public UiStateStore(Path root) { this.root = root.toAbsolutePath().normalize(); }
     private Path file(String scope) throws IOException {
         if (scope == null || scope.isBlank() || scope.length() > 4096) throw new IllegalArgumentException("UI_STATE_SCOPE");
-        String id=dev.mineagent.runtime.core.content.LegacyNamespaceIds.resolve(root,dev.mineagent.runtime.core.content.LegacyNamespaceIds.Kind.UI_STATE_SCOPE,scope,old->Files.isRegularFile(root.resolve(old+".json"),LinkOption.NOFOLLOW_LINKS));return root.resolve(id+".json");
+        String id=dev.mineagent.runtime.core.content.LegacyNamespaceIds.resolve(root,dev.mineagent.runtime.core.content.LegacyNamespaceIds.Kind.UI_STATE_SCOPE,scope,dev.mineagent.runtime.core.content.LegacyNamespaceIds.legacyFiles(root,false),old->Files.isRegularFile(root.resolve(old+".json"),LinkOption.NOFOLLOW_LINKS));return root.resolve(id+".json");
     }
     public synchronized String load(String scope) throws IOException {
         Path file = file(scope);
