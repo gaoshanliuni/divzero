@@ -55,8 +55,14 @@ public final class InteractionTargetResolver {
         for(int x=-2;x<=2;x++)for(int z=-2;z<=2;z++)for(var node:evaluator.positions(base.getX()+x,base.getZ()+z,recipient.getY())){
             var at=NativeTraversalEvaluator.point(node);
             if(evaluator.water(node)||evaluator.climb(node)||at.distanceToSqr(recipient.position())>1.45*1.45||Math.abs(at.y-recipient.getY())>1)continue;
-            if(player.getDimensions(player.getPose()).makeBoundingBox(at).intersects(recipient.getBoundingBox()))continue;
-            if(lineOfSight(player,at.add(0,player.getEyeHeight(),0),recipient.position().add(0,.5,0),null,false))nodes.add(node);
+            boolean usable=true;
+            deliveryWindow: for(double dx:new double[]{-.4,0,.4})for(double dz:new double[]{-.4,0,.4}){
+                var feet=at.add(dx,0,dz);
+                if(player.getDimensions(player.getPose()).makeBoundingBox(feet).deflate(.0001).intersects(recipient.getBoundingBox())){usable=false;break deliveryWindow;}
+                for(double eyeHeight:new double[]{player.getDimensions(net.minecraft.world.entity.Pose.CROUCHING).eyeHeight(),player.getDimensions(net.minecraft.world.entity.Pose.STANDING).eyeHeight()})
+                    if(!lineOfSight(player,feet.add(0,eyeHeight,0),recipient.position().add(0,.5,0),null,false)){usable=false;break deliveryWindow;}
+            }
+            if(usable)nodes.add(node);
         }
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
         return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());

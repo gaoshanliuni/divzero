@@ -53,6 +53,13 @@ public final class SkillRuntime {
         authorize(owner,agent);return loaded.thenCompose(v->known(operation)).thenComposeAsync(w->{authorize(owner,agent);if(w==null)return CompletableFuture.completedFuture(null);if(!w.session.owner().equals(owner.getUUID())||!w.session.agent().equals(agent))throw new SecurityException("COOP_CHILD_SCOPE");var snapshot=w.session.snapshot();return w.saved.thenApplyAsync(ignored->{authorize(owner,agent);return snapshot;},server::execute);},server::execute);
     }
     Map<String,Object> cooperativeDetails(UUID operation){var w=work.get(operation);return w==null||w.construct==null?Map.of():w.construct.view();}
+    Map<String,Object> cooperativePosition(UUID operation){
+        var w=work.get(operation);if(w==null||w.actor==null||!w.actor.current())return Map.of();
+        var pos=w.player().position();var out=new LinkedHashMap<String,Object>();out.put("position",List.of(pos.x,pos.y,pos.z));out.put("phase",w.session.snapshot().phase());
+        out.put("stand",w.stand==null?List.of():List.of(w.stand.x,w.stand.y,w.stand.z));out.put("navigation",w.actor.observation().getOrDefault("navigation",""));
+        if(w.handoffTarget!=null)out.put("recipientPosition",List.of(w.handoffTarget.x,w.handoffTarget.y,w.handoffTarget.z));
+        return Map.copyOf(out);
+    }
     boolean cooperativeIdle(UUID agent){return work.values().stream().noneMatch(w->w.session.agent().equals(agent)&&!w.session.terminal()&&w.session.spec().kind()!=SkillSpec.Kind.IDLE);}
     boolean cooperativeAvailable(UUID agent,Set<UUID> ownOperations){return work.values().stream().noneMatch(w->w.session.agent().equals(agent)&&!w.session.terminal()&&w.session.spec().kind()!=SkillSpec.Kind.IDLE&&!ownOperations.contains(w.token()));}
     CompletableFuture<Void> controlCooperative(ServerPlayer owner,UUID agent,UUID operation,String action,BooleanSupplier authority){

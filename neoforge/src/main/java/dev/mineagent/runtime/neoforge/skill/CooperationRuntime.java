@@ -53,7 +53,10 @@ public final class CooperationRuntime {
     }
     private Step step(Entry e,String id){return e.value.steps().stream().filter(s->s.node().equals(id)).findFirst().orElseThrow();}
     private void step(Entry e,Step next){var rows=new ArrayList<>(e.value.steps());rows.replaceAll(old->old.node().equals(next.node())?next:old);change(e,e.value.state(),e.value.reason(),rows,"");}
-    private Map<String,Object> view(Entry e){return Map.of("status",e.value.state(),"id",e.value.id(),"revision",e.value.revision(),"plan",e.value.plan(),"steps",e.value.steps(),"events",e.value.events(),"reason",e.value.reason(),"pendingReceipt",!e.saved.isDone(),"goalComplete",e.value.state().equals("COMPLETED"));}
+    private Map<String,Object> view(Entry e){
+        var live=new LinkedHashMap<String,Object>();try{var owner=owner(e);if(owner!=null){authorize(owner,e.value.leader(),e.value.plan());for(var step:e.value.steps())if(Set.of("ACTIVE","STARTING").contains(step.state()))live.put(step.node(),SkillRuntime.get(server).cooperativePosition(step.operation()));}}catch(SecurityException denied){live.clear();}
+        return Map.of("status",e.value.state(),"id",e.value.id(),"revision",e.value.revision(),"plan",e.value.plan(),"steps",e.value.steps(),"events",e.value.events(),"reason",e.value.reason(),"pendingReceipt",!e.saved.isDone(),"goalComplete",e.value.state().equals("COMPLETED"),"live",Map.copyOf(live));
+    }
     public CompletableFuture<Map<String,Object>> start(ServerPlayer owner,UUID leader,UUID operation,JsonNode args,BooleanSupplier permit){
         var plan=CooperationPlan.parse(args.path("plan"));authorize(owner,leader,plan);
         return loaded.thenComposeAsync(ignored->{authorize(owner,leader,plan);if(!permit.getAsBoolean())throw new IllegalStateException("COOP_REQUEST_CHANGED");var old=runs.get(operation);if(old!=null){if(!old.value.owner().equals(owner.getUUID())||!old.value.leader().equals(leader)||!old.value.plan().equals(plan))throw new IllegalArgumentException("COOP_OPERATION_REUSED");return CompletableFuture.completedFuture(view(old));}

@@ -4889,8 +4889,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "ad682a1e-5a36-4585-a4da-608be657cc92",
-      "bytes": 6566
+      "resourceId": "4d590daf-1e33-498e-b114-29d0d353ab83",
+      "bytes": 7068
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -6889,8 +6889,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
-      "resourceId": "0b9734d8-f10d-45d4-a2fd-46bc7aebd29d",
-      "bytes": 17297
+      "resourceId": "36ff2325-d3c6-4db3-9631-541eba96c2c3",
+      "bytes": 17692
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -7059,8 +7059,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "resourceId": "bfd5d58d-7c1a-4332-ad46-fd396d5f0766",
-      "bytes": 61354
+      "resourceId": "fa4e6d50-b559-46e8-a2d2-60ca256932e5",
+      "bytes": 62013
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6545b8fb8bcb4ebd3723ad8aab8a535ada95036b"
+  "sourceCommit": "3ffb58e536f5adbfbf672d08f48767c0e424b7dd"
 }
