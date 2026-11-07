@@ -4959,8 +4959,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTerrainRecovery.java",
-      "resourceId": "98652e2b-7eec-40d2-9d92-0c6b7c9f831c",
-      "bytes": 22418
+      "resourceId": "d49ca6a4-9c8a-4dad-bf2a-2d35f64f26f7",
+      "bytes": 22690
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTraversalEvaluator.java",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "a44102bcec1a66b18029d8391142eae41448329d"
+  "sourceCommit": "c4856879258a84d3e1836562dcb07c786cbf935e"
 }

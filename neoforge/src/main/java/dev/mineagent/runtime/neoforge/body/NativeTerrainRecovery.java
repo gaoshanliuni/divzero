@@ -207,9 +207,12 @@ public final class NativeTerrainRecovery {
         for(var face:Direction.values()){
             var anchor=target.relative(face.getOpposite());if(!NativeTerrainPolicy.loaded(p,anchor)||p.level().getBlockState(anchor).getCollisionShape(p.level(),anchor).isEmpty())continue;
             var hit=Vec3.atCenterOf(anchor).add(new Vec3(face.getStepX(),face.getStepY(),face.getStepZ()).scale(.5));
+            // Reaching a block's near face does not authorize placing against its hidden far face.
+            var normal=new Vec3(face.getStepX(),face.getStepY(),face.getStepZ());
+            if(eye.subtract(hit).dot(normal)<=.001)continue;
             if(eye.distanceTo(hit)>Math.min(4.25,p.blockInteractionRange()-.15))continue;
             var clip=p.level().clip(new ClipContext(eye,hit,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
-            if(clip.getType()!=HitResult.Type.MISS&&!clip.getBlockPos().equals(anchor))continue;
+            if(clip.getType()!=HitResult.Type.MISS&&(!clip.getBlockPos().equals(anchor)||clip.getDirection()!=face))continue;
             return new BlockHitResult(hit,face,anchor,false);
         }return null;
     }
