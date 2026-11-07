@@ -7,6 +7,22 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConstructionLedgerTest {
+    @Test void nativePlacementLayersPutVerticalPillarsBeforeOccludingPanelsWithoutChangingGeometry()throws Exception{
+        String source="""
+            {"id":"layers","name":"Layers","dimension":"minecraft:overworld","origin":[0,80,0],"components":[{"id":"wall","parts":[
+              {"kind":"box","min":[1,2,0],"max":[1,2,0],"material":"minecraft:glass"},
+              {"kind":"box","min":[0,2,0],"max":[0,2,0],"material":"minecraft:oak_log[axis=y]"},
+              {"kind":"box","min":[1,1,0],"max":[1,1,0],"material":"minecraft:stone"}]}]}
+            """;
+        try(var ledger=new ConstructionLedger(directory.resolve("layers.db"))){
+            ledger.plan(0,source,()->true);UUID session=UUID.randomUUID();ledger.claimNative(session,1);sampled(ledger,1);
+            var original=ledger.page(1,0,false);ledger.progress("PREPARING","PREFLIGHT",original.getLast().sequence(),0);
+            ledger.prepareNativeWriteOrder(session,1);var ordered=ledger.page(1,0,false);
+            assertEquals(List.of("minecraft:stone","minecraft:oak_log[axis=y]","minecraft:glass"),ordered.stream().map(ConstructionLedger.Cell::material).toList());
+            assertEquals(original.stream().map(c->List.of(c.x(),c.y(),c.z(),c.material(),c.before(),c.after())).collect(java.util.stream.Collectors.toSet()),ordered.stream().map(c->List.of(c.x(),c.y(),c.z(),c.material(),c.before(),c.after())).collect(java.util.stream.Collectors.toSet()));
+            ledger.prepareNativeWriteOrder(session,1);assertEquals(ordered,ledger.page(1,0,false));
+        }
+    }
     @Test void oldAlphabeticScheduleCanBeReorderedOnlyBeforeWorldWritesAndPreservesTargets()throws Exception{
         Path file=directory.resolve("native-order.db");UUID session=UUID.randomUUID();
         String source="""

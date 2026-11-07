@@ -1259,8 +1259,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionLedger.java",
-      "resourceId": "94ce24dc-0930-41a5-b954-eb4013d98031",
-      "bytes": 27961
+      "resourceId": "d1097b6f-ef85-4aaf-9f45-fb2a889a78bf",
+      "bytes": 28647
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionVerification.java",
@@ -3209,8 +3209,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/ConstructionLedgerTest.java",
-      "resourceId": "eb47b727-c38f-4a1f-b3fa-f4eb6db2375d",
-      "bytes": 11891
+      "resourceId": "8b9004bd-526e-468f-aa5d-83016297f065",
+      "bytes": 13444
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeClassReferenceTest.java",
@@ -5334,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "e5d95497-7a7c-440b-8585-d804bb6db527",
-      "bytes": 275819
+      "resourceId": "92055a86-442f-4606-a2e3-2f5172bc807f",
+      "bytes": 276273
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7054,8 +7054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
-      "resourceId": "582f0a4a-0151-4414-bf99-cfbc5682ba2e",
-      "bytes": 20367
+      "resourceId": "e858b2c1-de42-4c88-845d-efe7de48d05c",
+      "bytes": 20440
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
@@ -7234,8 +7234,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "resourceId": "a782e529-5a2f-4882-a112-ce4fc4945671",
-      "bytes": 62038
+      "resourceId": "87413afb-5c6e-4c35-b804-7694ce34cce8",
+      "bytes": 62393
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "249c3c2539f52136ea71bd49ca5eebfd25e761d0"
+  "sourceCommit": "0555fcb90081b457216b6125dd2b52d299875b5e"
 }

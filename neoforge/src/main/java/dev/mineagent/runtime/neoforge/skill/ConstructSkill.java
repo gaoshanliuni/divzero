@@ -55,7 +55,7 @@ public final class ConstructSkill {
             if(pending!=null){if(!pending.isDone())return;pending.join();var next=afterPending;pending=null;afterPending=null;if(next!=null)next.run();return;}
             if(w.player().hasInfiniteMaterials()){w.waitFor("BUILDING_REQUIRES_FINITE_INVENTORY",100);return;}
             if(cells.isEmpty()){
-                if(phase.equals("PREFLIGHT")){phase="WRITE";cursor=0;var next=lease.update(l->{l.progress("APPLYING","WRITE",0,0);return null;});waitFor(next,this::page);return;}
+                if(phase.equals("PREFLIGHT")){phase="WRITE";cursor=0;var next=lease.update(l->{l.prepareNativeWriteOrder(w.token(),w.session.spec().buildingRevision());l.progress("APPLYING","WRITE",0,0);return null;});waitFor(next,this::page);return;}
                 if(phase.equals("WRITE")){phase="VERIFY";cursor=0;var next=lease.update(l->{l.progress("APPLYING","VERIFY",0,0);return null;});waitFor(next,this::page);return;}
                 if(phase.equals("VERIFY")){long tick=w.player().level().getGameTime();waitFor(lease.update(l->{l.finish(tick);return null;}),this::verify);return;}
                 return;

@@ -112,12 +112,16 @@ public final class ConstructionLedger implements AutoCloseable {
         else if(Set.of("PARTIAL","CONFLICT").contains(h.status())&&h.mode().equals("APPLY")&&h.phase().equals("WRITE"))h=progress("APPLYING","WRITE",h.cursor(),h.mutationTick());
         else if(!Set.of("UNVERIFIED","VERIFIED").contains(h.status())&&!(nativeOwned(session,revision)&&Set.of("PREPARING","APPLYING").contains(h.status())))throw new IllegalStateException("BUILDING_NATIVE_BUSY");
         try(var q=db.prepareStatement("INSERT INTO native_execution VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET session=excluded.session,revision=excluded.revision")){q.setString(1,session.toString());q.setLong(2,revision);q.executeUpdate();}
-        orderUnstartedNativeTargets(revision);return h;
+        orderUnstartedNativeTargets(revision,1);return h;
+    }
+    public synchronized void prepareNativeWriteOrder(UUID session,long revision)throws Exception{
+        if(!nativeOwned(session,revision)||head().revision()!=revision||!head().phase().equals("PREFLIGHT"))throw new IllegalStateException("BUILDING_NATIVE_ORDER_CONTEXT_CHANGED");
+        orderUnstartedNativeTargets(revision,2);
     }
     /** Repair old alphabetic target schedules only before any world effect or referenced native operation exists. */
-    private void orderUnstartedNativeTargets(long revision)throws Exception{
-        var h=head();if(!h.phase().equals("PREFLIGHT")||h.cursor()!=0||h.mutationTick()!=0||h.activeRevision()!=0)return;
-        try(var q=db.prepareStatement("SELECT 1 FROM native_ordering WHERE revision=?")){q.setLong(1,revision);try(var rows=q.executeQuery()){if(rows.next())return;}}
+    private void orderUnstartedNativeTargets(long revision,int format)throws Exception{
+        var h=head();if(!h.phase().equals("PREFLIGHT")||format==1&&h.cursor()!=0||h.mutationTick()!=0||h.activeRevision()!=0)return;
+        try(var q=db.prepareStatement("SELECT format FROM native_ordering WHERE revision=?")){q.setLong(1,revision);try(var rows=q.executeQuery()){if(rows.next()&&rows.getInt(1)>=format)return;}}
         try(var q=db.prepareStatement("SELECT 1 FROM targets t WHERE t.revision=? AND (t.written=1 OR EXISTS(SELECT 1 FROM native_receipts n WHERE n.sequence=t.seq)) LIMIT 1")){
             q.setLong(1,revision);try(var rows=q.executeQuery()){if(rows.next())throw new IllegalStateException("BUILDING_NATIVE_ORDER_REQUIRES_RECONCILIATION");}
         }
@@ -126,7 +130,7 @@ public final class ConstructionLedger implements AutoCloseable {
         try(var q=db.prepareStatement("SELECT component,MIN(seq),MAX(seq) FROM targets WHERE revision=? GROUP BY component ORDER BY MIN(seq)")){
             q.setLong(1,revision);try(var rows=q.executeQuery()){while(rows.next()){int current=positions.getOrDefault(rows.getString(1),order.size());if(current<previousRank||rows.getLong(2)<=previousLast)ordered=false;previousRank=current;previousLast=rows.getLong(3);}}
         }
-        if(ordered){try(var mark=db.prepareStatement("INSERT INTO native_ordering VALUES(?,1)")){mark.setLong(1,revision);mark.executeUpdate();}return;}
+        if(ordered&&format==1){try(var mark=db.prepareStatement("INSERT INTO native_ordering VALUES(?,1) ON CONFLICT(revision) DO UPDATE SET format=MAX(format,1)")){mark.setLong(1,revision);mark.executeUpdate();}return;}
         var rank=new StringBuilder("CASE component");for(int i=0;i<order.size();i++)rank.append(" WHEN ? THEN ").append(i);rank.append(" ELSE ").append(order.size()).append(" END");
         db.setAutoCommit(false);
         try{
@@ -135,12 +139,13 @@ public final class ConstructionLedger implements AutoCloseable {
                 statement.execute("DROP TABLE IF EXISTS temp.native_order_rows");
                 statement.execute("CREATE TEMP TABLE native_order_rows(ordinal INTEGER PRIMARY KEY,previous_seq INTEGER UNIQUE NOT NULL)");
             }
-            try(var insert=db.prepareStatement("INSERT INTO temp.native_order_rows(previous_seq) SELECT seq FROM targets WHERE revision=? ORDER BY "+rank+",seq")){
+            String layerOrder=format==2?",y,CASE WHEN after_state LIKE '%[axis=y%' OR after_state LIKE '%,axis=y%' THEN 0 ELSE 1 END":"";
+            try(var insert=db.prepareStatement("INSERT INTO temp.native_order_rows(previous_seq) SELECT seq FROM targets WHERE revision=? ORDER BY "+rank+layerOrder+",seq")){
                 insert.setLong(1,revision);for(int i=0;i<order.size();i++)insert.setString(i+2,order.get(i));insert.executeUpdate();
             }
             try(var statement=db.createStatement();var rows=statement.executeQuery("SELECT COUNT(*) FROM temp.native_order_rows")){rows.next();count=rows.getLong(1);}Math.addExact(base,count);
             try(var update=db.prepareStatement("UPDATE targets SET seq=?+(SELECT ordinal FROM temp.native_order_rows WHERE previous_seq=targets.seq) WHERE revision=?")){update.setLong(1,base);update.setLong(2,revision);update.executeUpdate();}
-            try(var mark=db.prepareStatement("INSERT INTO native_ordering VALUES(?,1)")){mark.setLong(1,revision);mark.executeUpdate();}
+            try(var mark=db.prepareStatement("INSERT INTO native_ordering VALUES(?,?) ON CONFLICT(revision) DO UPDATE SET format=excluded.format")){mark.setLong(1,revision);mark.setInt(2,format);mark.executeUpdate();}
             db.commit();
         }catch(Exception failure){db.rollback();throw failure;}
         finally{db.setAutoCommit(true);try(var statement=db.createStatement()){statement.execute("DROP TABLE IF EXISTS temp.native_order_rows");}}

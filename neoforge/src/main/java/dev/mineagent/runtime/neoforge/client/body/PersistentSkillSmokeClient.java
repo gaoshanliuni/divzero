@@ -1083,6 +1083,7 @@ public final class PersistentSkillSmokeClient {
             var server=p.level().getServer();if(!restoreCopiedFixtureIdentity(p))return false;
             var found=MineAgentRuntimeServices.bodies(server).definitions().stream().filter(d->d.ownerPlayerId().equals(p.getUUID())&&d.displayName().equals("持续技能搭档")).findFirst();if(found.isEmpty())return false;agent=found.orElseThrow().agentId();return MineAgentRuntimeServices.bodies(server).body(agent).isPresent();
         }));
+        action("isolate-production-from-night-combat",()->server(p->{var server=p.level().getServer();server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"difficulty peaceful");server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"time set day");return Map.of("fixtureOnly",true,"difficulty","PEACEFUL","dayTimeReset",true,"scope","PRODUCTION_AND_CONSTRUCTION_NOT_COMBAT_ACCEPTANCE","newMaterialsGranted",0);}));
         action("read-persisted-real-model-plan-before-resume",()->tool("inspect_cooperation",JSON.createObjectNode()).thenApply(value->{
             require(value.path("runs").size()==1,"RESUME_EXPECTED_ONE_SOURCE_PLAN");resumedCooperation=value.path("runs").get(0);cooperativeRun=UUID.fromString(resumedCooperation.path("id").asText());require(resumedCooperation.path("status").asText().equals("PAUSED"),"RESUME_SOURCE_NOT_PAUSED");
             for(var step:resumedCooperation.path("steps")){

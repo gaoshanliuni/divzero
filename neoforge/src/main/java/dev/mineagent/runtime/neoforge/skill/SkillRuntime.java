@@ -57,6 +57,8 @@ public final class SkillRuntime {
         var w=work.get(operation);if(w==null||w.actor==null||!w.actor.current())return Map.of();
         var pos=w.player().position();var out=new LinkedHashMap<String,Object>();out.put("position",List.of(pos.x,pos.y,pos.z));out.put("phase",w.session.snapshot().phase());
         out.put("stand",w.stand==null?List.of():List.of(w.stand.x,w.stand.y,w.stand.z));out.put("navigation",w.actor.observation().getOrDefault("navigation",""));
+        out.put("dimension",w.player().level().dimension().identifier().toString());out.put("mainHand",w.player().getMainHandItem().toString());out.put("health",w.player().getHealth());
+        out.put("target",w.block==null?List.of():List.of(w.block.getX(),w.block.getY(),w.block.getZ()));if(w.construct!=null)out.put("construction",w.construct.view());
         if(w.handoffTarget!=null)out.put("recipientPosition",List.of(w.handoffTarget.x,w.handoffTarget.y,w.handoffTarget.z));
         return Map.copyOf(out);
     }
