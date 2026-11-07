@@ -14,6 +14,7 @@ import java.util.*;
 
 /** Production package entry, shared by trusted UI and future natural-language tool dispatch. No GUI classes. */
 public final class ServerPackageRuntime implements AutoCloseable {
+    private static final dev.mineagent.runtime.core.content.ObservationTokens TEXT_IDS=new dev.mineagent.runtime.core.content.ObservationTokens(256,16*1024*1024);
     private static final Map<MinecraftServer, ServerPackageRuntime> RUNTIMES = new IdentityHashMap<>();
     private final MinecraftServer server;
     private final RuntimePackageLibrary library;
@@ -136,7 +137,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
                 else for(var file:new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw).path("files"))if(file.path("path").asText().equals(path)&&file.path("encoding").asText("utf8").equals("utf8"))source=file.path("content").asText();
             }
             if(source==null){var file=base.resources().get(path);if(file==null||file.size()>1048576||!(path.endsWith(".java")||path.endsWith(".js")||path.endsWith(".json")||file.mediaType().startsWith("text/")))throw new IllegalArgumentException("PACKAGE_SOURCE_TEXT_REQUIRED");source=new String(content.read(file.sha256()),java.nio.charset.StandardCharsets.UTF_8);}
-            int start=Math.min(offset,source.length()),end=Math.min(source.length(),start+8192);value.put("path",path);value.put("source",source.substring(start,end));value.put("source_sha256",RuntimePackageCanonicalizer.sha256(source));value.put("nextOffset",end<source.length()?end:-1);return value;
+            int start=Math.min(offset,source.length()),end=Math.min(source.length(),start+8192);value.put("path",path);value.put("source",source.substring(start,end));value.put("source_sha256",TEXT_IDS.token(source));value.put("nextOffset",end<source.length()?end:-1);return value;
         }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}},io).thenCompose(value->server.submit(()->{if(closed||!current.getAsBoolean()||!mayWorldPatch(viewer.getUUID(),agent))throw new SecurityException("PACKAGE_SOURCE_CONTEXT_CHANGED");return value;}));
     }
     public java.util.concurrent.CompletableFuture<Map<String,Object>> editPackageSources(ServerPlayer viewer,UUID agent,UUID operation,com.fasterxml.jackson.databind.JsonNode args,java.util.function.BooleanSupplier current)throws Exception{

@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Server-owned Coder admission, bounded repair and explicit adoption. Candidate source is never executed here. */
 public final class ServerStudioCoder implements AutoCloseable {
+    private static final dev.mineagent.runtime.core.content.ObservationTokens TEXT_IDS=new dev.mineagent.runtime.core.content.ObservationTokens(256,16*1024*1024);
     private static final com.fasterxml.jackson.databind.ObjectMapper JSON=new com.fasterxml.jackson.databind.ObjectMapper();
     private static final Map<MinecraftServer,ServerStudioCoder> LIVE=new IdentityHashMap<>();
     private static final Set<MinecraftServer> STOPPED=Collections.newSetFromMap(new WeakHashMap<>());
@@ -329,7 +330,7 @@ public final class ServerStudioCoder implements AutoCloseable {
             text=switch(part){case "raw"->StudioCoderResult.read(content,attempt.rawHash(),StudioCoderJournal.MAX_RAW_BYTES);case "source"->StudioCoderResult.read(content,attempt.sourceHash(),64000);case "validation"->attempt.diagnostics();case "dependencyApi"->JavaDependencyApi.read(attempt.dependencyApi(),job.input().javaDependencies(),content);case "nativeContext"->{if(job.input().nativeSelection()==null)throw new IllegalArgumentException("STUDIO_CODER_NATIVE_CONTEXT_MISSING");yield job.input().nativeSelection().read(attempt.nativeContext(),content);}case "dependencySources"->{if(job.input().scriptDependencies()==null)throw new IllegalArgumentException("STUDIO_CODER_SCRIPT_CONTEXT_MISSING");yield job.input().scriptDependencies().read(attempt.scriptDependencySources(),content);}default->throw new IllegalArgumentException("STUDIO_CODER_ARGUMENTS");};
         }
         int start=Integer.parseInt(args.get("offset")),length=text.codePointCount(0,text.length());if(start<0||start>length)throw new IllegalArgumentException("STUDIO_CODER_PAGE");int end=Math.min(length,start+1024);
-        return Map.of("text",text.substring(text.offsetByCodePoints(0,start),text.offsetByCodePoints(0,end)),"nextOffset",end,"more",end<length,"hash",RuntimePackageCanonicalizer.sha256(text));
+        return Map.of("text",text.substring(text.offsetByCodePoints(0,start),text.offsetByCodePoints(0,end)),"nextOffset",end,"more",end<length,"hash",TEXT_IDS.token(text));
     }
     private Map<String,Object> summary(StudioCoderJournal.Job job){
         var in=job.input();return Map.ofEntries(Map.entry("id",job.id()),Map.entry("revision",job.revision()),Map.entry("state",job.state()),Map.entry("error",job.error()),

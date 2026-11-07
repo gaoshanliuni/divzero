@@ -1604,8 +1604,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ScopedGuidance.java",
-      "sha256": "5c7b18811ec0b608b70756d9fbc5aec0c7ef87a2f4acebac7d6601f17fc4a97b",
-      "bytes": 1683
+      "resourceId": "c641cfb5-5be9-4ac9-8ae4-41457173a29b",
+      "bytes": 1837
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/SpeechInputStore.java",
@@ -7184,8 +7184,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/ServerTaskHistory.java",
-      "sha256": "32b6ac0b2bd9cae5505ebc5b5c46feedd7d68c4d7fe6fb63d3be2ffa539bb00b",
-      "bytes": 10868
+      "resourceId": "5caa4fd7-bae3-4b92-a03e-4c8d7a648bdc",
+      "bytes": 10925
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/ServerTaskStart.java",
@@ -7834,8 +7834,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "resourceId": "50c0dc68-030e-4a9c-957c-10f441c682ce",
-      "bytes": 72906
+      "resourceId": "4954545f-78ba-445a-ba90-9c048880732e",
+      "bytes": 73049
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -7884,8 +7884,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerStudioCoder.java",
-      "resourceId": "f6af5c3d-6d7a-43e5-8520-b84ccf7dcd28",
-      "bytes": 44886
+      "resourceId": "9b8b5970-1a52-4f1f-8386-bbe133d5bfc5",
+      "bytes": 45029
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiAgentTasks.java",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "c4856879258a84d3e1836562dcb07c786cbf935e"
+  "sourceCommit": "cfb3ee78190b9da88be72191b8c87289fb31b280"
 }
