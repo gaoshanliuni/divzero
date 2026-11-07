@@ -80,13 +80,13 @@ public final class ServerJavaStudio {
             if(!args.keySet().equals(Set.of("kind","draftId","revision","offset")))throw new IllegalArgumentException("JAVA_STUDIO_ARGUMENTS");
             var d=draft(viewer,UUID.fromString(args.get("draftId")),Long.parseLong(args.get("revision")));int offset=Integer.parseInt(args.get("offset"));
             if(offset<0||offset>d.history().size())throw new IllegalArgumentException("STUDIO_HISTORY_PAGE");var items=new ArrayList<Map<String,Object>>();
-            for(int i=offset;i<Math.min(d.history().size(),offset+8);i++){String old=d.history().get(i);items.add(Map.of("index",i,"hash",RuntimePackageCanonicalizer.sha256(old),"characters",old.length()));}
+            for(int i=offset;i<Math.min(d.history().size(),offset+8);i++){String old=d.history().get(i);items.add(Map.of("index",i,"hash",dev.mineagent.runtime.api.packages.ResourceIds.version(d.draftId(),d.revision(),128+i),"characters",old.length()));}
             return Map.of("draftId",d.draftId(),"revision",d.revision(),"history",items,"total",d.history().size(),"nextOffset",offset+items.size(),"more",offset+items.size()<d.history().size());
         }
         if(kind.equals("historySource")){
             if(!args.keySet().equals(Set.of("kind","draftId","revision","entryIndex","hash","offset")))throw new IllegalArgumentException("JAVA_STUDIO_ARGUMENTS");
             var d=draft(viewer,UUID.fromString(args.get("draftId")),Long.parseLong(args.get("revision")));int index=Integer.parseInt(args.get("entryIndex"));
-            if(index<0||index>=d.history().size())throw new IllegalStateException("STUDIO_HISTORY_CHANGED");String source=d.history().get(index),hash=RuntimePackageCanonicalizer.sha256(source);
+            if(index<0||index>=d.history().size())throw new IllegalStateException("STUDIO_HISTORY_CHANGED");String source=d.history().get(index),hash=dev.mineagent.runtime.api.packages.ResourceIds.version(d.draftId(),d.revision(),128+index);
             if(!hash.equals(args.get("hash")))throw new IllegalStateException("STUDIO_HISTORY_CHANGED");if(source.length()>16000)throw new IllegalStateException("STUDIO_HISTORY_SOURCE_LIMIT");
             int start=Integer.parseInt(args.get("offset")),length=source.codePointCount(0,source.length());if(start<0||start>length)throw new IllegalArgumentException("STUDIO_HISTORY_PAGE");int end=Math.min(length,start+1024);
             return Map.of("text",source.substring(source.offsetByCodePoints(0,start),source.offsetByCodePoints(0,end)),"hash",hash,"nextOffset",end,"more",end<length);

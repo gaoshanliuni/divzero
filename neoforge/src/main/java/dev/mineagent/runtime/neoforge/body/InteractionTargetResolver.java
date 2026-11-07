@@ -22,8 +22,14 @@ public final class InteractionTargetResolver {
             if(evaluator.water(n)||evaluator.climb(n))continue;var at=NativeTraversalEvaluator.point(n);
             if(kind==Kind.PLACE){
                 var pose=p.getDimensions(net.minecraft.world.entity.Pose.CROUCHING);
-                if(pose.makeBoundingBox(at).intersects(new AABB(block)))continue;
-                if(NativeTerrainRecovery.placementHitFrom(p,block,at.add(0,pose.eyeHeight(),0))!=null)nodes.add(n);
+                // Navigation may settle within 0.4 blocks of a waypoint. A single ray
+                // from its exact centre can be clear while the actual body is occluded.
+                boolean usable=true;
+                placementWindow: for(double x:new double[]{-.4,0,.4})for(double z:new double[]{-.4,0,.4}){
+                    var feet=at.add(x,0,z);
+                    if(pose.makeBoundingBox(feet).intersects(new AABB(block))||NativeTerrainRecovery.placementHitFrom(p,block,feet.add(0,pose.eyeHeight(),0))==null){usable=false;break placementWindow;}
+                }
+                if(usable)nodes.add(n);
                 continue;
             }
             var eye=at.add(0,p.getEyeHeight(),0);double distance=eye.distanceTo(Vec3.atCenterOf(block));

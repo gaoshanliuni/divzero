@@ -4889,8 +4889,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "f4a22d6f-5d58-4dbf-8a7c-06628856d4c6",
-      "bytes": 4393
+      "resourceId": "3ae936af-23ed-4cb8-bfaa-a898d9f4d04d",
+      "bytes": 4819
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -5874,8 +5874,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/screen/NativeSpeechScreen.java",
-      "sha256": "94bd5f04dbd5222bb697c476851061615c4eb4cf960eaabf71f730fc638a7fba",
-      "bytes": 13163
+      "resourceId": "1e00a1d9-be1d-46f8-96b6-b9085d012cab",
+      "bytes": 13193
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/screen/ProjectAboutClient.java",
@@ -7364,8 +7364,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationEffectTools.java",
-      "sha256": "63acca4d954cc682c09a00bf0cc8e0252920bc1fc725d5edd9c4f452d6f91bd2",
-      "bytes": 3597
+      "resourceId": "217327f0-a2bf-4cd0-bde0-eb00080200b9",
+      "bytes": 3810
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationFeedbackSmokeServer.java",
@@ -7664,8 +7664,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerAgentInventory.java",
-      "sha256": "1a5be32c80008a57f860f7efd8f718d8d50f0a768ca53487d5a2ca2fe6b4b216",
-      "bytes": 8102
+      "resourceId": "69eb45c7-a0fb-4d04-97a2-8d6e4afbe22d",
+      "bytes": 8224
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerAgentManagement.java",
@@ -7789,8 +7789,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerJavaStudio.java",
-      "resourceId": "df3bdf78-13c2-44b5-a97a-3a1fd032f274",
-      "bytes": 42444
+      "resourceId": "3d60902c-53ba-4fd1-9132-e5dcdbb81038",
+      "bytes": 42539
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerMemoryRecall.java",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "409db192bfaf4e6f5b99fda6baf9c4374e6fbdde"
+  "sourceCommit": "a44102bcec1a66b18029d8391142eae41448329d"
 }

@@ -10,6 +10,7 @@ import java.util.*;
 
 /** Owner-scoped, server-thread inventory transactions. Clients supply slots, never item stacks. */
 public final class ServerAgentInventory {
+    private static final dev.mineagent.runtime.core.content.ObservationTokens INVENTORY_IDS=new dev.mineagent.runtime.core.content.ObservationTokens(1024,16*1024*1024);
     static MineAgentPlayer body(ServerPlayer viewer, Map<String,String> args) {
         var server=viewer.level().getServer();
         if(!server.isSameThread()||server.getPlayerList().getPlayer(viewer.getUUID())!=viewer)throw new SecurityException("INVENTORY_CONNECTION_CHANGED");
@@ -38,7 +39,7 @@ public final class ServerAgentInventory {
             var stack=player.getInventory().getItem(i);values.append('|').append(i).append(':');
             if(!stack.isEmpty())values.append(ItemStack.CODEC.encodeStart(player.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),stack).getOrThrow());
         }
-        try{return dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(values.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));}
+        try{return INVENTORY_IDS.token(MineAgentRuntimeServices.worldId(player.level().getServer())+"|"+values);}
         catch(Exception error){throw new IllegalStateException("INVENTORY_VERSION_UNAVAILABLE",error);}
     }
 
