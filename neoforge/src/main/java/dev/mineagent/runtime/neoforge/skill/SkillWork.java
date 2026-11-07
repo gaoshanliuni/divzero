@@ -71,6 +71,9 @@ final class SkillWork {
     }
     private boolean interactionMove(Vec3 target,InteractionTargetResolver.Kind kind){
         if(kind!=InteractionTargetResolver.Kind.PLACE)return move(target);
+        return movePrecisely(target);
+    }
+    boolean movePrecisely(Vec3 target){
         if(player().position().subtract(target).horizontalDistanceSqr()<=.040001&&Math.abs(player().getY()-target.y)<.2){actor.stop(token());return true;}
         String result=actor.move(token(),target);if(Set.of("UNREACHABLE","INTERACTION_BLOCKED","SEARCH_LIMIT").contains(result)){session.add("unreachable",1);waitFor(result,60);abandonTarget();}return false;
     }

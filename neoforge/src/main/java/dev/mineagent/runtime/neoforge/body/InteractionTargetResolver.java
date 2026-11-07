@@ -54,9 +54,9 @@ public final class InteractionTargetResolver {
         var nodes=new LinkedHashSet<SurfacePathfinder.Node>();var base=recipient.blockPosition();
         for(int x=-2;x<=2;x++)for(int z=-2;z<=2;z++)for(var node:evaluator.positions(base.getX()+x,base.getZ()+z,recipient.getY())){
             var at=NativeTraversalEvaluator.point(node);
-            if(evaluator.water(node)||evaluator.climb(node)||at.distanceToSqr(recipient.position())>1.45*1.45||Math.abs(at.y-recipient.getY())>1)continue;
+            if(evaluator.water(node)||evaluator.climb(node)||at.distanceToSqr(recipient.position())>1.7*1.7||Math.abs(at.y-recipient.getY())>1)continue;
             boolean usable=true;
-            deliveryWindow: for(double dx:new double[]{-.4,0,.4})for(double dz:new double[]{-.4,0,.4}){
+            deliveryWindow: for(double dx:new double[]{-.2,0,.2})for(double dz:new double[]{-.2,0,.2}){
                 var feet=at.add(dx,0,dz);
                 if(player.getDimensions(player.getPose()).makeBoundingBox(feet).deflate(.0001).intersects(recipient.getBoundingBox())){usable=false;break deliveryWindow;}
                 for(double eyeHeight:new double[]{player.getDimensions(net.minecraft.world.entity.Pose.CROUCHING).eyeHeight(),player.getDimensions(net.minecraft.world.entity.Pose.STANDING).eyeHeight()})

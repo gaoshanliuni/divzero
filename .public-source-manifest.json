@@ -4889,8 +4889,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "4d590daf-1e33-498e-b114-29d0d353ab83",
-      "bytes": 7068
+      "resourceId": "ce834a11-e759-40df-92fb-e3ecf124190a",
+      "bytes": 7066
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -6919,8 +6919,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/HandoffSkill.java",
-      "resourceId": "6e78de18-0010-45b6-8dd1-b71ef031fa4b",
-      "bytes": 8405
+      "resourceId": "716f3217-8958-49ed-8c86-83c1ddad884b",
+      "bytes": 8423
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/IsolatedCombatArena.java",
@@ -7064,8 +7064,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "resourceId": "e5176bc7-8084-494e-a2a6-c8e0cb930a1e",
-      "bytes": 13142
+      "resourceId": "8f80b485-038b-48f1-8aec-c72c266cd278",
+      "bytes": 13226
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "3ffb58e536f5adbfbf672d08f48767c0e424b7dd"
+  "sourceCommit": "c685d10f803d45bd5da9681bc99002b9f051b6b2"
 }

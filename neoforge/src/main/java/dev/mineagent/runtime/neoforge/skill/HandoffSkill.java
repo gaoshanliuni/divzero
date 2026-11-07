@@ -32,14 +32,14 @@ public final class HandoffSkill {
     private static void approach(SkillWork w,ServerPlayer recipient){
         if(w.handoffTarget==null||w.handoffTarget.distanceToSqr(recipient.position())>.0625){w.stand=null;w.search=null;w.handoffTarget=recipient.position();}
         w.session.phase("HANDOFF_APPROACH");
-        if(w.stand!=null){if(w.move(w.stand)&&!inDeliveryRange(w,recipient)){w.stand=null;w.search=null;}return;}
+        if(w.stand!=null){if(w.movePrecisely(w.stand)&&!inDeliveryRange(w,recipient)){w.stand=null;w.search=null;}return;}
         if(w.search==null)w.search=dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.handoff(w.player(),recipient);
         if(w.search.search()==null){w.search=null;w.waitFor("HANDOFF_NO_SAFE_STAND",40);return;}
         var budget=dev.mineagent.runtime.neoforge.body.NativeNavigationBudget.get(w.runtime.server);int allowance=budget.claim(w.token(),w.tick());if(allowance==0)return;
         w.search.evaluator().beginSlice();var result=w.search.search().advance(allowance,budget::timeAvailable);
         if(result.status()==dev.mineagent.runtime.core.task.SurfacePathfinder.Status.FOUND){
             w.stand=result.steps().isEmpty()?w.search.candidates().stream().min(Comparator.comparingDouble(at->at.distanceToSqr(w.player().position()))).orElseThrow():dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator.point(result.steps().getLast().to());
-            w.search=null;w.move(w.stand);
+            w.search=null;w.movePrecisely(w.stand);
         }else if(result.status()!=dev.mineagent.runtime.core.task.SurfacePathfinder.Status.BUDGET_EXHAUSTED){w.search=null;w.waitFor("HANDOFF_"+result.status().name(),40);}
     }
     private static void verify(SkillWork w,ServerPlayer recipient,Item item){
