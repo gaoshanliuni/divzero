@@ -67,6 +67,21 @@ public final class InteractionTargetResolver {
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
         return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());
     }
+    /** A courier clears the recipient's working reach after the actual pickup, using ordinary navigation. */
+    public static Query handoffExit(ServerPlayer player,ServerPlayer recipient){
+        var evaluator=new NativeTraversalEvaluator(player);var start=evaluator.closest(player.position());var nodes=new LinkedHashSet<SurfacePathfinder.Node>();var base=recipient.blockPosition();
+        double clearance=handoffClearance(recipient)+.25;int radius=(int)Math.ceil(clearance)+1;var offsets=new ArrayList<int[]>();
+        for(int x=-radius;x<=radius;x++)for(int z=-radius;z<=radius;z++)offsets.add(new int[]{x,z});
+        offsets.sort(Comparator.comparingDouble(d->player.position().distanceToSqr(Vec3.atBottomCenterOf(base.offset(d[0],0,d[1])))));
+        for(var offset:offsets){if(nodes.size()>=64)break;for(var node:evaluator.positions(base.getX()+offset[0],base.getZ()+offset[1],recipient.getY())){
+            var at=NativeTraversalEvaluator.point(node);double distance=at.subtract(recipient.position()).horizontalDistanceSqr();
+            if(distance<clearance*clearance||distance>(radius+.5)*(radius+.5)||Math.abs(at.y-recipient.getY())>2||evaluator.water(node)||evaluator.climb(node))continue;
+            if(!player.level().noCollision(player,player.getDimensions(player.getPose()).makeBoundingBox(at).deflate(.0001)))continue;nodes.add(node);
+        }}
+        if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
+        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());
+    }
+    public static double handoffClearance(ServerPlayer recipient){return Math.max(2.5,Math.min(5,recipient.blockInteractionRange()+.5));}
     /** Candidate feet positions must allow a real attack; the target's occupied block is not a waypoint. */
     public static Query melee(ServerPlayer p,net.minecraft.world.entity.LivingEntity target){
         var evaluator=new NativeTraversalEvaluator(p);var nodes=new LinkedHashSet<SurfacePathfinder.Node>();

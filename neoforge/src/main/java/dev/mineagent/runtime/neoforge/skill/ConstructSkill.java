@@ -92,6 +92,7 @@ public final class ConstructSkill {
         if(wanted.isAir()){advanceCell(cell,false);return;}
         Item item=wanted.getBlock().asItem();String id=BuiltInRegistries.ITEM.getKey(item).toString();if(w.count(item)<1){missing=id;w.waitFor("BUILDING_MATERIALS_REQUIRED",20);return;}missing="";
         if(!w.equip(item))return;if(w.tick()>=placementJumpUntil&&!w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted))return;
+        if(!placementSpaceReady(pos,wanted))return;
         w.actor.crouch(w.token(),true);
         if(!w.player().isCrouching())return;
         var hit=NativeTerrainRecovery.placementHit(w.player(),pos,wanted);if(hit==null){if(jumpForPlacement(cell,pos,wanted))return;w.waitFor("BUILDING_SUPPORT_FACE_REQUIRED",40);w.stand=null;w.search=null;return;}
@@ -111,10 +112,16 @@ public final class ConstructSkill {
             String detail=new com.google.gson.Gson().toJson(Map.of("actual",observed,"expected",cell.after(),"position",pos.toShortString(),"component",cell.component(),"materialsConsumed",1,"executionState","APPLIED_DIFFERENT_STATE"));
             waitFor(lease.update(l->{l.nativeObserved(w.token(),operation,"PLACED_STATE_MISMATCH",detail);l.applied(List.of(cell.sequence()),prior,tick);l.fail("PARTIAL",diagnostic);return null;}),()->{w.confirm("PLACED_STATE_MISMATCH",Map.of("actual",observed,"materialConsumed","1","executionState","APPLIED_DIFFERENT_STATE"));failure=diagnostic;w.pause("BUILDING_NATIVE_"+diagnostic);});return;
         }
+        if(w.action.equals("CONSTRUCT_PLACE")&&w.executed&&w.nativeUseObserved&&!w.nativeUse&&w.nativeConsumed==0&&actual.isAir()&&w.count(wanted.getBlock().asItem())==w.beforeCount){
+            String diagnostic=problem("PLACE_REJECTED_NO_CHANGE",cell,cell.after(),state(pos)).getMessage();UUID operation=w.operation;
+            String detail=new com.google.gson.Gson().toJson(Map.of("executionState","NOT_APPLIED","nativeAccepted",false,"actual",state(pos),"expected",cell.after(),"position",pos.toShortString(),"component",cell.component(),"materialsConsumed",0));
+            waitFor(lease.update(l->{l.nativeObserved(w.token(),operation,"NOT_APPLIED_NATIVE_REJECTED",detail);l.fail("PARTIAL",diagnostic);return null;}),()->{w.confirm("NOT_APPLIED_NATIVE_REJECTED",Map.of("actual",state(pos),"materialConsumed","0","executionState","NOT_APPLIED"));failure=diagnostic;w.pause("BUILDING_NATIVE_"+diagnostic);});return;
+        }
         if(w.interruptedOperation||w.executed&&w.tick()-w.startedTick>Math.min(2400,Math.max(240L,(long)NativeTerrainPolicy.breakTicks(w.player(),pos)*3+40)))throw problem("ACTION_OUTCOME_REQUIRES_RECONCILIATION",cell,cell.after(),state(pos));
         if(!w.executed&&!state(pos).equals(w.expectedState))throw problem("PREPARED_TARGET_CHANGED",cell,w.expectedState,state(pos));
         if(w.action.equals("CONSTRUCT_BREAK")){if(!w.executed){w.executed=true;w.startedTick=w.tick();}w.actor.breakBlock(w.token(),w.operation,pos);return;}
         if(w.executed)return; // A submitted placement waits for its real receipt; it is never replayed.
+        if(!placementSpaceReady(pos,wanted))return;
         w.actor.crouch(w.token(),true);if(!w.player().isCrouching())return;
         var hit=NativeTerrainRecovery.placementHit(w.player(),pos,wanted);
         if(hit==null){if(jumpForPlacement(cell,pos,wanted))return;w.stand=null;w.search=null;w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted);return;}
@@ -144,6 +151,12 @@ public final class ConstructSkill {
     CompletableFuture<Void> stop(){if(closed)return CompletableFuture.completedFuture(null);closed=true;boolean uncertain=w.executed;if(lease==null)return opening==null?CompletableFuture.completedFuture(null):opening.handle((value,error)->value).thenCompose(value->value==null?CompletableFuture.completedFuture(null):park(value,uncertain));return park(lease,uncertain);}
     private CompletableFuture<Void> park(ServerBuildings.NativeLease value,boolean uncertain){return value.park(uncertain,"NATIVE_ACTOR_STOPPED").whenComplete((v,e)->w.runtime.server.execute(value::release));}
     private boolean breakable(BlockPos pos){var p=w.player();return p.mayInteract(p.level(),pos)&&p.level().getBlockEntity(pos)==null&&p.level().getBlockState(pos).getDestroySpeed(p.level(),pos)>=0&&p.level().getFluidState(pos).isEmpty()&&TerrainProvenance.get(w.runtime.server).available()&&!TerrainProvenance.get(w.runtime.server).knownPlaced(p.level(),pos)&&dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.config(w.runtime.server).flag("autonomy.terrainRecovery.allowUnknownNaturalMaterials",true)&&!dev.mineagent.runtime.neoforge.ui.ServerInteractionRules.denied(p,pos,null,"block_break",false);}
+    private boolean placementSpaceReady(BlockPos pos,BlockState wanted){
+        var shape=wanted.getCollisionShape(w.player().level(),pos).move(pos.getX(),pos.getY(),pos.getZ());
+        if(w.player().level().isUnobstructed(null,shape))return true;
+        if(!shape.isEmpty()&&shape.bounds().intersects(w.player().getBoundingBox())){w.stand=null;w.search=null;w.reach(pos,InteractionTargetResolver.Kind.PLACE,wanted);return false;}
+        w.waitFor("BUILDING_ENTITY_BLOCKING",10);return false;
+    }
     private void loaded(BlockPos pos){if(!NativeTerrainPolicy.loaded(w.player(),pos))throw new IllegalStateException("BUILDING_CHUNK_NOT_LOADED at "+pos.toShortString());}
     private String state(BlockPos pos){return BlockStateParser.serialize(w.player().level().getBlockState(pos));}
     private static BlockPos position(ConstructionLedger.Cell cell){return new BlockPos(cell.x(),cell.y(),cell.z());}

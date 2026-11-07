@@ -18,7 +18,7 @@ public final class HandoffSkill {
         if(recipient==w.player()){w.pause("HANDOFF_SELF_TARGET");return;}
         Item item=BuiltInRegistries.ITEM.getValue(Identifier.parse(w.session.spec().crop()));if(item==null||item==Items.AIR){w.pause("HANDOFF_ITEM_UNAVAILABLE");return;}
         if(w.operation!=null){verify(w,recipient,item);return;}
-        long remaining=w.session.spec().limit()-w.session.count("handoffReceived");if(remaining<=0){w.completed("HANDOFF_RECEIVED_BY_TARGET");return;}
+        long remaining=w.session.spec().limit()-w.session.count("handoffReceived");if(remaining<=0){clearWorkingSpace(w,recipient);return;}
         if(w.count(item)==0){w.waitFor("HANDOFF_MATERIALS_REQUIRED",40);return;}
         if(!inDeliveryRange(w,recipient)){approach(w,recipient);return;}
         w.stand=null;w.search=null;w.handoffTarget=null;
@@ -28,6 +28,22 @@ public final class HandoffSkill {
     }
     private static boolean inDeliveryRange(SkillWork w,ServerPlayer recipient){
         return w.player().distanceToSqr(recipient)<=4&&Math.abs(w.player().getY()-recipient.getY())<=1&&dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.lineOfSight(w.player(),w.player().getEyePosition(),recipient.position().add(0,.5,0),null,false);
+    }
+    private static void clearWorkingSpace(SkillWork w,ServerPlayer recipient){
+        double clearance=dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.handoffClearance(recipient);
+        if(w.player().position().subtract(recipient.position()).horizontalDistanceSqr()>=clearance*clearance){
+            var receipt=new LinkedHashMap<>(w.session.receipt());receipt.put("clearancePosition",w.player().position().toString());receipt.put("recipientPosition",recipient.position().toString());receipt.put("minimumClearance",Double.toString(clearance));receipt.put("observedClearance",Double.toString(w.player().position().subtract(recipient.position()).horizontalDistance()));w.session.receipt(receipt);w.session.add("handoffClearanceVerified",1);w.completed("HANDOFF_RECEIVED_BY_TARGET");return;
+        }
+        if(!w.session.snapshot().phase().equals("HANDOFF_CLEARING_SPACE")||w.handoffTarget==null||w.handoffTarget.distanceToSqr(recipient.position())>.25){w.stand=null;w.search=null;w.handoffTarget=recipient.position();}
+        w.session.phase("HANDOFF_CLEARING_SPACE");
+        if(w.stand!=null){if(w.movePrecisely(w.stand)){w.stand=null;w.search=null;}return;}
+        if(w.search==null)w.search=dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.handoffExit(w.player(),recipient);
+        if(w.search.search()==null){w.search=null;w.waitFor("HANDOFF_NO_CLEARING_ROUTE",40);return;}
+        var budget=dev.mineagent.runtime.neoforge.body.NativeNavigationBudget.get(w.runtime.server);int allowance=budget.claim(w.token(),w.tick());if(allowance==0)return;
+        w.search.evaluator().beginSlice();var result=w.search.search().advance(allowance,budget::timeAvailable);
+        if(result.status()==dev.mineagent.runtime.core.task.SurfacePathfinder.Status.FOUND){
+            w.stand=result.steps().isEmpty()?w.search.candidates().stream().min(Comparator.comparingDouble(at->at.distanceToSqr(w.player().position()))).orElseThrow():dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator.point(result.steps().getLast().to());w.search=null;w.movePrecisely(w.stand);
+        }else if(result.status()!=dev.mineagent.runtime.core.task.SurfacePathfinder.Status.BUDGET_EXHAUSTED){w.search=null;w.waitFor("HANDOFF_CLEARANCE_"+result.status().name(),40);}
     }
     private static void approach(SkillWork w,ServerPlayer recipient){
         if(w.handoffTarget==null||w.handoffTarget.distanceToSqr(recipient.position())>.0625){w.stand=null;w.search=null;w.handoffTarget=recipient.position();}
