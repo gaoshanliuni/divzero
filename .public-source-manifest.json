@@ -5549,8 +5549,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",
-      "resourceId": "4826261e-e259-4484-aa3e-6ef383d39ec7",
-      "bytes": 19659
+      "resourceId": "19aa7c0f-c874-4a86-9127-327525448d3c",
+      "bytes": 19672
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
@@ -9665,5 +9665,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "fe6d60eb4f32526a567109934ef5bd55a36157c9"
+  "sourceCommit": "aa7c67b0ca1619f8773f82ed535616487a120c07"
 }
