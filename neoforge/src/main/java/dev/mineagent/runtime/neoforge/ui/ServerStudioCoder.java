@@ -75,7 +75,7 @@ public final class ServerStudioCoder implements AutoCloseable {
             if(in.scriptDependencies()!=null&&!ServerScriptDependencies.current(server,in.owner(),in.scriptDependencies().graph()))return false;
             if(in.nativeSelection()!=null){var latest=dev.mineagent.runtime.neoforge.compile.NativeCompilationEnvironment.latest();if(!latest.hash().equals(in.nativeSelection().snapshot())||!latest.snapshot().environment().fingerprint().equals(in.nativeSelection().environment())||in.nativeSelection().overlays().stream().anyMatch(o->!o.processEpoch().equals(dev.mineagent.runtime.neoforge.compile.NativeLiveClassAccess.state().processEpoch())))return false;}
             if(in.baseDraft()!=null){var draft=MineAgentRuntimeServices.codeDrafts(server).get(in.baseDraft()).orElse(null);
-                if(draft==null||!draft.dependencies().equals(in.dependencies())||draft.dependencyDeclaration()!=in.dependencyDeclaration()||!draft.worldId().equals(in.world())||!draft.ownerPlayerId().equals(in.owner())||draft.revision()!=in.baseRevision()||!draft.packageId().equals(in.packageId())||!draft.path().equals(in.path())||!draft.additionalSources().equals(in.additionalSources())||!RuntimePackageCanonicalizer.sha256(draft.source()).equals(in.sourceHash()))return false;}
+                if(draft==null||!draft.dependencies().equals(in.dependencies())||draft.dependencyDeclaration()!=in.dependencyDeclaration()||!draft.worldId().equals(in.world())||!draft.ownerPlayerId().equals(in.owner())||draft.revision()!=in.baseRevision()||!draft.packageId().equals(in.packageId())||!draft.path().equals(in.path())||!draft.additionalSources().equals(in.additionalSources())||!draft.primarySource().sha256().equals(in.sourceHash()))return false;}
             var pack=ServerPackageRuntime.get(server).worldLibrary().get(in.packageId()).orElse(null);
             if(in.packageRevision()==0)return pack==null;
             return pack!=null&&pack.revision()==in.packageRevision()&&pack.canonicalSha256().equals(in.packageHash())
@@ -175,9 +175,9 @@ public final class ServerStudioCoder implements AutoCloseable {
             return summary(previous);
         }
         if(active.size()>=4||active.values().stream().filter(b->b.input.owner().equals(owner)).count()>=2)throw new IllegalStateException("STUDIO_CODER_BUSY");
-        byte[] sourceBytes=CodeDraftSources.utf8(source);var refs=new TreeMap<>(additional);refs.put(path,CodeDraftSources.ref(source));if(workspace)CodeDraftSources.validate(path,refs);journal.capacity(sourceBytes.length+additional.values().stream().mapToInt(CodeDraft.SourceRef::bytes).sum());
-        String hash=content.put(sourceBytes).sha256();
-        String fingerprint=RuntimePackageCanonicalizer.sha256(path+"\n"+prompt+"\n"+CodeDraftSources.fingerprint(path,refs,dependencies)+"\n"+workspace+"\n"+maximum+"\n"+diagnostic+(dependencyDeclaration?"\njava-dependencies:"+dependencyHash+"\nexplicit:true":"")+(nativeSelection==null?"":"\nnative-selection:"+nativeSelection.fingerprint()));
+        byte[] sourceBytes=CodeDraftSources.utf8(source);var primaryRef=base==null?CodeDraftSources.store(content,source):base.primarySource();content.put(primaryRef.sha256(),sourceBytes);var refs=new TreeMap<>(additional);refs.put(path,primaryRef);if(workspace)CodeDraftSources.validate(path,refs);journal.capacity(sourceBytes.length+additional.values().stream().mapToInt(CodeDraft.SourceRef::bytes).sum());
+        String hash=primaryRef.sha256();
+        String fingerprint=operation.toString();
         var parent=base==null?null:dev.mineagent.runtime.core.persistence.TaskBudgetLineage.Parent.of(MineAgentRuntimeServices.tasks(server).get(base.taskId()).orElseThrow(),"REPAIR");
         if(repairSource!=null)parent=new dev.mineagent.runtime.core.persistence.TaskBudgetLineage.Parent(repairSource.input().task(),repairSource.input().taskIntent(),"REPAIR");
         var task=MineAgentRuntimeServices.tasks(server).createIdempotent(operation,agent,owner,"Code Studio Coder: "+path+" · "+fingerprint,50,
@@ -301,7 +301,7 @@ public final class ServerStudioCoder implements AutoCloseable {
         if(task.revision()==in.taskRevision()){var result=tasks.completeStep(task.taskId(),task.revision(),"generate");if(!result.accepted())throw new IllegalStateException("STUDIO_CODER_ADOPTION_TASK");task=result.task();}
         if(task.revision()!=in.taskRevision()+1||!task.runnableStepIds().contains("publish")||!currentInput(in,true))throw new IllegalStateException("STUDIO_CODER_ADOPTION_TASK");
         UUID operation=StudioCoderJournal.adoptionOperation(in);
-        var draft=MineAgentRuntimeServices.codeDrafts(server).createIdempotent(operation,in.owner(),in.task(),in.packageId(),task.revision(),Math.max(1,in.packageRevision()),in.path(),source,job.last().additionalSources(),in.workspace(),in.dependencies(),in.dependencyDeclaration());
+        var draft=MineAgentRuntimeServices.codeDrafts(server).createIdempotent(operation,in.owner(),in.task(),in.packageId(),task.revision(),Math.max(1,in.packageRevision()),in.path(),source,job.last().additionalSources(),in.workspace(),in.dependencies(),in.dependencyDeclaration(),new CodeDraft.SourceRef(job.last().sourceHash(),job.last().sourceBytes()),job.last().candidateHash(in));
         journal.adopted(id,draft.draftId());
         return Map.of("draftId",draft.draftId(),"state","ADOPTED_DRAFT_NOT_PUBLISHED");
     }

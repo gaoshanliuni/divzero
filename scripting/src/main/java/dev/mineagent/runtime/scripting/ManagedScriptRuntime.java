@@ -37,7 +37,7 @@ public final class ManagedScriptRuntime implements AutoCloseable {
     private final Duration executionTimeout;
     private final ScriptPreflight preflight = new ScriptPreflight();
     private final Map<UUID, Environment> environments = new LinkedHashMap<>();
-    public record Link(ScriptDependencyGraph graph,String sourceHash){public Link{java.util.Objects.requireNonNull(graph);if(sourceHash==null||!sourceHash.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("STUDIO_SCRIPT_DEPENDENCY_LINK");}}
+    public record Link(ScriptDependencyGraph graph,String sourceHash,String entry,Map<String,String> sources){public Link(ScriptDependencyGraph graph,String sourceHash){this(graph,sourceHash,"",Map.of());}public Link{java.util.Objects.requireNonNull(graph);sources=Map.copyOf(sources);if(sourceHash==null||!sourceHash.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("STUDIO_SCRIPT_DEPENDENCY_LINK");}}
     private volatile Map<UUID,ScriptDependencyGraph> reservations=Map.of();
     private volatile Map<UUID,List<UUID>> consumerIndex=Map.of();
     private final Set<UUID> attempted=new HashSet<>();
@@ -100,8 +100,7 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         if(link==null&&reservations.containsKey(packageId))throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_CONTEXT_REQUIRED");
         if(link!=null){
             if(!link.graph().equals(reservations.get(packageId)))throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_RESERVATION");
-            var refs=new java.util.TreeMap<String,dev.mineagent.runtime.api.packages.CodeDraft.SourceRef>();for(var file:modules.entrySet())refs.put(file.getKey(),CodeDraftSources.ref(file.getValue()));
-            if(!link.sourceHash().equals(CodeDraftSources.fingerprint(entryModule,refs,link.graph().required())))throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_SOURCE_CHANGED");
+            if(!entryModule.equals(link.entry())||!modules.equals(link.sources()))throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_SOURCE_CHANGED");
             pin(packageId,link.graph());
         }
         if (authority == null || initialTick < currentTick) throw new IllegalArgumentException("invalid script dispatch context");

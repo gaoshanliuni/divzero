@@ -147,7 +147,7 @@ public final class StudioScriptRuntime implements AutoCloseable {
             scripts.load(run.id(), pack.revision(), sources,
                     pack.entrypoints().get("studio_script").path(),
                     Map.of("host", new dev.mineagent.runtime.neoforge.scripting.MineAgentScriptHost(server, player.getUUID(), binding::current)),
-                    binding::current, server.getTickCount(),new ManagedScriptRuntime.Link(graph,run.sourceHash()));
+                    binding::current, server.getTickCount(),new ManagedScriptRuntime.Link(graph,run.sourceHash(),pack.entrypoints().get("studio_script").path(),sources));
             startCurrent(player, draft, revision);
             if (!binding.current()) throw new IllegalStateException("STUDIO_SCRIPT_AUTHORITY_CHANGED");
             journal.finish(run.id(), "START_RETURNED", "", "", 0, 0);

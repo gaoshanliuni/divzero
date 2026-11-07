@@ -111,7 +111,7 @@ public record StudioCoderResult(StudioCoderJournal.Attempt attempt,String source
             }
             for(var file:texts.entrySet()){if(file.getValue().isBlank())throw new IllegalArgumentException("STUDIO_CODER_SOURCE_LIMIT");refs.put(file.getKey(),CodeDraftSources.ref(file.getValue()));}
             if(workspace)CodeDraftSources.validate(entry,refs);
-            for(var file:texts.entrySet())if(!content.put(CodeDraftSources.utf8(file.getValue())).sha256().equals(refs.get(file.getKey()).sha256()))throw new java.io.IOException("content mismatch");
+            for(var file:texts.entrySet())content.put(refs.get(file.getKey()).sha256(),CodeDraftSources.utf8(file.getValue()));
             stored=true;
             if(javaSource){className=JavaSourceCompiler.inferClassName(texts.get(entry));if(!className.matches("[A-Za-z_$][A-Za-z0-9_$.]{0,255}"))throw new IllegalArgumentException("STUDIO_CODER_JAVA_ENTRY_REQUIRED");accepted=true;}
             else{
@@ -140,6 +140,6 @@ public record StudioCoderResult(StudioCoderJournal.Attempt attempt,String source
     public StudioCoderResult withScriptDependencySources(ScriptDependencySources.Snapshot sources){return new StudioCoderResult(StudioCoderJournal.withScriptDependencySources(attempt,sources),source,className,error,retryable);}
     public StudioCoderResult withNativeContext(NativeCoderContext.Snapshot context){return new StudioCoderResult(StudioCoderJournal.withNativeContext(attempt,context),source,className,error,retryable);}
     public StudioCoderResult uncertain(String code){return new StudioCoderResult(StudioCoderJournal.copyAttempt(attempt,"UNKNOWN",code,attempt.artifact(),attempt.nativeClasspath()),source,className,code,false);}
-    public static String read(ContentAddressedStore content,String hash,int maximum)throws Exception {byte[] bytes;try(var in=java.nio.file.Files.newInputStream(content.pathFor(hash))){bytes=in.readNBytes(maximum+1);}if(bytes.length>maximum||!RuntimePackageCanonicalizer.sha256(bytes).equals(hash))throw new IllegalStateException("STUDIO_CODER_SOURCE_CHANGED");return StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT).decode(java.nio.ByteBuffer.wrap(bytes)).toString();}
+    public static String read(ContentAddressedStore content,String hash,int maximum)throws Exception {byte[] bytes;try(var in=java.nio.file.Files.newInputStream(content.pathFor(hash))){bytes=in.readNBytes(maximum+1);}if(bytes.length>maximum)throw new IllegalStateException("STUDIO_CODER_SOURCE_CHANGED");return StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT).decode(java.nio.ByteBuffer.wrap(bytes)).toString();}
     private static String bounded(Object value,int max){String text=Objects.toString(value,"");return text.length()>max?text.substring(0,max):text;}
 }

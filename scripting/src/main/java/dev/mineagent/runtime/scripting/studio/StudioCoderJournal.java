@@ -89,8 +89,9 @@ public final class StudioCoderJournal {
             if(!entry.isEmpty()&&!sourceHash.isEmpty())CodeDraftSources.validate(entry,refs(entry,sourceHash,sourceBytes,additionalSources));
         }
         public Map<String,CodeDraft.SourceRef> files(String fallback){return sourceHash.isEmpty()?Map.of():refs(entry.isEmpty()?fallback:entry,sourceHash,sourceBytes,additionalSources);}
-        public String candidateHash(String fallback)throws Exception{return sourceHash.isEmpty()?"":CodeDraftSources.fingerprint(entry.isEmpty()?fallback:entry,files(fallback));}
-        public String candidateHash(Input in)throws Exception{return sourceHash.isEmpty()?"":CodeDraftSources.fingerprint(entry.isEmpty()?in.path():entry,files(in.path()),in.dependencies());}
+        public String candidateHash(String fallback){return sourceHash.isEmpty()?"":dev.mineagent.runtime.api.packages.ResourceIds.version(id,ordinal,3);}
+        public String candidateHash(Input in){return candidateHash(in.path());}
+        public CodeDraftSources.SourceSet sourceSet(Input in){return new CodeDraftSources.SourceSet(candidateHash(in),entry.isEmpty()?in.path():entry,files(in.path()),in.dependencies());}
         public int nativeContextBytes(){return nativeContext==null?0:nativeContext.bytes();}
         public int dependencyApiBytes(){return dependencyApi!=null?dependencyApi.bytes():scriptDependencySources!=null?scriptDependencySources.bytes():0;}
         public int totalSourceBytes(){return sourceBytes+additionalSources.values().stream().mapToInt(CodeDraft.SourceRef::bytes).sum();}

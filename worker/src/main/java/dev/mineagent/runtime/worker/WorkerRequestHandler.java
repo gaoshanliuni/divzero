@@ -740,6 +740,14 @@ public final class WorkerRequestHandler implements AutoCloseable {
             dev.mineagent.runtime.core.packages.JavaDependencyArtifacts.rejectCollisions(nativePaths,dependencyArtifacts.classOwners().keySet());
             if(dependencyGraph!=null)compileContext.put("javaDependencies",dependencyGraph.receiptHash());
             var compiler=new dev.mineagent.runtime.worker.compile.JavaSourceCompiler();
+            var sourceSet=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(request.payload().get("sourceSet"),dev.mineagent.runtime.core.packages.CodeDraftSources.SourceSet.class);
+            if(sourceSet==null)throw new IllegalArgumentException("JAVA_SOURCE_SET_REQUIRED");
+            var requestedSources=new java.util.TreeMap<String,String>();
+            if(request.payload().get("sources") instanceof Map<?,?> files)for(var entry:files.entrySet()){if(!(entry.getKey() instanceof String key)||!(entry.getValue() instanceof String value))throw new IllegalArgumentException("JAVA_SOURCE_SET_FILES");requestedSources.put(key,value);}
+            else requestedSources.put(sourceSet.entry(),required(request,"source"));
+            if(!sourceSet.files().keySet().equals(requestedSources.keySet())||!sourceSet.dependencies().equals(dependencyGraph==null?Map.of():dependencyGraph.required()))throw new IllegalArgumentException("JAVA_SOURCE_SET_CHANGED");
+            for(var entry:sourceSet.files().entrySet())if(!dev.mineagent.runtime.core.packages.CodeDraftSources.read(contentStore,entry.getValue()).equals(requestedSources.get(entry.getKey())))throw new IllegalArgumentException("JAVA_SOURCE_FILE_CHANGED: "+entry.getKey());
+            dev.mineagent.runtime.core.packages.CodeDraftSources.storeSet(contentStore,sourceSet);compileContext.put("sourceVersion",sourceSet.version());compileContext.put("sourceSet",sourceSet);
             dev.mineagent.runtime.worker.compile.JavaCompilationResult result;
             if(request.payload().containsKey("sources")){
                 if(!(request.payload().get("sources") instanceof Map<?,?> files)||files.isEmpty()||files.size()>64||snapshot==null)throw new IllegalArgumentException("STUDIO_WORKSPACE_COMPILER_INPUT");
@@ -765,7 +773,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
             }
             var activationMode = new dev.mineagent.runtime.scripting.javaext.JavaExtensionManager()
                     .classify(result.jarPath());
-            var stored = contentStore.put(java.nio.file.Files.readAllBytes(result.jarPath()));
+            var stored = contentStore.put(dev.mineagent.runtime.scripting.javaext.JavaExtensionManager.sha256(result.jarPath()),java.nio.file.Files.readAllBytes(result.jarPath()));
             return new WorkerEnvelope(PROTOCOL_VERSION, request.requestId(), "java.compile.result", Map.of(
                     "success", true, "diagnostics", diagnostics, "sha256", stored.sha256(),
                     "size", stored.size(), "activationMode", activationMode.name(),"compileContext",compileContext));

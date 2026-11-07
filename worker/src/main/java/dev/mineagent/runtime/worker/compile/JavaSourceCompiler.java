@@ -38,7 +38,7 @@ public final class JavaSourceCompiler {
     public JavaCompilationResult compile(String className,String source,Path outputJar)throws Exception{return compile(className,source,outputJar,List.of(),java.util.Map.of());}
     public JavaCompilationResult compile(String className, String source, Path outputJar,List<Path> nativeClasspath,java.util.Map<String,Object> compileContext) throws Exception {
         if(className==null||!className.matches("[A-Za-z_$][A-Za-z0-9_$.]{0,255}")||source==null||source.isBlank()||source.length()>1_000_000||outputJar==null)throw new IllegalArgumentException("invalid Java compilation request");
-        return compileUnits(className,className.replace('.','/')+".java",java.util.Map.of(className.replace('.','/')+".java",source),outputJar,nativeClasspath,compileContext,dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(source),false);
+        return compileUnits(className,className.replace('.','/')+".java",java.util.Map.of(className.replace('.','/')+".java",source),outputJar,nativeClasspath,compileContext,sourceVersion(compileContext),false);
     }
     public JavaCompilationResult compileWorkspace(String className,String entry,java.util.Map<String,String> sources,Path outputJar,List<Path> nativeClasspath,java.util.Map<String,Object> compileContext)throws Exception {
         return compileWorkspace(className,entry,sources,outputJar,nativeClasspath,compileContext,java.util.Map.of());
@@ -47,8 +47,9 @@ public final class JavaSourceCompiler {
         var refs=new java.util.TreeMap<String,dev.mineagent.runtime.api.packages.CodeDraft.SourceRef>();for(var file:sources.entrySet())refs.put(file.getKey(),dev.mineagent.runtime.core.packages.CodeDraftSources.ref(file.getValue()));
         dev.mineagent.runtime.core.packages.CodeDraftSources.validate(entry,refs);if(!dev.mineagent.runtime.core.packages.CodeDraftSources.java(entry))throw new IllegalArgumentException("STUDIO_WORKSPACE_LANGUAGE");
         var context=new java.util.LinkedHashMap<>(compileContext);context.put("workspaceEntry",entry);context.put("workspaceFileCount",sources.size());
-        return compileUnits(className,entry,java.util.Map.copyOf(sources),outputJar,nativeClasspath,context,dev.mineagent.runtime.core.packages.CodeDraftSources.fingerprint(entry,refs,dependencies),true);
+        return compileUnits(className,entry,java.util.Map.copyOf(sources),outputJar,nativeClasspath,context,sourceVersion(compileContext),true);
     }
+    private static String sourceVersion(java.util.Map<String,Object> context){Object version=context.get("sourceVersion");return version==null?dev.mineagent.runtime.api.packages.ResourceIds.create():dev.mineagent.runtime.api.packages.ResourceIds.require(version.toString());}
     private JavaCompilationResult compileUnits(String className,String entry,java.util.Map<String,String> sources,Path outputJar,List<Path> nativeClasspath,java.util.Map<String,Object> compileContext,String sourceHash,boolean workspace)throws Exception {
         String source=sources.get(entry);
         if (className == null || !className.matches("[A-Za-z_$][A-Za-z0-9_$.]{0,255}")
@@ -100,8 +101,8 @@ public final class JavaSourceCompiler {
             try {
                 try (var output = new JarOutputStream(Files.newOutputStream(temporaryJar));
                      var outputs = Files.walk(classes)) {
-                    if(!compileContext.isEmpty()){
-                        var context=new java.util.TreeMap<String,Object>(compileContext);context.put("className",className);context.put("sourceSha256",sourceHash);
+                    {
+                        var context=new java.util.TreeMap<String,Object>(compileContext);context.put("className",className);context.put("sourceSha256",sourceHash);context.put("artifactId",dev.mineagent.runtime.api.packages.ResourceIds.create());
                         var metadata=new JarEntry("META-INF/mineagent/compilation.json");metadata.setTime(0);output.putNextEntry(metadata);output.write(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(context));output.closeEntry();
                     }
                     for (Path path : outputs.filter(Files::isRegularFile).sorted().toList()) {

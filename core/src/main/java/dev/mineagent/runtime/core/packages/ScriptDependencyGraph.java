@@ -7,11 +7,13 @@ import java.util.*;
 public record ScriptDependencyGraph(int schema,UUID root,Map<UUID,String> required,List<Node> nodes) {
     public static final int MAX_NODES=64,MAX_DEPTH=32;
     public record Node(UUID packageId,String version,long packageRevision,String canonical,UUID publication,long publicationRevision,
-            String sourceHash,String entry,Map<UUID,String> dependencies) {
+            String sourceHash,String entry,Map<UUID,String> dependencies,Map<String,dev.mineagent.runtime.api.packages.CodeDraft.SourceRef> sourceRefs) {
+        public Node(UUID packageId,String version,long packageRevision,String canonical,UUID publication,long publicationRevision,String sourceHash,String entry,Map<UUID,String> dependencies){this(packageId,version,packageRevision,canonical,publication,publicationRevision,sourceHash,entry,dependencies,Map.of());}
         public Node {
             Objects.requireNonNull(packageId);Objects.requireNonNull(publication);dependencies=Collections.unmodifiableMap(new TreeMap<>(dependencies));
             if(version==null||!version.matches("[0-9A-Za-z_.+-]{1,64}")||packageRevision<1||publicationRevision<1||!sha(canonical)||!sha(sourceHash)||!RuntimeStudioScriptPlan.path(entry)||dependencies.size()>32)throw new IllegalArgumentException("STUDIO_SCRIPT_DEPENDENCY_NODE");
             CodeDraftSources.path(entry);
+            sourceRefs=sourceRefs==null?Map.of():Collections.unmodifiableMap(new TreeMap<>(sourceRefs));if(!sourceRefs.isEmpty())CodeDraftSources.validate(entry,sourceRefs);
         }
     }
     public ScriptDependencyGraph {

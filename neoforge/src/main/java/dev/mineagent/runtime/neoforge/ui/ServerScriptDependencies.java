@@ -33,7 +33,7 @@ public final class ServerScriptDependencies {
         if(records.size()!=1)throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_NOT_LOADED");
         var r=records.getFirst();
         if(!r.sourceHash().equals(RuntimeStudioPlan.fingerprint(pkg)))throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_SOURCE_CHANGED");
-        var node=new ScriptDependencyGraph.Node(id,version,pkg.revision(),pkg.canonicalSha256(),r.id(),r.revision(),r.sourceHash(),RuntimeStudioScriptPlan.source(pkg).path(),pkg.dependencies());
+        var node=new ScriptDependencyGraph.Node(id,version,pkg.revision(),pkg.canonicalSha256(),r.id(),r.revision(),r.sourceHash(),RuntimeStudioScriptPlan.source(pkg).path(),pkg.dependencies(),RuntimeStudioPlan.refs(pkg));
         nodes.put(id,node);visiting.add(id);
         for(var edge:pkg.dependencies().entrySet())visit(server,owner,edge.getKey(),edge.getValue(),nodes,visiting,depth+1);
         visiting.remove(id);

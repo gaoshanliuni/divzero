@@ -22,8 +22,7 @@ public record ScriptDependencySources(ScriptDependencyGraph graph,Map<UUID,Map<S
             var refs=files.get(node.packageId());if(refs==null)throw new IllegalArgumentException("STUDIO_CODER_SCRIPT_CONTEXT_FILES");
             CodeDraftSources.validate(node.entry(),refs);count+=refs.size();bytes+=refs.values().stream().mapToInt(CodeDraft.SourceRef::bytes).sum();
             if(count>1024||bytes>MAX_BYTES)throw new IllegalArgumentException("STUDIO_CODER_SCRIPT_SOURCE_CONTEXT_LIMIT");
-            try{if(!CodeDraftSources.fingerprint(node.entry(),refs,node.dependencies()).equals(node.sourceHash()))throw new IllegalArgumentException("STUDIO_CODER_SCRIPT_CONTEXT_SOURCE_CHANGED");}
-            catch(IllegalArgumentException e){throw e;}catch(Exception e){throw new IllegalArgumentException("STUDIO_CODER_SCRIPT_CONTEXT_SOURCE_CHANGED",e);}
+            if(node.sourceRefs().isEmpty()||!node.sourceRefs().equals(refs))throw new IllegalArgumentException("STUDIO_CODER_SCRIPT_CONTEXT_SOURCE_CHANGED");
             copy.put(node.packageId(),Collections.unmodifiableMap(new TreeMap<>(refs)));
         }
         files=Collections.unmodifiableMap(copy);

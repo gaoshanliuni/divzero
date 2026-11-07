@@ -40,13 +40,13 @@ public record NativeCompilationSnapshot(int schema,String namespace,String physi
         if(total!=classBytes||count!=classCount||!classes.containsKey("net/minecraft/server/MinecraftServer.class")||!classes.containsKey("net/neoforged/neoforge/common/NeoForge.class")||!classes.containsKey("dev/mineagent/runtime/api/packages/RuntimePackage.class"))throw new IllegalStateException("NATIVE_CLASSPATH_INCOMPLETE");verifyMaterialized(result);return List.copyOf(result);
     }
     public static void verifyReceipt(Path jar,String className,String sourceHash,String snapshot)throws Exception{
-        try(var file=new JarFile(jar.toFile(),false)){var entry=file.getJarEntry("META-INF/mineagent/compilation.json");if(entry==null)throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");byte[] bytes;try(var in=file.getInputStream(entry)){bytes=in.readNBytes(8193);}if(bytes.length>8192)throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");var value=new ObjectMapper().readTree(bytes);
+        try(var file=new JarFile(jar.toFile(),false)){var entry=file.getJarEntry("META-INF/mineagent/compilation.json");if(entry==null)throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");byte[] bytes;try(var in=file.getInputStream(entry)){bytes=in.readNBytes(65537);}if(bytes.length>65536)throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");var value=new ObjectMapper().readTree(bytes);
             if(!value.path("className").asText().equals(className)||!value.path("sourceSha256").asText().equals(sourceHash)||!value.path("nativeClasspath").asText().equals(snapshot))throw new IllegalStateException("JAVA_CLASSPATH_RECEIPT");}
     }
     public static void verifyReceipt(Path jar,String className,String sourceHash,String snapshot,String dependencies)throws Exception{
         verifyReceipt(jar,className,sourceHash,snapshot);
         try(var file=new JarFile(jar.toFile(),false);var in=file.getInputStream(file.getJarEntry("META-INF/mineagent/compilation.json"))){
-            var value=new ObjectMapper().readTree(in.readNBytes(8193));
+            var value=new ObjectMapper().readTree(in.readNBytes(65537));
             if(!value.path("javaDependencies").asText("").equals(dependencies))throw new IllegalStateException("JAVA_DEPENDENCY_RECEIPT");
         }
     }

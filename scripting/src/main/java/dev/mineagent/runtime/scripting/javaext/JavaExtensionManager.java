@@ -125,7 +125,7 @@ public final class JavaExtensionManager implements AutoCloseable {
         if(startAttempted.contains(key)&&!loaded.containsKey(key))throw new IllegalStateException("JAVA_PREVIOUS_OUTCOME_UNKNOWN");
         Path jar = requireJar(jarPath);
         if (!sha256(jar).equals(expectedSha256)) {
-            throw new IllegalArgumentException("extension SHA-256 mismatch");
+            throw new IllegalArgumentException("extension resource version mismatch");
         }
         ActivationMode mode = classify(jar);
         if (mode != ActivationMode.HOT_RUNTIME) {
@@ -172,18 +172,16 @@ public final class JavaExtensionManager implements AutoCloseable {
         return true;
     }
 
-    public static String sha256(Path path) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        try (var input = Files.newInputStream(path)) {
-            byte[] buffer = new byte[64 * 1024];
-            int count;
-            while ((count = input.read(buffer)) >= 0) {
-                if (count > 0) {
-                    digest.update(buffer, 0, count);
-                }
-            }
-        }
-        return HexFormat.of().formatHex(digest.digest());
+    private static final java.util.LinkedHashMap<String,byte[]> OBSERVED_ARTIFACTS=new java.util.LinkedHashMap<>(16,.75f,true);
+    private static final java.util.Map<Path,String> IMPORT_IDS=new java.util.LinkedHashMap<>();private static long observedBytes;
+    /** Historical API name: returns the artifact's assigned ID and compares earlier observations directly. */
+    public static synchronized String sha256(Path path) throws Exception {
+        Path file=path.toRealPath();if(Files.size(file)>256L*1024*1024)throw new IllegalArgumentException("JAVA_ARTIFACT_SIZE");byte[] bytes=Files.readAllBytes(file);String id=null;
+        try(var jar=new java.util.jar.JarFile(file.toFile(),false)){var metadata=jar.getJarEntry("META-INF/mineagent/compilation.json");if(metadata!=null)try(var in=jar.getInputStream(metadata)){byte[] raw=in.readNBytes(65537);if(raw.length>65536)throw new IllegalArgumentException("JAVA_ARTIFACT_METADATA_SIZE");var node=new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);if(node.has("artifactId"))id=dev.mineagent.runtime.api.packages.ResourceIds.require(node.path("artifactId").asText());}}
+        if(id==null){String name=file.getFileName().toString(),parent=file.getParent().getFileName().toString();if(parent.matches("[a-f0-9]{2}")&&name.matches("[a-f0-9]{62}"))id=parent+name;else if(name.matches("[a-f0-9]{64}\\.jar"))id=name.substring(0,64);else id=IMPORT_IDS.computeIfAbsent(file,ignored->dev.mineagent.runtime.api.packages.ResourceIds.create());}
+        while(IMPORT_IDS.size()>512)IMPORT_IDS.remove(IMPORT_IDS.keySet().iterator().next());var previous=OBSERVED_ARTIFACTS.get(id);if(previous!=null&&!java.util.Arrays.equals(previous,bytes))throw new IllegalStateException("JAVA_ARTIFACT_VERSION_CONTENT_CHANGED");
+        if(previous==null){OBSERVED_ARTIFACTS.put(id,bytes);observedBytes+=bytes.length;var iterator=OBSERVED_ARTIFACTS.entrySet().iterator();while(observedBytes>256L*1024*1024||OBSERVED_ARTIFACTS.size()>256){var row=iterator.next();observedBytes-=row.getValue().length;iterator.remove();}}
+        return id;
     }
 
     private static Path requireJar(Path value) {

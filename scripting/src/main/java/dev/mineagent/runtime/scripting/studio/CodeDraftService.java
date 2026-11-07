@@ -51,6 +51,7 @@ public final class CodeDraftService implements AutoCloseable {
         this.javaPublications = new JavaPublicationJournal(repository,worldId,clock);this.scriptPublications=new StudioScriptJournal(repository,worldId,clock);this.coder=new StudioCoderJournal(repository,worldId,clock);
         for (var record : repository.list(worldId, NAMESPACE)) {
             CodeDraft draft = mapper.readValue(record.payload(), CodeDraft.class);
+            CodeDraftSources.bind(draft,content);
             drafts.put(draft.draftId(), draft);
         }
     }
@@ -90,6 +91,7 @@ public final class CodeDraftService implements AutoCloseable {
         var draft = new CodeDraft(draftId, worldId, ownerPlayerId, taskId, packageId,
                 taskRevision, packageRevision, 1, path, source, CodeDraftStatus.DRAFT,
                 List.of(), clock.millis());
+        CodeDraftSources.bind(draft,content);
         var result = repository.compareAndSet(worldId, NAMESPACE, draftId.toString(), 0,
                 mapper.writeValueAsString(draft), draft.updatedAtEpochMillis());
         if (!result.accepted()) {
@@ -112,12 +114,16 @@ public final class CodeDraftService implements AutoCloseable {
         return createIdempotent(operation,owner,task,pkg,taskRevision,packageRevision,path,source,additional,workspace,dependencies,!dependencies.isEmpty());
     }
     public synchronized CodeDraft createIdempotent(UUID operation,UUID owner,UUID task,UUID pkg,long taskRevision,long packageRevision,String path,String source,Map<String,CodeDraft.SourceRef> additional,boolean workspace,Map<UUID,String> dependencies,boolean dependencyDeclaration)throws Exception {
+        return createIdempotent(operation,owner,task,pkg,taskRevision,packageRevision,path,source,additional,workspace,dependencies,dependencyDeclaration,null,null);
+    }
+    public synchronized CodeDraft createIdempotent(UUID operation,UUID owner,UUID task,UUID pkg,long taskRevision,long packageRevision,String path,String source,Map<String,CodeDraft.SourceRef> additional,boolean workspace,Map<UUID,String> dependencies,boolean dependencyDeclaration,CodeDraft.SourceRef primary,String sourceVersion)throws Exception {
         dependencyDeclaration=dependencyDeclaration||!dependencies.isEmpty();workspace=workspace||!additional.isEmpty()||dependencyDeclaration;
         if(dependencyDeclaration&&!CodeDraftSources.java(path)&&!isJavaScript(path))throw new IllegalArgumentException("STUDIO_DEPENDENCY_JAVA_REQUIRED");
         validate(owner,task,pkg,taskRevision,packageRevision,path,source);if(isJavaScript(path)&&!preflight.inspect(source).accepted())throw new IllegalArgumentException("STUDIO_SCRIPT_PREFLIGHT");UUID id=idempotentDraftId(worldId,owner,operation);
         var old=drafts.get(id);if(old!=null){if(!old.ownerPlayerId().equals(owner)||!old.taskId().equals(task)||!old.packageId().equals(pkg)||!old.path().equals(path)||!old.source().equals(source)||!old.additionalSources().equals(additional)||old.workspace()!=workspace||!old.dependencies().equals(dependencies)||old.dependencyDeclaration()!=dependencyDeclaration)throw new IllegalStateException("JAVA_STUDIO_OPERATION_REUSED");return old;}
-        if(drafts.size()>=4096)throw new IllegalStateException("JAVA_STUDIO_DRAFT_BUDGET");var value=new CodeDraft(id,worldId,owner,task,pkg,taskRevision,packageRevision,1,path,source,CodeDraftStatus.DRAFT,List.of(),clock.millis(),additional,List.of(),workspace,dependencies,dependencyDeclaration);
+        if(drafts.size()>=4096)throw new IllegalStateException("JAVA_STUDIO_DRAFT_BUDGET");var value=new CodeDraft(id,worldId,owner,task,pkg,taskRevision,packageRevision,1,path,source,CodeDraftStatus.DRAFT,List.of(),clock.millis(),additional,List.of(),workspace,dependencies,dependencyDeclaration,primary,sourceVersion);
         if(value.workspace()){CodeDraftSources.validate(path,CodeDraftSources.refs(value));validateSide(path,CodeDraftSources.refs(value).keySet());}
+        CodeDraftSources.bind(value,content);
         if(!repository.compareAndSet(worldId,NAMESPACE,id.toString(),0,mapper.writeValueAsString(value),clock.millis()).accepted())throw new IllegalStateException("JAVA_STUDIO_DRAFT_CAS");drafts.put(id,value);return value;
     }
     public synchronized Optional<CodeDraft> get(UUID draftId) {
@@ -170,11 +176,11 @@ public final class CodeDraftService implements AutoCloseable {
         if(draft.path().equals(path))return draft.source();var ref=draft.additionalSources().get(path);if(ref==null)throw new IllegalArgumentException("STUDIO_WORKSPACE_FILE_MISSING");return CodeDraftSources.read(content,ref);
     }
     public synchronized String historyFile(CodeDraft.WorkspaceVersion version,String path)throws Exception {var ref=version.files().get(path);if(ref==null)throw new IllegalArgumentException("STUDIO_WORKSPACE_FILE_MISSING");return CodeDraftSources.read(content,ref);}
-    private CodeDraft.SourceRef storeSource(String source)throws Exception {var ref=CodeDraftSources.ref(source);if(!content.put(CodeDraftSources.utf8(source)).sha256().equals(ref.sha256()))throw new IllegalStateException("STUDIO_WORKSPACE_SOURCE_CHANGED");return ref;}
+    private CodeDraft.SourceRef storeSource(String source)throws Exception {return CodeDraftSources.store(content,source);}
     private List<CodeDraft.WorkspaceVersion> snapshots(CodeDraft current)throws Exception {
-        storeSource(current.source());var values=new ArrayList<>(current.workspaceHistory());values.add(new CodeDraft.WorkspaceVersion(current.revision(),current.path(),CodeDraftSources.refs(current),current.dependencies()));while(values.size()>20)values.removeFirst();return List.copyOf(values);
+        CodeDraftSources.bind(current,content);var values=new ArrayList<>(current.workspaceHistory());values.add(new CodeDraft.WorkspaceVersion(current.revision(),current.path(),CodeDraftSources.refs(current),current.dependencies(),current.sourceVersion()));while(values.size()>20)values.removeFirst();return List.copyOf(values);
     }
-    private static CodeDraft workspaceCopy(CodeDraft d,String entry,String source,Map<String,CodeDraft.SourceRef> files,List<CodeDraft.WorkspaceVersion> history,boolean workspace){return new CodeDraft(d.draftId(),d.worldId(),d.ownerPlayerId(),d.taskId(),d.packageId(),d.taskRevision(),d.packageRevision(),d.revision(),entry,source,d.status(),d.history(),d.updatedAtEpochMillis(),files,history,workspace,d.dependencies(),d.dependencyDeclaration());}
+    private static CodeDraft workspaceCopy(CodeDraft d,String entry,String source,Map<String,CodeDraft.SourceRef> files,List<CodeDraft.WorkspaceVersion> history,boolean workspace){return new CodeDraft(d.draftId(),d.worldId(),d.ownerPlayerId(),d.taskId(),d.packageId(),d.taskRevision(),d.packageRevision(),d.revision(),entry,source,d.status(),d.history(),d.updatedAtEpochMillis(),files,history,workspace,d.dependencies(),d.dependencyDeclaration(),d.primarySource(),d.sourceVersion());}
     public synchronized CodeDraftResult file(UUID id,UUID owner,long revision,String action,String path,String target,String source)throws Exception {
         var current=require(id);if(!current.ownerPlayerId().equals(owner))return CodeDraftResult.rejected(current,"FORBIDDEN",List.of());if(current.revision()!=revision)return CodeDraftResult.rejected(current,"STALE_REVISION",List.of());if(current.status()!=CodeDraftStatus.DRAFT)return CodeDraftResult.rejected(current,"ALREADY_PUBLISHED",List.of());
         var refs=new LinkedHashMap<>(CodeDraftSources.refs(current));String entry=current.path(),primary=current.source();var dependencies=current.dependencies();
@@ -252,6 +258,7 @@ public final class CodeDraftService implements AutoCloseable {
 
     private CodeDraftResult save(CodeDraft current, CodeDraft next, Object executionResult) throws Exception {
         if(next.workspace()){CodeDraftSources.validate(next.path(),CodeDraftSources.refs(next));validateSide(next.path(),CodeDraftSources.refs(next).keySet());if(mapper.writeValueAsBytes(next).length>4*1024*1024-1024)throw new IllegalStateException("STUDIO_WORKSPACE_METADATA_LIMIT");}
+        CodeDraftSources.bind(next,content);
         var result = repository.compareAndSet(worldId, NAMESPACE, current.draftId().toString(),
                 current.revision(), mapper.writeValueAsString(next), next.updatedAtEpochMillis());
         if (!result.accepted()) {
@@ -281,7 +288,7 @@ public final class CodeDraftService implements AutoCloseable {
     ) {
         return new CodeDraft(draft.draftId(), draft.worldId(), draft.ownerPlayerId(), draft.taskId(),
                 draft.packageId(), draft.taskRevision(), draft.packageRevision(), revision,
-                draft.path(), source, status, history, updatedAt,draft.additionalSources(),draft.workspaceHistory(),draft.workspace(),draft.dependencies(),draft.dependencyDeclaration());
+                draft.path(), source, status, history, updatedAt,draft.additionalSources(),draft.workspaceHistory(),draft.workspace(),draft.dependencies(),draft.dependencyDeclaration(),source.equals(draft.source())?draft.primarySource():null,source.equals(draft.source())?draft.sourceVersion():null);
     }
     private static void validateSide(String entry,java.util.Collection<String> paths){boolean client=entry.startsWith("client/");if(paths.stream().anyMatch(path->path.startsWith("client/")!=client))throw new IllegalArgumentException("STUDIO_WORKSPACE_SIDE");}
 

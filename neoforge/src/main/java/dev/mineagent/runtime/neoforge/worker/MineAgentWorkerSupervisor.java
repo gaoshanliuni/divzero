@@ -278,6 +278,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                         if(!result.attempt().rawHash().isEmpty()){String raw=dev.mineagent.runtime.worker.generation.StudioCoderResult.read(content,result.attempt().rawHash(),dev.mineagent.runtime.scripting.studio.StudioCoderJournal.MAX_RAW_BYTES);if(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8).length!=result.attempt().rawBytes())throw new IllegalStateException("STUDIO_CODER_RESPONSE_CHANGED");}
                         if(!result.attempt().sourceHash().isEmpty()&&!dev.mineagent.runtime.worker.generation.StudioCoderResult.read(content,result.attempt().sourceHash(),64000).equals(result.source()))throw new IllegalStateException("STUDIO_CODER_RESPONSE_CHANGED");
                         if(!result.attempt().sourceHash().isEmpty()){
+                            dev.mineagent.runtime.core.packages.CodeDraftSources.storeSet(content,result.attempt().sourceSet(input));
                             if(input.workspace()){if(!input.path().equals(result.attempt().entry()))throw new IllegalStateException("STUDIO_CODER_RESPONSE_CHANGED");dev.mineagent.runtime.worker.generation.StudioCoderResult.readFiles(content,result.attempt().entry(),result.source(),result.attempt().additionalSources());}
                             else if(!result.attempt().additionalSources().isEmpty()||!result.attempt().entry().isEmpty())throw new IllegalStateException("STUDIO_CODER_RESPONSE_CHANGED");
                         }
@@ -294,7 +295,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
 
     /** Native-snapshot compilation and artifact proof only; never calls RuntimeExtension.start. */
     public CompletableFuture<WorkerEnvelope> validateStudioJava(dev.mineagent.runtime.scripting.studio.StudioCoderJournal.Input input,dev.mineagent.runtime.worker.generation.StudioCoderResult result,java.util.function.BooleanSupplier permit){
-        if(input.javaDependencies()==null&&input.nativeSelection()==null)return input.workspace()?validateStudioWorkspaceJava(result,permit):validateStudioJava(result.className(),result.source(),permit);
+
         return CompletableFuture.supplyAsync(()->{
             try{
                 if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();
@@ -303,7 +304,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                 String nativeHash="";if(input.nativeSelection()!=null){input.nativeSelection().read(result.attempt().nativeContext(),content);nativeHash=result.attempt().nativeContext().compilationSnapshot().isEmpty()?input.nativeSelection().snapshot():result.attempt().nativeContext().compilationSnapshot();}
                 return Map.entry(dev.mineagent.runtime.worker.generation.StudioCoderResult.readFiles(content,input.path(),result.source(),result.attempt().additionalSources()),nativeHash);
             }catch(Exception e){throw new java.util.concurrent.CompletionException(e);}
-        },requests).thenCompose(prepared->compileJavaWorkspaceAtSnapshot(result.className(),input.path(),prepared.getKey(),input.javaDependencies(),prepared.getValue(),permit)).thenApplyAsync(response->{
+        },requests).thenCompose(prepared->compileJavaSources(result.className(),result.source(),input.path(),prepared.getKey(),input.javaDependencies(),prepared.getValue(),permit,result.attempt().sourceSet(input))).thenApplyAsync(response->{
             try{
                 if(response.type().equals("java.compile.result")&&Boolean.TRUE.equals(response.payload().get("success"))){
                     String hash=String.valueOf(response.payload().get("sha256"));var path=contentPath(hash);
@@ -323,7 +324,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                     String hash=String.valueOf(response.payload().get("sha256"));var path=contentPath(hash);
                     if(!hash.equals(dev.mineagent.runtime.scripting.javaext.JavaExtensionManager.sha256(path)))throw new IllegalStateException("STUDIO_CODER_ARTIFACT_CHANGED");
                     var context=(Map<?,?>)response.payload().get("compileContext");
-                    dev.mineagent.runtime.core.compile.NativeCompilationSnapshot.verifyReceipt(path,className,dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(source),String.valueOf(context.get("nativeClasspath")));
+                    dev.mineagent.runtime.core.compile.NativeCompilationSnapshot.verifyReceipt(path,className,String.valueOf(context.get("sourceVersion")),String.valueOf(context.get("nativeClasspath")));
                 }
                 return response;
             }catch(Exception e){throw new java.util.concurrent.CompletionException(e);}
@@ -333,7 +334,7 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
         return CompletableFuture.supplyAsync(()->{
             try{if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();return dev.mineagent.runtime.worker.generation.StudioCoderResult.readFiles(new dev.mineagent.runtime.core.content.ContentAddressedStore(contentRoot),result.attempt().entry(),result.source(),result.attempt().additionalSources());}
             catch(Exception e){throw new java.util.concurrent.CompletionException(e);}
-        },requests).thenCompose(files->compileJavaWorkspace(result.className(),result.attempt().entry(),files,permit)).thenApplyAsync(response->{
+        },requests).thenCompose(files->compileJavaSources(result.className(),result.source(),result.attempt().entry(),files,null,"",permit,new dev.mineagent.runtime.core.packages.CodeDraftSources.SourceSet(result.attempt().candidateHash(result.attempt().entry()),result.attempt().entry(),result.attempt().files(result.attempt().entry()),Map.of()))).thenApplyAsync(response->{
             try{
                 if(response.type().equals("java.compile.result")&&Boolean.TRUE.equals(response.payload().get("success"))){String hash=String.valueOf(response.payload().get("sha256"));var path=contentPath(hash);if(!hash.equals(dev.mineagent.runtime.scripting.javaext.JavaExtensionManager.sha256(path)))throw new IllegalStateException("STUDIO_CODER_ARTIFACT_CHANGED");var context=(Map<?,?>)response.payload().get("compileContext");dev.mineagent.runtime.core.compile.NativeCompilationSnapshot.verifyReceipt(path,result.className(),result.attempt().candidateHash(result.attempt().entry()),String.valueOf(context.get("nativeClasspath")));}
                 return response;
@@ -388,13 +389,18 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
     public CompletableFuture<WorkerEnvelope> compileJavaWorkspace(String className,String entry,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,java.util.function.BooleanSupplier permit){
         var snapshot=Map.copyOf(sources);return compileJavaSources(className,snapshot.get(entry),entry,snapshot,dependencies,"",permit);
     }
-    public CompletableFuture<WorkerEnvelope> compileJavaWorkspace(String className,String entry,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,dev.mineagent.runtime.core.compile.NativeCoderContext selection,dev.mineagent.runtime.core.compile.NativeCoderContext.Snapshot context,java.util.function.BooleanSupplier permit){
-        if(selection==null||context==null)return CompletableFuture.failedFuture(new IllegalArgumentException("JAVA_NATIVE_CONTEXT_MISSING"));return CompletableFuture.supplyAsync(()->{try{if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();var content=new dev.mineagent.runtime.core.content.ContentAddressedStore(contentRoot);selection.read(context,content);var latest=dev.mineagent.runtime.neoforge.compile.NativeCompilationEnvironment.latest();if(!latest.hash().equals(selection.snapshot())||!latest.snapshot().environment().fingerprint().equals(selection.environment())||!selection.environment().equals(dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe().fingerprint())||selection.overlays().stream().anyMatch(o->!o.processEpoch().equals(dev.mineagent.runtime.neoforge.compile.NativeLiveClassAccess.state().processEpoch())))throw new IllegalStateException("JAVA_NATIVE_CONTEXT_CHANGED");String nativeSnapshot=context.compilationSnapshot().isEmpty()?selection.snapshot():context.compilationSnapshot();if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();return nativeSnapshot;}catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}},requests).thenCompose(nativeSnapshot->compileJavaWorkspaceAtSnapshot(className,entry,sources,dependencies,nativeSnapshot,permit));
+    public CompletableFuture<WorkerEnvelope> compileJavaWorkspace(String className,String entry,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,dev.mineagent.runtime.core.compile.NativeCoderContext selection,dev.mineagent.runtime.core.compile.NativeCoderContext.Snapshot context,java.util.function.BooleanSupplier permit){return compileJavaWorkspace(className,entry,sources,dependencies,selection,context,permit,null);}
+    public CompletableFuture<WorkerEnvelope> compileJavaWorkspace(String className,String entry,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,dev.mineagent.runtime.core.compile.NativeCoderContext selection,dev.mineagent.runtime.core.compile.NativeCoderContext.Snapshot context,java.util.function.BooleanSupplier permit,dev.mineagent.runtime.core.packages.CodeDraftSources.SourceSet sourceSet){
+        if(selection==null||context==null)return CompletableFuture.failedFuture(new IllegalArgumentException("JAVA_NATIVE_CONTEXT_MISSING"));return CompletableFuture.supplyAsync(()->{try{if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();var content=new dev.mineagent.runtime.core.content.ContentAddressedStore(contentRoot);selection.read(context,content);var latest=dev.mineagent.runtime.neoforge.compile.NativeCompilationEnvironment.latest();if(!latest.hash().equals(selection.snapshot())||!latest.snapshot().environment().fingerprint().equals(selection.environment())||!selection.environment().equals(dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe().fingerprint())||selection.overlays().stream().anyMatch(o->!o.processEpoch().equals(dev.mineagent.runtime.neoforge.compile.NativeLiveClassAccess.state().processEpoch())))throw new IllegalStateException("JAVA_NATIVE_CONTEXT_CHANGED");String nativeSnapshot=context.compilationSnapshot().isEmpty()?selection.snapshot():context.compilationSnapshot();if(!permit.getAsBoolean())throw new dev.mineagent.runtime.worker.process.WorkerDispatchGate.Rejected();return nativeSnapshot;}catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}},requests).thenCompose(nativeSnapshot->compileJavaSources(className,sources.get(entry),entry,Map.copyOf(sources),dependencies,nativeSnapshot,permit,sourceSet));
+    }
+    public CompletableFuture<WorkerEnvelope> compileJavaSourceSet(String className,dev.mineagent.runtime.core.packages.CodeDraftSources.SourceSet set,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,dev.mineagent.runtime.core.compile.NativeCoderContext selection,dev.mineagent.runtime.core.compile.NativeCoderContext.Snapshot context,java.util.function.BooleanSupplier permit){
+        return selection==null?compileJavaSources(className,sources.get(set.entry()),set.entry(),Map.copyOf(sources),dependencies,"",permit,set):compileJavaWorkspace(className,set.entry(),sources,dependencies,selection,context,permit,set);
     }
     private CompletableFuture<WorkerEnvelope> compileJavaWorkspaceAtSnapshot(String className,String entry,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,String nativeSnapshot,java.util.function.BooleanSupplier permit){
         var copy=Map.copyOf(sources);return compileJavaSources(className,copy.get(entry),entry,copy,dependencies,nativeSnapshot,permit);
     }
-    private CompletableFuture<WorkerEnvelope> compileJavaSources(String className,String source,String entry,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,String nativeSnapshot,java.util.function.BooleanSupplier permit){
+    private CompletableFuture<WorkerEnvelope> compileJavaSources(String className,String source,String entry,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,String nativeSnapshot,java.util.function.BooleanSupplier permit){return compileJavaSources(className,source,entry,sources,dependencies,nativeSnapshot,permit,null);}
+    private CompletableFuture<WorkerEnvelope> compileJavaSources(String className,String source,String entry,Map<String,String> sources,dev.mineagent.runtime.core.packages.JavaDependencyGraph dependencies,String nativeSnapshot,java.util.function.BooleanSupplier permit,dev.mineagent.runtime.core.packages.CodeDraftSources.SourceSet requestedSources){
         return CompletableFuture.supplyAsync(() -> {
             try {
                 if(contentRoot==null)throw new IllegalStateException("NATIVE_CLASSPATH_STORE_UNAVAILABLE");
@@ -406,13 +412,20 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                     var verified=dev.mineagent.runtime.core.compile.NativeCompilationSnapshot.read(content,nativeSnapshot);boolean raw=latest.hash().equals(nativeSnapshot)&&verified.equals(latest.snapshot()),derived=verified.mappingStatus().equals("RAW_MODULE_RESOURCES_WITH_EXPLICIT_LIVE_OVERLAYS")&&verified.environment().equals(latest.snapshot().environment())&&verified.namespace().equals(latest.snapshot().namespace())&&verified.physicalSide().equals(latest.snapshot().physicalSide());if(!raw&&!derived||!permit.getAsBoolean())throw new IllegalStateException("STUDIO_CODER_NATIVE_CONTEXT_CHANGED");snapshot=new dev.mineagent.runtime.neoforge.compile.NativeCompilationEnvironment.Captured(nativeSnapshot,verified);
                 }
                 var payload=new java.util.LinkedHashMap<String,Object>(Map.of("className",className,"source",source,"nativeClasspath",snapshot.hash()));if(!sources.isEmpty()){payload.put("entryPath",entry);payload.put("sources",sources);}
+                String sourceEntry=entry.isEmpty()?className.replace('.','/')+".java":entry;
+                var texts=sources.isEmpty()?Map.of(sourceEntry,source):sources;
+                var inputSet=requestedSources;
+                if(inputSet==null){var refs=new java.util.TreeMap<String,dev.mineagent.runtime.api.packages.CodeDraft.SourceRef>();for(var file:texts.entrySet())refs.put(file.getKey(),dev.mineagent.runtime.core.packages.CodeDraftSources.store(content,file.getValue()));inputSet=new dev.mineagent.runtime.core.packages.CodeDraftSources.SourceSet(dev.mineagent.runtime.api.packages.ResourceIds.create(),sourceEntry,refs,dependencies==null?Map.of():dependencies.required());}
+                if(!inputSet.entry().equals(sourceEntry)||!inputSet.files().keySet().equals(texts.keySet())||!inputSet.dependencies().equals(dependencies==null?Map.of():dependencies.required()))throw new IllegalStateException("JAVA_SOURCE_SET_CHANGED");
+                for(var file:inputSet.files().entrySet())if(!dev.mineagent.runtime.core.packages.CodeDraftSources.read(content,file.getValue()).equals(texts.get(file.getKey())))throw new IllegalStateException("JAVA_SOURCE_FILE_CHANGED: "+file.getKey());
+                dev.mineagent.runtime.core.packages.CodeDraftSources.storeSet(content,inputSet);payload.put("sourceSet",inputSet);
                 if(dependencies!=null)payload.put("javaDependencies",dependencies);
                 // Inspection happens on this background executor, not during a server-thread Native start.
                 var artifacts=dependencies==null?null:dev.mineagent.runtime.core.packages.JavaDependencyArtifacts.inspect(dependencies,content);
                 var result=requestWithRecovery(new WorkerEnvelope(1, UUID.randomUUID(), "java.compile", payload),permit);
                 if(result.type().equals("error")){String code=String.valueOf(result.payload().getOrDefault("code",""));throw new IllegalStateException(code.matches("(?:NATIVE_CLASSPATH|JAVA_DEPENDENCY)_[A-Z_]{1,80}")?code:"JAVA_COMPILE_FAILED");}
                 if(result.type().equals("java.compile.result")){
-                    var context=result.payload().get("compileContext");if(!(context instanceof Map<?,?> map)||!snapshot.hash().equals(map.get("nativeClasspath")))throw new IllegalStateException("NATIVE_CLASSPATH_RESPONSE_CHANGED");
+                    var context=result.payload().get("compileContext");if(!(context instanceof Map<?,?> map)||!snapshot.hash().equals(map.get("nativeClasspath"))||!inputSet.version().equals(map.get("sourceVersion")))throw new IllegalStateException("NATIVE_CLASSPATH_RESPONSE_CHANGED");
                     if(dependencies!=null){
                         if(!dependencies.receiptHash().equals(map.get("javaDependencies")))throw new IllegalStateException("JAVA_DEPENDENCY_RECEIPT");
                         dev.mineagent.runtime.core.packages.JavaDependencyArtifacts.verify(dependencies,artifacts.paths());
