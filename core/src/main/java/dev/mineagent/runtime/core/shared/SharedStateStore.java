@@ -62,11 +62,11 @@ public final class SharedStateStore implements AutoCloseable {
     public record ExpirySweep(int namespaces,int records,boolean more){}
     public record ExpiryBinding(UUID owner,long packageRevision,String canonical){public ExpiryBinding{Objects.requireNonNull(owner);if(packageRevision<1||canonical==null||!canonical.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("SHARED_EXPIRY_BINDING");}}
     @FunctionalInterface public interface ExpiryResolver{ExpiryBinding current(Scope scope)throws Exception;}
-    private final Connection db;private final UUID world;private final Authority authority;private boolean closed;private long clockBase,clockNano;
+    private final Connection db;private final UUID world;private final Authority authority;private final UUID streamEpoch,expiryActor;private boolean closed;private long clockBase,clockNano;
     private SharedStateStore(Connection db,UUID world,Authority authority)throws Exception{
         this.db=db;this.world=world;this.authority=authority;
         try(var s=db.createStatement()){s.execute("PRAGMA journal_mode=WAL");s.execute("PRAGMA busy_timeout=5000");}
-        transaction(()->{try(var s=db.createStatement()){
+        var identities=transaction(()->{try(var s=db.createStatement()){
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_shared_namespaces_v1(world TEXT NOT NULL,id TEXT NOT NULL,owner TEXT NOT NULL,payload TEXT NOT NULL,PRIMARY KEY(world,id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_shared_operations_v1(world TEXT NOT NULL,id TEXT NOT NULL,payload TEXT NOT NULL,PRIMARY KEY(world,id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_shared_event_exports_v1(world TEXT NOT NULL,event TEXT NOT NULL,payload_hash TEXT NOT NULL,PRIMARY KEY(world,event))");
@@ -74,7 +74,14 @@ public final class SharedStateStore implements AutoCloseable {
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_shared_expiry_v1(world TEXT NOT NULL,namespace TEXT NOT NULL,due INTEGER NOT NULL,owner TEXT NOT NULL,package_revision INTEGER NOT NULL,canonical TEXT NOT NULL,PRIMARY KEY(world,namespace))");
             s.execute("CREATE INDEX IF NOT EXISTS mineagent_shared_expiry_due_v1 ON mineagent_shared_expiry_v1(world,due)");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_shared_clock_v1(world TEXT PRIMARY KEY,observed INTEGER NOT NULL)");
-        }RetainedRows.initialize(db,world,List.of("mineagent_shared_operations_v1","mineagent_shared_outbox_v1"));return null;});
+            s.execute("CREATE TRIGGER IF NOT EXISTS mineagent_shared_outbox_immutable_v2 BEFORE UPDATE OF world,namespace,revision,event,payload ON mineagent_shared_outbox_v1 WHEN NEW.world IS NOT OLD.world OR NEW.namespace IS NOT OLD.namespace OR NEW.revision IS NOT OLD.revision OR NEW.event IS NOT OLD.event OR NEW.payload IS NOT OLD.payload BEGIN SELECT RAISE(ABORT,'SHARED_EVENT_IMMUTABLE'); END");
+        }
+        boolean legacy;try(var query=db.prepareStatement("SELECT 1 FROM mineagent_shared_namespaces_v1 WHERE world=? LIMIT 1")){query.setString(1,world.toString());try(var rows=query.executeQuery()){legacy=rows.next();}}
+        final boolean previousData=legacy;
+        UUID stream=dev.mineagent.runtime.core.persistence.SqlScopeIds.resolve(db,world,"shared_system","stream",()->previousData?dev.mineagent.runtime.core.content.LegacyNamespaceIds.sharedIdentityForMigration(world,"stream"):null);
+        UUID expiry=dev.mineagent.runtime.core.persistence.SqlScopeIds.resolve(db,world,"shared_system","expiry_actor",()->previousData?dev.mineagent.runtime.core.content.LegacyNamespaceIds.sharedIdentityForMigration(world,"expiry_actor"):null);
+        RetainedRows.initialize(db,world,List.of("mineagent_shared_operations_v1","mineagent_shared_outbox_v1"));return List.of(stream,expiry);});
+        streamEpoch=identities.get(0);expiryActor=identities.get(1);
     }
     public static SharedStateStore open(Path path,UUID world,Authority authority)throws Exception{
         Objects.requireNonNull(world);Objects.requireNonNull(authority);Path p=path.toAbsolutePath().normalize();Files.createDirectories(p.getParent());var db=DriverManager.getConnection("jdbc:sqlite:"+p);
@@ -260,7 +267,7 @@ public final class SharedStateStore implements AutoCloseable {
         if(changes.isEmpty()||changes.size()>64)throw new IllegalStateException("SHARED_CHANGE_BUDGET");
         if(n.records().size()>256)throw new IllegalStateException("SHARED_RECORD_BUDGET");String encoded=SharedJson.JSON.writeValueAsString(n);if(encoded.getBytes(StandardCharsets.UTF_8).length>262144)throw new IllegalStateException("SHARED_NAMESPACE_BYTE_BUDGET");budget("mineagent_shared_outbox_v1",8192);
         try(var q=db.prepareStatement("INSERT INTO mineagent_shared_namespaces_v1 VALUES(?,?,?,?) ON CONFLICT(world,id) DO UPDATE SET payload=excluded.payload")){q.setString(1,world.toString());q.setString(2,id(scope));q.setString(3,n.owner().toString());q.setString(4,encoded);q.executeUpdate();}
-        UUID event=UUID.nameUUIDFromBytes((world+"|shared|"+id(scope)+"|"+n.revision()).getBytes(StandardCharsets.UTF_8));var data=new Event(event,n.revision(),schema,actor,actorKind,binding.packageRevision(),binding.canonical(),changes,operation,now,origin);
+        UUID event=UUID.randomUUID();var data=new Event(event,n.revision(),schema,actor,actorKind,binding.packageRevision(),binding.canonical(),changes,operation,now,origin);
         try(var q=db.prepareStatement("INSERT INTO mineagent_shared_outbox_v1(world,namespace,revision,event,payload) VALUES(?,?,?,?,?)")){q.setString(1,world.toString());q.setString(2,id(scope));q.setLong(3,n.revision());q.setString(4,event.toString());q.setString(5,SharedJson.JSON.writeValueAsString(data));q.executeUpdate();}
         indexExpiry(scope,n,binding);return event;
     }
@@ -276,10 +283,30 @@ public final class SharedStateStore implements AutoCloseable {
     /** Runtime export boundary only: immutable commit metadata, never field values. */
     public synchronized List<Export> pendingExports(int limit)throws Exception{
         if(limit<1||limit>64||closed)throw new IllegalArgumentException("SHARED_EXPORT_LIMIT");var result=new ArrayList<Export>();
-        try(var q=db.prepareStatement("SELECT o.namespace,o.payload FROM mineagent_shared_outbox_v1 o LEFT JOIN mineagent_shared_event_exports_v1 e ON e.world=o.world AND e.event=o.event WHERE o.world=? AND o.archived=0 AND e.event IS NULL ORDER BY o.rowid LIMIT ?")){q.setString(1,world.toString());q.setInt(2,limit);try(var rows=q.executeQuery()){while(rows.next()){String[] key=rows.getString(1).split("/",-1);if(key.length!=3)throw new IllegalStateException("SHARED_EXPORT_SCOPE");String payload=rows.getString(2);var event=SharedJson.JSON.readValue(payload,Event.class);result.add(new Export(new Scope(world,UUID.fromString(key[0]),UUID.fromString(key[1]),key[2]),hash(payload),event));}}}return List.copyOf(result);
+        try(var q=db.prepareStatement("SELECT o.namespace,o.payload FROM mineagent_shared_outbox_v1 o LEFT JOIN mineagent_shared_event_exports_v1 e ON e.world=o.world AND e.event=o.event WHERE o.world=? AND o.archived=0 AND e.event IS NULL ORDER BY o.rowid LIMIT ?")){q.setString(1,world.toString());q.setInt(2,limit);try(var rows=q.executeQuery()){while(rows.next()){String[] key=rows.getString(1).split("/",-1);if(key.length!=3)throw new IllegalStateException("SHARED_EXPORT_SCOPE");String payload=rows.getString(2);var event=SharedJson.JSON.readValue(payload,Event.class);result.add(new Export(new Scope(world,UUID.fromString(key[0]),UUID.fromString(key[1]),key[2]),exportReference(event),event));}}}return List.copyOf(result);
     }
-    public synchronized void acknowledgeExport(Export row)throws Exception{if(!row.scope().world().equals(world)||closed)throw new SecurityException("SHARED_EXPORT_SCOPE");transaction(()->{try(var q=db.prepareStatement("SELECT namespace,payload FROM mineagent_shared_outbox_v1 WHERE world=? AND event=?")){q.setString(1,world.toString());q.setString(2,row.event().id().toString());try(var data=q.executeQuery()){if(!data.next()||!data.getString(1).equals(id(row.scope()))||!hash(data.getString(2)).equals(row.payloadHash()))throw new IllegalStateException("SHARED_EXPORT_CHANGED");}}try(var q=db.prepareStatement("INSERT INTO mineagent_shared_event_exports_v1 VALUES(?,?,?) ON CONFLICT(world,event) DO NOTHING")){q.setString(1,world.toString());q.setString(2,row.event().id().toString());q.setString(3,row.payloadHash());q.executeUpdate();}return null;});}
-    private String hash(String value)throws Exception{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}
+    public synchronized void acknowledgeExport(Export row)throws Exception{
+        if(!row.scope().world().equals(world)||closed)throw new SecurityException("SHARED_EXPORT_SCOPE");
+        transaction(()->{
+            try(var q=db.prepareStatement("SELECT namespace,payload FROM mineagent_shared_outbox_v1 WHERE world=? AND event=?")){
+                q.setString(1,world.toString());q.setString(2,row.event().id().toString());try(var data=q.executeQuery()){
+                    if(!data.next()||!data.getString(1).equals(id(row.scope())))throw new IllegalStateException("SHARED_EXPORT_CHANGED");
+                    var stored=SharedJson.JSON.readValue(data.getString(2),Event.class);
+                    if(!stored.equals(row.event())||!exportReference(stored).equals(row.payloadHash()))throw new IllegalStateException("SHARED_EXPORT_CHANGED");
+                }
+            }
+            try(var q=db.prepareStatement("INSERT INTO mineagent_shared_event_exports_v1 VALUES(?,?,?) ON CONFLICT(world,event) DO NOTHING")){q.setString(1,world.toString());q.setString(2,row.event().id().toString());q.setString(3,row.payloadHash());q.executeUpdate();}return null;
+        });
+    }
+    public UUID streamEpoch(){return streamEpoch;}
+    private static String exportReference(Event value){return "ref-v2:"+dev.mineagent.runtime.api.packages.ResourceIds.version(value.id(),value.revision(),35);}
+    private static void requireArchiveReceipt(String payload,String receipt,String id,long revision)throws Exception{
+        var event=SharedJson.JSON.readValue(payload,Event.class);if(!event.id().toString().equals(id)||event.revision()!=revision)throw new IllegalStateException("SHARED_EXPORT_IDENTITY_CHANGED");
+        // Archival changes storage temperature, not authority. Preserve historical acknowledged
+        // receipts as such; do not pretend to recalculate their old digest. Outbox rows are immutable.
+        if(dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.legacy(receipt))return;
+        if(!exportReference(event).equals(receipt))throw new IllegalStateException("SHARED_EXPORT_CHANGED");
+    }
     private Namespace load(Scope s)throws Exception{try(var q=db.prepareStatement("SELECT payload FROM mineagent_shared_namespaces_v1 WHERE world=? AND id=?")){q.setString(1,world.toString());q.setString(2,id(s));try(var r=q.executeQuery()){return r.next()?SharedJson.JSON.readValue(r.getString(1),Namespace.class):null;}}}
     private Receipt replay(UUID operation,String fingerprint)throws Exception{try(var q=db.prepareStatement("SELECT payload FROM mineagent_shared_operations_v1 WHERE world=? AND id=?")){q.setString(1,world.toString());q.setString(2,operation.toString());try(var r=q.executeQuery()){if(!r.next())return null;var op=SharedJson.JSON.readValue(r.getString(1),Operation.class);if(!op.fingerprint().equals(fingerprint))throw new IllegalArgumentException("SHARED_OPERATION_REUSED");return op.receipt();}}}
     /** Trusted verifier reads an existing transaction result without executing or replaying it. */
@@ -325,11 +352,11 @@ public final class SharedStateStore implements AutoCloseable {
         var expired=n.records().entrySet().stream().filter(e->e.getValue().expiresAt()>0&&e.getValue().expiresAt()<=now).sorted(Map.Entry.comparingByKey()).toList();
         if(expired.isEmpty()){indexExpiry(scope,n,binding);return 0;}
         var records=new TreeMap<>(n.records());long revision=n.revision();
-        UUID actor=UUID.nameUUIDFromBytes((world+"|shared-system-expiry-v1").getBytes(StandardCharsets.UTF_8));
+        UUID actor=expiryActor;
         for(int offset=0;offset<expired.size();offset+=64){var changes=new ArrayList<Change>();
             for(var item:expired.subList(offset,Math.min(offset+64,expired.size()))){var entry=item.getValue();records.remove(item.getKey());changes.add(new Change(entry.key(),entry.subject()));}
             revision=Math.addExact(revision,1);var next=new Namespace(n.owner(),revision,n.schema(),records);
-            UUID operation=UUID.nameUUIDFromBytes((world+"|shared-expiry|"+id(scope)+"|"+revision).getBytes(StandardCharsets.UTF_8));
+            UUID operation=UUID.randomUUID();
             publish(scope,binding,actor,"SYSTEM_EXPIRY",next,changes,false,operation,Provenance.NONE,now);
         }
         return expired.size();
@@ -368,7 +395,7 @@ public final class SharedStateStore implements AutoCloseable {
         if(Set.of("mineagent_shared_operations_v1","mineagent_shared_outbox_v1").contains(table)){
             RetainedRows.requireCapacity(db,world,table);if(RetainedRows.usage(db,world,table).hot()>=maximum){var rows=new ArrayList<Long>();
                 if(table.equals("mineagent_shared_operations_v1")){try(var query=db.prepareStatement("SELECT rowid FROM mineagent_shared_operations_v1 WHERE world=? AND archived=0 ORDER BY rowid LIMIT 256")){query.setString(1,world.toString());try(var result=query.executeQuery()){while(result.next())rows.add(result.getLong(1));}}}
-                else{try(var query=db.prepareStatement("SELECT o.rowid,o.payload,e.payload_hash FROM mineagent_shared_outbox_v1 o JOIN mineagent_shared_event_exports_v1 e ON e.world=o.world AND e.event=o.event WHERE o.world=? AND o.archived=0 ORDER BY o.rowid LIMIT 256")){query.setString(1,world.toString());try(var result=query.executeQuery()){while(result.next()){if(!hash(result.getString(2)).equals(result.getString(3)))throw new IllegalStateException("SHARED_EXPORT_CHANGED");rows.add(result.getLong(1));}}}}
+                else{try(var query=db.prepareStatement("SELECT o.rowid,o.payload,e.payload_hash,o.event,o.revision FROM mineagent_shared_outbox_v1 o JOIN mineagent_shared_event_exports_v1 e ON e.world=o.world AND e.event=o.event WHERE o.world=? AND o.archived=0 ORDER BY o.rowid LIMIT 256")){query.setString(1,world.toString());try(var result=query.executeQuery()){while(result.next()){requireArchiveReceipt(result.getString(2),result.getString(3),result.getString(4),result.getLong(5));rows.add(result.getLong(1));}}}}
                 RetainedRows.archive(db,world,table,rows);
             }
             if(RetainedRows.usage(db,world,table).hot()>=maximum)throw new IllegalStateException("SHARED_STORAGE_BUDGET");return;

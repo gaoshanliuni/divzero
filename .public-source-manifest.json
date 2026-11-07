@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "92a2c768-5837-4c01-9f16-6c8ec0d4ce06",
-      "bytes": 5358
+      "resourceId": "c28fd57a-93b7-4051-b9e4-301ff9fbf72d",
+      "bytes": 5453
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1464,8 +1464,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/LegacyNamespaceIds.java",
-      "resourceId": "fbc60f21-c6f0-458f-99a3-67ed852964cc",
-      "bytes": 6453
+      "resourceId": "8141115f-2935-4c1f-9379-6a43d7dc0c64",
+      "bytes": 6885
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ObservationTokens.java",
@@ -2398,6 +2398,11 @@
       "bytes": 23291
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqlScopeIds.java",
+      "resourceId": "798fe973-36aa-44fb-b7e5-2a3f93199248",
+      "bytes": 1557
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteConfigRepository.java",
       "sha256": "a6d3e9dfc9c90ca87b1f45878577e31be80d22e17e476affecc242fa9b16ea69",
       "bytes": 6261
@@ -2609,8 +2614,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/shared/SharedEventBridge.java",
-      "sha256": "d59bbe405cc7a780bdf29e004c48c9e6a133840420c645a5707eedba9822f7a0",
-      "bytes": 1391
+      "resourceId": "ac8ceba2-abfd-4002-9591-550c2a9d1040",
+      "bytes": 1307
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/shared/SharedJson.java",
@@ -2634,8 +2639,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/shared/SharedStateStore.java",
-      "resourceId": "bdaf369b-de6e-4add-8fc9-c0e67e89c66b",
-      "bytes": 47607
+      "resourceId": "80bfa69f-63df-4bb2-aa00-a16eec48d5a6",
+      "bytes": 49745
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/shared/SharedStateTarget.java",
@@ -3666,6 +3671,21 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/scoreboard/ScoreboardViewProjectorTest.java",
       "sha256": "a5ea1a42ba6cbf7bddcfea36560d4a8b61dc4f04d42a0d7d1a47ed207746d893",
       "bytes": 3070
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/shared/SharedEventBridgeTest.java",
+      "resourceId": "e73dbd95-6bf4-4eea-90e1-9be0841eab8d",
+      "bytes": 3341
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/shared/SharedIdentityTest.java",
+      "resourceId": "1bfe4ce1-3527-4ecc-8149-5d8bf23e6cb1",
+      "bytes": 3679
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/shared/SharedStateStoreTest.java",
+      "resourceId": "103a88f3-8d71-4018-b184-12f065d0ccc4",
+      "bytes": 12606
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/AutonomyPlanTest.java",
@@ -9500,5 +9520,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "3f6026f72a133ab1b247c7d1d92b0f5aa9077bac"
+  "sourceCommit": "5e98e84a54055aab08663059e656be32ba3de8d9"
 }

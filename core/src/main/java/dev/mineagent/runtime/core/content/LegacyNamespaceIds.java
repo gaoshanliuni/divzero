@@ -20,6 +20,11 @@ public final class LegacyNamespaceIds {
  /** Used only while atomically migrating a legacy world-action row lacking its explicit operation list. */
  public static UUID worldActionForMigration(UUID batch,int index){if(batch==null||index<0||index>=256)throw new IllegalArgumentException("LEGACY_WORLD_ACTION_ID");return UUID.nameUUIDFromBytes((batch+"|"+index).getBytes(StandardCharsets.UTF_8));}
  private record Mapping(String id,boolean migrated){}
+ /** Only used under the shared store's durable identity migration transaction. */
+ public static UUID sharedIdentityForMigration(UUID world,String kind){
+  String value=switch(kind){case "stream"->"shared-state-stream-v1|"+world;case "expiry_actor"->world+"|shared-system-expiry-v1";default->throw new IllegalArgumentException("LEGACY_SHARED_ID_KIND");};
+  return UUID.nameUUIDFromBytes(value.getBytes(StandardCharsets.UTF_8));
+ }
  private static final ObjectMapper JSON=new ObjectMapper();private static final Map<Path,Object> LOCKS=new java.util.concurrent.ConcurrentHashMap<>();
  public static String resolve(Path indexRoot,Kind kind,String originalScope,java.util.function.Predicate<String> legacyExists)throws IOException{
   return resolve(indexRoot,kind,originalScope,true,legacyExists);
