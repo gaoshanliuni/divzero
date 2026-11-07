@@ -1623,6 +1623,11 @@
       "bytes": 1734
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/TaskReferenceContext.java",
+      "resourceId": "58fe54e8-4660-41d5-8241-9fa256f6fc62",
+      "bytes": 2996
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ToolArguments.java",
       "sha256": "e2d034cf32e5530339202626e9e5a53d513b07091bb16b2def2e52a1cf908b8d",
       "bytes": 2035
@@ -3401,6 +3406,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ScopedGuidanceTest.java",
       "sha256": "a2f22a5d9cea1b5e9619a808c8dcbcea066f9f8193784457a3478540aa5d4f45",
       "bytes": 1252
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/TaskReferenceContextTest.java",
+      "resourceId": "4dcfa4ad-465b-42e9-9234-af024ae50272",
+      "bytes": 2838
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ToolArgumentsTest.java",
@@ -7919,8 +7929,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "resourceId": "4e05e8b8-ee07-4cfb-a563-51acc53dae71",
-      "bytes": 106700
+      "resourceId": "9aa02eb3-f981-47e9-908d-9244811934a0",
+      "bytes": 107098
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -9655,5 +9665,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "238cef830fb79adcb0a3f6016b8e22aac64a1b9d"
+  "sourceCommit": "86cca2f0bb2e6e741f704bc23a52a5fed6d06cdc"
 }
