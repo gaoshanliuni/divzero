@@ -41,6 +41,9 @@ public final class SqliteRuntimeRepository implements AutoCloseable {
     public synchronized boolean hasLegacyDialogueMemory(UUID world)throws SQLException{
         try(var query=connection.prepareStatement("SELECT 1 FROM mineagent_runtime_records WHERE world_id=? AND deleted=0 AND namespace GLOB 'dialogue_memory_[0-9a-f]*' LIMIT 1")){query.setString(1,world.toString());try(var rows=query.executeQuery()){return rows.next();}}
     }
+    public synchronized void initializeCooperationHistory()throws SQLException{CooperationRetention.initialize(connection);}
+    public synchronized List<RuntimeRecord> activeCooperations(UUID world)throws SQLException{return CooperationRetention.active(connection,world);}
+    public synchronized List<RuntimeRecord> cooperationHistory(UUID world,UUID owner,UUID leader,int offset,int limit)throws SQLException{return CooperationRetention.history(connection,world,owner,leader,offset,limit);}
     private void endWrite() throws SQLException {
         try { connection.setAutoCommit(true); } finally { writeGate.unlock(); }
     }

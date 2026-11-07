@@ -2348,6 +2348,11 @@
       "bytes": 277
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/CooperationRetention.java",
+      "resourceId": "12de0f78-bf25-4e98-9692-77f2fb57482e",
+      "bytes": 2443
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/ExactRequestSnapshot.java",
       "resourceId": "e687e61d-0f90-4ded-827e-7aadf73c8bc1",
       "bytes": 805
@@ -2409,8 +2414,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteRuntimeRepository.java",
-      "resourceId": "68d422cb-c955-48f9-b2ac-c5eafa66a652",
-      "bytes": 30115
+      "resourceId": "51cd6b8a-7542-4142-901e-abc7e9c460c9",
+      "bytes": 30609
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/SqliteWriteGate.java",
@@ -3653,6 +3658,11 @@
       "bytes": 2094
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/CooperationRetentionTest.java",
+      "resourceId": "a8c2e947-f858-4777-baa2-2671a3c5a888",
+      "bytes": 4080
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/NewWorldIdentityTest.java",
       "resourceId": "12dfda22-c1e7-41aa-92fe-ad671d34ad00",
       "bytes": 10592
@@ -4049,8 +4059,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "b27dc77e-8929-482c-b078-da1796e558d4",
-      "bytes": 13984
+      "resourceId": "5eea29d7-531a-48d3-9d98-d625cafa8a28",
+      "bytes": 15341
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -6949,8 +6959,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
-      "resourceId": "36ff2325-d3c6-4db3-9631-541eba96c2c3",
-      "bytes": 17692
+      "resourceId": "264ff6ec-c665-4080-8837-f35471d4103d",
+      "bytes": 19870
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -9540,5 +9550,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "c8d421aa89552381107e56ac05bf03892271d536"
+  "sourceCommit": "9fce9727c34ffd984a7661c02db6de4d246e6f8f"
 }
