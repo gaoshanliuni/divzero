@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 class CodeSourceVersionTest {
     @TempDir Path root;
+    @Test void repeatedCompileRequestKeepsItsVersionButRejectsChangedFiles()throws Exception{
+        var content=new ContentAddressedStore(root);UUID request=UUID.randomUUID();var first=CodeDraftSources.captureRequest(content,request,"Entry.java",Map.of("Entry.java","public class Entry {}"),Map.of());var again=CodeDraftSources.captureRequest(new ContentAddressedStore(root),request,"Entry.java",Map.of("Entry.java","public class Entry {}"),Map.of());assertEquals(first,again);
+        assertThrows(IllegalStateException.class,()->CodeDraftSources.captureRequest(content,request,"Entry.java",Map.of("Entry.java","public class Entry { int different; }"),Map.of()));assertEquals("public class Entry {}",CodeDraftSources.read(content,first.files().get("Entry.java")));
+    }
     @Test void primaryAndSourceSetSurviveSerializationWithoutRecomputingContentIdentity()throws Exception{
         var content=new ContentAddressedStore(root);var helper=CodeDraftSources.store(content,"exports.n=2;");
         var draft=new CodeDraft(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID(),1,1,1,"main.js","require('./helper.js').n;",CodeDraftStatus.DRAFT,List.of(),1,Map.of("helper.js",helper),List.of(),true);

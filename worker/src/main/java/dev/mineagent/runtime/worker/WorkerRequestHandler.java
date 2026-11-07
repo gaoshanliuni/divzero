@@ -741,10 +741,10 @@ public final class WorkerRequestHandler implements AutoCloseable {
             if(dependencyGraph!=null)compileContext.put("javaDependencies",dependencyGraph.receiptHash());
             var compiler=new dev.mineagent.runtime.worker.compile.JavaSourceCompiler();
             var sourceSet=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(request.payload().get("sourceSet"),dev.mineagent.runtime.core.packages.CodeDraftSources.SourceSet.class);
-            if(sourceSet==null)throw new IllegalArgumentException("JAVA_SOURCE_SET_REQUIRED");
             var requestedSources=new java.util.TreeMap<String,String>();
             if(request.payload().get("sources") instanceof Map<?,?> files)for(var entry:files.entrySet()){if(!(entry.getKey() instanceof String key)||!(entry.getValue() instanceof String value))throw new IllegalArgumentException("JAVA_SOURCE_SET_FILES");requestedSources.put(key,value);}
-            else requestedSources.put(sourceSet.entry(),required(request,"source"));
+            else requestedSources.put(sourceSet==null?required(request,"className").replace('.','/')+".java":sourceSet.entry(),required(request,"source"));
+            if(sourceSet==null)sourceSet=dev.mineagent.runtime.core.packages.CodeDraftSources.captureRequest(contentStore,request.requestId(),request.payload().containsKey("sources")?required(request,"entryPath"):requestedSources.firstKey(),requestedSources,dependencyGraph==null?Map.of():dependencyGraph.required());
             if(!sourceSet.files().keySet().equals(requestedSources.keySet())||!sourceSet.dependencies().equals(dependencyGraph==null?Map.of():dependencyGraph.required()))throw new IllegalArgumentException("JAVA_SOURCE_SET_CHANGED");
             for(var entry:sourceSet.files().entrySet())if(!dev.mineagent.runtime.core.packages.CodeDraftSources.read(contentStore,entry.getValue()).equals(requestedSources.get(entry.getKey())))throw new IllegalArgumentException("JAVA_SOURCE_FILE_CHANGED: "+entry.getKey());
             dev.mineagent.runtime.core.packages.CodeDraftSources.storeSet(contentStore,sourceSet);compileContext.put("sourceVersion",sourceSet.version());compileContext.put("sourceSet",sourceSet);

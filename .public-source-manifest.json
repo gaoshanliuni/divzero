@@ -2039,8 +2039,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/CodeDraftSources.java",
-      "resourceId": "e3109963-9f70-46f4-99d0-e8c9a5cb0128",
-      "bytes": 6838
+      "resourceId": "a72182b7-282c-44ad-9e33-feb5cdffb0a5",
+      "bytes": 8112
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ContentPackageService.java",
@@ -3484,8 +3484,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/CodeSourceVersionTest.java",
-      "resourceId": "290256c0-d8f8-4f31-a18e-fbe837160a39",
-      "bytes": 2888
+      "resourceId": "55f0775e-1d46-4907-b465-07e038f903a7",
+      "bytes": 3662
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/ContentPackageServiceTest.java",
@@ -8434,8 +8434,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/StudioCoderJournal.java",
-      "resourceId": "2ae8958c-dcf7-482a-8de2-cdbda8b2c50f",
-      "bytes": 32353
+      "resourceId": "cbb1f0b8-39ed-4a91-bf6f-9c3d03f58e59",
+      "bytes": 32543
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/StudioScriptJournal.java",
@@ -8519,8 +8519,8 @@
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/studio/StudioCoderDependencyJournalTest.java",
-      "resourceId": "47fcac2b-3540-475a-a423-1b5b7620d27f",
-      "bytes": 9962
+      "resourceId": "5e19bc65-03c1-480b-adfc-52fd0cec1f3f",
+      "bytes": 10023
     },
     {
       "path": "scripts/edit-feature-films.py",
@@ -8614,8 +8614,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/WorkerRequestHandler.java",
-      "resourceId": "0210c631-85a2-402d-b149-0741351a4216",
-      "bytes": 111616
+      "resourceId": "0e151f0b-74eb-4d3a-8aea-e6e858c62d62",
+      "bytes": 111910
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/BootDependencyClasspath.java",
@@ -9380,5 +9380,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "969ba95ff9f1b9ee16c31245b6dcdc76dee01c31"
+  "sourceCommit": "46605fbaee78c0771b1daaffe3cb2a31e7e67951"
 }
