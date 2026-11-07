@@ -1038,9 +1038,25 @@ public final class PersistentSkillSmokeClient {
         action("stop-resumed-session",()->tool("control_skill",JSON.createObjectNode().put("id","paused_farm").put("expected_revision",3).put("action","stop")));
     }
     private static UUID cooperativeWood,cooperativeStone,cooperativeRun;private static ObjectNode cooperativePlan;
+    private static boolean copiedIdentityRequested;
+    /** The launcher copies a complete stopped isolated data root. Use its explicit restore flow, not a fresh scope or SQL rewrite. */
+    private static boolean restoreCopiedFixtureIdentity(ServerPlayer p){
+        var server=p.level().getServer();server.getPlayerList().op(p.nameAndId());
+        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(server)){
+            if(!copiedIdentityRequested){
+                try{var sourceRecord=server.getServerDirectory().getParent().resolve("review-source.json");require(Files.isRegularFile(sourceRecord),"COPIED_FIXTURE_MANIFEST_REQUIRED");var source=JSON.readTree(Files.readString(sourceRecord));require(source.path("modelCalls").asInt(-1)==0&&Files.isDirectory(Path.of(source.path("sourceGame").asText())),"COPIED_FIXTURE_SOURCE_REQUIRED");
+                    var command=p.createCommandSourceStack();var tokens=dev.mineagent.runtime.neoforge.WorldIdentityRuntime.suggestToken(command,new com.mojang.brigadier.suggestion.SuggestionsBuilder("",0)).join().getList();require(tokens.size()==1,"COPIED_FIXTURE_RESTORE_CHALLENGE_REQUIRED");
+                    require(dev.mineagent.runtime.neoforge.WorldIdentityRuntime.choose(command,"RESTORE_ROOT",null,tokens.getFirst().getText())==1,"COPIED_FIXTURE_RESTORE_NOT_ACCEPTED");
+                    copiedIdentityRequested=true;require(WorldActivationRuntime.enable(command,null)==1,"COPIED_FIXTURE_ACTIVATION_NOT_ACCEPTED");
+                }catch(Exception error){throw new CompletionException(error);}
+            }
+            return false;
+        }
+        WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);return true;
+    }
     private static void peerHistoryReview(){
         waitFor("restore-existing-peer-history-without-model",600,()->server(p->{try{
-            var server=p.level().getServer();server.getPlayerList().op(p.nameAndId());WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);
+            var server=p.level().getServer();if(!restoreCopiedFixtureIdentity(p))return false;
             var candidate=MineAgentRuntimeServices.bodies(server).definitions().stream().filter(d->d.ownerPlayerId().equals(p.getUUID())&&d.displayName().equals("持续技能搭档")).findFirst();if(candidate.isEmpty())return false;agent=candidate.orElseThrow().agentId();
             var store=dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server).store();var peers=store.peers(p.getUUID(),agent,0);require(peers.size()>=2,"PEER_REVIEW_SOURCE_MISSING");EVIDENCE.add(Map.of("source","PERSISTED_REAL_PROVIDER_DIALOGUE_READ_ONLY","threads",peers,"modelCalls",0));return true;
         }catch(Exception failure){throw new CompletionException(failure);}}));
@@ -1064,7 +1080,7 @@ public final class PersistentSkillSmokeClient {
     private static JsonNode resumedCooperation;
     private static void cooperativeResume(){
         waitFor("restore-actual-model-builder",600,()->server(p->{
-            var server=p.level().getServer();server.getPlayerList().op(p.nameAndId());WorldActivationRuntime.decide(p.createCommandSourceStack(),true,null);
+            var server=p.level().getServer();if(!restoreCopiedFixtureIdentity(p))return false;
             var found=MineAgentRuntimeServices.bodies(server).definitions().stream().filter(d->d.ownerPlayerId().equals(p.getUUID())&&d.displayName().equals("持续技能搭档")).findFirst();if(found.isEmpty())return false;agent=found.orElseThrow().agentId();return MineAgentRuntimeServices.bodies(server).body(agent).isPresent();
         }));
         action("read-persisted-real-model-plan-before-resume",()->tool("inspect_cooperation",JSON.createObjectNode()).thenApply(value->{

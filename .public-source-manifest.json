@@ -5334,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "89af9bae-a716-48bd-8165-cbeef52dcc85",
-      "bytes": 274235
+      "resourceId": "e5d95497-7a7c-440b-8585-d804bb6db527",
+      "bytes": 275819
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7059,8 +7059,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
-      "resourceId": "08a5f6b0-473e-4065-be98-7f96f56efe36",
-      "bytes": 19968
+      "resourceId": "dc32faf1-460b-476f-81f4-ee88650a6abd",
+      "bytes": 20056
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CropAdapter.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6d9aebd4e65d4662c712b592e94d13b36d4ae455"
+  "sourceCommit": "faec47a0ec565d5056c12c88947486c465ea08de"
 }
