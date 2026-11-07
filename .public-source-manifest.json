@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "879c40dd-86a7-4853-9289-01d872f1a22c",
-      "bytes": 3800
+      "resourceId": "1bef8ef5-2783-4efd-b597-d70351725f9f",
+      "bytes": 3905
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1429,8 +1429,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
-      "resourceId": "958e1f47-dd45-4c09-aa4a-c4366df28a08",
-      "bytes": 5728
+      "resourceId": "5972c564-65e0-484c-95c3-c4f4ac334f2c",
+      "bytes": 5738
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentIntegrityException.java",
@@ -1654,8 +1654,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/crypto/SecretChannel.java",
-      "sha256": "649c2597f779843eaf9cae925a16d46fd97b075bd6a0915ede6625bed16443e0",
-      "bytes": 2782
+      "resourceId": "a1c58dbe-43ca-4728-ab3d-99e1eea16483",
+      "bytes": 3257
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/crypto/SecretEnvelope.java",
@@ -2124,8 +2124,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/NativeCompatibilityPolicy.java",
-      "sha256": "5633bd03ffba6361428789dbe28c4d2ca7511b60353f7a5510e2fae40d8619e6",
-      "bytes": 4562
+      "resourceId": "5ab206f8-4d1f-49dd-95ff-65e36d2554c0",
+      "bytes": 5286
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/PackageAssetMetadata.java",
@@ -3183,6 +3183,11 @@
       "bytes": 2932
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/config/NativeSecretPayloadTest.java",
+      "resourceId": "7d8cd975-3a2d-44ab-b609-372a91d19d1c",
+      "bytes": 1178
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/PanelConfigProjectionTest.java",
       "sha256": "3e9fec946ea8c23dadc5febe1921d3e4cd0c82e3fb58e34ca03b5c6cb1ff3861",
       "bytes": 914
@@ -3353,6 +3358,11 @@
       "bytes": 1390
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/crypto/SecretChannelTest.java",
+      "resourceId": "e5072495-e8fe-4d5e-a228-7cea4afed4c5",
+      "bytes": 1872
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/files/FileLibraryConcurrencyTest.java",
       "sha256": "c22616812755a46b69fb9a0cb632c8756bf5d1802bf17a70c460054734ce3d6d",
       "bytes": 1415
@@ -3501,6 +3511,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/LegacyContentPackageMigratorTest.java",
       "resourceId": "ebc18c06-eab4-4835-b021-7818e0e45b7f",
       "bytes": 3529
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/packages/NativeEnvironmentIdentityTest.java",
+      "resourceId": "d2de0039-6ccf-44b2-a2c1-6833b3ba1527",
+      "bytes": 1381
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/PackageSignatureMigrationTest.java",
@@ -6099,8 +6114,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/NativePackageCompatibility.java",
-      "sha256": "6fc940a4e234428df0b34ef9f948e06f56d22400fcee555df2132b9ea51f22c9",
-      "bytes": 7676
+      "resourceId": "289552fd-71cd-4a5b-9bea-4ddec3303178",
+      "bytes": 8695
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/RuntimeCreatureEntity.java",
@@ -9385,5 +9400,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "5fab3ae83031f4ea49c8cec1399b988499ebffdf"
+  "sourceCommit": "dff78413e256def69aac670929ceab566a61ceaf"
 }

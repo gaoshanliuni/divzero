@@ -22,7 +22,7 @@ public final class ContentAddressedStore {
   return namedKeyId(namespace,key,()->null);
  }
  public String namedKeyId(String namespace,List<String> key,java.util.concurrent.Callable<String> legacy)throws IOException{
-  if(namespace==null||!namespace.matches("[a-z_]{1,40}")||key==null||key.isEmpty()||key.size()>16||key.stream().anyMatch(v->v==null||v.length()>4096)||key.stream().mapToLong(String::length).sum()>8192)throw new IllegalArgumentException("RESOURCE_METADATA_KEY");
+  if(namespace==null||!namespace.matches("[a-z_]{1,40}")||key==null||key.isEmpty()||key.size()>16||key.stream().anyMatch(v->v==null||v.length()>1024*1024)||key.stream().mapToLong(String::length).sum()>1024*1024)throw new IllegalArgumentException("RESOURCE_METADATA_KEY");
   Path folder=root.resolve(".references");Files.createDirectories(folder);if(Files.isSymbolicLink(folder))throw new IOException("RESOURCE_BINDING_LINK");Path index=folder.resolve("metadata-ids.db");
   return ResourceFileLock.with(folder.resolve("metadata-ids.lock"),()->{if(Files.isSymbolicLink(index))throw new IOException("RESOURCE_BINDING_LINK");try(var db=java.sql.DriverManager.getConnection("jdbc:sqlite:"+index);var schema=db.createStatement()){
    schema.execute("PRAGMA busy_timeout=5000");schema.execute("CREATE TABLE IF NOT EXISTS resource_metadata_ids(namespace TEXT NOT NULL,reference_key TEXT NOT NULL,id TEXT NOT NULL UNIQUE,PRIMARY KEY(namespace,reference_key))");String encoded=new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(key);

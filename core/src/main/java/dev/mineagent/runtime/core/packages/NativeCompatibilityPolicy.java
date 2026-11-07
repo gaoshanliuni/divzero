@@ -6,10 +6,12 @@ import java.util.*;
 public final class NativeCompatibilityPolicy {
     public static final Set<String> ERROR_CODES=Set.of("NATIVE_COMPATIBILITY_REQUIRED","NATIVE_COMPATIBILITY_INVALID","NATIVE_COMPATIBILITY_UNDECLARED","NATIVE_COMPATIBILITY_TARGET_MISSING","NATIVE_COMPATIBILITY_MISMATCH","NATIVE_ENVIRONMENT_UNAVAILABLE","NATIVE_ENVIRONMENT_UNVERIFIED","NATIVE_DECLARATION_CANNOT_BE_OVERRIDDEN","NATIVE_COMPATIBILITY_OPERATION_REUSED","NATIVE_COMPATIBILITY_STALE","NATIVE_COMPATIBILITY_LEDGER_FULL","NATIVE_COMPATIBILITY_PIN_BUDGET","NATIVE_COMPATIBILITY_CONFIRM_REQUIRED","NATIVE_COMPATIBILITY_PERMISSION");
     private NativeCompatibilityPolicy(){}
-    public record Environment(String minecraft,String loader,String loaderVersion,String namespace,int javaFeature,String javaRuntime,Map<String,String> mods){
-        public Environment{Objects.requireNonNull(minecraft);Objects.requireNonNull(loader);Objects.requireNonNull(loaderVersion);Objects.requireNonNull(namespace);Objects.requireNonNull(javaRuntime);mods=Collections.unmodifiableMap(new TreeMap<>(mods));}
+    private static final dev.mineagent.runtime.core.content.ObservationTokens ENVIRONMENT_IDS=new dev.mineagent.runtime.core.content.ObservationTokens(128,8L*1024*1024);
+    public record Environment(String minecraft,String loader,String loaderVersion,String namespace,int javaFeature,String javaRuntime,Map<String,String> mods,String identity){
+        public Environment(String minecraft,String loader,String loaderVersion,String namespace,int javaFeature,String javaRuntime,Map<String,String> mods){this(minecraft,loader,loaderVersion,namespace,javaFeature,javaRuntime,mods,null);}
+        public Environment{Objects.requireNonNull(minecraft);Objects.requireNonNull(loader);Objects.requireNonNull(loaderVersion);Objects.requireNonNull(namespace);Objects.requireNonNull(javaRuntime);mods=Collections.unmodifiableMap(new TreeMap<>(mods));if(identity==null||identity.isBlank())try{identity=ENVIRONMENT_IDS.token(new String(RuntimePackageCanonicalizer.stableJson(Map.of("minecraft",minecraft,"loader",loader,"loaderVersion",loaderVersion,"namespace",namespace,"javaFeature",javaFeature,"javaRuntime",javaRuntime,"mods",mods)),java.nio.charset.StandardCharsets.UTF_8));}catch(Exception invalid){throw new IllegalArgumentException("NATIVE_ENVIRONMENT_METADATA",invalid);}ResourceIds.require(identity);}
         public Map<String,Object> wire(){return Map.of("minecraft",minecraft,"loader",loader,"loaderVersion",loaderVersion,"namespace",namespace,"javaFeature",javaFeature,"javaRuntime",javaRuntime,"mods",mods);}
-        public String fingerprint(){try{return RuntimePackageCanonicalizer.sha256(RuntimePackageCanonicalizer.stableJson(wire()));}catch(Exception e){throw new IllegalStateException("NATIVE_ENVIRONMENT_HASH",e);}}
+        public String fingerprint(){return identity;}
     }
     public record Result(String code,List<String> issues){public Result{issues=List.copyOf(issues);}public boolean allowed(){return code.equals("NATIVE_COMPATIBLE")||code.equals("NATIVE_NOT_REQUIRED");}}
     public static boolean required(RuntimePackage pkg,String side){

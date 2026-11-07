@@ -11,13 +11,16 @@ import java.util.*;
 
 /** Server environment admission only. Client-native execution must use its own observed environment and trust gate. */
 public final class NativePackageCompatibility implements AutoCloseable {
+    private static NativeCompatibilityPolicy.Environment observedEnvironment;
     private final MinecraftServer server;private final LegacyCompatibilityPins pins;private final NativeCompatibilityPolicy.Environment environment;private final String environmentHash;
     public NativePackageCompatibility(MinecraftServer server)throws Exception{this.server=server;environment=observe();environmentHash=environment.fingerprint();pins=new LegacyCompatibilityPins(server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db"),MineAgentRuntimeServices.worldId(server));}
-    public static NativeCompatibilityPolicy.Environment observe(){
+    public static synchronized NativeCompatibilityPolicy.Environment observe(){
         var mods=new TreeMap<String,String>();for(var mod:net.neoforged.fml.ModList.get().getMods())mods.put(mod.getModId(),mod.getVersion().toString());
         if(mods.size()>4096||!mods.containsKey("minecraft")||!mods.containsKey("neoforge"))throw new IllegalStateException("NATIVE_ENVIRONMENT_UNAVAILABLE");
         String namespace=mods.get("minecraft").equals("26.1.2")&&MinecraftServer.class.getName().equals("net.minecraft.server.MinecraftServer")?"official":"unverified";
-        return new NativeCompatibilityPolicy.Environment(mods.get("minecraft"),"neoforge",mods.get("neoforge"),namespace,Runtime.version().feature(),Runtime.version().toString(),mods);
+        var previous=observedEnvironment;if(previous!=null&&previous.mods().equals(mods)&&previous.namespace().equals(namespace)&&previous.javaRuntime().equals(Runtime.version().toString()))return previous;
+        var observed=new NativeCompatibilityPolicy.Environment(mods.get("minecraft"),"neoforge",mods.get("neoforge"),namespace,Runtime.version().feature(),Runtime.version().toString(),mods);
+        try{var registry=new dev.mineagent.runtime.core.content.ContentAddressedStore(net.neoforged.fml.loading.FMLPaths.GAMEDIR.get().resolve("mineagent-runtime-data/bootstrap-identities"));String descriptor=new String(RuntimePackageCanonicalizer.stableJson(observed.wire()),java.nio.charset.StandardCharsets.UTF_8);String identity=registry.namedKeyId("native_environment",List.of(descriptor));return observedEnvironment=new NativeCompatibilityPolicy.Environment(observed.minecraft(),observed.loader(),observed.loaderVersion(),observed.namespace(),observed.javaFeature(),observed.javaRuntime(),mods,identity);}catch(Exception invalid){throw new IllegalStateException("NATIVE_ENVIRONMENT_ID_UNAVAILABLE",invalid);}
     }
     public NativeCompatibilityPolicy.Environment environment(){return environment;}
     public String environmentHash(){return environmentHash;}
