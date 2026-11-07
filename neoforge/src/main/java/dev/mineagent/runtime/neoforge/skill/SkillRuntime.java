@@ -50,7 +50,7 @@ public final class SkillRuntime {
         linkedAuthorities.put(operation,authority);try{return start(owner,agent,operation,null,((com.fasterxml.jackson.databind.node.ObjectNode)arguments.deepCopy()).put("only_if_idle",true),null,authority).whenComplete((v,e)->server.execute(()->linkedAuthorities.remove(operation)));}catch(Exception error){linkedAuthorities.remove(operation);return CompletableFuture.failedFuture(error);}
     }
     CompletableFuture<SkillSession.Snapshot> cooperativeSnapshot(ServerPlayer owner,UUID agent,UUID operation){
-        authorize(owner,agent);return loaded.thenCompose(v->known(operation)).thenApplyAsync(w->{authorize(owner,agent);if(w==null)return null;if(!w.session.owner().equals(owner.getUUID())||!w.session.agent().equals(agent))throw new SecurityException("COOP_CHILD_SCOPE");return w.session.snapshot();},server::execute);
+        authorize(owner,agent);return loaded.thenCompose(v->known(operation)).thenComposeAsync(w->{authorize(owner,agent);if(w==null)return CompletableFuture.completedFuture(null);if(!w.session.owner().equals(owner.getUUID())||!w.session.agent().equals(agent))throw new SecurityException("COOP_CHILD_SCOPE");var snapshot=w.session.snapshot();return w.saved.thenApplyAsync(ignored->{authorize(owner,agent);return snapshot;},server::execute);},server::execute);
     }
     Map<String,Object> cooperativeDetails(UUID operation){var w=work.get(operation);return w==null||w.construct==null?Map.of():w.construct.view();}
     boolean cooperativeIdle(UUID agent){return work.values().stream().noneMatch(w->w.session.agent().equals(agent)&&!w.session.terminal()&&w.session.spec().kind()!=SkillSpec.Kind.IDLE);}

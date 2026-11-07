@@ -26,7 +26,7 @@ public record ObjectInteractionFilter(Target target,Set<String> actorKinds,List<
     }
     public boolean selects(UUID actor,String kind){return actorKinds.contains(kind)&&(actorIds.isEmpty()||actorIds.contains(actor));}
     public Map<String,Object> wire(){var data=new LinkedHashMap<>(target.wire());data.put("actor_kinds",actorKinds);data.put("actor_ids",actorIds);return data;}
-    public record Recipient(long revision,String authorityHash){public Recipient{if(revision<1||!hash(authorityHash))throw new IllegalArgumentException("OBJECT_EVENT_RECIPIENT");}}
+    public record Recipient(long revision,String authorityHash){public Recipient{if(revision<1||authorityHash==null||!(hash(authorityHash)||authorityHash.startsWith("exact-v2:")&&authorityHash.length()<=65536))throw new IllegalArgumentException("OBJECT_EVENT_RECIPIENT");}}
     public record Change(Target target,UUID owner,UUID activationId,ObjectQuery.Point objectPosition,String actorKind,boolean originKnown,SharedStateStore.Provenance origin,String handlerOutcome,Map<UUID,Recipient> subscriptions){
         public Change{Objects.requireNonNull(target);Objects.requireNonNull(owner);Objects.requireNonNull(activationId);Objects.requireNonNull(objectPosition);Objects.requireNonNull(origin);
             subscriptions=Collections.unmodifiableMap(new TreeMap<>(subscriptions));

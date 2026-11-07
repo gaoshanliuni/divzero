@@ -252,8 +252,7 @@ public final class PanelSnapshotInbox {
                 return false;
             }
             byte[] publicKey = java.util.Base64.getDecoder().decode(encodedPublic);
-            String calculated = java.util.HexFormat.of().withUpperCase().formatHex(
-                    java.security.MessageDigest.getInstance("SHA-256").digest(publicKey));
+            String calculated = dev.mineagent.runtime.core.crypto.IdentitySigner.keyId(publicKey);
             return calculated.equals(fingerprint)
                     && dev.mineagent.runtime.core.crypto.IdentitySigner.verify(
                     publicKey,

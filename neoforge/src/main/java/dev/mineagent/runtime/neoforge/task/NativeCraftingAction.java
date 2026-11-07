@@ -13,6 +13,7 @@ import java.util.*;
 import com.google.gson.*;
 /** One native recipe-book placement/result take; no item grants or synthetic recipe outputs. */
 public final class NativeCraftingAction {
+    private static final dev.mineagent.runtime.core.content.ObservationTokens ITEMS=new dev.mineagent.runtime.core.content.ObservationTokens(2048,4L*1024*1024);
     public record Outcome(boolean verified,String error,Map<String,String> evidence){}
     private NativeCraftingAction(){}
     public static Outcome execute(MineAgentPlayer actor,WorldActionSpec action)throws Exception{
@@ -65,11 +66,10 @@ public final class NativeCraftingAction {
     private static void merge(MineAgentPlayer actor,Map<String,Integer> into,ItemStack stack){if(!stack.isEmpty())into.merge(fingerprint(actor,stack),stack.getCount(),Math::addExact);}
     public static String fingerprint(MineAgentPlayer actor,ItemStack stack){
         if(stack.isEmpty())return "";
-        try{var value=ItemStack.CODEC.encodeStart(actor.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE),stack.copyWithCount(1)).getOrThrow();
+        var value=ItemStack.CODEC.encodeStart(actor.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE),stack.copyWithCount(1)).getOrThrow();
             String data=canonical(value).toString();
             if(data.length()>65536)throw new IllegalStateException("CRAFT_ITEM_BUDGET");
-            return BuiltInRegistries.ITEM.getKey(stack.getItem())+"/"+java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(data.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-        }catch(java.security.NoSuchAlgorithmException e){throw new IllegalStateException(e);}
+            return BuiltInRegistries.ITEM.getKey(stack.getItem())+"/"+ITEMS.token(data);
     }
     private static JsonElement canonical(JsonElement value){if(value.isJsonObject()){var result=new JsonObject();value.getAsJsonObject().keySet().stream().sorted().forEach(k->result.add(k,canonical(value.getAsJsonObject().get(k))));return result;}if(value.isJsonArray()){var result=new JsonArray();for(var v:value.getAsJsonArray())result.add(canonical(v));return result;}return value;}
     private static String json(Object value)throws Exception{return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(value);}

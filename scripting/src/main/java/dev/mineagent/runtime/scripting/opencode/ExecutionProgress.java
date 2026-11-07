@@ -9,6 +9,8 @@ public final class ExecutionProgress {
     private static final Set<String> VOLATILE=Set.of("observedAt","observedGameTick","gameTime","timestamp","elapsedMs","record_id","operation_id","fetchedAt","retrievedAt");
     private static final class Repeat{String outcome="";int count;Map<String,Object> result=Map.of();final List<Map<String,Object>> parts=new ArrayList<>();}
     private final LinkedHashMap<String,Repeat> observations=new LinkedHashMap<>(128,.75f,true);
+    private static final long MAX_RETAINED_CHARACTERS=8L*1024*1024;
+    private void trim(){long characters=0;for(var entry:observations.entrySet())characters+=(long)entry.getKey().length()+entry.getValue().outcome.length();var iterator=observations.entrySet().iterator();while(iterator.hasNext()&&(observations.size()>128||characters>MAX_RETAINED_CHARACTERS)){var entry=iterator.next();characters-=(long)entry.getKey().length()+entry.getValue().outcome.length();iterator.remove();}}
     public record Decision(boolean warn,boolean blocked,int repetitions){}
     /** Suppress another identical failed write, while leaving the assistant and all other tools running. */
     public synchronized Optional<Map<String,Object>> suppressedWrite(String name,String raw,String context){
@@ -28,6 +30,7 @@ public final class ExecutionProgress {
             String key=snapshot(List.of(name,parameters,context)),outcome=snapshot(canonical(JSON.valueToTree(result)));
             var repeat=observations.computeIfAbsent(key,k->new Repeat());while(observations.size()>128)observations.remove(observations.keySet().iterator().next());
             if(!outcome.equals(repeat.outcome)){repeat.outcome=outcome;repeat.count=0;repeat.parts.clear();}
+            trim();
             repeat.result=readOnly?Map.of():dev.mineagent.runtime.core.conversation.ToolFailure.summary(result);repeat.count++;repeat.parts.add(Map.of("type","tool","tool",name,"state",Map.of("status","completed","input",input)));
             if(repeat.parts.size()>3)repeat.parts.removeFirst();
             boolean repeated=repeat.count>=3&&OpenCodeRuntime.repeatedCalls(repeat.parts,name,input);

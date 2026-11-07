@@ -42,7 +42,7 @@ public final class NativeObjectEventSource implements AutoCloseable {
             if(captureTick!=server.getTickCount()){captureTick=server.getTickCount();captures=0;}if(++captures>64||queue.size()>=256){fail("OBJECT_EVENT_CAPTURE_BACKPRESSURE");return null;}
             var descriptor=WorldContentRuntime.get(server).objectEventTarget(object);String kind=actor instanceof MineAgentPlayer?"AGENT":"PLAYER";var recipients=new TreeMap<UUID,ObjectInteractionFilter.Recipient>();long now=System.currentTimeMillis();
             for(var sub:subscriptions){var filter=sub.request().object();if(!filter.target().equals(descriptor.target())||!sub.creator().scope().ownerId().equals(descriptor.owner())||!filter.selects(actor.getUUID(),kind)||now>=sub.expiresAt())continue;String grant=authority.apply(sub);if(grant==null)continue;
-                if(!sub.request().mode().equals("RECORD_ONLY")&&!originKnown){unknownAgentWakeSuppressed++;continue;}recipients.put(sub.id(),new ObjectInteractionFilter.Recipient(sub.revision(),hash(grant)));}
+                if(!sub.request().mode().equals("RECORD_ONLY")&&!originKnown){unknownAgentWakeSuppressed++;continue;}recipients.put(sub.id(),new ObjectInteractionFilter.Recipient(sub.revision(),authoritySnapshot(grant)));}
             if(recipients.isEmpty())return null;
             return new Capture(operation,descriptor.target(),descriptor.owner(),descriptor.activationId(),new ObjectQuery.Point(object.level().dimension().identifier().toString(),object.getX(),object.getY(),object.getZ()),directory.get().observeNativeInteractionActor(actor),kind,originKnown,origin,recipients,now);
         }catch(Exception unavailable){fail("OBJECT_EVENT_SOURCE_UNAVAILABLE");return null;}
@@ -88,9 +88,9 @@ public final class NativeObjectEventSource implements AutoCloseable {
         return Map.of("phase",status,"pendingCapturedEvents",queue.stream().filter(p->p.event.object().subscriptions().containsKey(sub.id())).count(),"maximumPendingCaptures",256,"maximumCapturesPerTick",64,"maximumCommitsPerTick",8,"businessVerified",false);
     }
     public boolean matches(RuntimeEventStore.Subscription sub,RuntimeEventStore.Event event){
-        if(!ObjectInteractionFilter.matches(sub,event))return false;String current=authority.apply(sub);return current!=null&&hash(current).equals(event.object().subscriptions().get(sub.id()).authorityHash());
+        if(!ObjectInteractionFilter.matches(sub,event))return false;String current=authority.apply(sub);return current!=null&&authoritySnapshot(current).equals(event.object().subscriptions().get(sub.id()).authorityHash());
     }
-    private static String hash(String value){try{return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));}catch(java.security.NoSuchAlgorithmException impossible){throw new IllegalStateException("OBJECT_EVENT_HASH",impossible);}}
+    private static String authoritySnapshot(String value){return "exact-v2:"+value;}
     public Map<String,Object> forModel(RuntimeEventStore.Event event){var change=Objects.requireNonNull(event.object());
         return Map.of("eventId",event.id(),"source",event.source(),"target",change.target().wire(),"actor",event.author(),"actorKind",change.actorKind(),"occurredAt",event.occurredAt(),"objectPosition",change.objectPosition(),"originKnown",change.originKnown(),"handlerOutcome",change.handlerOutcome(),"businessVerified",false);
     }
