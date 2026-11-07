@@ -43,6 +43,11 @@ final class ProcessingSkill {
         if (!w.runtime.reservations.reserve(w.reservation(pos), w.token(), w.tick(), 100)) { w.waitFor("PROCESS_STATION_RESERVED", 20); return; }
         if (!w.reach(pos, InteractionTargetResolver.Kind.BLOCK)) return;
         if (!body.isWithinBlockInteractionRange(pos, 0)) { w.stand = null; w.search = null; return; }
+        var hit = InteractionTargetResolver.topHit(body, pos);
+        if (!InteractionTargetResolver.lineOfSight(body, body.getEyePosition(), hit, pos, false)) {
+            w.stand = null; w.search = null; w.nextTick = w.tick() + 5; return;
+        }
+        w.actor.aim(w.token(), hit);
         w.actor.stop(w.token());
         RecipeHolder<?> holder = spec.action() == ProcessingSpec.Action.STORE ? null : NativeRecipeCatalog.require(body, spec.recipe(), spec.recipeReference());
         if (w.operation == null) {
@@ -168,7 +173,7 @@ final class ProcessingSkill {
     }
     private static AbstractContainerMenu open(MineAgentPlayer body, BlockPos pos) {
         if (body.containerMenu != body.inventoryMenu || !body.inventoryMenu.getCarried().isEmpty() || body.isUsingItem()) throw new IllegalStateException("PROCESS_ACTOR_MENU_BUSY");
-        var hit = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
+        var hit = new BlockHitResult(InteractionTargetResolver.topHit(body,pos), Direction.UP, pos, false);
         try (var scope = new ContainerOpenScope(body)) { body.gameMode.useItemOn(body, body.level(), body.getMainHandItem(), InteractionHand.MAIN_HAND, hit); }
         var menu = body.containerMenu;
         if (menu == body.inventoryMenu || !menu.stillValid(body)) { if (menu != body.inventoryMenu) body.doCloseContainer(); throw new IllegalStateException("PROCESS_STATION_NOT_OPENED"); }

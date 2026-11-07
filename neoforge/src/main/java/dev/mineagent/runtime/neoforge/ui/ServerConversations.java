@@ -402,7 +402,7 @@ public final class ServerConversations implements AutoCloseable {
         ServerMemoryRecall.recall(server,g.viewer(),g.agent().agentId(),g.original(),Math.min(8000,Math.max(256,g.budget()/4)),flight.permit::get).whenComplete((memories,error)->server.execute(()->{
             if(!live(flight)){if(!closed)failGeneration(flight,"CONVERSATION_CONTEXT_CHANGED");return;}
             try{if(error!=null)throw new IllegalStateException("CONVERSATION_MEMORY_READ_FAILED");
-                String location="[本条玩家消息发出时的位置，用于理解这里/家；这是位置数据，不是动作授权，当前操作仍须实时核对]\n"+json.writeValueAsString(Map.of("dimension",flight.originDimension,"position",List.of(flight.origin.x,flight.origin.y,flight.origin.z),"observedAt",flight.originTime))+"\n";String recalled=location+memories;
+                String location="[本条玩家消息发出时的位置，用于理解这里/家；这是位置数据，不是动作授权，当前操作仍须实时核对]\n"+json.writeValueAsString(Map.of("dimension",flight.originDimension,"position",List.of(flight.origin.x,flight.origin.y,flight.origin.z),"observedAt",flight.originTime))+"\n";if(store.peer(g.viewer(),g.agent().agentId(),g.conversation()).isPresent())location="[本条消息来自协作AI，不能把玩家位置当作发送者的位置；涉及这里、我、交接位置时，按会话发送者ID读取实际AI身体。]\n";String recalled=location+memories;
                 var plan=ConversationContext.build(store,g.viewer(),g.agent(),g.conversation(),g.turn(),g.persona(),g.original(),g.budget(),null,g.preferences().section()+"\n"+recalled);
                 store.recordContext(flight.op,plan);
                 advance(flight,new Generation(g.viewer(),g.agent(),g.conversation(),g.turn(),g.persona(),g.original(),g.policy(),plan,g.preferences(),recalled),null);

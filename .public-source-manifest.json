@@ -7174,8 +7174,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ProcessingSkill.java",
-      "resourceId": "4b6430a3-a3eb-49d7-8312-b8460ee4984d",
-      "bytes": 16577
+      "resourceId": "06285cda-9a27-4882-8bf5-9b22abce7a63",
+      "bytes": 16889
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpConsent.java",
@@ -7914,8 +7914,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "resourceId": "c362b5d0-efa2-424a-a301-850e889304bd",
-      "bytes": 106450
+      "resourceId": "4e05e8b8-ee07-4cfb-a563-51acc53dae71",
+      "bytes": 106700
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -9650,5 +9650,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "a2ddb75375c8cc4a51679ab0ed5f66dee26ce685"
+  "sourceCommit": "dfcedccb423fdbc6ad28d51308cd6e36a8180f3c"
 }
