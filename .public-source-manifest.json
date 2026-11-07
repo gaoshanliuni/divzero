@@ -1779,23 +1779,23 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/events/PlayerRegionEvents.java",
-      "sha256": "4e8491ff10ba4a70436d27d134be7b2c048583c4438c406654157380197c3e87",
-      "bytes": 8605
+      "resourceId": "823acecc-0e67-4e2a-82f0-8908acbb7330",
+      "bytes": 8448
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/events/RuntimeEventStore.java",
-      "resourceId": "6921c4e4-9d82-43cf-be98-b709a170fd7b",
-      "bytes": 74657
+      "resourceId": "a4230915-daf8-46d4-bea7-566ed61c20cb",
+      "bytes": 77062
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/events/ScoreEventFilter.java",
-      "sha256": "966801a8e54c2b28bd5339006d4ab7872463514c8fd3468358c2506b761c1450",
-      "bytes": 4927
+      "resourceId": "7d1d944c-0e5c-4d6f-9340-2481a9549e14",
+      "bytes": 4849
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/events/ScoreEventSampler.java",
-      "sha256": "d5f33c86e9c9401ba43fea1dfd678284ee3be8ff57247426b8e7043f124f2a3e",
-      "bytes": 6171
+      "resourceId": "c2e442e2-5758-41d1-86a6-903dfe9ee300",
+      "bytes": 6009
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/events/ScriptEventConsumer.java",
@@ -3423,6 +3423,16 @@
       "bytes": 1872
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/events/EventIdentityTest.java",
+      "resourceId": "e7b9f539-d02b-4fca-83bc-e85f45c4c534",
+      "bytes": 4715
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/events/RuntimeEventStoreTest.java",
+      "resourceId": "7d91fadf-4b05-4bd7-9b39-a63359877cae",
+      "bytes": 7159
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/FeedbackDataBindingTest.java",
       "resourceId": "b68b3e41-a769-4944-aa3e-f2e0c0e4607b",
       "bytes": 3873
@@ -3431,6 +3441,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/FeedbackTransactionOutcomeTest.java",
       "resourceId": "2cf2d393-de16-4bc6-8a6a-d10548216a96",
       "bytes": 1875
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/FeedbackWakeStoreTest.java",
+      "resourceId": "ffebca3e-9b05-4d29-b524-38fcc8ac955a",
+      "bytes": 2937
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/UiFeedbackDataPumpTest.java",
@@ -3444,8 +3459,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/feedback/UiFeedbackStoreTest.java",
-      "resourceId": "169d29c4-2465-43fa-9041-347c82281de2",
-      "bytes": 18452
+      "resourceId": "61fdbb06-c71c-4769-a7db-f99c65e9ff67",
+      "bytes": 19826
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/files/FileLibraryConcurrencyTest.java",
@@ -4059,8 +4074,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "5eea29d7-531a-48d3-9d98-d625cafa8a28",
-      "bytes": 15341
+      "resourceId": "cc280cd4-60f6-49f6-a2f3-7ed109456a85",
+      "bytes": 15996
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -7179,8 +7194,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeEventRuntime.java",
-      "sha256": "f6128e0005b39eb4a3bdfd6c0e981fc13dfa672591364d2f603c45e698e5cd89",
-      "bytes": 60084
+      "resourceId": "9e656031-edb8-4855-aea5-3b28fd11857c",
+      "bytes": 60038
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeObjectEventSource.java",
@@ -7199,8 +7214,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeScoreEventSource.java",
-      "sha256": "1372cd9ffb26df703199cd963043f989ac5d9f66c2fc6801f90ecf2220a33e27",
-      "bytes": 12845
+      "resourceId": "8551d40d-5852-44c9-a495-022f3b1c11cd",
+      "bytes": 12888
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeSharedStateRuntime.java",
@@ -7964,8 +7979,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiFeedback.java",
-      "resourceId": "1869d7d1-2ba8-4385-b1ff-e4b80e9b3ea4",
-      "bytes": 27627
+      "resourceId": "02d71c5b-7e58-414c-9091-70ee8e88cdc4",
+      "bytes": 27622
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiRuntime.java",
@@ -9550,5 +9565,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "9fce9727c34ffd984a7661c02db6de4d246e6f8f"
+  "sourceCommit": "42382eba3449ea4d097ffdd239ebd7a56acb0705"
 }

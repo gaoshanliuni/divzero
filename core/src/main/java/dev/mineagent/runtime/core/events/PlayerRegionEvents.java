@@ -57,13 +57,13 @@ public final class PlayerRegionEvents {
         if(!slot.pending.isEmpty())throw new IllegalStateException("REGION_PENDING_DRAIN_REQUIRED");
         // A wall-clock rollback creates a new baseline, not a negative-duration crossing.
         if(at<slot.observedAt){slot.baseline=current;slot.observedAt=at;slot.error="REGION_CLOCK_REBASED";return;}
-        UUID batch=UUID.randomUUID();var events=new ArrayList<RuntimeEventStore.Event>();
+        var events=new ArrayList<RuntimeEventStore.Event>();
         for(var entry:current.entrySet()){
             var before=slot.baseline.get(entry.getKey());var after=entry.getValue();if(before==null||!continuous(before,after))continue;
             boolean was=inside(sub.request().query(),before),is=inside(sub.request().query(),after);if(was==is)continue;
             String source=is?"PLAYER_REGION_ENTER":"PLAYER_REGION_LEAVE";if(!sub.request().sources().contains(source))continue;
             var change=new Change(sub.id(),sub.revision(),sub.request().query(),before,slot.observedAt,at);
-            UUID id=UUID.nameUUIDFromBytes((sourceEpoch+"|player-region|"+sub.id()+"|"+sub.revision()+"|"+batch+"|"+entry.getKey()).getBytes(StandardCharsets.UTF_8));
+            UUID id=UUID.randomUUID();
             events.add(new RuntimeEventStore.Event(id,sub.creator().scope().worldId(),sourceEpoch,source,UUID.fromString(entry.getKey()),after,at,null,List.of(),null,null,change));
         }
         slot.error="";slot.failures=0;

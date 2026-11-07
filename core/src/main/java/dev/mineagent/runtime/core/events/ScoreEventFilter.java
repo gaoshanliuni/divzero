@@ -26,9 +26,8 @@ public record ScoreEventFilter(String objective,String criteria,List<String> hol
     public Map<String,Object> wire(){var data=new LinkedHashMap<String,Object>();data.put("objective",objective);data.put("criteria",criteria);data.put("holders",holders);var when=new LinkedHashMap<String,Object>();when.put("test",test);if(value!=null)when.put("value",value);data.put("when",when);data.put("match_mode",matchMode);data.put("replacement_policy",replacementPolicy);return data;}
     public record Change(UUID subscriptionId,long subscriptionRevision,ScoreEventFilter filter,long incarnation,String authorityHash,String holder,Integer before,Integer after,long observedBefore,long observedAfter){
         public Change{Objects.requireNonNull(subscriptionId);Objects.requireNonNull(filter);name(holder,40);
-            if(subscriptionRevision<1||incarnation<0||authorityHash==null||!authorityHash.matches("[a-f0-9]{64}")||!filter.selects(holder)||!filter.matches(before,after)||observedBefore<0||observedAfter<observedBefore)throw new IllegalArgumentException("SCORE_EVENT_CHANGE");}
+            if(subscriptionRevision<1||incarnation<0||authorityHash==null||!(authorityHash.matches("[a-f0-9]{64}")||authorityHash.startsWith("exact-v2:")&&authorityHash.length()<=16384)||!filter.selects(holder)||!filter.matches(before,after)||observedBefore<0||observedAfter<observedBefore)throw new IllegalArgumentException("SCORE_EVENT_CHANGE");}
     }
-    public static UUID systemAuthor(UUID world){return UUID.nameUUIDFromBytes((world+"|native-score-observer-v1").getBytes(StandardCharsets.UTF_8));}
     public static boolean matches(RuntimeEventStore.Subscription sub,RuntimeEventStore.Event event){var change=event.score();return change!=null&&sub.request().score()!=null&&sub.id().equals(change.subscriptionId())&&sub.revision()==change.subscriptionRevision()&&sub.request().score().equals(change.filter());}
     private static String text(JsonNode node,String key,String fallback){if(!node.has(key))return fallback;if(!node.get(key).isTextual())throw new IllegalArgumentException("SCORE_EVENT_TEXT");return node.get(key).textValue();}
 }

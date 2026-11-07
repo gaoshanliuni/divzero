@@ -42,7 +42,7 @@ public final class ServerUiFeedback implements AutoCloseable {
             var s=item.scope();if(!standing(s))throw new SecurityException("FEEDBACK_EXPORT_AUTHORITY");
             String original=json.writeValueAsString(Map.of("source","UI_FEEDBACK","feedbackId",item.id(),"event",s.eventName(),"payload",json.readTree(item.payload())));
             ServerConversations.get(server).store().appendFeedback(s.authorId(),s.agentId(),s.conversationId(),item.id(),original);
-            MineAgentRuntimeServices.events(server).ingestDurable(dev.mineagent.runtime.core.events.RuntimeEventStore.Event.feedback(item));
+            MineAgentRuntimeServices.events(server).ingestDurable(MineAgentRuntimeServices.events(server).store().feedbackEvent(item));
         });
     }
     private void thread(){if(closed||!server.isSameThread())throw new IllegalStateException("FEEDBACK_RUNTIME_THREAD");}

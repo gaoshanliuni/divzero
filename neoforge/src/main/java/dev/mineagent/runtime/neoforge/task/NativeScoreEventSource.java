@@ -65,7 +65,7 @@ public final class NativeScoreEventSource implements AutoCloseable {
                 store.pauseScoreSource(sub.id(),sub.revision(),code);sampler.forget(sub.id());}
         }
     }
-    public boolean matches(RuntimeEventStore.Subscription sub,RuntimeEventStore.Event event){if(!ScoreEventFilter.matches(sub,event))return false;String current=authority.apply(sub);return current!=null&&event.sourceEpoch().equals(epoch)&&ScoreEventSampler.hash(current).equals(event.score().authorityHash());}
+    public boolean matches(RuntimeEventStore.Subscription sub,RuntimeEventStore.Event event){if(!ScoreEventFilter.matches(sub,event))return false;String current=authority.apply(sub);return current!=null&&event.sourceEpoch().equals(epoch)&&event.author().equals(epoch)&&ScoreEventSampler.authoritySnapshot(current).equals(event.score().authorityHash());}
     public BooleanSupplier permit(UUID owner,ScoreEventFilter filter){try{requirePermission(owner);var guard=resource(filter.objective(),filter.criteria()).guard();long permission=permissionRevision(owner);return ()->!closed&&granted(owner)&&permissionRevision(owner)==permission&&guard.current().getAsBoolean();}catch(RuntimeException invalid){return ()->false;}}
     public BooleanSupplier inspectionPermit(UUID owner,com.fasterxml.jackson.databind.JsonNode observation){
         try{requirePermission(owner);if(!epoch.toString().equals(observation.path("sourceEpoch").asText()))return ()->false;long permission=permissionRevision(owner);var guards=new ArrayList<ScoreboardReadWindow.Guard>();

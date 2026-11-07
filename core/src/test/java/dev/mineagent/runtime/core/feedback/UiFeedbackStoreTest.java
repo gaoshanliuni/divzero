@@ -102,12 +102,12 @@ class UiFeedbackStoreTest {
         };
         try(var feedback=open();var events=dev.mineagent.runtime.core.events.RuntimeEventStore.open(root.resolve("runtime.db"),world,now::get,eventPort)){
             var item=feedback.submit(scope,document(),op,"{\"question\":\"PRIVATE_FEEDBACK_VALUE\"}");id=item.id();
-            var event=dev.mineagent.runtime.core.events.RuntimeEventStore.Event.feedback(item);assertEquals(1,events.ingest(event));
+            var event=events.feedbackEvent(item);assertEquals(1,events.ingest(event));
             assertFalse(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(event).contains("PRIVATE_FEEDBACK_VALUE"));
             assertFalse(feedback.inspect(author,id).exported());
         }
         try(var feedback=open();var events=dev.mineagent.runtime.core.events.RuntimeEventStore.open(root.resolve("runtime.db"),world,now::get,eventPort)){
-            assertEquals(1,new UiFeedbackOutbox(feedback,item->assertEquals(1,events.ingest(dev.mineagent.runtime.core.events.RuntimeEventStore.Event.feedback(item)))).pump(4));
+            assertEquals(1,new UiFeedbackOutbox(feedback,item->assertEquals(1,events.ingest(events.feedbackEvent(item)))).pump(4));
             var event=events.event(id).orElseThrow();assertEquals("UI_FEEDBACK",event.source());assertEquals(author,event.author());assertEquals(conversation,event.feedback().scope().conversationId());
             assertEquals("RECORDED",feedback.inspect(author,id).state());assertEquals(0,new UiFeedbackOutbox(feedback,item->fail("re-exported acknowledged event")).pump(4));
         }
@@ -146,6 +146,23 @@ class UiFeedbackStoreTest {
             var borrowed=new FeedbackTransactionPlan(changed.transaction(),changed.canonical(),first.sha256());
             assertThrows(IllegalStateException.class,()->store.reserveDataPlan(item.id(),consumer,borrowed));
             assertEquals("PROCESSING",store.runtimeItem(item.id()).orElseThrow().state());
+        }
+    }
+
+    @Test void feedbackStreamAdoptsRecordedEpochWithoutReemittingTheEvent()throws Exception{
+        var eventPort=new dev.mineagent.runtime.core.events.RuntimeEventStore.Port(){
+            public void authorize(dev.mineagent.runtime.core.events.RuntimeEventStore.Context c){}
+            public String authority(dev.mineagent.runtime.core.events.RuntimeEventStore.Subscription s){return "test";}
+            public boolean matches(dev.mineagent.runtime.core.events.RuntimeEventStore.Subscription s,dev.mineagent.runtime.core.events.RuntimeEventStore.Event e){return false;}
+        };
+        UUID legacyEpoch=UUID.randomUUID(),id;
+        try(var feedback=open();var events=dev.mineagent.runtime.core.events.RuntimeEventStore.open(root.resolve("runtime.db"),world,now::get,eventPort)){
+            var item=submit(feedback,scope("RECORD_ONLY","INDEPENDENT"),UUID.randomUUID());id=item.id();
+            assertEquals(1,events.ingest(dev.mineagent.runtime.core.events.RuntimeEventStore.Event.feedback(item,legacyEpoch)));
+        }
+        try(var feedback=open();var events=dev.mineagent.runtime.core.events.RuntimeEventStore.open(root.resolve("runtime.db"),world,now::get,eventPort)){
+            var event=events.feedbackEvent(feedback.runtimeItem(id).orElseThrow());assertEquals(legacyEpoch,event.sourceEpoch());assertEquals(1,events.ingest(event));
+            assertEquals(event,events.feedbackEvent(feedback.runtimeItem(id).orElseThrow()));
         }
     }
 

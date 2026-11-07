@@ -153,7 +153,7 @@ public final class NativeEventRuntime implements AutoCloseable {
     public RuntimeEventStore.Context context(ManagedTask task,UUID operation){return new RuntimeEventStore.Context(directory().currentScope(task),epoch,eventEpoch(task.ownerPlayerId()),operation,shared().epoch(task.ownerPlayerId()));}
     public void playerEvent(String kind,ServerPlayer player){
         if(closed||player instanceof MineAgentPlayer||!server.isSameThread())return;
-        try{var subject=directory().observeNativePlayer(player);UUID id=UUID.nameUUIDFromBytes((epoch+"|"+kind+"|"+subject.ref().generation()).getBytes(StandardCharsets.UTF_8));if(store.event(id).isPresent())return;
+        try{var subject=directory().observeNativePlayer(player);UUID id=store.playerEventId(epoch,kind,subject.ref().generation());if(store.event(id).isPresent())return;
             store.ingest(new RuntimeEventStore.Event(id,MineAgentRuntimeServices.worldId(server),epoch,kind,player.getUUID(),subject,System.currentTimeMillis(),null,List.of()));refresh();}
         catch(Exception failure){diagnostic="EVENT_CAPTURE_FAILED";MineAgentRuntimeMod.LOGGER.error("Native event capture failed source={} code={}",kind,failure.getClass().getSimpleName());}
     }
