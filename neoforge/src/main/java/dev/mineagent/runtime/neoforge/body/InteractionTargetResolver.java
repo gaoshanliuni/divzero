@@ -75,7 +75,7 @@ public final class InteractionTargetResolver {
         offsets.sort(Comparator.comparingDouble(d->player.position().distanceToSqr(Vec3.atBottomCenterOf(base.offset(d[0],0,d[1])))));
         for(var offset:offsets){if(nodes.size()>=64)break;for(var node:evaluator.positions(base.getX()+offset[0],base.getZ()+offset[1],recipient.getY())){
             var at=NativeTraversalEvaluator.point(node);double distance=at.subtract(recipient.position()).horizontalDistanceSqr();
-            if(distance<clearance*clearance||distance>(radius+.5)*(radius+.5)||Math.abs(at.y-recipient.getY())>2||evaluator.water(node)||evaluator.climb(node))continue;
+            if(distance<clearance*clearance||distance>(radius+.5)*(radius+.5)||evaluator.water(node)||evaluator.climb(node))continue;
             if(!player.level().noCollision(player,player.getDimensions(player.getPose()).makeBoundingBox(at).deflate(.0001)))continue;nodes.add(node);
         }}
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());

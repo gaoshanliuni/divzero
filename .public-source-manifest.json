@@ -4119,8 +4119,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "e57a934e-4bae-4d1d-a7fb-506ba7ae60d6",
-      "bytes": 23983
+      "resourceId": "cdd25f89-5200-4a0e-bba9-3d0e5050dc21",
+      "bytes": 24226
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -5024,8 +5024,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "a0f9c567-4094-493d-9aaa-10c518f8f01c",
-      "bytes": 8831
+      "resourceId": "d42e2552-cbaa-4768-a1a6-69b344992b8c",
+      "bytes": 8796
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -7054,8 +7054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/HandoffSkill.java",
-      "resourceId": "e4d1683d-e4cb-48eb-84e7-a705d1bbae4a",
-      "bytes": 10696
+      "resourceId": "9c7d60eb-3201-4a44-840c-9160fcf97e77",
+      "bytes": 10719
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/IsolatedCombatArena.java",
@@ -9625,5 +9625,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "afa13d4c62e7f1bf9a56894eb252299f6925f3a4"
+  "sourceCommit": "aa5ecf07e78b041f3b15caed0ee0f0e2b070f59f"
 }

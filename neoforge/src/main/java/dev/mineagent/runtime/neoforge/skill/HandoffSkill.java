@@ -31,7 +31,7 @@ public final class HandoffSkill {
     }
     private static void clearWorkingSpace(SkillWork w,ServerPlayer recipient){
         double clearance=dev.mineagent.runtime.neoforge.body.InteractionTargetResolver.handoffClearance(recipient);
-        if(w.player().position().subtract(recipient.position()).horizontalDistanceSqr()>=clearance*clearance){
+        if(w.player().onGround()&&w.player().position().subtract(recipient.position()).horizontalDistanceSqr()>=clearance*clearance){
             var receipt=new LinkedHashMap<>(w.session.receipt());receipt.put("clearancePosition",w.player().position().toString());receipt.put("recipientPosition",recipient.position().toString());receipt.put("minimumClearance",Double.toString(clearance));receipt.put("observedClearance",Double.toString(w.player().position().subtract(recipient.position()).horizontalDistance()));w.session.receipt(receipt);w.session.add("handoffClearanceVerified",1);w.completed("HANDOFF_RECEIVED_BY_TARGET");return;
         }
         if(!w.session.snapshot().phase().equals("HANDOFF_CLEARING_SPACE")||w.handoffTarget==null||w.handoffTarget.distanceToSqr(recipient.position())>.25){w.stand=null;w.search=null;w.handoffTarget=recipient.position();}
