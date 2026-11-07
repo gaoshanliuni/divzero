@@ -199,11 +199,16 @@ public final class NativeTerrainRecovery {
         }return null;
     }
     public static BlockHitResult placementHit(ServerPlayer p,BlockPos target){
+        var hit=placementHitFrom(p,target,p.getEyePosition());
+        return hit!=null&&p.isWithinBlockInteractionRange(hit.getBlockPos(),0)?hit:null;
+    }
+    /** Evaluates the actual support face from a prospective eye position without moving the body. */
+    public static BlockHitResult placementHitFrom(ServerPlayer p,BlockPos target,Vec3 eye){
         for(var face:Direction.values()){
             var anchor=target.relative(face.getOpposite());if(!NativeTerrainPolicy.loaded(p,anchor)||p.level().getBlockState(anchor).getCollisionShape(p.level(),anchor).isEmpty())continue;
             var hit=Vec3.atCenterOf(anchor).add(new Vec3(face.getStepX(),face.getStepY(),face.getStepZ()).scale(.5));
-            if(!p.isWithinBlockInteractionRange(anchor,0))continue;
-            var clip=p.level().clip(new ClipContext(p.getEyePosition(),hit,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
+            if(eye.distanceTo(hit)>Math.min(4.25,p.blockInteractionRange()-.15))continue;
+            var clip=p.level().clip(new ClipContext(eye,hit,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
             if(clip.getType()!=HitResult.Type.MISS&&!clip.getBlockPos().equals(anchor))continue;
             return new BlockHitResult(hit,face,anchor,false);
         }return null;

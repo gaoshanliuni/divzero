@@ -87,7 +87,9 @@ public final class ConstructSkill {
         }
         if(wanted.isAir()){advanceCell(cell,false);return;}
         Item item=wanted.getBlock().asItem();String id=BuiltInRegistries.ITEM.getKey(item).toString();if(w.count(item)<1){missing=id;w.waitFor("BUILDING_MATERIALS_REQUIRED",20);return;}missing="";
-        if(!w.equip(item))return;if(!w.reach(pos,InteractionTargetResolver.Kind.BLOCK))return;
+        if(!w.equip(item))return;if(!w.reach(pos,InteractionTargetResolver.Kind.PLACE))return;
+        w.actor.crouch(w.token(),true);
+        if(!w.player().isCrouching())return;
         var hit=NativeTerrainRecovery.placementHit(w.player(),pos);if(hit==null){w.waitFor("BUILDING_SUPPORT_FACE_REQUIRED",40);w.stand=null;w.search=null;return;}
         if(!w.player().mayInteract(w.player().level(),pos)||dev.mineagent.runtime.neoforge.ui.ServerInteractionRules.denied(w.player(),pos,null,"block_place",false))throw problem("PLACE_DENIED",cell,cell.after(),state(pos));
         w.nativeUsePos=hit.getBlockPos();w.beforeCount=w.count(item);w.expectedState=state(pos);w.actor.aimImmediately(w.token(),hit.getLocation());w.prepare("CONSTRUCT_PLACE",evidence(cell));
@@ -100,9 +102,13 @@ public final class ConstructSkill {
         if(w.action.equals("CONSTRUCT_BREAK")&&w.nativeBreak){w.nativeBreak=false;finishAction(cell,false,"VERIFIED_NATIVE_BREAK");return;}
         if(w.action.equals("CONSTRUCT_PLACE")&&actual==wanted&&w.nativeUse&&w.nativeConsumed==1){w.session.add("constructionMaterialsConsumed",1);w.session.add("constructionBlocksPlaced",1);finishAction(cell,true,"VERIFIED_NATIVE_PLACEMENT");return;}
         if(w.interruptedOperation||w.executed&&w.tick()-w.startedTick>Math.min(2400,Math.max(240L,(long)NativeTerrainPolicy.breakTicks(w.player(),pos)*3+40)))throw problem("ACTION_OUTCOME_REQUIRES_RECONCILIATION",cell,cell.after(),state(pos));
-        if(!w.executed){if(!state(pos).equals(w.expectedState))throw problem("PREPARED_TARGET_CHANGED",cell,w.expectedState,state(pos));w.executed=true;w.startedTick=w.tick();}
-        if(w.action.equals("CONSTRUCT_BREAK")){w.actor.breakBlock(w.token(),w.operation,pos);return;}
-        var hit=NativeTerrainRecovery.placementHit(w.player(),pos);if(hit==null)throw problem("PREPARED_SUPPORT_CHANGED",cell,cell.after(),state(pos));w.nativeUsePos=hit.getBlockPos();w.actor.aimImmediately(w.token(),hit.getLocation());w.actor.crouch(w.token(),true);w.actor.placeBlock(w.token(),w.operation,hit);
+        if(!w.executed&&!state(pos).equals(w.expectedState))throw problem("PREPARED_TARGET_CHANGED",cell,w.expectedState,state(pos));
+        if(w.action.equals("CONSTRUCT_BREAK")){if(!w.executed){w.executed=true;w.startedTick=w.tick();}w.actor.breakBlock(w.token(),w.operation,pos);return;}
+        if(w.executed)return; // A submitted placement waits for its real receipt; it is never replayed.
+        w.actor.crouch(w.token(),true);if(!w.player().isCrouching())return;
+        var hit=NativeTerrainRecovery.placementHit(w.player(),pos);
+        if(hit==null){w.stand=null;w.search=null;w.reach(pos,InteractionTargetResolver.Kind.PLACE);return;}
+        w.nativeUsePos=hit.getBlockPos();w.actor.aimImmediately(w.token(),hit.getLocation());w.executed=true;w.startedTick=w.tick();w.actor.placeBlock(w.token(),w.operation,hit);
     }
     private void finishAction(ConstructionLedger.Cell cell,boolean placed,String status){
         UUID operation=w.operation;String observed=state(position(cell));long tick=w.player().level().getGameTime(),prior=cursor;var detail=Map.of("state",observed,"materialsConsumed",placed?1:0,"tick",tick);String encoded=new com.google.gson.Gson().toJson(detail);
