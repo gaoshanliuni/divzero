@@ -30,6 +30,8 @@ public final class ConversationStore implements AutoCloseable {
     private ConversationStore(Connection db,UUID world,Clock clock)throws SQLException{
         this.db=db;this.world=Objects.requireNonNull(world);this.clock=Objects.requireNonNull(clock);
         try(var s=db.createStatement()){
+            s.execute("CREATE TABLE IF NOT EXISTS mineagent_peer_threads_v1(world_id TEXT NOT NULL,owner_id TEXT NOT NULL,sender_id TEXT NOT NULL,recipient_id TEXT NOT NULL,conversation_id TEXT NOT NULL,sender_name TEXT NOT NULL,recipient_name TEXT NOT NULL,PRIMARY KEY(world_id,owner_id,sender_id,recipient_id),UNIQUE(world_id,conversation_id))");
+            s.execute("CREATE INDEX IF NOT EXISTS mineagent_peer_recipient_v1 ON mineagent_peer_threads_v1(world_id,owner_id,recipient_id)");
             s.execute("PRAGMA journal_mode=WAL");s.execute("PRAGMA busy_timeout=5000");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversation_actions_v1(world_id TEXT NOT NULL,conversation_id TEXT NOT NULL,message_id TEXT NOT NULL,definition TEXT NOT NULL,expires_at INTEGER NOT NULL,selected INTEGER NOT NULL DEFAULT -1,selection_operation TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'OPEN',revision INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(world_id,message_id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversation_titles_v1(world_id TEXT NOT NULL,conversation_id TEXT NOT NULL,state TEXT NOT NULL,operation_id TEXT NOT NULL DEFAULT '',source_title TEXT NOT NULL,model_receipt TEXT NOT NULL DEFAULT '',PRIMARY KEY(world_id,conversation_id))");
@@ -139,7 +141,7 @@ public final class ConversationStore implements AutoCloseable {
     }
     public synchronized Listing list(UUID viewer,UUID agent,String state,String search,long before,int count)throws SQLException{
         limit(count);text(search,256,true);if(before<0||!Set.of("ACTIVE","ARCHIVED","DELETED","ALL").contains(state))throw new IllegalArgumentException("CONVERSATION_LIST_INPUT");
-        var rows=query("SELECT * FROM mineagent_conversations_v1 c WHERE world_id=? AND player_id=? AND agent_id=? AND ordinal<? AND (?='ALL' OR state=?) AND (?='' OR instr(lower(title),lower(?))>0 OR EXISTS(SELECT 1 FROM mineagent_conversation_messages_v1 m WHERE m.world_id=c.world_id AND m.conversation_id=c.id AND instr(lower(m.text),lower(?))>0)) ORDER BY ordinal DESC LIMIT ?",this::conversation,world,viewer,agent,before==0?Long.MAX_VALUE:before,state,state,search,search,search,count+1);
+        var rows=query("SELECT * FROM mineagent_conversations_v1 c WHERE world_id=? AND player_id=? AND agent_id=? AND NOT EXISTS(SELECT 1 FROM mineagent_peer_threads_v1 p WHERE p.world_id=c.world_id AND p.conversation_id=c.id) AND ordinal<? AND (?='ALL' OR state=?) AND (?='' OR instr(lower(title),lower(?))>0 OR EXISTS(SELECT 1 FROM mineagent_conversation_messages_v1 m WHERE m.world_id=c.world_id AND m.conversation_id=c.id AND instr(lower(m.text),lower(?))>0)) ORDER BY ordinal DESC LIMIT ?",this::conversation,world,viewer,agent,before==0?Long.MAX_VALUE:before,state,state,search,search,search,count+1);
         boolean more=rows.size()>count;if(more)rows.removeLast();return new Listing(List.copyOf(rows),more?rows.getLast().ordinal():0);
     }
     public synchronized Conversation change(UUID viewer,UUID agent,UUID id,UUID op,long expected,String action,String title)throws Exception{
@@ -388,6 +390,25 @@ public final class ConversationStore implements AutoCloseable {
     }
     public synchronized Chunk chunk(UUID viewer,UUID agent,UUID conversation,UUID message,long revision,int offset,int size)throws SQLException{
         get(viewer,agent,conversation);if(offset<0||size<1||size>4096)throw new IllegalArgumentException("CONVERSATION_CHUNK_INPUT");var rows=query("SELECT revision,text FROM mineagent_conversation_messages_v1 WHERE world_id=? AND conversation_id=? AND id=?",r->{String text=r.getString(2);if(r.getLong(1)!=revision)throw new IllegalStateException("STALE_MESSAGE_REVISION");if(offset>text.length())throw new IllegalArgumentException("CONVERSATION_CHUNK_OFFSET");return new Chunk(message,revision,offset,text.length(),text.substring(offset,Math.min(text.length(),offset+size)));},world,conversation,message);if(rows.isEmpty())throw new SecurityException("CONVERSATION_MESSAGE_NOT_OWNED");return rows.getFirst();
+    }
+    public record PeerThread(UUID conversationId, UUID sender, UUID recipient, String senderName, String recipientName) {}
+    private PeerThread peerRow(ResultSet r) throws SQLException { return new PeerThread(uuid(r.getString("conversation_id")),uuid(r.getString("sender_id")),uuid(r.getString("recipient_id")),r.getString("sender_name"),r.getString("recipient_name")); }
+    public synchronized PeerThread peerThread(UUID owner, UUID sender, UUID recipient, String senderName, String recipientName) throws Exception {
+        if(sender.equals(recipient))throw new IllegalArgumentException("PEER_SELF_MESSAGE");
+        text(senderName,128,false);text(recipientName,128,false);
+        var old=query("SELECT * FROM mineagent_peer_threads_v1 WHERE world_id=? AND owner_id=? AND sender_id=? AND recipient_id=?",this::peerRow,world,owner,sender,recipient);
+        if(!old.isEmpty())return old.getFirst();
+        String title=senderName+" → "+recipientName; if(title.length()>128)title=title.substring(0,128);
+        var conversation=create(owner,recipient,UUID.randomUUID(),title);
+        execute("INSERT INTO mineagent_peer_threads_v1 VALUES(?,?,?,?,?,?,?)",world,owner,sender,recipient,conversation.conversationId(),senderName,recipientName);
+        return new PeerThread(conversation.conversationId(),sender,recipient,senderName,recipientName);
+    }
+    public synchronized Optional<PeerThread> peer(UUID owner, UUID participant, UUID conversation) throws SQLException {
+        return query("SELECT * FROM mineagent_peer_threads_v1 WHERE world_id=? AND owner_id=? AND conversation_id=? AND (sender_id=? OR recipient_id=?)",this::peerRow,world,owner,conversation,participant,participant).stream().findFirst();
+    }
+    public synchronized List<PeerThread> peers(UUID owner, UUID participant, int offset) throws SQLException {
+        if(offset<0)throw new IllegalArgumentException("PEER_OFFSET");
+        return List.copyOf(query("SELECT p.* FROM mineagent_peer_threads_v1 p JOIN mineagent_conversations_v1 c ON c.world_id=p.world_id AND c.id=p.conversation_id WHERE p.world_id=? AND p.owner_id=? AND (p.sender_id=? OR p.recipient_id=?) ORDER BY c.updated_at DESC,c.ordinal DESC LIMIT 17 OFFSET ?",this::peerRow,world,owner,participant,participant,offset));
     }
     @Override public synchronized void close()throws SQLException{db.close();}
 }

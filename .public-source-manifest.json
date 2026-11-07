@@ -999,8 +999,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "resourceId": "16304643-b282-4e98-9150-b6f851d19689",
-      "bytes": 325815
+      "resourceId": "d02a6a35-4c07-4a6b-a37b-5cf553e3d5ea",
+      "bytes": 326432
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1509,8 +1509,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilityCatalog.java",
-      "resourceId": "84bc8e82-3cc5-4e24-bbbc-81d5314d4512",
-      "bytes": 24807
+      "resourceId": "c264a246-f35d-47ea-9fce-721d350fe795",
+      "bytes": 24847
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
@@ -1554,8 +1554,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationStore.java",
-      "resourceId": "6e71b75a-1190-4bc3-9065-cb24dbc4ba18",
-      "bytes": 56125
+      "resourceId": "9c4aca62-d64f-4da6-8e5c-6d75b8268710",
+      "bytes": 59004
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationSummaryStore.java",
@@ -1569,13 +1569,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "fa474f01-d4c3-4d8d-adde-c03c28723956",
-      "bytes": 77583
+      "resourceId": "82b0ad5b-5ee9-483d-b0cc-c46817dcf4d3",
+      "bytes": 78759
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CooperationTools.java",
-      "resourceId": "76171e73-4cb5-421d-93fb-8eebecfb3f23",
-      "bytes": 4352
+      "resourceId": "310cbaaf-9fbc-4239-bf2e-da33c5090004",
+      "bytes": 4367
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
@@ -3329,8 +3329,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationStoreTest.java",
-      "sha256": "ed7ae1bcdac0674fca412e097638f766dd90dd9e2c503c0b6550855bf4f389c6",
-      "bytes": 15143
+      "resourceId": "decc1112-396d-4f44-9712-06a0b82da30d",
+      "bytes": 16940
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationStreamBatchTest.java",
@@ -5314,8 +5314,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "4fb4e706-94e3-4800-9790-fef1dee7a822",
-      "bytes": 250334
+      "resourceId": "94a0f727-59c3-43f7-9db9-164d85ebc5a1",
+      "bytes": 255726
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5534,8 +5534,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",
-      "sha256": "66709b23c6b23a1624a50c54ae6177a005936920a26d56c91c0e705953ee5fbf",
-      "bytes": 19454
+      "resourceId": "4826261e-e259-4484-aa3e-6ef383d39ec7",
+      "bytes": 19659
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
@@ -5869,13 +5869,18 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "resourceId": "95bf387b-67fc-42de-8e39-3b6f14ed7bfb",
-      "bytes": 56154
+      "resourceId": "28827690-b657-49e2-9e88-7254409ce1c3",
+      "bytes": 56244
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/OctoberFeedbackSmoke.java",
       "sha256": "d50c91b99e685fbad071015aab5a1169f2cb53599ded238293ea4bd6fd2095f8",
       "bytes": 13852
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PeerDialoguePanel.java",
+      "resourceId": "2a315cbb-652e-40de-bc2e-824be07f7cb3",
+      "bytes": 6395
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PersonaLibraryBar.java",
@@ -6989,8 +6994,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
-      "resourceId": "ae166474-e182-4355-8b00-d5fc9763c018",
-      "bytes": 6066
+      "resourceId": "adf16b6d-bced-4598-8562-b94ed4b0081d",
+      "bytes": 6514
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BoostRuntime.java",
@@ -7479,8 +7484,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "9a6dd9ea-7153-4a03-b8fb-bbbf8b365c30",
-      "bytes": 79440
+      "resourceId": "cbad2d76-3000-4dec-b12c-8a1ce7a4bde3",
+      "bytes": 80332
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7909,8 +7914,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "resourceId": "73f6ff0e-3b84-46af-88ad-8582590cb368",
-      "bytes": 98568
+      "resourceId": "d944d208-13b7-4227-af2f-af99a66f60ca",
+      "bytes": 105849
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -9645,5 +9650,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6935ce343ff19364fa62e2c42601a0f7165e6ec8"
+  "sourceCommit": "4aaaf3da5c373700336e2a2b3a3d5b787a2d3fe1"
 }

@@ -3586,4 +3586,26 @@
   "识别语言（留空自动识别）": "Language (leave empty for automatic detection)",
   "语义记忆向量模型（留空使用关键词检索）": "Semantic memory embedding model (empty uses keyword retrieval)",
   "视觉模型（留空沿用 AI 当前模型）": "Vision model (empty uses the AI current model)"
+,
+  "协作对话": "AI conversations"
+,
+  "读取 AI 间的真实消息…": "Loading AI messages…"
+,
+  "这里显示 AI 发送的消息与真实回复；任务状态请查看行为面板。": "Actual AI messages and replies. Task progress is shown in the behavior panel."
+,
+  "正在回复": "Replying"
+,
+  "消息已保存": "Messages saved"
+,
+  "暂无 AI 协作对话": "No AI conversations yet"
+,
+  "查看对话": "View conversation"
+,
+  "本条未完成": "This reply did not finish"
+,
+  "继续展开": "Read more"
+,
+  "返回较新消息": "Newer messages"
+,
+  "加工与储存": "Production and storage"
 }

@@ -29,6 +29,12 @@ public final class BehaviorAuthority {
 
     public long revision(ServerPlayer p,UUID agent){return order.revision(new Key(p.getUUID(),agent));}
     public void invalidate(ServerPlayer p,UUID agent){order.invalidate(new Key(p.getUUID(),agent));}
+    /** Peer messages may not grant player takeover, PvP consent, or execute shorthand player commands. */
+    public void acceptedPeer(ServerPlayer p,UUID agent,UUID operation){
+        var key=new Key(p.getUUID(),agent);var old=requests.putIfAbsent(operation,new Request(key,""));
+        if(old!=null&&!old.key.equals(key))throw new IllegalStateException("BEHAVIOR_REQUEST_REUSED");
+        if(old==null)order.accept(key,operation,false);
+    }
     public void accepted(ServerPlayer p,UUID agent,UUID operation,String raw){
         var key=new Key(p.getUUID(),agent);var old=requests.get(operation);if(old!=null){if(!old.key.equals(key)||!old.text.equals(raw))throw new IllegalStateException("BEHAVIOR_REQUEST_REUSED");return;}
         String text=raw.strip().replaceAll("[，。！!,.\\s]","").toLowerCase(Locale.ROOT);

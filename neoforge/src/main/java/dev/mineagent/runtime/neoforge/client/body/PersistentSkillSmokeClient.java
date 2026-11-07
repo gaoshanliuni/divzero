@@ -889,6 +889,7 @@ public final class PersistentSkillSmokeClient {
             agent=MineAgentRuntimeServices.bodies(s).createPersistentAt("持续技能搭档",p.getUUID(),p.level(),new Vec3(.5,101,6.5)).agentId();var b=body(p);b.setGameMode(GameType.SURVIVAL);b.getInventory().clearContent();b.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));b.getInventory().setItem(1,new ItemStack(Items.WHEAT_SEEDS,32));b.getInventory().setItem(2,new ItemStack(Items.IRON_HOE));b.getInventory().setItem(3,new ItemStack(Items.BOW));b.getInventory().setItem(4,new ItemStack(Items.ARROW,32));var rod=new ItemStack(Items.FISHING_ROD);var lure=p.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.LURE);net.minecraft.world.item.enchantment.EnchantmentHelper.updateEnchantments(rod,e->e.set(lure,3));b.getInventory().setItem(5,rod);return Map.of("agent",agent,"mode",b.gameMode.getGameModeForPlayer().name());
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
+        if(mode.equals("native_production")){nativeProduction();return;}
         if(mode.equals("cooperative_building")){cooperativeBuilding();return;}
         if(mode.equals("online_replay")){onlineReplay();return;}
         if(mode.equals("region_settings")){regionSettings();return;}
@@ -1034,6 +1035,41 @@ public final class PersistentSkillSmokeClient {
         action("stop-resumed-session",()->tool("control_skill",JSON.createObjectNode().put("id","paused_farm").put("expected_revision",3).put("action","stop")));
     }
     private static UUID cooperativeWood,cooperativeStone,cooperativeRun;private static ObjectNode cooperativePlan;
+    private static void nativeProduction(){
+        action("production-raw-input-fixture",()->server(p->{
+            var b=body(p);b.getInventory().clearContent();b.getInventory().setItem(0,new ItemStack(Items.OAK_LOG,4));b.getInventory().setItem(1,new ItemStack(Items.COBBLESTONE,2));b.getInventory().setItem(2,new ItemStack(Items.SAND,2));b.getInventory().setItem(3,new ItemStack(Items.DIAMOND,24));b.getInventory().setItem(4,new ItemStack(Items.COAL,1));
+            p.level().setBlock(new BlockPos(3,101,6),Blocks.CRAFTING_TABLE.defaultBlockState(),3);p.level().setBlock(new BlockPos(4,101,6),Blocks.FURNACE.defaultBlockState(),3);p.level().setBlock(new BlockPos(5,101,6),Blocks.CHEST.defaultBlockState(),3);
+            return Map.of("fixtureOnly",true,"rawLogs",4,"rawCobblestone",2,"rawSand",2,"rawDiamonds",24,"fuelCoal",1,"processedItemsGranted",0);
+        }));
+        String[][] crafts={{"planks","minecraft:oak_planks","4"},{"sticks","minecraft:stick","1"},{"chest","minecraft:chest","1"},{"helmet","minecraft:diamond_helmet","1"},{"chestplate","minecraft:diamond_chestplate","1"},{"leggings","minecraft:diamond_leggings","1"},{"boots","minecraft:diamond_boots","1"}};
+        for(var row:crafts)productionStep(row[0],"CRAFT",row[1],Integer.parseInt(row[2]),3);
+        productionStep("stone","SMELT","minecraft:stone",2,4);productionStep("glass","SMELT","minecraft:glass",2,4);
+        for(String armor:List.of("diamond_helmet","diamond_chestplate","diamond_leggings","diamond_boots")){
+            String id="store_"+armor;
+            action(id,()->{var n=start(id,"ai");var process=n.putObject("process").put("action","STORE").put("item","minecraft:"+armor).put("count",1);process.putArray("station").add(5).add(101).add(6);return tool("process_items",n);});
+            waitFor(id+"_verified",1600,()->productionDone(id,1));
+        }
+        action("production-real-inventory-and-chest-proof",()->server(p->{
+            var b=body(p);var chest=(net.minecraft.world.Container)p.level().getBlockEntity(new BlockPos(5,101,6));var actual=new LinkedHashMap<String,Integer>();for(int i=0;i<chest.getContainerSize();i++){var stack=chest.getItem(i);if(!stack.isEmpty())actual.merge(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),stack.getCount(),Integer::sum);}
+            require(actual.equals(Map.of("minecraft:diamond_helmet",1,"minecraft:diamond_chestplate",1,"minecraft:diamond_leggings",1,"minecraft:diamond_boots",1)),"PRODUCTION_CHEST_CONTENTS_"+actual);
+            require(b.getInventory().countItem(Items.DIAMOND)==0&&b.getInventory().countItem(Items.OAK_LOG)==0&&b.getInventory().countItem(Items.COBBLESTONE)==0&&b.getInventory().countItem(Items.SAND)==0,"PRODUCTION_RAW_INPUTS_NOT_CONSUMED");
+            require(b.getInventory().countItem(Items.STONE)==2&&b.getInventory().countItem(Items.GLASS)==2&&b.getInventory().countItem(Items.CHEST)==1&&b.getInventory().countItem(Items.STICK)==4&&b.getInventory().countItem(Items.OAK_PLANKS)==6,"PRODUCTION_OUTPUT_NOT_ACTUAL");
+            return Map.of("chest",actual,"inventory",dev.mineagent.runtime.neoforge.task.NativeCraftingAction.inventory(b),"modelCalls",0,"fixtureOnly",true);
+        }));
+    }
+    private static void productionStep(String id,String kind,String recipe,int count,int x){
+        action("discover_and_start_"+id,()->tool("inspect_recipes",JSON.createObjectNode().put("query",recipe).put("kind",kind.equals("CRAFT")?"crafting":"smelting")).thenCompose(result->{
+            JsonNode found=null;for(var row:result.path("recipes"))if(row.path("recipe").asText().equals(recipe)){found=row;break;}require(found!=null,"PRODUCTION_REGISTERED_RECIPE_MISSING_"+recipe);EVIDENCE.add(found);
+            var n=start("produce_"+id,"ai");var process=n.putObject("process").put("action",kind).put("recipe",recipe).put("recipe_reference",found.path("recipe_reference").asText()).put("count",count);process.putArray("station").add(x).add(101).add(6);return tool("process_items",n);
+        }));
+        waitFor("native_result_"+id,2400,()->productionDone("produce_"+id,count));
+    }
+    private static CompletableFuture<Boolean> productionDone(String id,int count){
+        return tool("inspect_behavior",JSON.createObjectNode()).thenCompose(active->{
+            for(var row:active.path("skills")){var session=row.path("session");if(session.path("spec").path("id").asText().equals(id)){lastObservation=active;if(Set.of("FAILED","PAUSED").contains(session.path("state").asText()))throw new IllegalStateException("PRODUCTION_FAILED_"+session);if(session.path("state").asText().equals("COMPLETED")){require(session.path("counters").path("processedUnits").asLong()==count,"PRODUCTION_COUNT");EVIDENCE.add(row);return CompletableFuture.completedFuture(true);}return CompletableFuture.completedFuture(false);}}
+            return tool("inspect_behavior",JSON.createObjectNode().put("history",true)).thenApply(history->{lastObservation=history;for(var row:history.path("skills")){var session=row.path("session");if(session.path("spec").path("id").asText().equals(id)){require(session.path("state").asText().equals("COMPLETED")&&session.path("counters").path("processedUnits").asLong()==count,"PRODUCTION_HISTORY_NOT_COMPLETE_"+session);EVIDENCE.add(row);return true;}}return false;});
+        });
+    }
     private static void cooperativeBuilding(){
         action("cooperation-real-material-sources-and-empty-builder",()->server(p->{
             var bodies=MineAgentRuntimeServices.bodies(p.level().getServer());body(p).getInventory().clearContent();

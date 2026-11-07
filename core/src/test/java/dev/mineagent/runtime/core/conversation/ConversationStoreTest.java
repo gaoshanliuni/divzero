@@ -6,6 +6,23 @@ import java.time.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class ConversationStoreTest {
+    @Test void peerHistoryUsesActualMessagesAndKeepsBothParticipantsAndWorldScope()throws Exception {
+        UUID sender=UUID.randomUUID(),receiver=UUID.randomUUID(),thread;
+        Path path=dir.resolve("peer-history.db");
+        try(var store=ConversationStore.open(path,world,clock)){
+            var peer=store.peerThread(viewer,sender,receiver,"木匠","矿工");thread=peer.conversationId();
+            assertEquals(thread,store.peerThread(viewer,sender,receiver,"木匠新名字","矿工").conversationId());
+            var turn=store.begin(viewer,receiver,thread,UUID.randomUUID(),1,"还需要 8 块圆石，请送到工作台旁。",0);
+            store.finish(turn.operationId(),"COMPLETE","当前背包只有 5 块，还需要继续采集。","");
+            assertEquals(1,store.peers(viewer,sender,0).size());assertEquals(1,store.peers(viewer,receiver,0).size());
+            assertTrue(store.peer(viewer,UUID.randomUUID(),thread).isEmpty());assertTrue(store.peer(UUID.randomUUID(),sender,thread).isEmpty());
+            assertTrue(store.list(viewer,receiver,"ACTIVE","",0,20).conversations().isEmpty());
+            var messages=store.messages(viewer,receiver,thread,0,8).messages();assertEquals(2,messages.size());
+            var reply=messages.getLast();assertEquals("当前背包只有 5 块，还需要继续采集。",store.chunk(viewer,receiver,thread,reply.messageId(),reply.revision(),0,4096).text());
+        }
+        try(var store=ConversationStore.open(path,world,clock)){assertEquals(thread,store.peers(viewer,sender,0).getFirst().conversationId());assertEquals(2,store.messages(viewer,receiver,thread,0,8).messages().size());}
+        try(var store=ConversationStore.open(path,UUID.randomUUID(),clock)){assertTrue(store.peers(viewer,sender,0).isEmpty());}
+    }
     @Test void unverifiedConstructionDoesNotAcquireACompleteReplyStatus()throws Exception {
         try(var store=ConversationStore.open(dir.resolve("unverified.db"),world,clock)){
             var conversation=store.create(viewer,agent,UUID.randomUUID(),"house");var turn=store.begin(viewer,agent,conversation.conversationId(),UUID.randomUUID(),1,"build",0);
