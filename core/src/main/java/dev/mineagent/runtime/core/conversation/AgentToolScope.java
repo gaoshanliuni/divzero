@@ -9,7 +9,7 @@ public final class AgentToolScope {
     private static final ObjectMapper JSON=new ObjectMapper();
     private static final Set<String> TARGETABLE=Set.of("observe","stop_actions","inspect_operations",
         "inspect_agent_settings","set_agent_setting","inspect_behavior","inspect_skills","set_behavior_mode","start_skill","set_combat_policy","control_behavior","control_skill",
-        "follow_entity","patrol_route","guard_area","farm_area","fish_at","wander_area","combat_entity",
+        "gather_resources","follow_entity","patrol_route","guard_area","farm_area","fish_at","wander_area","combat_entity",
         "inspect_agent_body","control_agent_body","set_actor_enhancements","inspect_persona","set_persona",
         "inspect_appearance","set_appearance","inspect_skins","open_skin_ui","export_current_skin","create_skin_png","set_skin_png",
         "inspect_chat_settings","set_chat_settings","set_chat_color");

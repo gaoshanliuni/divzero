@@ -20,6 +20,7 @@ public interface SkillActor {
     boolean select(UUID session,int slot);
     boolean equipOffhand(UUID session,int slot);
     void breakBlock(UUID session,UUID operation,BlockPos target);
+    void dropItem(UUID session,UUID operation,boolean wholeStack);
     void useBlock(UUID session,UUID operation,BlockPos target);
     void useItem(UUID session,UUID operation,boolean hold);
     void useHand(UUID session,UUID operation,net.minecraft.world.InteractionHand hand);

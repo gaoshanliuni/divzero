@@ -64,10 +64,11 @@ public final class GatherSkill {
         return true;
     }
     private static void verify(SkillWork w,Item wanted){
-        if(!w.saved.isDone()||w.block==null)return;var state=w.player().level().getBlockState(w.block);
-        if(w.nativeBreak&&(!BlockStateParser.serialize(state).equals(w.expectedState)||w.count(wanted)>w.beforeCount)){w.nativeBreak=false;w.session.add("gatheredBlocks",1);w.confirm("VERIFIED_BLOCK_BROKEN",Map.of("after",BlockStateParser.serialize(state),"inventoryAfter",Integer.toString(w.count(wanted))));SkillLootCollector.remember(w,Vec3.atCenterOf(w.block));w.loot.entrySet().removeIf(e->e.getValue().item()!=wanted);w.abandonTarget();return;}
+        if(!w.saved.isDone()||w.block==null)return;if(!w.runtime.reservations.reserve(w.reservation(w.block),w.token(),w.tick(),100)){w.pause("GATHER_RESERVATION_LOST");return;}var state=w.player().level().getBlockState(w.block);
+        // nativeBreak is reported by the body only after vanilla removal actually succeeds.
+        if(w.nativeBreak){w.nativeBreak=false;w.session.add("gatheredBlocks",1);w.confirm("VERIFIED_BLOCK_BROKEN",Map.of("after",BlockStateParser.serialize(state),"inventoryAfter",Integer.toString(w.count(wanted))));SkillLootCollector.remember(w,Vec3.atCenterOf(w.block));w.loot.entrySet().removeIf(e->e.getValue().item()!=wanted);w.abandonTarget();return;}
         if(!w.executed){if(!allowed(w,w.block)||!BlockStateParser.serialize(state).equals(w.expectedState)){w.confirm("NOT_EXECUTED_TARGET_CHANGED",Map.of("after",BlockStateParser.serialize(state)));w.abandonTarget();return;}w.executed=true;w.startedTick=w.tick();w.session.phase("GATHER_MINING");}
-        if(w.interruptedOperation){w.pause("GATHER_OUTCOME_REQUIRES_RECONCILIATION");return;}
+        if(w.interruptedOperation){if(BlockStateParser.serialize(state).equals(w.expectedState)&&w.count(wanted)==w.beforeCount){w.confirm("OBSERVED_UNCHANGED_AFTER_INTERRUPT",Map.of("after",BlockStateParser.serialize(state)));w.abandonTarget();}else w.pause("GATHER_OUTCOME_REQUIRES_RECONCILIATION");return;}
         int expected=NativeTerrainPolicy.breakTicks(w.player(),w.block);
         if(w.tick()-w.startedTick>Math.min(2400,Math.max(80L,(long)expected*3+40))){w.pause("GATHER_OUTCOME_REQUIRES_RECONCILIATION");return;}
         try{w.actor.breakBlock(w.token(),w.operation,w.block);}catch(IllegalStateException refused){if(!"SKILL_MINING_REJECTED".equals(refused.getMessage()))throw refused;w.gatherRejected.put(w.block,state);while(w.gatherRejected.size()>128)w.gatherRejected.remove(w.gatherRejected.keySet().iterator().next());w.confirm("NOT_EXECUTED_MINING_REJECTED",Map.of("reason",refused.getMessage()));w.abandonTarget();w.waitFor("GATHER_BREAK_REJECTED_OR_BLOCKED",40);}

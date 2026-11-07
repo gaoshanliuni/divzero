@@ -1449,8 +1449,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/AgentToolScope.java",
-      "sha256": "686068810c02f94cfbf2d7b37af3e4aed439d608d16783d634ade5809297e936",
-      "bytes": 4972
+      "resourceId": "ad6c28ae-b4f1-4143-9b7c-3be64aa98127",
+      "bytes": 4991
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/BlockObservationRegion.java",
@@ -2779,8 +2779,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSpec.java",
-      "resourceId": "e8b94768-054d-4e5a-8fb7-bde52d60d377",
-      "bytes": 8713
+      "resourceId": "d450be7d-ee1d-408e-bd74-64ebd21e7cb9",
+      "bytes": 8917
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillTools.java",
@@ -3554,8 +3554,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/GatherSkillContractTest.java",
-      "resourceId": "7f33b7bc-5f73-4030-8cb1-c98745356af9",
-      "bytes": 1172
+      "resourceId": "367ceb80-8de5-4bb2-903e-bfc99de8c829",
+      "bytes": 1741
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/HumanDuelSeriesTest.java",
@@ -4989,8 +4989,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "sha256": "f51513e4106cc1baf76a2ad40cb76944816b8017726a2cb4b7f0a93c645bcce4",
-      "bytes": 12188
+      "resourceId": "afd917ce-aae0-46e5-81ec-3df18ffe7c26",
+      "bytes": 12470
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
@@ -6669,8 +6669,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/AiSkillActor.java",
-      "sha256": "ba9bf0c51671befaba60defc240e0a09a83f88dcc863cd4670beed032730084a",
-      "bytes": 8268
+      "resourceId": "1630340d-fc14-4ce6-a620-7bd8e9f57934",
+      "bytes": 8489
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
@@ -6734,8 +6734,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/GatherSkill.java",
-      "resourceId": "08cd5b69-88df-4f59-ba1f-ca75bf27d198",
-      "bytes": 7567
+      "resourceId": "0fe8f1a4-c79b-4cff-9ded-870affb88326",
+      "bytes": 7909
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/HandoffSkill.java",
+      "resourceId": "51081793-d5a0-4f4e-84b6-d1bb723fa829",
+      "bytes": 7037
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/IsolatedCombatArena.java",
@@ -6829,8 +6834,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "sha256": "f8547ffbb2b694232e4c9d09d24678342d07d8120702089f9ce351b65927d8d4",
-      "bytes": 14636
+      "resourceId": "b74387ce-6b96-4de1-aa00-3a4c6c82cd00",
+      "bytes": 14797
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
@@ -6864,23 +6869,23 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillActor.java",
-      "sha256": "3475b6d7b2d197776766a64f339f5b311d8d92f1fe1867e68d4405ade67ad3fc",
-      "bytes": 1977
+      "resourceId": "8790bb19-223e-4f49-b9d9-a5dde53432d7",
+      "bytes": 2044
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillLootCollector.java",
-      "sha256": "39332d0f5fe80fe67da5bade83c34d9ef6f0ad321e676f9c45fa33bd53d46f3c",
-      "bytes": 4115
+      "resourceId": "626be094-bfa4-4db4-89fb-74eea3bc7d2b",
+      "bytes": 4419
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "sha256": "82d16f96c12931846d28f7598c87955b11994be9f205d24bf1d3c274d73336f2",
-      "bytes": 57014
+      "resourceId": "7e1e0903-04c9-49cc-beba-1daf3b8f16db",
+      "bytes": 57697
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "resourceId": "3e74ebb0-eba2-4826-9594-429a4002e271",
-      "bytes": 11780
+      "resourceId": "d0731c68-45fe-4b88-8131-94d84a30206a",
+      "bytes": 11914
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",
@@ -9250,5 +9255,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "36784da2d4d641dd603a00b25be5f4e681872f37"
+  "sourceCommit": "467c91773712352696d72db05e17a40682a49198"
 }
