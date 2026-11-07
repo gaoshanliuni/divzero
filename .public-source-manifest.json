@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "86530a8c-12cf-41a1-90fa-75b8448e8ef2",
-      "bytes": 5172
+      "resourceId": "ee5f7b81-87c8-4d19-92df-e14d7dbb9679",
+      "bytes": 5134
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -3989,8 +3989,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "0d336eaa-2322-4969-82f6-d99de2a7ac7b",
-      "bytes": 10154
+      "resourceId": "e8e22058-b4fc-4ecf-b493-bd594e9761f9",
+      "bytes": 10837
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -9480,5 +9480,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "936da15d14f853c795ce1ddd954d09e16e6b7ebb"
+  "sourceCommit": "69fb127009680329e5244e9478ad1fb52a118d80"
 }

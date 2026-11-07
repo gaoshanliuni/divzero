@@ -1,4 +1,4 @@
-name: Development compile (no project content digests)
+name: Development resource migration checks
 on:
   workflow_dispatch:
 permissions:
@@ -19,7 +19,7 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Compile active source without running incomplete migrations
+      - name: Compile current migration source
         run: |
           New-Item -ItemType Directory -Force build/development-logs | Out-Null
           & ./gradlew.bat -PpythonRuntime=none :neoforge:compileJava --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/compile.log
