@@ -20,8 +20,13 @@ class ConstructionLedgerTest {
     private static void finish(ConstructionLedger ledger,long tick)throws Exception {ledger.progress("APPLYING","VERIFY",0,tick);ledger.finish(tick);}
     @Test void compactFilesKeepFullWorldOwnerAgentBinding()throws Exception {
         var scope=new ConstructionCatalog.Scope(UUID.randomUUID(),UUID.randomUUID(),UUID.randomUUID());var other=new ConstructionCatalog.Scope(UUID.randomUUID(),scope.owner(),scope.agent());
-        var file=ConstructionCatalog.register(directory,scope,"home");assertEquals(46,file.getFileName().toString().length());assertFalse(file.equals(ConstructionCatalog.register(directory,other,"home")));
+        var file=ConstructionCatalog.register(directory,scope,"home");assertTrue(file.getFileName().toString().length()<64);assertEquals(file,ConstructionCatalog.register(directory,scope,"home"));assertFalse(file.equals(ConstructionCatalog.register(directory,other,"home")));
         assertEquals(1,ConstructionCatalog.list(directory,scope,0).size());try(var ledger=new ConstructionLedger(file)){ledger.bind(scope,"home");assertThrows(SecurityException.class,()->ledger.bind(other,"home"));}
+    }
+    @Test void documentReferencesAreStableForDesignsAndRotateForNewReports()throws Exception{
+        Path file=directory.resolve("references.db");String designId,footprint;
+        try(var ledger=new ConstructionLedger(file)){ledger.plan(0,SOURCE,()->true);designId=ledger.documentId("design",1);footprint=ledger.footprintHash(1);assertEquals(footprint,ledger.footprintHash(1));String before=ledger.documentId("report",1);ledger.start(1,"APPLY");assertNotEquals(before,ledger.documentId("report",1));sampled(ledger,1);finish(ledger,5);String operation=ledger.head().operation(),report=ledger.documentId("report",1);ledger.verified(operation,1,true,"checked actual positions");assertNotEquals(report,ledger.documentId("report",1));assertEquals(designId,ledger.documentId("design",1));}
+        try(var ledger=new ConstructionLedger(file)){assertEquals(designId,ledger.documentId("design",1));assertEquals(footprint,ledger.footprintHash(1));}
     }
     @Test void localRoofChangeKeepsFloorAndRestoresOriginalWorldInsteadOfAir()throws Exception {
         try(var ledger=new ConstructionLedger(directory.resolve("house.db"))){

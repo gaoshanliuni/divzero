@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "107205ac-6c99-4351-8cb8-4b73c4c07ea6",
-      "bytes": 2384
+      "resourceId": "de15b64a-209e-4f64-86e2-aadb3f3510fd",
+      "bytes": 2712
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -1229,13 +1229,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionCatalog.java",
-      "sha256": "a9ed255e36233e3504f2e649fa53794ab634cea8cc391217ab2e86c13a6b92f8",
-      "bytes": 2701
+      "resourceId": "efa4d1af-28ac-444f-9117-157add9f550a",
+      "bytes": 2976
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionLedger.java",
-      "sha256": "a489caba44901f5faf684669fd47a23a07796122cf3a559ea6886d2eccd20d2f",
-      "bytes": 18100
+      "resourceId": "3539d60a-25b7-4a3d-8e4d-a853bbf8edb3",
+      "bytes": 20383
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/ConstructionVerification.java",
@@ -2284,8 +2284,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/AssignedTaskIds.java",
-      "resourceId": "5dfd8674-562d-4fc3-acee-c81cd12f6dd4",
-      "bytes": 4980
+      "resourceId": "f6c50522-98fc-473c-b547-17e8bac75d6a",
+      "bytes": 5308
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/AuditRecord.java",
@@ -2369,8 +2369,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/TaskRetention.java",
-      "sha256": "61c5da1b1945fb1279eb75f82744bb0ee45f8e808f06f36998e7a81b92fc6cf5",
-      "bytes": 12315
+      "resourceId": "c2d238ef-02f4-496a-b164-710b65c81671",
+      "bytes": 12581
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/WorldActionRetention.java",
@@ -2829,8 +2829,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/TaskManager.java",
-      "resourceId": "1d84b80b-aa31-45db-b87c-008340851deb",
-      "bytes": 24677
+      "resourceId": "1069985a-07da-4592-815f-ca0e8ead45a5",
+      "bytes": 24746
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/TaskResultFence.java",
@@ -3119,8 +3119,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/ConstructionLedgerTest.java",
-      "sha256": "3edd0f3fac9a7734410a8c7bd2709d2c2576cc247722600d1d2e5c2b441a1e26",
-      "bytes": 5631
+      "resourceId": "5a97f38a-065a-4aa7-99a4-da343e72cf95",
+      "bytes": 6649
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/AgentMentionDisplayTest.java",
@@ -3474,8 +3474,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/AssignedTaskIdsTest.java",
-      "resourceId": "5736a548-fde0-4117-b268-3e6303210c38",
-      "bytes": 1932
+      "resourceId": "ab986776-c74e-4a49-960b-85f793dd6aad",
+      "bytes": 2094
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/persistence/NewWorldIdentityTest.java",
@@ -5314,8 +5314,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeBuildingPanel.java",
-      "sha256": "abb6833fe99ab49ffcbbc98732d2f3cc100cf6c9dcf6a83b229e37d3935aa9e5",
-      "bytes": 21922
+      "resourceId": "d2fcfb13-ff51-44ab-a8cd-50248fa1233f",
+      "bytes": 21743
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeButtonFeedback.java",
@@ -5604,8 +5604,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/ToolRepairSmoke.java",
-      "sha256": "9cb0afa5286ab7eb7a247c34d90767f03c1a57c28955e01ab1ada8f0ad90c756",
-      "bytes": 15813
+      "resourceId": "69c81006-a003-473b-a98f-0f729a290212",
+      "bytes": 15804
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/WorkspacePanels.java",
@@ -7084,8 +7084,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/BuildingUiDocuments.java",
-      "sha256": "13a8a4faad26616683adcb2e3487479c179fa18425ca366ed22ed79b086b6815",
-      "bytes": 6398
+      "resourceId": "a6d04dea-829f-49b2-8b9e-242230405648",
+      "bytes": 6361
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/BuildingVerifier.java",
@@ -7544,8 +7544,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildings.java",
-      "sha256": "684002b0f86af7324e9cce68647bb0ae4cfdb498a5ab3e1a3c1f53d55e89c7b1",
-      "bytes": 27069
+      "resourceId": "8c9cf3dc-49f1-4465-b374-9dceee517063",
+      "bytes": 27168
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBulldozers.java",
@@ -8234,8 +8234,8 @@
     },
     {
       "path": "neoforge/src/test/java/dev/mineagent/runtime/neoforge/ui/BuildingUiDocumentsTest.java",
-      "sha256": "60949e83abec12d22ff8aae559332c9df148f4012882d90c76a9e4b9f598f4fd",
-      "bytes": 3855
+      "resourceId": "3b1b2e58-dab7-4562-a8b9-bb5ccd07de12",
+      "bytes": 4026
     },
     {
       "path": "scripting/build.gradle",
@@ -9270,5 +9270,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "f5e100e85db74e928df1af72ec6e277df7c40000"
+  "sourceCommit": "f04b54aadaaa784dc852930ebe8200bdba875fa8"
 }

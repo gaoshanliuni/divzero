@@ -5,7 +5,8 @@ class AssignedTaskIdsTest {
  @Test void newTaskBindingsSurviveReopenAndSeparateOwnersAndWorlds()throws Exception{
   Path file=root.resolve("runtime.db");UUID world=UUID.randomUUID(),owner=UUID.randomUUID(),agent=UUID.randomUUID(),operation=UUID.randomUUID(),task;
   try(var manager=dev.mineagent.runtime.core.task.TaskManager.open(file,world,Clock.systemUTC())){task=manager.startTaskId(owner,operation);var started=manager.createIdempotent(operation,agent,owner,"gather",1,List.of(new dev.mineagent.runtime.core.task.TaskStepSpec("collect",Set.of())));assertEquals(task,started.taskId());assertEquals(task,manager.createIdempotent(operation,agent,owner,"gather",1,List.of(new dev.mineagent.runtime.core.task.TaskStepSpec("collect",Set.of()))).taskId());assertThrows(IllegalArgumentException.class,()->manager.createIdempotent(operation,agent,owner,"different",1,List.of(new dev.mineagent.runtime.core.task.TaskStepSpec("collect",Set.of()))));}
-  try(var manager=dev.mineagent.runtime.core.task.TaskManager.open(file,world,Clock.systemUTC())){assertEquals(task,manager.startTaskId(owner,operation));assertNotEquals(task,manager.startTaskId(UUID.randomUUID(),operation));}
+  Files.move(root.resolve("assigned-task-ids-v2.db"),root.resolve("previous-id-map.db"));
+  try(var manager=dev.mineagent.runtime.core.task.TaskManager.open(file,world,Clock.systemUTC())){assertEquals(task,manager.startTaskId(owner,operation),"a restored runtime DB retains the explicit original operation binding");assertNotEquals(task,manager.startTaskId(UUID.randomUUID(),operation));}
   assertNotEquals(task,AssignedTaskIds.resolve(file,UUID.randomUUID(),owner,operation));
  }
  @Test void canonicalRequestComparisonIsExactAndPreservesNullableContext()throws Exception{

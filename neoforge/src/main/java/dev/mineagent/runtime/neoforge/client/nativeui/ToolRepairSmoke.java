@@ -78,7 +78,7 @@ public final class ToolRepairSmoke {
         catch(Exception e){result.completeExceptionally(e);return result;}
         server(p->{try{
             var s=p.level().getServer();var cfg=MineAgentRuntimeServices.config(s);require(cfg.apply(new dev.mineagent.runtime.api.config.ConfigPatch(cfg.snapshot().revision(),Map.of("provider.openai.enabled","true","provider.openai.baseUrl","http://127.0.0.1:"+http.getAddress().getPort()+"/v1/","provider.openai.model","controlled-tool-repair","provider.openai.apiKey","fixture-only","voice.output.enabled","false")),true).accepted(),"FIXTURE_CONFIG_REJECTED");
-            var scope=new dev.mineagent.runtime.core.building.ConstructionCatalog.Scope(MineAgentRuntimeServices.worldId(s),p.getUUID(),agent);Files.createDirectories(s.getServerDirectory().resolve("mineagent-runtime-data/buildings").resolve(dev.mineagent.runtime.core.building.ConstructionCatalog.filename(scope,"broken_storage")));
+            var scope=new dev.mineagent.runtime.core.building.ConstructionCatalog.Scope(MineAgentRuntimeServices.worldId(s),p.getUUID(),agent);Files.createDirectories(dev.mineagent.runtime.core.building.ConstructionCatalog.register(s.getServerDirectory().resolve("mineagent-runtime-data/buildings"),scope,"broken_storage"));
             var conversations=ServerConversations.get(s);conversation=conversations.store().nativeConversation(p.getUUID(),agent).conversationId();conversations.submitNative(p,agent,gameContent()?"做一个召唤权杖":"请进行建筑工具错误反馈验证，保留已完成部分。",true,operation);return true;
         }catch(Exception e){throw new CompletionException(e);}}).whenComplete((v,e)->{if(e!=null)failure=e;});return result;
     }

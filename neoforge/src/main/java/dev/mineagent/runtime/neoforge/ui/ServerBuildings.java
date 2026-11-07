@@ -52,11 +52,11 @@ public final class ServerBuildings {
     }
     public static CompletableFuture<Map<String,Object>> document(ServerPlayer player,UUID agent,JsonNode args){
         authorize(player,agent,false);var handle=handle(player,agent,id(args));long revision=revision(args);String section=args.path("section").asText(),expected=args.path("sha256").asText();int offset=args.path("offset").asInt(0);
-        return handle.opened.thenCompose(ledger->io(()->{require(ledger.head().revision()==revision,"STALE_REVISION");String source=switch(section){case "design"->ledger.design(revision).source();case "report"->ledger.head().report();case "history"->JSON.writeValueAsString(ledger.history(args.path("historyOffset").asInt(0)));default->throw new IllegalArgumentException("BUILDING_DOCUMENT_SECTION");};return BuildingUiDocuments.part(source,offset,expected);}));
+        return handle.opened.thenCompose(ledger->io(()->{require(ledger.head().revision()==revision,"STALE_REVISION");String source=switch(section){case "design"->ledger.design(revision).source();case "report"->ledger.head().report();case "history"->JSON.writeValueAsString(ledger.history(args.path("historyOffset").asInt(0)));default->throw new IllegalArgumentException("BUILDING_DOCUMENT_SECTION");};return BuildingUiDocuments.part(source,offset,expected,ledger.documentId(section,revision));}));
     }
     private static Map<String,Object> view(Handle handle,ConstructionLedger ledger,int offset)throws Exception {
         var h=ledger.head();var out=new LinkedHashMap<String,Object>();out.put("id",handle.key.id);out.put("revision",h.revision());out.put("activeRevision",h.activeRevision());out.put("status",h.status());out.put("operation",h.operation());out.put("phase",h.phase());out.put("cursor",h.cursor());out.put("verification",h.status().equals("VERIFIED")?"VERIFIED":"UNVERIFIED");out.put("report",h.report());
-        if(h.revision()>0){out.put("design",JSON.readTree(ledger.design(h.revision()).source()));out.put("steps",ledger.steps(h.revision()));out.put("history",ledger.history(offset));}return out;
+        if(h.revision()>0){out.put("designHash",ledger.documentId("design",h.revision()));out.put("design",JSON.readTree(ledger.design(h.revision()).source()));out.put("steps",ledger.steps(h.revision()));out.put("history",ledger.history(offset));}return out;
     }
     public static CompletableFuture<Map<String,Object>> inspect(ServerPlayer p,UUID agent,JsonNode args){
         authorize(p,agent,false);int offset=args.path("offset").asInt(0);require(offset>=0,"OFFSET");

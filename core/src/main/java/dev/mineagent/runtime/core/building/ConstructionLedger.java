@@ -24,6 +24,8 @@ public final class ConstructionLedger implements AutoCloseable {
             s.execute("CREATE TABLE IF NOT EXISTS control(id INTEGER PRIMARY KEY CHECK(id=1),revision INTEGER NOT NULL DEFAULT 0,active_revision INTEGER NOT NULL DEFAULT 0,status TEXT NOT NULL DEFAULT 'EMPTY',mode TEXT NOT NULL DEFAULT '',phase TEXT NOT NULL DEFAULT '',cursor INTEGER NOT NULL DEFAULT 0,operation TEXT NOT NULL DEFAULT '',mutation_tick INTEGER NOT NULL DEFAULT 0,report TEXT NOT NULL DEFAULT '')");
             s.execute("INSERT OR IGNORE INTO control(id) VALUES(1)");
             s.execute("CREATE TABLE IF NOT EXISTS designs(revision INTEGER PRIMARY KEY,base_revision INTEGER NOT NULL,source TEXT NOT NULL)");
+            s.execute("CREATE TABLE IF NOT EXISTS footprint_ids(revision INTEGER PRIMARY KEY,resource_id TEXT NOT NULL UNIQUE)");
+            s.execute("CREATE TABLE IF NOT EXISTS document_ids(kind TEXT NOT NULL,revision INTEGER NOT NULL,resource_id TEXT NOT NULL UNIQUE,PRIMARY KEY(kind,revision))");
             s.execute("CREATE TABLE IF NOT EXISTS component_bounds(revision INTEGER NOT NULL,component TEXT NOT NULL,min_x INTEGER,max_x INTEGER,min_y INTEGER,max_y INTEGER,min_z INTEGER,max_z INTEGER,PRIMARY KEY(revision,component))");
             s.execute("CREATE TABLE IF NOT EXISTS targets(seq INTEGER PRIMARY KEY,revision INTEGER NOT NULL,component TEXT NOT NULL,x INTEGER NOT NULL,y INTEGER NOT NULL,z INTEGER NOT NULL,material TEXT NOT NULL,orientation TEXT NOT NULL,expected TEXT,baseline TEXT,before_state TEXT,after_state TEXT,present INTEGER NOT NULL DEFAULT 1,changed INTEGER NOT NULL DEFAULT 0,written INTEGER NOT NULL DEFAULT 0,UNIQUE(revision,x,y,z))");
             s.execute("CREATE INDEX IF NOT EXISTS targets_pages ON targets(revision,seq)");
@@ -97,7 +99,7 @@ public final class ConstructionLedger implements AutoCloseable {
         }
         String operation=UUID.randomUUID().toString();
         try(var p=db.prepareStatement("UPDATE control SET status='PREPARING',mode=?,phase='PREFLIGHT',cursor=0,operation=?,report='' WHERE id=1")){p.setString(1,mode);p.setString(2,operation);p.executeUpdate();}
-        history("PREPARING","");return head();
+        rotateDocument("report",revision);history("PREPARING","");return head();
     }
     public synchronized Head progress(String status,String phase,long cursor,long mutationTick)throws Exception {
         try(var p=db.prepareStatement("UPDATE control SET status=?,phase=?,cursor=?,mutation_tick=MAX(mutation_tick,?) WHERE id=1")){p.setString(1,status);p.setString(2,phase);p.setLong(3,cursor);p.setLong(4,mutationTick);p.executeUpdate();}return head();
@@ -138,10 +140,11 @@ public final class ConstructionLedger implements AutoCloseable {
     }
     public synchronized void verified(String operation,long revision,boolean passed,String report)throws Exception {
         var h=head();if(h.activeRevision!=revision||!h.operation.equals(operation)||!Set.of("UNVERIFIED","VERIFIED").contains(h.status))throw new IllegalStateException("BUILDING_VERIFICATION_STALE");
-        try(var p=db.prepareStatement("UPDATE control SET status=?,report=? WHERE id=1")){p.setString(1,passed?"VERIFIED":"UNVERIFIED");p.setString(2,report);p.executeUpdate();}history(passed?"VERIFIED":"UNVERIFIED",report);
+        try(var p=db.prepareStatement("UPDATE control SET status=?,report=? WHERE id=1")){p.setString(1,passed?"VERIFIED":"UNVERIFIED");p.setString(2,report);p.executeUpdate();}rotateDocument("report",revision);history(passed?"VERIFIED":"UNVERIFIED",report);
     }
     private void history(String status,String detail)throws Exception {
         var h=head();try(var p=db.prepareStatement("INSERT INTO history VALUES(?,?,?,?,?,?) ON CONFLICT(operation) DO UPDATE SET status=excluded.status,detail=excluded.detail,at=excluded.at")){p.setString(1,h.operation);p.setLong(2,h.revision);p.setString(3,h.mode);p.setString(4,status);p.setString(5,detail);p.setLong(6,System.currentTimeMillis());p.executeUpdate();}
+        rotateDocument("history",0);
     }
     public synchronized List<Map<String,Object>> steps(long revision)throws Exception {
         var result=new ArrayList<Map<String,Object>>();try(var p=db.prepareStatement("SELECT component,COUNT(*) AS cells,SUM(changed) AS changes,SUM(written) AS written FROM targets WHERE revision=? GROUP BY component ORDER BY MIN(seq)")){p.setLong(1,revision);try(var r=p.executeQuery()){while(r.next())result.add(Map.of("component",r.getString(1),"cells",r.getLong(2),"changes",r.getLong(3),"written",r.getLong(4)));}}return result;
@@ -150,10 +153,16 @@ public final class ConstructionLedger implements AutoCloseable {
         if(offset<0)throw new IllegalArgumentException("BUILDING_OFFSET");var result=new ArrayList<Map<String,Object>>();try(var p=db.prepareStatement("SELECT * FROM history ORDER BY at DESC,operation LIMIT 32 OFFSET ?")){p.setInt(1,offset);try(var r=p.executeQuery()){while(r.next())result.add(Map.of("operation",r.getString(1),"revision",r.getLong(2),"mode",r.getString(3),"status",r.getString(4),"detail",r.getString(5),"at",r.getLong(6)));}}return result;
     }
     public synchronized String footprintHash(long revision)throws Exception {
-        var hash=java.security.MessageDigest.getInstance("SHA-256");
-        try(var p=db.prepareStatement("SELECT x,y,z,after_state FROM targets WHERE revision=? AND present=1 ORDER BY x,y,z")){p.setLong(1,revision);try(var r=p.executeQuery()){while(r.next())hash.update((r.getInt(1)+","+r.getInt(2)+","+r.getInt(3)+"="+r.getString(4)+"\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));}}
-        return HexFormat.of().formatHex(hash.digest());
+        String id=dev.mineagent.runtime.api.packages.ResourceIds.create();var head=head();if(head.activeRevision()==revision&&!head.report().isBlank())try{var scope=new com.fasterxml.jackson.databind.ObjectMapper().readTree(head.report()).path("evidence").path("scope");if(scope.path("revision").asLong()==revision&&scope.path("building").asText().equals(design(revision).id()))id=dev.mineagent.runtime.api.packages.ResourceIds.require(scope.path("footprintHash").asText());}catch(Exception ignored){/* Invalid old reports cannot authorize a new version. */}
+        try(var p=db.prepareStatement("INSERT INTO footprint_ids(revision,resource_id) SELECT revision,? FROM designs WHERE revision=? ON CONFLICT(revision) DO NOTHING")){p.setString(1,id);p.setLong(2,revision);p.executeUpdate();}
+        try(var p=db.prepareStatement("SELECT resource_id FROM footprint_ids WHERE revision=?")){p.setLong(1,revision);try(var row=p.executeQuery()){if(!row.next())throw new IllegalArgumentException("BUILDING_REVISION_MISSING");return dev.mineagent.runtime.api.packages.ResourceIds.require(row.getString(1));}}
     }
+    public synchronized String documentId(String kind,long revision)throws Exception{
+        if(!Set.of("design","report","history").contains(kind)||revision<1)throw new IllegalArgumentException("BUILDING_DOCUMENT_SCOPE");long version=kind.equals("history")?0:revision;
+        try(var p=db.prepareStatement("INSERT INTO document_ids VALUES(?,?,?) ON CONFLICT(kind,revision) DO NOTHING")){p.setString(1,kind);p.setLong(2,version);p.setString(3,dev.mineagent.runtime.api.packages.ResourceIds.create());p.executeUpdate();}
+        try(var p=db.prepareStatement("SELECT resource_id FROM document_ids WHERE kind=? AND revision=?")){p.setString(1,kind);p.setLong(2,version);try(var rows=p.executeQuery()){if(!rows.next())throw new IllegalStateException("BUILDING_DOCUMENT_ID_MISSING");return dev.mineagent.runtime.api.packages.ResourceIds.require(rows.getString(1));}}
+    }
+    private void rotateDocument(String kind,long revision)throws Exception{try(var p=db.prepareStatement("INSERT INTO document_ids VALUES(?,?,?) ON CONFLICT(kind,revision) DO UPDATE SET resource_id=excluded.resource_id")){p.setString(1,kind);p.setLong(2,revision);p.setString(3,dev.mineagent.runtime.api.packages.ResourceIds.create());p.executeUpdate();}}
     public synchronized long count(long revision)throws Exception{try(var p=db.prepareStatement("SELECT COUNT(*) FROM targets WHERE revision=? AND present=1")){p.setLong(1,revision);try(var r=p.executeQuery()){r.next();return r.getLong(1);}}}
     public synchronized int[] bounds(long revision,String component)throws Exception{try(var p=db.prepareStatement(component==null?"SELECT MIN(x),MAX(x),MIN(y),MAX(y),MIN(z),MAX(z) FROM targets WHERE revision=? AND present=1":"SELECT min_x,max_x,min_y,max_y,min_z,max_z FROM component_bounds WHERE revision=? AND component=?")){p.setLong(1,revision);if(component!=null)p.setString(2,component);try(var r=p.executeQuery()){if(!r.next()||r.getObject(1)==null)throw new IllegalArgumentException("BUILDING_EMPTY_COMPONENT");return new int[]{r.getInt(1),r.getInt(2),r.getInt(3),r.getInt(4),r.getInt(5),r.getInt(6)};}}}
     public synchronized void reconcile(List<Long> written)throws Exception {try(var p=db.prepareStatement("UPDATE targets SET written=1 WHERE seq=?")){for(long sequence:written){p.setLong(1,sequence);p.addBatch();}p.executeBatch();}}

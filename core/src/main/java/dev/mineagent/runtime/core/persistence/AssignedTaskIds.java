@@ -32,6 +32,7 @@ public final class AssignedTaskIds {
         try(var query=db.prepareStatement("SELECT 1 FROM mineagent_runtime_records WHERE world_id=? AND namespace='task_start_requests' AND json_valid(payload) AND length(json_extract(payload,'$.fingerprint'))=64 LIMIT 1")){query.setString(1,world.toString());try(var rows=query.executeQuery()){return rows.next();}}
     }
     private static UUID bound(Connection db,Set<String> tables,UUID world,UUID owner,UUID operation)throws SQLException{
+        if(tables.contains("mineagent_runtime_records")){UUID id=query(db,"SELECT record_id FROM mineagent_runtime_records WHERE world_id=? AND namespace='task_start_requests' AND json_valid(payload) AND json_extract(payload,'$.owner')=? AND json_extract(payload,'$.operation')=?",world,owner,operation);if(id!=null)return id;}
         if(tables.containsAll(Set.of("mineagent_schedule_occurrences_v1","mineagent_schedules_v1"))){UUID id=query(db,"SELECT o.task FROM mineagent_schedule_occurrences_v1 o JOIN mineagent_schedules_v1 s ON s.world=o.world AND s.id=o.schedule WHERE o.world=? AND s.owner=? AND o.id=? AND o.task IS NOT NULL",world,owner,operation);if(id!=null)return id;}
         if(tables.containsAll(Set.of("mineagent_event_triggers_v1","mineagent_subscriptions_v1")))return query(db,"SELECT t.task_id FROM mineagent_event_triggers_v1 t JOIN mineagent_subscriptions_v1 s ON s.world=t.world AND s.id=t.subscription WHERE t.world=? AND s.owner=? AND t.id=? AND t.task_id IS NOT NULL",world,owner,operation);
         return null;

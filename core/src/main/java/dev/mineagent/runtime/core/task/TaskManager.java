@@ -73,7 +73,7 @@ public final class TaskManager implements AutoCloseable {
         request.put("plan",plan.stream().map(s->{var value=new java.util.TreeMap<String,Object>();value.put("id",s.stepId());value.put("dependencies",s.dependencies().stream().sorted().toList());return value;}).toList());
         if(parent!=null)request.put("budgetParent",List.of(parent.taskId(),parent.intent(),parent.relation()));
         String fingerprint=dev.mineagent.runtime.core.persistence.ExactRequestSnapshot.encode(request);
-        String payload=mapper.writeValueAsString(java.util.Map.of("fingerprint",fingerprint));var old=repository.getIncludingDeleted(worldId,"task_start_requests",taskId.toString());
+        String payload=mapper.writeValueAsString(new java.util.TreeMap<>(java.util.Map.of("fingerprint",fingerprint,"owner",ownerPlayerId,"operation",operation)));var old=repository.getIncludingDeleted(worldId,"task_start_requests",taskId.toString());
         if(old.isPresent()){if(old.get().deleted())throw new IllegalStateException("TASK_CREATION_REMOVED");if(!old.get().payload().equals(payload))throw new IllegalArgumentException("TASK_OPERATION_REUSED");}
         else{
             var result=write("task_start_requests",taskId.toString(),0,payload,clock.millis());
