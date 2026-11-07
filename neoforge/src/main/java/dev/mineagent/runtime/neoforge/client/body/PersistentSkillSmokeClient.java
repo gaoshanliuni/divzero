@@ -889,6 +889,7 @@ public final class PersistentSkillSmokeClient {
             agent=MineAgentRuntimeServices.bodies(s).createPersistentAt("持续技能搭档",p.getUUID(),p.level(),new Vec3(.5,101,6.5)).agentId();var b=body(p);b.setGameMode(GameType.SURVIVAL);b.getInventory().clearContent();b.getInventory().setItem(0,new ItemStack(Items.DIAMOND_SWORD));b.getInventory().setItem(1,new ItemStack(Items.WHEAT_SEEDS,32));b.getInventory().setItem(2,new ItemStack(Items.IRON_HOE));b.getInventory().setItem(3,new ItemStack(Items.BOW));b.getInventory().setItem(4,new ItemStack(Items.ARROW,32));var rod=new ItemStack(Items.FISHING_ROD);var lure=p.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.LURE);net.minecraft.world.item.enchantment.EnchantmentHelper.updateEnchantments(rod,e->e.set(lure,3));b.getInventory().setItem(5,rod);return Map.of("agent",agent,"mode",b.gameMode.getGameModeForPlayer().name());
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
+        if(mode.equals("cooperative_building")){cooperativeBuilding();return;}
         if(mode.equals("online_replay")){onlineReplay();return;}
         if(mode.equals("region_settings")){regionSettings();return;}
         if(mode.equals("resume_ai")){resumeAi(false);return;}
@@ -1031,6 +1032,43 @@ public final class PersistentSkillSmokeClient {
         action("resume-same-session",()->tool("control_skill",JSON.createObjectNode().put("id","paused_farm").put("expected_revision",2).put("action","resume")));
         waitFor("resumed-native-result",1000,()->state("paused_farm",s->s.path("counters").path("planted").asLong()>=1));
         action("stop-resumed-session",()->tool("control_skill",JSON.createObjectNode().put("id","paused_farm").put("expected_revision",3).put("action","stop")));
+    }
+    private static UUID cooperativeWood,cooperativeStone,cooperativeRun;private static ObjectNode cooperativePlan;
+    private static void cooperativeBuilding(){
+        action("cooperation-real-material-sources-and-empty-builder",()->server(p->{
+            var bodies=MineAgentRuntimeServices.bodies(p.level().getServer());body(p).getInventory().clearContent();
+            cooperativeWood=bodies.createPersistentAt("木材采集",p.getUUID(),p.level(),new Vec3(2.5,101,14.5)).agentId();
+            cooperativeStone=bodies.createPersistentAt("石料采集",p.getUUID(),p.level(),new Vec3(21.5,101,14.5)).agentId();
+            for(var id:List.of(cooperativeWood,cooperativeStone)){var worker=bodies.body(id).orElseThrow();worker.setGameMode(GameType.SURVIVAL);worker.getInventory().clearContent();worker.getInventory().setItem(0,new ItemStack(id.equals(cooperativeWood)?Items.IRON_AXE:Items.IRON_PICKAXE));}
+            for(int x=1;x<=6;x++)for(int z=18;z<=21;z++)p.level().setBlock(new BlockPos(x,101,z),Blocks.OAK_LOG.defaultBlockState(),3);
+            for(int x=18;x<=23;x++)for(int z=18;z<=22;z++)p.level().setBlock(new BlockPos(x,101,z),Blocks.STONE.defaultBlockState(),3);
+            cooperativePlan=JSON.createObjectNode().put("name","原生采集交接建屋验证");var nodes=cooperativePlan.putArray("nodes");var supply=cooperativePlan.putArray("supplies");
+            for(int i=0;i<2;i++){
+                String prefix=i==0?"wood":"stone",item=i==0?"minecraft:oak_log":"minecraft:cobblestone";UUID worker=i==0?cooperativeWood:cooperativeStone;
+                var gather=nodes.addObject().put("id",prefix).put("agent",worker.toString());gather.set("intent",area(prefix,"ai",i==0?1:18,101,18,i==0?6:23,101,i==0?21:22).put("kind","GATHER").put("crop",item).put("limit",4));
+                var delivery=nodes.addObject().put("id",prefix+"_delivery").put("agent",worker.toString());delivery.putArray("after").add(prefix);delivery.set("intent",start(prefix+"_delivery","ai").put("kind","HANDOFF").put("target",body(p).getUUID().toString()).put("crop",item).put("limit",4));
+                supply.addObject().put("gather",prefix).put("handoff",prefix+"_delivery").put("construction","hut");
+            }
+            var build=nodes.addObject().put("id","hut").put("agent",agent.toString());build.putArray("after").add("wood_delivery").add("stone_delivery");build.set("intent",start("hut","ai").put("kind","CONSTRUCT").put("building_id","cooperative_hut").put("building_revision",1));
+            return Map.of("builderInitiallyEmpty",body(p).getInventory().isEmpty(),"woodSourceBlocks",24,"stoneSourceBlocks",30,"initialDeliveryPerResource",4,"buildingMaterialsGranted",0);
+        }));
+        action("cooperation-save-versioned-house-plan",()->tool("plan_building",JSON.createObjectNode().put("revision",0).put("source","""
+            {"id":"cooperative_hut","name":"Cooperative hut","dimension":"minecraft:overworld","origin":[10,101,6],"components":[
+            {"id":"floor","parts":[{"kind":"box","min":[0,0,0],"max":[2,0,2],"material":"minecraft:cobblestone"}]},
+            {"id":"walls","depends_on":["floor"],"parts":[{"kind":"box","min":[0,1,0],"max":[0,2,2],"material":"minecraft:oak_log"},{"kind":"box","min":[2,1,0],"max":[2,2,2],"material":"minecraft:oak_log"},{"kind":"box","min":[1,1,2],"max":[1,2,2],"material":"minecraft:oak_log"}]},
+            {"id":"roof","depends_on":["walls"],"parts":[{"kind":"box","min":[0,3,0],"max":[2,3,2],"material":"minecraft:cobblestone"}]}],
+            "checks":[{"id":"door","component":"walls","kind":"clearance","min":[1,1,0],"max":[1,2,0]},
+            {"id":"walk_inside","component":"floor","kind":"path","path":[[1,1,0],[1,1,1]],"headroom":2},
+            {"id":"roof_bounds","component":"roof","kind":"bounds","min":[0,3,0],"max":[2,3,2]}]}
+            """)));
+        action("cooperation-submit-real-tools",()->tool("start_cooperation",JSON.createObjectNode().set("plan",cooperativePlan)).thenApply(value->{cooperativeRun=UUID.fromString(value.path("id").asText());require(value.path("status").asText().equals("STARTED"),"COOP_NOT_ADMITTED_"+value);return value;}));
+        waitFor("cooperation-real-pickup-resupply-and-verified-house",10000,()->tool("inspect_cooperation",JSON.createObjectNode().put("id",cooperativeRun.toString())).thenApply(value->{
+            lastObservation=value;if(Set.of("PAUSED","CANCELLED").contains(value.path("status").asText()))throw new IllegalStateException("COOP_FAILED_"+value);if(!value.path("status").asText().equals("COMPLETED"))return false;
+            int resupplies=0;long received=0,placed=0;for(var row:value.path("steps")){resupplies+=row.path("round").asInt()-1;received+=row.path("observed").path("counters").path("handoffReceived").asLong();placed+=row.path("observed").path("counters").path("constructionBlocksPlaced").asLong();}
+            require(resupplies>=2&&received>=8&&placed==32,"COOP_NO_ACTUAL_RESUPPLY_OR_CONSTRUCTION_"+value);EVIDENCE.add(value);return true;
+        }));
+        action("cooperation-read-authoritative-building-proof",()->tool("inspect_buildings",JSON.createObjectNode().put("id","cooperative_hut")).thenApply(value->{EVIDENCE.add(value);return value;}));
+        action("cooperation-check-world-and-zero-grants",()->server(p->{require(p.level().getBlockState(new BlockPos(11,102,6)).isAir()&&p.level().getBlockState(new BlockPos(11,103,6)).isAir(),"COOP_DOOR_CLOSED");require(p.level().getBlockState(new BlockPos(11,104,7)).is(Blocks.COBBLESTONE),"COOP_ROOF_MISSING");long woodLeft=0,stoneLeft=0;for(int x=1;x<=6;x++)for(int z=18;z<=21;z++)if(p.level().getBlockState(new BlockPos(x,101,z)).is(Blocks.OAK_LOG))woodLeft++;for(int x=18;x<=23;x++)for(int z=18;z<=22;z++)if(p.level().getBlockState(new BlockPos(x,101,z)).is(Blocks.STONE))stoneLeft++;require(24-woodLeft>=14&&30-stoneLeft>=18,"COOP_MATERIALS_NOT_MINED");return Map.of("actualWoodMined",24-woodLeft,"actualStoneMined",30-stoneLeft,"modelCalls",0,"fixtureOnly",true);}));
     }
     private static void patrol(){
         action("start-patrol-route",()->{var n=start("patrol","ai").put("repeat",false).put("dwell_ticks",10);var r=n.putArray("route");r.addArray().add(6.5).add(101).add(6.5);r.addArray().add(6.5).add(101).add(11.5);r.addArray().add(.5).add(101).add(11.5);return tool("patrol_route",n);});

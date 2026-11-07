@@ -5044,8 +5044,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "sha256": "a0dd65ab4229d07ff4133c08ab4b3707ceae334398ef6aae972ba12830d3b8cb",
-      "bytes": 243496
+      "resourceId": "8763681b-809e-4adc-b850-ac842900d1cf",
+      "bytes": 249570
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -6934,8 +6934,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "resourceId": "20e49d7f-98eb-42e1-ae28-5d653e4d2a8a",
-      "bytes": 61033
+      "resourceId": "2509c913-2da8-49cb-a094-d9ac8cbc7256",
+      "bytes": 61102
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
@@ -9310,5 +9310,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "afcc79632841e47f463e90ededc78bf28b6a283b"
+  "sourceCommit": "d9f8428daca0d748927c998bf1fd4f828511eda2"
 }
