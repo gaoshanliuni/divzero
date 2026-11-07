@@ -108,10 +108,7 @@ public final class LegacyContentPackageMigrator {
 
     private RuntimePackage convert(ContentPackage legacy) throws Exception {
         byte[] source = legacy.source().getBytes(StandardCharsets.UTF_8);
-        var stored = contentStore.put(source);
-        if (!stored.sha256().equals(legacy.sha256())) {
-            throw new IllegalStateException("legacy source hash mismatch");
-        }
+        var stored = contentStore.put(legacy.sha256(),source);
         var resource = new RuntimeResourceRef("server/main.js", stored.sha256(), RuntimeResourceSide.SERVER,
                 "application/javascript", stored.size());
         RuntimePackage unsigned = new RuntimePackage(legacy.packageId(), RuntimePackageType.CONTENT,
@@ -120,13 +117,7 @@ public final class LegacyContentPackageMigrator {
                         stored.sha256())),
                 Map.of(), Map.of(resource.path(), resource), PackageOrigin.LEGACY_V1, legacy.enabled(), 1,
                 "0".repeat(64), "", 0);
-        String canonicalHash = RuntimePackageCanonicalizer.sha256(unsigned);
-        String signature = Base64.getEncoder().encodeToString(
-                signer.sign(canonicalHash.getBytes(StandardCharsets.US_ASCII)));
-        return new RuntimePackage(unsigned.packageId(), unsigned.type(), unsigned.name(), unsigned.version(),
-                unsigned.activationMode(), unsigned.dependencies(), unsigned.permissions(), unsigned.entrypoints(),
-                unsigned.definitions(), unsigned.resources(), unsigned.origin(), unsigned.enabled(), 1,
-                canonicalHash, signature, 0);
+        return PackageSignatures.signNew(unsigned,contentStore::read,signer);
     }
 
     private Path backupPath() {

@@ -61,8 +61,7 @@ public final class WorldPackagePatchBuilder {
             }
         }
         }
-        String hash=RuntimePackageCanonicalizer.sha256(draft);
-        var candidate=new RuntimePackage(draft.packageId(),draft.type(),draft.name(),draft.version(),draft.activationMode(),draft.dependencies(),draft.permissions(),entries,draft.definitions(),resources,draft.origin(),draft.enabled(),draft.revision(),hash,Base64.getEncoder().encodeToString(signer.sign(hash.getBytes(StandardCharsets.US_ASCII))),draft.updatedAtEpochMillis(),draft.nativeCompatibility());
+        var candidate=dev.mineagent.runtime.core.packages.PackageSignatures.signNew(draft,store::read,signer);
         WorldPatchPolicy.require(base,candidate);return candidate;
     }
     private static String diagnostics(String path,PreflightResult check){return check.diagnostics().stream().map(d->path+":"+d.line()+": "+d.code()+" — "+d.message()).collect(java.util.stream.Collectors.joining("\n"));}

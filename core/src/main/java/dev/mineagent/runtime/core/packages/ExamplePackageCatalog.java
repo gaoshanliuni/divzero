@@ -90,12 +90,7 @@ public final class ExamplePackageCatalog implements AutoCloseable {
         RuntimePackage unsigned = new RuntimePackage(source.packageId(), source.type(), source.name(), source.version(),
                 source.activationMode(), source.dependencies(), source.permissions(), source.entrypoints(),
                 source.definitions(), source.resources(), origin, false, 1, "0".repeat(64), "", 0,source.nativeCompatibility());
-        String hash = RuntimePackageCanonicalizer.sha256(unsigned);
-        String signature = Base64.getEncoder().encodeToString(
-                signer.sign(hash.getBytes(StandardCharsets.US_ASCII)));
-        return new RuntimePackage(unsigned.packageId(), unsigned.type(), unsigned.name(), unsigned.version(),
-                unsigned.activationMode(), unsigned.dependencies(), unsigned.permissions(), unsigned.entrypoints(),
-                unsigned.definitions(), unsigned.resources(), unsigned.origin(), false, 1, hash, signature, 0,unsigned.nativeCompatibility());
+        return PackageSignatures.copySigned(source,unsigned,signer);
     }
 
     @Override

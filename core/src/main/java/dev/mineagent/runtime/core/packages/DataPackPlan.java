@@ -40,7 +40,7 @@ public record DataPackPlan(RuntimePackage manifest,Map<String,RuntimeResourceRef
     public String packId(){return "file/"+filename();}
     public static boolean managedName(String name){return name!=null&&name.matches("mineagent-(?:data|world)-[a-f0-9-]{36}-[a-f0-9]{64}\\.zip");}
     public void verifySignature(byte[] publicKey)throws Exception{
-        if(!manifest.canonicalSha256().equals(RuntimePackageCanonicalizer.sha256(manifest))||!IdentitySigner.verify(publicKey,manifest.canonicalSha256().getBytes(StandardCharsets.US_ASCII),Base64.getDecoder().decode(manifest.signature())))throw new IllegalStateException("DATA_PACK_SIGNATURE");
+        if(!PackageSignatures.verifyManifest(manifest,publicKey))throw new IllegalStateException("DATA_PACK_SIGNATURE");
     }
     /** Called on the file worker. Publishing never replaces an existing archive. */
     public String publish(Path save,ContentAddressedStore content)throws Exception{
@@ -53,8 +53,8 @@ public record DataPackPlan(RuntimePackage manifest,Map<String,RuntimeResourceRef
             try(var zip=new ZipOutputStream(Files.newOutputStream(temporary))){
                 for(var e:files.entrySet()){
                     if(Thread.currentThread().isInterrupted())throw new java.io.InterruptedIOException("DATA_PACK_BUILD_INTERRUPTED");
-                    byte[] bytes=content.read(e.getValue().sha256());if(bytes.length!=e.getValue().size()||!RuntimePackageCanonicalizer.sha256(bytes).equals(e.getValue().sha256()))throw new IllegalStateException("DATA_PACK_RESOURCE_HASH");
-                    var crc=new CRC32();crc.update(bytes);var entry=new ZipEntry(e.getKey());entry.setMethod(ZipEntry.STORED);entry.setSize(bytes.length);entry.setCompressedSize(bytes.length);entry.setCrc(crc.getValue());entry.setTime(0);zip.putNextEntry(entry);zip.write(bytes);zip.closeEntry();
+                    byte[] bytes=content.read(e.getValue().sha256());PackageSignatures.requireResource(manifest,e.getValue(),bytes);
+                    var entry=new ZipEntry(e.getKey());entry.setTime(0);zip.putNextEntry(entry);zip.write(bytes);zip.closeEntry();
                 }
             }
             try(var channel=FileChannel.open(temporary,StandardOpenOption.WRITE)){channel.force(true);}
@@ -71,11 +71,11 @@ public record DataPackPlan(RuntimePackage manifest,Map<String,RuntimeResourceRef
         try(var zip=new ZipInputStream(new java.io.ByteArrayInputStream(image))){
             ZipEntry entry;int count=0;while((entry=zip.getNextEntry())!=null){
                 var ref=remaining.remove(entry.getName());if(++count>256||entry.isDirectory()||ref==null)throw new IllegalStateException("DATA_PACK_ARCHIVE_INVALID");
-                byte[] bytes=zip.readNBytes(4*1024*1024+1);if(bytes.length!=ref.size()||!RuntimePackageCanonicalizer.sha256(bytes).equals(ref.sha256()))throw new IllegalStateException("DATA_PACK_RESOURCE_HASH");
+                byte[] bytes=zip.readNBytes(4*1024*1024+1);PackageSignatures.requireResource(manifest,ref,bytes);
                 if(entry.getName().equals("pack.mcmeta")){if(bytes.length>65536)throw new IllegalStateException("DATA_PACK_METADATA_INVALID");var node=new ObjectMapper().readTree(bytes);if(node==null||!node.isObject()||!node.path("pack").isObject())throw new IllegalStateException("DATA_PACK_METADATA_INVALID");}
                 decoded.put(entry.getName(),bytes);
             }
         }
-        if(!remaining.isEmpty())throw new IllegalStateException("DATA_PACK_ARCHIVE_INVALID");return new Snapshot(RuntimePackageCanonicalizer.sha256(image),Collections.unmodifiableMap(decoded));
+        if(!remaining.isEmpty())throw new IllegalStateException("DATA_PACK_ARCHIVE_INVALID");return new Snapshot(manifest.canonicalSha256(),Collections.unmodifiableMap(decoded));
     }
 }

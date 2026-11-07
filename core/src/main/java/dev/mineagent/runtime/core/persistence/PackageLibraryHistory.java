@@ -53,9 +53,9 @@ public final class PackageLibraryHistory {
         if(record==null)return;
         var json=new com.fasterxml.jackson.databind.ObjectMapper().readTree(record.payload());
         if(!record.recordId().equals(json.path("packageId").asText())||record.revision()!=json.path("revision").asLong())throw new IllegalStateException("PACKAGE_VERSION_CONTEXT");
-        String hash=dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer.sha256(record.payload().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String hash=dev.mineagent.runtime.api.packages.ResourceIds.create();
         try(var q=db.prepareStatement("INSERT OR IGNORE INTO mineagent_library_versions_v1 VALUES(?,?,?,?,?,?,?,?,?,?)")){q.setString(1,record.recordId());q.setLong(2,record.revision());q.setString(3,record.payload());q.setString(4,hash);q.setString(5,json.path("canonicalSha256").asText());q.setBoolean(6,json.path("enabled").asBoolean());q.setString(7,json.path("version").asText());q.setString(8,json.path("origin").asText());q.setString(9,provenance);q.setLong(10,at);q.executeUpdate();}
-        try(var q=db.prepareStatement("SELECT payload_hash FROM mineagent_library_versions_v1 WHERE package_id=? AND revision=?")){q.setString(1,record.recordId());q.setLong(2,record.revision());try(var r=q.executeQuery()){if(!r.next()||!hash.equals(r.getString(1)))throw new IllegalStateException("PACKAGE_VERSION_CONFLICT");}}
+        try(var q=db.prepareStatement("SELECT payload FROM mineagent_library_versions_v1 WHERE package_id=? AND revision=?")){q.setString(1,record.recordId());q.setLong(2,record.revision());try(var r=q.executeQuery()){if(!r.next()||!record.payload().equals(r.getString(1)))throw new IllegalStateException("PACKAGE_VERSION_CONFLICT");}}
     }
     static Version version(Connection db,UUID id,long revision)throws SQLException{
         try(var q=db.prepareStatement("SELECT payload,payload_hash,canonical,provenance,observed_at FROM mineagent_library_versions_v1 WHERE package_id=? AND revision=?")){q.setString(1,id.toString());q.setLong(2,revision);try(var r=q.executeQuery()){return r.next()?new Version(id,revision,r.getString(1),r.getString(2),r.getString(3),r.getString(4),r.getLong(5)):null;}}

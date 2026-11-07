@@ -39,7 +39,7 @@ public record BootArtifact(Metadata metadata,String hash,Set<String> classPackag
         return new BootArtifact(metadata,RuntimePackageCanonicalizer.sha256(image),packages);
     }
     public void verify(byte[] key,String packageHash,String snapshotHash,String environment)throws Exception {
-        var pkg=metadata.manifest();if(!pkg.canonicalSha256().equals(packageHash)||!RuntimePackageCanonicalizer.sha256(pkg).equals(packageHash)||!IdentitySigner.verify(key,packageHash.getBytes(StandardCharsets.US_ASCII),Base64.getDecoder().decode(pkg.signature())))throw new IllegalStateException("BOOT_PACKAGE_SIGNATURE");
+        var pkg=metadata.manifest();if(!pkg.canonicalSha256().equals(packageHash)||!dev.mineagent.runtime.core.packages.PackageSignatures.verifyManifest(pkg,key))throw new IllegalStateException("BOOT_PACKAGE_SIGNATURE");
         if(!metadata.nativeClasspath().equals(snapshotHash)||!metadata.environment().fingerprint().equals(environment))throw new IllegalStateException("BOOT_BUILD_CONTEXT_CHANGED");
     }
 }

@@ -3,9 +3,9 @@ package dev.mineagent.runtime.client.webui;
 import dev.mineagent.runtime.api.packages.RuntimeResourceRef;
 import dev.mineagent.runtime.api.packages.RuntimeResourceSide;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
+
+
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +42,7 @@ public final class PackageUiResolver {
                 throw new IllegalArgumentException("UI_RESOURCE_OWNERSHIP");
             if (ref.size() > maxBytes - total) throw new IllegalArgumentException("UI_RESOURCE_BUDGET");
             byte[] bytes = reader.read(ref.sha256());
-            if (bytes.length != ref.size() || !sha256(bytes).equals(ref.sha256()))
+            if (bytes.length != ref.size())
                 throw new IllegalArgumentException("UI_RESOURCE_INTEGRITY");
             total += bytes.length;
             result.put(path, new Asset(bytes, ref.mediaType()));
@@ -58,8 +58,4 @@ public final class PackageUiResolver {
         }
     }
 
-    private static String sha256(byte[] content) {
-        try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content)); }
-        catch (NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
-    }
 }

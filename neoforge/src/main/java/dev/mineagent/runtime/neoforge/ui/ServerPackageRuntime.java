@@ -52,7 +52,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         var directory = server.getServerDirectory().resolve("mineagent-runtime-data");
         content = new ContentAddressedStore(directory.resolve("content"));
         library = RuntimePackageLibrary.open(directory.resolve("runtime.db"), Clock.systemUTC(),
-                MineAgentRuntimeServices.identity(server).publicKeyEncoded(), content);
+                MineAgentRuntimeServices.identity(server), content);
         var javaDependencies=MineAgentRuntimeServices.javaExtensions(server);
         library.bindMutationGuard(id->{javaDependencies.requirePackageMutable(id);StudioScriptRuntime.requirePackageMutable(server,id);});
         try { jobs = PackageGenerationService.open(directory.resolve("runtime.db"), MineAgentRuntimeServices.worldId(server),

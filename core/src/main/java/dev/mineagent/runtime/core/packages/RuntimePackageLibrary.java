@@ -26,6 +26,7 @@ public final class RuntimePackageLibrary implements AutoCloseable {
     private final Clock clock;
     private final byte[] trustedPublicKey;
     private final ContentAddressedStore contentStore;
+    private final PackageSignatureMigration signatureMigration;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<UUID, RuntimePackage> packages = new LinkedHashMap<>();
     private final Map<UUID, String> quarantined = new LinkedHashMap<>();
@@ -38,18 +39,19 @@ public final class RuntimePackageLibrary implements AutoCloseable {
             SqliteRuntimeRepository repository,
             Clock clock,
             byte[] trustedPublicKey,
-            ContentAddressedStore contentStore
+            ContentAddressedStore contentStore,IdentitySigner migrationSigner
     )
             throws Exception {
         this.repository = repository;
         this.clock = clock;
         this.trustedPublicKey = trustedPublicKey.clone();
         this.contentStore = contentStore;
+        this.signatureMigration=new PackageSignatureMigration(repository,contentStore,migrationSigner,trustedPublicKey);
         repository.initializePackageLibrary();
         var baselines=new java.util.ArrayList<dev.mineagent.runtime.core.persistence.RuntimeRecord>();
         for (var record : repository.list(GLOBAL_LIBRARY_ID, NAMESPACE)) {
             try {
-                RuntimePackage runtimePackage = mapper.readValue(record.payload(), RuntimePackage.class);
+                RuntimePackage runtimePackage = signatureMigration.readStored(record.payload());
                 if(!runtimePackage.packageId().toString().equals(record.recordId())||runtimePackage.revision()!=record.revision())throw new IllegalArgumentException("PACKAGE_RECORD_CONTEXT");
                 String error = integrityError(runtimePackage);
                 if (error.isEmpty()) {
@@ -83,13 +85,16 @@ public final class RuntimePackageLibrary implements AutoCloseable {
     ) throws Exception {
         var repository = new SqliteRuntimeRepository(database);
         try {
-            return new RuntimePackageLibrary(repository, clock, trustedPublicKey, contentStore);
+            return new RuntimePackageLibrary(repository, clock, trustedPublicKey, contentStore,null);
         } catch (Exception failure) {
             repository.close();
             throw failure;
         }
     }
 
+    public static RuntimePackageLibrary open(Path database,Clock clock,IdentitySigner signer,ContentAddressedStore content)throws Exception{
+        var repository=new SqliteRuntimeRepository(database);try{return new RuntimePackageLibrary(repository,clock,signer.publicKeyEncoded(),content,signer);}catch(Exception failure){repository.close();throw failure;}
+    }
     public synchronized RuntimePackageMutationResult install(RuntimePackage candidate) throws Exception {
         if (candidate == null) {
             throw new IllegalArgumentException("runtime package is required");
@@ -203,8 +208,8 @@ public final class RuntimePackageLibrary implements AutoCloseable {
     public synchronized PackageAssetMetadata.Receipt assetReceipt(UUID world,UUID owner,UUID operation)throws Exception{return repository.packageAssetReceipt(world,owner,operation);}
     public synchronized PackageAssetMetadata.Receipt assetMetadata(PackageAssetMetadata.Input input)throws Exception{return repository.packageAssetMetadata(input,clock.millis());}
     public synchronized RuntimePackage assetSource(PackageAssetMetadata.Shelf shelf)throws Exception{
-        var record=repository.packageVersion(shelf.packageId(),shelf.packageRevision());if(record==null||!record.payloadHash().equals(shelf.payloadHash())||!RuntimePackageCanonicalizer.sha256(record.payload()).equals(shelf.payloadHash()))throw new IllegalStateException("PACKAGE_ASSET_VERSION_UNAVAILABLE");
-        var p=mapper.readValue(record.payload(),RuntimePackage.class);if(!p.packageId().equals(shelf.packageId())||p.revision()!=shelf.packageRevision()||!p.version().equals(shelf.version())||!p.canonicalSha256().equals(shelf.canonical())||!integrityError(p).isEmpty())throw new IllegalStateException("PACKAGE_ASSET_SOURCE_SIGNATURE");return p;
+        var record=repository.packageVersion(shelf.packageId(),shelf.packageRevision());if(record==null||!record.payloadHash().equals(shelf.payloadHash()))throw new IllegalStateException("PACKAGE_ASSET_VERSION_UNAVAILABLE");
+        var p=signatureMigration.readStored(record.payload());if(!p.packageId().equals(shelf.packageId())||p.revision()!=shelf.packageRevision()||!p.version().equals(shelf.version())||!p.canonicalSha256().equals(shelf.canonical())||!integrityError(p).isEmpty())throw new IllegalStateException("PACKAGE_ASSET_SOURCE_SIGNATURE");return p;
     }
     public synchronized PackageAssetMetadata.Receipt installAssetCopy(PackageAssetMetadata.Input input,RuntimePackage candidate)throws Exception{
         String error=validateCandidate(candidate);if(error.isEmpty())error=dependencyError(candidate,false);if(error.isEmpty()&&introducesCycle(candidate))error="DEPENDENCY_CYCLE";if(!error.isEmpty())throw new IllegalStateException(error);
@@ -212,7 +217,7 @@ public final class RuntimePackageLibrary implements AutoCloseable {
         var result=repository.packageAssetCopy(input,mapper.writeValueAsString(candidate),clock.millis());refreshAsset(result.target());return result;
     }
     public synchronized RuntimePackage refreshAsset(UUID id)throws Exception{
-        var record=repository.get(GLOBAL_LIBRARY_ID,NAMESPACE,id.toString()).orElseThrow(()->new IllegalStateException("PACKAGE_COPY_COMMIT_UNCERTAIN"));var p=mapper.readValue(record.payload(),RuntimePackage.class);
+        var record=repository.get(GLOBAL_LIBRARY_ID,NAMESPACE,id.toString()).orElseThrow(()->new IllegalStateException("PACKAGE_COPY_COMMIT_UNCERTAIN"));var p=signatureMigration.readStored(record.payload());
         if(!p.packageId().equals(id)||p.revision()!=record.revision()||!integrityError(p).isEmpty()||!resourceError(p).isEmpty())throw new IllegalStateException("PACKAGE_COPY_COMMIT_UNCERTAIN");packages.put(id,p);return p;
     }
     public synchronized Optional<RuntimePackage> get(UUID packageId) {
@@ -254,20 +259,8 @@ public final class RuntimePackageLibrary implements AutoCloseable {
         return RuntimePackageMutationResult.accepted(next);
     }
 
-    private String integrityError(RuntimePackage candidate) throws Exception {
-        if (!RuntimePackageCanonicalizer.sha256(candidate).equals(candidate.canonicalSha256())) {
-            return "HASH_MISMATCH";
-        }
-        try {
-            if (!IdentitySigner.verify(trustedPublicKey,
-                    candidate.canonicalSha256().getBytes(StandardCharsets.US_ASCII),
-                    Base64.getDecoder().decode(candidate.signature()))) {
-                return "SIGNATURE_INVALID";
-            }
-        } catch (Exception invalidSignature) {
-            return "SIGNATURE_INVALID";
-        }
-        return "";
+    private String integrityError(RuntimePackage candidate)throws Exception{
+        try{return PackageSignatures.verifyManifest(candidate,(bytes,proof)->IdentitySigner.verify(trustedPublicKey,bytes,proof))?"":"SIGNATURE_INVALID";}catch(Exception invalid){return "SIGNATURE_INVALID";}
     }
 
     private String resourceError(RuntimePackage candidate) {
@@ -277,6 +270,7 @@ public final class RuntimePackageLibrary implements AutoCloseable {
         for (var resource : candidate.resources().values()) {
             try {
                 byte[] bytes = contentStore.read(resource.sha256());
+                PackageSignatures.requireResource(candidate,resource,bytes);
                 if (bytes.length != resource.size()) {
                     return "RESOURCE_SIZE_MISMATCH";
                 }
@@ -284,7 +278,7 @@ public final class RuntimePackageLibrary implements AutoCloseable {
                 return "RESOURCE_HASH_MISMATCH";
             } catch (java.io.IOException missing) {
                 return "RESOURCE_MISSING";
-            }
+            } catch(Exception invalid){return "RESOURCE_SIGNATURE_INVALID";}
         }
         return "";
     }
@@ -342,8 +336,8 @@ public final class RuntimePackageLibrary implements AutoCloseable {
     }
     public synchronized SavedVersion version(UUID id,long revision,String expectedPayloadHash)throws Exception{
         var stored=repository.packageVersion(id,revision);if(stored==null)throw new IllegalStateException("PACKAGE_VERSION_NOT_RECORDED");
-        String hash=RuntimePackageCanonicalizer.sha256(stored.payload().getBytes(StandardCharsets.UTF_8));if(!hash.equals(stored.payloadHash())||!hash.equals(expectedPayloadHash))throw new IllegalStateException("PACKAGE_VERSION_SNAPSHOT_CHANGED");
-        var manifest=mapper.readValue(stored.payload(),RuntimePackage.class);if(!manifest.packageId().equals(id)||manifest.revision()!=revision||!integrityError(manifest).isEmpty())throw new IllegalStateException("PACKAGE_VERSION_INVALID");
+        String hash=stored.payloadHash();if(!hash.equals(expectedPayloadHash))throw new IllegalStateException("PACKAGE_VERSION_SNAPSHOT_CHANGED");
+        var manifest=signatureMigration.readStored(stored.payload());if(!manifest.packageId().equals(id)||manifest.revision()!=revision||!integrityError(manifest).isEmpty())throw new IllegalStateException("PACKAGE_VERSION_INVALID");
         return new SavedVersion(manifest,hash,stored.provenance(),stored.observedAt(),stored.payload());
     }
     private RuntimePackage readValidated(dev.mineagent.runtime.core.persistence.RuntimeRecord record,RuntimePackage fallback)throws Exception{
@@ -353,7 +347,7 @@ public final class RuntimePackageLibrary implements AutoCloseable {
         }return latest;
     }
     private RuntimePackage read(String payload, RuntimePackage fallback) throws Exception {
-        return payload == null || payload.isBlank() ? fallback : mapper.readValue(payload, RuntimePackage.class);
+        return payload == null || payload.isBlank() ? fallback : signatureMigration.readStored(payload);
     }
 
     private static RuntimePackage copy(RuntimePackage source, boolean enabled, long revision, long updatedAt) {

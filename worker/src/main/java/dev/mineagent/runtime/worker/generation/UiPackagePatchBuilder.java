@@ -57,8 +57,7 @@ public final class UiPackagePatchBuilder {
         }
         var draft=new RuntimePackage(base.packageId(),base.type(),base.name(),base.version(),base.activationMode(),base.dependencies(),base.permissions(),entries,base.definitions(),resources,base.origin(),base.enabled(),base.revision()+1,"0".repeat(64),"",System.currentTimeMillis(),base.nativeCompatibility());
         FeedbackPackageContract.validate(draft,store::read);
-        String hash=RuntimePackageCanonicalizer.sha256(draft);
-        var candidate=new RuntimePackage(draft.packageId(),draft.type(),draft.name(),draft.version(),draft.activationMode(),draft.dependencies(),draft.permissions(),entries,draft.definitions(),resources,draft.origin(),draft.enabled(),draft.revision(),hash,Base64.getEncoder().encodeToString(signer.sign(hash.getBytes(StandardCharsets.US_ASCII))),draft.updatedAtEpochMillis(),draft.nativeCompatibility());
+        var candidate=dev.mineagent.runtime.core.packages.PackageSignatures.signNew(draft,store::read,signer);
         UiPatchPolicy.require(base,candidate);return candidate;
     }
     private static void only(JsonNode node,Set<String> fields){if(node==null||!node.isObject()||node.properties().stream().anyMatch(e->!fields.contains(e.getKey())))throw new IllegalArgumentException("UI_PATCH_FIELDS");}

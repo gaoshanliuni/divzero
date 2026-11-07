@@ -36,9 +36,7 @@ public final class RuntimePackagePublisher {
         if(draft.activationMode()==ActivationMode.BOOT_EXTENSION)dev.mineagent.runtime.core.boot.BootExtensionPlan.validate(draft);
         if(draft.entrypoints().containsKey("client"))dev.mineagent.runtime.core.packages.ClientScriptPlan.inspect(draft);
         if(draft.entrypoints().containsKey("client_java"))dev.mineagent.runtime.core.packages.ClientJavaPlan.inspect(draft);
-        String hash = RuntimePackageCanonicalizer.sha256(draft);
-        return new RuntimePackage(id, draft.type(), draft.name(), draft.version(), draft.activationMode(), draft.dependencies(),
-                draft.permissions(), draft.entrypoints(), draft.definitions(), draft.resources(), draft.origin(), false, 1,
-                hash, Base64.getEncoder().encodeToString(signer.sign(hash.getBytes(StandardCharsets.US_ASCII))), draft.updatedAtEpochMillis(),draft.nativeCompatibility());
+        var bytes=new java.util.HashMap<String,byte[]>();for(var file:parsed.files()){var previous=bytes.putIfAbsent(file.sha256(),file.content());if(previous!=null&&!java.util.Arrays.equals(previous,file.content()))throw new IllegalArgumentException("RESOURCE_ID_REUSED: "+file.path());}
+        return dev.mineagent.runtime.core.packages.PackageSignatures.signNew(draft,bytes::get,signer);
     }
 }

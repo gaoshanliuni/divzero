@@ -14,7 +14,7 @@ public final class PackageTransferLeases {
     public synchronized Offer offer(UUID viewer, UUID session, UUID packageId, long revision, byte[] body) throws Exception {
         expire();
         if (body.length < 1 || body.length > maximumBytes || revision < 1) throw new IllegalArgumentException("UI_TRANSFER_BUDGET");
-        var offer = new Offer(UUID.randomUUID(), packageId, revision, body.length, RuntimePackageCanonicalizer.sha256(body), clock.millis() + 120_000);
+        var offer = new Offer(UUID.randomUUID(), packageId, revision, body.length, dev.mineagent.runtime.api.packages.ResourceIds.create(), clock.millis() + 120_000);
         leases.put(offer.transferId(), new Lease(viewer, session, offer, body.clone()));
         return offer;
     }

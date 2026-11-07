@@ -17,8 +17,7 @@ public final class PackagePreviewTransfer {
         var bundle = PackagePreviewBundle.decode(body);
         var pkg = bundle.manifest();
         if (!pkg.packageId().equals(packageId) || pkg.revision() != revision) throw new IllegalArgumentException("STALE_PACKAGE");
-        if (!RuntimePackageCanonicalizer.sha256(pkg).equals(pkg.canonicalSha256())) throw new IllegalArgumentException("MANIFEST_HASH");
-        if (!verifier.verify(pkg.canonicalSha256().getBytes(StandardCharsets.US_ASCII), Base64.getDecoder().decode(pkg.signature())))
+        if (!dev.mineagent.runtime.core.packages.PackageSignatures.verifyManifest(pkg,verifier::verify))
             throw new SecurityException("PACKAGE_SIGNATURE_UNTRUSTED");
         if (pkg.resources().size() > 256 || bundle.files().size() > 256 || !bundle.entry().startsWith("ui/") || !(bundle.entry().endsWith(".html")||bundle.entry().endsWith(".json"))
                 || pkg.entrypoints().values().stream().noneMatch(e -> e.path().equals(bundle.entry()) && e.side() != RuntimeResourceSide.SERVER))
@@ -31,6 +30,7 @@ public final class PackagePreviewTransfer {
             if (encoded == null || encoded.length() > 12 * 1024 * 1024) throw new IllegalArgumentException("UI_RESOURCE_BUDGET");
             return Base64.getDecoder().decode(encoded);
         }, PackagePreviewBundle.MAX_UI_BYTES);
+        for(var ref:pkg.resources().values())if(ref.path().startsWith("ui/"))dev.mineagent.runtime.core.packages.PackageSignatures.requireResource(pkg,ref,assets.get(ref.path()).bytes());
         if (!assets.containsKey(bundle.entry())) throw new IllegalArgumentException("UI_ENTRYPOINT_MISSING");
         return new Resolved(pkg, bundle.entry(), assets);
     }
@@ -59,7 +59,6 @@ public final class PackagePreviewTransfer {
         }
         public byte[] finish() throws Exception {
             if (offset != body.length) throw new IllegalStateException("UI_TRANSFER_INCOMPLETE");
-            if (!RuntimePackageCanonicalizer.sha256(body).equals(hash)) throw new IllegalArgumentException("UI_TRANSFER_HASH");
             return body.clone();
         }
     }

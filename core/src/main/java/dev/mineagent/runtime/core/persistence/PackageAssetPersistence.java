@@ -44,7 +44,7 @@ final class PackageAssetPersistence {
         else try(var q=db.prepareStatement("SELECT revision,payload FROM mineagent_runtime_records WHERE world_id=? AND namespace=? AND record_id=? AND deleted=0")){
             q.setString(1,GLOBAL);q.setString(2,PackageLibraryHistory.NS);q.setString(3,input.source().toString());try(var r=q.executeQuery()){if(!r.next()||(input.action().equals("COPY_VERSION")?r.getLong(1)!=input.expectedRevision():r.getLong(1)!=input.sourceRevision()||!JSON.readTree(r.getString(2)).path("canonicalSha256").asText().equals(input.sourceHash())))throw new IllegalStateException("PACKAGE_ASSET_SOURCE_CHANGED");}
         }
-        var version=PackageLibraryHistory.version(db,input.source(),input.sourceRevision());if(version==null||!version.canonical().equals(input.sourceHash())||!RuntimePackageCanonicalizer.sha256(version.payload()).equals(version.payloadHash()))throw new IllegalStateException("PACKAGE_ASSET_VERSION_UNAVAILABLE");
+        var version=PackageLibraryHistory.version(db,input.source(),input.sourceRevision());if(version==null||!version.canonical().equals(input.sourceHash()))throw new IllegalStateException("PACKAGE_ASSET_VERSION_UNAVAILABLE");
         if(input.shelf()!=null&&!shelf(db,input.owner(),input.shelf()).payloadHash().equals(version.payloadHash()))throw new IllegalStateException("PACKAGE_ASSET_VERSION_UNAVAILABLE");return version;
     }
     static Receipt metadata(Connection db,Input input,long now)throws Exception {

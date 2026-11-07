@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "91f27255-eed6-45f0-87d8-ecdc2af12f68",
+      "resourceId": "99b18679-1d9b-408c-a7b8-25ba4e9f2287",
       "bytes": 2163
     },
     {
@@ -914,13 +914,13 @@
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/PackagePreviewTransfer.java",
-      "sha256": "d30f7354fc19ed652317007cfc6ddd0d64ece4ef8cd54ca1989b19ad6ddd21ab",
-      "bytes": 4602
+      "resourceId": "78225875-9def-45f0-bc6d-1d417e6a2095",
+      "bytes": 4496
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/PackageUiResolver.java",
-      "sha256": "7a1554944d576255867b2e4d60b398db27cf5589c7be1e35fcd3ba192294f423",
-      "bytes": 3192
+      "resourceId": "fe669eb2-db7d-4c56-ac6d-509d1b1824ac",
+      "bytes": 2784
     },
     {
       "path": "client/src/main/java/dev/mineagent/runtime/client/webui/RuntimeObjectTelemetry.java",
@@ -1154,8 +1154,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootArtifact.java",
-      "sha256": "e5f3cde76b90c5b35811eb5c9e21c9a0830ee1fbe3b9f83c9660087ae4612b86",
-      "bytes": 5543
+      "resourceId": "9a9cf4c0-2f40-4c68-baa4-68aeb402d5ec",
+      "bytes": 5440
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootDependencyGraph.java",
@@ -1999,13 +1999,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ClientJavaPlan.java",
-      "sha256": "0f28ea9ed960ce3500af472654b673c3753c3bf01d2a8da8ed53ec2c031bb751",
-      "bytes": 6562
+      "resourceId": "9ab10512-f0e3-4890-822e-28b3b4898a6c",
+      "bytes": 6280
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ClientScriptPlan.java",
-      "sha256": "244d7e253ac79108ac7536b18c6bcbd84a82f5fc0165e54e6a19a489b9b1d427",
-      "bytes": 6947
+      "resourceId": "abf24614-242e-4192-95cf-1e0975147735",
+      "bytes": 6663
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/CodeDraftSources.java",
@@ -2024,8 +2024,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/DataPackPlan.java",
-      "sha256": "7bf565b4be4473ea314fb959b0c1e882de11919eda621b9d80b52b856910f653",
-      "bytes": 7879
+      "resourceId": "d84429b1-7952-41e1-9c8c-d43576243edb",
+      "bytes": 7319
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ExampleImportReceipt.java",
@@ -2034,8 +2034,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ExamplePackageCatalog.java",
-      "sha256": "15e6061c0a48319316b9fde5097e1e38d6f258fce771e880669d353498aa4f30",
-      "bytes": 4965
+      "resourceId": "57bde137-93d4-4a15-80fe-fe94a46113da",
+      "bytes": 4462
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ExplicitPackageImports.java",
@@ -2074,8 +2074,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/LegacyContentPackageMigrator.java",
-      "sha256": "09174360780875c2502d67c53549b4dfdbf8fe4e36dc8d9e443fd74b657ba5bd",
-      "bytes": 6963
+      "resourceId": "52b68fc4-1688-4a63-b915-086e1f4d576d",
+      "bytes": 6318
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/LegacyMigrationReceipt.java",
@@ -2128,14 +2128,19 @@
       "bytes": 4461
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/packages/PackageSignatureMigration.java",
+      "resourceId": "ea498e81-4494-486d-833f-7922ff0fd3bc",
+      "bytes": 2741
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/PackageSignatures.java",
-      "resourceId": "a1865298-fb06-4d5f-9b21-fcedd033c508",
-      "bytes": 6410
+      "resourceId": "4230b78a-9b51-41b3-9363-b6ecdc8e7b8b",
+      "bytes": 6591
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/PackageTransferLeases.java",
-      "sha256": "11044c8ddf44379ba606bea24e895458b4dc7578d5364643563a6fb4e8fa1d7d",
-      "bytes": 2746
+      "resourceId": "bea820ae-eedb-44ef-9b31-9d13377d2cfd",
+      "bytes": 2761
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/PackageUiEntrypoints.java",
@@ -2159,8 +2164,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/ResourcePackPlan.java",
-      "sha256": "d7eb1aeaf2d53c692cff6e7f45d705ec2ea5a27a3015bb666fe924dc04027c12",
-      "bytes": 8676
+      "resourceId": "465786e6-7a0b-4cc6-99bf-ed0cf9c3ed14",
+      "bytes": 8216
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/RuntimeInstanceMutationResult.java",
@@ -2179,8 +2184,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/RuntimePackageAssetCopy.java",
-      "sha256": "54a78128bbffba45299bba1efd847dafb8f8589858ad23b56b5ea9c28fd9a6ae",
-      "bytes": 1947
+      "resourceId": "1abc49c2-31f4-496f-b173-432a562ef19f",
+      "bytes": 1256
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/RuntimePackageCanonicalizer.java",
@@ -2189,8 +2194,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/RuntimePackageLibrary.java",
-      "sha256": "e57f23ae7ebba7592148157c7b056dbb654262fb425da781c10f0e252a98a105",
-      "bytes": 21387
+      "resourceId": "2754b941-ff24-47b1-90c0-149845873614",
+      "bytes": 21545
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/RuntimePackageMutationResult.java",
@@ -2279,8 +2284,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/PackageAssetPersistence.java",
-      "sha256": "dab266c51ff2d74befe9b0a919606300a474c3981b0002a0ad442a48b1574dac",
-      "bytes": 16562
+      "resourceId": "9558ad91-7a9f-4611-8f89-7d8ceec8bf8d",
+      "bytes": 16476
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/PackageJobRetention.java",
@@ -2289,8 +2294,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/PackageLibraryHistory.java",
-      "sha256": "2dadc75565393fd1bca233419c78e3ea399694351ac02648bca4bb9b1ac51613",
-      "bytes": 14784
+      "resourceId": "07805b44-86be-4317-83de-90622c6593b1",
+      "bytes": 14708
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/persistence/RetainedRows.java",
@@ -3411,6 +3416,11 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/TrajectoryTriggersTest.java",
       "sha256": "172353fac8e0ff2a7b55e13d05cba31cfbdbfb06e527b3e01ca0bbc5295b3375",
       "bytes": 2479
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/packages/PackageSignatureMigrationTest.java",
+      "resourceId": "68f6ee74-0f8d-41de-bb7e-cc54248b5a91",
+      "bytes": 2815
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/PackageSignaturesTest.java",
@@ -5704,8 +5714,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ClientScriptPackages.java",
-      "sha256": "6846af4a70b1e8c4245750a40a4a5ed3408a58b15f5d94b3263430e523357c70",
-      "bytes": 42554
+      "resourceId": "c3012a6d-8bc5-4121-bab0-e1a7a2cdf168",
+      "bytes": 42433
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ContentDeliveryClient.java",
@@ -5949,8 +5959,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/ManagedDataPackGuard.java",
-      "sha256": "908b4de3234c33c0fa12e7f3eed2f93e3f8dc62fb655978bd7b098d47c719bfb",
-      "bytes": 14182
+      "resourceId": "e5c4fc9b-934c-44ec-afd1-a744035d935b",
+      "bytes": 14005
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/ManagedPackSourceIdentity.java",
@@ -7564,8 +7574,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerJavaStudio.java",
-      "sha256": "69b9864f50fadbe19dd14fb52a6503d2696af0d0b6886d4d9d6e1ec4bd5dc148",
-      "bytes": 42748
+      "resourceId": "bcaf8dca-3a6c-4cdf-b580-96445341ce0f",
+      "bytes": 42286
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerMemoryRecall.java",
@@ -7609,8 +7619,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "resourceId": "33b203cc-86b0-446f-9058-ce80920fe7f4",
-      "bytes": 72925
+      "resourceId": "50c0dc68-030e-4a9c-957c-10f441c682ce",
+      "bytes": 72906
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -8454,8 +8464,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/WorkerRequestHandler.java",
-      "resourceId": "6a3f8c28-4da9-470d-b990-9609f03ab7b7",
-      "bytes": 110310
+      "resourceId": "0bb5507f-7f23-4a40-8ea2-75cde6259553",
+      "bytes": 110090
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/BootDependencyClasspath.java",
@@ -8559,8 +8569,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/RuntimePackagePublisher.java",
-      "sha256": "2987ca9c558194a009812639d5f6198c4c1997fb01480ef8ab93c5541d34569c",
-      "bytes": 3291
+      "resourceId": "1a367036-fa6b-4ba2-805e-fd2d1d261d23",
+      "bytes": 3193
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/ScheduleDeliveryContract.java",
@@ -8599,8 +8609,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/UiPackagePatchBuilder.java",
-      "sha256": "6c2e2c0e9f47c9760e9dd5baa813a3d0a4811aa2a6ef207f37d91d5569513a3c",
-      "bytes": 8001
+      "resourceId": "6b5a72fc-43a2-4c03-bca0-6422aa5ab455",
+      "bytes": 7644
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/UiPatchPrompt.java",
@@ -8639,8 +8649,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldPackagePatchBuilder.java",
-      "sha256": "2585b3d56741c9eb8f5e555c74007c9ad77865d5c6060fdf4348d2dacb4caf75",
-      "bytes": 8501
+      "resourceId": "030004c4-b399-4100-a395-1f40c97c29d1",
+      "bytes": 8144
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/generation/WorldPatchPrompt.java",
@@ -9210,5 +9220,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "7aa27b219e54f8b580409b458cc95d20afdc46b0"
+  "sourceCommit": "bbc99c7191ae52e6800c12fdb5683798748111da"
 }

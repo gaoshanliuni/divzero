@@ -45,6 +45,7 @@ public final class PackageSignatures {
     public static boolean verifyManifest(RuntimePackage p,Verifier trusted)throws Exception{
         var envelope=envelope(p);return trusted.verify(manifestPayload(p,envelope.publicKey(),envelope.resources()),Base64.getDecoder().decode(envelope.manifestSignature()));
     }
+    public static boolean verifyManifest(RuntimePackage p,byte[] trustedKey)throws Exception{return verifyManifest(p,(bytes,proof)->IdentitySigner.verify(trustedKey,bytes,proof));}
     public static void requireResource(RuntimePackage p,RuntimeResourceRef ref,byte[] bytes)throws Exception{
         if(!ref.equals(p.resources().get(ref.path()))||bytes==null||bytes.length!=ref.size())throw new IllegalArgumentException("PACKAGE_RESOURCE_CONTEXT: "+ref.path());
         var envelope=envelope(p);String signature=envelope.resources().get(ref.sha256());

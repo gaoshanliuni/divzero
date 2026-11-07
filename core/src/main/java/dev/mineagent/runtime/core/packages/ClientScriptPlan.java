@@ -33,25 +33,25 @@ public record ClientScriptPlan(RuntimePackage manifest,String entrypoint,Map<Str
         return new ClientScriptPlan(p,entry.path(),modules,bytes);
     }
     public byte[] bundle(ContentAddressedStore store)throws Exception{
-        var files=new TreeMap<String,String>();for(var e:modules.entrySet()){byte[] value=store.read(e.getValue().sha256());check(e.getValue(),value);files.put(e.getKey(),Base64.getEncoder().encodeToString(value));}
+        var files=new TreeMap<String,String>();for(var e:modules.entrySet()){byte[] value=store.read(e.getValue().sha256());check(manifest,e.getValue(),value);files.put(e.getKey(),Base64.getEncoder().encodeToString(value));}
         byte[] body=new ObjectMapper().writeValueAsBytes(new Bundle(manifest,files));if(body.length>MAX_BUNDLE)throw new IllegalStateException("CLIENT_SCRIPT_BUNDLE_LIMIT");return body;
     }
     public static Resolved decode(byte[] body,UUID id,long revision,String canonical,Verifier verifier)throws Exception{
         if(body==null||body.length<1||body.length>MAX_BUNDLE)throw new IllegalStateException("CLIENT_SCRIPT_BUNDLE_LIMIT");var bundle=new ObjectMapper().readValue(body,Bundle.class);var p=bundle.manifest();
         if(!p.packageId().equals(id)||p.revision()!=revision||!p.canonicalSha256().equals(canonical))throw new IllegalStateException("CLIENT_SCRIPT_SOURCE_CHANGED");
-        if(!RuntimePackageCanonicalizer.sha256(p).equals(p.canonicalSha256())||!verifier.verify(p.canonicalSha256().getBytes(StandardCharsets.US_ASCII),Base64.getDecoder().decode(p.signature())))throw new IllegalStateException("CLIENT_SCRIPT_SIGNATURE");
+        if(!PackageSignatures.verifyManifest(p,verifier::verify))throw new IllegalStateException("CLIENT_SCRIPT_SIGNATURE");
         var plan=inspect(p);if(!bundle.files().keySet().equals(plan.modules().keySet()))throw new IllegalStateException("CLIENT_SCRIPT_RESOURCE_SET");var modules=new TreeMap<String,String>();
-        for(var e:plan.modules().entrySet()){String encoded=bundle.files().get(e.getKey());if(encoded==null||encoded.length()>2*MAX_SOURCE_BYTES)throw new IllegalStateException("CLIENT_SCRIPT_BUNDLE_LIMIT");byte[] value=Base64.getDecoder().decode(encoded);check(e.getValue(),value);var decoder=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);modules.put(e.getKey(),decoder.decode(ByteBuffer.wrap(value)).toString());}
-        return new Resolved(plan,body,RuntimePackageCanonicalizer.sha256(body),modules);
+        for(var e:plan.modules().entrySet()){String encoded=bundle.files().get(e.getKey());if(encoded==null||encoded.length()>2*MAX_SOURCE_BYTES)throw new IllegalStateException("CLIENT_SCRIPT_BUNDLE_LIMIT");byte[] value=Base64.getDecoder().decode(encoded);check(p,e.getValue(),value);var decoder=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);modules.put(e.getKey(),decoder.decode(ByteBuffer.wrap(value)).toString());}
+        return new Resolved(plan,body,p.canonicalSha256(),modules);
     }
     public String filename(String publisher){if(!publisher.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("CLIENT_SCRIPT_IDENTITY");return PREFIX+publisher+"-"+manifest.packageId()+"-"+manifest.canonicalSha256()+".bin";}
     public static boolean managedName(String name){return name!=null&&name.matches("mineagent-client-script-[a-f0-9]{64}-[a-f0-9-]{36}-[a-f0-9]{64}\\.bin");}
     public static byte[] read(Path file)throws Exception{if(!Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS)||Files.isSymbolicLink(file))throw new IllegalStateException("CLIENT_SCRIPT_FILE_LINK");try(var in=Files.newInputStream(file)){byte[] bytes=in.readNBytes(MAX_BUNDLE+1);if(bytes.length>MAX_BUNDLE)throw new IllegalStateException("CLIENT_SCRIPT_BUNDLE_LIMIT");return bytes;}}
     public static void publish(Path directory,String filename,byte[] bytes,String expected)throws Exception{
-        if(!managedName(filename)||!RuntimePackageCanonicalizer.sha256(bytes).equals(expected))throw new IllegalStateException("CLIENT_SCRIPT_BUNDLE_HASH");
+        if(!managedName(filename)||!filename.endsWith("-"+expected+".bin"))throw new IllegalStateException("CLIENT_SCRIPT_BUNDLE_HASH");
         if(Files.exists(directory,LinkOption.NOFOLLOW_LINKS)&&(!Files.isDirectory(directory,LinkOption.NOFOLLOW_LINKS)||Files.isSymbolicLink(directory)))throw new IllegalStateException("CLIENT_SCRIPT_CACHE_LINK");Files.createDirectories(directory);Path root=directory.toRealPath(),target=root.resolve(filename);
-        if(Files.exists(target,LinkOption.NOFOLLOW_LINKS)){if(!RuntimePackageCanonicalizer.sha256(read(target)).equals(expected))throw new IllegalStateException("CLIENT_SCRIPT_CACHE_CONFLICT");return;}
+        if(Files.exists(target,LinkOption.NOFOLLOW_LINKS)){if(!Arrays.equals(read(target),bytes))throw new IllegalStateException("CLIENT_SCRIPT_CACHE_CONFLICT");return;}
         Path temporary=Files.createTempFile(root,".mineagent-client-script-",".pending");try{Files.write(temporary,bytes);try(var channel=FileChannel.open(temporary,StandardOpenOption.WRITE)){channel.force(true);}Files.createLink(target,temporary);}finally{Files.deleteIfExists(temporary);}
     }
-    private static void check(RuntimeResourceRef ref,byte[] value)throws Exception{if(value.length!=ref.size()||!RuntimePackageCanonicalizer.sha256(value).equals(ref.sha256()))throw new IllegalStateException("CLIENT_SCRIPT_RESOURCE_HASH");}
+    private static void check(RuntimePackage p,RuntimeResourceRef ref,byte[] value)throws Exception{PackageSignatures.requireResource(p,ref,value);}
 }
