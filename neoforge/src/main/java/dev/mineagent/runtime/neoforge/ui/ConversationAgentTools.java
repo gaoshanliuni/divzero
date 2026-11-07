@@ -79,6 +79,7 @@ public final class ConversationAgentTools {
             if(tool.equals("read_web_page"))return ServerResourceTools.execute(p,agent,operation,"read_resource",args,permit);
             if(Set.of("search_resources","inspect_resources","read_resource","download_resource","preview_resource","inspect_image","compare_images","transcribe_resource","capture_game_view").contains(tool))return ServerResourceTools.execute(p,agent,operation,tool,args,permit);
             if(tool.equals("inspect_model_capabilities"))return ServerModelCapabilities.inspect(p,agent,args,permit);
+            if(tool.equals("inspect_recipes")){keys(args,"query","kind","offset");var body=MineAgentRuntimeServices.bodies(s).body(agent).orElseThrow(()->new IllegalStateException("RECIPE_ACTOR_UNAVAILABLE"));return CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.task.NativeRecipeCatalog.inspect(body,args));}
             if(tool.equals("inspect_cooperation"))return dev.mineagent.runtime.neoforge.skill.CooperationRuntime.get(s).inspect(p,agent,args);
             if(tool.equals("inspect_owned_agents")){keys(args,"query","offset");return CompletableFuture.completedFuture(ConversationAgentScope.list(p,agent,args));}
             if(tool.equals("inspect_agent_settings")){keys(args);return CompletableFuture.completedFuture(ConversationAgentScope.settings(p,agent));}

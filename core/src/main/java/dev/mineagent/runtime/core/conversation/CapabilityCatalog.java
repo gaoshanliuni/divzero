@@ -12,8 +12,8 @@ public final class CapabilityCatalog {
     private static Group group(String name,String description,String guide,String tools){return new Group(name,description,guide,tools.isBlank()?List.of():List.of(tools.split(" ")));}
     public static final List<Group> GROUPS=List.of(
         group("cooperation","多AI协作、依赖、分派采集、真实交接、缺料补给和共同建造",
-            "先读取同一所有者的AI及其实际身体UUID、工作、库存与授权采集区。通过plan_building为施工AI保存有验证条件的建筑计划，再start_cooperation提交GATHER→HANDOFF→CONSTRUCT依赖；不同采集者并行、同一身体保序。交接必须真实丢弃并由指定AI拾取，施工消耗实际背包。supplies连接已有采集/交接/施工节点，施工缺料时重新分派已验证完成的补给步骤。不要用give或世界直接填充冒充材料闭环；不要反复让模型查询等待。inspect_cooperation查持久阶段、回执及补给轮次，control_cooperation暂停/恢复/停止。所有者、权限或玩家新意图变化时暂停，结果未知不自动重放。",
-            "start_cooperation inspect_cooperation control_cooperation inspect_owned_agents inspect_behavior inspect_agent_body set_behavior_mode gather_resources handoff_items construct_building inspect_buildings plan_building verify_building"),
+            "先读取同一所有者的AI及其实际身体UUID、工作、库存与授权采集区。通过plan_building为施工AI保存有验证条件的建筑计划，再start_cooperation提交GATHER→HANDOFF→PROCESS→CONSTRUCT依赖；不同采集者并行、同一身体保序。交接必须真实丢弃并由指定AI拾取，施工消耗实际背包。supplies连接已有采集/交接/施工节点，施工缺料时重新分派已验证完成的补给步骤。不要用give或世界直接填充冒充材料闭环；不要反复让模型查询等待。inspect_cooperation查持久阶段、回执及补给轮次，control_cooperation暂停/恢复/停止。所有者、权限或玩家新意图变化时暂停，结果未知不自动重放。",
+            "inspect_recipes process_items start_cooperation inspect_cooperation control_cooperation inspect_owned_agents inspect_behavior inspect_agent_body set_behavior_mode gather_resources handoff_items construct_building inspect_buildings plan_building verify_building"),
         group("agents","同一玩家的多个AI、批量跟随、AI设置、人设、模型、重生与游戏模式",
             "玩家可通过一个AI管理自己名下其他AI。先inspect_owned_agents遍历全部分页获取agent_id，再按目标读取设置和revision，逐个调用对应工具并带agent_id。所有AI跟随我应对每个目标调用follow_entity(target=$owner)，不只处理当前AI。可与movement/combat/appearance/chat组合；不能改其他所有者AI，协作者和OP身份不扩展同一所有者范围。实际失败按目标报告，不能把STARTED当作已到达或部分成功说成全部完成。",
             "inspect_owned_agents inspect_agent_settings set_agent_setting inspect_behavior set_behavior_mode set_combat_policy control_behavior follow_entity set_actor_enhancements inspect_persona set_persona inspect_appearance set_appearance inspect_skins set_skin_png inspect_chat_settings set_chat_settings set_chat_color"),
@@ -23,6 +23,9 @@ public final class CapabilityCatalog {
         group("ui","原生界面、面板、HUD 血条、菜单附加、交互、三维预览",
             "先 read_ui_wiki 按需查询LDLib2/KubeJS编码资料，inspect_native_ui 发现当前定义与契约。HUD根控件必须在root.style显式写正数height（如height: 54;），同时给出width并避免flex-grow拉伸；普通状态面板不能用100%高度。KubeJS 构建 LDLib2 原生控件和交互，不生成 HTML/MCEF。悬浮层默认 HUD，不抢鼠标；结构热更验证成功后替换，失败保留旧界面和匹配输入，数据用增量更新。菜单附加先 inspect_native_screen，实体血条用 ENTITY_HUD 的实际实体数据，酿造配方可接 open_preview。提交定义不等于交易完成；核对客户端 attachment/painted/error 回执。",
             "read_ui_wiki inspect_native_ui edit_native_ui set_native_ui patch_native_ui_data control_native_ui inspect_native_screen inspect_brewing_recipes open_preview"),
+        group("production","合成表、工作台制作、熔炉烧制与箱子储存",
+            "先inspect_recipes读取真实配方ID、recipe_reference、原料候选和输出数量。process_items提交本地有限工作，process.action为CRAFT/SMELT/STORE，station为实际工作台/熔炉/箱子坐标；CRAFT的count为配方执行次数，SMELT为原料数，STORE为物品件数。真实材料、燃料、烧制时间和菜单操作，不给物品、不直接写容器。用建筑或放置能力摆放自己制作的工作台、熔炉和箱子。可作为start_cooperation的PROCESS节点，与采集交接施工按依赖组合。缺料本地等待；未知结果先核对，不盲目重试。",
+            "inspect_recipes process_items inspect_agent_body inspect_behavior control_behavior inspect_blocks scan_blocks agent_block_action inspect_owned_agents"),
         group("gathering","原生采集木头、石料和已适配的方块物品",
             "gather_resources 提交一次本地采集：min/max 是授权采集区，crop 是目标物品 ID，limit 是背包实际目标数量。木头直接采原木，圆石从石头挖取；用实际工具、挖掘时间和原生掉落拾取，不使用 give。避开已知玩家放置方块、容器和保护规则；缺工具或资源时报告真实等待原因。允许与 agents 组合给同一玩家的其他 AI 派采集任务，不能把破坏方块计数当作收到材料。交接调用handoff_items，指定实际接收者target、crop物品ID与limit数量。真实走近、丢弃并核对指定接收者的原生拾取；仅丢在地上不算收到。",
             "gather_resources handoff_items inspect_behavior control_behavior inspect_agent_body control_agent_body inspect_registry inspect_owned_agents"),
@@ -90,6 +93,7 @@ public final class CapabilityCatalog {
             var json=new ObjectMapper();var schema=(ObjectNode)json.readTree(value.parameters());var properties=(ObjectNode)schema.get("properties");
             var keep=new HashSet<>(List.of("agent_id","id","actor","dimension","expected_revision","combat","defend","resume_previous","only_if_idle"));
             switch(kind){
+                case PROCESS->keep.add("process");
                 case CONSTRUCT->keep.addAll(List.of("building_id","building_revision"));
                 case HANDOFF->keep.addAll(List.of("target","crop","limit"));
                 case GATHER->keep.addAll(List.of("min","max","crop","limit"));

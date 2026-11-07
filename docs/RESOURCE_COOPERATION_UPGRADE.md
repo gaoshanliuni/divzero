@@ -173,3 +173,11 @@ Create 导出蓝图的只读分页不再计算文件 SHA。文件名拥有持久
 | 模型请求 | 0；这是固定测试计划通过实际 Java/原生执行器的联验，不是自然语言规划或远程视觉识别测试 |
 
 第七次实体占位失败仍保留；第八次证明该次卡点已修复，不把旧失败标成成功。最新完整发行所需的其余摘要迁移、媒体/双 Python 打包和未覆盖原生场景仍未全部完成，正式主包未替换，未发布 Release。
+
+## 2026-11-07 additions: production, dialogue, real provider acceptance
+
+The requested acceptance now includes server recipe discovery, logs to planks/sticks, cobblestone to stone, sand to glass, diamonds to armor, a medium-sized furnished room, and crafted chest storage. Materials must come through actual cooperation handoffs; native crafting, furnace time/fuel and final chest contents are authoritative. The earlier 32-block hut fixture does not prove this larger scenario.
+
+Current implementation adds finite PROCESS skills (CRAFT/SMELT/STORE), observed recipe references, native workstation navigation and menu operations, and cooperation dependency admission. It reuses NativeCraftingAction. These changes are awaiting CI and native verification; they are not a completed acceptance result. Smelting runs in the local tick loop, with actual furnace state and result-slot consumption. Uncertain side effects remain paused for reconciliation.
+
+AI-to-AI dialogue must have actual sender/recipient messages, persistent history, and a readable AI-panel entry, distinct from scheduler status events. This remains in progress. A real official DeepSeek Flash / high-thinking test must generate its plan through the actual tools, with private request/usage/result records and no artificial max_tokens. No real model request has yet been issued for these added requirements. No Release or production replacement until the entire current batch is verified.

@@ -1494,8 +1494,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/AgentToolScope.java",
-      "resourceId": "4f9bbaf9-e23e-4744-8998-52bd49e0a15a",
-      "bytes": 5028
+      "resourceId": "5d5f7f01-d856-4d8f-b1f5-64788f3c3e69",
+      "bytes": 5062
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/BlockObservationRegion.java",
@@ -1509,13 +1509,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilityCatalog.java",
-      "resourceId": "253d29ee-2932-41bc-9771-216845627c1f",
-      "bytes": 23839
+      "resourceId": "84bc8e82-3cc5-4e24-bbbc-81d5314d4512",
+      "bytes": 24807
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CapabilitySession.java",
-      "resourceId": "0dcbb491-2b23-486f-b994-46cce169a0dd",
-      "bytes": 6576
+      "resourceId": "fe5c5f87-911a-4b97-a4eb-6b56f5cde684",
+      "bytes": 6711
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationAuditImporter.java",
@@ -1569,13 +1569,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "c9c010ff-d93e-4c23-9775-ddd841481491",
-      "bytes": 76981
+      "resourceId": "fa474f01-d4c3-4d8d-adde-c03c28723956",
+      "bytes": 77583
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CooperationTools.java",
-      "resourceId": "3c74747f-5a02-42ae-88f6-d0d5f9089b6c",
-      "bytes": 4344
+      "resourceId": "76171e73-4cb5-421d-93fb-8eebecfb3f23",
+      "bytes": 4352
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ExecutionContext.java",
@@ -2744,8 +2744,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/CooperationPlan.java",
-      "resourceId": "05d9d7f2-ca5d-40d2-a742-7180e6350c87",
-      "bytes": 6040
+      "resourceId": "08d1d489-c3ed-4c87-96a4-a85bea6ab717",
+      "bytes": 6072
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/CraftingInventoryProof.java",
@@ -2833,6 +2833,11 @@
       "bytes": 995
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/task/ProcessingSpec.java",
+      "resourceId": "9913eb58-22e6-4326-a431-9ca1a8a52031",
+      "bytes": 3443
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/PvpIntent.java",
       "sha256": "e24ac6a1e9df8aeebbcc004c67414cbf4cbca02a7b4930471379f4c808d6c252",
       "bytes": 1442
@@ -2864,13 +2869,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillSpec.java",
-      "resourceId": "ea24245d-7b33-4f34-ba14-5b26ac01430f",
-      "bytes": 10239
+      "resourceId": "c320b8b4-5fd7-4cb7-939e-64b3624abbd3",
+      "bytes": 11581
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SkillTools.java",
-      "resourceId": "7ee2fec0-3036-44a2-ace6-e5d6661aad0c",
-      "bytes": 11548
+      "resourceId": "2c6e876b-3f83-4324-ad66-a181fdaf8c61",
+      "bytes": 12699
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SneakClearance.java",
@@ -3868,6 +3873,11 @@
       "bytes": 3203
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/task/ProcessingSpecTest.java",
+      "resourceId": "6f98ec52-fc91-4547-8753-9f5979d706a9",
+      "bytes": 3386
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/task/PvpIntentTest.java",
       "sha256": "338b79442a49b7b53ee0bdcbe3125726660558f37afc82609363e74e1d533b0a",
       "bytes": 950
@@ -4119,8 +4129,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "e05fd3e5-a825-4f6b-bc2c-492cd418b7a0",
-      "bytes": 27167
+      "resourceId": "7803fe96-8c0e-4171-9042-faff8d40bfb8",
+      "bytes": 28622
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -7158,6 +7168,11 @@
       "bytes": 3021
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ProcessingSkill.java",
+      "resourceId": "89f6a3f9-9517-4bf3-b16d-73630b3b2b95",
+      "bytes": 16520
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PvpConsent.java",
       "sha256": "7b4c650bf83ade27b9b574f10dcc3d5d9c0b22cd7281ad6632b43dc13c5d1ef9",
       "bytes": 2812
@@ -7199,8 +7214,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
-      "resourceId": "52c5c4a8-d69a-4dcc-81f8-653c33cddabb",
-      "bytes": 13268
+      "resourceId": "2f369064-ce8a-48cd-9d8e-0341cdd1346a",
+      "bytes": 13341
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/WaterClutchRuntime.java",
@@ -7256,6 +7271,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativePlayerEventSource.java",
       "sha256": "f95027d6a7d99545692f78dd78e76f7fcc9abcd5e8dc3e31cec67ef411144b5e",
       "bytes": 991
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeRecipeCatalog.java",
+      "resourceId": "faf4e4a9-a860-412f-b8f3-c48b9596749a",
+      "bytes": 4563
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/NativeScheduleRuntime.java",
@@ -7459,8 +7479,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "0c5be64f-9ba7-4a2a-b125-e5bfb56b274d",
-      "bytes": 79112
+      "resourceId": "9a6dd9ea-7153-4a03-b8fb-bbbf8b365c30",
+      "bytes": 79440
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -9625,5 +9645,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "c3ce7d3d81646ea4aea80ea68d5e9b8c31e50f6d"
+  "sourceCommit": "6935ce343ff19364fa62e2c42601a0f7165e6ec8"
 }
