@@ -70,6 +70,8 @@ class ScoreboardServiceTest {
                 temporaryDirectory.resolve("score.db"), worldId, clock, port)) {
             ScoreSourceBinding source = service.refreshSources().stream()
                     .filter(value -> value.reference().equals("kills")).findFirst().orElseThrow();
+            assertEquals(4,source.sourceId().version());
+            assertEquals(source.sourceId(),service.refreshSources().stream().filter(value->value.reference().equals("kills")).findFirst().orElseThrow().sourceId());
             assertEquals(ScoreSourceOwnership.EXTERNAL, source.ownership());
             assertEquals(ScoreAccessMode.READ_ONLY, source.accessMode());
             var forbidden = service.execute(new ScoreboardCommand(UUID.randomUUID(), service.revision(),

@@ -30,6 +30,7 @@ public final class ScoreboardService implements AutoCloseable {
     private final UUID worldId;
     private final Clock clock;
     private final ScoreboardPort port;
+    private final dev.mineagent.runtime.core.content.ContentAddressedStore sourceIdentities;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<UUID, ScoreSourceBinding> sources = new LinkedHashMap<>();
     private final Map<UUID, ScoreView> views = new LinkedHashMap<>();
@@ -41,12 +42,13 @@ public final class ScoreboardService implements AutoCloseable {
             SqliteRuntimeRepository repository,
             UUID worldId,
             Clock clock,
-            ScoreboardPort port
+            ScoreboardPort port,Path database
     ) throws Exception {
         this.repository = repository;
         this.worldId = worldId;
         this.clock = clock;
         this.port = port;
+        sourceIdentities=new dev.mineagent.runtime.core.content.ContentAddressedStore(database.toAbsolutePath().resolveSibling(database.getFileName()+".score-identities"));
         for (var record : repository.list(worldId, SOURCE_NAMESPACE)) {
             ScoreSourceBinding source = mapper.readValue(record.payload(), ScoreSourceBinding.class);
             sources.put(source.sourceId(), source);
@@ -79,7 +81,7 @@ public final class ScoreboardService implements AutoCloseable {
             throws Exception {
         var repository = new SqliteRuntimeRepository(database);
         try {
-            return new ScoreboardService(repository, worldId, clock, port);
+            return new ScoreboardService(repository, worldId, clock, port,database);
         } catch (Exception failure) {
             repository.close();
             throw failure;
@@ -91,14 +93,14 @@ public final class ScoreboardService implements AutoCloseable {
     }
 
     public synchronized List<ScoreSourceBinding> refreshSources() throws Exception {
+        var known=new java.util.HashSet<String>();for(var source:sources.values())if(source.backend()==ScoreSourceBackend.VANILLA)known.add(source.reference());
         for (var objective : port.snapshot().objectives()) {
-            boolean known = sources.values().stream().anyMatch(source -> source.backend() == ScoreSourceBackend.VANILLA
-                    && source.reference().equals(objective.name()));
-            if (known) {
+            if (!known.add(objective.name())) {
                 continue;
             }
-            UUID sourceId = UUID.nameUUIDFromBytes((worldId + "|vanilla|" + objective.name())
-                    .getBytes(StandardCharsets.UTF_8));
+            String assigned=sourceIdentities.namedKeyId("vanilla_score",List.of(worldId.toString(),objective.name()));
+            var encoded=java.nio.ByteBuffer.wrap(java.util.HexFormat.of().parseHex(assigned.substring(0,32)));
+            UUID sourceId = new UUID(encoded.getLong(),encoded.getLong());
             ScoreSourceBinding source = new ScoreSourceBinding(sourceId, ScoreSourceBackend.VANILLA,
                     objective.name(), ScoreSourceOwnership.EXTERNAL, ScoreAccessMode.READ_ONLY,
                     null, 1, clock.millis());

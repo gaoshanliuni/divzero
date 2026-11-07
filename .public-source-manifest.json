@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/development-compile.yml",
-      "resourceId": "f0bfea01-07f3-462b-b132-e16f1915e768",
-      "bytes": 5284
+      "resourceId": "d4614faf-3d98-49b2-b20b-34a39c210ae6",
+      "bytes": 5317
     },
     {
       "path": ".github/workflows/legacy189.yml",
@@ -2589,8 +2589,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scoreboard/ScoreboardService.java",
-      "sha256": "9034fc0f65d9a661eb43b3b79232f0e54717084a9f1960840c8ff736fb18db45",
-      "bytes": 23389
+      "resourceId": "28386aa4-72d3-409c-b07a-29a32112137e",
+      "bytes": 23828
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/scoreboard/ScoreboardServiceState.java",
@@ -3654,8 +3654,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/scoreboard/ScoreboardServiceTest.java",
-      "sha256": "4c6bfcb18fad71450f4c92acf93280030db9451c6e55d48579a2824ea8e2b694",
-      "bytes": 14823
+      "resourceId": "76e1808c-23bc-4d8b-971b-45d44e5085f9",
+      "bytes": 15045
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/scoreboard/ScoreboardViewProjectorTest.java",
@@ -9495,5 +9495,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "d35d749d60b39a483ed196886e8d24c84cacb03b"
+  "sourceCommit": "20ce1c85affdc2831fcdcbab9be24ba005707474"
 }
