@@ -16,7 +16,7 @@ public final class NativeGapTraversal {
     static PathStep edge(ServerPlayer p, NativeTraversalEvaluator terrain, Node from, Node to) {
         int dx = Math.abs(from.x() - to.x()), dz = Math.abs(from.z() - to.z()), span = dx + dz;
         if (dx != 0 && dz != 0 || span < 2 || span > 3 || Math.abs(from.y() - to.y()) > .1
-                || !NativeTravelPolicy.canSprint(p) || terrain.water(from) || terrain.water(to) || terrain.climb(from) || terrain.climb(to)
+                || span==3&&!NativeTravelPolicy.canSprint(p) || p.isUsingItem() || p.isPassenger() || terrain.water(from) || terrain.water(to) || terrain.climb(from) || terrain.climb(to)
                 || !(p instanceof dev.mineagent.runtime.neoforge.mixin.CombatJumpAccess access)) return null;
         var a = NativeTraversalEvaluator.point(from); var b = NativeTraversalEvaluator.point(to);
         if (!NativeTravelPolicy.supported(p, a, .05) || !NativeTravelPolicy.supported(p, b, .05)) return null;

@@ -45,7 +45,7 @@ public final class NativeTravelPolicy {
     }
     /** Same ground travel rate used by the AI controller, with ordinary native sprinting. */
     public static double sprintSpeed(ServerPlayer p, Vec3 start) {
-        double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED) * (p.isSprinting() ? 1 : 1.3);
+        double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED) * (p.isSprinting() || !canSprint(p) ? 1 : 1.3);
         double friction = Math.max(.1, p.level().getBlockState(BlockPos.containing(start).below()).getBlock().getFriction());
         return .98 * speed * .216 / (friction * friction * friction) / Math.max(.05, 1 - friction * .91);
     }

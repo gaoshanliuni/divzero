@@ -4053,6 +4053,11 @@
       "bytes": 7152
     },
     {
+      "path": "docs/CONSTRUCTION_MOBILITY.md",
+      "resourceId": "ad7466ee-084f-4fc7-a53d-f6aca49131ba",
+      "bytes": 1797
+    },
+    {
       "path": "docs/COUNTERATTACK_UI_FUNCTIONS.md",
       "sha256": "a30409cbf097b6687b0c09479b76392d465ec8033004bdd4da69b2b4cb6929b1",
       "bytes": 14296
@@ -5084,8 +5089,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeGapTraversal.java",
-      "resourceId": "56ab4b40-e73b-4817-8632-a5f7c9621979",
-      "bytes": 3254
+      "resourceId": "a17a020e-a5e4-4c7e-9c0d-1323cfa1e267",
+      "bytes": 3301
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeInventorySync.java",
@@ -5134,8 +5139,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTravelPolicy.java",
-      "resourceId": "64072040-3a80-4fbc-8d0d-5ce33288081e",
-      "bytes": 3188
+      "resourceId": "c8677faf-6476-4ba3-a232-bd8e8d619e2c",
+      "bytes": 3205
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTraversalEvaluator.java",
@@ -5334,8 +5339,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "resourceId": "606f15cb-f724-4041-9045-26e20ad2614e",
-      "bytes": 13205
+      "resourceId": "e65e8dab-63ac-4cd6-82f7-9160ed76b4c3",
+      "bytes": 13524
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
@@ -9680,5 +9685,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "b60b9e2cad9829eac2c57ee7695e249a342fe55c"
+  "sourceCommit": "1f1c67645b0783dbd7b1cb911e6e79021e734a0f"
 }

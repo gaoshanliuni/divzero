@@ -40,11 +40,13 @@ public final class NativeSkillInput {
             if(n.path("pathAction").asText().equals("GAP_JUMP")&&n.has("takeoff")){
                 String identity=n.path("operation").asText()+n.get("takeoff").toString();
                 if(!gapKey.equals(identity)){gapKey=identity;gapLaunched=false;}
-                var takeoff=vector(n.get("takeoff"));
-                if(!gapLaunched){if(p.position().subtract(takeoff).horizontalDistanceSqr()>.0144)target=takeoff;
-                    else if(p.onGround()){launchGap=true;gapLaunched=true;}}
+                var takeoff=vector(n.get("takeoff"));var heading=target.subtract(p.position());
+                turn(p.getEyePosition().add(heading.x,0,heading.z));
+                double facing=new Vec3(p.getLookAngle().x,0,p.getLookAngle().z).normalize().dot(new Vec3(heading.x,0,heading.z).normalize());
+                if(!gapLaunched){if(p.position().subtract(takeoff).horizontalDistanceSqr()>.0144||!p.onGround()||facing<.96)target=takeoff;
+                    else {launchGap=true;gapLaunched=true;}}
             }else{gapKey="";gapLaunched=false;}
-            var delta=target.subtract(p.position());double yaw=angle(delta.x,delta.z);if(n.has("aim"))turn(vector(n.get("aim")));else if(delta.horizontalDistanceSqr()>.25)turn(p.getEyePosition().add(new Vec3(delta.x,0,delta.z).normalize().scale(4)));double relative=Math.toRadians(Mth.wrapDegrees((float)yaw-p.getYRot()));boolean horizontal=delta.horizontalDistanceSqr()>.015;key(mc.options.keyUp,horizontal&&Math.cos(relative)>.35);key(mc.options.keyDown,horizontal&&Math.cos(relative)< -.35);key(mc.options.keyRight,horizontal&&Math.sin(relative)>.35);key(mc.options.keyLeft,horizontal&&Math.sin(relative)< -.35);
+            var delta=target.subtract(p.position());double yaw=angle(delta.x,delta.z);if(!n.path("pathAction").asText().equals("GAP_JUMP")){if(n.has("aim"))turn(vector(n.get("aim")));else if(delta.horizontalDistanceSqr()>.25)turn(p.getEyePosition().add(new Vec3(delta.x,0,delta.z).normalize().scale(4)));}double relative=Math.toRadians(Mth.wrapDegrees((float)yaw-p.getYRot()));boolean horizontal=delta.horizontalDistanceSqr()>.015;key(mc.options.keyUp,horizontal&&Math.cos(relative)>.35);key(mc.options.keyDown,horizontal&&Math.cos(relative)< -.35);key(mc.options.keyRight,horizontal&&Math.sin(relative)>.35);key(mc.options.keyLeft,horizontal&&Math.sin(relative)< -.35);
             String edge=n.path("pathAction").asText();key(mc.options.keyJump,launchGap||n.path("jump").asBoolean()&&p.onGround()||edge.equals("CLIMB")&&delta.y>0||p.isInWater()&&delta.y>.1||delta.y>.65&&delta.horizontalDistanceSqr()<2);
             key(mc.options.keySprint,n.path("sprinting").asBoolean()||p.isInWater()&&(edge.equals("SWIM")||edge.equals("ENTER_WATER")));key(mc.options.keyShift,n.path("sneaking").asBoolean()||edge.equals("CROUCH")||p.isInWater()&&delta.y< -.2||!p.isInWater()&&dev.mineagent.runtime.neoforge.body.NativeSurfaceNavigation.requiresSneaking(p,target));return;
         }
