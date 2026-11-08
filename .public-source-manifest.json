@@ -7914,8 +7914,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GeneratedContentActivation.java",
-      "resourceId": "f8da20c2-1e25-4121-bf83-d04553238911",
-      "bytes": 13010
+      "resourceId": "78ce89ae-ea9d-4aed-9454-119a554c2717",
+      "bytes": 13248
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GenerationRepairSmokeServer.java",
@@ -9895,5 +9895,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "dad8c6f90e87da13f50f4fcec0700f5c40dfea7a"
+  "sourceCommit": "178841a222756a2dfdb4958a16a62a06e45c5b1d"
 }

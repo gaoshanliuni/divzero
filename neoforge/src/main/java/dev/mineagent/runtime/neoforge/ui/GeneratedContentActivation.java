@@ -108,15 +108,16 @@ final class GeneratedContentActivation implements AutoCloseable {
         }
         return Map.copyOf(result);
     }
+    private boolean validClient(ServerPlayer player,ClientResource item){
+        var config=MineAgentRuntimeServices.config(server);var pack=packages.worldLibrary().get(item.packageId()).orElse(null);
+        return item.owner().equals(player.getUUID())&&ServerAuthority.allowed(player,PermissionAction.RUN_CODE)&&ServerAuthority.allowed(player,PermissionAction.MANAGE_PACKAGES)
+                &&item.runGeneration()==config.permissionGeneration(player.getUUID(),PermissionAction.RUN_CODE)&&item.manageGeneration()==config.permissionGeneration(player.getUUID(),PermissionAction.MANAGE_PACKAGES)
+                &&pack!=null&&pack.revision()==item.revision()&&pack.canonicalSha256().equals(item.canonical());
+    }
     Map<String,Object> clientResources(ServerPlayer player)throws Exception{
-        var result=new ArrayList<ClientResource>();var config=MineAgentRuntimeServices.config(server);
+        var result=new ArrayList<ClientResource>();
         for(var item:List.copyOf(clientQueue.values()))if(item.owner().equals(player.getUUID())){
-            var pack=packages.worldLibrary().get(item.packageId()).orElse(null);
-            if(!ServerAuthority.allowed(player,PermissionAction.RUN_CODE)||!ServerAuthority.allowed(player,PermissionAction.MANAGE_PACKAGES)
-                    ||item.runGeneration()!=config.permissionGeneration(player.getUUID(),PermissionAction.RUN_CODE)||item.manageGeneration()!=config.permissionGeneration(player.getUUID(),PermissionAction.MANAGE_PACKAGES)
-                    ||pack==null||pack.revision()!=item.revision()||!pack.canonicalSha256().equals(item.canonical())){
-                completeClient(item,"FAILED","GENERATED_RESOURCE_AUTHORITY_OR_SOURCE_CHANGED");continue;
-            }
+            if(!validClient(player,item)){completeClient(item,"UNKNOWN","GENERATED_RESOURCE_AUTHORITY_OR_SOURCE_CHANGED");continue;}
             result.add(item);if(result.size()==8)break;
         }
         return Map.of("requests",result,"scope","CURRENT_PLAYER_GENERATED_RESOURCE_PACKS");
@@ -129,11 +130,11 @@ final class GeneratedContentActivation implements AutoCloseable {
     Map<String,Object> authorizeClient(ServerPlayer player,UUID operation,String canonical)throws Exception{
         var item=clientQueue.get(operation);if(item==null)return Map.of("allowed",false);
         if(!item.owner().equals(player.getUUID())||!item.canonical().equals(canonical))throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");
-        clientResources(player);return Map.of("allowed",clientQueue.containsKey(operation));
+        if(!validClient(player,item)){completeClient(item,"UNKNOWN","GENERATED_RESOURCE_AUTHORITY_OR_SOURCE_CHANGED");return Map.of("allowed",false);}return Map.of("allowed",true);
     }
-    void cancelClient(UUID owner,UUID operation)throws Exception{var item=clientQueue.get(operation);if(item!=null){if(!item.owner().equals(owner))throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");completeClient(item,"CANCELLED","USER_CANCELLED_BEFORE_CLIENT_RECEIPT");}}
+    void cancelClient(UUID owner,UUID operation)throws Exception{var item=clientQueue.get(operation);if(item!=null){if(!item.owner().equals(owner))throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");completeClient(item,"UNKNOWN","USER_CANCELLED_BEFORE_CLIENT_RECEIPT");}}
     private void completeClient(ClientResource item,String status,String code)throws Exception{
-        save(item.operation(),Map.of("status",status.equals("APPLIED")?"PUBLISHED_CLIENT_ACTIVE":"PUBLISHED_CLIENT_"+status,"code",code,"observationSource","OWNER_CLIENT_RESOURCE_LIFECYCLE","executed",status.equals("APPLIED"),"replayAllowed",false));
+        save(item.operation(),Map.of("status",status.equals("APPLIED")?"PUBLISHED_CLIENT_ACTIVE":"PUBLISHED_CLIENT_"+status,"code",code,"observationSource","OWNER_CLIENT_RESOURCE_LIFECYCLE","executed",status.equals("UNKNOWN")?"UNKNOWN":status.equals("APPLIED"),"replayAllowed",false));
         var row=db.get(world,CLIENT_QUEUE,item.operation().toString());if(row.isPresent()&&!db.delete(world,CLIENT_QUEUE,item.operation().toString(),row.get().revision(),System.currentTimeMillis()).accepted())throw new IllegalStateException("GENERATED_RESOURCE_RECEIPT_CONFLICT");clientQueue.remove(item.operation());
     }
     public void close()throws Exception {db.close();}
