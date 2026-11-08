@@ -32,8 +32,14 @@ public record RuntimeMesh(List<Vertex> vertices,List<Triangle> triangles,Collisi
             double[] low={Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY},high={Double.NEGATIVE_INFINITY,Double.NEGATIVE_INFINITY,Double.NEGATIVE_INFINITY};
             for(var vertex:vertices){double[] xyz={vertex.x(),vertex.y(),vertex.z()};for(int axis=0;axis<3;axis++){low[axis]=Math.min(low[axis],xyz[axis]);high[axis]=Math.max(high[axis],xyz[axis]);if(high[axis]-low[axis]>MAX_AXIS+1e-5)throw new IllegalArgumentException("MESH_EXTENT_100");}}
             for(var t:triangles){var a=vertices.get(t.a());var b=vertices.get(t.b());var c=vertices.get(t.c());double x=(b.y-a.y)*(c.z-a.z)-(b.z-a.z)*(c.y-a.y),y=(b.z-a.z)*(c.x-a.x)-(b.x-a.x)*(c.z-a.z),z=(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);double area=x*x+y*y+z*z;double ab=(b.x-a.x)*(b.x-a.x)+(b.y-a.y)*(b.y-a.y)+(b.z-a.z)*(b.z-a.z),ac=(c.x-a.x)*(c.x-a.x)+(c.y-a.y)*(c.y-a.y)+(c.z-a.z)*(c.z-a.z);if(version==1?area<1e-12:area<=1e-30||area<ab*ac*1e-12)throw new IllegalArgumentException();}
-            var c=root.path("collision");arraySize(c,6);double[] b=new double[6];for(int i=0;i<6;i++)b[i]=number(c.get(i),-MAX_AXIS,MAX_AXIS);
-            if(Math.abs(b[0]+b[3])>1e-6||Math.abs(b[2]+b[5])>1e-6||b[1]!=0)throw new IllegalArgumentException();String mode=root.path("collisionMode").asText("solid");if(root.has("collisionMode")&&(!root.path("collisionMode").isTextual()||!Set.of("solid","none").contains(mode)))throw new IllegalArgumentException();var collision=new Collision(b[3]-b[0],b[4],b[5]-b[2],mode.equals("none"));
+            Collision collision;
+            if(!root.has("collision")){
+                if(root.has("collisionMode")&&!root.path("collisionMode").asText().equals("none"))throw new IllegalArgumentException("OBJECT_COLLISION_REQUIRED");
+                collision=new Collision(Math.max(.05,Math.min(MAX_AXIS,high[0]-low[0])),Math.max(.05,Math.min(MAX_AXIS,high[1]-low[1])),Math.max(.05,Math.min(MAX_AXIS,high[2]-low[2])),true);
+            }else{
+                var c=root.path("collision");arraySize(c,6);double[] b=new double[6];for(int i=0;i<6;i++)b[i]=number(c.get(i),-MAX_AXIS,MAX_AXIS);
+                if(Math.abs(b[0]+b[3])>1e-6||Math.abs(b[2]+b[5])>1e-6||b[1]!=0)throw new IllegalArgumentException();String mode=root.path("collisionMode").asText("solid");if(root.has("collisionMode")&&(!root.path("collisionMode").isTextual()||!Set.of("solid","none").contains(mode)))throw new IllegalArgumentException();collision=new Collision(b[3]-b[0],b[4],b[5]-b[2],mode.equals("none"));
+            }
             var p=root.path("physics");Physics physics=new Physics(false,1,0,0,1);
             if(root.has("physics")){keys(p,Set.of("dynamic","mass","gravity","restitution","drag"));if(!p.path("dynamic").isBoolean())throw new IllegalArgumentException();physics=new Physics(p.path("dynamic").booleanValue(),number(p.path("mass"),0.0001,10000),number(p.path("gravity"),0,1),number(p.path("restitution"),0,1),number(p.path("drag"),0,1));}
             if(collision.nonSolid()&&physics.dynamic())throw new IllegalArgumentException("NON_SOLID_DYNAMIC_UNSUPPORTED");

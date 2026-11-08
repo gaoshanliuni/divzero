@@ -31,6 +31,8 @@ public final class ObjectAssetPayloads {
             if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(viewer.level().getServer()))throw new IllegalStateException("WORLD_IDENTITY_NOT_READY");
             if(viewer instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)throw new SecurityException();long tick=viewer.level().getServer().getTickCount();var window=rate.computeIfAbsent(viewer,k->new long[]{tick,0});if(tick-window[0]>=20){window[0]=tick;window[1]=0;}if(++window[1]>96)throw new IllegalStateException("OBJECT_RATE_LIMIT");
             var entity=viewer.level().getEntity(p.entity());
+            var item=RuntimeItemAssets.visible(entity,viewer,p.hash());
+            if(item!=null){if(viewer.distanceToSqr(entity)>128*128)throw new SecurityException();var bundle=WorldContentRuntime.get(viewer.level().getServer()).itemBundle(item);PacketDistributor.sendToPlayer(viewer,new Chunk(p.request(),p.entity(),p.hash(),bundle.size(),p.offset(),bundle.chunk(p.offset(),24576),""));return;}
             if(entity instanceof RuntimeCreatureEntity creature){
                 if(viewer.distanceToSqr(creature)>256*256||creature.definition()==null||!creature.definition().modelAssets().containsValue(p.hash()))throw new SecurityException();
                 var server=viewer.level().getServer();var level=viewer.level();

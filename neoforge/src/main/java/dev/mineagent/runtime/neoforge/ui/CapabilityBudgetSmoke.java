@@ -21,7 +21,7 @@ public final class CapabilityBudgetSmoke {
         function step(){
           var part=Math.floor(index/2);
           if(index%2===0)content.giveItem('item'+part,'models/tiny.json',1,'budget fixture '+part);
-          else content.createObject('object'+part,'models/tiny.json',(part%12)*1.5,1,Math.floor(part/12)*1.5);
+          else content.createObject('object'+part,'models/object.json',(part%12)*1.5,1,Math.floor(part/12)*1.5);
           index++;
           if(index<280)schedule(2,step);else content.state('completed','true');
         }
@@ -34,10 +34,15 @@ public final class CapabilityBudgetSmoke {
         operation=UUID.randomUUID();var job=jobs.submit(player.getUUID(),agent,operation,"FIXTURE_ONLY: 140 distinct real items and objects",true,"WORLD_CONTENT").job();
         var context=ServerPackageRuntime.class.getDeclaredField("generatedActivation");context.setAccessible(true);((GeneratedContentActivation)context.get(runtime)).capture(player,job);
         var code=new GeneratedFile("server/main.js",RuntimeResourceSide.SERVER,"application/javascript",ResourceIds.create(),SCRIPT.getBytes(StandardCharsets.UTF_8));
-        var model=new GeneratedFile("models/tiny.json",RuntimeResourceSide.COMMON,"application/json",ResourceIds.create(),MODEL.getBytes(StandardCharsets.UTF_8));
-        var definition=new RuntimeDefinition(UUID.randomUUID(),"Budget fixture",RuntimeDefinitionKind.ENTITY,"server",Set.of(model.path()),Map.of(),1);
+        var model=new GeneratedFile("models/tiny.json",RuntimeResourceSide.COMMON,"application/json",ResourceIds.create(),MODEL.replace("\"version\":1","\"version\":1,\"texture\":\"models/checker.png\"").getBytes(StandardCharsets.UTF_8));
+        var objectModel=new GeneratedFile("models/object.json",RuntimeResourceSide.COMMON,"application/json",ResourceIds.create(),MODEL.getBytes(StandardCharsets.UTF_8));
+        var image=new java.awt.image.BufferedImage(16,16,java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        for(int x=0;x<16;x++)for(int y=0;y<16;y++)image.setRGB(x,y,(x/4+y/4)%2==0?0xffff3030:0xff3060ff);
+        var bytes=new java.io.ByteArrayOutputStream();javax.imageio.ImageIO.write(image,"png",bytes);
+        var texture=new GeneratedFile("models/checker.png",RuntimeResourceSide.COMMON,"image/png",ResourceIds.create(),bytes.toByteArray());
+        var definition=new RuntimeDefinition(UUID.randomUUID(),"Budget fixture",RuntimeDefinitionKind.ENTITY,"server",Set.of(model.path(),objectModel.path(),texture.path()),Map.of(),1);
         var parsed=new ParsedRuntimePackage("Budget fixture","1.0",RuntimePackageType.CONTENT,ActivationMode.HOT_RUNTIME,Map.of(),Set.of("RUN_CODE"),
-                Map.of("server",new RuntimeEntrypoint(code.path(),code.side(),code.sha256())),List.of(definition),List.of(code,model));
+                Map.of("server",new RuntimeEntrypoint(code.path(),code.side(),code.sha256())),List.of(definition),List.of(code,model,objectModel,texture));
         for(var file:parsed.files())runtime.worldContent().put(file.sha256(),file.content());
         var candidate=RuntimePackagePublisher.prepare(parsed,job.packageId(),MineAgentRuntimeServices.identity(server));
         var publish=ServerPackageRuntime.class.getDeclaredMethod("publishGenerated",PackageGenerationJob.class,RuntimePackage.class,String.class,String.class);publish.setAccessible(true);
@@ -55,7 +60,7 @@ public final class CapabilityBudgetSmoke {
         guard();var runtime=WorldContentRuntime.get(player.level().getServer());
         for(int slot=0;slot<player.getInventory().getContainerSize();slot++) {
             var stack=player.getInventory().getItem(slot);var binding=dev.mineagent.runtime.neoforge.content.RuntimeItem.binding(stack);
-            if(binding!=null&&binding.instance().equals(instance)) {observedItems.add(binding.part());player.getInventory().setItem(slot,net.minecraft.world.item.ItemStack.EMPTY);}
+            if(binding!=null&&binding.instance().equals(instance)) {observedItems.add(binding.part());if(!binding.part().equals("item139"))player.getInventory().setItem(slot,net.minecraft.world.item.ItemStack.EMPTY);else if(slot<9)player.getInventory().setSelectedSlot(slot);}
         }
         var stored=runtime.instance(instance).orElseThrow();var active=runtime.list(player.getUUID()).stream().filter(a->a.instanceId().equals(instance)).findFirst().orElseThrow();
         if(!active.state().equals("ACTIVE"))throw new IllegalStateException("CONTENT_FIXTURE_STOPPED_"+active);

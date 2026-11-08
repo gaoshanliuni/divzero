@@ -31,7 +31,15 @@ public final class RuntimeObjectAssets {
         if(hash==null||hash.isEmpty())return null;var old=loaded.get(hash);if(old!=null){loaded.put(hash,new Entry(old.asset(),ticks));return old.asset();}
         if(!errors.containsKey(hash)&&pending.size()<4)pending.computeIfAbsent(hash,k->new Pending(entity.getId(),hash));return null;
     }
-    private static boolean bound(net.minecraft.world.entity.Entity entity,String hash){return entity instanceof RuntimeObjectEntity object&&object.header()!=null&&object.header().asset().equals(hash)||entity instanceof dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity creature&&creature.definition()!=null&&creature.definition().modelAssets().containsValue(hash);}
+    public static Asset get(RuntimeItemBinding binding){
+        String asset=binding.assetHash();var old=loaded.get(asset);if(old!=null){loaded.put(asset,new Entry(old.asset(),ticks));return old.asset();}
+        var mc=Minecraft.getInstance();if(mc.level==null||mc.player==null||errors.containsKey(asset)||pending.size()>=4)return null;
+        net.minecraft.world.entity.Entity holder=null;
+        if(dev.mineagent.runtime.neoforge.content.RuntimeItemAssets.visible(mc.player,mc.player,asset)!=null)holder=mc.player;
+        else for(var entity:mc.level.entitiesForRendering())if(mc.player.distanceToSqr(entity)<=128*128&&dev.mineagent.runtime.neoforge.content.RuntimeItemAssets.visible(entity,mc.player,asset)!=null){holder=entity;break;}
+        if(holder!=null){int id=holder.getId();pending.computeIfAbsent(asset,k->new Pending(id,asset));}return null;
+    }
+    private static boolean bound(net.minecraft.world.entity.Entity entity,String hash){if(Minecraft.getInstance().player!=null&&dev.mineagent.runtime.neoforge.content.RuntimeItemAssets.visible(entity,Minecraft.getInstance().player,hash)!=null)return true;return entity instanceof RuntimeObjectEntity object&&object.header()!=null&&object.header().asset().equals(hash)||entity instanceof dev.mineagent.runtime.neoforge.content.RuntimeCreatureEntity creature&&creature.definition()!=null&&creature.definition().modelAssets().containsValue(hash);}
     public static String diagnostic(String hash){return loaded.containsKey(hash)?"READY":errors.getOrDefault(hash,"LOADING");}
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
         ticks++;var mc=Minecraft.getInstance();Object current=mc.getConnection()==null?null:mc.getConnection().getConnection();if(current!=connection){clear();connection=current;}
@@ -54,7 +62,8 @@ public final class RuntimeObjectAssets {
             var bundle=RuntimeModelBundle.decode(waiting.bytes.toByteArray(),p.hash());byte[] png=bundle.texture();
             if(png.length==0){image=new NativeImage(1,1,false);image.setPixel(0,0,-1);}else image=NativeImage.read(new ByteArrayInputStream(png));
             if(image.getWidth()>1024||image.getHeight()>1024)throw new IllegalStateException("OBJECT_TEXTURE_DIMENSIONS");long bytes=bundle.size()+4L*image.getWidth()*image.getHeight()+32L*bundle.mesh().vertices().size()+16L*bundle.mesh().triangles().size();
-            if(loaded.size()>=64||memory+bytes>64L*1024*1024)throw new IllegalStateException("OBJECT_GPU_BUDGET");
+            while(!loaded.isEmpty()&&memory+bytes>64L*1024*1024){var oldest=loaded.entrySet().stream().min(Comparator.comparingInt(e->e.getValue().used())).orElseThrow();Minecraft.getInstance().getTextureManager().release(oldest.getValue().asset().texture());memory-=oldest.getValue().asset().memory();loaded.remove(oldest.getKey());}
+            if(memory+bytes>64L*1024*1024)throw new IllegalStateException("OBJECT_GPU_BUDGET");
             Identifier texture=Identifier.fromNamespaceAndPath("mineagent_runtime","objects/"+p.hash());Minecraft.getInstance().getTextureManager().register(texture,new DynamicTexture(()->"Runtime object "+p.hash(),image));image=null;
             loaded.put(p.hash(),new Entry(new Asset(bundle.mesh(),texture,bytes),ticks));memory+=bytes;pending.remove(p.hash());
         }catch(Exception failure){fail(waiting,"OBJECT_ASSET_INVALID");}finally{if(image!=null)image.close();}
