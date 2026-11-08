@@ -9,6 +9,13 @@ public record InteractionRuleSpec(String name,String dimension,List<Integer> pos
  public static final Set<String> EVENTS=Set.of("block_use","block_break","block_place","entity_use","entity_attack","item_use","item_use_start","item_use_finish","living_jump","incoming_damage","living_death");
  private static final Set<String> OBSERVATIONS=Set.of("item_use_finish","living_jump","living_death");
  private static final ObjectMapper JSON=new ObjectMapper(com.fasterxml.jackson.core.JsonFactory.builder().enable(com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION).build()).enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+ /** Target and action grants compose; a block rule that changes a living actor requires both. */
+ public Set<dev.mineagent.runtime.api.permission.PermissionAction> permissions(){
+  var grants=java.util.EnumSet.noneOf(dev.mineagent.runtime.api.permission.PermissionAction.class);
+  grants.add(events.stream().anyMatch(e->e.startsWith("block_"))?dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD:dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES);
+  if(java.util.stream.Stream.concat(allowedActions.stream(),deniedActions.stream()).anyMatch(a->Set.of("effect","velocity","damage_scale","use_duration").contains(a.get("type"))))grants.add(dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES);
+  return Set.copyOf(grants);
+ }
  public static InteractionRuleSpec parse(String source){return parse(source,false);}
  /** Templates deliberately have no world target. Binding validates the materialized rule again. */
  public static InteractionRuleSpec template(String source){return parse(source,true);}

@@ -19,8 +19,8 @@
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
-      "resourceId": "dbce2b16-76a6-4972-a31c-3ff8148b9081",
-      "bytes": 3818
+      "resourceId": "9af0abcd-51ab-42f5-a314-e7b25d0d9c29",
+      "bytes": 3853
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -2024,8 +2024,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/interaction/InteractionRuleSpec.java",
-      "sha256": "37c4fc29a4aa3e828bd1f70b953d981327a34b59083e3c12827fb3124acaeedc",
-      "bytes": 9525
+      "resourceId": "3d27eb8a-2673-4bae-b026-430fb3ac2652",
+      "bytes": 10297
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/maintenance/GameProcessLease.java",
@@ -3679,12 +3679,12 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/interaction/InteractionRuleSpecTest.java",
-      "sha256": "b8528c0c4708660642f5ea96d67e3a23c8b0c5f96673d8159c5b4ea341ea9207",
-      "bytes": 2952
+      "resourceId": "a40d914a-dea1-4f75-a655-1110e5102057",
+      "bytes": 4184
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/maintenance/JavaMaintenanceTest.java",
-      "resourceId": "b66010b9-59b9-49e6-961a-fad9a9e90e17",
+      "resourceId": "721925a7-3e0d-45a2-a5c3-ca43b11636a2",
       "bytes": 11142
     },
     {
@@ -4169,8 +4169,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "6b971745-30f4-44af-ac00-eca69697ab29",
-      "bytes": 15907
+      "resourceId": "76b910bd-2f1f-413c-a44e-314986f4faf9",
+      "bytes": 16409
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -5504,8 +5504,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "94ae0e2c-5e3a-49b1-8120-9d68c612afdf",
-      "bytes": 306659
+      "resourceId": "8defa373-83a3-4d9c-a3b1-519ece220134",
+      "bytes": 306935
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7643,6 +7643,11 @@
       "bytes": 11639
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityAccessSmoke.java",
+      "resourceId": "f0c6a192-6af1-45a9-bcf8-baea1b7c362a",
+      "bytes": 5800
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityBudgetSmoke.java",
       "resourceId": "b629195e-bd21-464a-92b0-39f059f9f77b",
       "bytes": 7745
@@ -7719,8 +7724,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "ead716c4-c3c7-4278-a5e9-5c744c9cbfd2",
-      "bytes": 84248
+      "resourceId": "a301058b-be99-4bb3-a4d7-b5d0102c077e",
+      "bytes": 84734
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -8179,8 +8184,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEventAbilities.java",
-      "resourceId": "0d1b9dac-4525-4fdd-8181-4e1cad49ee69",
-      "bytes": 11385
+      "resourceId": "42530107-ce4f-4604-bff8-a9bbf5f30022",
+      "bytes": 11842
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerFileTools.java",
@@ -8194,8 +8199,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerInteractionRules.java",
-      "resourceId": "c952a0a6-7e90-4224-ae1e-acdf04696f5f",
-      "bytes": 21017
+      "resourceId": "e4c6dc8a-8020-4385-b9fe-601544d4751c",
+      "bytes": 21158
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerJavaDependencies.java",
@@ -8249,8 +8254,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "resourceId": "e87d0225-da3e-40f3-8ef6-130b8668b9ec",
-      "bytes": 74431
+      "resourceId": "5f7e5536-2c86-40cc-a036-89c4836bf96f",
+      "bytes": 74563
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -9910,5 +9915,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "483787830ff957e8be2ac1f61782f5fef0c0a1c2"
+  "sourceCommit": "7ae054be2680c9f92cd942fc52665910873b4b50"
 }

@@ -100,9 +100,9 @@ public final class ServerPackageRuntime implements AutoCloseable {
     public Optional<PackageGenerationJob> generation(UUID owner,UUID operation){requireServerThread();return jobs.find(owner,operation);}
     public Optional<PackageUiPatchJob> patchJob(UUID owner,UUID operation){requireServerThread();return patches.find(owner,operation);}
     public Optional<PackageUiPatchService.RebuildEvidence> uiRebuildEvidence(UUID owner,UUID operation){requireServerThread();return patches.rebuildEvidence(owner,operation);}
-    public boolean mayRebuildUi(ServerPlayer viewer,UUID operation){requireServerThread();try{var j=patches.get(viewer.getUUID(),operation);return viewer.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)&&allowed(viewer.getUUID(),j.agentId());}catch(SecurityException denied){return false;}}
+    public boolean mayRebuildUi(ServerPlayer viewer,UUID operation){requireServerThread();try{var j=patches.get(viewer.getUUID(),operation);return dev.mineagent.runtime.neoforge.task.ServerAuthority.allowed(viewer,PermissionAction.RUN_CODE)&&dev.mineagent.runtime.neoforge.task.ServerAuthority.allowed(viewer,PermissionAction.MANAGE_PACKAGES)&&allowed(viewer.getUUID(),j.agentId());}catch(SecurityException denied){return false;}}
     public java.util.concurrent.CompletableFuture<PackageUiPatchJob> rebuildUi(ServerPlayer viewer,UUID operation,String rawHash,boolean confirmed){
-        requireServerThread();if(!confirmed||!mayRebuildUi(viewer,operation))throw new SecurityException("UI_PATCH_REBUILD_OPERATOR_REQUIRED");
+        requireServerThread();if(!confirmed||!mayRebuildUi(viewer,operation))throw new SecurityException("UI_PATCH_REBUILD_PERMISSION_REQUIRED");
         if(rawHash==null||!rawHash.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("UI_PATCH_REBUILD_HASH");
         var job=patches.get(viewer.getUUID(),operation);if(!job.rawOutputSha256().isEmpty()&&!job.rawOutputSha256().equals(rawHash))throw new IllegalArgumentException("UI_PATCH_REBUILD_CHANGED");
         if(rebuildingUi.size()>=4||!rebuildingUi.add(operation))throw new IllegalStateException("UI_PATCH_REBUILD_BUSY");
@@ -113,7 +113,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
             catch(Exception|LinkageError error){failure=error;}
             var candidate=built;var error=failure;server.execute(()->{rebuildingUi.remove(operation);try{
                 if(closed)throw new IllegalStateException("PACKAGE_RUNTIME_UNAVAILABLE");if(error!=null)throw new IllegalStateException("UI_PATCH_REBUILD_FAILED",error);
-                if(!mayRebuildUi(viewer,operation)||server.getPlayerList().getPlayer(viewer.getUUID())!=viewer)throw new SecurityException("UI_PATCH_REBUILD_OPERATOR_REQUIRED");
+                if(!mayRebuildUi(viewer,operation)||server.getPlayerList().getPlayer(viewer.getUUID())!=viewer)throw new SecurityException("UI_PATCH_REBUILD_PERMISSION_REQUIRED");
                 result.complete(patches.rebuildFailed(viewer.getUUID(),operation,candidate.candidate(),rawHash,true));
             }catch(Exception failed){result.completeExceptionally(failed);}});
         });}catch(RuntimeException rejected){rebuildingUi.remove(operation);result.completeExceptionally(rejected);}return result;

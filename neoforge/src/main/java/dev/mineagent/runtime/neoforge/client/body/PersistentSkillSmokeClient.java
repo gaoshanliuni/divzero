@@ -899,6 +899,7 @@ public final class PersistentSkillSmokeClient {
         if(mode.equals("capability_entities")){capabilityEntities();return;}
         if(mode.equals("capability_delivery")){capabilityDelivery();return;}
         if(mode.equals("capability_data")){capabilityData();return;}
+        if(mode.equals("capability_access")){action("non-op-grants-revocation-and-dense-entity-pages",()->server(p->{try{return dev.mineagent.runtime.neoforge.ui.CapabilityAccessSmoke.run(p,agent);}catch(Exception failure){throw new CompletionException(failure);}}));return;}
         if(mode.equals("provider_presets")){waitFor("provider-presets-client-enabled",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});action("provider-presets-native",()->dev.mineagent.runtime.neoforge.client.nativeui.ModelSettingsSmoke.runPresets(agent));return;}
         if(mode.equals("native_production")){nativeProduction();return;}
         if(mode.equals("cooperative_building")){cooperativeBuilding();return;}

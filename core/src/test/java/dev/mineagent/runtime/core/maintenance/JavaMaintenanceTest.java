@@ -31,7 +31,7 @@ class JavaMaintenanceTest {
         var draft=new RuntimePackage(pkg,RuntimePackageType.EXTENSION,"Fixture",version,ActivationMode.BOOT_EXTENSION,Map.of(),Set.of("RUN_CODE"),Map.of("boot",new RuntimeEntrypoint(descriptor.path(),descriptor.side(),descriptor.sha256())),Map.of(),resources,PackageOrigin.GENERATED,false,1,"0".repeat(64),"",1,compat);
         var manifest=PackageSignatures.signNew(draft,source::get,signer);String id=ResourceIds.create();
         String bootstrap="dev.mineagent.boot.p"+pkg.toString().replace("-","")+".Bootstrap";
-        var metadata=new BootArtifact.Metadata(schema,manifest,modId,"example.Main",bootstrap,ResourceIds.create(),env,"SERVER","RAW_MODULE_RESOURCES_NOT_LIVE_TRANSFORMS",null,replacement,schema==2?id:"");
+        var metadata=new BootArtifact.Metadata(schema,manifest,modId,"example.Main",bootstrap,ResourceIds.create(),env,"SERVER","RAW_MODULE_RESOURCES_NOT_LIVE_TRANSFORMS",replacement,null,schema==2?id:"");
         var bytes=new ByteArrayOutputStream();try(var zip=new ZipOutputStream(bytes)){
             for(String cls:List.of("example.Main",bootstrap)){zip.putNextEntry(new ZipEntry(cls.replace('.','/')+".class"));zip.write(java.lang.classfile.ClassFile.of().build(java.lang.constant.ClassDesc.of(cls),b->b.withFlags(java.lang.classfile.ClassFile.ACC_PUBLIC)));zip.closeEntry();}
             zip.putNextEntry(new ZipEntry(BootArtifact.METADATA));zip.write(json.writeValueAsBytes(metadata));zip.closeEntry();zip.putNextEntry(new ZipEntry("META-INF/neoforge.mods.toml"));zip.write("fixture".getBytes());zip.closeEntry();

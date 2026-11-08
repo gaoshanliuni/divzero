@@ -18,4 +18,14 @@ class InteractionRuleSpecTest {
   assertThrows(IllegalArgumentException.class,()->InteractionRuleSpec.template("{\"events\":[\"incoming_damage\"],\"events\":[\"living_jump\"]}"));
   assertTrue(InteractionRuleSpec.template("{\"events\":[\"incoming_damage\"],\"decision\":\"continue\",\"on_allowed\":[{\"type\":\"damage_scale\",\"value\":0.5}]} ").enabled());
  }
+ @Test void narrowGrantsFollowTargetsAndComposeWithActions(){
+  var block=InteractionRuleSpec.template("{\"events\":[\"block_use\"]}");
+  var entity=InteractionRuleSpec.template("{\"events\":[\"entity_use\"]}");
+  var mixed=InteractionRuleSpec.template("{\"events\":[\"block_use\"],\"on_allowed\":[{\"type\":\"velocity\",\"y\":0.2,\"target\":\"actor\"}]}");
+  var world=dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD;var entities=dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES;
+  assertEquals(java.util.Set.of(world),block.permissions());assertEquals(java.util.Set.of(entities),entity.permissions());assertEquals(java.util.Set.of(world,entities),mixed.permissions());
+  var permissions=new dev.mineagent.runtime.core.permission.PermissionService();var player=java.util.UUID.randomUUID();permissions.setTrustedActions(player,java.util.Set.of(entities));
+  assertTrue(entity.permissions().stream().allMatch(a->permissions.allowed(player,false,a)));assertFalse(mixed.permissions().stream().allMatch(a->permissions.allowed(player,false,a)));
+  permissions.setTrustedActions(player,java.util.Set.of());assertFalse(entity.permissions().stream().allMatch(a->permissions.allowed(player,false,a)));
+ }
 }
