@@ -73,8 +73,17 @@ public final class WorldReopenBootstrap {
         }catch(Exception failure){throw new IllegalStateException("WORLD_REOPEN_START_MARKER_UNAVAILABLE",failure);}
     }
     public static Path worldgenPath(Path save){return net.minecraft.world.level.levelgen.WorldGenSettings.TYPE.id().withSuffix(".dat").resolveAgainst(save.resolve("data"));}
-    public static String worldgenHash(Path save)throws Exception{Path path=worldgenPath(save);if(!Files.isRegularFile(path,LinkOption.NOFOLLOW_LINKS)||Files.isSymbolicLink(path))throw new IllegalStateException("WORLD_REOPEN_WORLDGEN_SAVE_MISSING");try(var in=Files.newInputStream(path)){byte[] bytes=in.readNBytes(64*1024*1024+1);if(bytes.length>64*1024*1024)throw new IllegalStateException("WORLD_REOPEN_WORLDGEN_SAVE_LIMIT");return RuntimePackageCanonicalizer.sha256(bytes);}}
-    public static void cancellable(PlanContext context)throws Exception{if(context.plan().nativeStarted()||!worldgenHash(context.save()).equals(context.plan().worldgenHash()))throw new IllegalStateException("WORLD_REOPEN_MAY_HAVE_LOADED_NOT_A_RETIREMENT");}
+    /** Historical field name; the value is a durable observation version, not a file digest. */
+    public static String worldgenHash(Path save)throws Exception{return worldgenVersion(save,"");}
+    private static String worldgenVersion(Path save,String expected)throws Exception{
+        Path path=worldgenPath(save);if(!Files.isRegularFile(path,LinkOption.NOFOLLOW_LINKS)||Files.isSymbolicLink(path))throw new IllegalStateException("WORLD_REOPEN_WORLDGEN_SAVE_MISSING");
+        byte[] bytes;try(var in=Files.newInputStream(path)){bytes=in.readNBytes(64*1024*1024+1);}if(bytes.length>64*1024*1024)throw new IllegalStateException("WORLD_REOPEN_WORLDGEN_SAVE_LIMIT");
+        UUID scope=identity(save);
+        try(var observations=new dev.mineagent.runtime.core.content.FileObservationStore(home().resolve("worldgen-observations.db"),64*1024*1024,256L*1024*1024)){
+            return observations.observe(observations.identify(scope.toString()),bytes,expected);
+        }
+    }
+    public static void cancellable(PlanContext context)throws Exception{if(context.plan().nativeStarted()||!worldgenVersion(context.save(),context.plan().worldgenHash()).equals(context.plan().worldgenHash()))throw new IllegalStateException("WORLD_REOPEN_MAY_HAVE_LOADED_NOT_A_RETIREMENT");}
     public record PlanContext(Path save,WorldReopenPlans.Plan plan){}
     public static boolean same(DataPackConfig actual,List<String> enabled,List<String> disabled){return actual.getEnabled().equals(enabled)&&actual.getDisabled().equals(disabled);}
     public static UUID identity(Path save)throws Exception{

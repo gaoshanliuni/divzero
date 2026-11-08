@@ -150,7 +150,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
             if(!source.agentId().equals(agent)||!source.base().canonicalSha256().equals(base.canonicalSha256())||!Set.of("FAILED","CANCELLED").contains(source.state())||source.revision()!=args.path("job_revision").asLong()||!source.rawOutputSha256().equals(args.path("raw_sha256").asText())||source.rawOutputSha256().isEmpty())throw new IllegalStateException("STALE_PACKAGE_CANDIDATE");sourceHash=source.rawOutputSha256();
         }
         var edits=new ArrayList<dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change>();for(var edit:args.path("edits"))edits.add(new dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change(edit.path("path").asText(),edit.path("old_text").asText(),edit.path("new_text").asText(),edit.path("replace_all").asBoolean()));
-        var submitted=worldPatches.submit(viewer.getUUID(),agent,operation,base,"Local source edit "+RuntimePackageCanonicalizer.sha256(args.toString()),true,budgetParent(operation,"PATCH"));var job=submitted.job();
+        var submitted=worldPatches.submit(viewer.getUUID(),agent,operation,base,"Local source edit "+operation,true,budgetParent(operation,"PATCH"));var job=submitted.job();
         if(submitted.duplicate())return java.util.concurrent.CompletableFuture.completedFuture(Map.of("status",job.state(),"operation_id",operation,"replayed",false));
         var permit=new java.util.concurrent.atomic.AtomicBoolean(true);worldPatchPermits.put(job.taskId(),permit);String previous=sourceHash;var signer=MineAgentRuntimeServices.identity(server);
         return java.util.concurrent.CompletableFuture.supplyAsync(()->{String raw=previous;try{

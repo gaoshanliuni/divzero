@@ -29,8 +29,8 @@
     },
     {
       "path": ".github/workflows/native-knowledge-compile.yml",
-      "resourceId": "36932ad2-f47d-4bbf-8263-167b3a595ec9",
-      "bytes": 2380
+      "resourceId": "8507eeb3-3363-45ba-a669-915e713d3848",
+      "bytes": 2416
     },
     {
       "path": ".gitignore",
@@ -6479,8 +6479,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/WorldReopenBootstrap.java",
-      "sha256": "c1b5f773e548e7562294263dd27bcbe847f2e16f434ab8bbd97818bd2e9727af",
-      "bytes": 12389
+      "resourceId": "9ca897fe-ad0b-4f75-a6ff-af1eeec71d19",
+      "bytes": 12923
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/WorldReopenVerifier.java",
@@ -8084,8 +8084,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "resourceId": "4954545f-78ba-445a-ba90-9c048880732e",
-      "bytes": 73049
+      "resourceId": "403bdb23-aa38-4b3a-95f4-e24cccaabe02",
+      "bytes": 73007
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -9735,5 +9735,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "8ba71817760931a0e3a40671e29431b99de10620"
+  "sourceCommit": "e28a2834b1869c7545b257f329f6e346bef7d80c"
 }
