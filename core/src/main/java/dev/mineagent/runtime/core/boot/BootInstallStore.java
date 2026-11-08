@@ -40,7 +40,8 @@ public final class BootInstallStore implements AutoCloseable {
             builds.clear();builds.putAll(current);return List.copyOf(current.values());
         }catch(Exception e){throw new IllegalStateException("BOOT_STORE_READ",e);}
     }
-    public synchronized Build get(UUID id){try(var q=db.prepareStatement("SELECT payload FROM boot_builds_v1 WHERE id=?")){q.setString(1,id.toString());try(var r=q.executeQuery()){if(!r.next())throw new IllegalStateException("BOOT_BUILD_MISSING");var value=JSON.readValue(r.getString(1),Build.class);builds.put(id,value);return value;}}catch(Exception e){throw new IllegalStateException("BOOT_STORE_READ",e);}}
+    public synchronized Optional<Build> find(UUID id){try(var q=db.prepareStatement("SELECT payload FROM boot_builds_v1 WHERE id=?")){q.setString(1,id.toString());try(var r=q.executeQuery()){if(!r.next())return Optional.empty();var value=JSON.readValue(r.getString(1),Build.class);builds.put(id,value);return Optional.of(value);}}catch(Exception e){throw new IllegalStateException("BOOT_STORE_READ",e);}}
+    public synchronized Build get(UUID id){return find(id).orElseThrow(()->new IllegalStateException("BOOT_BUILD_MISSING"));}
     public synchronized Begun begin(UUID id,UUID world,UUID owner,RuntimePackage pkg,String key,String environment,String directory)throws Exception{return begin(id,world,owner,pkg,key,environment,directory,null);}
     public synchronized Begun begin(UUID id,UUID world,UUID owner,RuntimePackage pkg,String key,String environment,String directory,UUID replaces)throws Exception {
         String slot="";if(replaces!=null){var previous=get(replaces);if(!previous.owner().equals(owner)||!previous.manifest().packageId().equals(pkg.packageId())||previous.manifest().canonicalSha256().equals(pkg.canonicalSha256())||!previous.directory().equals(directory))throw new IllegalStateException("BOOT_REPLACEMENT_SOURCE");slot=BootFiles.filename(previous);}

@@ -83,6 +83,7 @@ public final class MineAgentRuntimeMod {
         MineAgentRuntimeServices.packages(event.getServer()).tick(event.getServer().getTickCount());
         dev.mineagent.runtime.neoforge.content.WorldContentRuntime.tick(event.getServer());
         dev.mineagent.runtime.neoforge.content.NativeDataPackRuntime.tick(event.getServer());
+        dev.mineagent.runtime.neoforge.ui.ServerPackageRuntime.tick(event.getServer());
         MineAgentRuntimeServices.packages(event.getServer()).fire("server.tick", event.getServer().getTickCount());
         dev.mineagent.runtime.neoforge.ui.StudioScriptRuntime.tick(event.getServer());
         if (event.getServer().getTickCount() % 10 == 0) {

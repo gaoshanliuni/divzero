@@ -29,6 +29,14 @@ public final class NativeBootRuntime implements AutoCloseable {
     }
     public static synchronized NativeBootRuntime get(MinecraftServer server){var value=OPEN.get(server);if(value==null){try{value=new NativeBootRuntime(server);OPEN.put(server,value);}catch(Exception e){throw new IllegalStateException("BOOT_STORE_UNAVAILABLE",e);}}return value;}
     public static synchronized void stop(MinecraftServer server){var value=OPEN.remove(server);if(value!=null)try{value.close();}catch(Exception ignored){}}
+    public boolean busy(){if(!server.isSameThread())throw new IllegalStateException("BOOT_SERVER_THREAD_REQUIRED");return active!=null;}
+    /** Exact receipt lookup for the durable automatic lifecycle, without filesystem scans. */
+    public Optional<BootInstallStore.Build> generatedBuild(UUID owner,UUID operation){
+        if(!server.isSameThread())throw new IllegalStateException("BOOT_SERVER_THREAD_REQUIRED");
+        var found=store.find(operation);
+        if(found.isPresent()&&(!found.get().owner().equals(owner)||!found.get().world().equals(MineAgentRuntimeServices.worldId(server))))throw new SecurityException("BOOT_BUILD_OWNER");
+        return found;
+    }
     public static void authorize(ServerPlayer player){var server=player.level().getServer();if(!server.isSameThread()||player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer||server.getPlayerList().getPlayer(player.getUUID())!=player)throw new SecurityException("BOOT_CONNECTED_HUMAN_REQUIRED");for(var action:List.of(PermissionAction.RUN_CODE,PermissionAction.MANAGE_PACKAGES))dev.mineagent.runtime.neoforge.task.ServerAuthority.require(player,action);}
     private RuntimePackage owned(ServerPlayer player,UUID id,long revision,String hash){var p=ServerPackageRuntime.get(server).ownedPackage(player.getUUID(),id,revision).orElseThrow(()->new SecurityException("BOOT_PACKAGE_OWNER"));if(!p.canonicalSha256().equals(hash))throw new IllegalStateException("BOOT_PACKAGE_CHANGED");return p;}
     public void current(ServerPlayer viewer,Map<String,String> args){

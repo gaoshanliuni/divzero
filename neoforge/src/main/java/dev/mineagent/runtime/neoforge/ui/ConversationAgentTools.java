@@ -327,7 +327,7 @@ public final class ConversationAgentTools {
                     }
                     var pack=runtime.worldLibrary().get(job.packageId()).orElseThrow();
                     var activation=new LinkedHashMap<String,Object>(runtime.generatedActivation(p,job));
-                    if(Set.of("PUBLISHED_AWAITING_CLIENT_RESOURCE","PUBLISHED_LIFECYCLE_SUBMITTED").contains(activation.get("status")))return false;
+                    if(Set.of("PUBLISHED_AWAITING_CLIENT_RESOURCE","PUBLISHED_LIFECYCLE_SUBMITTED","PUBLISHED_BOOT_QUEUED","PUBLISHED_BOOT_BUILD_SUBMITTED","PUBLISHED_BOOT_INSTALL_SUBMITTED").contains(activation.get("status")))return false;
                     activation.put("packageId",pack.packageId());activation.put("name",pack.name());activation.put("revision",pack.revision());activation.put("activationMode",pack.activationMode());
                     result.complete(activation);return true;
                 }

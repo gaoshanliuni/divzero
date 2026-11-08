@@ -5,6 +5,8 @@ import dev.mineagent.runtime.api.packages.*;
 import dev.mineagent.runtime.api.permission.PermissionAction;
 import dev.mineagent.runtime.core.packages.PackageGenerationJob;
 import dev.mineagent.runtime.core.persistence.*;
+import dev.mineagent.runtime.core.boot.BootActivationStep;
+import dev.mineagent.runtime.neoforge.boot.NativeBootRuntime;
 import dev.mineagent.runtime.neoforge.MineAgentRuntimeServices;
 import dev.mineagent.runtime.neoforge.content.*;
 import dev.mineagent.runtime.neoforge.task.ServerAuthority;
@@ -24,10 +26,17 @@ final class GeneratedContentActivation implements AutoCloseable {
     record ClientResource(UUID operation,UUID owner,UUID packageId,long revision,String canonical,long runGeneration,long manageGeneration){}
     private final Map<UUID,ClientResource> clientQueue=new LinkedHashMap<>();
     record Context(UUID owner,UUID agent,RuntimeInstanceLocation anchor,long runGeneration,long manageGeneration){}
+    private static final String BOOT_QUEUE="generated_boot_pending";
+    record BootRequest(UUID operation,Context context,UUID packageId,long revision,String canonical,UUID build,UUID install,BootActivationStep.Stage stage) {
+        BootRequest stage(BootActivationStep.Stage next){return new BootRequest(operation,context,packageId,revision,canonical,build,install,next);}
+    }
+    private final Map<UUID,BootRequest> bootQueue=new LinkedHashMap<>();
+    private volatile boolean closed;
     GeneratedContentActivation(MinecraftServer server,ServerPackageRuntime packages)throws Exception {
         this.server=server;this.packages=packages;world=MineAgentRuntimeServices.worldId(server);
         db=new SqliteRuntimeRepository(server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db"));
         for(var row:db.list(world,CLIENT_QUEUE)){var item=json.readValue(row.payload(),ClientResource.class);clientQueue.put(item.operation(),item);}
+        for(var row:db.list(world,BOOT_QUEUE)){var item=json.readValue(row.payload(),BootRequest.class);bootQueue.put(item.operation(),item);}
     }
     void capture(ServerPlayer player,PackageGenerationJob job)throws Exception {
         if(!job.purpose().equals("WORLD_CONTENT"))return;
@@ -90,7 +99,11 @@ final class GeneratedContentActivation implements AutoCloseable {
                     clientQueue.put(item.operation(),item);
                     save(job.operationId(),Map.of("status","PUBLISHED_AWAITING_CLIENT_RESOURCE","mode",pack.activationMode(),"executed",false));
                 }
-                case BOOT_EXTENSION -> save(job.operationId(),Map.of("status","PUBLISHED_AWAITING_BOOT_PIPELINE","mode",pack.activationMode(),"executed",false));
+                case BOOT_EXTENSION -> {
+                    var item=new BootRequest(job.operationId(),context,pack.packageId(),pack.revision(),pack.canonicalSha256(),operation(job.operationId(),"boot-build"),operation(job.operationId(),"boot-install"),BootActivationStep.Stage.QUEUED);
+                    saveBoot(item);
+                    save(job.operationId(),Map.of("status","PUBLISHED_BOOT_QUEUED","mode",pack.activationMode(),"buildOperation",item.build(),"installOperation",item.install(),"executed",false));
+                }
                 default -> save(job.operationId(),Map.of("status","PUBLISHED_LIFECYCLE_REQUIRED","mode",pack.activationMode(),"executed",false));
             }
         } catch(Exception failure) {
@@ -102,6 +115,8 @@ final class GeneratedContentActivation implements AutoCloseable {
         var row=db.get(world,RESULT,job.operationId().toString());
         if(row.isEmpty())return Map.of("status","PUBLISHED_LIFECYCLE_REQUIRED","executed",false);
         @SuppressWarnings("unchecked") var result=new LinkedHashMap<String,Object>(json.readValue(row.get().payload(),Map.class));
+        var boot=bootQueue.get(job.operationId());
+        if(boot!=null){result.put("status","PUBLISHED_BOOT_"+boot.stage());result.put("buildOperation",boot.build());result.put("installOperation",boot.install());result.put("activeNow",false);}
         if("PUBLISHED_LIFECYCLE_SUBMITTED".equals(result.get("status"))) {
             var head=packages.worldLibrary().get(job.packageId()).orElseThrow();
             var observed=NativeDataPackRuntime.get(server).read(player,Map.of("packageId",head.packageId().toString(),"packageRevision",Long.toString(head.revision()),"offset","0","operationId",result.get("operationId").toString()));result.put("observation",observed);
@@ -136,10 +151,69 @@ final class GeneratedContentActivation implements AutoCloseable {
         if(!item.owner().equals(player.getUUID())||!item.canonical().equals(canonical))throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");
         if(!validClient(player,item)){completeClient(item,"UNKNOWN","GENERATED_RESOURCE_AUTHORITY_OR_SOURCE_CHANGED");return Map.of("allowed",false);}return Map.of("allowed",true);
     }
-    void cancelClient(UUID owner,UUID operation)throws Exception{var item=clientQueue.get(operation);if(item!=null){if(!item.owner().equals(owner))throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");completeClient(item,"UNKNOWN","USER_CANCELLED_BEFORE_CLIENT_RECEIPT");}}
+    void cancelClient(UUID owner,UUID operation)throws Exception{
+        var item=clientQueue.get(operation);if(item!=null){if(!item.owner().equals(owner))throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");completeClient(item,"UNKNOWN","USER_CANCELLED_BEFORE_CLIENT_RECEIPT");}
+        var boot=bootQueue.get(operation);if(boot!=null){if(!boot.context().owner().equals(owner))throw new SecurityException("BOOT_BUILD_OWNER");completeBoot(boot,boot.stage()==BootActivationStep.Stage.QUEUED?"CANCELLED":"UNKNOWN","BOOT_AUTOMATIC_CANCELLED",List.of());}
+    }
     private void completeClient(ClientResource item,String status,String code)throws Exception{
         save(item.operation(),Map.of("status",status.equals("APPLIED")?"PUBLISHED_CLIENT_ACTIVE":"PUBLISHED_CLIENT_"+status,"code",code,"observationSource","OWNER_CLIENT_RESOURCE_LIFECYCLE","executed",status.equals("UNKNOWN")?"UNKNOWN":status.equals("APPLIED"),"replayAllowed",false));
         var row=db.get(world,CLIENT_QUEUE,item.operation().toString());if(row.isPresent()&&!db.delete(world,CLIENT_QUEUE,item.operation().toString(),row.get().revision(),System.currentTimeMillis()).accepted())throw new IllegalStateException("GENERATED_RESOURCE_RECEIPT_CONFLICT");clientQueue.remove(item.operation());
     }
-    public void close()throws Exception {db.close();}
+    private void saveBoot(BootRequest item)throws Exception {
+        var old=db.get(world,BOOT_QUEUE,item.operation().toString());
+        if(!db.compareAndSet(world,BOOT_QUEUE,item.operation().toString(),old.map(RuntimeRecord::revision).orElse(0L),json.writeValueAsString(item),System.currentTimeMillis()).accepted())throw new IllegalStateException("BOOT_AUTOMATIC_QUEUE_CONFLICT");
+        bootQueue.put(item.operation(),item);
+    }
+    private boolean validBoot(BootRequest item) {
+        var player=server.getPlayerList().getPlayer(item.context().owner());if(player==null)return false;
+        try{NativeBootRuntime.authorize(player);}catch(SecurityException denied){return false;}
+        var config=MineAgentRuntimeServices.config(server);var pack=packages.ownedPackage(player.getUUID(),item.packageId(),item.revision()).orElse(null);
+        return pack!=null&&pack.revision()==item.revision()&&pack.canonicalSha256().equals(item.canonical())
+                &&item.context().runGeneration()==config.permissionGeneration(player.getUUID(),PermissionAction.RUN_CODE)
+                &&item.context().manageGeneration()==config.permissionGeneration(player.getUUID(),PermissionAction.MANAGE_PACKAGES);
+    }
+    private boolean bootPermit(BootRequest item) {
+        if(closed)return false;
+        java.util.function.Supplier<Boolean> check=()->!closed&&bootQueue.containsKey(item.operation())&&validBoot(item);
+        try{return server.isSameThread()?check.get():server.submit(check).get(3,java.util.concurrent.TimeUnit.SECONDS);}
+        catch(Exception unavailable){return false;}
+    }
+    /** One FIFO step per Tick. UI lifetime and ordinary dimension changes do not own this queue. */
+    void tick() {
+        if(closed||bootQueue.isEmpty())return;
+        var item=bootQueue.values().iterator().next();bootQueue.remove(item.operation());bootQueue.put(item.operation(),item);
+        try {
+            // A finished receipt saved immediately before a crash takes precedence over a stale queue row.
+            var saved=db.get(world,RESULT,item.operation().toString());
+            if(saved.isPresent()&&json.readTree(saved.get().payload()).path("bootTerminal").asBoolean()){removeBoot(item);return;}
+            var runtime=NativeBootRuntime.get(server);var build=runtime.generatedBuild(item.context().owner(),item.build()).orElse(null);
+            var action=BootActivationStep.next(item.stage(),build==null?"":build.phase(),runtime.busy());
+            if(build!=null&&(!build.manifest().packageId().equals(item.packageId())||build.manifest().revision()!=item.revision()||!build.manifest().canonicalSha256().equals(item.canonical())))throw new IllegalStateException("BOOT_AUTOMATIC_SOURCE_CHANGED");
+            if(action==BootActivationStep.Action.READY_AT_RESTART){completeBoot(item,"READY_AT_SERVER_RESTART","",build.diagnostics());return;}
+            if(action==BootActivationStep.Action.FAILED||action==BootActivationStep.Action.UNKNOWN){completeBoot(item,action.name(),build==null?"BOOT_SUBMISSION_RECEIPT_MISSING":build.error().isEmpty()?"BOOT_RESULT_UNVERIFIED":build.error(),build==null?List.of():build.diagnostics());return;}
+            var player=server.getPlayerList().getPlayer(item.context().owner());
+            if(player==null&&item.stage()==BootActivationStep.Stage.QUEUED)return;
+            if(!validBoot(item)){completeBoot(item,item.stage()==BootActivationStep.Stage.QUEUED?"NOT_STARTED":"UNKNOWN","BOOT_AUTHORITY_OR_SOURCE_CHANGED",List.of());return;}
+            if(action==BootActivationStep.Action.WAIT)return;
+            String environment=NativePackageCompatibility.observe().fingerprint();
+            if(action==BootActivationStep.Action.BUILD){
+                saveBoot(item.stage(BootActivationStep.Stage.BUILD_SUBMITTED));
+                runtime.build(player,item.build(),Map.of("kind","build","packageId",item.packageId().toString(),"packageRevision",Long.toString(item.revision()),"canonical",item.canonical(),"environment",environment),()->bootPermit(item));
+            }else if(action==BootActivationStep.Action.INSTALL){
+                saveBoot(item.stage(BootActivationStep.Stage.INSTALL_SUBMITTED));
+                runtime.change(player,item.install(),Map.of("kind","change","buildId",item.build().toString(),"expectedRevision",Long.toString(build.revision()),"action","INSTALL","environment",environment,"confirmed","true","confirmModId",build.modId()),()->bootPermit(item));
+            }
+        }catch(Exception failure){
+            try{completeBoot(bootQueue.getOrDefault(item.operation(),item),"UNKNOWN",NativeBootRuntime.code(failure),List.of());}
+            catch(Exception persistence){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Automatic BOOT receipt pending operation={} cause={}",item.operation(),persistence.getClass().getSimpleName());}
+        }
+    }
+    private void completeBoot(BootRequest item,String status,String error,List<String> diagnostics)throws Exception {
+        save(item.operation(),Map.ofEntries(Map.entry("status","PUBLISHED_BOOT_"+status),Map.entry("mode",ActivationMode.BOOT_EXTENSION),Map.entry("bootTerminal",true),Map.entry("buildOperation",item.build()),Map.entry("installOperation",item.install()),Map.entry("activeNow",false),Map.entry("error",error),Map.entry("diagnostics",diagnostics),Map.entry("executed",status.equals("UNKNOWN")?"UNKNOWN":status.equals("READY_AT_SERVER_RESTART")),Map.entry("replayAllowed",false)));
+        removeBoot(item);
+    }
+    private void removeBoot(BootRequest item)throws Exception {
+        var row=db.get(world,BOOT_QUEUE,item.operation().toString());if(row.isPresent()&&!db.delete(world,BOOT_QUEUE,item.operation().toString(),row.get().revision(),System.currentTimeMillis()).accepted())throw new IllegalStateException("BOOT_AUTOMATIC_RECEIPT_CONFLICT");bootQueue.remove(item.operation());
+    }
+    public void close()throws Exception {closed=true;db.close();}
 }

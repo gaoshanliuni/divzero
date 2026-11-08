@@ -19,8 +19,8 @@
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
-      "resourceId": "ae50d7f1-aced-4eb9-aac4-91b1656da364",
-      "bytes": 3753
+      "resourceId": "a2732218-2f72-4e07-b728-10a32aebc201",
+      "bytes": 3787
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -1208,6 +1208,11 @@
       "bytes": 283
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootActivationStep.java",
+      "resourceId": "2561638e-a3d0-492b-89fe-ce57deb427b9",
+      "bytes": 1005
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootArtifact.java",
       "resourceId": "8f914a53-8928-47c4-9b36-3a09f1b6efb6",
       "bytes": 10095
@@ -1229,8 +1234,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootInstallStore.java",
-      "sha256": "f352b857cfeb5d55631c7834f52e107a4ae70c0055b669e5170ccde6bfaf51c0",
-      "bytes": 23406
+      "resourceId": "2f462f03-732c-4a55-97a6-dfb77ad697e6",
+      "bytes": 23526
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootReplacement.java",
@@ -3253,6 +3258,11 @@
       "bytes": 1958
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/boot/BootActivationStepTest.java",
+      "resourceId": "c448cf01-0bed-4c4b-b84f-f61400f03f93",
+      "bytes": 1527
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/boot/BootArtifactIdentityTest.java",
       "resourceId": "e17bc740-a008-4758-8166-c249ca372966",
       "bytes": 6310
@@ -4159,8 +4169,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "1baddaea-4d82-4775-9cff-16874e9576c3",
-      "bytes": 14252
+      "resourceId": "efd3ca0b-8df4-4062-930e-affe72bcb2e5",
+      "bytes": 14997
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -5159,8 +5169,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
-      "resourceId": "dd932225-cdef-4e6a-9901-93df57b8010f",
-      "bytes": 56643
+      "resourceId": "f31affa6-4918-40db-8bcb-fa3593c63527",
+      "bytes": 56731
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
@@ -5324,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootRuntime.java",
-      "resourceId": "e61ccf60-b83d-4bdb-afcd-fa4ad2204609",
-      "bytes": 22610
+      "resourceId": "f0f69ca4-7555-4344-a973-360127e108c5",
+      "bytes": 23283
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootUpgrades.java",
@@ -7709,8 +7719,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "84fa9653-e62f-4824-9ee4-b3bf8c89deb2",
-      "bytes": 84156
+      "resourceId": "ead716c4-c3c7-4278-a5e9-5c744c9cbfd2",
+      "bytes": 84248
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7919,8 +7929,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GeneratedContentActivation.java",
-      "resourceId": "fdc99743-492c-47b8-aac4-0abac9f6751e",
-      "bytes": 13970
+      "resourceId": "3bb5fc60-4d53-4f1c-9197-932718d7ac99",
+      "bytes": 21509
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GenerationRepairSmokeServer.java",
@@ -8239,8 +8249,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "resourceId": "8a14d18f-5b1a-48b4-ad7f-f2c0a869c529",
-      "bytes": 74275
+      "resourceId": "e87d0225-da3e-40f3-8ef6-130b8668b9ec",
+      "bytes": 74431
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -9900,5 +9910,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "cd03d99ae11c60b0a8f34e4b759fc154c490d446"
+  "sourceCommit": "88392d8c0d6b2780a4218235f7e4cc0e09d1561d"
 }

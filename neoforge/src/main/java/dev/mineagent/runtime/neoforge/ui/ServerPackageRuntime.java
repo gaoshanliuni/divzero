@@ -80,6 +80,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
             dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Package runtime close failed: {}", failure.getClass().getSimpleName());
         }
     }
+    public static void tick(MinecraftServer server){var runtime=RUNTIMES.get(server);if(runtime!=null&&!runtime.closed)runtime.generatedActivation.tick();}
     public dev.mineagent.runtime.core.persistence.RetainedRuntimeJobs.Page<?> history(UUID owner,String category,String state,String archive,int offset){
         requireServerThread();return switch(category){
             case "GENERATION"->jobs.history(owner,state,archive,offset);case "UI_PATCH"->patches.history(owner,state,archive,offset);
