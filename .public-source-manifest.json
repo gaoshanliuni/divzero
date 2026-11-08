@@ -8904,8 +8904,8 @@
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/ManagedScriptRuntimeTest.java",
-      "resourceId": "575f879a-f346-463d-8e01-9872196006e8",
-      "bytes": 10607
+      "resourceId": "b9dab09f-9a86-4a26-90c3-859c701d7ad9",
+      "bytes": 10636
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/preflight/BrowserScriptPreflightTest.java",
@@ -9805,5 +9805,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "9170866fa5526d4f9124c0b8b6bf4cf716d267a2"
+  "sourceCommit": "c8bef5f7e1fa3231e3c522fb1483a1e6b95ead07"
 }

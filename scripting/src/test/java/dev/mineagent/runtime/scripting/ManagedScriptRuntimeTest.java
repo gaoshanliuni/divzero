@@ -63,7 +63,7 @@ class ManagedScriptRuntimeTest {
     }
     @Test void lifecycleBudgetStillStopsAnInfiniteLoopAndCannotBeUsedForOrdinaryEvents()throws Exception{
         var id=UUID.randomUUID();try(var runtime=new ManagedScriptRuntime()){
-            runtime.load(id,1,Map.of("main","on('instance.create',function(){while(true){}});"),"main",Map.of());
+            runtime.load(id,1,Map.of("main","var stop=false;on('instance.create',function(){while(true){if(stop)break;}});"),"main",Map.of());
             org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,()->runtime.fireLifecycle(id,"tick",1,java.time.Duration.ofMillis(200)));
             org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,()->runtime.fireLifecycle(id,"instance.create",1,java.time.Duration.ofSeconds(1)));
             assertFalse(runtime.fireLifecycle(id,"instance.create",1,java.time.Duration.ofMillis(10)));
