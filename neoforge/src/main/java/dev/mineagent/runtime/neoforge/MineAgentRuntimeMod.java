@@ -236,6 +236,7 @@ public final class MineAgentRuntimeMod {
         MineAgentRuntimeServices.config(server);
         dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(server);
         dev.mineagent.runtime.neoforge.content.NativeDataPackRuntime.get(server);
+        dev.mineagent.runtime.neoforge.ui.ServerConversations.get(server);
         MineAgentRuntimeServices.events(server);MineAgentRuntimeServices.schedules(server);
         for(var media:MineAgentRuntimeServices.media(server).all())if(media.playing()&&!media.screenBinding().isBlank())MineAgentRuntimeServices.mediaCoordinator(server).start(media);
     }

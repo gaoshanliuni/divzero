@@ -1,0 +1,67 @@
+name: Conversation summary cooperation greeting and speech checks
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compile:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile current migration source
+        run: |
+          New-Item -ItemType Directory -Force build/development-logs | Out-Null
+          & ./gradlew.bat -PpythonRuntime=none :neoforge:compileJava --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/compile.log
+          exit $LASTEXITCODE
+      - name: Verify scoped permissions, geometry and script exit/deadline contracts
+        run: |
+          & ./gradlew.bat -PpythonRuntime=none :core:test --tests '*PermissionServiceTest' --tests '*ConstructionLedgerTest' --tests '*WorldGeometryTest' --tests '*RuntimeInstanceCacheTest' --tests '*FairTickBudgetTest' --tests '*GeometrySpoolTest' --tests '*SurfacePathfinderTest' --tests '*CapabilitySessionTest' --tests '*RuntimeMeshTest' --tests '*RuntimeMaterialsTest' --tests '*RuntimeItemBindingTest' --tests '*NativeEntityDefinitionTest' --tests '*CreatureDefinitionTest' --tests '*BootArtifactIdentityTest' --tests '*BootActivationStepTest' --tests '*JavaMaintenanceTest' --tests '*InteractionRuleSpecTest' --tests '*ConversationSummaryStoreTest' --tests '*ConversationSummaryContextTest' --tests '*ConversationContextTest' --tests '*ConversationStoreTest' --tests '*ConversationSummaryBacklogTest' --tests '*ConversationCooperationListingTest' --tests '*GreetingGestureTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/production-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./gradlew.bat -PpythonRuntime=none :agent:test --tests '*ChunkTicketLedgerTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/ticket-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./gradlew.bat -PpythonRuntime=none :scripting:test --tests '*ScriptPreflightTest' --tests '*ManagedScriptRuntimeTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/provider-audit-tests.log
+          exit $LASTEXITCODE
+      - name: Package isolated test candidate after selected contracts pass
+        run: |
+          & ./gradlew.bat -PpythonRuntime=none :neoforge:jar --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/candidate-jar.log
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: isolated-candidate-${{ github.run_id }}
+          path: build/editions/none/neoforge/libs/*.jar
+          retention-days: 7
+      - uses: actions/download-artifact@v4
+        with:
+          name: isolated-candidate-42450475612
+          run-id: 42450475612
+          github-token: ${{ github.token }}
+          path: build/overlay-base
+      - name: Produce exact member overlay for the already downloaded isolated baseline
+        run: |
+          $candidate = (Get-ChildItem build/editions/none/neoforge/libs/*.jar | Select-Object -First 1).FullName
+          $baseline = (Get-ChildItem build/overlay-base/*.jar | Select-Object -First 1).FullName
+          python .github/scripts/candidate-overlay.py $baseline $candidate build/candidate-overlay.zip '${{ github.sha }}'
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: isolated-overlay-${{ github.run_id }}
+          path: build/candidate-overlay.zip
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: development-compile-${{ github.run_id }}
+          path: build/development-logs/*
+          retention-days: 7

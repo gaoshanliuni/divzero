@@ -30,6 +30,7 @@ public final class ConversationStore implements AutoCloseable {
     private ConversationStore(Connection db,UUID world,Clock clock)throws SQLException{
         this.db=db;this.world=Objects.requireNonNull(world);this.clock=Objects.requireNonNull(clock);
         try(var s=db.createStatement()){
+            s.execute("CREATE TABLE IF NOT EXISTS mineagent_conversation_authors_v1(world_id TEXT NOT NULL,message_id TEXT NOT NULL,kind TEXT NOT NULL,sender_id TEXT NOT NULL,sender_name TEXT NOT NULL,PRIMARY KEY(world_id,message_id))");
             s.execute("CREATE TABLE IF NOT EXISTS mineagent_peer_threads_v1(world_id TEXT NOT NULL,owner_id TEXT NOT NULL,sender_id TEXT NOT NULL,recipient_id TEXT NOT NULL,conversation_id TEXT NOT NULL,sender_name TEXT NOT NULL,recipient_name TEXT NOT NULL,PRIMARY KEY(world_id,owner_id,sender_id,recipient_id),UNIQUE(world_id,conversation_id))");
             s.execute("CREATE INDEX IF NOT EXISTS mineagent_peer_recipient_v1 ON mineagent_peer_threads_v1(world_id,owner_id,recipient_id)");
             s.execute("PRAGMA journal_mode=WAL");s.execute("PRAGMA busy_timeout=5000");
@@ -71,6 +72,7 @@ public final class ConversationStore implements AutoCloseable {
             boolean exists=false;try(var columns=s.executeQuery("PRAGMA table_info(mineagent_conversation_context_v1)")){while(columns.next())if(columns.getString("name").equals("model_receipt"))exists=true;}
             if(!exists)s.execute("ALTER TABLE mineagent_conversation_context_v1 ADD COLUMN model_receipt TEXT NOT NULL DEFAULT ''");
             var names=new HashSet<String>();try(var columns=s.executeQuery("PRAGMA table_info(mineagent_conversation_context_v1)")){while(columns.next())names.add(columns.getString("name"));}
+            if(!names.contains("summary_output_limit"))s.execute("ALTER TABLE mineagent_conversation_context_v1 ADD COLUMN summary_output_limit INTEGER NOT NULL DEFAULT 8192");
             if(!names.contains("input_source"))s.execute("ALTER TABLE mineagent_conversation_context_v1 ADD COLUMN input_source TEXT NOT NULL DEFAULT ''");
             if(!names.contains("speech_operation"))s.execute("ALTER TABLE mineagent_conversation_context_v1 ADD COLUMN speech_operation TEXT NOT NULL DEFAULT ''");
             s.execute("COMMIT");
@@ -144,6 +146,25 @@ public final class ConversationStore implements AutoCloseable {
         var rows=query("SELECT * FROM mineagent_conversations_v1 c WHERE world_id=? AND player_id=? AND agent_id=? AND NOT EXISTS(SELECT 1 FROM mineagent_peer_threads_v1 p WHERE p.world_id=c.world_id AND p.conversation_id=c.id) AND ordinal<? AND (?='ALL' OR state=?) AND (?='' OR instr(lower(title),lower(?))>0 OR EXISTS(SELECT 1 FROM mineagent_conversation_messages_v1 m WHERE m.world_id=c.world_id AND m.conversation_id=c.id AND instr(lower(m.text),lower(?))>0)) ORDER BY ordinal DESC LIMIT ?",this::conversation,world,viewer,agent,before==0?Long.MAX_VALUE:before,state,state,search,search,search,count+1);
         boolean more=rows.size()>count;if(more)rows.removeLast();return new Listing(List.copyOf(rows),more?rows.getLast().ordinal():0);
     }
+    /** The UI lists both participants' threads; ordinary native-chat routing continues using list(). */
+    public synchronized Listing listIncludingPeers(UUID viewer,UUID agent,String state,String search,long before,int count)throws SQLException{
+        limit(count);text(search,256,true);if(before<0||!Set.of("ACTIVE","ARCHIVED","DELETED","ALL").contains(state))throw new IllegalArgumentException("CONVERSATION_LIST_INPUT");
+        var rows=query("SELECT c.* FROM mineagent_conversations_v1 c WHERE c.world_id=? AND c.player_id=? AND (c.agent_id=? OR EXISTS(SELECT 1 FROM mineagent_peer_threads_v1 p WHERE p.world_id=c.world_id AND p.conversation_id=c.id AND p.owner_id=c.player_id AND p.sender_id=?)) AND c.ordinal<? AND (?='ALL' OR c.state=?) AND (?='' OR instr(lower(c.title),lower(?))>0 OR EXISTS(SELECT 1 FROM mineagent_conversation_messages_v1 m WHERE m.world_id=c.world_id AND m.conversation_id=c.id AND instr(lower(m.text),lower(?))>0)) ORDER BY c.ordinal DESC LIMIT ?",this::conversation,world,viewer,agent,agent,before==0?Long.MAX_VALUE:before,state,state,search,search,search,count+1);
+        boolean more=rows.size()>count;if(more)rows.removeLast();return new Listing(List.copyOf(rows),more?rows.getLast().ordinal():0);
+    }
+    public record Author(String kind,UUID senderId,String senderName){}
+    public synchronized void author(UUID viewer,UUID agent,UUID conversation,UUID message,Author author)throws SQLException{
+        message(viewer,agent,conversation,message);if(!Set.of("PLAYER","AI").contains(author.kind()))throw new IllegalArgumentException("CONVERSATION_AUTHOR_KIND");text(author.senderName(),128,false);
+        var old=query("SELECT kind,sender_id,sender_name FROM mineagent_conversation_authors_v1 WHERE world_id=? AND message_id=?",r->new Author(r.getString(1),uuid(r.getString(2)),r.getString(3)),world,message);
+        if(!old.isEmpty()){if(!old.getFirst().equals(author))throw new IllegalStateException("CONVERSATION_AUTHOR_CHANGED");return;}
+        execute("INSERT INTO mineagent_conversation_authors_v1 VALUES(?,?,?,?,?)",world,message,author.kind(),author.senderId(),author.senderName());
+    }
+    public synchronized Author author(UUID viewer,UUID agent,UUID conversation,Message message)throws SQLException{
+        message(viewer,agent,conversation,message.messageId());var saved=query("SELECT kind,sender_id,sender_name FROM mineagent_conversation_authors_v1 WHERE world_id=? AND message_id=?",r->new Author(r.getString(1),uuid(r.getString(2)),r.getString(3)),world,message.messageId());if(!saved.isEmpty())return saved.getFirst();
+        var peer=peer(viewer,agent,conversation);if(peer.isPresent()){var p=peer.get();return message.role().equals("USER")?new Author("AI",p.sender(),p.senderName()):new Author("AI",p.recipient(),p.recipientName());}
+        return message.role().equals("USER")?new Author("PLAYER",viewer,"玩家"):new Author("AI",agent,"AI");
+    }
+    public synchronized Map<String,Author> authors(UUID viewer,UUID agent,UUID conversation,List<Message> messages)throws SQLException{var result=new LinkedHashMap<String,Author>();for(var message:messages)result.put(message.messageId().toString(),author(viewer,agent,conversation,message));return Map.copyOf(result);}
     public synchronized Conversation change(UUID viewer,UUID agent,UUID id,UUID op,long expected,String action,String title)throws Exception{
         if(expected<1||!Set.of("rename","archive","delete","restore").contains(action))throw new IllegalArgumentException("CONVERSATION_CHANGE_INPUT");if(action.equals("rename"))text(title,128,false);
         String fp=fingerprint(action,viewer,agent,id,expected,title);
@@ -158,15 +179,17 @@ public final class ConversationStore implements AutoCloseable {
     public synchronized Turn begin(UUID viewer,UUID agent,UUID id,UUID op,long expected,String original,long personaRevision,ConversationBudget budget)throws Exception{
         return begin(viewer,agent,id,op,expected,original,personaRevision,budget,null,null);
     }
-    public synchronized Turn begin(UUID viewer,UUID agent,UUID id,UUID op,long expected,String original,long personaRevision,ConversationBudget budget,dev.mineagent.runtime.api.interaction.InteractionSource source,UUID speech)throws Exception{
+    public synchronized Turn begin(UUID viewer,UUID agent,UUID id,UUID op,long expected,String original,long personaRevision,ConversationBudget budget,dev.mineagent.runtime.api.interaction.InteractionSource source,UUID speech)throws Exception{return begin(viewer,agent,id,op,expected,original,personaRevision,budget,source,speech,null,null);}
+    public synchronized Turn begin(UUID viewer,UUID agent,UUID id,UUID op,long expected,String original,long personaRevision,ConversationBudget budget,dev.mineagent.runtime.api.interaction.InteractionSource source,UUID speech,Author userAuthor,Author assistantAuthor)throws Exception{
         if(source!=null&&budget==null)throw new IllegalArgumentException("CONVERSATION_INPUT_SOURCE_INVALID");
         text(original,16384,false);if(expected<1||personaRevision<0)throw new IllegalArgumentException("CONVERSATION_SEND_INPUT");String fp=fingerprint("send",viewer,agent,id,expected,original);
         return transaction(()->{var c=get(viewer,agent,id);var old=operation(op,fp);if(old!=null)return new Turn(op,id,old.user(),old.assistant(),old.personaRevision(),false);
             if(!c.state().equals("ACTIVE"))throw new IllegalStateException("CONVERSATION_READ_ONLY");if(c.revision()!=expected)throw new IllegalStateException("STALE_CONVERSATION_REVISION");if(!c.activeOperation().isEmpty())throw new IllegalStateException("CONVERSATION_BUSY");
             UUID user=UUID.randomUUID(),assistant=UUID.randomUUID();long now=clock.millis();message(id,user,c.messageCount()+1,"USER",original,"COMPLETE",0,now);message(id,assistant,c.messageCount()+2,"ASSISTANT","","PENDING",personaRevision,now);
             execute("UPDATE mineagent_conversations_v1 SET message_count=message_count+2,updated_at=? WHERE world_id=? AND id=?",now,world,id);remember(op,fp,"send",id,user,assistant,personaRevision);
-            if(budget!=null)execute("INSERT INTO mineagent_conversation_context_v1(world_id,operation_id,config_revision,input_budget,max_summary_calls,summary_input_budget) VALUES(?,?,?,?,?,?)",world,op,budget.configRevision(),budget.contextTokenBudget(),budget.summaryMaxCalls(),budget.summaryInputBudget());
+            if(budget!=null)execute("INSERT INTO mineagent_conversation_context_v1(world_id,operation_id,config_revision,input_budget,max_summary_calls,summary_input_budget,summary_output_limit) VALUES(?,?,?,?,?,?,?)",world,op,budget.configRevision(),budget.contextTokenBudget(),budget.summaryMaxCalls(),budget.summaryInputBudget(),budget.summaryOutputBudget());
             if(source!=null)recordInputSource(op,source,speech);
+            if(userAuthor!=null)author(viewer,agent,id,user,userAuthor);if(assistantAuthor!=null)author(viewer,agent,id,assistant,assistantAuthor);
             return new Turn(op,id,user,assistant,personaRevision,true);});
     }
 
@@ -188,9 +211,9 @@ public final class ConversationStore implements AutoCloseable {
     public synchronized Optional<ContextUsage> context(UUID viewer,UUID agent,UUID conversation,UUID assistant)throws SQLException{
         get(viewer,agent,conversation);
         if(assistant!=null)message(viewer,agent,conversation,assistant);
-        var rows=query("SELECT o.id AS operation_id,o.assistant_message_id,m.status,m.error_code,c.config_revision,c.input_budget,c.max_summary_calls,c.summary_input_budget,c.estimated_tokens,c.omitted_through,c.summary_output_budget,c.summary_status,c.summary_id,c.summary_revision,c.model_receipt,c.input_source,c.speech_operation FROM mineagent_conversation_operations_v1 o JOIN mineagent_conversation_messages_v1 m ON m.world_id=o.world_id AND m.id=o.assistant_message_id AND m.conversation_id=o.conversation_id LEFT JOIN mineagent_conversation_context_v1 c ON c.world_id=o.world_id AND c.operation_id=o.id WHERE o.world_id=? AND o.conversation_id=? AND o.kind='send' AND (? IS NULL OR o.assistant_message_id=?) ORDER BY m.sequence DESC LIMIT 1",r->{
+        var rows=query("SELECT o.id AS operation_id,o.assistant_message_id,m.status,m.error_code,c.config_revision,c.input_budget,c.max_summary_calls,c.summary_input_budget,c.summary_output_limit,c.estimated_tokens,c.omitted_through,c.summary_output_budget,c.summary_status,c.summary_id,c.summary_revision,c.model_receipt,c.input_source,c.speech_operation FROM mineagent_conversation_operations_v1 o JOIN mineagent_conversation_messages_v1 m ON m.world_id=o.world_id AND m.id=o.assistant_message_id AND m.conversation_id=o.conversation_id LEFT JOIN mineagent_conversation_context_v1 c ON c.world_id=o.world_id AND c.operation_id=o.id WHERE o.world_id=? AND o.conversation_id=? AND o.kind='send' AND (? IS NULL OR o.assistant_message_id=?) ORDER BY m.sequence DESC LIMIT 1",r->{
             boolean recorded=r.getObject("config_revision")!=null;
-            var budget=recorded?new ConversationBudget(r.getLong("config_revision"),r.getInt("input_budget"),r.getInt("max_summary_calls"),r.getInt("summary_input_budget")):null;
+            var budget=recorded?new ConversationBudget(r.getLong("config_revision"),r.getInt("input_budget"),r.getInt("max_summary_calls"),r.getInt("summary_input_budget"),r.getInt("summary_output_limit")):null;
             ConversationModelReceipt receipt=null;String storedReceipt=r.getString("model_receipt");
             if(storedReceipt!=null&&!storedReceipt.isEmpty())try{receipt=new com.fasterxml.jackson.databind.ObjectMapper().readValue(storedReceipt,ConversationModelReceipt.class);}catch(Exception invalid){throw new SQLException("MODEL_RECEIPT_INVALID",invalid);}
             return new ContextUsage(uuid(r.getString("operation_id")),uuid(r.getString("assistant_message_id")),r.getString("status"),r.getString("error_code"),budget,recorded?r.getInt("estimated_tokens"):-1,r.getLong("omitted_through"),r.getInt("summary_output_budget"),recorded?r.getString("summary_status"):"LEGACY_UNRECORDED",recorded?r.getString("summary_id"):"",r.getLong("summary_revision"),receipt,Objects.toString(r.getString("input_source"),""),Objects.toString(r.getString("speech_operation"),""));

@@ -40,6 +40,7 @@ public final class SkillRuntime {
         var operations=new HashSet<UUID>();operations.add(w.token());if(w.operation!=null)operations.add(w.operation);if(w.combatOperation!=null)operations.add(w.combatOperation);
         for(UUID id:operations)byOperation.put(id,w);indexedOperations.put(w.token(),Set.copyOf(operations));
     }
+    public static boolean socialActionBusy(dev.mineagent.runtime.neoforge.body.MineAgentPlayer body){var runtime=ALL.get(body.level().getServer());if(runtime==null)return false;return runtime.forEntity(body).stream().filter(w->w.session.runnable()).anyMatch(w->w.fighting!=null||w.combatStage>0||w.healSlot>=0||w.nativeUsePos!=null||w.nativeBreak||w.construct!=null);}
     private List<SkillWork> forEntity(ServerPlayer player){return List.copyOf(byEntity.getOrDefault(player.getUUID(),new LinkedHashSet<>()));}
     private CompletableFuture<SkillWork> known(UUID operation){var value=work.get(operation);if(value==null)value=history.get(operation);if(value!=null)return CompletableFuture.completedFuture(value);UUID world=MineAgentRuntimeServices.worldId(server);
         return CompletableFuture.supplyAsync(()->{try(var db=new SqliteRuntimeRepository(database())){var row=db.get(world,SPACE,operation.toString());return row.isEmpty()?null:new SkillWork(this,SkillSession.restore(JSON.readValue(row.orElseThrow().payload(),SkillSession.Snapshot.class)),row.orElseThrow().revision());}catch(Exception error){throw new CompletionException(error);}},IO);

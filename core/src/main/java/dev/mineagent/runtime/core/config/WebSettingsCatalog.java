@@ -61,6 +61,8 @@ public final class WebSettingsCatalog {
         new Field("runtime.agentTicketRadius","每个 AI 的附加区块半径","运行资源","number","2",PermissionAction.MANAGE_PERMISSIONS),
         new Field("conversation.contextTokenBudget","对话输入词元预算（1024–131072，保守估算）","会话与摘要预算","number","32768",PermissionAction.MANAGE_PERMISSIONS),
         new Field("conversation.summary.maxCalls","每次发送最多新摘要请求数（0–64）","会话与摘要预算","number","8",PermissionAction.MANAGE_PERMISSIONS),
+        new Field("conversation.summary.maxConcurrent","后台摘要并发预算（1–64）","会话与摘要预算","number","2",PermissionAction.MANAGE_PERMISSIONS),
+        new Field("conversation.summary.outputBudget","摘要正文预算（256–65536，UTF-8 字节）","会话与摘要预算","number","8192",PermissionAction.MANAGE_PERMISSIONS),
         new Field("conversation.summary.inputBudget","每批摘要输入预算（2048–131072，UTF-8 字节）","会话与摘要预算","number","16384",PermissionAction.MANAGE_PERMISSIONS),
         new Field("voice.output.enabled","启用语音输出","运行设置","boolean","true",PermissionAction.MANAGE_PERMISSIONS),
         new Field("voice.default","默认声音","运行设置","text","zh-CN-XiaoxiaoNeural",PermissionAction.MANAGE_PERMISSIONS),

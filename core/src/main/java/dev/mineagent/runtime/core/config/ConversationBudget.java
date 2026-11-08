@@ -4,24 +4,29 @@ import dev.mineagent.runtime.api.config.PanelSnapshot;
 
 /** Immutable per-send input/summary policy. Estimates are not Provider usage or billing totals. */
 public record ConversationBudget(long configRevision, int contextTokenBudget, int summaryMaxCalls,
-                                 int summaryInputBudget) {
+                                 int summaryInputBudget,int summaryOutputBudget) {
     public static final String ESTIMATE_MODE = "UTF8_BYTE_UPPER_BOUND";
 
+    public ConversationBudget(long revision,int context,int calls,int input){this(revision,context,calls,input,8192);}
     public ConversationBudget {
+        if(summaryOutputBudget==0)summaryOutputBudget=8192; // Persisted policies from earlier versions omit this field.
         if (configRevision < 0 || contextTokenBudget < 1024 || contextTokenBudget > 131072
                 || summaryMaxCalls < 0 || summaryMaxCalls > 64
+                || summaryOutputBudget < 256 || summaryOutputBudget > 65536
                 || summaryInputBudget < 2048 || summaryInputBudget > 131072) {
             throw new IllegalArgumentException("CONVERSATION_BUDGET_INVALID");
         }
     }
 
+    public int effectiveSummaryOutputBudget(){return Math.min(summaryOutputBudget,summaryInputBudget/2);}
     public static ConversationBudget from(PanelSnapshot snapshot) {
         try {
             var values = snapshot.values();
             return new ConversationBudget(snapshot.revision(),
                     Integer.parseInt(values.getOrDefault("conversation.contextTokenBudget", "32768")),
                     Integer.parseInt(values.getOrDefault("conversation.summary.maxCalls", "8")),
-                    Integer.parseInt(values.getOrDefault("conversation.summary.inputBudget", "16384")));
+                    Integer.parseInt(values.getOrDefault("conversation.summary.inputBudget", "16384")),
+                    Integer.parseInt(values.getOrDefault("conversation.summary.outputBudget", "8192")));
         } catch (NumberFormatException failure) {
             throw new IllegalArgumentException("CONVERSATION_BUDGET_INVALID", failure);
         }
@@ -35,6 +40,6 @@ public record ConversationBudget(long configRevision, int contextTokenBudget, in
         int length=ModelCapabilityProfiles.read(values,base,model).contextTokens();if(length==0)return policy;
         if(length<2048)throw new IllegalArgumentException("MODEL_CONTEXT_TOO_SMALL");
         int input=Math.min(policy.contextTokenBudget(),length-Math.max(1024,length/10));
-        return new ConversationBudget(policy.configRevision(),input,policy.summaryMaxCalls(),Math.min(policy.summaryInputBudget(),Math.max(2048,input)));
+        return new ConversationBudget(policy.configRevision(),input,policy.summaryMaxCalls(),Math.min(policy.summaryInputBudget(),Math.max(2048,input)),policy.summaryOutputBudget());
     }
 }

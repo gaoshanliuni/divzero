@@ -187,7 +187,10 @@ public final class MineAgentPlayer extends ServerPlayer {
         return true;
     }
 
-    public void applySneaking(boolean value){setShiftKeyDown(value);if(value)setSprinting(false);updatePlayerPose();}
+    private boolean requestedSneaking;
+    public boolean requestedSneaking(){return requestedSneaking;}
+    public void applySneaking(boolean value){requestedSneaking=value;setShiftKeyDown(value);if(value)setSprinting(false);updatePlayerPose();}
+    public void applyGreetingPose(boolean crouch){setShiftKeyDown(requestedSneaking||crouch);if(crouch)setSprinting(false);updatePlayerPose();}
 
     @Override
     public String getIpAddress() {
@@ -207,7 +210,7 @@ public final class MineAgentPlayer extends ServerPlayer {
         doTick();
         if(level().getGameTime()%4==0)NativeUseSync.send(this);
         dev.mineagent.runtime.neoforge.skill.NativeEquipmentSupport.maintainAi(this);
-        if(isAlive()&&!lifecycle.deathAccepted()){movementController.tick(this);tickMining();if(!movementController.diagonalThisTick()&&lookTarget!=null&&lookUntil>=level().getServer().getTickCount()&&taskControl.owns(lookOwner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,lookTarget);}
+        if(isAlive()&&!lifecycle.deathAccepted()){movementController.tick(this);tickMining();if(!SocialGreetingRuntime.active(this)&&!movementController.diagonalThisTick()&&lookTarget!=null&&lookUntil>=level().getServer().getTickCount()&&taskControl.owns(lookOwner,dev.mineagent.runtime.api.agent.BodyDomain.LOOK))lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,lookTarget);}
     }
 
     /** PvP locomotion is prepared before vanilla travel, never an extra move afterwards. */

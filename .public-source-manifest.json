@@ -33,6 +33,11 @@
       "bytes": 3885
     },
     {
+      "path": ".github/workflows/conversation-feedback-compile.yml",
+      "resourceId": "22e7c16d-26de-48c9-bc1e-a46abfdcc694",
+      "bytes": 4173
+    },
+    {
       "path": ".github/workflows/development-compile.yml",
       "resourceId": "c28fd57a-93b7-4051-b9e4-301ff9fbf72d",
       "bytes": 5453
@@ -1173,6 +1178,11 @@
       "bytes": 957
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/agent/GreetingGesture.java",
+      "resourceId": "021855bf-0b14-44e3-97ff-db09c500ad2e",
+      "bytes": 893
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/agent/PersistentAgent.java",
       "sha256": "18a4149399bf283b239221056bb163c69ca0d96a3b17be823f8cb680060ad9fd",
       "bytes": 563
@@ -1424,8 +1434,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ConversationBudget.java",
-      "resourceId": "87813ea7-54d6-4512-be9f-dbf08d096fe7",
-      "bytes": 2530
+      "resourceId": "361aa22b-e873-4827-a6e9-69bef9403951",
+      "bytes": 3109
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ExplicitModelRoles.java",
@@ -1494,8 +1504,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServerConfigService.java",
-      "resourceId": "7ca4d9d6-b52a-4ab5-910a-ccf715842e90",
-      "bytes": 19043
+      "resourceId": "fd571611-4741-4602-a5ff-6cf766c1e82d",
+      "bytes": 19418
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServiceCallBudget.java",
@@ -1509,8 +1519,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/WebSettingsCatalog.java",
-      "resourceId": "f52caf6b-669d-4896-af8a-6ff2f750960f",
-      "bytes": 12529
+      "resourceId": "ffba723c-db29-4b60-b5dc-d61571d162f5",
+      "bytes": 12883
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
@@ -1589,8 +1599,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationContext.java",
-      "sha256": "9f7e5d1cb7b82fc60c78a4fd2b150b2cfc270dcfa337a91748f1b27471ec92b1",
-      "bytes": 8186
+      "resourceId": "21f93db5-8e39-4312-9d53-d1eeeb35845b",
+      "bytes": 8997
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationFocusRegistry.java",
@@ -1614,13 +1624,18 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationStore.java",
-      "resourceId": "9c4aca62-d64f-4da6-8e5c-6d75b8268710",
-      "bytes": 59004
+      "resourceId": "d1a3ec87-d413-48f6-9883-428954fc0529",
+      "bytes": 63299
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationSummaryBacklog.java",
+      "resourceId": "138cb5fc-58f8-4599-823c-1f939d5d10cf",
+      "bytes": 3755
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationSummaryStore.java",
-      "resourceId": "eeb7f164-ddab-4014-8c57-f36a73f16563",
-      "bytes": 20221
+      "resourceId": "525c7ed5-80f7-4926-b90b-8f21156f92c7",
+      "bytes": 21147
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationToolJournal.java",
@@ -3258,6 +3273,11 @@
       "bytes": 532
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/agent/GreetingGestureTest.java",
+      "resourceId": "a033feca-6d72-4afe-aed1-34dafec0d1ad",
+      "bytes": 1034
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/agent/PersistentAgentServiceTest.java",
       "resourceId": "59ca4bc7-6247-405e-a7e3-63b1113620fe",
       "bytes": 4863
@@ -3438,6 +3458,11 @@
       "bytes": 4558
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationCooperationListingTest.java",
+      "resourceId": "ec4f63bc-e559-45f6-aef0-f99790191b9b",
+      "bytes": 1916
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationFocusRegistryTest.java",
       "sha256": "c94b131ffc688521166c24c0dd87f5d8341a057afc7d97ebd6b9647069bfa407",
       "bytes": 4456
@@ -3468,14 +3493,19 @@
       "bytes": 2016
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationSummaryBacklogTest.java",
+      "resourceId": "a6f725d5-d26d-422d-b5a0-401824aa3f9a",
+      "bytes": 1450
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationSummaryContextTest.java",
-      "sha256": "e2c95d3cb5074203fd23c90ce3b64f742eaa4ebd57a35d8d46d14bcd370633ab",
-      "bytes": 2440
+      "resourceId": "e5212348-04e4-4d12-9df5-475694fbdbc1",
+      "bytes": 3628
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationSummaryStoreTest.java",
-      "resourceId": "225aa186-2a94-4c38-b427-2b4e80dddd8c",
-      "bytes": 9331
+      "resourceId": "228863b3-7e34-4aaa-9825-b32e8058743f",
+      "bytes": 10707
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationTitleTest.java",
@@ -4201,6 +4231,11 @@
       "path": "docs/CONSTRUCTION_MOBILITY.md",
       "resourceId": "ed99cce6-5e89-4880-a312-af6916f7e166",
       "bytes": 3090
+    },
+    {
+      "path": "docs/CONVERSATION_FEEDBACK_RELEASE.md",
+      "resourceId": "e3391bff-bcaf-4a1d-9bbe-269ac6115a96",
+      "bytes": 1655
     },
     {
       "path": "docs/COUNTERATTACK_UI_FUNCTIONS.md",
@@ -5184,8 +5219,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
-      "resourceId": "f31affa6-4918-40db-8bcb-fa3593c63527",
-      "bytes": 56731
+      "resourceId": "a7d9bfe9-62ea-41fb-b0d3-73c424d38f22",
+      "bytes": 56806
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
@@ -5244,13 +5279,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentMovementController.java",
-      "resourceId": "7f44d033-a97e-4db9-bfde-03d8da9650e1",
-      "bytes": 11250
+      "resourceId": "b99dd063-3e99-4f55-9d13-13887c0f1bcc",
+      "bytes": 11300
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentPlayer.java",
-      "sha256": "bb40e7350a9f23ccd24271140053075c2f95c84d3486585accd3df3a7b371604",
-      "bytes": 22175
+      "resourceId": "1544bc32-1840-4e0c-9c9d-7c43c7880332",
+      "bytes": 22485
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeDropSafety.java",
@@ -5321,6 +5356,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeUseSync.java",
       "sha256": "a644a44cd6496ae5a34cc629e6e04a10af3e69b321d79200f90178e12c1998b4",
       "bytes": 1291
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/SocialGreetingRuntime.java",
+      "resourceId": "c3f62293-971d-401a-b562-012d68cc5dda",
+      "bytes": 6376
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/TerrainProvenance.java",
@@ -5739,8 +5779,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",
-      "resourceId": "075ba37f-db75-4a4b-bddc-4a48c6afd3c4",
-      "bytes": 20400
+      "resourceId": "9b1b8877-1781-4196-85e5-4a55b795192e",
+      "bytes": 20541
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
@@ -6079,8 +6119,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "resourceId": "ca60786c-7e99-41d8-92fd-f76a9e1c3801",
-      "bytes": 56706
+      "resourceId": "3fe6878d-a20f-4215-be2a-dd33fc958ac4",
+      "bytes": 60501
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/OctoberFeedbackSmoke.java",
@@ -7464,8 +7504,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillRuntime.java",
-      "resourceId": "2a9f1a32-96cb-4eb8-8f8e-72d9896cea85",
-      "bytes": 62478
+      "resourceId": "7db6a388-6da4-4e7c-b196-80ef2ce748d2",
+      "bytes": 62847
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/SkillWork.java",
@@ -8219,8 +8259,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "resourceId": "9aa02eb3-f981-47e9-908d-9244811934a0",
-      "bytes": 107098
+      "resourceId": "96662dd0-7229-4516-bfe5-a1a51c63a479",
+      "bytes": 112664
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -9965,5 +10005,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "bf451749e02d165490bdf5075c20dc17f6073f23"
+  "sourceCommit": "0d1252b78f86666a60527c99fa906ed3bc293d8e"
 }

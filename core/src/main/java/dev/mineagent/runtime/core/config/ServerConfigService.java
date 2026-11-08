@@ -38,6 +38,8 @@ public final class ServerConfigService implements AutoCloseable {
         publicValues.put("conversation.contextTokenBudget", "32768");
         publicValues.put("conversation.summary.maxCalls", "8");
         publicValues.put("conversation.summary.inputBudget", "16384");
+        publicValues.put("conversation.summary.outputBudget", "8192");
+        publicValues.put("conversation.summary.maxConcurrent", "2");
         publicValues.put("provider.priority", "openai-compatible,ollama");
         publicValues.put(ServiceCallBudget.DAILY, "0");
         publicValues.put(ServiceCallBudget.TASK, "0");
@@ -195,6 +197,8 @@ public final class ServerConfigService implements AutoCloseable {
                 case "runtime.agentTicketRadius" -> validateRange(key, value, 0, 1875000, "0–1875000 区块（受总票预算约束）", errors);
                 case "conversation.contextTokenBudget" -> validateRange(key, value, 1024, 131072, "1024–131072", errors);
                 case "conversation.summary.maxCalls" -> validateRange(key, value, 0, 64, "0–64（0 禁止新摘要请求）", errors);
+                case "conversation.summary.maxConcurrent" -> validateRange(key, value, 1, 64, "1–64", errors);
+                case "conversation.summary.outputBudget" -> validateRange(key, value, 256, 65536, "256–65536", errors);
                 case "conversation.summary.inputBudget" -> validateRange(key, value, 2048, 131072, "2048–131072", errors);
                 case "skill.veinMining.maxBlocks" -> validateRange(key, value, 1, 128, "1–128", errors);
                 case "voice.input.enabled" -> {

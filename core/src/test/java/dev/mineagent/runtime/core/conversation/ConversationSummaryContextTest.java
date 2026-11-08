@@ -9,6 +9,14 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class ConversationSummaryContextTest {
     @TempDir Path dir;
+    @Test void disabledSummariesDoNotClaimBackgroundWorkIsRunning()throws Exception{
+        UUID world=UUID.randomUUID(),viewer=UUID.randomUUID();var agent=new AgentDefinition(UUID.randomUUID(),"A","a",viewer,AgentMode.CREATOR,Set.of());var persona=new AgentPersonaService.Persona(agent.agentId(),1,"",viewer,0);
+        try(var messages=ConversationStore.open(dir.resolve("disabled"),world,Clock.systemUTC())){
+            var c=messages.create(viewer,agent.agentId(),UUID.randomUUID(),"chat");for(int i=0;i<12;i++){var t=messages.begin(viewer,agent.agentId(),c.conversationId(),UUID.randomUUID(),1,"history "+"石砖".repeat(100),1);messages.finish(t.operationId(),"COMPLETE","好的","");}
+            var turn=messages.begin(viewer,agent.agentId(),c.conversationId(),UUID.randomUUID(),1,"现在继续",1);
+            var plan=ConversationContext.build(messages,viewer,agent,c.conversationId(),turn,persona,"现在继续",4096,null,"",8192,false,false);assertEquals("SUMMARY_DISABLED",plan.summaryStatus());assertTrue(plan.prompt().contains("后台摘要已关闭"));assertFalse(plan.prompt().contains("正在后台整理"));assertTrue(plan.estimatedTokens()<=4096);
+        }
+    }
     @Test void composedContextUsesValidPrefixSummaryAndKeepsCurrentPersonaAndMessageWithinBudget()throws Exception{
         UUID world=UUID.randomUUID(),viewer=UUID.randomUUID();var a=new AgentDefinition(UUID.randomUUID(),"A","a",viewer,AgentMode.CREATOR,Set.of());var persona=new AgentPersonaService.Persona(a.agentId(),2,"最新人设",viewer,0);
         try(var messages=ConversationStore.open(dir.resolve("db"),world,Clock.systemUTC());var summaries=ConversationSummaryStore.open(dir.resolve("db"),world,Clock.systemUTC())){

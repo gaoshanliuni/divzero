@@ -7,6 +7,13 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class ConversationSummaryStoreTest {
     @TempDir Path dir;final UUID world=UUID.randomUUID(),viewer=UUID.randomUUID(),agent=UUID.randomUUID();
+    @Test void summaryReceivesUserConstraintEvenWhenAssistantOnlySaysOkay()throws Exception{
+        Path db=dir.resolve("constraint.db");try(var messages=ConversationStore.open(db,world,Clock.systemUTC());var summaries=ConversationSummaryStore.open(db,world,Clock.systemUTC())){
+            var c=messages.create(viewer,agent,UUID.randomUUID(),"constraints");var turn=messages.begin(viewer,agent,c.conversationId(),UUID.randomUUID(),1,"以后所有建筑必须使用石砖，北门保留",0);messages.finish(turn.operationId(),"COMPLETE","好的","");
+            var prepared=summaries.prepare(messages,viewer,agent,c.conversationId(),UUID.randomUUID(),0,2,16384,8192,null);assertTrue(prepared.prompt().contains("以后所有建筑必须使用石砖，北门保留"));assertTrue(prepared.prompt().contains("\"role\":\"USER\""));assertTrue(prepared.prompt().contains("\"role\":\"ASSISTANT\""));assertTrue(prepared.prompt().contains("\"kind\":\"PLAYER\""));
+            String large="必须使用石砖；北门仍未完工。".repeat(150);assertTrue(ConversationSummaryStore.bytes(large)>2048);var ready=summaries.complete(messages,prepared.summaryId(),new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(Map.of("summary",large)),"fixture","fixture");assertEquals(large,ready.text());assertTrue(summaries.valid(messages,viewer,agent,ready));
+        }
+    }
     @Test void sourceChunkEndingAt4096NeverSplitsASurrogatePair()throws Exception{
         Path db=dir.resolve("db");String original="x".repeat(4095)+"😀tail";
         try(var m=ConversationStore.open(db,world,Clock.systemUTC());var s=ConversationSummaryStore.open(db,world,Clock.systemUTC())){
@@ -17,7 +24,7 @@ class ConversationSummaryStoreTest {
             var second=s.prepare(m,viewer,agent,c.conversationId(),request,1,2,16384,128,previous);
             assertEquals(first.summary().end(),second.summary().start());assertEquals(new ConversationSummaryStore.Cursor(3,0),second.summary().end());
             var ref=second.summary().sources().getFirst();String rest=m.chunk(viewer,agent,c.conversationId(),t.userMessageId(),ref.revision(),ref.from(),4096).text();
-            assertEquals("😀tail",rest);assertFalse(second.prompt().contains("😀tail"),"user source remains in the archive, not assistant-prose summary input");assertTrue(second.prompt().contains("reply"));
+            assertEquals("😀tail",rest);assertTrue(second.prompt().contains("😀tail"),"summary must receive the original user constraint as well as the reply");assertTrue(second.prompt().contains("reply"));
             var ready=s.complete(m,second.summaryId(),"{\"summary\":\"complete\"}","fixture","fixture");assertTrue(s.valid(m,viewer,agent,ready));
             assertEquals(original,m.chunk(viewer,agent,c.conversationId(),t.userMessageId(),1,0,4096).text()+m.chunk(viewer,agent,c.conversationId(),t.userMessageId(),1,4096,4096).text());
         }

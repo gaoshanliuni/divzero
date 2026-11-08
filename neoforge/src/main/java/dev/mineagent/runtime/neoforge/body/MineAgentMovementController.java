@@ -42,6 +42,7 @@ public final class MineAgentMovementController {
     public void tick(MineAgentPlayer p){
         int tick=p.level().getServer().getTickCount();if(lastTick==tick)return;lastTick=tick;diagonalThisTick=false;
         p.applySneaking(p.canAct()&&(manualSneak||edgeSafeNavigation&&NativeTravelPolicy.sneak(p,p.position(),gapStep!=null&&gapLaunched?"GAP_JUMP":"WALK")||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
+        if(SocialGreetingRuntime.apply(p))return;
         if(!p.canAct()||intent.target().isEmpty())return;
         if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
         var step=intent.tick(p);
