@@ -49,7 +49,7 @@ public final class NativeEntityTemplates {
         var types=BuiltInRegistries.ENTITY_TYPE.keySet().stream().map(Object::toString).filter(k->k.contains(query)).sorted().toList();
         var templates=s.rows.values().stream().filter(t->t.owner().equals(p.getUUID())&&(t.definition().name().toLowerCase(Locale.ROOT).contains(query)||t.definition().type().contains(query))).toList();
         var instances=new ArrayList<Map<String,Object>>();for(var e:p.level().getAllEntities())if(owned(p,e))instances.add(observe(e));
-        var out=new LinkedHashMap<String,Object>();out.put("contract",NativeEntityDefinition.CONTRACT);out.put("twilightBosses",TwilightBossInterop.catalog());
+        var out=new LinkedHashMap<String,Object>();out.put("contract",NativeEntityDefinition.CONTRACT);out.put("copyAdapters",dev.mineagent.runtime.neoforge.integration.NativeEntityCopyAdapters.catalog());out.put("twilightBosses",TwilightBossInterop.catalog());
         if(a.has("template_id")){var t=ownedTemplate(p,UUID.fromString(a.path("template_id").asText()));out.put("template",t);}
         out.put("types",types.stream().skip(offset).limit(24).map(k->{var t=BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(k));return Map.of("type",k,"summonable",t.canSummon(),"persistent",t.canSerialize());}).toList());out.put("nextTypeOffset",offset+24<types.size()?offset+24:-1);
         out.put("templates",templates.stream().skip(offset).limit(8).map(t->Map.of("id",t.id(),"name",t.definition().name(),"type",t.definition().type(),"revision",t.revision())).toList());out.put("nextTemplateOffset",offset+8<templates.size()?offset+8:-1);
@@ -60,21 +60,25 @@ public final class NativeEntityTemplates {
         var n=JSON.createObjectNode().put("name",a.path("name").asText("派生"+e.getName().getString())).put("type",TwilightBossInterop.id(e));
         var attributes=n.putObject("attributes");for(var h:BuiltInRegistries.ATTRIBUTE.listElements().toList()){var i=mob.getAttribute(h);if(i!=null)attributes.put(h.key().identifier().toString(),i.getBaseValue());}
         var equipment=n.putObject("equipment");for(var slot:EquipmentSlot.values()){var item=mob.getItemBySlot(slot);if(!item.isEmpty())equipment.set(slot.getName(),JSON.readTree(ItemStack.CODEC.encodeStart(RegistryOps.create(JsonOps.INSTANCE,p.registryAccess()),item).getOrThrow().toString()));}
+        n.put("no_ai",mob.isNoAi());var policy=NativeEntityDefinition.CopyPolicy.valueOf(a.path("copy_policy").asText("BASIC"));String adapter=a.path("copy_adapter").asText(""),version=a.path("adapter_version").asText("");
+        if(a.has("copy_fields")&&!a.get("copy_fields").isArray())throw new IllegalArgumentException("ENTITY_COPY_FIELDS");var fields=new LinkedHashSet<String>();for(var field:a.path("copy_fields")){if(!field.isTextual())throw new IllegalArgumentException("ENTITY_COPY_FIELDS");fields.add(field.asText());}
+        n.put("copy_policy",policy.name());if(!adapter.isEmpty())n.put("copy_adapter",adapter);if(!version.isEmpty())n.put("adapter_version",version);
+        n.set("copy_state",JSON.valueToTree(dev.mineagent.runtime.neoforge.integration.NativeEntityCopyAdapters.capture(mob,TwilightBossInterop.id(e),policy,adapter,version,fields)));
         var def=NativeEntityDefinition.parse(n.toString());return Map.of("source",def.source(),"sourceEntity",e.getUUID(),"mode","FRESH_NATIVE_BEHAVIOR","notCopied",List.of("UUID/world references","current phase/targets/passengers","private live state"),"next","define_native_entity then control_native_entity spawn","contract",NativeEntityDefinition.CONTRACT);
     }
-    private record Patch(Map<AttributeInstance,Double> attributes, Map<EquipmentSlot,ItemStack> equipment){}
+    private record Patch(Map<AttributeInstance,Double> attributes, Map<EquipmentSlot,ItemStack> equipment,Runnable copyState){}
     private static Patch validate(ServerPlayer p,Mob mob,NativeEntityDefinition def){
         var attrs=new LinkedHashMap<AttributeInstance,Double>();for(var f:def.attributes().entrySet()){
             var id=Identifier.parse(f.getKey());if(!BuiltInRegistries.ATTRIBUTE.containsKey(id))throw new IllegalArgumentException("NATIVE_ENTITY_ATTRIBUTE_UNKNOWN");var h=BuiltInRegistries.ATTRIBUTE.wrapAsHolder(BuiltInRegistries.ATTRIBUTE.getValue(id));var instance=mob.getAttribute(h);
             if(instance==null||h.value().sanitizeValue(f.getValue())!=f.getValue())throw new IllegalArgumentException("NATIVE_ENTITY_ATTRIBUTE_RANGE");attrs.put(instance,f.getValue());
         }
-        var equipment=new EnumMap<EquipmentSlot,ItemStack>(EquipmentSlot.class);for(var f:def.equipment().entrySet())equipment.put(EquipmentSlot.byName(f.getKey()),ItemStack.CODEC.parse(RegistryOps.create(JsonOps.INSTANCE,p.registryAccess()),JsonParser.parseString(f.getValue())).getOrThrow());return new Patch(attrs,equipment);
+        var equipment=new EnumMap<EquipmentSlot,ItemStack>(EquipmentSlot.class);for(var f:def.equipment().entrySet())equipment.put(EquipmentSlot.byName(f.getKey()),ItemStack.CODEC.parse(RegistryOps.create(JsonOps.INSTANCE,p.registryAccess()),JsonParser.parseString(f.getValue())).getOrThrow());return new Patch(attrs,equipment,dev.mineagent.runtime.neoforge.integration.NativeEntityCopyAdapters.prepare(mob,def));
     }
     private static void apply(Mob mob,NativeEntityDefinition def,Patch patch,boolean fresh){
-        patch.attributes().forEach(AttributeInstance::setBaseValue);patch.equipment().forEach(mob::setItemSlot);mob.setCustomName(Component.literal(def.name()));mob.setNoAi(def.noAi());mob.setPersistenceRequired();mob.setHealth(fresh?mob.getMaxHealth():Math.min(mob.getHealth(),mob.getMaxHealth()));
+        patch.attributes().forEach(AttributeInstance::setBaseValue);patch.equipment().forEach(mob::setItemSlot);mob.setCustomName(Component.literal(def.name()));mob.setNoAi(def.noAi());mob.setPersistenceRequired();mob.setHealth(fresh?mob.getMaxHealth():Math.min(mob.getHealth(),mob.getMaxHealth()));patch.copyState().run();
     }
     public static CompletableFuture<Map<String,Object>> define(ServerPlayer p,UUID operation,JsonNode a)throws Exception{
-        authority(p);var def=NativeEntityDefinition.parse(a.path("source").asText());type(def.type());var server=p.level().getServer();var s=state(server);
+        authority(p);var def=NativeEntityDefinition.parse(a.path("source").asText());type(def.type());dev.mineagent.runtime.neoforge.integration.NativeEntityCopyAdapters.validate(def.type(),def.copyPolicy(),def.copyAdapter(),def.adapterVersion(),def.copyState());var server=p.level().getServer();var s=state(server);
         UUID id=a.has("template_id")?UUID.fromString(a.path("template_id").asText()):operation;var old=s.rows.get(id);long expected=a.path("expected_revision").asLong(0);
         if(a.has("expected_revision")&&(!a.get("expected_revision").isIntegralNumber()||!a.get("expected_revision").canConvertToLong()||expected<0||expected==Long.MAX_VALUE))throw new IllegalArgumentException("NATIVE_ENTITY_REVISION");
         if(old!=null&&!old.owner().equals(p.getUUID()))throw new SecurityException("NATIVE_ENTITY_NOT_OWNED");if(expected!=(old==null?0:old.revision()))throw new IllegalStateException("NATIVE_ENTITY_STALE");

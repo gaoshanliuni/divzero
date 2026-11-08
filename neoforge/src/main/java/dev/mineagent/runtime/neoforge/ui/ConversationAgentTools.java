@@ -116,7 +116,7 @@ public final class ConversationAgentTools {
             if(tool.equals("inspect_brewing_recipes")){keys(args,"query","offset");return CompletableFuture.completedFuture(NativeMenuData.inspect(p,args));}
             if(tool.equals("inspect_native_ui")||tool.equals("inspect_native_screen")){keys(args,"id","candidate_id");return ServerNativeInterfaces.inspect(p,agent,args,permit);}
             if(tool.equals("inspect_native_entities")){keys(args,"query","offset","template_id");return CompletableFuture.completedFuture(NativeEntityTemplates.inspect(p,args));}
-            if(tool.equals("derive_native_entity")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(NativeEntityTemplates.derive(p,args));}
+            if(tool.equals("derive_native_entity")){keys(args,"entity_id","name","copy_policy","copy_adapter","adapter_version","copy_fields");return CompletableFuture.completedFuture(NativeEntityTemplates.derive(p,args));}
             if(tool.equals("inspect_entity_model")){keys(args,"entity_type","offset");return EntityModelProbe.request(p,args);}
             if(tool.equals("inspect_entity_logic")){keys(args,"entity_id","offset","query");return CompletableFuture.completedFuture(EntityLogicTools.inspect(p,args));}
             if(tool.equals("derive_creature_template")){keys(args,"entity_id","name");return CompletableFuture.completedFuture(EntityLogicTools.template(p,args));}

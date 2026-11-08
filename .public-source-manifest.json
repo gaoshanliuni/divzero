@@ -14,8 +14,8 @@
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
-      "resourceId": "2a5484d9-e93f-4e3b-8d3e-4ce2d911cc62",
-      "bytes": 2770
+      "resourceId": "ace85f66-f585-4aa8-a9cb-f0dd9a9f117f",
+      "bytes": 2808
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -1609,8 +1609,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "25de6f18-6dd9-414f-b95f-b512bc44f82f",
-      "bytes": 80409
+      "resourceId": "7696d91d-7692-4986-b3a6-6b87eedb5e8c",
+      "bytes": 80816
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CooperationTools.java",
@@ -1719,8 +1719,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/NativeEntityDefinition.java",
-      "sha256": "90f74c3120fb83bb97838b325c9c97a1b4852469b4f5150d20d917baac8cf47f",
-      "bytes": 5019
+      "resourceId": "3efff726-3724-4b42-a42e-e44fd7861fe1",
+      "bytes": 6964
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/crypto/IdentitySigner.java",
@@ -3524,8 +3524,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/NativeEntityDefinitionTest.java",
-      "sha256": "8dbee9cdf655d2d9763b8491bce32e9457f3c596bfab4e7be05b02486261a7b9",
-      "bytes": 1390
+      "resourceId": "c29c36d6-89ab-48ab-b702-aaa11d248a48",
+      "bytes": 2295
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/crypto/SecretChannelTest.java",
@@ -6598,6 +6598,11 @@
       "bytes": 3783
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/integration/NativeEntityCopyAdapters.java",
+      "resourceId": "0b7510e1-6821-4e2e-b4bc-0480212c0df9",
+      "bytes": 5296
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/integration/NeoForgeYsmRuntimeBridge.java",
       "resourceId": "e4b52ae7-51d5-45d8-b224-e30e71f1a9e0",
       "bytes": 7611
@@ -7669,8 +7674,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "75f2b38d-95fc-4fd0-9f9d-afed6fda929c",
-      "bytes": 83042
+      "resourceId": "2272749a-d915-428b-a0f0-dc0272929022",
+      "bytes": 83103
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7949,8 +7954,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeEntityTemplates.java",
-      "resourceId": "feb1b01f-a40e-4367-a739-11d564147949",
-      "bytes": 17659
+      "resourceId": "bb0ac9db-affd-44ba-80df-ff6d653b2c36",
+      "bytes": 18914
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeFeedbackData.java",
@@ -9855,5 +9860,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "11eff5fd043df9d62e264b2cc72260a4ce5dd0a2"
+  "sourceCommit": "791c72c9882bd015f554cb330257e2a422224afe"
 }
