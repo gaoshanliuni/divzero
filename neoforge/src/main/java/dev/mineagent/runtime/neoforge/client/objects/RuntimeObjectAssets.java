@@ -59,11 +59,13 @@ public final class RuntimeObjectAssets {
         waiting.total=p.total();waiting.bytes.writeBytes(p.bytes());waiting.waiting=false;if(waiting.bytes.size()!=waiting.total)return;
         var images=new TreeMap<String,NativeImage>();var registered=new LinkedHashMap<String,Identifier>();boolean retained=false;
         try{
-            var bundle=RuntimeModelBundle.decode(waiting.bytes.toByteArray(),p.hash());var white=new NativeImage(1,1,false);white.setPixel(0,0,-1);images.put("",white);
-            long bytes=bundle.size()+4+32L*bundle.mesh().vertices().size()+24L*bundle.mesh().triangles().size();
-            for(var entry:bundle.textures().entrySet()){var image=NativeImage.read(new ByteArrayInputStream(entry.getValue()));images.put(entry.getKey(),image);if(image.getWidth()>1024||image.getHeight()>1024)throw new IllegalStateException("OBJECT_TEXTURE_DIMENSIONS");bytes+=4L*image.getWidth()*image.getHeight();}
+            var bundle=RuntimeModelBundle.decode(waiting.bytes.toByteArray(),p.hash());
+            long bytes=bundle.size()+4+bundle.decodedTextureBytes()+32L*bundle.mesh().vertices().size()+24L*bundle.mesh().triangles().size();
+            if(bytes>64L*1024*1024)throw new IllegalStateException("OBJECT_GPU_BUDGET");
             while(!loaded.isEmpty()&&memory+bytes>64L*1024*1024){var oldest=loaded.entrySet().stream().min(Comparator.comparingInt(e->e.getValue().used())).orElseThrow();oldest.getValue().asset().release();memory-=oldest.getValue().asset().memory();loaded.remove(oldest.getKey());}
             if(memory+bytes>64L*1024*1024)throw new IllegalStateException("OBJECT_GPU_BUDGET");
+            var white=new NativeImage(1,1,false);white.setPixel(0,0,-1);images.put("",white);
+            for(var entry:bundle.textures().entrySet()){var image=NativeImage.read(new ByteArrayInputStream(entry.getValue()));images.put(entry.getKey(),image);var header=java.nio.ByteBuffer.wrap(entry.getValue());if(image.getWidth()!=header.getInt(16)||image.getHeight()!=header.getInt(20))throw new IllegalStateException("OBJECT_TEXTURE_DIMENSIONS");}
             int index=0;for(var entry:List.copyOf(images.entrySet())){Identifier texture=Identifier.fromNamespaceAndPath("mineagent_runtime","objects/"+p.hash()+"/"+(index++));Minecraft.getInstance().getTextureManager().register(texture,new DynamicTexture(()->"Runtime object "+p.hash(),entry.getValue()));images.remove(entry.getKey());registered.put(entry.getKey(),texture);}
             loaded.put(p.hash(),new Entry(new Asset(bundle.mesh(),registered,bytes),ticks));memory+=bytes;pending.remove(p.hash());retained=true;
         }catch(Exception failure){fail(waiting,"OBJECT_ASSET_INVALID");}finally{images.values().forEach(NativeImage::close);if(!retained)registered.values().forEach(Minecraft.getInstance().getTextureManager()::release);}

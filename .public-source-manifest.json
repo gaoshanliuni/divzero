@@ -2119,8 +2119,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/RuntimeModelBundle.java",
-      "resourceId": "773447db-964d-4b13-a0d8-1ca06391d532",
-      "bytes": 8726
+      "resourceId": "4e84e4d1-72cb-4273-8f49-3325299288a3",
+      "bytes": 9017
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/TrajectoryTriggers.java",
@@ -3754,8 +3754,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeMaterialsTest.java",
-      "resourceId": "1f98b75d-7190-41b1-9eab-7315279e3048",
-      "bytes": 3178
+      "resourceId": "779f9f26-669b-48a4-a130-f487978aadc4",
+      "bytes": 3235
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeMeshTest.java",
@@ -4184,8 +4184,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "b3ab54d9-5ebc-4279-a4c8-0a9faec0f0f1",
-      "bytes": 19170
+      "resourceId": "321d0c5c-38b4-4c0e-928d-1a64a1a59338",
+      "bytes": 20090
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -6209,8 +6209,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeObjectAssets.java",
-      "resourceId": "97573351-9410-4152-a244-49d16c911105",
-      "bytes": 8541
+      "resourceId": "f8e1e693-1e77-488a-a7ac-3ec0279d81d2",
+      "bytes": 8709
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeObjectRenderer.java",
@@ -9965,5 +9965,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6183b3b40a5cc5052b47739cdc9a72427b55261c"
+  "sourceCommit": "8d32459d471326fc576540b89a796929edc8e9cb"
 }

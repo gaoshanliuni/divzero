@@ -18,6 +18,7 @@ class RuntimeMaterialsTest {
         var textures=Map.of("textures/red.png",png(0xffff0000),"textures/blue.png",png(0xff0000ff));
         var bundle=RuntimeModelBundle.create(SOURCE.getBytes(StandardCharsets.UTF_8),textures);var received=RuntimeModelBundle.decode(bundle.bytes(),bundle.sha256());assertEquals(SOURCE,received.modelSource());assertEquals(mesh,received.mesh());
         for(var texture:textures.entrySet())assertArrayEquals(texture.getValue(),received.textures().get(texture.getKey()));
+        assertEquals(32,received.decodedTextureBytes());
         var binding=RuntimeItemBinding.create(UUID.randomUUID(),UUID.randomUUID(),"piece","a".repeat(64),"models/item.json",SOURCE);assertEquals(2,RuntimeItemBinding.parse(binding.encode()).mesh().materials().size());
     }
     @Test void undeclaredMissingAndTrailingMaterialInputsAreRejected()throws Exception{

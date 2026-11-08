@@ -14,6 +14,8 @@ public final class RuntimeModelBundle {
     public Map<String,byte[]> textures(){return copyTextures(textures);}
     public byte[] bytes(){return bytes.clone();}public byte[] texture(){return textures.getOrDefault(mesh.texture(),new byte[0]).clone();}public RuntimeMesh mesh(){return mesh;}public String sha256(){return sha256;}
     public int size(){return bytes.length;}
+    /** PNG dimensions are validated before this estimate; charge expansion before allocating native pixels. */
+    public long decodedTextureBytes(){long result=0;for(var png:textures.values()){var header=ByteBuffer.wrap(png);result+=4L*header.getInt(16)*header.getInt(20);}return result;}
     public String modelSource(){var buffer=ByteBuffer.wrap(bytes);int first=buffer.getInt();return (first==0x44565A32||first==0x44565A33)?new String(bytes,72,buffer.getInt(68),StandardCharsets.UTF_8):new String(bytes,4,first,StandardCharsets.UTF_8);}
     public byte[] chunk(int offset,int length){if(offset<0||offset>=bytes.length||length<1||length>24576)throw new IllegalArgumentException("OBJECT_CHUNK_RANGE");return Arrays.copyOfRange(bytes,offset,Math.min(bytes.length,offset+length));}
     public static RuntimeModelBundle create(byte[] model,byte[] png){return create(model,png,ResourceIds.create());}
