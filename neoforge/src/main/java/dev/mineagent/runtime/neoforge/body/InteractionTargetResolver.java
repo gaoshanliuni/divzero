@@ -47,7 +47,7 @@ public final class InteractionTargetResolver {
             if(lineOfSight(p,eye,Vec3.atCenterOf(block),block,kind==Kind.FISH))nodes.add(n);
         }}
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
-        var all=new SurfacePathfinder.Search(start,nodes::contains,n->nodes.stream().mapToDouble(g->Math.max(Math.abs(g.x()-n.x()),Math.abs(g.z()-n.z()))).min().orElse(0),evaluator);
+        var all=new SurfacePathfinder.Search(start,nodes::contains,n->nodes.stream().mapToDouble(g->Math.max(Math.abs(g.x()-n.x()),Math.abs(g.z()-n.z()))).min().orElse(0),evaluator).searchBudget(NativeNavigationBudget.get(p.level().getServer())::searchNodes);
         // A just-finished placement may leave the body airborne; retain its real support level, not the jump apex.
         // A roof is often at the same height as the current wall-top stance. Dropping
         // into the room here can make later corner support faces impossible to reach.
@@ -58,7 +58,7 @@ public final class InteractionTargetResolver {
                 int minZ=Math.min(start.z(),elevated.stream().mapToInt(SurfacePathfinder.Node::z).min().orElseThrow())-8,maxZ=Math.max(start.z(),elevated.stream().mapToInt(SurfacePathfinder.Node::z).max().orElseThrow())+8;
                 // This is only a preference search. Failure falls back to the complete ordinary route query.
                 SurfacePathfinder.TraversalEvaluator local=n->evaluator.neighbors(n).stream().filter(e->e.to().x()>=minX&&e.to().x()<=maxX&&e.to().z()>=minZ&&e.to().z()<=maxZ).toList();
-                var preferred=new SurfacePathfinder.Search(start,elevated::contains,n->elevated.stream().mapToDouble(g->Math.max(Math.abs(g.x()-n.x()),Math.abs(g.z()-n.z()))).min().orElse(0),local);
+                var preferred=new SurfacePathfinder.Search(start,elevated::contains,n->elevated.stream().mapToDouble(g->Math.max(Math.abs(g.x()-n.x()),Math.abs(g.z()-n.z()))).min().orElse(0),local).searchBudget(NativeNavigationBudget.get(p.level().getServer())::searchNodes);
                 return new Query(evaluator,preferred,nodes.stream().map(NativeTraversalEvaluator::point).toList(),all);
             }
         }
@@ -82,7 +82,7 @@ public final class InteractionTargetResolver {
             if(usable)nodes.add(node);
         }
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
-        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());
+        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator).searchBudget(NativeNavigationBudget.get(p.level().getServer())::searchNodes),nodes.stream().map(NativeTraversalEvaluator::point).toList());
     }
     /** A courier clears the recipient's working reach after the actual pickup, using ordinary navigation. */
     public static Query handoffExit(ServerPlayer player,ServerPlayer recipient){
@@ -96,7 +96,7 @@ public final class InteractionTargetResolver {
             if(!player.level().noCollision(player,player.getDimensions(player.getPose()).makeBoundingBox(at).deflate(.0001)))continue;nodes.add(node);
         }}
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
-        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator),nodes.stream().map(NativeTraversalEvaluator::point).toList());
+        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator).searchBudget(NativeNavigationBudget.get(p.level().getServer())::searchNodes),nodes.stream().map(NativeTraversalEvaluator::point).toList());
     }
     public static double handoffClearance(ServerPlayer recipient){return Math.max(2.5,Math.min(5,recipient.blockInteractionRange()+.5));}
     /** Candidate feet positions must allow a real attack; the target's occupied block is not a waypoint. */

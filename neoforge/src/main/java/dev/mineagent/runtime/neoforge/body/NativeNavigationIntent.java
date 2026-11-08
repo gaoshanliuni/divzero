@@ -64,7 +64,7 @@ public final class NativeNavigationIntent {
             long began=System.nanoTime();var direct=reserved>0?evaluator.direct(start,goal,budget::timeAvailable):null;
             totalSearchNanos+=System.nanoTime()-began;maxSliceNanos=Math.max(maxSliceNanos,System.nanoTime()-began);
             if(direct!=null&&!direct.isEmpty()){steps=direct;index=0;directPlans++;retry.reset(tick);reason="DIRECT_CHECKED_ROUTE";}
-            else {final Node destination=goal;search=new SurfacePathfinder.Search(start,destination::equals,n->Math.hypot(n.x()-destination.x(),n.z()-destination.z())+Math.abs(n.y()-destination.y())*.12,evaluator);searchStarted=tick;}
+            else {final Node destination=goal;search=new SurfacePathfinder.Search(start,destination::equals,n->Math.hypot(n.x()-destination.x(),n.z()-destination.z())+Math.abs(n.y()-destination.y())*.12,evaluator).searchBudget(NativeNavigationBudget.get(p.level().getServer())::searchNodes);searchStarted=tick;}
         }
         if(search!=null){
             if(!evaluator.current()){search=null;retry.waitUntil(tick+1);reason="SEARCH_STALE";return null;}

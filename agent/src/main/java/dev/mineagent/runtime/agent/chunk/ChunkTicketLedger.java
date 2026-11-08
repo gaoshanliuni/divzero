@@ -14,7 +14,7 @@ public final class ChunkTicketLedger {
     private final Set<UUID> deniedAgents = new LinkedHashSet<>();
 
     public ChunkTicketLedger(int radius, int maximumUniqueTickets) {
-        if (radius < 0 || radius > 2 || maximumUniqueTickets < 0) {
+        if (radius < 0 || radius > 1_875_000 || maximumUniqueTickets < 0) {
             throw new IllegalArgumentException("invalid ticket ledger limits");
         }
         this.radius = radius;
@@ -27,7 +27,7 @@ public final class ChunkTicketLedger {
      * Overlapping coordinates cost one native ticket. A zero budget removes all managed tickets.
      */
     public synchronized TicketDelta reconcile(Map<UUID, ChunkCoordinate> centers, int radius, int maximumUniqueTickets) {
-        if (radius < 0 || radius > 2 || maximumUniqueTickets < 0) {
+        if (radius < 0 || radius > 1_875_000 || maximumUniqueTickets < 0) {
             throw new IllegalArgumentException("invalid ticket ledger limits");
         }
         var nextAgents = new LinkedHashMap<UUID, Set<ChunkCoordinate>>();
@@ -35,6 +35,7 @@ public final class ChunkTicketLedger {
         var nextDenied = new LinkedHashSet<UUID>();
         for (UUID id : centers.keySet().stream().sorted().toList()) {
             var center = java.util.Objects.requireNonNull(centers.get(id), "center");
+            if(footprint(radius)>maximumUniqueTickets){nextDenied.add(id);continue;}
             var desired = square(center.dimension(), center.x(), center.z(), radius);
             long additional = desired.stream().filter(c -> !nextCounts.containsKey(c)).count();
             if (nextCounts.size() + additional > maximumUniqueTickets) {
@@ -64,6 +65,7 @@ public final class ChunkTicketLedger {
         if (agentId == null) {
             throw new IllegalArgumentException("agentId is required");
         }
+        if(footprint(radius)>maximumUniqueTickets){deniedAgents.add(agentId);return TicketDelta.rejected("GLOBAL_TICKET_LIMIT");}
         Set<ChunkCoordinate> desired = square(dimension, centerX, centerZ);
         Set<ChunkCoordinate> previous = byAgent.getOrDefault(agentId, Set.of());
         if (desired.equals(previous)) {
@@ -133,6 +135,7 @@ public final class ChunkTicketLedger {
     private Set<ChunkCoordinate> square(String dimension, int centerX, int centerZ) {
         return square(dimension, centerX, centerZ, radius);
     }
+    private static long footprint(int radius){long diameter=2L*radius+1;return diameter*diameter;}
 
     private static Set<ChunkCoordinate> square(String dimension, int centerX, int centerZ, int radius) {
         // Use offsets so an invalid extreme center cannot wrap a loop into unbounded work.

@@ -40,7 +40,7 @@ public final class CapabilityCatalog {
             "set_actor_enhancements follow_entity patrol_route wander_area set_behavior_mode inspect_behavior control_behavior inspect_agent_body control_agent_body inspect_player_control control_player_session request_player_control"),
         group("world","世界观察、方块、容器、原生命令和世界约定",
             "根据实际本人、AI、世界和目标状态执行。游戏命令与电脑命令分开，沿用当前真实权限，不授予自己 OP。方块/容器操作走原生互动与槽位，不能用 give 或数据写入假装搬运。世界修改绑定明确维度和目标，玩家换维度不能默默挪到新位置；未知写入先核对回执。大观察可分页读取。",
-            "read_guidance inspect_world inspect_registry inspect_blocks scan_blocks inspect_blueprints inspect_commands run_game_command read_command_output interact_block inspect_container quick_move_container close_container"),
+            "read_guidance inspect_world inspect_mods inspect_registry inspect_blocks scan_blocks inspect_blueprints inspect_commands run_game_command read_command_output interact_block inspect_container quick_move_container close_container"),
         group("items","真实背包、物品、装备、附魔、效果与预览",
             "新物品创建优先加载content，用generate_content_package交付模型与游戏内行为；召唤权杖等物品用item.use及已核对的原生API实现，不能因为要写代码就转本机Python。已有原版物品先读注册表和真实库存，修改名称、附魔或组件时保留未要求改变的内容。给予与效果变更使用实际权限。搬运用容器工具；生成新模型/新物品还可加载 content。预览通过 open_preview，不把预览当成物品已获得。",
             "inspect_player inspect_registry inspect_effects modify_effect modify_item give_item drop_item pickup_item open_preview"),

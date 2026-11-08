@@ -8,6 +8,14 @@ public final class WebSettingsCatalog {
     private WebSettingsCatalog(){}
     public record Field(String key,String label,String group,String type,String fallback,PermissionAction permission){}
     public static final List<Field> FIELDS=List.of(
+        new Field(dev.mineagent.runtime.core.geometry.GeometryDiskBudget.KEY,"几何存储磁盘安全余量（MiB）","服务器资源预算","number","16",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(NavigationResourceBudget.PREFIX+"tickNodes","每 Tick 导航节点预算","服务器资源预算","number","4096",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(NavigationResourceBudget.PREFIX+"sliceNodes","单次导航切片节点预算","服务器资源预算","number","96",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(NavigationResourceBudget.PREFIX+"searchNodes","单路径搜索节点预算","服务器资源预算","number","131072",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(NavigationResourceBudget.PREFIX+"minMillis","高负载时导航时间预算（毫秒）","服务器资源预算","number","1",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(NavigationResourceBudget.PREFIX+"maxMillis","空闲时导航时间预算（毫秒）","服务器资源预算","number","8",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(NavigationResourceBudget.PREFIX+"targetMillis","导航调度目标 Tick 时间（毫秒）","服务器资源预算","number","45",PermissionAction.MANAGE_PERMISSIONS),
+
         new Field(ScriptResourceBudget.PREFIX+"packages","已加载脚本包数量告警阈值","服务器资源预算","number","128",PermissionAction.MANAGE_PERMISSIONS),
         new Field(ScriptResourceBudget.PREFIX+"modules","单脚本模块缓存数量告警阈值","服务器资源预算","number","64",PermissionAction.MANAGE_PERMISSIONS),
         new Field(ScriptResourceBudget.PREFIX+"handlers","单脚本事件处理器数量告警阈值","服务器资源预算","number","128",PermissionAction.MANAGE_PERMISSIONS),
@@ -46,8 +54,8 @@ public final class WebSettingsCatalog {
         new Field("provider.ollama.model","Ollama 模型","Ollama","text","qwen3:8b",PermissionAction.MANAGE_PROVIDERS),
         new Field("provider.comfyui.enabled","启用 ComfyUI","ComfyUI","boolean","true",PermissionAction.MANAGE_PROVIDERS),
         new Field("provider.comfyui.baseUrl","ComfyUI 服务地址","ComfyUI","url","",PermissionAction.MANAGE_PROVIDERS),
-        new Field("runtime.maxChunkTickets","AI 附加区块票预算（0–100）","运行资源","number","100",PermissionAction.MANAGE_PERMISSIONS),
-        new Field("runtime.agentTicketRadius","每个 AI 的附加区块半径（0–2）","运行资源","number","2",PermissionAction.MANAGE_PERMISSIONS),
+        new Field("runtime.maxChunkTickets","AI 附加区块票总预算","运行资源","number","100",PermissionAction.MANAGE_PERMISSIONS),
+        new Field("runtime.agentTicketRadius","每个 AI 的附加区块半径","运行资源","number","2",PermissionAction.MANAGE_PERMISSIONS),
         new Field("conversation.contextTokenBudget","对话输入词元预算（1024–131072，保守估算）","会话与摘要预算","number","32768",PermissionAction.MANAGE_PERMISSIONS),
         new Field("conversation.summary.maxCalls","每次发送最多新摘要请求数（0–64）","会话与摘要预算","number","8",PermissionAction.MANAGE_PERMISSIONS),
         new Field("conversation.summary.inputBudget","每批摘要输入预算（2048–131072，UTF-8 字节）","会话与摘要预算","number","16384",PermissionAction.MANAGE_PERMISSIONS),

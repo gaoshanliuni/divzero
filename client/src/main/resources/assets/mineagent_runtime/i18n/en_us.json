@@ -3619,5 +3619,14 @@
   "单脚本跟踪资源数量告警阈值": "Tracked resource warning threshold per script",
   "每 Tick 脚本回调数量预算": "Script callbacks per tick",
   "每 Tick 脚本调度时间预算（毫秒）": "Script dispatch time per tick (ms)",
-  "待调度脚本回调预算": "Pending script callback budget"
+  "待调度脚本回调预算": "Pending script callback budget",
+  "AI 附加区块票总预算": "Total managed AI chunk ticket budget",
+  "每个 AI 的附加区块半径": "Managed chunk radius per AI",
+  "每 Tick 导航节点预算": "Navigation nodes per tick",
+  "单次导航切片节点预算": "Nodes per navigation slice",
+  "单路径搜索节点预算": "Nodes per path search",
+  "高负载时导航时间预算（毫秒）": "Navigation time under high load (ms)",
+  "空闲时导航时间预算（毫秒）": "Navigation time under low load (ms)",
+  "导航调度目标 Tick 时间（毫秒）": "Target server tick time (ms)",
+  "几何存储磁盘安全余量（MiB）": "Geometry storage disk reserve (MiB)"
 }

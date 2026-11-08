@@ -7,8 +7,8 @@ public record RuntimeResourceLimits(int maxAgents, int maxChunkTickets, int agen
     public static final RuntimeResourceLimits DEFAULT = new RuntimeResourceLimits(Integer.MAX_VALUE, 100, 2);
 
     public RuntimeResourceLimits {
-        if (maxAgents < 1 || maxChunkTickets < 0 || maxChunkTickets > 100
-                || agentTicketRadius < 0 || agentTicketRadius > 2) {
+        if (maxAgents < 1 || maxChunkTickets < 0
+                || agentTicketRadius < 0 || agentTicketRadius > 1_875_000) {
             throw new IllegalArgumentException("RUNTIME_RESOURCE_LIMITS_INVALID");
         }
     }
@@ -24,8 +24,8 @@ public record RuntimeResourceLimits(int maxAgents, int maxChunkTickets, int agen
         }
     }
 
-    public int ticketsPerAgent() {
-        int diameter = 2 * agentTicketRadius + 1;
+    public long ticketsPerAgent() {
+        long diameter = 2L * agentTicketRadius + 1;
         return diameter * diameter;
     }
 }

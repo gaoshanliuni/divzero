@@ -3,6 +3,11 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 class CapabilitySessionTest {
+    @Test void modPaginationIsDiscoveredOnDemandAndRemainsReadOnly(){
+        var scope=new CapabilitySession();assertFalse(scope.tools().contains("inspect_mods"));scope.load("world");
+        assertTrue(scope.tools().contains("inspect_mods"));assertFalse(ConversationTools.mutation("inspect_mods"));
+        assertTrue(ToolExecutionTraits.of("inspect_mods").dimensionIndependent());
+    }
     @Test void vanillaProductionAndPeerMessagesDoNotPreloadAuthoringOrChatSettings(){
         var scope=new CapabilitySession();scope.preload("请协作，先给伙伴发消息确认材料，用工作台合成现有钻石盔甲，熔炉烧制玻璃，再建房并把盔甲存入箱子。",List.of());
         assertTrue(scope.groups().containsAll(List.of("cooperation","production","building")));

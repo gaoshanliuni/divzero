@@ -2,6 +2,17 @@ package dev.mineagent.runtime.core.geometry;
 import org.junit.jupiter.api.Test;import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;import java.util.*;import static org.junit.jupiter.api.Assertions.*;
 class GeometrySpoolTest {
+ @Test void storageEstimateAllowsSmallPlansBelowOldReserveAndAccountsForGrowth(){
+  long mib=1024*1024;assertTrue(GeometryDiskBudget.required(16*mib,2*mib,500_000,50_000,180)<200*mib);
+  assertTrue(GeometryDiskBudget.required(16*mib,2*mib,500_000,2_000_000,180)>200*mib);
+  assertEquals(Long.MAX_VALUE,GeometryDiskBudget.required(0,0,Long.MAX_VALUE,0,0));
+ }
+ @Test void finalPartialBatchAlsoChecksSpaceWithSpecificDiagnostics()throws Exception{
+  try(var spool=GeometrySpool.create(root.resolve("reserve.db")).reserveBytes(Long.MAX_VALUE)){
+   var failure=assertThrows(RuntimeException.class,()->spool.generate("{\"origin\":[0,0,0],\"parts\":[{\"kind\":\"box\",\"min\":[0,0,0],\"max\":[0,0,0],\"material\":\"minecraft:stone\"}]}",()->true));
+   assertEquals("storage",GeometryDiagnostic.details(failure).get("field"));assertEquals(0,spool.size());
+  }
+ }
  @TempDir Path root;
  @Test void streamsBeyondOldCellLimitWithBoundedPages()throws Exception{
   try(var spool=GeometrySpool.create(root.resolve("large.db"))){var summary=spool.generate("{\"origin\":[0,0,0],\"parts\":[{\"kind\":\"box\",\"min\":[0,0,0],\"max\":[2047,0,128],\"material\":\"minecraft:stone\"}]}",()->true);assertEquals(264192,spool.size());assertEquals(2047,summary.max().x());long cursor=0,count=0;while(true){var page=spool.page(cursor,512,false);if(page.isEmpty())break;assertTrue(page.size()<=512);count+=page.size();cursor=page.getLast().cursor();}assertEquals(264192,count);}

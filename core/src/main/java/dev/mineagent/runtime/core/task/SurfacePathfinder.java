@@ -19,7 +19,8 @@ public final class SurfacePathfinder {
         private final Node start;private final Predicate<Node> goal;private final ToDoubleFunction<Node> heuristic;private final TraversalEvaluator evaluator;
         private final PriorityQueue<Entry> open=new PriorityQueue<>(Comparator.comparingDouble(Entry::score));
         private final Map<Node,Double> costs=new HashMap<>();private final Map<Node,PathStep> parent=new HashMap<>();private final Set<Node> closed=new HashSet<>();
-        private Result terminal;
+        private Result terminal;private java.util.function.IntSupplier searchBudget=()->131072;
+        public Search searchBudget(java.util.function.IntSupplier value){searchBudget=Objects.requireNonNull(value);return this;}
         public Search(Node start,Node goal,TraversalEvaluator evaluator){this(start,goal::equals,n->distance(n,goal),evaluator);}
         public Search(Node start,Predicate<Node> goal,ToDoubleFunction<Node> heuristic,TraversalEvaluator evaluator){this.start=Objects.requireNonNull(start);this.goal=goal;this.heuristic=heuristic;this.evaluator=evaluator;costs.put(start,0.0);open.add(new Entry(start,0,heuristic.applyAsDouble(start)));}
         public Result advance(int budget,BooleanSupplier timeAvailable){
@@ -29,7 +30,7 @@ public final class SurfacePathfinder {
                 remaining--;if(goal.test(n)){var route=new ArrayList<PathStep>();for(Node at=n;!at.equals(start);){var edge=parent.get(at);route.add(edge);at=edge.from;}Collections.reverse(route);return terminal=new Result(Status.FOUND,route,closed.size());}
                 for(var step:evaluator.neighbors(n)){if(!step.from.equals(n))throw new IllegalArgumentException("PATH_EDGE_ORIGIN");var next=step.to;if(closed.contains(next))continue;double cost=entry.cost+step.cost;
                     if(cost<costs.getOrDefault(next,Double.POSITIVE_INFINITY)){costs.put(next,cost);parent.put(next,step);open.add(new Entry(next,cost,cost+heuristic.applyAsDouble(next)));}}
-                if(costs.size()>131072)return terminal=new Result(Status.SEARCH_LIMIT,List.of(),closed.size());
+                if(costs.size()>Math.max(1,searchBudget.getAsInt()))return terminal=new Result(Status.SEARCH_LIMIT,List.of(),closed.size());
             }
             if(open.isEmpty())return terminal=new Result(evaluator.encounteredUnloaded()?Status.WAITING_CHUNKS:Status.NO_PATH,List.of(),closed.size());
             return new Result(Status.BUDGET_EXHAUSTED,List.of(),closed.size());

@@ -105,6 +105,7 @@ public final class ServerConfigService implements AutoCloseable {
         });
 
         ProviderDefaults.update(publicValues,nextPublic,patch.values());
+        try{NavigationResourceBudget.from(nextPublic);}catch(IllegalArgumentException invalid){return ConfigPatchResult.rejected(snapshot(),"VALIDATION_FAILED",Map.of(NavigationResourceBudget.PREFIX+"maxMillis","导航预算必须为有效正数，最大耗时不能小于最小耗时"));}
         var nextLimits = RuntimeResourceLimits.from(nextPublic);
         var nextGenerations=PermissionGenerations.advance(permissionGenerations,publicValues,nextPublic);
         if (repository != null) {
@@ -179,14 +180,16 @@ public final class ServerConfigService implements AutoCloseable {
             if(key.startsWith("provider.openai.role.")&&!value.isBlank()&&!AgentModelSettings.validModel(value))errors.put(key,"模型名称应为不超过 256 字符的单行文本");
             if(ContentResourceBudget.KEYS.contains(key))try{ContentResourceBudget.from(Map.of(key,value));}catch(IllegalArgumentException invalid){errors.put(key,"服务器资源预算数值无效");}
             if(ScriptResourceBudget.KEYS.contains(key))try{ScriptResourceBudget.from(Map.of(key,value));}catch(IllegalArgumentException invalid){errors.put(key,"服务器资源预算数值无效");}
+            if(NavigationResourceBudget.KEYS.contains(key))validateRange(key,value,0,Integer.MAX_VALUE,"非负整数",errors);
+            if(key.equals(dev.mineagent.runtime.core.geometry.GeometryDiskBudget.KEY))try{dev.mineagent.runtime.core.geometry.GeometryDiskBudget.reserve(Map.of(key,value));}catch(IllegalArgumentException invalid){errors.put(key,"服务器资源预算数值无效");}
             switch (key) {
                 case ServiceCallBudget.DAILY, ServiceCallBudget.REQUEST, ServiceCallBudget.PAUSED, ServiceCallBudget.TASK -> {
                     try { ServiceCallBudget.from(Map.of(key,value)); }
                     catch(IllegalArgumentException invalid) { errors.put(key, key.equals(ServiceCallBudget.PAUSED)?"应为 true 或 false":(key.equals(ServiceCallBudget.DAILY)||key.equals(ServiceCallBudget.TASK))?"0–1000000 整数；0 不额外限制":"0–10000 整数；0 不额外限制"); }
                 }
                 case "runtime.maxAgents" -> validateRange(key, value, 1, Integer.MAX_VALUE, "正整数", errors);
-                case "runtime.maxChunkTickets" -> validateRange(key, value, 0, 100, "0–100", errors);
-                case "runtime.agentTicketRadius" -> validateRange(key, value, 0, 2, "0–2", errors);
+                case "runtime.maxChunkTickets" -> validateRange(key, value, 0, Integer.MAX_VALUE, "非负整数", errors);
+                case "runtime.agentTicketRadius" -> validateRange(key, value, 0, 1875000, "0–1875000 区块（受总票预算约束）", errors);
                 case "conversation.contextTokenBudget" -> validateRange(key, value, 1024, 131072, "1024–131072", errors);
                 case "conversation.summary.maxCalls" -> validateRange(key, value, 0, 64, "0–64（0 禁止新摘要请求）", errors);
                 case "conversation.summary.inputBudget" -> validateRange(key, value, 2048, 131072, "2048–131072", errors);
