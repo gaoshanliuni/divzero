@@ -37,8 +37,8 @@ public final class NativeDataPackRuntime implements AutoCloseable {
     // NeoForge expands hidden mod children at runtime; saved DataPacks contains only visible roots.
     private List<String> selected(){
         // Pack.hidden() can hide repository children without changing PackResources.isHidden().
-        var hidden=server.getPackRepository().getSelectedPacks().stream().filter(net.minecraft.server.packs.repository.Pack::isHidden).map(net.minecraft.server.packs.repository.Pack::getId).collect(java.util.stream.Collectors.toSet());
-        return server.getResourceManager().listPacks().map(PackResources::packId).filter(id->!hidden.contains(id)).toList();
+        var roots=server.getPackRepository().getSelectedPacks().stream().filter(pack->!pack.isHidden()).map(net.minecraft.server.packs.repository.Pack::getId).collect(java.util.stream.Collectors.toSet());
+        return server.getResourceManager().listPacks().map(PackResources::packId).filter(roots::contains).distinct().toList();
     }
     private final dev.mineagent.runtime.core.content.ObservationTokens selectionIds=new dev.mineagent.runtime.core.content.ObservationTokens(256,1024*1024);
     private String selection()throws Exception{return selectionIds.token(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(selected()));}

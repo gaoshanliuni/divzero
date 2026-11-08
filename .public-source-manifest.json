@@ -6519,8 +6519,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/NativeDataPackRuntime.java",
-      "resourceId": "1d3c4342-e252-4f7b-9616-88be045fef0d",
-      "bytes": 27925
+      "resourceId": "a07e3f38-a293-497b-a902-26663b46a5a7",
+      "bytes": 27896
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/NativePackageCompatibility.java",
@@ -9900,5 +9900,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "24c5ed6a6cedbed1bf1bc8d9228d886cc73b1109"
+  "sourceCommit": "cd03d99ae11c60b0a8f34e4b759fc154c490d446"
 }
