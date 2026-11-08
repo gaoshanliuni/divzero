@@ -48,8 +48,9 @@ public final class InteractionTargetResolver {
         }}
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
         var all=new SurfacePathfinder.Search(start,nodes::contains,n->nodes.stream().mapToDouble(g->Math.max(Math.abs(g.x()-n.x()),Math.abs(g.z()-n.z()))).min().orElse(0),evaluator);
-        if(kind==Kind.PLACE&&desired!=null&&!desired.hasBlockEntity()&&p.getY()>=block.getY()+.9){
-            var elevated=new LinkedHashSet<SurfacePathfinder.Node>();for(var node:nodes)if(node.y()>=p.getY()-.3)elevated.add(node);
+        // A just-finished placement may leave the body airborne; retain its real support level, not the jump apex.
+        if(kind==Kind.PLACE&&desired!=null&&!desired.hasBlockEntity()&&start.y()>=block.getY()+.9){
+            var elevated=new LinkedHashSet<SurfacePathfinder.Node>();for(var node:nodes)if(node.y()>=start.y()-.3)elevated.add(node);
             if(!elevated.isEmpty()){
                 int minX=Math.min(start.x(),elevated.stream().mapToInt(SurfacePathfinder.Node::x).min().orElseThrow())-8,maxX=Math.max(start.x(),elevated.stream().mapToInt(SurfacePathfinder.Node::x).max().orElseThrow())+8;
                 int minZ=Math.min(start.z(),elevated.stream().mapToInt(SurfacePathfinder.Node::z).min().orElseThrow())-8,maxZ=Math.max(start.z(),elevated.stream().mapToInt(SurfacePathfinder.Node::z).max().orElseThrow())+8;

@@ -83,6 +83,7 @@ public final class ConstructSkill {
     private void writeCell(){
         var cell=cells.get(index);var pos=position(cell);loaded(pos);w.block=pos;var actual=w.player().level().getBlockState(pos);var wanted=ServerBuildings.nativeState(w.player(),cell.after(),List.of());
         if(w.operation!=null){perform(cell,pos,wanted);return;}
+        w.session.phase("CONSTRUCT_APPROACH");
         if(actual==wanted){advanceCell(cell,false);return;}
         boolean ownBreak=actual.isAir()&&"VERIFIED_NATIVE_BREAK".equals(w.session.receipt().get("state"))&&Long.toString(cell.sequence()).equals(w.session.receipt().get("sequence"))&&w.session.spec().buildingId().equals(w.session.receipt().get("building"));
         if(!BlockStateParser.serialize(actual).equals(cell.before())&&!ownBreak)throw problem("TARGET_CHANGED_DURING_CONSTRUCTION",cell,cell.before(),state(pos));
@@ -165,7 +166,7 @@ public final class ConstructSkill {
         double rise=NativeTerrainRecovery.placementJumpRise(w.player(),w.player().position());
         if(rise<=0||NativeTerrainRecovery.placementHitFrom(w.player(),pos,w.player().getEyePosition().add(0,rise,0),wanted)==null)return false;
         if(placementJumpAttempts++>=3)throw problem("JUMP_PLACEMENT_WINDOW_UNAVAILABLE",cell,cell.after(),state(pos));
-        w.actor.haltMotion(w.token());w.actor.crouch(w.token(),true);w.actor.jump(w.token());placementJumpUntil=w.tick()+30;return true;
+        w.actor.haltMotion(w.token());w.actor.crouch(w.token(),true);w.actor.jump(w.token());w.session.add("constructionReachJumps",1);placementJumpUntil=w.tick()+30;return true;
     }
     private void finishAction(ConstructionLedger.Cell cell,boolean placed,String status){
         UUID operation=w.operation;String observed=state(position(cell));long tick=w.player().level().getGameTime(),prior=cursor;var at=w.player().position();var detail=Map.of("state",observed,"materialsConsumed",placed?1:0,"tick",tick,"actorPosition",List.of(at.x,at.y,at.z),"placementMode",pillarPlacement?"NATIVE_JUMP_UNDERFOOT":"NATIVE_USE");String encoded=new com.google.gson.Gson().toJson(detail);

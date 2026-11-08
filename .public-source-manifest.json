@@ -5054,8 +5054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "ec17755a-7ee2-40f4-8472-525c0b2df35b",
-      "bytes": 10461
+      "resourceId": "f830f644-b3a9-40ee-a10e-89ac4a3f092f",
+      "bytes": 10579
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -7054,8 +7054,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/ConstructSkill.java",
-      "resourceId": "c39ab0eb-daf7-4be2-8e5c-aaa66192c9d6",
-      "bytes": 23767
+      "resourceId": "a690223b-2b8c-4fb2-aff9-c03db738a1a0",
+      "bytes": 23856
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/CooperationRuntime.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6f759690bf9dd7d6e39b1f3102a0123bae6d7f8c"
+  "sourceCommit": "6abe84064cd82b78c23fb952f8d784b293d3f637"
 }
