@@ -15,10 +15,15 @@ final class ServerBlueprintTransfer {
         ServerAuthority.require(player,PermissionAction.EDIT_WORLD);
         if(!arguments.keySet().equals(Set.of("agentId","path","body")))throw new IllegalArgumentException("BUILDING_TRANSFER_ARGUMENTS");
         UUID agent=UUID.fromString(arguments.get("agentId")),owner=player.getUUID();String path=arguments.get("path");JsonNode body=JSON.readTree(arguments.get("body"));
+        var server=player.level().getServer();var permissions=dev.mineagent.runtime.neoforge.MineAgentRuntimeServices.permissions(server);long authority=permissions.actionRevision(owner,PermissionAction.EDIT_WORLD);
         if(!body.isObject()||!Set.of("/list","/asset","/begin","/directory","/file","/chunk","/finish","/cancel","/select","/download").contains(path))throw new IllegalArgumentException("BUILDING_TRANSFER_ACTION");
         if(path.equals("/select"))return ServerBuildingFiles.selected(player,agent,UUID.fromString(body.path("id").asText()));
         return ServerBuildingFiles.library(player,agent).thenApplyAsync(store->{try{
-            if(!permit.getAsBoolean())throw new IllegalStateException("BUILDING_TRANSFER_CONTEXT_CHANGED");
+            // Transfer IO is asynchronous; a still-open panel is not proof that the grant is still valid.
+            boolean current=server.submit(()->permit.getAsBoolean()&&server.getPlayerList().getPlayer(owner)==player
+                    &&ServerAuthority.allowed(player,PermissionAction.EDIT_WORLD)&&permissions.actionRevision(owner,PermissionAction.EDIT_WORLD)==authority
+                    &&dev.mineagent.runtime.neoforge.task.ServerTaskStart.allowed(player,agent)).get(3,TimeUnit.SECONDS);
+            if(!current)throw new IllegalStateException("BUILDING_TRANSFER_CONTEXT_CHANGED");
             return switch(path){
                 case "/list"->store.list(owner,body.path("query").asText(""),body.path("offset").asInt(0));
                 case "/asset"->Map.of("asset",store.asset(owner,UUID.fromString(body.path("id").asText())));

@@ -8,9 +8,19 @@
       "bytes": 476
     },
     {
+      "path": ".github/scripts/boot-automatic.ps1",
+      "resourceId": "d42114a6-4b06-4389-99cf-0c7c8fb5a8f9",
+      "bytes": 3456
+    },
+    {
       "path": ".github/scripts/candidate-overlay.py",
       "resourceId": "37fc450c-5672-4f65-b676-8b2981e950f0",
       "bytes": 2669
+    },
+    {
+      "path": ".github/workflows/boot-lifecycle-compile.yml",
+      "resourceId": "495bcadf-6391-4e4e-be23-f6ed3d6125b3",
+      "bytes": 3669
     },
     {
       "path": ".github/workflows/build-jar.yml",
@@ -4174,8 +4184,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "db02210e-e838-4c97-af09-1db5ccdc8a20",
-      "bytes": 17539
+      "resourceId": "b7209273-cc21-4cf1-aefb-106fa1de06d8",
+      "bytes": 18724
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -7643,6 +7653,11 @@
       "bytes": 4320
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/BootAutomaticCiSmoke.java",
+      "resourceId": "e9e91d6c-5680-45ee-b071-a56dfa852bec",
+      "bytes": 8106
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/BuildingImportSmokeServer.java",
       "sha256": "697d906de4b2d2d8c6804fd7341899cc444f598a35593d02c9c432c8a071b870",
       "bytes": 6401
@@ -8144,8 +8159,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBlueprintTransfer.java",
-      "resourceId": "1c8443e6-d08c-4379-872c-e8f94e8a8ca4",
-      "bytes": 4718
+      "resourceId": "482e5917-7281-4625-9434-22f4277b9e7b",
+      "bytes": 5422
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildingFiles.java",
@@ -9940,5 +9955,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "f987576b8d53bf3f0e014737d140dae9362c7999"
+  "sourceCommit": "2b4d126dba7e402873b1f699dec68e61790bad22"
 }
