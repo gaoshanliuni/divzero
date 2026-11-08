@@ -893,6 +893,7 @@ public final class PersistentSkillSmokeClient {
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(mode.equals("cooperative_deepseek")){cooperativeDeepSeek();return;}
         if(mode.equals("native_travel")){nativeTravel();return;}
+        if(mode.equals("capability_foundation")){capabilityFoundation();return;}
         if(mode.equals("provider_presets")){waitFor("provider-presets-client-enabled",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});action("provider-presets-native",()->dev.mineagent.runtime.neoforge.client.nativeui.ModelSettingsSmoke.runPresets(agent));return;}
         if(mode.equals("native_production")){nativeProduction();return;}
         if(mode.equals("cooperative_building")){cooperativeBuilding();return;}
@@ -1179,6 +1180,18 @@ public final class PersistentSkillSmokeClient {
             require(new dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator(b).transition(from,to)==null,"MISSING_LANDING_ACCEPTED");
             return Map.of("lowCeilingRejected",true,"removedLandingRejected",true);
         }));
+    }
+    private static String foundationPlan;
+    private static void capabilityFoundation(){
+        action("plan-normal-geometry-block-entities",()->tool("plan_world_geometry",JSON.createObjectNode().put("source","{\"origin\":[5,101,6],\"parts\":[{\"kind\":\"box\",\"min\":[0,0,0],\"max\":[0,0,0],\"material\":\"minecraft:chest\"},{\"kind\":\"box\",\"min\":[1,0,0],\"max\":[1,0,0],\"material\":\"minecraft:furnace\"}]}")).thenApply(value->{require(value.path("status").asText().equals("PLANNED"),"BLOCK_ENTITY_PLAN_REJECTED_"+value);foundationPlan=value.path("planId").asText();return value;}));
+        action("apply-normal-geometry-block-entities",()->tool("apply_world_geometry",JSON.createObjectNode().put("plan_id",foundationPlan)).thenApply(value->{require(value.path("status").asText().equals("APPLIED")&&value.path("written").asInt()==2,"BLOCK_ENTITY_WRITE_FAILED_"+value);return value;}));
+        action("check-actual-block-entities",()->server(p->{
+            var chest=p.level().getBlockEntity(new BlockPos(5,101,6));var furnace=p.level().getBlockEntity(new BlockPos(6,101,6));
+            require(chest instanceof net.minecraft.world.level.block.entity.ChestBlockEntity&&furnace instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity,"DEFAULT_BLOCK_ENTITY_MISSING");
+            ((net.minecraft.world.Container)chest).setItem(0,new ItemStack(Items.DIAMOND,3));return Map.of("nativeChest",true,"nativeFurnace",true,"preservationFixtureItems",3);
+        }));
+        action("reject-overwriting-existing-container",()->tool("plan_world_geometry",JSON.createObjectNode().put("source","{\"origin\":[5,101,6],\"parts\":[{\"kind\":\"box\",\"min\":[0,0,0],\"max\":[0,0,0],\"material\":\"minecraft:stone\"}]}")).thenApply(value->{require(value.path("status").asText().equals("REJECTED")&&value.path("error").asText().contains("EXISTING_BLOCK_ENTITY"),"EXISTING_CONTAINER_NOT_PROTECTED_"+value);return value;}));
+        action("container-items-remain",()->server(p->{var chest=(net.minecraft.world.Container)p.level().getBlockEntity(new BlockPos(5,101,6));require(chest.getItem(0).is(Items.DIAMOND)&&chest.getItem(0).getCount()==3,"EXISTING_ITEMS_CHANGED");return Map.of("existingContainerPreserved",true,"itemsPreserved",3);}));
     }
     private static void nativeProduction(){
         action("production-raw-input-fixture",()->server(p->{

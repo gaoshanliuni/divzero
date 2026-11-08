@@ -33,7 +33,13 @@ public final class PermissionService {
         }
         return operator
                 || REGULAR_ACTIONS.contains(action)
-                || trustedActions.getOrDefault(playerId, Set.of()).contains(action);
+                || granted(trustedActions.getOrDefault(playerId, Set.of()), action);
+    }
+
+    /** Existing code-execution grants already permit these operations; narrower grants do not grant code execution. */
+    private static boolean granted(Set<PermissionAction> grants, PermissionAction action) {
+        return grants.contains(action) || (action==PermissionAction.EDIT_WORLD || action==PermissionAction.EDIT_ENTITIES)
+                && grants.contains(PermissionAction.RUN_CODE);
     }
 
     public synchronized void setTrustedActions(UUID playerId, Set<PermissionAction> actions) {
@@ -42,7 +48,7 @@ public final class PermissionService {
         }
         var next=actions.isEmpty()?Set.<PermissionAction>of():Set.copyOf(EnumSet.copyOf(actions));
         var previous=trustedActions.getOrDefault(playerId,Set.of());
-        for(var action:PermissionAction.values())if(previous.contains(action)!=next.contains(action)){
+        for(var action:PermissionAction.values())if(granted(previous,action)!=granted(next,action)){
             var revisions=actionRevisions.computeIfAbsent(playerId,ignored->new java.util.EnumMap<>(PermissionAction.class));
             revisions.put(action,Math.addExact(revisions.getOrDefault(action,0L),1));
         }

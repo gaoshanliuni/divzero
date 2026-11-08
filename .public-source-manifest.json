@@ -13,6 +13,11 @@
       "bytes": 6278
     },
     {
+      "path": ".github/workflows/capability-budget-compile.yml",
+      "resourceId": "acc57f8f-e817-459d-a8b0-b82b33997329",
+      "bytes": 2271
+    },
+    {
       "path": ".github/workflows/development-compile.yml",
       "resourceId": "c28fd57a-93b7-4051-b9e4-301ff9fbf72d",
       "bytes": 5453
@@ -524,8 +529,8 @@
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/permission/PermissionAction.java",
-      "sha256": "454f5b719394eedc9b3f9a0c1c283745cbd5fa1614186886d869d6a60b9144cf",
-      "bytes": 469
+      "resourceId": "41d8e981-2f25-42b6-b657-535445eba4c9",
+      "bytes": 504
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/recovery/BlockChange.java",
@@ -1009,8 +1014,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "resourceId": "a8fb42a6-9502-4054-b3c7-94e49470ca3b",
-      "bytes": 326858
+      "resourceId": "3ae74f48-c748-47e4-98a6-b7ed2fec66e9",
+      "bytes": 326925
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1909,8 +1914,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/geometry/WorldGeometry.java",
-      "sha256": "ffe6ad288ebe7bb32c1d9a26694331d05bc3e11aa1aba790b8e9796997272860",
-      "bytes": 28313
+      "resourceId": "301c4efb-3b59-44ec-af20-e93cfe35e28e",
+      "bytes": 28396
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/host/HostCommandRequest.java",
@@ -2349,8 +2354,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/permission/PermissionService.java",
-      "sha256": "be5847804b57837708670e8dbe224e43a017f816963edaf6d17b8bad6bdd2582",
-      "bytes": 5583
+      "resourceId": "323aaae7-bd4d-4a29-ab73-babc0e34f8af",
+      "bytes": 5985
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/permission/WorldActivation.java",
@@ -3748,6 +3753,11 @@
       "bytes": 3140
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/permission/PermissionServiceTest.java",
+      "resourceId": "bcc1a92a-5853-46aa-aa2c-c61ad6ced4b1",
+      "bytes": 5087
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/permission/WorldActivationTest.java",
       "sha256": "c1ed44371921e9c08789ebf8e4f9f7aa028ac28e1f360ffa84f0c00fe5691247",
       "bytes": 4036
@@ -4081,6 +4091,11 @@
       "path": "docs/BUILD_JAR.md",
       "sha256": "709d090da014b74760a8c4290658c7e44972b4c9dd72fd8e6c8abc872ab52a0a",
       "bytes": 5306
+    },
+    {
+      "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
+      "resourceId": "8497b79f-eea3-4fc4-a092-f03daaf2ec78",
+      "bytes": 2541
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -5414,8 +5429,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "d8cd749f-de8c-49d1-8921-10860d8b8520",
-      "bytes": 282734
+      "resourceId": "ec371f3f-18d1-4c81-b069-8a8ab4842ef5",
+      "bytes": 285069
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5939,8 +5954,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeUiTheme.java",
-      "sha256": "682de777e43b8efcb8961cff927ef70022ffe550651c081b51ccf8ce7bd4022f",
-      "bytes": 7880
+      "resourceId": "1e47e81f-f302-43b3-bf9d-6dfcb33d03a9",
+      "bytes": 7951
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeViewCapture.java",
@@ -7438,6 +7453,11 @@
       "bytes": 15680
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/ServerAuthority.java",
+      "resourceId": "56cdf35e-d2bd-4350-9b9b-0b202b62d7e8",
+      "bytes": 1047
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/ServerGenerationHistory.java",
       "resourceId": "e8d14d06-bb11-47e5-8e5d-1484013f266e",
       "bytes": 7637
@@ -7589,8 +7609,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "b3747750-66b8-4287-841b-f2ea609434bf",
-      "bytes": 80340
+      "resourceId": "574f1b32-af30-4253-bdda-1e19bf61adf5",
+      "bytes": 81012
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7699,8 +7719,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationWorldGeometry.java",
-      "resourceId": "31603b24-cf10-4bea-9d55-edadc75a3576",
-      "bytes": 30595
+      "resourceId": "f7694fd4-9a1e-44ef-bbbf-a273e3c413ba",
+      "bytes": 30812
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreateBlueprintReader.java",
@@ -7759,8 +7779,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityLogicTools.java",
-      "sha256": "e218f9f842b720c442fcc61cdeff6ddeb666c529ead50f6c9cacff8c3c6c7597",
-      "bytes": 9152
+      "resourceId": "87993626-f90e-4841-83d6-4b9a8397c7d8",
+      "bytes": 9288
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/EntityModelProbe.java",
@@ -7859,8 +7879,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeEntityTemplates.java",
-      "sha256": "9acc1d52e09f04302b867c9283b5f490fb6b147fbfabafef3b8c50c77497472c",
-      "bytes": 17660
+      "resourceId": "feb1b01f-a40e-4367-a739-11d564147949",
+      "bytes": 17659
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeFeedbackData.java",
@@ -7979,8 +7999,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildings.java",
-      "resourceId": "bc2d22d8-3fea-4d0d-a5dc-69911f192583",
-      "bytes": 32075
+      "resourceId": "ab53a078-54a4-4696-9150-7752387e9bf6",
+      "bytes": 32139
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBulldozers.java",
@@ -8029,8 +8049,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEntityInterop.java",
-      "sha256": "ccf73957ad58cfda66cd9f15bb5c1ee31ef6574dd3dc571af762b05acde8235a",
-      "bytes": 18712
+      "resourceId": "1fa9da8d-8fe4-4785-a987-c53f7dff6a0a",
+      "bytes": 18718
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEventAbilities.java",
@@ -8769,8 +8789,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/preflight/ScriptPreflight.java",
-      "sha256": "3de0b9c84ebdbb668cc39e1803574be2ebcba0831e8a09261d272d1b1d8cac54",
-      "bytes": 2513
+      "resourceId": "9f949110-c6cc-48d8-8db5-9c6b414d708a",
+      "bytes": 4570
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/CodeDraftResult.java",
@@ -8863,9 +8883,19 @@
       "bytes": 5502
     },
     {
+      "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/ManagedScriptRuntimeTest.java",
+      "resourceId": "575f879a-f346-463d-8e01-9872196006e8",
+      "bytes": 10607
+    },
+    {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/preflight/BrowserScriptPreflightTest.java",
       "resourceId": "befe024c-adeb-424d-a9c3-16a6f0dc8d23",
       "bytes": 1431
+    },
+    {
+      "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/preflight/ScriptPreflightTest.java",
+      "resourceId": "ee62e892-3c3e-4535-a5ed-db586f253f64",
+      "bytes": 2311
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/studio/CodeDraftServiceTest.java",
@@ -9755,5 +9785,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "93d0f682d85c0ba18eed3715e4cd8e352b0070c6"
+  "sourceCommit": "444f80799abf7aef7e5bc886b4b97c3e377556ad"
 }

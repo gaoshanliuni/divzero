@@ -37,6 +37,12 @@ public final class ConversationAgentTools {
     private ConversationAgentTools(){}
     private static boolean current(ServerPlayer p,BooleanSupplier permit){return permit.getAsBoolean()&&p.level().getServer().getPlayerList().getPlayer(p.getUUID())==p;}
     private static boolean personalTool(String tool){return Set.of("set_chat_settings","set_chat_messages","remember","forget_memory").contains(tool);}
+    private static dev.mineagent.runtime.api.permission.PermissionAction toolPermission(String tool){
+        if(personalTool(tool))return dev.mineagent.runtime.api.permission.PermissionAction.CHAT;
+        if(Set.of("plan_world_geometry","apply_world_geometry","plan_building","apply_building","control_building","construct_building","plan_building_import").contains(tool))return dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD;
+        if(Set.of("set_entity_rule","delete_entity_rule","set_entity_state","set_entity_animation","define_native_entity","control_native_entity","replace_entity_part").contains(tool))return dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES;
+        return dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE;
+    }
     private static boolean itemPermission(ServerPlayer p){return MineAgentRuntimeServices.permissions(p.level().getServer()).allowed(p.getUUID(),p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE);}
     private static void keys(JsonNode n,String... allowed){if(n==null||!n.isObject())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS",new IllegalArgumentException("arguments must be an object"));var extra=n.properties().stream().map(Map.Entry::getKey).filter(k->!Set.of(allowed).contains(k)).toList();if(!extra.isEmpty())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS",new IllegalArgumentException("Unknown fields "+extra+"; allowed fields are "+Arrays.toString(allowed)));}
     private static String text(JsonNode n,String key,int max){if(!n.path(key).isTextual()||n.path(key).asText().length()>max||n.path(key).asText().isBlank())throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS",new IllegalArgumentException(key+": expected nonempty text of at most "+max+" characters; received "+n.path(key).getNodeType()));return n.path(key).asText();}
@@ -135,7 +141,7 @@ public final class ConversationAgentTools {
             if(!ConversationTools.mutation(tool)){if(tool.equals("inspect_container"))return CompletableFuture.completedFuture(ConversationNativeInteractions.inspect(p,agent,args));return read(p,tool,args,permit);}
             if(!personalTool(tool)&&!ServerTaskStart.allowed(p,agent))throw new SecurityException("AGENT_TOOL_PERMISSION");
             if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");
-            var world=MineAgentRuntimeServices.worldId(s);var level=p.level();var permissionAction=personalTool(tool)?dev.mineagent.runtime.api.permission.PermissionAction.CHAT:dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE;long permission=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),permissionAction);
+            var world=MineAgentRuntimeServices.worldId(s);var level=p.level();var permissionAction=toolPermission(tool);long permission=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),permissionAction);
             var db=s.getServerDirectory().resolve("mineagent-runtime-data/runtime.db");var result=new CompletableFuture<Map<String,Object>>();String intent=JSON.writeValueAsString(Map.of("state","DISPATCHING","owner",p.getUUID(),"agent",agent,"tool",tool,"arguments",args));
             CompletableFuture.runAsync(()->{try{ConversationToolJournal.save(db,world,operation,0,intent);}catch(Exception e){throw new CompletionException(e);}},IO).whenComplete((v,error)->s.execute(()->{
                 if(error!=null){result.complete(ToolFailure.result(tool,operation,error,ToolFailure.Phase.INTENT_STORAGE));return;}

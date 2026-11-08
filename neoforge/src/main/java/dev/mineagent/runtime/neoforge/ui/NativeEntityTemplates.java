@@ -40,7 +40,7 @@ public final class NativeEntityTemplates {
         public void close()throws Exception{closed=true;db.close();}
     }
     private static State state(MinecraftServer server){if(!server.isSameThread())throw new IllegalStateException("NATIVE_ENTITY_SERVER_THREAD");return LIVE.computeIfAbsent(server,s->{try{return new State(s);}catch(Exception e){throw new IllegalStateException("NATIVE_ENTITY_STORE",e);}});}
-    private static void authority(ServerPlayer p){if(!p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))throw new SecurityException("NATIVE_ENTITY_GAMEMASTER_REQUIRED");}
+    private static void authority(ServerPlayer p){dev.mineagent.runtime.neoforge.task.ServerAuthority.require(p,dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES);}
     private static EntityType<?> type(String id){var key=Identifier.parse(id);if(!BuiltInRegistries.ENTITY_TYPE.containsKey(key))throw new IllegalArgumentException("NATIVE_ENTITY_MOD_NOT_INSTALLED");var type=BuiltInRegistries.ENTITY_TYPE.getValue(key);if(!type.canSummon()||!type.canSerialize()||id.equals("minecraft:player"))throw new IllegalArgumentException("NATIVE_ENTITY_TYPE_NOT_PERSISTENT_SUMMONABLE");return type;}
     private static int offset(JsonNode n){if(!n.has("offset"))return 0;if(!n.get("offset").isIntegralNumber()||!n.get("offset").canConvertToInt()||n.get("offset").intValue()<0)throw new IllegalArgumentException("NATIVE_ENTITY_OFFSET");return n.get("offset").intValue();}
     public static java.util.List<Template> ownedTemplates(ServerPlayer p){return state(p.level().getServer()).rows.values().stream().filter(r->r.owner().equals(p.getUUID())).toList();}

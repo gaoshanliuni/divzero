@@ -3614,5 +3614,7 @@
   "豆包 火山方舟": "Doubao (Volcengine Ark)",
   "MiMo 小米": "MiMo (Xiaomi)",
   "SiliconFlow 硅基流动": "SiliconFlow",
-  "选择模板只填入地址；保存后选择或填写对应平台的模型。": "A preset fills the address. Save, then select or enter a model from that provider."
+  "选择模板只填入地址；保存后选择或填写对应平台的模型。": "A preset fills the address. Save, then select or enter a model from that provider.",
+  "编辑世界": "Edit world",
+  "编辑实体": "Edit entities"
 }

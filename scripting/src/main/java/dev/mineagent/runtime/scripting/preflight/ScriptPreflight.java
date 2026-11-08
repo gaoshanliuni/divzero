@@ -9,6 +9,7 @@ import dev.latvian.mods.rhino.ast.AstNode;
 import dev.latvian.mods.rhino.ast.EmptyExpression;
 import dev.latvian.mods.rhino.ast.ForLoop;
 import dev.latvian.mods.rhino.ast.WhileLoop;
+import dev.latvian.mods.rhino.ast.*;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -28,23 +29,54 @@ public final class ScriptPreflight {
             return new PreflightResult(false, diagnostics);
         }
 
-        var nodes = new ArrayDeque<Node>();
-        nodes.add(root);
-        while (!nodes.isEmpty()) {
-            Node node = nodes.removeFirst();
-            if (node instanceof WhileLoop loop && loop.getCondition().getType() == Token.TRUE) {
-                diagnostics.add(infiniteLoop(loop));
-            } else if (node instanceof ForLoop loop
-                    && (loop.getCondition() == null
-                    || loop.getCondition() instanceof EmptyExpression
-                    || loop.getCondition().getType() == Token.EMPTY)) {
-                diagnostics.add(infiniteLoop(loop));
-            }
-            for (Node child = node.getFirstChild(); child != null; child = child.getNext()) {
-                nodes.addLast(child);
-            }
-        }
+        root.visit(node -> {
+            AstNode body = null;
+            if (node instanceof WhileLoop loop && literalTrue(loop.getCondition())) body = loop.getBody();
+            else if (node instanceof ForLoop loop && (loop.getCondition() == null || loop.getCondition() instanceof EmptyExpression
+                    || loop.getCondition().getType() == Token.EMPTY || literalTrue(loop.getCondition()))) body = loop.getBody();
+            else if (node instanceof DoLoop loop && literalTrue(loop.getCondition())) body = loop.getBody();
+            if (body != null && !hasExit(node, body)) diagnostics.add(infiniteLoop(node));
+            return true;
+        });
         return new PreflightResult(diagnostics.isEmpty(), diagnostics);
+    }
+
+    private static AstNode unparenthesized(AstNode node) {
+        while (node instanceof ParenthesizedExpression expression) node = expression.getExpression();
+        return node;
+    }
+    private static boolean literalTrue(AstNode node) { return node != null && unparenthesized(node).getType() == Token.TRUE; }
+    private static boolean encloses(AstNode outer, AstNode inner) {
+        if (outer == null) return false;
+        for (AstNode node=inner; node!=null; node=node.getParent()) if (node == outer) return true;
+        return false;
+    }
+    /** Possible exits belong to this loop/enclosing function, never to a nested function or switch. */
+    private static boolean hasExit(AstNode loop, AstNode body) {
+        boolean[] found={false};
+        NodeVisitor exits = new NodeVisitor() {
+            @Override public boolean visit(AstNode node) {
+                if (found[0] || node instanceof FunctionNode) return false;
+                if (node instanceof IfStatement branch) {
+                    int condition=unparenthesized(branch.getCondition()).getType();
+                    if (condition==Token.TRUE || condition==Token.FALSE) {
+                        var reachable=condition==Token.TRUE?branch.getThenPart():branch.getElsePart();
+                        if (reachable!=null) reachable.visit(this);
+                        return false;
+                    }
+                }
+                if (node instanceof BreakStatement stop && encloses(stop.getBreakTarget(),loop)) found[0]=true;
+                if (node instanceof ReturnStatement) found[0]=true;
+                if (node instanceof ThrowStatement) {
+                    boolean caught=false;
+                    for(var parent=node.getParent();parent!=null&&parent!=loop;parent=parent.getParent())
+                        if(parent instanceof TryStatement attempt&&!attempt.getCatchClauses().isEmpty()&&encloses(attempt.getTryBlock(),node)){caught=true;break;}
+                    if(!caught)found[0]=true;
+                }
+                return !found[0];
+            }
+        };
+        body.visit(exits);return found[0];
     }
 
     private static PreflightDiagnostic infiniteLoop(AstNode loop) {

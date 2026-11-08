@@ -48,7 +48,7 @@ public final class WorldGeometry {
         {"op":"array","count":[1..2048,1..2048,1..2048],"step":[整数x,y,z]}包含原件，网格阵列。
         {"op":"path","points":[三维点...],"spacing":正数,"orient":true}沿折线路径按弧长重复，包含起点；复制局部模板以[0,0,0]为锚，orient可按切向将模板+Z朝向旋转到最近90度。
         连续曲线/曲面栅格化为方块近似，不是任意角度BlockState旋转。坐标局部±4096；最终包围盒每轴最多2048格（包含两端），即最大2048×2048×2048范围。不再设262144体素总量上限；大计划在后台写入磁盘、按分页/分Tick采样和执行，不全部装内存。磁盘不足、取消、未加载区块或世界高度外明确失败，不截断。工具轮数/累计调用数不限。
-        实際世界读取/写入分Tick，仅读写已加载区块且世界边界/高度合法；真实游戏管理权限；禁止覆盖现有BlockEntity或创建BlockEntity，不支持NBT/箱子内容编辑。
+        实際世界读取/写入分Tick，仅读写已加载区块且世界边界/高度合法；由 OP 或明确授予 EDIT_WORLD 的玩家编辑；允许创建默认空的原生 BlockEntity，继续禁止覆盖现有容器/机器，不支持通过几何字符串注入 NBT 或箱子物品。
         计划绑定玩家/AI/维度/权限，完成采样后10分钟可启动、一次消费；大计划进行中不按这10分钟中断；包含实际旧状态和新状态计数、bounds、预览。apply重新核对旧状态，过期/变化拒绝；执行中变化/停止可能PARTIAL，绝不自动重放。
         回执包含写入计数及等待物理更新后的实际状态匹配数。放置成功不等于红石/流体机器工作；仍需inspect_blocks等待读回。inspect_world_geometry(plan_id,offset)可分页读取计划所有选中体素，offset为返回的持久游标，不能把分页当截断；旧的已完成计划缓存可能被新计划回收，实际写入回执仍在inspect_operations。
         示例：{"origin":[0,80,0],"parts":[{"kind":"box","min":[0,0,0],"max":[5,3,5],"mode":"walls","material":"minecraft:stone_bricks"},{"kind":"cylinder","center":[8,0,0],"radius":[2,2],"height":5,"material":{"mode":"stripe","states":["minecraft:stone","minecraft:andesite"],"axis":"y"}}]}
