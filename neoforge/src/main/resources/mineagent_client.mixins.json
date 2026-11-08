@@ -29,6 +29,7 @@
     "client.EntityModelRenderRulesMixin",
     "client.LivingEntityPartsMixin",
     "client.EntityRenderContextMixin",
+    "client.EntityRendererAdaptersMixin",
     "client.NativeButtonMixin",
     "client.NativeSelectorMixin",
     "client.ContainerScreenGeometry",

@@ -8,14 +8,19 @@
       "bytes": 476
     },
     {
+      "path": ".github/scripts/candidate-overlay.py",
+      "resourceId": "37fc450c-5672-4f65-b676-8b2981e950f0",
+      "bytes": 2669
+    },
+    {
       "path": ".github/workflows/build-jar.yml",
       "resourceId": "936e78f8-0d7f-42e0-ae22-443cc4207893",
       "bytes": 6278
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
-      "resourceId": "ace85f66-f585-4aa8-a9cb-f0dd9a9f117f",
-      "bytes": 2808
+      "resourceId": "9b845ecd-ae10-49c4-822d-893503938919",
+      "bytes": 3683
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -6124,8 +6129,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/EntityVisualClient.java",
-      "sha256": "ad4276d92d3ddcc6e21312d609ead77bd5ad6393ad6c57f280f0504960faa7cb",
-      "bytes": 11811
+      "resourceId": "1bed169e-6335-409c-b0e0-d8fcd37a4ca2",
+      "bytes": 12713
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeAcceptanceClient.java",
@@ -6136,6 +6141,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeBossSmokeClient.java",
       "sha256": "d0385dad5bb6ad98d4a355dc3dd6f64be4ecec9908b6aaea7fe388e934b603e5",
       "bytes": 1638
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RendererAdapters.java",
+      "resourceId": "08edd28e-8a5c-4ea9-8479-8559c3ce3c29",
+      "bytes": 2683
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeCreatureRenderer.java",
@@ -6976,6 +6986,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/EntityRenderContextMixin.java",
       "sha256": "bab3bb122af46591725e72e9d0f32bc5ec74eb467e3b10ed94cbc1417b4b8f29",
       "bytes": 801
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/EntityRendererAdaptersMixin.java",
+      "resourceId": "b6ffc850-3eb0-407d-8a92-f88f360e9949",
+      "bytes": 1191
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/mixin/client/GuiMessageMarkMixin.java",
@@ -8609,8 +8624,8 @@
     },
     {
       "path": "neoforge/src/main/resources/mineagent_client.mixins.json",
-      "sha256": "7a3938c3a41927ae4ba22124359e3bfec437503361d04be785ce510f5af46af4",
-      "bytes": 1334
+      "resourceId": "0498de00-b25a-4594-b217-ae6a1f2e5034",
+      "bytes": 1376
     },
     {
       "path": "neoforge/src/main/resources/mineagent_container.mixins.json",
@@ -9860,5 +9875,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "791c72c9882bd015f554cb330257e2a422224afe"
+  "sourceCommit": "d1c2267bbff4a79c38eb020280140eb2a83ceb44"
 }
