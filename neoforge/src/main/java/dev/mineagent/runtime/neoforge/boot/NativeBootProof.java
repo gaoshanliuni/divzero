@@ -17,19 +17,28 @@ public final class NativeBootProof {
     private NativeBootProof(){}
     private static Source source(String modId)throws Exception {
         var info=net.neoforged.fml.ModList.get().getModFileById(modId);if(info==null)throw new IllegalStateException("BOOT_LOADER_SOURCE_MISSING");var file=info.getFile().getFilePath().toRealPath();
-        var image=BootArtifact.inspect(NativeCompilationSnapshot.read(file,BootExtensionPlan.MAX_ARCHIVE));if(!image.metadata().modId().equals(modId))throw new IllegalStateException("BOOT_LOADER_SOURCE_UNVERIFIED");return new Source(image.metadata(),file.toString(),image.hash());
+        var root=net.neoforged.fml.loading.FMLPaths.GAMEDIR.get().resolve("mineagent-runtime-data/boot-install");
+        var image=BootFiles.inspect(file,root.resolve("cache"));if(!image.metadata().modId().equals(modId))throw new IllegalStateException("BOOT_LOADER_SOURCE_UNVERIFIED");
+        var json=new com.fasterxml.jackson.databind.ObjectMapper();var receipts=new ArrayList<BootInstallStore.Build>();
+        if(image.proof()!=null){var receipt=root.resolve("receipts").resolve(image.proof().build()+".json");receipts.add(json.readValue(NativeCompilationSnapshot.read(receipt,1024*1024),BootInstallStore.Build.class));}
+        else try(var files=java.nio.file.Files.newDirectoryStream(root.resolve("receipts"),"*.json")){for(var receipt:files){var build=json.readValue(NativeCompilationSnapshot.read(receipt,1024*1024),BootInstallStore.Build.class);if(build.artifact().equals(image.hash()))receipts.add(build);}}
+        boolean approved=false;for(var build:receipts)if(build.artifact().equals(image.hash())&&build.modId().equals(modId)&&java.nio.file.Path.of(build.directory()).resolve(BootFiles.filename(build)).toRealPath().equals(file)&&build.manifest().equals(image.metadata().manifest())){
+            image.verify(Base64.getDecoder().decode(build.publicKey()),build.manifest().canonicalSha256(),build.nativeClasspath(),build.environment());approved=true;break;
+        }
+        if(!approved||!dev.mineagent.runtime.core.packages.NativeCompatibilityPolicy.check(image.metadata().manifest(),dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe(),image.metadata().physicalSide()).allowed())throw new IllegalStateException("BOOT_LOADER_SOURCE_UNVERIFIED");
+        return new Source(image.metadata(),file.toString(),image.hash());
     }
     /** FML's dependency futures must have completed; fail instead of waiting under Mod construction. */
     public static void requireDependencies(Class<?> bootstrap,String modId,String packageId,String canonical)throws Exception {
         var current=source(modId);var metadata=current.metadata();
-        if(!metadata.bootstrap().equals(bootstrap.getName())||!metadata.manifest().packageId().toString().equals(packageId)||!metadata.manifest().canonicalSha256().equals(canonical)||!RuntimePackageCanonicalizer.sha256(metadata.manifest()).equals(canonical))throw new IllegalStateException("BOOT_LOADER_SOURCE_UNVERIFIED");
+        if(!metadata.bootstrap().equals(bootstrap.getName())||!metadata.manifest().packageId().toString().equals(packageId)||!metadata.manifest().canonicalSha256().equals(canonical))throw new IllegalStateException("BOOT_LOADER_SOURCE_UNVERIFIED");
         var graph=metadata.dependencies()==null?BootDependencyGraph.empty():metadata.dependencies();graph.require(metadata.manifest());
         var directory=net.neoforged.fml.loading.FMLPaths.MODSDIR.get().toRealPath();
         for(var dependency:graph.nodes()){
             var proof=INITIALIZED.get(dependency.modId());var loaded=SOURCES.get(dependency.modId());
             if(proof==null||loaded==null||!proof.archiveHash().equals(dependency.artifact())||!loaded.hash().equals(dependency.artifact())||!proof.packageId().equals(dependency.packageId())||!proof.canonical().equals(dependency.canonical())||!proof.path().equals(directory.resolve(dependency.filename()).toString()))throw new IllegalStateException("BOOT_DEPENDENCY_NOT_INITIALIZED");
             dependency.require(loaded.metadata(),loaded.hash());graph.requireEmbedded(loaded.metadata());
-            if(!loaded.metadata().physicalSide().equals(metadata.physicalSide())||!IdentitySigner.verify(Base64.getDecoder().decode(dependency.publicKey()),dependency.canonical().getBytes(StandardCharsets.US_ASCII),Base64.getDecoder().decode(loaded.metadata().manifest().signature())))throw new IllegalStateException("BOOT_DEPENDENCY_SOURCE_UNVERIFIED");
+            if(!loaded.metadata().physicalSide().equals(metadata.physicalSide())||!dev.mineagent.runtime.core.packages.PackageSignatures.verifyManifest(loaded.metadata().manifest(),Base64.getDecoder().decode(dependency.publicKey())))throw new IllegalStateException("BOOT_DEPENDENCY_SOURCE_UNVERIFIED");
         }
     }
     public static void initialized(Class<?> bootstrap,String modId,String packageId,String canonical) {

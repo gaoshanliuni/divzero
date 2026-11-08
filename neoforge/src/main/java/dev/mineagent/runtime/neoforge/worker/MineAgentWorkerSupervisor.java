@@ -355,19 +355,19 @@ public final class MineAgentWorkerSupervisor implements AutoCloseable {
                 for(var dependency:dependencies.nodes()){
                     if(!permit.getAsBoolean())throw new IllegalStateException("BOOT_AUTHORITY_CHANGED");
                     var file=net.neoforged.fml.loading.FMLPaths.MODSDIR.get().toRealPath().resolve(dependency.filename());byte[] bytes=dev.mineagent.runtime.core.boot.BootFiles.archive(file,dependency.artifact());
-                    var image=dev.mineagent.runtime.core.boot.BootArtifact.inspect(bytes);dependency.require(image.metadata(),image.hash());image.verify(java.util.Base64.getDecoder().decode(dependency.publicKey()),dependency.canonical(),image.metadata().nativeClasspath(),image.metadata().environment().fingerprint());dependencies.requireEmbedded(image.metadata());
+                    var image=dev.mineagent.runtime.core.boot.BootArtifact.inspect(bytes,dependency.artifact());dependency.require(image.metadata(),image.hash());image.verify(java.util.Base64.getDecoder().decode(dependency.publicKey()),dependency.canonical(),image.metadata().nativeClasspath(),image.metadata().environment().fingerprint());dependencies.requireEmbedded(image.metadata());
                     if(snapshot.snapshot().environment().mods().containsKey(dependency.modId())){
                         var info=net.neoforged.fml.ModList.get().getModFileById(dependency.modId());var proof=dev.mineagent.runtime.neoforge.boot.NativeBootProof.get(dependency.modId()).orElseThrow(()->new IllegalStateException("BOOT_DEPENDENCY_LOADER_UNVERIFIED"));
                         if(info==null||!info.getFile().getFilePath().toRealPath().equals(file.toRealPath())||!proof.archiveHash().equals(dependency.artifact())||!proof.canonical().equals(dependency.canonical())||!proof.packageId().equals(dependency.packageId()))throw new IllegalStateException("BOOT_DEPENDENCY_LOADER_CHANGED");
                     }
-                    if(!content.put(bytes).sha256().equals(dependency.artifact()))throw new IllegalStateException("BOOT_DEPENDENCY_CHANGED");
+                    content.put(dependency.artifact(),bytes);
                 }
                 var values=new com.fasterxml.jackson.databind.ObjectMapper().convertValue(pkg,new com.fasterxml.jackson.core.type.TypeReference<Map<String,Object>>(){});
                 var payload=new java.util.LinkedHashMap<String,Object>();payload.put("manifest",values);payload.put("publicKey",java.util.Base64.getEncoder().encodeToString(publicKey));payload.put("nativeClasspath",snapshot.hash());payload.put("dependencies",dependencies);
                 if(previous!=null){
                     if(!previous.manifest().packageId().equals(pkg.packageId()))throw new IllegalStateException("BOOT_REPLACEMENT_SOURCE");
                     var file=java.nio.file.Path.of(previous.directory()).resolve(dev.mineagent.runtime.core.boot.BootFiles.filename(previous));
-                    var original=dev.mineagent.runtime.core.boot.BootArtifact.inspect(dev.mineagent.runtime.core.boot.BootFiles.archive(file,previous.artifact()));original.verify(java.util.Base64.getDecoder().decode(previous.publicKey()),previous.manifest().canonicalSha256(),previous.nativeClasspath(),previous.environment());
+                    var original=dev.mineagent.runtime.core.boot.BootArtifact.inspect(dev.mineagent.runtime.core.boot.BootFiles.archive(file,previous.artifact()),previous.artifact());original.verify(java.util.Base64.getDecoder().decode(previous.publicKey()),previous.manifest().canonicalSha256(),previous.nativeClasspath(),previous.environment());
                     var info=net.neoforged.fml.ModList.get().getModFileById(previous.modId());String moduleHash="";
                     if(info!=null){if(!info.getFile().getFilePath().toRealPath().equals(file.toRealPath()))throw new IllegalStateException("BOOT_REPLACEMENT_LOADER_SOURCE");moduleHash=snapshot.snapshot().module(previous.modId()).sha256();}
                     else if(snapshot.snapshot().environment().mods().containsKey(previous.modId()))throw new IllegalStateException("BOOT_REPLACEMENT_LOADER_SOURCE");

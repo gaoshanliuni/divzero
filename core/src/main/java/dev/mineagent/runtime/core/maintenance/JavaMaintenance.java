@@ -28,60 +28,74 @@ public final class JavaMaintenance {
     }
     static Path directory(Path p)throws Exception{Path value=p.toAbsolutePath().normalize();if(!Files.isDirectory(value,LinkOption.NOFOLLOW_LINKS)||Files.isSymbolicLink(value)||!value.toRealPath().equals(value))throw new IllegalStateException("MAINTENANCE_DIRECTORY_LINK");return value;}
     static Path child(Path parent,String name){if(name.isBlank()||name.contains("/")||name.contains("\\")||name.contains(":")||name.equals(".")||name.equals(".."))throw new IllegalArgumentException("MAINTENANCE_PATH");Path path=parent.resolve(name);if(Files.isSymbolicLink(path))throw new IllegalStateException("MAINTENANCE_FILE_LINK");return path;}
-    private static byte[] checked(Path p,String hash,int limit)throws Exception{var data=NativeCompilationSnapshot.read(p,limit);if(!RuntimePackageCanonicalizer.sha256(data).equals(hash))throw new IllegalStateException("MAINTENANCE_HASH_CHANGED");return data;}
+    private static byte[] checked(Path p,String id,int limit,Path cache)throws Exception{
+        byte[] data=BootFiles.archive(p,id);if(data.length>limit||!Arrays.equals(data,BootFiles.archive(child(cache,id+".jar"),id)))throw new IllegalStateException("MAINTENANCE_CONTENT_CHANGED");return data;
+    }
+    private static BootInstallStore.Build buildRecord(Path root,UUID id)throws Exception{return JSON.readValue(NativeCompilationSnapshot.read(child(directory(root.resolve("receipts")),id+".json"),1024*1024),BootInstallStore.Build.class);}
+    private static BootUpgradePlan approvedPlan(Path root,UUID operation,String requested)throws Exception{
+        BootUpgradePlan approved;
+        try(var database=java.sql.DriverManager.getConnection("jdbc:sqlite:"+root.resolve("boot-installs.db"));var query=database.prepareStatement("SELECT payload FROM boot_upgrades_v1 WHERE id=?")){
+            query.setString(1,operation.toString());try(var rows=query.executeQuery()){if(!rows.next())throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_MISSING");approved=JSON.readValue(rows.getString(1),BootInstallStore.Upgrade.class).input();}
+        }
+        if(!approved.operation().equals(operation)||approved.schema()==2&&!approved.sha256().equals(requested))throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_CHANGED");
+        byte[] actual=NativeCompilationSnapshot.read(child(directory(root.resolve("upgrades")),operation+".json"),16384);
+        if(!Arrays.equals(actual,approved.encode()))throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_CHANGED");return approved;
+    }
     private static void atomicJson(Path destination,Object value)throws Exception{byte[] bytes=JSON.writeValueAsBytes(value);if(Files.exists(destination,LinkOption.NOFOLLOW_LINKS))throw new IllegalStateException("MAINTENANCE_RECEIPT_ALREADY_EXISTS");Path pending=Files.createTempFile(destination.getParent(),".maintenance-",".pending");try{Files.write(pending,bytes);try(var c=FileChannel.open(pending,StandardOpenOption.WRITE)){c.force(true);}Files.move(pending,destination,StandardCopyOption.ATOMIC_MOVE);}finally{Files.deleteIfExists(pending);}}
     public static Map<String,Object> upgrade(Path game,Map<String,String> a)throws Exception{
         Path root=directory(game.resolve("mineagent-runtime-data/boot-install")),plans=directory(root.resolve("upgrades")),cache=directory(root.resolve("cache"));
         UUID operation=UUID.fromString(required(a,"operation"));String hash=required(a,"plan-hash"),action=required(a,"action");if(!hash.matches("[a-f0-9]{64}")||!Set.of("apply","rollback").contains(action))throw new IllegalArgumentException("MAINTENANCE_PLAN_ARGUMENTS");
         try(var c=FileChannel.open(child(root,"boot-installs.lock"),StandardOpenOption.WRITE);var lease=c.tryLock()){
             if(lease==null)throw new IllegalStateException("BOOT_STORE_IN_USE");
-            Path planFile=child(plans,operation+".json");var plan=JSON.readValue(checked(planFile,hash,16384),BootUpgradePlan.class);
+            Path planFile=child(plans,operation+".json");var plan=approvedPlan(root,operation,hash);
             Path mods=directory(Path.of(required(a,"mods")));if(!plan.operation().equals(operation)||!plan.modId().equals(required(a,"mod-id"))||!mods.toString().equals(plan.directory()))throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_CHANGED");
             if(Files.exists(child(plans,operation+".cancelled"),LinkOption.NOFOLLOW_LINKS))throw new IllegalStateException("BOOT_UPGRADE_CANCELLED");
             if(action.equals("apply")&&Files.exists(child(plans,operation+".rollback.json"),LinkOption.NOFOLLOW_LINKS))throw new IllegalStateException("BOOT_UPGRADE_ALREADY_ROLLED_BACK");
             String wanted=action.equals("apply")?plan.nextArtifact():plan.previousArtifact(),before=action.equals("apply")?plan.previousArtifact():plan.nextArtifact();
-            byte[] bytes=checked(child(cache,wanted+".jar"),wanted,BootExtensionPlan.MAX_ARCHIVE);var artifact=BootArtifact.inspect(bytes);var m=artifact.metadata();
+            byte[] bytes=checked(child(cache,wanted+".jar"),wanted,BootExtensionPlan.MAX_ARCHIVE,cache);var artifact=BootArtifact.inspect(bytes,wanted);var m=artifact.metadata();
+            var wantedBuild=buildRecord(root,action.equals("apply")?plan.nextBuild():plan.previousBuild());artifact.verify(Base64.getDecoder().decode(wantedBuild.publicKey()),wantedBuild.manifest().canonicalSha256(),wantedBuild.nativeClasspath(),wantedBuild.environment());
+            var beforeBuild=buildRecord(root,action.equals("apply")?plan.previousBuild():plan.nextBuild());BootArtifact.inspect(checked(child(cache,before+".jar"),before,BootExtensionPlan.MAX_ARCHIVE,cache),before).verify(Base64.getDecoder().decode(beforeBuild.publicKey()),beforeBuild.manifest().canonicalSha256(),beforeBuild.nativeClasspath(),beforeBuild.environment());
             if(!m.manifest().packageId().equals(plan.packageId())||!m.modId().equals(plan.modId())||!m.manifest().canonicalSha256().equals(action.equals("apply")?plan.nextCanonical():plan.previousCanonical()))throw new IllegalStateException("BOOT_UPGRADE_ARTIFACT_CHANGED");
             if(action.equals("apply")&&(m.replacement()==null||!m.replacement().build().equals(plan.previousBuild())||!m.replacement().artifact().equals(plan.previousArtifact())))throw new IllegalStateException("BOOT_UPGRADE_PREDECESSOR_CHANGED");
-            dependencies(mods,artifact,plan.filename());Path target=child(mods,plan.filename()),receipt=child(plans,operation+"."+action+".json");String current=RuntimePackageCanonicalizer.sha256(NativeCompilationSnapshot.read(target,BootExtensionPlan.MAX_ARCHIVE));
+            dependencies(mods,artifact,plan.filename(),cache);Path target=child(mods,plan.filename()),receipt=child(plans,operation+"."+action+".json");String current=BootFiles.identity(target,cache);
             if(!current.equals(wanted)&&!current.equals(before))throw new IllegalStateException("BOOT_UPGRADE_SLOT_CHANGED");
             if(Boolean.parseBoolean(a.getOrDefault("preview","false")))return Map.of("status","PREVIEW","operation",operation,"action",action,"alreadyApplied",current.equals(wanted),"worldModified",false);
-            if(Files.exists(receipt,LinkOption.NOFOLLOW_LINKS)){var old=JSON.readTree(NativeCompilationSnapshot.read(receipt,4096));if(!current.equals(wanted)||!old.path("planHash").asText().equals(hash)||!old.path("targetHash").asText().equals(wanted)||!old.path("action").asText().equals(action))throw new IllegalStateException("BOOT_UPGRADE_RECEIPT_CONFLICT");return Map.of("status","ALREADY_APPLIED","operation",operation);}
+            if(Files.exists(receipt,LinkOption.NOFOLLOW_LINKS)){var old=JSON.readTree(NativeCompilationSnapshot.read(receipt,4096));if(!current.equals(wanted)||!(old.path("planHash").asText().equals(plan.sha256())||plan.schema()==1&&old.path("planHash").asText().matches("[a-f0-9]{64}"))||!old.path("targetHash").asText().equals(wanted)||!old.path("action").asText().equals(action))throw new IllegalStateException("BOOT_UPGRADE_RECEIPT_CONFLICT");return Map.of("status","ALREADY_APPLIED","operation",operation);}
             if(!current.equals(wanted)){
-                Path backup=child(mods,plan.filename()+".upgrade-"+operation+"."+action+".previous");byte[] prior=checked(target,before,BootExtensionPlan.MAX_ARCHIVE);
-                if(Files.exists(backup,LinkOption.NOFOLLOW_LINKS))checked(backup,before,BootExtensionPlan.MAX_ARCHIVE);else{Files.write(backup,prior,StandardOpenOption.CREATE_NEW);try(var b=FileChannel.open(backup,StandardOpenOption.WRITE)){b.force(true);}}
+                Path backup=child(mods,plan.filename()+".upgrade-"+operation+"."+action+".previous");byte[] prior=checked(target,before,BootExtensionPlan.MAX_ARCHIVE,cache);
+                if(Files.exists(backup,LinkOption.NOFOLLOW_LINKS))checked(backup,before,BootExtensionPlan.MAX_ARCHIVE,cache);else{Files.write(backup,prior,StandardOpenOption.CREATE_NEW);try(var b=FileChannel.open(backup,StandardOpenOption.WRITE)){b.force(true);}}
                 Path staged=Files.createTempFile(mods,".mineagent-swap-",".pending");try{
-                    Files.write(staged,bytes);try(var b=FileChannel.open(staged,StandardOpenOption.WRITE)){b.force(true);}checked(staged,wanted,BootExtensionPlan.MAX_ARCHIVE);
-                    checked(planFile,hash,16384);if(Files.exists(child(plans,operation+".cancelled"),LinkOption.NOFOLLOW_LINKS))throw new IllegalStateException("BOOT_UPGRADE_CANCELLED");checked(target,before,BootExtensionPlan.MAX_ARCHIVE);dependencies(mods,artifact,plan.filename());
-                    Files.move(staged,target,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);checked(target,wanted,BootExtensionPlan.MAX_ARCHIVE);checked(backup,before,BootExtensionPlan.MAX_ARCHIVE);
+                    Files.write(staged,bytes);try(var b=FileChannel.open(staged,StandardOpenOption.WRITE)){b.force(true);}checked(staged,wanted,BootExtensionPlan.MAX_ARCHIVE,cache);
+                    approvedPlan(root,operation,hash);if(Files.exists(child(plans,operation+".cancelled"),LinkOption.NOFOLLOW_LINKS))throw new IllegalStateException("BOOT_UPGRADE_CANCELLED");checked(target,before,BootExtensionPlan.MAX_ARCHIVE,cache);dependencies(mods,artifact,plan.filename(),cache);
+                    Files.move(staged,target,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);checked(target,wanted,BootExtensionPlan.MAX_ARCHIVE,cache);checked(backup,before,BootExtensionPlan.MAX_ARCHIVE,cache);
                 }finally{Files.deleteIfExists(staged);}
             }
-            atomicJson(receipt,Map.of("schema",1,"operation",operation,"planHash",hash,"action",action,"targetHash",wanted,"observedAt",Instant.now().toString()));
+            atomicJson(receipt,Map.of("schema",1,"operation",operation,"planHash",plan.sha256(),"action",action,"targetHash",wanted,"observedAt",Instant.now().toString()));
             return Map.of("status","APPLIED","operation",operation,"action",action,"targetHash",wanted,"requiresGameRestart",true,"worldDataChanged",false);
         }
     }
-    private static void dependencies(Path mods,BootArtifact artifact,String ownSlot)throws Exception{
+    private static void dependencies(Path mods,BootArtifact artifact,String ownSlot,Path cache)throws Exception{
         var m=artifact.metadata();var graph=m.dependencies()==null?BootDependencyGraph.empty():m.dependencies();graph.require(m.manifest());
-        for(var n:graph.nodes()){var actual=BootArtifact.inspect(checked(child(mods,n.filename()),n.artifact(),BootExtensionPlan.MAX_ARCHIVE));n.require(actual.metadata(),actual.hash());if(!actual.metadata().physicalSide().equals(m.physicalSide()))throw new IllegalStateException("BOOT_DEPENDENCY_SIDE_CHANGED");graph.requireEmbedded(actual.metadata());}
-        try(var stream=Files.newDirectoryStream(mods,"mineagent-boot-*.jar")){int count=0;for(var path:stream){if(++count>4096)throw new IllegalStateException("BOOT_DIRECTORY_LIMIT");if(path.getFileName().toString().equals(ownSlot))continue;var other=BootArtifact.inspect(NativeCompilationSnapshot.read(path,BootExtensionPlan.MAX_ARCHIVE));
+        for(var n:graph.nodes()){var actual=BootArtifact.inspect(checked(child(mods,n.filename()),n.artifact(),BootExtensionPlan.MAX_ARCHIVE,cache),n.artifact());n.require(actual.metadata(),actual.hash());actual.verify(Base64.getDecoder().decode(n.publicKey()),n.canonical(),actual.metadata().nativeClasspath(),actual.metadata().environment().fingerprint());if(!actual.metadata().physicalSide().equals(m.physicalSide()))throw new IllegalStateException("BOOT_DEPENDENCY_SIDE_CHANGED");graph.requireEmbedded(actual.metadata());}
+        try(var stream=Files.newDirectoryStream(mods,"mineagent-boot-*.jar")){int count=0;for(var path:stream){if(++count>4096)throw new IllegalStateException("BOOT_DIRECTORY_LIMIT");if(path.getFileName().toString().equals(ownSlot))continue;var other=BootFiles.inspect(path,cache);
             if(other.metadata().modId().equals(m.modId())||!Collections.disjoint(other.classPackages(),artifact.classPackages()))throw new IllegalStateException("BOOT_UPGRADE_MOD_CONFLICT");
             for(var n:other.metadata().dependencies()==null?List.<BootDependencyGraph.Node>of():other.metadata().dependencies().nodes())if(n.packageId().equals(m.manifest().packageId())&&!n.artifact().equals(artifact.hash()))throw new IllegalStateException("BOOT_DEPENDENCY_REQUIRED_BY_INSTALLED");
         }}
     }
     public static Map<String,Object> recoverBoot(Path game,Map<String,String> a)throws Exception{
-        Path root=directory(game.resolve("mineagent-runtime-data/boot-install")),mods=directory(Path.of(required(a,"mods")));UUID id=UUID.fromString(required(a,"build"));String action=required(a,"action");
+        Path root=directory(game.resolve("mineagent-runtime-data/boot-install")),cache=directory(root.resolve("cache")),mods=directory(Path.of(required(a,"mods")));UUID id=UUID.fromString(required(a,"build"));String action=required(a,"action");
         if(!Set.of("remove","restore").contains(action))throw new IllegalArgumentException("MAINTENANCE_RECOVERY_ACTION");
         try(var c=FileChannel.open(child(root,"boot-installs.lock"),StandardOpenOption.WRITE);var lease=c.tryLock()){
             if(lease==null)throw new IllegalStateException("BOOT_STORE_IN_USE");var build=JSON.readValue(NativeCompilationSnapshot.read(child(directory(root.resolve("receipts")),id+".json"),1024*1024),BootInstallStore.Build.class);
             if(!build.id().equals(id)||!build.modId().equals(required(a,"mod-id"))||!build.directory().equals(mods.toString()))throw new IllegalStateException("BOOT_RECOVERY_APPROVAL_CHANGED");
             String slot=BootFiles.filename(build);Path jar=child(mods,slot),disabled=child(mods,slot+".disabled"),source=action.equals("remove")?jar:disabled,target=action.equals("remove")?disabled:jar;
-            if(!Files.exists(source,LinkOption.NOFOLLOW_LINKS)){checked(target,build.artifact(),BootExtensionPlan.MAX_ARCHIVE);return Map.of("status","ALREADY_APPLIED","action",action);}
-            var artifact=BootArtifact.inspect(checked(source,build.artifact(),BootExtensionPlan.MAX_ARCHIVE));artifact.verify(Base64.getDecoder().decode(build.publicKey()),build.manifest().canonicalSha256(),build.nativeClasspath(),build.environment());
+            if(!Files.exists(source,LinkOption.NOFOLLOW_LINKS)){checked(target,build.artifact(),BootExtensionPlan.MAX_ARCHIVE,cache);return Map.of("status","ALREADY_APPLIED","action",action);}
+            var artifact=BootArtifact.inspect(checked(source,build.artifact(),BootExtensionPlan.MAX_ARCHIVE,cache),build.artifact());artifact.verify(Base64.getDecoder().decode(build.publicKey()),build.manifest().canonicalSha256(),build.nativeClasspath(),build.environment());
             if(Files.exists(target,LinkOption.NOFOLLOW_LINKS))throw new IllegalStateException("BOOT_RECOVERY_TARGET_EXISTS");
-            if(action.equals("restore"))dependencies(mods,artifact,slot);
-            else try(var others=Files.newDirectoryStream(mods,"mineagent-boot-*.jar")){for(var path:others){if(path.equals(jar))continue;var other=BootArtifact.inspect(NativeCompilationSnapshot.read(path,BootExtensionPlan.MAX_ARCHIVE));for(var n:other.metadata().dependencies()==null?List.<BootDependencyGraph.Node>of():other.metadata().dependencies().nodes())if(n.packageId().equals(build.manifest().packageId()))throw new IllegalStateException("BOOT_DEPENDENCY_REQUIRED_BY_INSTALLED");}}
+            if(action.equals("restore"))dependencies(mods,artifact,slot,cache);
+            else try(var others=Files.newDirectoryStream(mods,"mineagent-boot-*.jar")){for(var path:others){if(path.equals(jar))continue;var other=BootFiles.inspect(path,cache);for(var n:other.metadata().dependencies()==null?List.<BootDependencyGraph.Node>of():other.metadata().dependencies().nodes())if(n.packageId().equals(build.manifest().packageId()))throw new IllegalStateException("BOOT_DEPENDENCY_REQUIRED_BY_INSTALLED");}}
             if(Boolean.parseBoolean(a.getOrDefault("preview","false")))return Map.of("status","PREVIEW","action",action,"worldModified",false);
-            checked(source,build.artifact(),BootExtensionPlan.MAX_ARCHIVE);Files.move(source,target,StandardCopyOption.ATOMIC_MOVE);checked(target,build.artifact(),BootExtensionPlan.MAX_ARCHIVE);return Map.of("status","APPLIED","action",action,"backupPreserved",true,"requiresGameRestart",true,"worldDataChanged",false);
+            checked(source,build.artifact(),BootExtensionPlan.MAX_ARCHIVE,cache);Files.move(source,target,StandardCopyOption.ATOMIC_MOVE);checked(target,build.artifact(),BootExtensionPlan.MAX_ARCHIVE,cache);return Map.of("status","APPLIED","action",action,"backupPreserved",true,"requiresGameRestart",true,"worldDataChanged",false);
         }
     }
     private JavaMaintenance(){}

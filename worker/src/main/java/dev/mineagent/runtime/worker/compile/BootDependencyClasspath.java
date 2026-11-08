@@ -9,7 +9,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.jar.JarFile;
 
-/** Hash-verified dependency artifacts; uses Native modules when loaded, otherwise adds approved pending JARs. */
+/** Signed, identity-bound dependency artifacts; uses Native modules when loaded, otherwise adds approved pending JARs. */
 final class BootDependencyClasspath {
     record Inputs(List<Path> additional,Map<Path,String> hashes){
         void verify()throws Exception{for(var item:hashes.entrySet())BootFiles.archive(item.getKey(),item.getValue());}
@@ -19,7 +19,7 @@ final class BootDependencyClasspath {
         for(var path:nativePaths)packages.addAll(packages(path));
         Path directory=BootFiles.directory(scratch.resolve("dependency-classpath"));
         for(var node:graph.nodes()){
-            byte[] bytes=BootFiles.archive(content.pathFor(node.artifact()),node.artifact());var artifact=BootArtifact.inspect(bytes);node.require(artifact.metadata(),artifact.hash());
+            byte[] bytes=BootFiles.archive(content.pathFor(node.artifact()),node.artifact());var artifact=BootArtifact.inspect(bytes,node.artifact());node.require(artifact.metadata(),artifact.hash());
             artifact.verify(Base64.getDecoder().decode(node.publicKey()),node.canonical(),artifact.metadata().nativeClasspath(),artifact.metadata().environment().fingerprint());graph.requireEmbedded(artifact.metadata());
             if(!artifact.metadata().physicalSide().equals(snapshot.physicalSide()))throw new IllegalStateException("BOOT_DEPENDENCY_PHYSICAL_SIDE");
             if(snapshot.environment().mods().containsKey(node.modId())){

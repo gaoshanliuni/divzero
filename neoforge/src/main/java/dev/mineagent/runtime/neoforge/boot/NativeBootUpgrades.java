@@ -17,8 +17,8 @@ final class NativeBootUpgrades {
     void publish(BootInstallStore.Upgrade upgrade,BooleanSupplier permit)throws Exception {
         var p=upgrade.input();var previous=store.get(p.previousBuild());var next=store.get(p.nextBuild());
         if(!mods.toString().equals(p.directory()))throw new IllegalStateException("BOOT_UPGRADE_DIRECTORY");
-        byte[] oldBytes=BootFiles.archive(mods.resolve(p.filename()),p.previousArtifact());var before=BootArtifact.inspect(oldBytes);before.verify(Base64.getDecoder().decode(previous.publicKey()),p.previousCanonical(),previous.nativeClasspath(),previous.environment());
-        var after=BootArtifact.inspect(BootFiles.archive(cache.resolve(p.nextArtifact()+".jar"),p.nextArtifact()));after.verify(Base64.getDecoder().decode(next.publicKey()),p.nextCanonical(),next.nativeClasspath(),next.environment());
+        byte[] oldBytes=BootFiles.archive(mods.resolve(p.filename()),p.previousArtifact());var before=BootArtifact.inspect(oldBytes,p.previousArtifact());before.verify(Base64.getDecoder().decode(previous.publicKey()),p.previousCanonical(),previous.nativeClasspath(),previous.environment());
+        var after=BootArtifact.inspect(BootFiles.archive(cache.resolve(p.nextArtifact()+".jar"),p.nextArtifact()),p.nextArtifact());after.verify(Base64.getDecoder().decode(next.publicKey()),p.nextCanonical(),next.nativeClasspath(),next.environment());
         if(after.metadata().replacement()==null||!after.metadata().replacement().build().equals(previous.id())||!after.metadata().modId().equals(p.modId()))throw new IllegalStateException("BOOT_UPGRADE_PROVENANCE");
         new NativeBootDependencies(store,mods).requireCurrent(next.manifest(),after.metadata().dependencies(),permit);
         if(!dependencyIssues(after.metadata()).isEmpty())throw new IllegalStateException("BOOT_UPGRADE_DEPENDENCY_CONFLICT");
@@ -27,7 +27,7 @@ final class NativeBootUpgrades {
     }
     void cancel(BootInstallStore.Upgrade u,BooleanSupplier permit)throws Exception {
         if(!Set.of("PREPARING","WAIT_OFFLINE","PLAN_WRITE_FAILED","CANCEL_FAILED","CANCELLED").contains(u.phase()))throw new IllegalStateException("BOOT_UPGRADE_ALREADY_APPLIED");
-        var p=u.input();Path target=mods.resolve(p.filename());String observed=Files.exists(target,LinkOption.NOFOLLOW_LINKS)?RuntimePackageCanonicalizer.sha256(NativeCompilationSnapshot.read(target,BootExtensionPlan.MAX_ARCHIVE)):"";if(observed.equals(p.nextArtifact())||receipt(p,"apply")&&!receipt(p,"rollback"))throw new IllegalStateException("BOOT_UPGRADE_ALREADY_APPLIED");if(!permit.getAsBoolean())throw new IllegalStateException("BOOT_AUTHORITY_CHANGED");
+        var p=u.input();Path target=mods.resolve(p.filename());String observed=Files.exists(target,LinkOption.NOFOLLOW_LINKS)?BootFiles.identity(target,cache):"";if(observed.equals(p.nextArtifact())||receipt(p,"apply")&&!receipt(p,"rollback"))throw new IllegalStateException("BOOT_UPGRADE_ALREADY_APPLIED");if(!permit.getAsBoolean())throw new IllegalStateException("BOOT_AUTHORITY_CHANGED");
         write(cancelled(p),p.sha256().getBytes(java.nio.charset.StandardCharsets.US_ASCII));store.upgradeStatus(p.operation(),"CANCELLED","",observed);
     }
     void reconcile(UUID owner)throws Exception {
@@ -37,7 +37,7 @@ final class NativeBootUpgrades {
             boolean cancellation=cancelledMatches(p),rollback=receipt(p,"rollback");
             if(u.phase().equals("APPLIED")&&!cancellation&&!rollback)continue;
             String hash=hashes.get(p.filename());
-            if(hash==null){Path target=mods.resolve(p.filename());if(!Files.exists(target,LinkOption.NOFOLLOW_LINKS))hash="";else try{hash=RuntimePackageCanonicalizer.sha256(NativeCompilationSnapshot.read(target,BootExtensionPlan.MAX_ARCHIVE));}catch(Exception unavailable){continue;}hashes.put(p.filename(),hash);}
+            if(hash==null){Path target=mods.resolve(p.filename());if(!Files.exists(target,LinkOption.NOFOLLOW_LINKS))hash="";else try{hash=BootFiles.identity(target,cache);}catch(Exception unavailable){continue;}hashes.put(p.filename(),hash);}
             if(cancellation&&!hash.equals(p.nextArtifact()))store.upgradeStatus(p.operation(),"CANCELLED","",hash);
             else if(rollback)store.upgradeStatus(p.operation(),"ROLLED_BACK","",hash);
             else if(hash.equals(p.nextArtifact())&&approved(p)&&!Files.exists(cancelled(p),LinkOption.NOFOLLOW_LINKS))store.upgradeStatus(p.operation(),"APPLIED","",hash);
@@ -49,9 +49,9 @@ final class NativeBootUpgrades {
         return List.copyOf(out);
     }
     int count(UUID owner)throws Exception{return (int)store.upgrades().stream().filter(u->u.input().owner().equals(owner)).count();}
-    private boolean approved(BootUpgradePlan p){try{return RuntimePackageCanonicalizer.sha256(NativeCompilationSnapshot.read(planFile(p),16384)).equals(p.sha256());}catch(Exception e){return false;}}
-    private boolean cancelledMatches(BootUpgradePlan p){try{return new String(NativeCompilationSnapshot.read(cancelled(p),64),java.nio.charset.StandardCharsets.US_ASCII).equals(p.sha256());}catch(Exception e){return false;}}
-    private boolean receipt(BootUpgradePlan p,String action){try{var json=new com.fasterxml.jackson.databind.ObjectMapper().readTree(NativeCompilationSnapshot.read(plans.resolve(p.operation()+"."+action+".json"),4096));return json.path("operation").asText().equals(p.operation().toString())&&json.path("planHash").asText().equals(p.sha256())&&json.path("action").asText().equals(action)&&json.path("targetHash").asText().equals(action.equals("apply")?p.nextArtifact():p.previousArtifact());}catch(Exception e){return false;}}
+    private boolean approved(BootUpgradePlan p){try{return Arrays.equals(NativeCompilationSnapshot.read(planFile(p),16384),p.encode());}catch(Exception e){return false;}}
+    private boolean cancelledMatches(BootUpgradePlan p){try{return new String(NativeCompilationSnapshot.read(cancelled(p),64),java.nio.charset.StandardCharsets.US_ASCII).matches(p.schema()==1?"[a-f0-9]{64}":p.sha256());}catch(Exception e){return false;}}
+    private boolean receipt(BootUpgradePlan p,String action){try{var json=new com.fasterxml.jackson.databind.ObjectMapper().readTree(NativeCompilationSnapshot.read(plans.resolve(p.operation()+"."+action+".json"),4096));return json.path("operation").asText().equals(p.operation().toString())&&(json.path("planHash").asText().equals(p.sha256())||p.schema()==1&&json.path("planHash").asText().matches("[a-f0-9]{64}"))&&json.path("action").asText().equals(action)&&json.path("targetHash").asText().equals(action.equals("apply")?p.nextArtifact():p.previousArtifact());}catch(Exception e){return false;}}
     private static List<String> dependencyIssues(BootArtifact.Metadata next){
         var result=new ArrayList<String>();var version=new org.apache.maven.artifact.versioning.DefaultArtifactVersion(next.manifest().version());
         for(var mod:net.neoforged.fml.ModList.get().getMods())if(!mod.getModId().equals(next.modId())&&net.neoforged.fml.ModList.get().getModFileById(mod.getModId())!=null&&Files.exists(net.neoforged.fml.ModList.get().getModFileById(mod.getModId()).getFile().getFilePath()))for(var dependency:mod.getDependencies()){
@@ -63,7 +63,7 @@ final class NativeBootUpgrades {
     void noOtherConflict(String ownSlot,BootArtifact candidate)throws Exception {
         new NativeBootDependencies(store,mods).requireNotUsed(candidate.metadata().manifest().packageId(),candidate.hash());
         var known=store.all();var checked=new HashSet<String>();for(var other:known){if(other.artifact().isEmpty())continue;String slot=BootFiles.filename(other);if(slot.equals(ownSlot)||!checked.add(slot))continue;Path file=mods.resolve(slot);if(!Files.exists(file,LinkOption.NOFOLLOW_LINKS))continue;
-            var image=BootArtifact.inspect(NativeCompilationSnapshot.read(file,BootExtensionPlan.MAX_ARCHIVE));var owner=known.stream().filter(b->!b.artifact().isEmpty()&&BootFiles.filename(b).equals(slot)&&b.artifact().equals(image.hash())).findFirst().orElseThrow(()->new IllegalStateException("BOOT_MANAGED_FILE_CHANGED"));image.verify(Base64.getDecoder().decode(owner.publicKey()),owner.manifest().canonicalSha256(),owner.nativeClasspath(),owner.environment());
+            var image=BootFiles.inspect(file,cache);var owner=known.stream().filter(b->!b.artifact().isEmpty()&&BootFiles.filename(b).equals(slot)&&b.artifact().equals(image.hash())).findFirst().orElseThrow(()->new IllegalStateException("BOOT_MANAGED_FILE_CHANGED"));image.verify(Base64.getDecoder().decode(owner.publicKey()),owner.manifest().canonicalSha256(),owner.nativeClasspath(),owner.environment());
             var contract=image.metadata().manifest().nativeCompatibility().targets().get(candidate.metadata().physicalSide());String required=contract==null?null:contract.requiredMods().get(candidate.metadata().modId());if(required!=null&&!required.equals(candidate.metadata().manifest().version()))throw new IllegalStateException("BOOT_UPGRADE_PENDING_DEPENDENCY_CONFLICT");
             if(image.metadata().modId().equals(candidate.metadata().modId())||!Collections.disjoint(image.classPackages(),candidate.classPackages()))throw new IllegalStateException("BOOT_PENDING_MOD_CONFLICT");
         }

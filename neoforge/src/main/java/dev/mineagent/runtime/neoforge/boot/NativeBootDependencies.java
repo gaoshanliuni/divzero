@@ -35,7 +35,7 @@ final class NativeBootDependencies {
         visiting.remove(id);nodes.put(id,node);if(nodes.size()>BootDependencyGraph.MAX_NODES)throw new IllegalStateException("BOOT_DEPENDENCY_LIMIT_OR_AUTHORITY");
     }
     private Installed installed(Path file,List<BootInstallStore.Build> known)throws Exception {
-        byte[] bytes=NativeCompilationSnapshot.read(file,BootExtensionPlan.MAX_ARCHIVE);var image=BootArtifact.inspect(bytes);
+        var image=BootFiles.inspect(file,store.root().resolve("cache"));
         var candidates=known.stream().filter(v->v.artifact().equals(image.hash())&&v.directory().equals(mods.toString())&&BootFiles.filename(v).equals(file.getFileName().toString())).toList();
         if(candidates.isEmpty())throw new IllegalStateException("BOOT_DEPENDENCY_UNKNOWN_FILE");
         for(var owner:candidates.stream().map(BootInstallStore.Build::owner).distinct().toList())new NativeBootUpgrades(store,mods,store.root().resolve("cache")).reconcile(owner);
@@ -51,7 +51,7 @@ final class NativeBootDependencies {
     void requireNotUsed(UUID packageId,String nextArtifact)throws Exception {
         String targetModId="";var checked=new HashSet<String>();var known=store.all();for(var b:known){if(b.artifact().isEmpty()||!b.directory().equals(mods.toString())||!checked.add(BootFiles.filename(b)))continue;Path path=mods.resolve(BootFiles.filename(b));if(!Files.exists(path,LinkOption.NOFOLLOW_LINKS))continue;
             if(b.manifest().packageId().equals(packageId)){
-                var image=BootArtifact.inspect(NativeCompilationSnapshot.read(path,BootExtensionPlan.MAX_ARCHIVE));var own=known.stream().filter(v->v.manifest().packageId().equals(packageId)&&v.artifact().equals(image.hash())&&v.directory().equals(mods.toString())&&BootFiles.filename(v).equals(path.getFileName().toString())).findFirst().orElseThrow(()->new IllegalStateException("BOOT_DEPENDENCY_UNKNOWN_FILE"));
+                var image=BootFiles.inspect(path,store.root().resolve("cache"));var own=known.stream().filter(v->v.manifest().packageId().equals(packageId)&&v.artifact().equals(image.hash())&&v.directory().equals(mods.toString())&&BootFiles.filename(v).equals(path.getFileName().toString())).findFirst().orElseThrow(()->new IllegalStateException("BOOT_DEPENDENCY_UNKNOWN_FILE"));
                 image.verify(Base64.getDecoder().decode(own.publicKey()),own.manifest().canonicalSha256(),own.nativeClasspath(),own.environment());targetModId=image.metadata().modId();continue;
             }
             var value=installed(path,known);var graph=value.artifact().metadata().dependencies();

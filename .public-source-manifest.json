@@ -19,8 +19,8 @@
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
-      "resourceId": "659e3bda-5548-4776-9056-f31866497e11",
-      "bytes": 3717
+      "resourceId": "ae50d7f1-aced-4eb9-aac4-91b1656da364",
+      "bytes": 3753
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -1209,8 +1209,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootArtifact.java",
-      "resourceId": "9a9cf4c0-2f40-4c68-baa4-68aeb402d5ec",
-      "bytes": 5440
+      "resourceId": "8f914a53-8928-47c4-9b36-3a09f1b6efb6",
+      "bytes": 10095
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootDependencyGraph.java",
@@ -1224,8 +1224,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootFiles.java",
-      "sha256": "997e824db14a80986d0637927dbd94dd3ec132615205c5122e7dedae15884733",
-      "bytes": 3130
+      "resourceId": "5d5535e5-616a-44d2-83c1-cb01a9f9885d",
+      "bytes": 5152
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootInstallStore.java",
@@ -1239,8 +1239,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootUpgradePlan.java",
-      "sha256": "62b1a21d2393f0fa5e0d005b70c2f8c51a721afe7be844c7a5a852d589f1df98",
-      "bytes": 1759
+      "resourceId": "358d46ed-1202-4e9f-9ba6-61f6b950a6a4",
+      "bytes": 1809
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/building/AnvilBuildingReader.java",
@@ -2029,8 +2029,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/maintenance/JavaMaintenance.java",
-      "sha256": "eda94377837868f33b5f7fefd86a7657ed8312bddd5c2617e423a315b402e399",
-      "bytes": 13838
+      "resourceId": "a0060910-58da-4458-8d51-2d22889e8bce",
+      "bytes": 16015
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/media/MediaService.java",
@@ -3253,6 +3253,11 @@
       "bytes": 1958
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/boot/BootArtifactIdentityTest.java",
+      "resourceId": "e17bc740-a008-4758-8166-c249ca372966",
+      "bytes": 6310
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/building/BuildingDesignStoreTest.java",
       "sha256": "c7fc612b7db5127e5fcd6042bfda58b1a85c75ca9d36ba2197745b32dc36dd0a",
       "bytes": 1787
@@ -4154,8 +4159,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "8bec6747-4d88-48d7-b806-9b4ee171df87",
-      "bytes": 10213
+      "resourceId": "1baddaea-4d82-4775-9cff-16874e9576c3",
+      "bytes": 14252
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -5309,23 +5314,23 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootDependencies.java",
-      "sha256": "75ff5268190bc0cdc688fb55abc236a2f1044a9160e081354f6a305699ef6aee",
-      "bytes": 7569
+      "resourceId": "e069d406-fb3d-48c9-949e-b100681cdf7e",
+      "bytes": 7480
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootProof.java",
-      "sha256": "2caf49a7d011f1e481989608e98be05938fa3752f0875975aa21f7ecdaafacd8",
-      "bytes": 4389
+      "resourceId": "a486aa59-8f36-416f-a5b6-339bae377a95",
+      "bytes": 5744
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootRuntime.java",
-      "sha256": "4a59e5ca77d80910e0e752690d150a8a393a676f20fd149b343df332ea25708b",
-      "bytes": 22483
+      "resourceId": "e61ccf60-b83d-4bdb-afcd-fa4ad2204609",
+      "bytes": 22610
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootUpgrades.java",
-      "sha256": "aad4a9bf163fd24a95e1e22bb2df64a065c1ff2898bca1ce3de665538104a0d7",
-      "bytes": 10155
+      "resourceId": "54414b78-0604-483b-9492-2526806e0ef6",
+      "bytes": 10064
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/chat/AiChatMessages.java",
@@ -8434,8 +8439,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/worker/MineAgentWorkerSupervisor.java",
-      "resourceId": "3a95856a-f035-41fb-885b-115590694ca9",
-      "bytes": 74690
+      "resourceId": "79631951-9d4e-4bf5-aebe-efeceb6c5c17",
+      "bytes": 74652
     },
     {
       "path": "neoforge/src/main/resources/assets/mineagent_runtime/blockstates/automation_console.json",
@@ -9119,13 +9124,13 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/BootDependencyClasspath.java",
-      "sha256": "1db0075839e1c97283686252e1f3cb8e26d004fac715462448d82cf609d25c7f",
-      "bytes": 3080
+      "resourceId": "fb08562a-60b4-40df-90ec-473df2243e1b",
+      "bytes": 3105
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/BootExtensionCompiler.java",
-      "resourceId": "bf66e984-df4b-4f78-8bbb-44e7ef2d210b",
-      "bytes": 10799
+      "resourceId": "314683a1-9dde-4638-aeb3-d0122ec0b54b",
+      "bytes": 10855
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/CompilationDiagnostic.java",
@@ -9895,5 +9900,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "9a6ec10f1f74226f5647fd289b7b536d13793f5e"
+  "sourceCommit": "24c5ed6a6cedbed1bf1bc8d9228d886cc73b1109"
 }

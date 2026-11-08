@@ -29,7 +29,7 @@ public final class NativeBootRuntime implements AutoCloseable {
     }
     public static synchronized NativeBootRuntime get(MinecraftServer server){var value=OPEN.get(server);if(value==null){try{value=new NativeBootRuntime(server);OPEN.put(server,value);}catch(Exception e){throw new IllegalStateException("BOOT_STORE_UNAVAILABLE",e);}}return value;}
     public static synchronized void stop(MinecraftServer server){var value=OPEN.remove(server);if(value!=null)try{value.close();}catch(Exception ignored){}}
-    public static void authorize(ServerPlayer player){var server=player.level().getServer();if(!server.isSameThread()||player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer||server.getPlayerList().getPlayer(player.getUUID())!=player||!player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))throw new SecurityException("BOOT_HUMAN_OPERATOR_REQUIRED");var permissions=MineAgentRuntimeServices.permissions(server);for(var action:List.of(PermissionAction.RUN_CODE,PermissionAction.MANAGE_PACKAGES))if(!permissions.allowed(player.getUUID(),true,action))throw new SecurityException("BOOT_PERMISSION");}
+    public static void authorize(ServerPlayer player){var server=player.level().getServer();if(!server.isSameThread()||player instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer||server.getPlayerList().getPlayer(player.getUUID())!=player)throw new SecurityException("BOOT_CONNECTED_HUMAN_REQUIRED");for(var action:List.of(PermissionAction.RUN_CODE,PermissionAction.MANAGE_PACKAGES))dev.mineagent.runtime.neoforge.task.ServerAuthority.require(player,action);}
     private RuntimePackage owned(ServerPlayer player,UUID id,long revision,String hash){var p=ServerPackageRuntime.get(server).ownedPackage(player.getUUID(),id,revision).orElseThrow(()->new SecurityException("BOOT_PACKAGE_OWNER"));if(!p.canonicalSha256().equals(hash))throw new IllegalStateException("BOOT_PACKAGE_CHANGED");return p;}
     public void current(ServerPlayer viewer,Map<String,String> args){
         if(closed)throw new IllegalStateException("BOOT_RUNTIME_CLOSED");authorize(viewer);
@@ -45,7 +45,7 @@ public final class NativeBootRuntime implements AutoCloseable {
             if(kind.equals("dependencies")){
                 var b=store.get(UUID.fromString(args.get("buildId")));if(!b.owner().equals(owner))throw new SecurityException("BOOT_BUILD_OWNER");
                 BootDependencyGraph bound=null,current=null;String error="";
-                if(!b.artifact().isEmpty()){var artifact=BootArtifact.inspect(BootFiles.archive(cache.resolve(b.artifact()+".jar"),b.artifact()));bound=artifact.metadata().dependencies()==null?BootDependencyGraph.empty():artifact.metadata().dependencies();}
+                if(!b.artifact().isEmpty()){var artifact=BootArtifact.inspect(BootFiles.archive(cache.resolve(b.artifact()+".jar"),b.artifact()),b.artifact());bound=artifact.metadata().dependencies()==null?BootDependencyGraph.empty():artifact.metadata().dependencies();}
                 try{current=dependencies.resolve(b.manifest(),permit);dependencies.requireCurrent(b.manifest(),current,permit);}catch(Exception failure){error=code(failure);}
                 var graph=bound!=null?bound:current!=null?current:BootDependencyGraph.empty();if(offset>graph.nodes().size())throw new IllegalArgumentException("BOOT_OFFSET");var nodes=graph.nodes().stream().skip(offset).limit(8).map(n->Map.of("packageId",n.packageId(),"version",n.version(),"modId",n.modId(),"canonical",n.canonical(),"artifact",n.artifact(),"filename",n.filename())).toList();
                 if(!permit.getAsBoolean())throw new IllegalStateException("BOOT_AUTHORITY_CHANGED");
@@ -71,7 +71,7 @@ public final class NativeBootRuntime implements AutoCloseable {
         authorize(viewer);if(!args.keySet().equals(Set.of("kind","packageId","packageRevision","canonical","environment","replacementBuildId"))&&!args.keySet().equals(Set.of("kind","packageId","packageRevision","canonical","environment")))throw new IllegalArgumentException("BOOT_ARGUMENTS");
         var p=owned(viewer,UUID.fromString(args.get("packageId")),Long.parseLong(args.get("packageRevision")),args.get("canonical"));BootExtensionPlan.validate(p);
         String environment=NativePackageCompatibility.observe().fingerprint();if(!environment.equals(args.get("environment")))throw new IllegalStateException("BOOT_ENVIRONMENT_CHANGED");
-        byte[] key=MineAgentRuntimeServices.identity(server).publicKeyEncoded();
+        var signer=MineAgentRuntimeServices.identity(server);byte[] key=signer.publicKeyEncoded();
         var previous=args.getOrDefault("replacementBuildId","").isEmpty()?null:store.get(UUID.fromString(args.get("replacementBuildId")));
         if(previous!=null&&(!previous.owner().equals(viewer.getUUID())||!previous.manifest().packageId().equals(p.packageId())||!previous.directory().equals(mods.toString())||!Set.of("INSTALLED_PENDING_RESTART","FILE_STATE_UNKNOWN").contains(previous.phase())))throw new IllegalStateException("BOOT_REPLACEMENT_SOURCE");
         var begun=store.begin(operation,MineAgentRuntimeServices.worldId(server),viewer.getUUID(),p,Base64.getEncoder().encodeToString(key),environment,mods.toString(),previous==null?null:previous.id());if(!begun.created())return Map.of("operation",operation,"phase",begun.value().phase());
@@ -84,12 +84,12 @@ public final class NativeBootRuntime implements AutoCloseable {
                 var built=JSON.convertValue(result.payload(),dev.mineagent.runtime.worker.compile.BootExtensionCompiler.Result.class);
                 if(!built.success()){store.failed(operation,"BOOT_COMPILE_REJECTED",built.diagnostics());return;}
                 if(!permit.getAsBoolean())throw new IllegalStateException("BOOT_AUTHORITY_CHANGED");
-                byte[] bytes=BootFiles.archive(worker.contentPath(built.artifact()),built.artifact());var artifact=BootArtifact.inspect(bytes);artifact.verify(key,p.canonicalSha256(),built.nativeClasspath(),environment);
+                byte[] draft=dev.mineagent.runtime.core.compile.NativeCompilationSnapshot.read(worker.contentPath(built.artifact()),BootExtensionPlan.MAX_ARCHIVE);var inspected=BootArtifact.inspect(draft);inspected.verifySource(key,p.canonicalSha256(),built.nativeClasspath(),environment);byte[] bytes=BootArtifact.seal(draft,operation,signer);var artifact=BootArtifact.inspect(bytes);artifact.verify(key,p.canonicalSha256(),built.nativeClasspath(),environment);
                 if(previous!=null&&(artifact.metadata().replacement()==null||!artifact.metadata().replacement().build().equals(previous.id())||!artifact.metadata().replacement().artifact().equals(previous.artifact())))throw new IllegalStateException("BOOT_REPLACEMENT_SOURCE");
                 dependencies.requireCurrent(p,artifact.metadata().dependencies(),permit);
                 if(!artifact.metadata().modId().equals(built.modId()))throw new IllegalStateException("BOOT_BUILD_CONTEXT_CHANGED");
-                store.built(operation,built.nativeClasspath(),built.artifact(),built.modId(),built.diagnostics(),bytes.length);
-                BootFiles.publish(cache,built.artifact()+".jar",bytes,built.artifact(),permit);
+                store.built(operation,built.nativeClasspath(),artifact.hash(),built.modId(),built.diagnostics(),bytes.length);
+                BootFiles.publish(cache,artifact.hash()+".jar",bytes,artifact.hash(),permit);
                 // CACHING reserves retained disk budget before publishing, but never authorizes Loader installation.
                 var ready=store.cached(operation);writeRecovery(ready);
             }catch(Exception e){try{store.failed(operation,code(e),List.of());}catch(Exception ignored){}}finally{server.execute(()->{if(operation.equals(active))active=null;});}});}catch(RejectedExecutionException stopped){server.execute(()->{if(operation.equals(active))active=null;});}
@@ -107,7 +107,7 @@ public final class NativeBootRuntime implements AutoCloseable {
         try{io.execute(()->{boolean done=false;String error="";try{
             if(!permit.getAsBoolean())throw new IllegalStateException("BOOT_AUTHORITY_CHANGED");
             if(action.equals("INSTALL")){
-                byte[] bytes=BootFiles.archive(cache.resolve(b.artifact()+".jar"),b.artifact());var artifact=BootArtifact.inspect(bytes);artifact.verify(Base64.getDecoder().decode(b.publicKey()),b.manifest().canonicalSha256(),b.nativeClasspath(),b.environment());
+                byte[] bytes=BootFiles.archive(cache.resolve(b.artifact()+".jar"),b.artifact());var artifact=BootArtifact.inspect(bytes,b.artifact());artifact.verify(Base64.getDecoder().decode(b.publicKey()),b.manifest().canonicalSha256(),b.nativeClasspath(),b.environment());
                 dependencies.requireCurrent(b.manifest(),artifact.metadata().dependencies(),permit);upgrades.noOtherConflict(BootFiles.filename(b),artifact);
                 writeRecovery(b);BootFiles.publish(mods,BootFiles.filename(b),bytes,b.artifact(),permit);
             }else{dependencies.requireNotUsed(b.manifest().packageId(),"");BootFiles.remove(b,mods,cache,permit);}
@@ -121,7 +121,7 @@ public final class NativeBootRuntime implements AutoCloseable {
         var a=store.get(b.replaces());if(!NativePackageCompatibility.observe().fingerprint().equals(args.get("environment"))||!b.environment().equals(args.get("environment")))throw new IllegalStateException("BOOT_ENVIRONMENT_CHANGED");
         var prior=store.upgrade(operation);if(prior.isPresent()){if(!prior.get().input().owner().equals(viewer.getUUID())||!prior.get().input().nextBuild().equals(b.id()))throw new IllegalStateException("BOOT_OPERATION_REUSED");return Map.of("operation",operation,"phase",prior.get().phase());}
         if(active!=null)throw new IllegalStateException("BOOT_BUSY");
-        var plan=new BootUpgradePlan(1,operation,MineAgentRuntimeServices.worldId(server),viewer.getUUID(),b.manifest().packageId(),a.id(),b.id(),mods.toString(),BootFiles.filename(a),a.modId(),a.artifact(),b.artifact(),a.manifest().canonicalSha256(),b.manifest().canonicalSha256(),a.phase(),b.phase(),System.currentTimeMillis(),true);
+        var plan=new BootUpgradePlan(2,operation,MineAgentRuntimeServices.worldId(server),viewer.getUUID(),b.manifest().packageId(),a.id(),b.id(),mods.toString(),BootFiles.filename(a),a.modId(),a.artifact(),b.artifact(),a.manifest().canonicalSha256(),b.manifest().canonicalSha256(),a.phase(),b.phase(),System.currentTimeMillis(),true);
         var staged=store.stageUpgrade(plan,a.revision(),Long.parseLong(args.get("expectedRevision")));active=operation;
         try{io.execute(()->{try{upgrades.publish(staged,()->!closed&&session.getAsBoolean());}catch(Exception e){try{store.upgradeStatus(operation,"PLAN_WRITE_FAILED",code(e));}catch(Exception ignored){}}finally{server.execute(()->{if(operation.equals(active))active=null;});}});}catch(RejectedExecutionException e){active=null;store.upgradeStatus(operation,"PLAN_WRITE_FAILED","BOOT_DISPATCH_FAILED");throw e;}
         return Map.of("operation",operation,"phase","PREPARING","planHash",plan.sha256());

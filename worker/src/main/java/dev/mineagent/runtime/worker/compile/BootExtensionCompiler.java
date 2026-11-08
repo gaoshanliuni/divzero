@@ -49,7 +49,7 @@ public final class BootExtensionCompiler {
             }
             for(var e:plan.resources().entrySet()){total+=e.getValue().length;if(total>20*1024*1024||entries.putIfAbsent(e.getKey(),e.getValue())!=null)throw new IllegalStateException("BOOT_RESOURCE_LIMIT");}
             entries.put("META-INF/neoforge.mods.toml",metadata(plan,snapshot,graph).getBytes(StandardCharsets.UTF_8));
-            var receipt=new BootArtifact.Metadata(1,pkg,plan.modId(),plan.entrypoint(),bootstrap,snapshotHash,snapshot.environment(),snapshot.physicalSide(),snapshot.mappingStatus(),replacement,graph.nodes().isEmpty()?null:graph);
+            var receipt=new BootArtifact.Metadata(2,pkg,plan.modId(),plan.entrypoint(),bootstrap,snapshotHash,snapshot.environment(),snapshot.physicalSide(),snapshot.mappingStatus(),replacement,graph.nodes().isEmpty()?null:graph,dev.mineagent.runtime.api.packages.ResourceIds.create());
             entries.put(BootArtifact.METADATA,new ObjectMapper().writeValueAsBytes(receipt));
             var buffer=new ByteArrayOutputStream();try(var jar=new JarOutputStream(buffer)){
                 for(var e:entries.entrySet()){var entry=new JarEntry(e.getKey());entry.setTime(0);jar.putNextEntry(entry);jar.write(e.getValue());jar.closeEntry();if(buffer.size()>BootExtensionPlan.MAX_ARCHIVE)throw new IllegalStateException("BOOT_ARCHIVE_LIMIT");}
