@@ -138,7 +138,7 @@ public final class ConversationAgentTools {
             if(tool.equals("inspect_operations")){keys(args,"offset","operation_id","receipt_offset");return operations(p,agent,args,permit);}
             if(tool.equals("inspect_persona")){keys(args);return CompletableFuture.completedFuture(ConversationIdentityTools.persona(p,agent));}
             if(tool.equals("inspect_appearance")){keys(args);return CompletableFuture.completedFuture(ConversationIdentityTools.appearance(p,agent));}
-            if(!ConversationTools.mutation(tool)){if(tool.equals("inspect_container"))return CompletableFuture.completedFuture(ConversationNativeInteractions.inspect(p,agent,args));return read(p,tool,args,permit);}
+            if(!ConversationTools.mutation(tool)){if(tool.equals("inspect_container"))return CompletableFuture.completedFuture(ConversationNativeInteractions.inspect(p,agent,args));return read(p,agent,tool,args,permit);}
             if(!personalTool(tool)&&!ServerTaskStart.allowed(p,agent))throw new SecurityException("AGENT_TOOL_PERMISSION");
             if(Set.of("give_item","modify_item").contains(tool)&&!itemPermission(p))throw new SecurityException("AGENT_ITEM_PERMISSION");
             var world=MineAgentRuntimeServices.worldId(s);var level=p.level();var permissionAction=toolPermission(tool);long permission=MineAgentRuntimeServices.permissions(s).actionRevision(p.getUUID(),permissionAction);
@@ -159,7 +159,7 @@ public final class ConversationAgentTools {
             }));return result;
         }catch(Exception invalid){return CompletableFuture.completedFuture(ToolFailure.result(tool,operation,invalid,ToolFailure.Phase.VALIDATION));}
     }
-    private static CompletableFuture<Map<String,Object>> read(ServerPlayer p,String tool,JsonNode args,BooleanSupplier permit)throws Exception{
+    private static CompletableFuture<Map<String,Object>> read(ServerPlayer p,UUID agent,String tool,JsonNode args,BooleanSupplier permit)throws Exception{
         if(tool.equals("read_host_output"))throw new IllegalStateException("HOST_TOOL_ROUTING");
         if(tool.equals("scan_blocks"))return scan(p,args,permit).thenApply(result->{ConversationDiamondSmokeServer.observe(result);return result;});
         if(tool.equals("web_search")||tool.equals("read_web_page"))return web(p,tool,args,permit);
@@ -390,7 +390,7 @@ public final class ConversationAgentTools {
         if(!server.isSingleplayerOwner(p.nameAndId())){
             dev.mineagent.runtime.neoforge.task.ServerAuthority.require(p,dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD);
             var args=JSON.createObjectNode().put("offset",a.path("offset").asInt(0));boolean listing=a.path("action").asText().equals("list");
-            if(listing)args.put("query","");else{if(!a.path("action").asText().equals("read"))throw new IllegalArgumentException("BLUEPRINT_ACTION");args.put("file_id",text(a,"blueprint_id",36));}
+            if(listing)args.put("query","");else{if(!a.path("action").asText().equals("read"))throw new IllegalArgumentException("BLUEPRINT_ACTION");args.put("file_id",text(a,"blueprint_id",36));args.put("block_offset",a.path("offset").asLong(0));}
             return ServerBuildingFiles.read(p,agent,listing?"inspect_building_files":"inspect_building_file",args,permit).thenApply(value->{var result=new LinkedHashMap<String,Object>(value);result.put("scope","AUTHORIZED_UPLOADED_LIBRARY");result.put("nextTool","inspect_building_file / plan_building_import");return result;});
         }
         String action=text(a,"action",16);int offset=a.has("offset")?number(a,"offset",0,131072):0,variant=a.has("variant")?number(a,"variant",0,63):0;

@@ -7689,8 +7689,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "d7f60948-0eb2-4c01-9d95-a4f2d04dad08",
-      "bytes": 83879
+      "resourceId": "cd3a935f-28a0-492b-b2f8-1d58c8732874",
+      "bytes": 83948
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -9880,5 +9880,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "27783f12883714acee53c2016f98fd8ecfe22f86"
+  "sourceCommit": "3ee7659155b0272a96d9fdea8bc0ac3ce7216a4a"
 }
