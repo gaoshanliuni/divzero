@@ -19,8 +19,8 @@
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
-      "resourceId": "9af0abcd-51ab-42f5-a314-e7b25d0d9c29",
-      "bytes": 3853
+      "resourceId": "3e7a5470-495c-4721-bcd2-711d232503f1",
+      "bytes": 3885
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -1714,8 +1714,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureDefinition.java",
-      "resourceId": "b4c2a59e-eb26-462e-b6e6-b4c483fa0be3",
-      "bytes": 14946
+      "resourceId": "6cc57fb8-356f-473a-8742-e70d7e718e3d",
+      "bytes": 14956
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureRig.java",
@@ -2084,8 +2084,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/ModelGeometryTools.java",
-      "resourceId": "4888f7a6-9e0e-43c4-8c4f-d1abe7687ed9",
-      "bytes": 11238
+      "resourceId": "ea6dc88b-794f-4ec6-8b93-5ee7cf1e3a84",
+      "bytes": 11713
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/ObjectPhysics.java",
@@ -2104,13 +2104,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/RuntimeMesh.java",
-      "resourceId": "76888d3d-9f41-4c9c-bee8-e793de957e3f",
-      "bytes": 10588
+      "resourceId": "c60528f2-db21-4a86-b7fd-a20c384a1865",
+      "bytes": 14669
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/RuntimeModelBundle.java",
-      "resourceId": "533ed2a7-33d1-4c90-965c-07cd9c8958a8",
-      "bytes": 5387
+      "resourceId": "773447db-964d-4b13-a0d8-1ca06391d532",
+      "bytes": 8726
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/objects/TrajectoryTriggers.java",
@@ -3743,6 +3743,11 @@
       "bytes": 2869
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeMaterialsTest.java",
+      "resourceId": "1f98b75d-7190-41b1-9eab-7315279e3048",
+      "bytes": 3178
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeMeshTest.java",
       "resourceId": "9625dd70-b69c-4699-afbe-916c8fe8e639",
       "bytes": 2344
@@ -4169,8 +4174,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "76b910bd-2f1f-413c-a44e-314986f4faf9",
-      "bytes": 16409
+      "resourceId": "f7d0d0a6-7633-4e48-990e-e79975a3455e",
+      "bytes": 17180
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -5504,8 +5509,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "8defa373-83a3-4d9c-a3b1-519ece220134",
-      "bytes": 306935
+      "resourceId": "362b25be-273d-4a8b-b2b5-223e6ddd9853",
+      "bytes": 308608
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -6169,23 +6174,28 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeCreatureRenderer.java",
-      "sha256": "935c74a118d72242bc8526eca67148829d99aa4007e7134108cd30ffbdd93379",
-      "bytes": 8118
+      "resourceId": "5a07f1f9-1a9e-42a8-a2fe-edb186aa770c",
+      "bytes": 7116
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeItemRenderer.java",
-      "resourceId": "8140c188-00f3-484a-a193-c72b5778aebc",
-      "bytes": 5285
+      "resourceId": "f6b12906-4b84-4aff-b846-7c8441a4745a",
+      "bytes": 5126
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeMeshDraw.java",
+      "resourceId": "e8fb9141-7da8-4039-9fbb-146465c34fbb",
+      "bytes": 1906
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeObjectAssets.java",
-      "resourceId": "853cb545-9698-4938-8d76-3fe552130399",
-      "bytes": 7929
+      "resourceId": "97573351-9410-4152-a244-49d16c911105",
+      "bytes": 8541
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeObjectRenderer.java",
-      "sha256": "60ed92986f90ac254199bcd0e10c4f359b83328cdc8f2c4b2bfbf3aa79a1ed5d",
-      "bytes": 3081
+      "resourceId": "09e8da85-89dd-4f72-8638-089779c52e6c",
+      "bytes": 2050
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeThrownItemRenderer.java",
@@ -7644,8 +7654,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityAccessSmoke.java",
-      "resourceId": "f0c6a192-6af1-45a9-bcf8-baea1b7c362a",
-      "bytes": 5800
+      "resourceId": "50bc521c-6bc9-4957-9c8f-702d8813b620",
+      "bytes": 6230
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityBudgetSmoke.java",
@@ -7654,8 +7664,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityDeliverySmoke.java",
-      "resourceId": "0036b60d-62b9-42cd-a975-61f4b46cf26a",
-      "bytes": 5172
+      "resourceId": "00232ea7-4d10-475e-921d-e971b0570fd7",
+      "bytes": 5184
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityModelSmoke.java",
+      "resourceId": "e335b01b-278a-4835-802b-cc167eb7c23a",
+      "bytes": 3085
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
@@ -7849,8 +7864,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreatureModelAssets.java",
-      "resourceId": "fa8df54f-e562-490f-b5ce-43aca3cd4be8",
-      "bytes": 7048
+      "resourceId": "c5c7fdd8-38d8-4b4b-b11a-169724b325a1",
+      "bytes": 7734
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreatureTextureSmoke.java",
@@ -9915,5 +9930,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "7ae054be2680c9f92cd942fc52665910873b4b50"
+  "sourceCommit": "004f891c71c39a759954dd9278aaf204805deaf7"
 }

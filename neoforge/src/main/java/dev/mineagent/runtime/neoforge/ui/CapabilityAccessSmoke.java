@@ -45,13 +45,14 @@ public final class CapabilityAccessSmoke {
         denied(()->ServerInteractionRules.set(player,UUID.randomUUID(),mixed,false));
         grant(player,Set.of(PermissionAction.EDIT_WORLD,PermissionAction.EDIT_ENTITIES));ServerInteractionRules.set(player,UUID.randomUUID(),mixed,false);
         grant(player,Set.of());require(!ServerInteractionRules.denied(player,at,null,"block_use",false),"REVOKED_WORLD_RULE_ACTIVE");
+        var expectedEntities=player.level().getEntities(player,player.getBoundingBox().inflate(32),e->e.getType()==net.minecraft.world.entity.EntityType.PIG).stream().map(e->e.getUUID().toString()).collect(java.util.stream.Collectors.toSet());require(expectedEntities.containsAll(pigs.stream().map(e->e.getUUID().toString()).toList()),"FIXTURE_PIGS_NOT_OBSERVED");
         var seen=new HashSet<String>();int offset=0,pages=0;
         do{
             var args=JSON.createObjectNode().put("section","view").put("entity_type","minecraft:pig").put("radius",32).put("limit",13).put("offset",offset).put("sort","distance");
             var result=ConversationAgentTools.execute(player,agent,UUID.randomUUID(),"inspect_player",args.toString(),()->true).getNow(null);require(result!=null,"READ_NOT_IMMEDIATE");var page=JSON.valueToTree(result);
-            require(page.path("total").asInt()==75,"DENSE_ENTITY_TOTAL_"+page);for(var entity:page.path("entities"))require(seen.add(entity.path("entityId").asText()),"DUPLICATE_ENTITY_PAGE");offset=page.path("nextOffset").asInt();pages++;
+            require(page.path("total").asInt()==expectedEntities.size(),"DENSE_ENTITY_TOTAL_"+page);for(var entity:page.path("entities"))require(seen.add(entity.path("entityId").asText()),"DUPLICATE_ENTITY_PAGE");offset=page.path("nextOffset").asInt();pages++;
         }while(offset>=0);
-        require(seen.size()==75&&pages==6,"DENSE_ENTITY_PAGES_INCOMPLETE");
+        require(seen.equals(expectedEntities)&&pages==(expectedEntities.size()+12)/13,"DENSE_ENTITY_PAGES_INCOMPLETE");
         return Map.of("operator",false,"narrowEntityGrant",true,"narrowWorldGrant",true,"mixedActionsRequireBoth",true,"revocationStopsNativeCallbacks",true,"templateBinding",true,"nativeEntities",seen.size(),"pages",pages,"modelCalls",0);
     }
     private CapabilityAccessSmoke(){}

@@ -20,13 +20,7 @@ public final class RuntimeObjectRenderer extends EntityRenderer<RuntimeObjectEnt
     @Override public void extractRenderState(RuntimeObjectEntity entity,State state,float partial){super.extractRenderState(entity,state,partial);state.asset=RuntimeObjectAssets.get(entity);state.entity=entity.getUUID();state.yaw=entity.getYRot();}
     @Override public void submit(State state,PoseStack poses,SubmitNodeCollector collector,CameraRenderState camera){
         super.submit(state,poses,collector,camera);if(state.asset==null)return;var asset=state.asset;poses.pushPose();poses.mulPose(Axis.YP.rotationDegrees(-state.yaw));
-        collector.submitCustomGeometry(poses,RenderTypes.entityTranslucent(asset.texture()),(pose,buffer)->{
-            for(var t:asset.mesh().triangles()){
-                var a=asset.mesh().vertices().get(t.a());var b=asset.mesh().vertices().get(t.b());var c=asset.mesh().vertices().get(t.c());
-                float x=(b.y()-a.y())*(c.z()-a.z())-(b.z()-a.z())*(c.y()-a.y()),y=(b.z()-a.z())*(c.x()-a.x())-(b.x()-a.x())*(c.z()-a.z()),z=(b.x()-a.x())*(c.y()-a.y())-(b.y()-a.y())*(c.x()-a.x());float n=(float)Math.sqrt(x*x+y*y+z*z);x/=n;y/=n;z/=n;
-                vertex(buffer,pose,state.lightCoords,a,t.color(),x,y,z);vertex(buffer,pose,state.lightCoords,b,t.color(),x,y,z);vertex(buffer,pose,state.lightCoords,c,t.color(),x,y,z);vertex(buffer,pose,state.lightCoords,c,t.color(),x,y,z);
-            }
-        });poses.popPose();if(dev.mineagent.runtime.client.webui.RuntimeObjectTelemetry.enabled())drawn.merge(state.entity,1,Integer::sum);
+        RuntimeMeshDraw.submit(asset.mesh(),poses,collector,state.lightCoords,OverlayTexture.NO_OVERLAY,asset::texture);
+        poses.popPose();if(dev.mineagent.runtime.client.webui.RuntimeObjectTelemetry.enabled())drawn.merge(state.entity,1,Integer::sum);
     }
-    private static void vertex(VertexConsumer b,PoseStack.Pose pose,int light,RuntimeMesh.Vertex v,int color,float x,float y,float z){b.addVertex(pose,v.x(),v.y(),v.z()).setColor(color).setUv(v.u(),v.v()).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(pose,v.hasNormal()?v.nx():x,v.hasNormal()?v.ny():y,v.hasNormal()?v.nz():z);}
 }

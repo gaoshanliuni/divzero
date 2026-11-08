@@ -12,7 +12,7 @@ import java.util.*;
 public final class CapabilityDeliverySmoke {
     public static final String MARKER="DIVZERO_AUTOMATIC_RESOURCE_ACTUAL_READBACK";
     private static UUID generation;
-    private static void guard(){if(!Boolean.getBoolean("mineagent.skillSmoke")||!Set.of("capability_delivery","capability_data").contains(System.getProperty("mineagent.skillSmokeMode","")))throw new SecurityException("FIXTURE_DISABLED");}
+    private static void guard(){if(!Boolean.getBoolean("mineagent.skillSmoke")||!Set.of("capability_delivery","capability_data","capability_models").contains(System.getProperty("mineagent.skillSmokeMode","")))throw new SecurityException("FIXTURE_DISABLED");}
     public static Map<String,Object> publish(ServerPlayer player,UUID agent)throws Exception{
         var metadata=new GeneratedFile("resourcepack/pack.mcmeta",RuntimeResourceSide.CLIENT,"application/json",ResourceIds.create(),"{\"pack\":{\"description\":\"Automatic lifecycle fixture\",\"min_format\":[84,0],\"max_format\":[84,0]}}".getBytes(StandardCharsets.UTF_8));
         var marker=new GeneratedFile("resourcepack/assets/capability_fixture/auto.txt",RuntimeResourceSide.CLIENT,"text/plain",ResourceIds.create(),MARKER.getBytes(StandardCharsets.UTF_8));
@@ -26,7 +26,7 @@ public final class CapabilityDeliverySmoke {
         var env=dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe();var contract=new NativeCompatibility(1,Map.of("SERVER",new NativeCompatibility.Target(env.minecraft(),env.loader(),env.loaderVersion(),env.namespace(),env.javaFeature(),Map.of())));
         return publishParsed(player,agent,new ParsedRuntimePackage(reopen?"自动登记世界重开验收":"自动数据重载验收","1.0",RuntimePackageType.CONTENT,reopen?ActivationMode.WORLD_REOPEN:ActivationMode.DATA_RELOAD,Map.of(),Set.of("RUN_CODE"),Map.of("datapack",new RuntimeEntrypoint(metadata.path(),metadata.side(),metadata.sha256())),List.of(),List.of(metadata,marker),contract));
     }
-    private static Map<String,Object> publishParsed(ServerPlayer player,UUID agent,ParsedRuntimePackage parsed)throws Exception{
+    static Map<String,Object> publishParsed(ServerPlayer player,UUID agent,ParsedRuntimePackage parsed)throws Exception{
         guard();var runtime=ServerPackageRuntime.get(player.level().getServer());
         var field=ServerPackageRuntime.class.getDeclaredField("jobs");field.setAccessible(true);var jobs=(PackageGenerationService)field.get(runtime);
         generation=UUID.randomUUID();var job=jobs.submit(player.getUUID(),agent,generation,"FIXTURE_ONLY own generated resource pack",true,"WORLD_CONTENT").job();
