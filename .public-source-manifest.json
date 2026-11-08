@@ -3224,8 +3224,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeCoderContextTest.java",
-      "resourceId": "71b1280b-a698-4bb4-bd26-0d4ca1525345",
-      "bytes": 10590
+      "resourceId": "c6c25a97-0470-4a17-8dca-817c4d6d740a",
+      "bytes": 10597
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeCompilationIdentityTest.java",
@@ -9735,5 +9735,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "8233fdb335c6b5747573247339b98e6516e0bd43"
+  "sourceCommit": "8ba71817760931a0e3a40671e29431b99de10620"
 }
