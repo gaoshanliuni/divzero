@@ -6159,8 +6159,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeItemRenderer.java",
-      "resourceId": "0190bae0-a613-4edb-b31d-55710ca70c8e",
-      "bytes": 5165
+      "resourceId": "8140c188-00f3-484a-a193-c72b5778aebc",
+      "bytes": 5285
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeObjectAssets.java",
@@ -9895,5 +9895,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "d27be81c3a1cf882186588d134fc46d16be743e9"
+  "sourceCommit": "713cfd2cfe57d9b6e05ccfba698ceb76d937bdb6"
 }

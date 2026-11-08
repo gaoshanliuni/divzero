@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 @EventBusSubscriber(modid="mineagent_runtime",value=Dist.CLIENT)
 public final class RuntimeItemRenderer implements SpecialModelRenderer<RuntimeItemRenderer.RenderedItem> {
-    public record RenderedItem(RuntimeMesh mesh,Identifier texture){}
+    public record RenderedItem(RuntimeMesh mesh,RuntimeItemBinding binding){}
     private static final Map<String,RuntimeMesh> CACHE=new LinkedHashMap<>(32,.75f,true);
     private static final Identifier WHITE=Identifier.fromNamespaceAndPath("mineagent_runtime","runtime_item_white");
     private static boolean textureReady;
@@ -35,24 +35,25 @@ public final class RuntimeItemRenderer implements SpecialModelRenderer<RuntimeIt
         String raw=stack.get(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_ITEM_BINDING.get());if(raw==null||raw.length()>RuntimeItemBinding.MAX_BINDING)return null;
         var binding=RuntimeItem.binding(stack);if(binding==null)return null;var mesh=CACHE.get(raw);
         if(mesh==null){mesh=binding.mesh();if(CACHE.size()>=32)CACHE.remove(CACHE.keySet().iterator().next());CACHE.put(raw,mesh);}
-        var asset=mesh.texture().isEmpty()?null:RuntimeObjectAssets.get(binding);
-        return new RenderedItem(mesh,asset==null?WHITE:asset.texture());
+        return new RenderedItem(mesh,binding);
     }
     @Override public void getExtents(Consumer<Vector3fc> output){for(int x=0;x<=1;x++)for(int y=0;y<=1;y++)for(int z=0;z<=1;z++)output.accept(new Vector3f(x,y,z));}
     @Override public void submit(RenderedItem item,PoseStack poses,SubmitNodeCollector collector,int light,int overlay,boolean foil,int outline){
         if(item==null)return;var mesh=item.mesh();
+        // Held-item render arguments may be cached while an asynchronous asset download finishes.
+        var asset=mesh.texture().isEmpty()?null:RuntimeObjectAssets.get(item.binding());var texture=asset==null?WHITE:asset.texture();
         if(!textureReady){var image=new com.mojang.blaze3d.platform.NativeImage(1,1,false);image.setPixel(0,0,-1);Minecraft.getInstance().getTextureManager().register(WHITE,new net.minecraft.client.renderer.texture.DynamicTexture(()->"Runtime item color surface",image));textureReady=true;}
         poses.pushPose();poses.translate(.5,0,.5);
         double minX=Double.POSITIVE_INFINITY,minY=minX,minZ=minX,maxX=Double.NEGATIVE_INFINITY,maxY=maxX,maxZ=maxX;
         for(var v:mesh.vertices()){minX=java.lang.Math.min(minX,v.x());minY=java.lang.Math.min(minY,v.y());minZ=java.lang.Math.min(minZ,v.z());maxX=java.lang.Math.max(maxX,v.x());maxY=java.lang.Math.max(maxY,v.y());maxZ=java.lang.Math.max(maxZ,v.z());}
         if(minX<-.5||maxX>.5||minY<0||maxY>1||minZ<-.5||maxZ>.5){float fit=(float)(.95/java.lang.Math.max(maxX-minX,java.lang.Math.max(maxY-minY,maxZ-minZ)));poses.scale(fit,fit,fit);poses.translate(-(minX+maxX)/2,-minY,-(minZ+maxZ)/2);}
-        collector.submitCustomGeometry(poses,RenderTypes.entityTranslucent(item.texture()),(pose,buffer)->{
+        collector.submitCustomGeometry(poses,RenderTypes.entityTranslucent(texture),(pose,buffer)->{
             for(var t:mesh.triangles()){
                 var a=mesh.vertices().get(t.a());var b=mesh.vertices().get(t.b());var c=mesh.vertices().get(t.c());
                 float x=(b.y()-a.y())*(c.z()-a.z())-(b.z()-a.z())*(c.y()-a.y()),y=(b.z()-a.z())*(c.x()-a.x())-(b.x()-a.x())*(c.z()-a.z()),z=(b.x()-a.x())*(c.y()-a.y())-(b.y()-a.y())*(c.x()-a.x());float n=(float)java.lang.Math.sqrt(x*x+y*y+z*z);
                 vertex(buffer,pose,light,overlay,a,t.color(),x/n,y/n,z/n);vertex(buffer,pose,light,overlay,b,t.color(),x/n,y/n,z/n);vertex(buffer,pose,light,overlay,c,t.color(),x/n,y/n,z/n);vertex(buffer,pose,light,overlay,c,t.color(),x/n,y/n,z/n);
             }
-        });poses.popPose();if(Boolean.getBoolean("mineagent.conversationAgentSmoke")||Boolean.getBoolean("mineagent.skillSmoke")){rendered++;if(!item.texture().equals(WHITE))texturedRendered++;}
+        });poses.popPose();if(Boolean.getBoolean("mineagent.conversationAgentSmoke")||Boolean.getBoolean("mineagent.skillSmoke")){rendered++;if(!texture.equals(WHITE))texturedRendered++;}
     }
     private static void vertex(VertexConsumer b,PoseStack.Pose pose,int light,int overlay,RuntimeMesh.Vertex v,int color,float x,float y,float z){b.addVertex(pose,v.x(),v.y(),v.z()).setColor(color).setUv(v.u(),v.v()).setOverlay(overlay).setLight(light).setNormal(pose,v.hasNormal()?v.nx():x,v.hasNormal()?v.ny():y,v.hasNormal()?v.nz():z);}
 }
