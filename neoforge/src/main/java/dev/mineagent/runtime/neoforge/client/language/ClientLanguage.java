@@ -8,6 +8,29 @@ public final class ClientLanguage {
  public static String gameLanguage(){var mc=Minecraft.getInstance();return mc==null||mc.options==null?"en_us":mc.options.languageCode;}
  public static String language(){try{return UiLanguagePreferences.resolve(prefs().state().language(),gameLanguage());}catch(Exception e){return UiLanguagePreferences.resolve("auto",gameLanguage());}}
  public static String t(String source){return UiLanguageCatalog.text(language(),source);}
+ public static String permissionName(dev.mineagent.runtime.api.permission.PermissionAction action){return t(switch(action){
+  case CHAT->"聊天";
+  case START_TASK->"启动任务";
+  case CREATE_AGENT->"创建 AI 玩家";
+  case MODIFY_AGENT->"管理 AI 玩家";
+  case CANCEL_AGENT_TASK->"取消 AI 任务";
+  case RUN_CODE->"运行代码";
+  case MANAGE_PACKAGES->"管理内容包";
+  case MANAGE_PROVIDERS->"管理模型服务";
+  case MANAGE_PERMISSIONS->"管理权限组";
+  case CONTROL_PUBLIC_MEDIA->"控制公共媒体";
+  case MANAGE_SCOREBOARD->"管理计分板";
+  case DISCOVER_OBJECTS->"发现世界对象";
+  case SUBSCRIBE_EVENTS->"订阅事件";
+  case SCHEDULE_TASKS->"安排定时任务";
+  case ACCESS_SHARED_STATE->"访问共享状态";
+  case OFFER_CONTENT->"提供内容";
+  case RECEIVE_UI_FEEDBACK->"接收界面反馈";
+  case RESTORE_BACKUP->"恢复备份";
+  case VIEW_DIAGNOSTICS->"查看诊断";
+  case EDIT_WORLD->"编辑世界与方块";
+  case EDIT_ENTITIES->"编辑实体与状态";
+ });}
  public static Component component(String source){return Component.literal(t(source));}
  public static Map<String,Object> view(){try{var s=prefs().state();return Map.of("language",s.language(),"effectiveLanguage",UiLanguagePreferences.resolve(s.language(),gameLanguage()),"revision",s.revision(),"defaultLanguage","auto");}catch(Exception e){return Map.of("language","auto","effectiveLanguage",UiLanguagePreferences.resolve("auto",gameLanguage()),"revision",0L,"defaultLanguage","auto","error","UI_LANGUAGE_UNAVAILABLE");}}
  public static CompletableFuture<Map<String,Object>> save(String language,long revision){return CompletableFuture.supplyAsync(()->{try{prefs().save(revision,language);return view();}catch(Exception e){throw new CompletionException(e);}},IO);}

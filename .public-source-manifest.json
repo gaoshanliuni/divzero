@@ -1034,8 +1034,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "resourceId": "c3621428-6188-42a2-871a-6497311f74a1",
-      "bytes": 328947
+      "resourceId": "904665af-18ba-4f17-a455-f3c0281512dc",
+      "bytes": 329396
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -4184,8 +4184,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "321d0c5c-38b4-4c0e-928d-1a64a1a59338",
-      "bytes": 20090
+      "resourceId": "40d45144-e1eb-4644-bedb-ff95e9e07952",
+      "bytes": 20658
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -5709,8 +5709,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/language/ClientLanguage.java",
-      "sha256": "3c7edc8dcb0de532b9873038c9457bd8032f2c2f9b08952d4e3f6604cba0629c",
-      "bytes": 3704
+      "resourceId": "4cfe9ac1-9ca0-49fa-8e31-dfe6fd5391ef",
+      "bytes": 4727
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/media/MediaScreenRenderState.java",
@@ -6234,8 +6234,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/screen/ControlCenterScreen.java",
-      "resourceId": "643b3bc9-860a-4522-8da3-c169363088d3",
-      "bytes": 110101
+      "resourceId": "88da7dbc-e5c7-4b43-ac6b-31b344dc634f",
+      "bytes": 110172
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/screen/LanguageScreen.java",
@@ -9965,5 +9965,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "b544986f5294271b7dca4a1c5dcb09958915bea1"
+  "sourceCommit": "87e88190cc9278282a3dd940bcad0cf8ff4f11de"
 }

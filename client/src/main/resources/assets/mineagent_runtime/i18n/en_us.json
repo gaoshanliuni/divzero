@@ -3631,5 +3631,15 @@
   "几何存储磁盘安全余量（MiB）": "Geometry storage disk reserve (MiB)",
   "几何任务同时加载区块预算": "Concurrent geometry chunk ticket budget",
   "每 Tick 几何区块加载数量预算": "Geometry chunk loads per tick",
-  "AI 附加区块估算内存预算（MiB）": "Estimated managed AI chunk memory budget (MiB)"
+  "AI 附加区块估算内存预算（MiB）": "Estimated managed AI chunk memory budget (MiB)",
+  "启动任务": "Start tasks",
+  "管理 AI 玩家": "Manage AI players",
+  "管理模型服务": "Manage model providers",
+  "管理权限组": "Manage permission groups",
+  "控制公共媒体": "Control public media",
+  "管理计分板": "Manage scoreboards",
+  "安排定时任务": "Schedule tasks",
+  "提供内容": "Offer content",
+  "编辑世界与方块": "Edit world and blocks",
+  "编辑实体与状态": "Edit entities and state"
 }

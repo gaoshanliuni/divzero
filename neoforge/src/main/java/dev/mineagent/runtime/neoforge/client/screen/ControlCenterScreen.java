@@ -1025,7 +1025,7 @@ public final class ControlCenterScreen extends dev.mineagent.runtime.neoforge.cl
         player.setValue(permissionPlayerDraft);
         player.setResponder(value -> permissionPlayerDraft = value);
         addRenderableWidget(player);
-        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("权限: ") + permissionAction.name()), ignored -> {
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("权限: ") + dev.mineagent.runtime.neoforge.client.language.ClientLanguage.permissionName(permissionAction)), ignored -> {
                     var values = dev.mineagent.runtime.api.permission.PermissionAction.values();
                     permissionAction = values[(permissionAction.ordinal() + 1) % values.length];
                     rebuildWidgets();
