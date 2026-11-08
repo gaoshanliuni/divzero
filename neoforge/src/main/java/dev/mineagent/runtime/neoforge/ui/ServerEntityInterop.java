@@ -20,6 +20,7 @@ public final class ServerEntityInterop {
  public record Rule(UUID id,UUID owner,long revision,String kind,String source,Long authorityGeneration){public Rule(UUID id,UUID owner,long revision,String kind,String source){this(id,owner,revision,kind,source,null);}}
  private static final ObjectMapper JSON=new ObjectMapper();private static final Map<MinecraftServer,State> LIVE=new WeakHashMap<>();private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
  private static final ThreadLocal<Boolean> CALLBACK=ThreadLocal.withInitial(()->false);
+ private static final Map<MinecraftServer,Map<UUID,Boolean>> VISUAL_AUTHORITY=new WeakHashMap<>();
  private record RemovedGoal(GoalSelector selector,int priority,Goal goal){}
  private static final class State implements AutoCloseable {
   final SqliteRuntimeRepository db;final UUID world;final Map<UUID,Rule> rules=new LinkedHashMap<>();final Map<UUID,EntityLogicSpec> logic=new HashMap<>();final Map<UUID,Map<String,Long>> counts=new HashMap<>();final Map<String,Long> cooldown=new HashMap<>();final Map<Mob,List<RemovedGoal>> removed=new IdentityHashMap<>();final Set<UUID> writing=new HashSet<>();boolean closed;
@@ -55,6 +56,13 @@ public final class ServerEntityInterop {
  private static boolean authorized(MinecraftServer server,Rule rule){return rule!=null&&dev.mineagent.runtime.neoforge.task.ServerAuthority.allowed(server,rule.owner(),dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES)&&(rule.authorityGeneration()==null||rule.authorityGeneration()==MineAgentRuntimeServices.config(server).permissionGeneration(rule.owner(),dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES));}
  private static void send(ServerPlayer p,Rule rule,boolean remove){if(!rule.kind().equals("visual"))return;try{net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,new UiPayloads.Event(rule.id(),"entityVisualRule",JSON.writeValueAsString(Map.of("remove",remove,"rule",rule))));}catch(Exception e){MineAgentRuntimeMod.LOGGER.warn("Entity visual rule sync failed: {}",rule.id());}}
  public static void sync(ServerPlayer p){var s=state(p.level().getServer());net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,new UiPayloads.Event(UUID.randomUUID(),"entityVisualReset","{}"));s.rules.values().forEach(r->send(p,r,!authorized(p.level().getServer(),r)));}
+ @SubscribeEvent public static void reconcileVisualAuthority(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event){
+  var server=event.getServer();var current=LIVE.get(server);if(current==null||current.closed||server.getTickCount()%20!=0)return;
+  var prior=VISUAL_AUTHORITY.computeIfAbsent(server,key->new HashMap<>());prior.keySet().retainAll(current.rules.keySet());
+  for(var rule:current.rules.values())if(rule.kind().equals("visual")){boolean permitted=authorized(server,rule);var previous=prior.put(rule.id(),permitted);
+   if(previous==null||previous!=permitted)for(var viewer:server.getPlayerList().getPlayers())if(!(viewer instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer))send(viewer,rule,!permitted);
+  }
+ }
  private static List<Map.Entry<UUID,EntityLogicSpec>> matching(Entity entity){if(!editable(entity)||!(entity.level() instanceof ServerLevel l))return List.of();var s=LIVE.get(l.getServer());if(s==null||s.logic.isEmpty())return List.of();var root=root(entity);return s.logic.entrySet().stream().filter(e->authorized(l.getServer(),s.rules.get(e.getKey()))&&matches(e.getValue().selector(),root)).toList();}
  private static void event(State s,UUID id,EntityLogicSpec rule,Entity e,String event,boolean blocked){s.counts.computeIfAbsent(id,k->new HashMap<>()).merge(event+(blocked?".blocked":".observed"),1L,Long::sum);if(CALLBACK.get())return;var actions=rule.callbacks().getOrDefault(event,List.of());if(actions.isEmpty())return;long now=e.level().getGameTime();String key=id+":"+e.getUUID()+":"+event;if(now-s.cooldown.getOrDefault(key,Long.MIN_VALUE/2)<rule.cooldown())return;s.cooldown.put(key,now);CALLBACK.set(true);try{var server=((ServerLevel)e.level()).getServer();var owner=server.getPlayerList().getPlayer(s.rules.get(id).owner());for(var a:actions)switch(a.type()){
   case "message"->{if(owner!=null)owner.sendSystemMessage(Component.literal("["+rule.name()+"] "+a.value()));}
@@ -76,7 +84,7 @@ public final class ServerEntityInterop {
  }
  @SubscribeEvent public static void login(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent e){if(e.getEntity() instanceof ServerPlayer p&&!(p instanceof dev.mineagent.runtime.neoforge.body.MineAgentPlayer)&&WorldIdentityRuntime.ready(p.level().getServer()))sync(p);}
  @SubscribeEvent public static void leave(net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent e){if(e.getLevel() instanceof ServerLevel level&&LIVE.containsKey(level.getServer())&&e.getEntity() instanceof Mob mob)LIVE.get(level.getServer()).removed.remove(mob);}
- @SubscribeEvent public static void stop(net.neoforged.neoforge.event.server.ServerStoppedEvent e){var s=LIVE.remove(e.getServer());if(s!=null){s.closed=true;IO.submit(()->{try{s.close();}catch(Exception ignored){}});}}
+ @SubscribeEvent public static void stop(net.neoforged.neoforge.event.server.ServerStoppedEvent e){VISUAL_AUTHORITY.remove(e.getServer());var s=LIVE.remove(e.getServer());if(s!=null){s.closed=true;IO.submit(()->{try{s.close();}catch(Exception ignored){}});}}
  public static final String CONTRACT=dev.mineagent.runtime.core.interaction.EntityPartReplacement.CONTRACT+"\n"+"""
  原版/Mod实体规则，不修改JAR或伪造原生事件。先inspect_entity_logic取得实体UUID、类型、Goal类名、multipart部件与适配器能力。
  source平面JSON：dimension及entity_id/entity_type/species_id三选一。logic字段：name，block:[interact,attack,attacked,hurt,knockback,target,move,tick]，damage_taken_multiplier，damage_dealt_multiplier(0..100)，knockback_multiplier(0..10)，movement_scale:[x,y,z](0..8)，blocked_goals:[inspect返回的完整Goal类名]。
