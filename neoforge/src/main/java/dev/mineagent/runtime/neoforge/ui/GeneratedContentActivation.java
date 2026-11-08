@@ -126,6 +126,12 @@ final class GeneratedContentActivation implements AutoCloseable {
         if(!item.owner().equals(player.getUUID())||!item.canonical().equals(canonical)||!Set.of("APPLIED","FAILED","UNKNOWN").contains(status)||code.length()>128)throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");
         completeClient(item,status,code);return Map.of("status","RECORDED");
     }
+    Map<String,Object> authorizeClient(ServerPlayer player,UUID operation,String canonical)throws Exception{
+        var item=clientQueue.get(operation);if(item==null)return Map.of("allowed",false);
+        if(!item.owner().equals(player.getUUID())||!item.canonical().equals(canonical))throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");
+        clientResources(player);return Map.of("allowed",clientQueue.containsKey(operation));
+    }
+    void cancelClient(UUID owner,UUID operation)throws Exception{var item=clientQueue.get(operation);if(item!=null){if(!item.owner().equals(owner))throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");completeClient(item,"CANCELLED","USER_CANCELLED_BEFORE_CLIENT_RECEIPT");}}
     private void completeClient(ClientResource item,String status,String code)throws Exception{
         save(item.operation(),Map.of("status",status.equals("APPLIED")?"PUBLISHED_CLIENT_ACTIVE":"PUBLISHED_CLIENT_"+status,"code",code,"observationSource","OWNER_CLIENT_RESOURCE_LIFECYCLE","executed",status.equals("APPLIED"),"replayAllowed",false));
         var row=db.get(world,CLIENT_QUEUE,item.operation().toString());if(row.isPresent()&&!db.delete(world,CLIENT_QUEUE,item.operation().toString(),row.get().revision(),System.currentTimeMillis()).accepted())throw new IllegalStateException("GENERATED_RESOURCE_RECEIPT_CONFLICT");clientQueue.remove(item.operation());

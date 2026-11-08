@@ -6239,8 +6239,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ClientResourcePacks.java",
-      "resourceId": "e764e5ba-ddf0-4bcf-b508-7652943e4c77",
-      "bytes": 24462
+      "resourceId": "5022f18b-866b-4d15-bde0-497be5c5e24e",
+      "bytes": 25198
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ClientScriptPackages.java",
@@ -7704,8 +7704,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "6532aec6-a519-427d-98ff-29bc4da0855a",
-      "bytes": 84092
+      "resourceId": "9c817456-e321-40fd-adb1-7713a8f65f1e",
+      "bytes": 84114
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7914,8 +7914,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GeneratedContentActivation.java",
-      "resourceId": "2f580e65-5d95-4551-81c3-d1b9a4048dbe",
-      "bytes": 12274
+      "resourceId": "f8da20c2-1e25-4121-bf83-d04553238911",
+      "bytes": 13010
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GenerationRepairSmokeServer.java",
@@ -8234,8 +8234,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "resourceId": "d6650ac8-7f72-4b50-8537-1d4b89487c56",
-      "bytes": 74040
+      "resourceId": "8a14d18f-5b1a-48b4-ad7f-f2c0a869c529",
+      "bytes": 74275
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -9895,5 +9895,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "a78f33838716269d49beac31b919930fa3d62268"
+  "sourceCommit": "dad8c6f90e87da13f50f4fcec0700f5c40dfea7a"
 }

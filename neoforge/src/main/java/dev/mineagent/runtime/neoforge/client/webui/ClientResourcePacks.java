@@ -19,6 +19,7 @@ public final class ClientResourcePacks {
     private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
     private static final Set<Download> downloads=ConcurrentHashMap.newKeySet();private static volatile Download download;private static String downloadOutcome="";private static long downloadGeneration;private static LocalResourcePackStore.Job active;private static AutoCloseable permit;private static Pending finish;private static boolean recoveryHook;
     private static boolean automaticPolling;private static long automaticAt;private static Object automaticConnection;
+    private static final Set<UUID> automaticAuthorizing=new HashSet<>();
     private record Automatic(UUID operation,UUID packageId,long revision,String canonical){}
     private record Pending(LocalResourcePackStore.Job job,boolean success,String code){}
     private static final class Download {
@@ -116,7 +117,7 @@ public final class ClientResourcePacks {
     private static void complete(LocalResourcePackStore.Job job,boolean success,String code){try{store().finish(job,success,code);active=null;finish=null;}catch(Exception failure){active=job;finish=new Pending(job,success,code);}finally{if(permit!=null){try{permit.close();}catch(Exception ignored){}permit=null;}}}
     public static void tick(){thread();for(var d:List.copyOf(downloads))current(d);if(finish!=null){var p=finish;complete(p.job(),p.success(),p.code());}automaticTick();}
     private static void automaticTick(){
-        Object connection=mc().getConnection();if(connection!=automaticConnection){automaticConnection=connection;automaticPolling=false;automaticAt=0;}
+        Object connection=mc().getConnection();if(connection!=automaticConnection){automaticConnection=connection;automaticPolling=false;automaticAt=0;automaticAuthorizing.clear();}
         if(connection==null||automaticPolling||busy()||!dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready()||System.currentTimeMillis()<automaticAt)return;
         automaticAt=System.currentTimeMillis()+3000;automaticPolling=true;
         UiClientSessions.command("package.generatedResources",Map.of(),UUID.randomUUID()).whenComplete((receipt,error)->mc().execute(()->{
@@ -152,9 +153,14 @@ public final class ClientResourcePacks {
         }
         var selected=asset.get();
         if(selected().contains("file/"+selected.filename())){ManagedClientResourcePackGuard.trusted(selected);verifyResources(selected);automaticResult(request,"APPLIED","RESOURCE_PACK_RELOADED_AND_OPTIONS_OBSERVED",connection);return;}
-        if(busy())return;var scope=webScope();
-        try{change(request.operation(),selected.filename(),"ENABLE",selected.revision(),selection(),ManagedClientResourcePackGuard.environment().fingerprint(),true,"own-generated-content",()->mc().getConnection()==connection&&scope.getAsBoolean());}
-        catch(Exception failure){if(store().job(request.operation()).isEmpty())automaticResult(request,"FAILED",code(failure),connection);}
+        if(busy()||!automaticAuthorizing.add(request.operation()))return;
+        UiClientSessions.command("package.generatedResources",Map.of("authorize",request.operation().toString(),"canonical",request.canonical()),UUID.randomUUID()).whenComplete((receipt,error)->mc().execute(()->{
+            automaticAuthorizing.remove(request.operation());if(mc().getConnection()!=connection)return;
+            try{
+                if(error!=null||receipt.code()!=Code.OBSERVED||!com.google.gson.JsonParser.parseString(receipt.values().get("result")).getAsJsonObject().get("allowed").getAsBoolean()||busy())return;
+                var scope=webScope();change(request.operation(),selected.filename(),"ENABLE",selected.revision(),selection(),ManagedClientResourcePackGuard.environment().fingerprint(),true,"own-generated-content",()->mc().getConnection()==connection&&scope.getAsBoolean());
+            }catch(Exception failure){try{if(store().job(request.operation()).isEmpty())automaticResult(request,"FAILED",code(failure),connection);}catch(Exception ignored){}}
+        }));
     }
     private static void automaticResult(Automatic request,String status,String code,Object connection){
         if(mc().getConnection()!=connection)return;

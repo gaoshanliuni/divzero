@@ -318,7 +318,7 @@ public final class ConversationAgentTools {
             else runtime.patchFailedCandidate(p,agent,operation,UUID.fromString(repair.path("source_operation_id").asText()),repair.path("job_revision").asLong(),repair.path("raw_sha256").asText(),repair.path("edits"),permit);
             accepted=true;
             WORK.computeIfAbsent(server,k->new ArrayList<>()).add(new Work(){final long deadline=System.nanoTime()+java.time.Duration.ofMinutes(10).toNanos();
-                public void cancel(){try{if(runtime.generation(p.getUUID(),operation).filter(j->j.state().equals("GENERATING")).isPresent())runtime.cancel(p.getUUID(),operation);}catch(Exception ignored){}result.completeExceptionally(new IllegalStateException("AGENT_CONTENT_GENERATION_CANCELLED",new IllegalStateException("Content generation was cancelled before its final receipt; candidate or activation state is not confirmed.")));}
+                public void cancel(){try{if(runtime.generation(p.getUUID(),operation).filter(j->Set.of("GENERATING","PUBLISHED").contains(j.state())).isPresent())runtime.cancel(p.getUUID(),operation);}catch(Exception ignored){}result.completeExceptionally(new IllegalStateException("AGENT_CONTENT_GENERATION_CANCELLED",new IllegalStateException("Content generation was cancelled before its final receipt; candidate or activation state is not confirmed.")));}
                 public boolean tick()throws Exception{
                     if(!current(p,permit)||repair==null&&p.level()!=level||!runtime.mayGenerate(p.getUUID(),agent)||System.nanoTime()>deadline){cancel();return true;}
                     var job=runtime.generation(p.getUUID(),operation).orElseThrow();if(job.state().equals("GENERATING"))return false;
