@@ -12,6 +12,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ManagedScriptRuntimeTest {
+    @Test void creationHandlerDiscoveryDoesNotRequireARestoreSubscription()throws Exception{
+        var id=UUID.randomUUID();var values=new ArrayList<Integer>();try(var runtime=new ManagedScriptRuntime()){
+            runtime.load(id,1,Map.of("main","on('instance.create',function(){host.accept(1);});"),"main",Map.of("host",new Host(values,new TrackedResource())));
+            assertTrue(runtime.hasHandlers(id,"instance.create"));assertFalse(runtime.hasHandlers(id,"instance.restore"));
+            assertTrue(runtime.fireLifecycle(id,"instance.create",0,java.time.Duration.ofMillis(100)));assertEquals(List.of(1),values);
+            runtime.unload(id);assertFalse(runtime.hasHandlers(id,"instance.create"));
+        }
+    }
     private static dev.mineagent.runtime.core.config.ScriptResourceBudget budget(int callbacks,int pending){
         return new dev.mineagent.runtime.core.config.ScriptResourceBudget(1,1,1,1,1,callbacks,1_000_000_000L,pending);
     }

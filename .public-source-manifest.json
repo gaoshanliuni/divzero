@@ -6574,8 +6574,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/WorldContentRuntime.java",
-      "resourceId": "ff499543-8a3f-4299-bdd9-2c392bb8556f",
-      "bytes": 96604
+      "resourceId": "277cb90d-e7a1-4669-ab9d-283093cce6a6",
+      "bytes": 96678
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/WorldContentSmokeServer.java",
@@ -8804,8 +8804,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/ManagedScriptRuntime.java",
-      "resourceId": "181b89b6-ec64-4748-8f7d-0a0acaa2fd46",
-      "bytes": 40535
+      "resourceId": "75c11093-8917-4177-8d1a-3f61a1fea36a",
+      "bytes": 40762
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/RhinoScriptRuntime.java",
@@ -8989,8 +8989,8 @@
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/ManagedScriptRuntimeTest.java",
-      "resourceId": "f1b8b8ae-26a2-4c61-90a3-c0d1150f806f",
-      "bytes": 15888
+      "resourceId": "a690e98d-a280-43a6-9472-d5c448031d63",
+      "bytes": 16618
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/preflight/BrowserScriptPreflightTest.java",
@@ -9890,5 +9890,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6ea7a262bba571dc529348bcdc7b3c1293e7ad85"
+  "sourceCommit": "960018ff22accf62fee7f85dcbe82f4ed762c8fd"
 }

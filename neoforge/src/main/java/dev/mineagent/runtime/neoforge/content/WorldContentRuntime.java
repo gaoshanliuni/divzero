@@ -450,7 +450,7 @@ public final class WorldContentRuntime implements AutoCloseable {
         var bindings=new LinkedHashMap<String,Object>(Map.of("server",server,"level",level,"instance",instance,"content",host));
         bindings.putAll(dev.mineagent.runtime.neoforge.ui.FeedbackRestartSmokeServer.bindings(server));
         scripts.load(instance.instanceId(),pack.revision(),plan.modules(),pack.entrypoints().get(plan.definitions().get(a.definitionId()).entrypointId()).path(),bindings);
-        if(registered){host.phase=restoring?Phase.RESTORING:Phase.CREATING;if(!scripts.fireLifecycle(instance.instanceId(),restoring?"instance.restore":"instance.create",instance,java.time.Duration.ofMillis(200)))throw new IllegalStateException("LIFECYCLE_CALLBACK_FAILED");}
+        if(registered||!restoring&&scripts.hasHandlers(instance.instanceId(),"instance.create")){host.phase=restoring?Phase.RESTORING:Phase.CREATING;if(!scripts.fireLifecycle(instance.instanceId(),restoring?"instance.restore":"instance.create",instance,java.time.Duration.ofMillis(200)))throw new IllegalStateException("LIFECYCLE_CALLBACK_FAILED");}
         host.phase=Phase.ACTIVE;return host;
     }
     private boolean ownerAllowed(WorldActivationLedger.Activation a){

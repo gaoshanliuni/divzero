@@ -272,6 +272,7 @@ public final class ManagedScriptRuntime implements AutoCloseable {
     public synchronized boolean isLoaded(UUID packageId) {
         return environments.containsKey(packageId);
     }
+    public synchronized boolean hasHandlers(UUID scopeId,String event){var environment=environments.get(scopeId);return environment!=null&&!environment.suspended&&!environment.handlers.getOrDefault(event,List.of()).isEmpty();}
 
     /** One-way quiescence: retain cleanup resources, but dispatch no further script callbacks. */
     public synchronized void suspend(UUID scopeId) {
