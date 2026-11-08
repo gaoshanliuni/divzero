@@ -5489,8 +5489,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "9495cf61-e069-4530-a1d1-6ba11012a9d5",
-      "bytes": 303269
+      "resourceId": "4fd370f0-569a-4b2d-b03f-169ad8ff1765",
+      "bytes": 304027
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -6134,8 +6134,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/EntityVisualClient.java",
-      "resourceId": "1bed169e-6335-409c-b0e0-d8fcd37a4ca2",
-      "bytes": 12713
+      "resourceId": "d501e39a-128c-409e-a5be-c7620663d32a",
+      "bytes": 12752
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/NativeAcceptanceClient.java",
@@ -6149,8 +6149,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RendererAdapters.java",
-      "resourceId": "08edd28e-8a5c-4ea9-8479-8559c3ce3c29",
-      "bytes": 2683
+      "resourceId": "0ad09471-4f5e-44b4-911a-2b78224a47c7",
+      "bytes": 4383
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeCreatureRenderer.java",
@@ -6159,8 +6159,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeItemRenderer.java",
-      "resourceId": "39c79135-0230-4ebe-ad8c-924384e3aab3",
-      "bytes": 5018
+      "resourceId": "0190bae0-a613-4edb-b31d-55710ca70c8e",
+      "bytes": 5165
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RuntimeObjectAssets.java",
@@ -9895,5 +9895,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "562751dd3ad88c686e2ae6ef51f0972dbce343d9"
+  "sourceCommit": "a78f33838716269d49beac31b919930fa3d62268"
 }

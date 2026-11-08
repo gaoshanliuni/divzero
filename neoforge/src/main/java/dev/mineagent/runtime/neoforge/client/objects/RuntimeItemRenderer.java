@@ -24,6 +24,7 @@ public final class RuntimeItemRenderer implements SpecialModelRenderer<RuntimeIt
     private static final Identifier WHITE=Identifier.fromNamespaceAndPath("mineagent_runtime","runtime_item_white");
     private static boolean textureReady;
     public static volatile int rendered;
+    public static volatile int texturedRendered;
     @SubscribeEvent public static void register(net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent event){event.register(Identifier.fromNamespaceAndPath("mineagent_runtime","runtime_item"),Unbaked.CODEC);}
     public record Unbaked() implements SpecialModelRenderer.Unbaked<RenderedItem> {
         public static final MapCodec<Unbaked> CODEC=MapCodec.unit(new Unbaked());
@@ -51,7 +52,7 @@ public final class RuntimeItemRenderer implements SpecialModelRenderer<RuntimeIt
                 float x=(b.y()-a.y())*(c.z()-a.z())-(b.z()-a.z())*(c.y()-a.y()),y=(b.z()-a.z())*(c.x()-a.x())-(b.x()-a.x())*(c.z()-a.z()),z=(b.x()-a.x())*(c.y()-a.y())-(b.y()-a.y())*(c.x()-a.x());float n=(float)java.lang.Math.sqrt(x*x+y*y+z*z);
                 vertex(buffer,pose,light,overlay,a,t.color(),x/n,y/n,z/n);vertex(buffer,pose,light,overlay,b,t.color(),x/n,y/n,z/n);vertex(buffer,pose,light,overlay,c,t.color(),x/n,y/n,z/n);vertex(buffer,pose,light,overlay,c,t.color(),x/n,y/n,z/n);
             }
-        });poses.popPose();if(Boolean.getBoolean("mineagent.conversationAgentSmoke"))rendered++;
+        });poses.popPose();if(Boolean.getBoolean("mineagent.conversationAgentSmoke")||Boolean.getBoolean("mineagent.skillSmoke")){rendered++;if(!item.texture().equals(WHITE))texturedRendered++;}
     }
     private static void vertex(VertexConsumer b,PoseStack.Pose pose,int light,int overlay,RuntimeMesh.Vertex v,int color,float x,float y,float z){b.addVertex(pose,v.x(),v.y(),v.z()).setColor(color).setUv(v.u(),v.v()).setOverlay(overlay).setLight(light).setNormal(pose,v.hasNormal()?v.nx():x,v.hasNormal()?v.ny():y,v.hasNormal()?v.nz():z);}
 }

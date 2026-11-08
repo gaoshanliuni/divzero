@@ -22,20 +22,36 @@ public final class RendererAdapters {
         Frame capture(EntityRenderer<?,?> renderer,EntityRenderState state,PoseStack poses);
     }
     private static final Map<String,Adapter> ADAPTERS=new LinkedHashMap<>();
-    public static synchronized void register(Adapter adapter){
+    private static final Map<String,String> FAILURES=new LinkedHashMap<>();
+    public static synchronized AutoCloseable register(Adapter adapter){
         Objects.requireNonNull(adapter);if(!adapter.id().matches("[a-z0-9_.-]+:[a-z0-9_./-]+")||!adapter.version().matches("[A-Za-z0-9_.+-]{1,64}"))throw new IllegalArgumentException("RENDERER_ADAPTER_ID");
         if(ADAPTERS.putIfAbsent(adapter.id(),adapter)!=null)throw new IllegalStateException("RENDERER_ADAPTER_EXISTS");
+        return ()->{synchronized(RendererAdapters.class){ADAPTERS.remove(adapter.id(),adapter);FAILURES.remove(adapter.id());}};
     }
-    public static synchronized List<Map<String,String>> catalog(){return ADAPTERS.values().stream().map(a->Map.of("id",a.id(),"version",a.version())).toList();}
+    public static synchronized List<Map<String,String>> catalog(){return ADAPTERS.values().stream().map(a->Map.of("id",a.id(),"version",a.version(),"error",FAILURES.getOrDefault(a.id(),""))).toList();}
+    private static void failed(Adapter adapter,Throwable failure){synchronized(RendererAdapters.class){FAILURES.put(adapter.id(),"RENDERER_ADAPTER_"+failure.getClass().getSimpleName().toUpperCase(Locale.ROOT));}}
     public static void submit(EntityRenderer<?,?> renderer,EntityRenderState state,PoseStack poses,Runnable original){
         var meta=state.getRenderData(EntityVisualClient.KEY);if(meta==null||meta.type().equals("minecraft:player")){original.run();return;}
-        List<Adapter> matching;synchronized(RendererAdapters.class){matching=ADAPTERS.values().stream().filter(a->a.supports(renderer,state)).toList();}
-        if(matching.size()!=1){original.run();return;}
-        var adapter=matching.getFirst();poses.pushPose();
-        try(var frame=adapter.capture(renderer,state,poses)){
-            frame.apply(EntityVisualClient.tracks(meta));original.run();
-            EntityVisualClient.adapterObserved(meta,adapter.id(),adapter.version(),renderer.getClass().getName(),frame::inspect);
-        }finally{poses.popPose();}
+        var matching=new ArrayList<Adapter>();synchronized(RendererAdapters.class){for(var adapter:ADAPTERS.values())if(!FAILURES.containsKey(adapter.id()))try{if(adapter.supports(renderer,state))matching.add(adapter);}catch(RuntimeException|LinkageError failure){failed(adapter,failure);}}
+        if(matching.size()!=1){
+            if(matching.size()>1)EntityVisualClient.adapterObserved(meta,"","",renderer.getClass().getName(),(offset,limit)->Map.of("error","RENDERER_ADAPTER_AMBIGUOUS"));
+            original.run();return;
+        }
+        var adapter=matching.getFirst();poses.pushPose();Frame frame=null;boolean submitted=false,restored=true;
+        try{
+            try{frame=adapter.capture(renderer,state,poses);frame.apply(EntityVisualClient.tracks(meta));}
+            catch(RuntimeException|LinkageError failure){failed(adapter,failure);}
+            synchronized(RendererAdapters.class){if(!FAILURES.containsKey(adapter.id()))submitted=true;}
+            if(submitted){
+                original.run(); // A native renderer error is not retried as another draw.
+                try{EntityVisualClient.adapterObserved(meta,adapter.id(),adapter.version(),renderer.getClass().getName(),frame::inspect);}
+                catch(RuntimeException|LinkageError failure){failed(adapter,failure);}
+            }
+        }finally{
+            try{if(frame!=null)frame.close();}catch(RuntimeException|LinkageError failure){restored=false;failed(adapter,failure);}finally{poses.popPose();}
+        }
+        if(!submitted&&restored)original.run();
+        synchronized(RendererAdapters.class){if(FAILURES.containsKey(adapter.id()))EntityVisualClient.adapterObserved(meta,adapter.id(),adapter.version(),renderer.getClass().getName(),(offset,limit)->Map.of("error",FAILURES.get(adapter.id())));}
     }
     private RendererAdapters(){}
 }

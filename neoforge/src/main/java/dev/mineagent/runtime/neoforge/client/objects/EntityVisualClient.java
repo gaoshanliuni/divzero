@@ -50,7 +50,7 @@ public final class EntityVisualClient {
  public static List<RendererAdapters.Track> tracks(Meta meta){return RULES.entrySet().stream().filter(e->matches(e.getValue().spec(),meta)).map(e->new RendererAdapters.Track(e.getKey(),e.getValue().spec(),Math.max(0,ticks-e.getValue().started())+meta.age()-Math.floor(meta.age()))).toList();}
  public static void adapterObserved(Meta meta,String id,String version,String renderer,java.util.function.BiFunction<Integer,Integer,Map<String,Object>> inspect){
   for(var probe:List.copyOf(PROBES.values()))if(probe.entity().equals(meta.entity())&&probe.part()==meta.part()){
-   var out=new LinkedHashMap<String,Object>(inspect.apply(probe.offset(),24));out.put("status","OBSERVED_ADAPTER_DRAW");out.put("adapter",id);out.put("adapterVersion",version);out.put("rendererClass",renderer);out.put("entity",meta.entity());out.put("ageInTicks",meta.age());reply(probe.id(),out);PROBES.remove(probe.id());
+   var out=new LinkedHashMap<String,Object>(inspect.apply(probe.offset(),24));out.put("status",out.containsKey("error")?"UNAVAILABLE":"OBSERVED_ADAPTER_DRAW");out.put("adapter",id);out.put("adapterVersion",version);out.put("rendererClass",renderer);out.put("entity",meta.entity());out.put("ageInTicks",meta.age());reply(probe.id(),out);PROBES.remove(probe.id());
   }
  }
  private static void reply(UUID id,Map<String,Object> data){if(Minecraft.getInstance().getConnection()!=null)net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new UiPayloads.Command(id,"entityAnimationInspectReply",new Gson().toJson(data)));}
