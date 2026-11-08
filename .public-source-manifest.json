@@ -5059,8 +5059,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "f830f644-b3a9-40ee-a10e-89ac4a3f092f",
-      "bytes": 10579
+      "resourceId": "b97ce5ee-c0c4-49ea-b6ad-6ce90ca3a0af",
+      "bytes": 10753
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -9685,5 +9685,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "bdab15eac00d46522c125eee9aa34790c1ca1612"
+  "sourceCommit": "75d68d614c191aa8fb3679b5eecb525b4456ccba"
 }
