@@ -4153,6 +4153,11 @@
       "bytes": 6205
     },
     {
+      "path": "docs/RECIPE_PEER_PRODUCTION.md",
+      "resourceId": "30b2510b-e43f-4957-a412-b1946ca45238",
+      "bytes": 3248
+    },
+    {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
       "resourceId": "41d4bd21-a61d-4e9d-a673-31d224edc120",
       "bytes": 35842
@@ -4271,6 +4276,16 @@
       "path": "docs/images/native-neural-selfplay-arena.png",
       "sha256": "fc2349e2a0f389a7377856d032f3c0d401aad930fddbcc5be53114e7ad437d2e",
       "bytes": 2226828
+    },
+    {
+      "path": "docs/images/native-peer-dialogue-profile.png",
+      "resourceId": "9235333f-5062-45fa-857a-66689549f334",
+      "bytes": 308100
+    },
+    {
+      "path": "docs/images/native-peer-dialogue-workspace.png",
+      "resourceId": "ed2af437-c962-4760-901e-6167959f823a",
+      "bytes": 321739
     },
     {
       "path": "docs/images/native-preview.png",
@@ -9685,5 +9700,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "75d68d614c191aa8fb3679b5eecb525b4456ccba"
+  "sourceCommit": "b3d755a8e2735fbc2fb05703cf8f09e82d075bc1"
 }
