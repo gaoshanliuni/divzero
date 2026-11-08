@@ -4184,8 +4184,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "40d45144-e1eb-4644-bedb-ff95e9e07952",
-      "bytes": 20658
+      "resourceId": "67b9eef7-fac4-46e0-94fb-f00f0226cb18",
+      "bytes": 22851
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -4309,8 +4309,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "9b954f48-92b0-4e7c-8966-f36159d6e6bc",
-      "bytes": 37986
+      "resourceId": "4a7e27aa-84fc-4c0e-a04f-73c5cc94e3d9",
+      "bytes": 38649
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -9965,5 +9965,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "87e88190cc9278282a3dd940bcad0cf8ff4f11de"
+  "sourceCommit": "bf451749e02d165490bdf5075c20dc17f6073f23"
 }
