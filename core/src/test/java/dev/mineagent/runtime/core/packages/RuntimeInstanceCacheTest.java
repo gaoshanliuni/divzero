@@ -18,7 +18,7 @@ class RuntimeInstanceCacheTest {
             assertTrue(library.install(PackageSignatures.signNew(draft,ignored->bytes,signer)).accepted());
             var parts=new LinkedHashMap<String,String>();for(int i=0;i<600;i++)parts.put("_object.part"+i,"saved-object-"+i);
             try(var service=RuntimeInstanceService.open(root.resolve("instances.db"),world,Clock.systemUTC(),library)){
-                service.cacheBudget(()->1024);var created=service.create(packageId,definition,new RuntimeInstanceLocation("minecraft:overworld",0,64,0),parts);instance=created.instanceId();
+                service.cacheBudget(()->1024);var created=service.create(packageId,definition,new RuntimeInstanceLocation("minecraft:overworld",0,64,0,0,0),parts);instance=created.instanceId();
                 assertEquals(0,service.cacheObservation().get("entries"));assertEquals(600,service.get(instance).orElseThrow().state().size());
                 assertEquals(instance,service.createIfAbsent(instance,packageId,definition,created.location(),Map.of()).instanceId());
                 assertTrue(service.updateState(instance,1,parts).accepted());assertEquals("STALE_REVISION",service.updateState(instance,1,parts).errorCode());
