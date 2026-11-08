@@ -116,7 +116,7 @@ public final class ConstructionLedger implements AutoCloseable {
     }
     public synchronized void prepareNativeWriteOrder(UUID session,long revision)throws Exception{
         if(!nativeOwned(session,revision)||head().revision()!=revision||!head().phase().equals("PREFLIGHT"))throw new IllegalStateException("BUILDING_NATIVE_ORDER_CONTEXT_CHANGED");
-        orderUnstartedNativeTargets(revision,2);
+        orderUnstartedNativeTargets(revision,3);
     }
     /** Repair old alphabetic target schedules only before any world effect or referenced native operation exists. */
     private void orderUnstartedNativeTargets(long revision,int format)throws Exception{
@@ -139,7 +139,8 @@ public final class ConstructionLedger implements AutoCloseable {
                 statement.execute("DROP TABLE IF EXISTS temp.native_order_rows");
                 statement.execute("CREATE TEMP TABLE native_order_rows(ordinal INTEGER PRIMARY KEY,previous_seq INTEGER UNIQUE NOT NULL)");
             }
-            String layerOrder=format==2?",y,CASE WHEN after_state LIKE '%[axis=y%' OR after_state LIKE '%,axis=y%' THEN 0 ELSE 1 END":"";
+            String layerOrder=format>=2?",y,CASE WHEN after_state LIKE '%[axis=y%' OR after_state LIKE '%,axis=y%' THEN 0 ELSE 1 END":"";
+            if(format>=3)layerOrder+=",CASE WHEN EXISTS(SELECT 1 FROM targets support WHERE support.revision=targets.revision AND support.x=targets.x AND support.y=targets.y-1 AND support.z=targets.z AND support.present=1 AND support.after_state NOT IN ('minecraft:air','minecraft:cave_air','minecraft:void_air')) THEN 0 ELSE 1 END";
             try(var insert=db.prepareStatement("INSERT INTO temp.native_order_rows(previous_seq) SELECT seq FROM targets WHERE revision=? ORDER BY "+rank+layerOrder+",seq")){
                 insert.setLong(1,revision);for(int i=0;i<order.size();i++)insert.setString(i+2,order.get(i));insert.executeUpdate();
             }

@@ -7,6 +7,17 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConstructionLedgerTest {
+    @Test void unsupportedLintelWaitsForSupportedCellsAtItsLayer()throws Exception{
+        String source="""
+            {"id":"lintel","name":"Lintel","dimension":"minecraft:overworld","origin":[0,80,0],"components":[{"id":"walls","parts":[
+              {"kind":"box","min":[0,2,0],"max":[0,2,0],"material":"minecraft:oak_planks"},
+              {"kind":"box","min":[1,1,0],"max":[1,2,0],"material":"minecraft:oak_planks"}]}]}
+            """;
+        try(var ledger=new ConstructionLedger(directory.resolve("lintel.db"))){
+            ledger.plan(0,source,()->true);UUID session=UUID.randomUUID();ledger.claimNative(session,1);sampled(ledger,1);ledger.prepareNativeWriteOrder(session,1);
+            var cells=ledger.page(1,0,false);assertEquals(List.of(List.of(1,81),List.of(1,82),List.of(0,82)),cells.stream().map(c->List.of(c.x(),c.y())).toList());
+        }
+    }
     @Test void nativePlacementLayersPutVerticalPillarsBeforeOccludingPanelsWithoutChangingGeometry()throws Exception{
         String source="""
             {"id":"layers","name":"Layers","dimension":"minecraft:overworld","origin":[0,80,0],"components":[{"id":"wall","parts":[
