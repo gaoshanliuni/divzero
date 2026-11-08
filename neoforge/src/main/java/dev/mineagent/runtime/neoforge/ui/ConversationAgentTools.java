@@ -40,7 +40,7 @@ public final class ConversationAgentTools {
     private static dev.mineagent.runtime.api.permission.PermissionAction toolPermission(String tool){
         if(personalTool(tool))return dev.mineagent.runtime.api.permission.PermissionAction.CHAT;
         if(Set.of("set_interaction_rule","delete_interaction_rule","define_event_ability","bind_event_ability","control_event_ability","plan_world_geometry","apply_world_geometry","plan_building","apply_building","control_building","construct_building","plan_building_import").contains(tool))return dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD;
-        if(Set.of("set_entity_rule","delete_entity_rule","set_entity_state","set_entity_animation","define_native_entity","control_native_entity","replace_entity_part").contains(tool))return dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES;
+        if(Set.of("define_creature","control_creature","set_entity_rule","delete_entity_rule","set_entity_state","set_entity_animation","define_native_entity","control_native_entity","replace_entity_part").contains(tool))return dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES;
         return dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE;
     }
     private static boolean itemPermission(ServerPlayer p){return MineAgentRuntimeServices.permissions(p.level().getServer()).allowed(p.getUUID(),p.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE);}

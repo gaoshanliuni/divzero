@@ -5,6 +5,19 @@ import java.nio.file.Path;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 class CreatureDefinitionTest {
+ @Test void genericTriggersCombineNativeEventsConditionsCooldownAndState(){
+  var definition=CreatureDefinition.parse("""
+    {"name":"触发器样本","triggers":[
+      {"id":"trade","event":"interact","item":"minecraft:wheat","consume_count":1,"consume_interaction":true,"next_state":"fed","actions":[{"type":"give_item","id":"minecraft:apple","count":1}]},
+      {"id":"snow","event":"projectile_hit","projectile":"minecraft:snowball","state":"fed","next_state":"alert","cooldown":40,"target":"self","actions":[{"type":"effect","id":"minecraft:speed"}]},
+      {"id":"low","event":"health_below","health_below":0.2,"next_state":"wounded"}
+    ]}
+    """);
+  assertEquals(3,definition.triggers().size());assertEquals(definition,CreatureDefinition.parse(definition.source()));
+  assertEquals(1,definition.triggers().getFirst().consumeCount());assertEquals("fed",definition.triggers().get(1).state());
+  assertThrows(IllegalArgumentException.class,()->CreatureDefinition.parse(definition.source().replace("\"projectile_hit\"","\"execute_code\"")));
+  assertThrows(IllegalArgumentException.class,()->CreatureDefinition.parse(definition.source().replace("\"consume_count\":1","\"consume_count\":-1")));
+ }
  @TempDir Path temp;
  @Test void catalogSearchAndPagingUseActualOwnedDefinitions()throws Exception{
   UUID world=UUID.randomUUID(),owner=UUID.randomUUID();try(var store=new CreatureStore(temp.resolve("catalog.db"),world)){

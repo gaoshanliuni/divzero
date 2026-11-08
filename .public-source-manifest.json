@@ -19,8 +19,8 @@
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
-      "resourceId": "9b845ecd-ae10-49c4-822d-893503938919",
-      "bytes": 3683
+      "resourceId": "659e3bda-5548-4776-9056-f31866497e11",
+      "bytes": 3717
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -1709,8 +1709,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureDefinition.java",
-      "sha256": "9c033c516ec669df81a87d54f6994b82a4c135ca20e1814e722c791d9fe3999b",
-      "bytes": 14061
+      "resourceId": "b4c2a59e-eb26-462e-b6e6-b4c483fa0be3",
+      "bytes": 14946
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureRig.java",
@@ -1721,6 +1721,11 @@
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureStore.java",
       "sha256": "4434c6a21592ed70e186ce224382940c8be550b6fe9033e7e616a7a25a3f5082",
       "bytes": 4263
+    },
+    {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/creature/CreatureTrigger.java",
+      "resourceId": "cc9d2272-cdff-4b1f-865c-a5a8e4fca511",
+      "bytes": 3871
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/creature/NativeEntityDefinition.java",
@@ -3519,8 +3524,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureDefinitionTest.java",
-      "sha256": "02ccfc6bcab01b1907d7d59b72b58a3cb1ea61a9bbf3643ef5b222d157250056",
-      "bytes": 4321
+      "resourceId": "b6f631af-ac6c-4a89-ba91-e749628d36cc",
+      "bytes": 5526
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/creature/CreatureRigTest.java",
@@ -6473,6 +6478,11 @@
       "bytes": 7315
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/CreatureTriggerEvents.java",
+      "resourceId": "46c3cc6f-f639-499f-8dad-d904a1bb30ab",
+      "bytes": 1358
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/LegacyContentBoundary.java",
       "sha256": "3b4e2e562f70ace3dac49a9861a057c192ab4bed21d2b52ccf4988eb9a1cd7be",
       "bytes": 1006
@@ -6514,13 +6524,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/RuntimeCreatureEntity.java",
-      "sha256": "76d3a643c4c64c0b7c864baee889800c14eba20326b28fffaf33e43df1ce6f57",
-      "bytes": 18780
+      "resourceId": "4566a1df-6e34-46b7-9d67-9c8a39961d0d",
+      "bytes": 23589
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/RuntimeCreatures.java",
-      "sha256": "e95f861985cb6127f4d0adad3d1e9071c65d362e2c81b2739c72adc9cab83588",
-      "bytes": 10761
+      "resourceId": "746eb128-14dc-4269-b6ae-632874bf1086",
+      "bytes": 11217
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/RuntimeItem.java",
@@ -7689,8 +7699,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "cd3a935f-28a0-492b-b2f8-1d58c8732874",
-      "bytes": 83948
+      "resourceId": "73a41a63-9a6f-46a4-917b-a25719bf04d4",
+      "bytes": 83985
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -9880,5 +9890,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "3ee7659155b0272a96d9fdea8bc0ac3ce7216a4a"
+  "sourceCommit": "3bcd30df5902fd481f1c1d1baada84cc045b45e3"
 }

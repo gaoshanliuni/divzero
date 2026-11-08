@@ -27,7 +27,7 @@ jobs:
           exit $LASTEXITCODE
       - name: Verify scoped permissions, geometry and script exit/deadline contracts
         run: |
-          & ./gradlew.bat -PpythonRuntime=none :core:test --tests '*PermissionServiceTest' --tests '*ConstructionLedgerTest' --tests '*WorldGeometryTest' --tests '*RuntimeInstanceCacheTest' --tests '*FairTickBudgetTest' --tests '*GeometrySpoolTest' --tests '*SurfacePathfinderTest' --tests '*CapabilitySessionTest' --tests '*RuntimeMeshTest' --tests '*RuntimeItemBindingTest' --tests '*NativeEntityDefinitionTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/production-tests.log
+          & ./gradlew.bat -PpythonRuntime=none :core:test --tests '*PermissionServiceTest' --tests '*ConstructionLedgerTest' --tests '*WorldGeometryTest' --tests '*RuntimeInstanceCacheTest' --tests '*FairTickBudgetTest' --tests '*GeometrySpoolTest' --tests '*SurfacePathfinderTest' --tests '*CapabilitySessionTest' --tests '*RuntimeMeshTest' --tests '*RuntimeItemBindingTest' --tests '*NativeEntityDefinitionTest' --tests '*CreatureDefinitionTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/production-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./gradlew.bat -PpythonRuntime=none :agent:test --tests '*ChunkTicketLedgerTest' --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/ticket-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
