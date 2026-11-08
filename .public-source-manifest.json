@@ -4054,8 +4054,8 @@
     },
     {
       "path": "docs/CONSTRUCTION_MOBILITY.md",
-      "resourceId": "ad7466ee-084f-4fc7-a53d-f6aca49131ba",
-      "bytes": 1797
+      "resourceId": "975607d7-342b-4995-9787-6ebd39e1624f",
+      "bytes": 2688
     },
     {
       "path": "docs/COUNTERATTACK_UI_FUNCTIONS.md",
@@ -9685,5 +9685,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "12a1e579678254eace7b05b558e881df0851dc94"
+  "sourceCommit": "bdab15eac00d46522c125eee9aa34790c1ca1612"
 }
