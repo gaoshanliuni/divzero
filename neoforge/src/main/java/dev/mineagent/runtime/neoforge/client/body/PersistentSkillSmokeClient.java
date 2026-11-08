@@ -899,6 +899,15 @@ public final class PersistentSkillSmokeClient {
         if(mode.equals("capability_entities")){capabilityEntities();return;}
         if(mode.equals("capability_delivery")){capabilityDelivery();return;}
         if(mode.equals("capability_data")){capabilityData();return;}
+        if(mode.equals("capability_adapters")){
+            action("native-copy-adapter",()->server(p->{try{var evidence=dev.mineagent.runtime.neoforge.ui.CapabilityAdapterSmoke.run(p);copyPig=UUID.fromString(evidence.get("source").toString());return evidence;}catch(Exception error){throw new CompletionException(error);}}));
+            action("register-native-renderer-adapter",()->{dev.mineagent.runtime.neoforge.client.objects.RendererAdapterSmoke.start(copyPig);return CompletableFuture.completedFuture(Map.of("installed",true));});
+            action("configure-render-controller-track",()->tool("set_entity_animation",JSON.createObjectNode().put("source","{\"entity_id\":\""+copyPig+"\",\"parts\":{\"controller/rotor\":[{\"tick\":0,\"rotation\":[0,30,0]}]}}")));
+            waitFor("native-render-controller-applied-and-restored",500,()->CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.client.objects.RendererAdapterSmoke.applied()));
+            action("inject-render-controller-failure",()->{dev.mineagent.runtime.neoforge.client.objects.RendererAdapterSmoke.failNext();return CompletableFuture.completedFuture(Map.of("fixtureFailureRequested",true));});
+            waitFor("native-render-failure-restores-controller",200,()->CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.client.objects.RendererAdapterSmoke.failureRestored()));
+            action("unregister-renderer-adapter",()->{try{return CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.client.objects.RendererAdapterSmoke.finish());}catch(Exception error){return CompletableFuture.failedFuture(error);}});return;
+        }
         if(mode.equals("capability_models")){
             action("publish-two-material-item-and-visual",()->server(p->{try{p.getInventory().clearContent();p.getInventory().setSelectedSlot(0);return dev.mineagent.runtime.neoforge.ui.CapabilityModelSmoke.publish(p,agent);}catch(Exception failure){throw new CompletionException(failure);}}));
             waitFor("two-native-textures-and-item-transform",500,()->{var binding=dev.mineagent.runtime.neoforge.content.RuntimeItem.binding(mc().player.getMainHandItem());if(binding==null||!binding.part().equals("material"))return CompletableFuture.completedFuture(false);var asset=dev.mineagent.runtime.neoforge.client.objects.RuntimeObjectAssets.get(binding);if(asset==null||dev.mineagent.runtime.neoforge.client.objects.RuntimeItemRenderer.distinctTextureBatches!=2||!dev.mineagent.runtime.neoforge.client.objects.RuntimeItemRenderer.transformed)return CompletableFuture.completedFuture(false);require(!asset.texture("models/red.png").equals(asset.texture("models/blue.png")),"MATERIAL_TEXTURES_NOT_INDEPENDENT");EVIDENCE.add(Map.of("distinctNativeTextures",2,"nativePoseChanged",true,"materialPaths",binding.mesh().materials(),"modelCalls",0));return CompletableFuture.completedFuture(true);});

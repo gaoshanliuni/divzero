@@ -4174,8 +4174,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "f7d0d0a6-7633-4e48-990e-e79975a3455e",
-      "bytes": 17180
+      "resourceId": "db02210e-e838-4c97-af09-1db5ccdc8a20",
+      "bytes": 17539
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -5509,8 +5509,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "362b25be-273d-4a8b-b2b5-223e6ddd9853",
-      "bytes": 308608
+      "resourceId": "0b43e165-1f82-4081-9360-65a841e7c91a",
+      "bytes": 310252
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -6168,6 +6168,11 @@
       "bytes": 1638
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RendererAdapterSmoke.java",
+      "resourceId": "81d77532-d048-4f55-9bcf-0be4fa20c59a",
+      "bytes": 3251
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/objects/RendererAdapters.java",
       "resourceId": "0ad09471-4f5e-44b4-911a-2b78224a47c7",
       "bytes": 4383
@@ -6644,8 +6649,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/integration/NativeEntityCopyAdapters.java",
-      "resourceId": "0b7510e1-6821-4e2e-b4bc-0480212c0df9",
-      "bytes": 5296
+      "resourceId": "2a8bf21f-92db-4879-abee-3780e0259c0f",
+      "bytes": 5412
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/integration/NeoForgeYsmRuntimeBridge.java",
@@ -7656,6 +7661,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityAccessSmoke.java",
       "resourceId": "50bc521c-6bc9-4957-9c8f-702d8813b620",
       "bytes": 6230
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityAdapterSmoke.java",
+      "resourceId": "9a0e9467-974a-4ce5-b9d4-01cc62609bb3",
+      "bytes": 3133
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityBudgetSmoke.java",
@@ -9930,5 +9940,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "004f891c71c39a759954dd9278aaf204805deaf7"
+  "sourceCommit": "f987576b8d53bf3f0e014737d140dae9362c7999"
 }

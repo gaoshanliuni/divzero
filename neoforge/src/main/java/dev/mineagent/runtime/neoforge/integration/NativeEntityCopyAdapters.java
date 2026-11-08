@@ -13,10 +13,11 @@ public final class NativeEntityCopyAdapters {
         Runnable prepare(Mob destination,Map<String,Object> state);
     }
     private static final Map<String,Adapter> ADAPTERS=new LinkedHashMap<>();
-    public static synchronized void register(Adapter adapter){
+    public static synchronized AutoCloseable register(Adapter adapter){
         Objects.requireNonNull(adapter);if(!adapter.id().matches("[a-z0-9_.-]+:[a-z0-9_./-]+")||adapter.version().isBlank()||adapter.entityTypes().contains("minecraft:player"))throw new IllegalArgumentException("ENTITY_COPY_ADAPTER_ID");
         for(var field:adapter.fields().entrySet())if(!field.getKey().matches("[a-z][a-zA-Z0-9_]{0,63}")||!Set.of(String.class,Boolean.class,Number.class).contains(field.getValue()))throw new IllegalArgumentException("ENTITY_COPY_ADAPTER_FIELD");
         if(ADAPTERS.putIfAbsent(adapter.id(),adapter)!=null)throw new IllegalStateException("ENTITY_COPY_ADAPTER_EXISTS");
+        return ()->{synchronized(NativeEntityCopyAdapters.class){ADAPTERS.remove(adapter.id(),adapter);}};
     }
     private static synchronized Adapter adapter(String type,String id,String version){var a=ADAPTERS.get(id);if(a==null||!a.entityTypes().contains(type)||!a.version().equals(version))throw new IllegalArgumentException("ENTITY_COPY_ADAPTER_UNAVAILABLE");return a;}
     public static synchronized List<Map<String,Object>> catalog(){return ADAPTERS.values().stream().map(a->Map.<String,Object>of("id",a.id(),"version",a.version(),"entityTypes",a.entityTypes(),"fields",a.fields().keySet())).toList();}
