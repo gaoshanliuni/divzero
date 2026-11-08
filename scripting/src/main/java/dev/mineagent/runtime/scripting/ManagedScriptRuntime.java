@@ -25,14 +25,32 @@ import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.ArrayDeque;
+import dev.mineagent.runtime.core.config.ScriptResourceBudget;
 
 public final class ManagedScriptRuntime implements AutoCloseable {
-    private static final int MAX_PACKAGES = 128;
-    private static final int MAX_MODULES = 64;
-    private static final int MAX_HANDLERS = 128;
-    private static final int MAX_SCHEDULED = 128;
-    private static final int MAX_TRACKED_RESOURCES = 256;
-    private static final long MAX_DISPATCH_NANOS = Duration.ofMillis(50).toNanos();
+    private ScriptResourceBudget budget = ScriptResourceBudget.from(Map.of());
+    private final ArrayDeque<Environment> ready = new ArrayDeque<>();
+    private final Set<Environment> queued = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private int callbacksThisTick;
+    private long nanosThisTick, completedCallbacks, pressureEvents;
+    private long pendingCallbacks;
+    private boolean draining;
+
+    public synchronized void configure(ScriptResourceBudget value) { budget=Objects.requireNonNull(value); }
+    public synchronized Map<String,Object> resourceObservation() {
+        var warnings=new ArrayList<String>();
+        if(environments.size()>budget.packages())warnings.add("packages");
+        for(var e:environments.values()) {
+            if(e.moduleCache.size()>budget.modules())warnings.add(e.packageId+":modules");
+            if(e.handlerCount>budget.handlers())warnings.add(e.packageId+":handlers");
+            if(e.scheduled.size()>budget.timers())warnings.add(e.packageId+":timers");
+            if(e.resources.size()>budget.resources())warnings.add(e.packageId+":resources");
+        }
+        return Map.of("loaded",environments.size(),"pendingCallbacks",pendingCallbacks,"readyScopes",ready.size(),
+                "callbacksThisTick",callbacksThisTick,"millisThisTick",nanosThisTick/1_000_000.0,
+                "completedCallbacks",completedCallbacks,"pressureEvents",pressureEvents,"softBudgetWarnings",warnings,"budget",budget);
+    }
 
     private final Duration executionTimeout;
     private final ScriptPreflight preflight = new ScriptPreflight();
@@ -44,7 +62,7 @@ public final class ManagedScriptRuntime implements AutoCloseable {
     public synchronized void pin(UUID consumer,ScriptDependencyGraph graph){
         var old=reservations.get(consumer);if(old!=null&&!old.equals(graph))throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_CHANGED");
         for(var node:graph.nodes()){var e=requireLinked(node);e.requireDispatch();graph.requireEmbedded(node,e.link.graph());}
-        if(old==null){if(reservations.size()>=MAX_PACKAGES)throw new IllegalStateException("STUDIO_SCRIPT_DEPENDENCY_RESERVATION_LIMIT");var next=new LinkedHashMap<>(reservations);next.put(consumer,graph);setReservations(next);}
+        if(old==null){var next=new LinkedHashMap<>(reservations);next.put(consumer,graph);setReservations(next);}
     }
     private Environment requireLinked(ScriptDependencyGraph.Node node){
         var e=environments.get(node.publication());
@@ -105,14 +123,11 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         }
         if (authority == null || initialTick < currentTick) throw new IllegalArgumentException("invalid script dispatch context");
         if (packageId == null || revision < 1 || modules == null || modules.isEmpty()
-                || modules.size() > MAX_MODULES || bindings == null || entryModule == null
+                || bindings == null || entryModule == null
                 || !entryModule.matches("[A-Za-z0-9_./-]{1,128}") || !modules.containsKey(entryModule)) {
             throw new IllegalArgumentException("invalid managed script package");
         }
         Environment previous = environments.get(packageId);
-        if (previous == null && environments.size() >= MAX_PACKAGES) {
-            throw new IllegalStateException("managed script package limit reached");
-        }
         if (previous != null && revision <= previous.revision) {
             throw new IllegalArgumentException("script package revision is stale");
         }
@@ -150,23 +165,28 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         if (event == null || !event.matches("[A-Za-z0-9_.:-]{1,128}")) {
             throw new IllegalArgumentException("invalid script event");
         }
-        long deadline = System.nanoTime() + MAX_DISPATCH_NANOS;
-        for (Environment environment : List.copyOf(environments.values())) {
-            if (environment.suspended) continue;
-            if (System.nanoTime() >= deadline) {
-                break;
-            }
-            try {
-                environment.fire(event, payload);
-            } catch (RuntimeException | LinkageError failure) {
-                recordFailure(environment,event,failure);disable(environment);
-            }
+        // Admission is atomic: callers can retry an explicit backpressure result without a partial broadcast.
+        // Tick observations may coalesce; ordinary events retain each accepted callback exactly once.
+        boolean coalesce=Set.of("tick","server.tick","client.tick").contains(event);
+        var targets=environments.values().stream().filter(e->!e.suspended).toList();
+        long added=targets.stream().mapToLong(e->coalesce&&e.pendingTicks.containsKey(event)?0:e.handlers.getOrDefault(event,List.of()).size()).sum();
+        if(pendingCallbacks+added>budget.pendingCallbacks()) {pressureEvents++;throw new IllegalStateException("SCRIPT_QUEUE_PRESSURE_NOT_ENQUEUED");}
+        for(var e:targets) {
+            var existing=coalesce?e.pendingTicks.get(event):null;
+            if(existing!=null) {existing.values[0]=payload;continue;}
+            var callbacks=List.copyOf(e.handlers.getOrDefault(event,List.of()));
+            if(callbacks.isEmpty())continue;
+            var dispatch=new Dispatch(event,callbacks,new Object[]{payload});
+            e.pending.addLast(dispatch);pendingCallbacks+=callbacks.size();
+            if(coalesce)e.pendingTicks.put(event,dispatch);
+            enqueue(e);
         }
+        drain();
     }
     /** Instance lifecycle events must never broadcast to unrelated scopes. */
     public synchronized void replaceBinding(UUID scopeId,long revision,String name,Object value){
         var e=environments.get(scopeId);if(e==null||e.revision!=revision)throw new IllegalStateException("SCRIPT_BINDING_STALE");
-        if(name==null||value==null||Set.of("on","require","schedule","track","callPackage").contains(name)||!e.bindingNames.contains(name))throw new IllegalArgumentException("SCRIPT_BINDING_UNKNOWN");
+        if(name==null||value==null||Set.of("on","off","require","unloadModule","schedule","cancelSchedule","track","releaseResource","callPackage").contains(name)||!e.bindingNames.contains(name))throw new IllegalArgumentException("SCRIPT_BINDING_UNKNOWN");
         try{e.contexts.beginExecution().addToScope(e.scope,name,value);}catch(RuntimeException|LinkageError failure){recordFailure(e,"binding:"+name,failure);disable(e);throw failure;}
     }
     /** Read-only discovery of registered consumer names; no code execution or lifecycle event exposure. */
@@ -207,19 +227,46 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         if (tick < currentTick) {
             throw new IllegalArgumentException("script tick cannot move backwards");
         }
+        if(tick>currentTick) {callbacksThisTick=0;nanosThisTick=0;}
         currentTick = tick;
-        long deadline = System.nanoTime() + MAX_DISPATCH_NANOS;
-        for (Environment environment : List.copyOf(environments.values())) {
-            if (environment.suspended) continue;
-            if (System.nanoTime() >= deadline) {
-                break;
+        for(var e:environments.values()) {e.currentTick=tick;if(!e.suspended&&hasWork(e))enqueue(e);}
+        drain();
+    }
+
+    private boolean hasWork(Environment e) {return !e.pending.isEmpty()||!e.scheduled.isEmpty()&&e.scheduled.peek().dueTick<=currentTick;}
+    private void enqueue(Environment e) {if(queued.add(e))ready.addLast(e);}
+    private void discardPending(Environment e) {
+        for(var dispatch:e.pending)pendingCallbacks-=dispatch.callbacks.size()-dispatch.index;
+        e.pending.clear();e.pendingTicks.clear();ready.remove(e);queued.remove(e);
+    }
+    private void drain() {
+        if(draining)return;
+        draining=true;
+        try {
+            while(!ready.isEmpty()&&callbacksThisTick<budget.callbacks()&&nanosThisTick<budget.dispatchNanos()) {
+                var e=ready.removeFirst();queued.remove(e);
+                if(e.suspended||environments.get(e.packageId)!=e) {discardPending(e);continue;}
+                boolean timer=!e.scheduled.isEmpty()&&e.scheduled.peek().dueTick<=currentTick;
+                String event="schedule";Function callback;Object[] values;
+                if(timer&&(e.pending.isEmpty()||e.timerTurn)) {
+                    callback=e.scheduled.remove().callback;values=new Object[0];e.timerTurn=false;
+                } else if(!e.pending.isEmpty()) {
+                    var dispatch=e.pending.peekFirst();event=dispatch.event;
+                    callback=dispatch.callbacks.get(dispatch.index++);values=dispatch.values;pendingCallbacks--;e.timerTurn=true;
+                    if(dispatch.index==dispatch.callbacks.size()) {e.pending.removeFirst();e.pendingTicks.remove(event,dispatch);}
+                } else continue;
+                long started=System.nanoTime();callbacksThisTick++;
+                try {e.invoke(callback,values);completedCallbacks++;}
+                catch(RuntimeException|LinkageError failure) {recordFailure(e,event,failure);disable(e);}
+                finally {nanosThisTick+=Math.max(0,System.nanoTime()-started);}
+                if(environments.get(e.packageId)==e&&!e.suspended&&hasWork(e))enqueue(e);
             }
-            try {
-                environment.tick(tick);
-            } catch (RuntimeException | LinkageError failure) {
-                recordFailure(environment,"schedule",failure);disable(environment);
-            }
-        }
+        } finally {draining=false;}
+    }
+
+    private static final class Dispatch {
+        final String event;final List<Function> callbacks;final Object[] values;int index;
+        Dispatch(String event,List<Function> callbacks,Object[] values){this.event=event;this.callbacks=callbacks;this.values=values;}
     }
 
     public synchronized boolean isLoaded(UUID packageId) {
@@ -229,8 +276,8 @@ public final class ManagedScriptRuntime implements AutoCloseable {
     /** One-way quiescence: retain cleanup resources, but dispatch no further script callbacks. */
     public synchronized void suspend(UUID scopeId) {
         var environment = environments.get(scopeId);
-        if (environment != null) environment.suspended = true;
-        for(var consumer:consumers(scopeId)){var other=environments.get(consumer);if(other!=null)other.suspended=true;}
+        if (environment != null) {environment.suspended = true;discardPending(environment);}
+        for(var consumer:consumers(scopeId)){var other=environments.get(consumer);if(other!=null){other.suspended=true;discardPending(other);}}
     }
 
     public synchronized boolean isSuspended(UUID scopeId) {
@@ -331,6 +378,9 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         private long currentTick;
         private long sequence;
         private int handlerCount;
+        private final ArrayDeque<Dispatch> pending=new ArrayDeque<>();
+        private final Map<String,Dispatch> pendingTicks=new HashMap<>();
+        private boolean timerTurn;
 
         private Environment(ManagedScriptRuntime runtime,UUID packageId, long revision, Map<String, String> modules, Duration timeout,
                 java.util.function.BooleanSupplier authority,String entryModule,Link link) {
@@ -367,26 +417,34 @@ public final class ManagedScriptRuntime implements AutoCloseable {
                     throw new IllegalArgumentException("on expects event name and function");
                 }
                 String event = String.valueOf(Wrapper.unwrapped(args[0]));
-                if (!event.matches("[A-Za-z0-9_.:-]{1,128}") || handlerCount >= MAX_HANDLERS) {
-                    throw new IllegalArgumentException("invalid or excessive event handler");
+                if (!event.matches("[A-Za-z0-9_.:-]{1,128}")) {
+                    throw new IllegalArgumentException("invalid event handler name");
                 }
                 handlers.computeIfAbsent(event, ignored -> new ArrayList<>()).add(callback);
                 handlerCount++;
-                return Context.getUndefinedValue();
+                return callback;
+            }));
+            context.addToScope(scope,"off",function(scope,context,"off",(cx,args)->{
+                if(args.length!=2||!(args[1] instanceof Function callback))throw new IllegalArgumentException("off expects event name and registered function");
+                var list=handlers.get(String.valueOf(Wrapper.unwrapped(args[0])));boolean removed=list!=null&&list.remove(callback);if(removed)handlerCount--;return removed;
             }));
             context.addToScope(scope, "schedule", function(scope, context, "schedule", (cx, args) -> {
-                if (args.length != 2 || !(args[1] instanceof Function callback) || scheduled.size() >= MAX_SCHEDULED) {
+                if (args.length != 2 || !(args[1] instanceof Function callback)) {
                     throw new IllegalArgumentException("schedule expects bounded delay and function");
                 }
-                long delay = Math.round(cx.toNumber(args[0]));
-                if (delay < 1 || delay > 72_000) {
+                double rawDelay=cx.toNumber(args[0]);long delay = Math.round(rawDelay);
+                if (!Double.isFinite(rawDelay)||delay < 1 || rawDelay>9_007_199_254_740_991D) {
                     throw new IllegalArgumentException("scheduled delay is out of range");
                 }
-                scheduled.add(new Scheduled(Math.addExact(currentTick, delay), sequence++, callback));
-                return Context.getUndefinedValue();
+                long id=sequence++;scheduled.add(new Scheduled(Math.addExact(currentTick, delay), id, callback));
+                return id;
+            }));
+            context.addToScope(scope,"cancelSchedule",function(scope,context,"cancelSchedule",(cx,args)->{
+                if(args.length!=1)throw new IllegalArgumentException("cancelSchedule expects timer id");
+                double id=cx.toNumber(args[0]);return scheduled.removeIf(timer->timer.sequence==id);
             }));
             context.addToScope(scope, "track", function(scope, context, "track", (cx, args) -> {
-                if (args.length != 1 || resources.size() >= MAX_TRACKED_RESOURCES) {
+                if (args.length != 1) {
                     throw new IllegalArgumentException("track expects one bounded resource");
                 }
                 Object unwrapped = Wrapper.unwrapped(args[0]);
@@ -395,6 +453,18 @@ public final class ManagedScriptRuntime implements AutoCloseable {
                 }
                 resources.add(resource);
                 return args[0];
+            }));
+            context.addToScope(scope,"releaseResource",function(scope,context,"releaseResource",(cx,args)->{
+                if(args.length!=1)throw new IllegalArgumentException("releaseResource expects tracked resource");
+                var value=Wrapper.unwrapped(args[0]);for(int i=0;i<resources.size();i++)if(resources.get(i)==value){
+                    var resource=resources.remove(i);try{resource.close();}catch(Exception failure){throw new IllegalStateException("SCRIPT_RESOURCE_CLOSE_UNKNOWN",failure);}return true;
+                }return false;
+            }));
+            context.addToScope(scope,"unloadModule",function(scope,context,"unloadModule",(cx,args)->{
+                if(args.length!=1)throw new IllegalArgumentException("unloadModule expects module name");
+                String name=String.valueOf(Wrapper.unwrapped(args[0]));
+                if(name.equals(entryModule)||loadingModules.contains(name))throw new IllegalStateException("SCRIPT_MODULE_IN_USE");
+                return moduleCache.remove(name)!=null;
             }));
             if(link!=null||bridge!=null)context.addToScope(scope,"callPackage",function(scope,context,"callPackage",(cx,args)->{
                 if(args.length!=3||!(args[0] instanceof String id)||!(args[1] instanceof String member))throw new IllegalArgumentException("STUDIO_SCRIPT_DEPENDENCY_CALL_ARGUMENTS");
@@ -425,25 +495,17 @@ public final class ManagedScriptRuntime implements AutoCloseable {
 
         private void fire(String event, Object payload) {
             List<Function> callbacks = handlers.getOrDefault(event, List.of());
+            long deadline=System.nanoTime()+contexts.timeout.toNanos();
             for (Function callback : List.copyOf(callbacks)) {
-                invoke(callback, new Object[]{payload});
-            }
-        }
-
-        private void tick(long tick) {
-            currentTick = tick;
-            int executed = 0;
-            while (!scheduled.isEmpty() && scheduled.peek().dueTick <= tick) {
-                if (++executed > MAX_SCHEDULED) {
-                    throw new IllegalStateException("scheduled script execution limit exceeded");
-                }
-                invoke(scheduled.remove().callback, new Object[0]);
+                invokeUntil(callback, new Object[]{payload},deadline);
             }
         }
 
         private Object invoke(Function callback, Object[] values) {
             Context context = contexts.beginExecution();
-            return invokeIn(context,callback,values);
+            var result=invokeIn(context,callback,values);
+            if(System.nanoTime()>=((DeadlineContext)context).deadline)throw new ScriptTimeoutException();
+            return result;
         }
         private Object invokeUntil(Function callback,Object[] values,long deadline){
             if(System.nanoTime()>=deadline)throw new ScriptTimeoutException();
@@ -466,6 +528,7 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         @Override
         public void close() throws Exception {
             suspended=true;
+            runtime.discardPending(this);
             handlers.clear();
             scheduled.clear();
             moduleCache.clear();

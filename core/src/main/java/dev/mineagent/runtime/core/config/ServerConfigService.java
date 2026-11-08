@@ -178,6 +178,7 @@ public final class ServerConfigService implements AutoCloseable {
             }
             if(key.startsWith("provider.openai.role.")&&!value.isBlank()&&!AgentModelSettings.validModel(value))errors.put(key,"模型名称应为不超过 256 字符的单行文本");
             if(ContentResourceBudget.KEYS.contains(key))try{ContentResourceBudget.from(Map.of(key,value));}catch(IllegalArgumentException invalid){errors.put(key,"服务器资源预算数值无效");}
+            if(ScriptResourceBudget.KEYS.contains(key))try{ScriptResourceBudget.from(Map.of(key,value));}catch(IllegalArgumentException invalid){errors.put(key,"服务器资源预算数值无效");}
             switch (key) {
                 case ServiceCallBudget.DAILY, ServiceCallBudget.REQUEST, ServiceCallBudget.PAUSED, ServiceCallBudget.TASK -> {
                     try { ServiceCallBudget.from(Map.of(key,value)); }

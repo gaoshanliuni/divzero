@@ -3585,28 +3585,17 @@
   "语音识别模型": "Speech recognition model",
   "识别语言（留空自动识别）": "Language (leave empty for automatic detection)",
   "语义记忆向量模型（留空使用关键词检索）": "Semantic memory embedding model (empty uses keyword retrieval)",
-  "视觉模型（留空沿用 AI 当前模型）": "Vision model (empty uses the AI current model)"
-,
-  "协作对话": "AI conversations"
-,
-  "读取 AI 间的真实消息…": "Loading AI messages…"
-,
-  "这里显示 AI 发送的消息与真实回复；任务状态请查看行为面板。": "Actual AI messages and replies. Task progress is shown in the behavior panel."
-,
-  "正在回复": "Replying"
-,
-  "消息已保存": "Messages saved"
-,
-  "暂无 AI 协作对话": "No AI conversations yet"
-,
-  "查看对话": "View conversation"
-,
-  "本条未完成": "This reply did not finish"
-,
-  "继续展开": "Read more"
-,
-  "返回较新消息": "Newer messages"
-,
+  "视觉模型（留空沿用 AI 当前模型）": "Vision model (empty uses the AI current model)",
+  "协作对话": "AI conversations",
+  "读取 AI 间的真实消息…": "Loading AI messages…",
+  "这里显示 AI 发送的消息与真实回复；任务状态请查看行为面板。": "Actual AI messages and replies. Task progress is shown in the behavior panel.",
+  "正在回复": "Replying",
+  "消息已保存": "Messages saved",
+  "暂无 AI 协作对话": "No AI conversations yet",
+  "查看对话": "View conversation",
+  "本条未完成": "This reply did not finish",
+  "继续展开": "Read more",
+  "返回较新消息": "Newer messages",
   "加工与储存": "Production and storage",
   "自定义地址": "Custom address",
   "Kimi 月之暗面": "Kimi (Moonshot)",
@@ -3622,5 +3611,13 @@
   "每 Tick 对象模拟时间预算（毫秒）": "Object simulation time per tick (ms)",
   "对象活跃距离（格）": "Object active distance (blocks)",
   "模型资源缓存预算（MiB）": "Model resource cache budget (MiB)",
-  "实例状态缓存预算（MiB）": "Instance state cache budget (MiB)"
+  "实例状态缓存预算（MiB）": "Instance state cache budget (MiB)",
+  "已加载脚本包数量告警阈值": "Loaded script package warning threshold",
+  "单脚本模块缓存数量告警阈值": "Cached module warning threshold per script",
+  "单脚本事件处理器数量告警阈值": "Event handler warning threshold per script",
+  "单脚本定时器数量告警阈值": "Timer warning threshold per script",
+  "单脚本跟踪资源数量告警阈值": "Tracked resource warning threshold per script",
+  "每 Tick 脚本回调数量预算": "Script callbacks per tick",
+  "每 Tick 脚本调度时间预算（毫秒）": "Script dispatch time per tick (ms)",
+  "待调度脚本回调预算": "Pending script callback budget"
 }

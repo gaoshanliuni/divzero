@@ -1014,8 +1014,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "resourceId": "1e1f8399-e763-41b4-b97b-9fec62e0bff7",
-      "bytes": 327366
+      "resourceId": "9edc8220-cd2d-4a43-a99f-10889ee71a76",
+      "bytes": 328023
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1458,9 +1458,14 @@
       "bytes": 1373
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/config/ScriptResourceBudget.java",
+      "resourceId": "cf83a78c-daff-489d-a86f-bf62e50e299a",
+      "bytes": 1831
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServerConfigService.java",
-      "resourceId": "64ab5a38-f183-488f-bf61-478f78993afc",
-      "bytes": 17778
+      "resourceId": "920cf031-1c85-4ee8-9f12-87b0df5d1026",
+      "bytes": 17977
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServiceCallBudget.java",
@@ -1474,8 +1479,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/WebSettingsCatalog.java",
-      "resourceId": "91b46bf1-23aa-4ec4-a91b-736a78dab2ed",
-      "bytes": 9380
+      "resourceId": "03ad33aa-ed28-4e74-b28e-726a81a6abe7",
+      "bytes": 10785
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
@@ -4114,8 +4119,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "917f732a-ae64-4fea-9411-89ef327d896a",
-      "bytes": 3625
+      "resourceId": "a48b755e-c572-4616-9cce-b51dd3b613e4",
+      "bytes": 5793
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -6519,8 +6524,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/WorldContentRuntime.java",
-      "resourceId": "0fb53686-96c2-47b1-a946-86d473cb9938",
-      "bytes": 95369
+      "resourceId": "fab1bc94-51b3-4869-ab5b-c79520014a96",
+      "bytes": 95558
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/WorldContentSmokeServer.java",
@@ -8254,8 +8259,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/StudioScriptRuntime.java",
-      "resourceId": "cf4cabf3-c7ce-4a1e-8af3-d05fd5de8678",
-      "bytes": 21534
+      "resourceId": "b52fbfe2-cccf-4ae5-9bb0-845870811d3f",
+      "bytes": 21891
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/TakeoverResumeSmokeServer.java",
@@ -8719,8 +8724,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/ManagedScriptRuntime.java",
-      "resourceId": "bca61b57-a60d-4aeb-803b-82970146b11a",
-      "bytes": 35016
+      "resourceId": "181b89b6-ec64-4748-8f7d-0a0acaa2fd46",
+      "bytes": 40535
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/RhinoScriptRuntime.java",
@@ -8904,8 +8909,8 @@
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/ManagedScriptRuntimeTest.java",
-      "resourceId": "b9dab09f-9a86-4a26-90c3-859c701d7ad9",
-      "bytes": 10636
+      "resourceId": "f1b8b8ae-26a2-4c61-90a3-c0d1150f806f",
+      "bytes": 15888
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/preflight/BrowserScriptPreflightTest.java",
@@ -9805,5 +9810,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "c8bef5f7e1fa3231e3c522fb1483a1e6b95ead07"
+  "sourceCommit": "3eb169fc42409366ef1a8e67c3f90b7a017eae5e"
 }

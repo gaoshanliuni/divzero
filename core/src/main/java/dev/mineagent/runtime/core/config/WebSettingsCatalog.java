@@ -8,6 +8,14 @@ public final class WebSettingsCatalog {
     private WebSettingsCatalog(){}
     public record Field(String key,String label,String group,String type,String fallback,PermissionAction permission){}
     public static final List<Field> FIELDS=List.of(
+        new Field(ScriptResourceBudget.PREFIX+"packages","已加载脚本包数量告警阈值","服务器资源预算","number","128",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ScriptResourceBudget.PREFIX+"modules","单脚本模块缓存数量告警阈值","服务器资源预算","number","64",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ScriptResourceBudget.PREFIX+"handlers","单脚本事件处理器数量告警阈值","服务器资源预算","number","128",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ScriptResourceBudget.PREFIX+"timers","单脚本定时器数量告警阈值","服务器资源预算","number","128",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ScriptResourceBudget.PREFIX+"resources","单脚本跟踪资源数量告警阈值","服务器资源预算","number","256",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ScriptResourceBudget.PREFIX+"callbacks","每 Tick 脚本回调数量预算","服务器资源预算","number","256",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ScriptResourceBudget.PREFIX+"dispatchMillis","每 Tick 脚本调度时间预算（毫秒）","服务器资源预算","number","5",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ScriptResourceBudget.PREFIX+"pendingCallbacks","待调度脚本回调预算","服务器资源预算","number","65536",PermissionAction.MANAGE_PERMISSIONS),
         new Field(ContentResourceBudget.PREFIX+"physicsSlices","每 Tick 对象模拟数量预算","服务器资源预算","number","256",PermissionAction.MANAGE_PERMISSIONS),
         new Field(ContentResourceBudget.PREFIX+"physicsMillis","每 Tick 对象模拟时间预算（毫秒）","服务器资源预算","number","2",PermissionAction.MANAGE_PERMISSIONS),
         new Field(ContentResourceBudget.PREFIX+"activeRadius","对象活跃距离（格）","服务器资源预算","number","128",PermissionAction.MANAGE_PERMISSIONS),

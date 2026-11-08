@@ -12,6 +12,69 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ManagedScriptRuntimeTest {
+    private static dev.mineagent.runtime.core.config.ScriptResourceBudget budget(int callbacks,int pending){
+        return new dev.mineagent.runtime.core.config.ScriptResourceBudget(1,1,1,1,1,callbacks,1_000_000_000L,pending);
+    }
+    @Test void retainsCallbacksFairlyAcrossTicksAndDoesNotApplyFormerPackageCounts()throws Exception{
+        var values=new ArrayList<Integer>();var host=new Host(values,new TrackedResource());
+        try(var runtime=new ManagedScriptRuntime(java.time.Duration.ofSeconds(1))){
+            runtime.configure(budget(2,1000));
+            for(int i=0;i<140;i++)runtime.load(UUID.randomUUID(),1,Map.of("main","on('probe',function(){host.accept("+i+");});"),"main",Map.of("host",host));
+            runtime.fire("probe",0);assertEquals(2,values.size());
+            for(int tick=1;tick<70;tick++)runtime.tick(tick);
+            assertEquals(java.util.stream.IntStream.range(0,140).boxed().toList(),values);
+            assertEquals(0L,runtime.resourceObservation().get("pendingCallbacks"));
+            assertTrue(runtime.resourceObservation().get("softBudgetWarnings").toString().contains("packages"));
+        }
+    }
+    @Test void timerAndEventQueuesAlternateAndStaleCallbacksNeverReachReloadedScope()throws Exception{
+        var values=new ArrayList<Integer>();var id=UUID.randomUUID();var host=new Host(values,new TrackedResource());
+        try(var runtime=new ManagedScriptRuntime(java.time.Duration.ofSeconds(1))){
+            runtime.configure(budget(1,100));
+            runtime.load(id,1,Map.of("main","on('probe',function(){host.accept(1);});on('probe',function(){host.accept(2);});schedule(1,function(){host.accept(3);});"),"main",Map.of("host",host));
+            runtime.fire("probe",0);runtime.tick(1);runtime.tick(2);assertEquals(List.of(1,3,2),values);
+            runtime.fire("probe",0);runtime.load(id,2,Map.of("main","on('probe',function(){host.accept(9);});"),"main",Map.of("host",host));
+            runtime.tick(3);assertEquals(List.of(1,3,2),values);runtime.fire("probe",0);assertEquals(List.of(1,3,2,9),values);
+        }
+    }
+    @Test void backpressureIsAtomicAndTickCoalescingDoesNotGrowTheQueue()throws Exception{
+        var values=new ArrayList<Integer>();var id=UUID.randomUUID();var host=new Host(values,new TrackedResource());
+        try(var runtime=new ManagedScriptRuntime(java.time.Duration.ofSeconds(1))){
+            runtime.configure(budget(0,2));
+            runtime.load(id,1,Map.of("main","on('probe',function(v){host.accept(v);});on('tick',function(v){host.accept(v);});"),"main",Map.of("host",host));
+            runtime.fire("probe",7);for(int i=1;i<=20;i++)runtime.fire("tick",i);
+            var error=org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,()->runtime.fire("probe",8));
+            assertEquals("SCRIPT_QUEUE_PRESSURE_NOT_ENQUEUED",error.getMessage());assertEquals(2L,runtime.resourceObservation().get("pendingCallbacks"));
+            runtime.configure(budget(10,2));runtime.tick(21);assertEquals(List.of(7,20),values);
+        }
+    }
+    @Test void scriptsCanReleaseResourcesTimersHandlersAndModuleCaches()throws Exception{
+        var values=new ArrayList<Integer>();var resource=new TrackedResource();
+        try(var runtime=new ManagedScriptRuntime(java.time.Duration.ofSeconds(1))){
+            runtime.configure(budget(1000,1000));
+            runtime.load(UUID.randomUUID(),1,Map.of("helper","host.accept(2);({ok:true});","main","""
+                var r=track(host.resource());releaseResource(r);
+                var f=on('probe',function(){host.accept(99);});off('probe',f);
+                var timer=schedule(1,function(){host.accept(98);});cancelSchedule(timer);
+                require('helper');unloadModule('helper');require('helper');
+                for(var i=0;i<140;i++){on('noop',function(){});schedule(2,function(){host.accept(1);});}
+                """),"main",Map.of("host",new Host(values,resource)));
+            assertTrue(resource.closed);runtime.fire("probe",0);runtime.tick(1);assertEquals(List.of(2,2),values);
+            runtime.tick(2);assertEquals(142,values.size());
+        }
+    }
+    @Test void oneFailingScriptDoesNotStarveAnotherAndAuthorityIsRecheckedAfterDeferral()throws Exception{
+        var values=new ArrayList<Integer>();var allowed=new java.util.concurrent.atomic.AtomicBoolean(true);
+        try(var runtime=new ManagedScriptRuntime(java.time.Duration.ofSeconds(1))){
+            runtime.configure(budget(1,100));
+            var a=UUID.randomUUID();var b=UUID.randomUUID();var c=UUID.randomUUID();
+            runtime.load(a,1,Map.of("main","on('probe',function(){throw new Error('failure');});"),"main",Map.of());
+            runtime.load(b,1,Map.of("main","on('probe',function(){host.accept(2);});"),"main",Map.of("host",new Host(values,new TrackedResource())),allowed::get,0);
+            runtime.load(c,1,Map.of("main","on('probe',function(){host.accept(3);});"),"main",Map.of("host",new Host(values,new TrackedResource())));
+            runtime.fire("probe",0);allowed.set(false);runtime.tick(1);runtime.tick(2);
+            assertEquals(List.of(3),values);assertFalse(runtime.isLoaded(a));assertFalse(runtime.isLoaded(b));assertTrue(runtime.isLoaded(c));
+        }
+    }
     public record ObjectEvent(String part) {}
     @Test void possibleExitStillHasRuntimeDeadlineAndKeepsPreviousValidScope()throws Exception{
         var id=UUID.randomUUID();var values=new ArrayList<Integer>();

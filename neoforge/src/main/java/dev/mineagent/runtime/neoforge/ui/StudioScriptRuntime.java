@@ -89,6 +89,9 @@ public final class StudioScriptRuntime implements AutoCloseable {
                 "suspended", value != null && value.scripts.isSuspended(id),
                 "metadataPending", value != null && (value.pending.containsKey(id) || value.stopIntents.containsKey(id)));
     }
+    public static synchronized Map<String,Object> resources(MinecraftServer server) {
+        var runtime=LIVE.get(server);return runtime==null?Map.of("loaded",0):runtime.scripts.resourceObservation();
+    }
     /** Library guard never takes a runtime/Class monitor while holding the library lock. */
     public static void requirePackageMutable(MinecraftServer server,UUID pkg){var value=OBSERVED.get(server);if(value!=null)value.scripts.requirePackageMutable(pkg);}
     public static List<UUID> consumers(MinecraftServer server,UUID publication){var value=OBSERVED.get(server);return value==null?List.of():value.scripts.consumers(publication);}
@@ -269,6 +272,7 @@ public final class StudioScriptRuntime implements AutoCloseable {
         }
         for (var entry : List.copyOf(active.entrySet()))
             if (entry.getValue().enabled && !entry.getValue().current()) stop(entry.getKey(), "SOURCE_OR_PERMISSION_CHANGED");
+        scripts.configure(dev.mineagent.runtime.core.config.ScriptResourceBudget.from(MineAgentRuntimeServices.config(server).snapshot().values()));
         scripts.tick(server.getTickCount());
         scripts.fire("server.tick", server.getTickCount());
         for (var entry : List.copyOf(active.entrySet())) if (!scripts.isLoaded(entry.getKey())) {
