@@ -104,7 +104,11 @@ final class GeneratedContentActivation implements AutoCloseable {
         @SuppressWarnings("unchecked") var result=new LinkedHashMap<String,Object>(json.readValue(row.get().payload(),Map.class));
         if("PUBLISHED_LIFECYCLE_SUBMITTED".equals(result.get("status"))) {
             var head=packages.worldLibrary().get(job.packageId()).orElseThrow();
-            result.put("observation",NativeDataPackRuntime.get(server).read(player,Map.of("packageId",head.packageId().toString(),"packageRevision",Long.toString(head.revision()),"offset","0","operationId",result.get("operationId").toString())));
+            var observed=NativeDataPackRuntime.get(server).read(player,Map.of("packageId",head.packageId().toString(),"packageRevision",Long.toString(head.revision()),"offset","0","operationId",result.get("operationId").toString()));result.put("observation",observed);
+            var nativeJob=json.valueToTree(observed.get("job"));String phase=nativeJob.path("phase").asText();
+            if(phase.equals("COMPLETED")){result.put("status",Boolean.TRUE.equals(observed.get("loadedNow"))?"PUBLISHED_AND_ACTIVE":"PUBLISHED_LIFECYCLE_COMPLETED");result.put("activeNow",observed.get("loadedNow"));}
+            else if(phase.equals("AWAITING_REOPEN")){result.put("status","PUBLISHED_READY_AT_WORLD_REOPEN");result.put("activeNow",false);}
+            else if(Set.of("FAILED","UNKNOWN").contains(phase)){result.put("status","PUBLISHED_ACTIVATION_"+phase);result.put("executed",phase.equals("UNKNOWN")?"UNKNOWN":false);result.put("error",nativeJob.path("code").asText());}
         }
         return Map.copyOf(result);
     }
