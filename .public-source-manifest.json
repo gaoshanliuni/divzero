@@ -3714,8 +3714,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeItemBindingTest.java",
-      "resourceId": "496c1662-8df1-4477-8a9e-773eb7ed81be",
-      "bytes": 2711
+      "resourceId": "39d01066-6c48-4c60-9391-aa90047493f1",
+      "bytes": 2869
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeMeshTest.java",
@@ -9855,5 +9855,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "bf8c77f46c9f88f1ec38a230b736355fbf8926d7"
+  "sourceCommit": "11eff5fd043df9d62e264b2cc72260a4ce5dd0a2"
 }
