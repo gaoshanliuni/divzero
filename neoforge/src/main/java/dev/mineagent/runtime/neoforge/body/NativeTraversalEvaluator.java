@@ -72,6 +72,7 @@ public final class NativeTraversalEvaluator implements dev.mineagent.runtime.cor
     public PathStep transition(Node from,Node to){
         fresh();var a=point(from);var b=point(to);double rise=b.y-a.y;boolean wetA=water(from),wetB=water(to),ladder=climb(from)||climb(to),wet=wetA||wetB;
         int dx=Math.abs(from.x()-to.x()),dz=Math.abs(from.z()-to.z());boolean diagonal=dx==1&&dz==1;
+        if(dx>1||dz>1)return NativeGapTraversal.edge(player,this,from,to);
         if(dx>1||dz>1||dx+dz==0&&!ladder&&!wetA||rise>1.251||!NativeDropSafety.affordable(player,-rise))return null;
         Pose pose=wetA&&wetB?Pose.SWIMMING:Pose.STANDING;
         if(!clear(b,pose,wet)){if(!wet&&clear(b,Pose.CROUCHING,false))pose=Pose.CROUCHING;else return null;}
@@ -91,6 +92,10 @@ public final class NativeTraversalEvaluator implements dev.mineagent.runtime.cor
     }
     @Override public List<PathStep> neighbors(Node from){fresh();return edges.computeIfAbsent(from,n->{
         var nexts=new LinkedHashSet<Node>();for(int[] d:DIRECTIONS)nexts.addAll(positions(n.x()+d[0],n.z()+d[1],n.y()));
+        for(int[] d:DIRECTIONS)if(d[0]==0||d[1]==0){
+            boolean supported=positions(n.x()+d[0],n.z()+d[1],n.y()).stream().anyMatch(at->Math.abs(at.y()-n.y())<.1);
+            if(!supported)for(int span=2;span<=3;span++)nexts.addAll(positions(n.x()+d[0]*span,n.z()+d[1]*span,n.y()));
+        }
         if(climb(n)||water(n)){nexts.add(new Node(n.x(),n.y16()+16,n.z()));nexts.add(new Node(n.x(),n.y16()-16,n.z()));}
         var result=new ArrayList<PathStep>();for(var to:nexts){if(point(to).distanceToSqr(origin)>160*160)continue;var edge=transition(n,to);if(edge!=null)result.add(edge);}return List.copyOf(result);
     });}
@@ -102,6 +107,12 @@ public final class NativeTraversalEvaluator implements dev.mineagent.runtime.cor
             if(!budget.getAsBoolean())return null;
             int x=start.x()+(int)Math.round((end.x()-start.x())*i/(double)count),z=start.z()+(int)Math.round((end.z()-start.z())*i/(double)count);
             PathStep best=null;double cost=Double.POSITIVE_INFINITY;
+            if(start.x()==end.x()||start.z()==end.z())for(int span=2;span<=3&&i+span-1<=count;span++){
+                int gx=at.x()+Integer.signum(end.x()-start.x())*span,gz=at.z()+Integer.signum(end.z()-start.z())*span;
+                for(var next:positions(gx,gz,at.y())){var jump=NativeGapTraversal.edge(player,this,at,next);if(jump!=null){best=jump;break;}}
+                if(best!=null){i+=span-1;break;}
+            }
+            if(best!=null){route.add(best);at=best.to();continue;}
             for(var next:positions(x,z,at.y())){var step=transition(at,next);if(step==null)continue;double score=step.cost()+Math.abs(next.y()-end.y())*.12;if(score<cost){cost=score;best=step;}}
             if(best==null)return null;route.add(best);at=best.to();
         }return at.equals(end)?List.copyOf(route):null;

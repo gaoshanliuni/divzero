@@ -892,6 +892,7 @@ public final class PersistentSkillSmokeClient {
         }));
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(mode.equals("cooperative_deepseek")){cooperativeDeepSeek();return;}
+        if(mode.equals("native_travel")){nativeTravel();return;}
         if(mode.equals("native_production")){nativeProduction();return;}
         if(mode.equals("cooperative_building")){cooperativeBuilding();return;}
         if(mode.equals("online_replay")){onlineReplay();return;}
@@ -1087,7 +1088,7 @@ public final class PersistentSkillSmokeClient {
             var server=p.level().getServer();if(!restoreCopiedFixtureIdentity(p))return false;
             var found=MineAgentRuntimeServices.bodies(server).definitions().stream().filter(d->d.ownerPlayerId().equals(p.getUUID())&&d.displayName().equals("持续技能搭档")).findFirst();if(found.isEmpty())return false;agent=found.orElseThrow().agentId();return MineAgentRuntimeServices.bodies(server).body(agent).isPresent();
         }));
-        action("isolate-production-from-night-combat",()->server(p->{var server=p.level().getServer();server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"difficulty peaceful");server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"time set day");return Map.of("fixtureOnly",true,"difficulty","PEACEFUL","dayTimeReset",true,"scope","PRODUCTION_AND_CONSTRUCTION_NOT_COMBAT_ACCEPTANCE","newMaterialsGranted",0);}));
+        action("isolate-production-from-night-combat",()->server(p->{var server=p.level().getServer();server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"difficulty peaceful");server.getCommands().performPrefixedCommand(p.createCommandSourceStack(),"time set day");p.teleportTo(p.level(),15.5,110,23.5,Set.of(),180,28,true);p.getAbilities().flying=true;p.onUpdateAbilities();return Map.of("fixtureOnly",true,"difficulty","PEACEFUL","dayTimeReset",true,"scope","PRODUCTION_AND_CONSTRUCTION_NOT_COMBAT_ACCEPTANCE","newMaterialsGranted",0);}));
         action("read-persisted-real-model-plan-before-resume",()->tool("inspect_cooperation",JSON.createObjectNode()).thenApply(value->{
             require(value.path("runs").size()==1,"RESUME_EXPECTED_ONE_SOURCE_PLAN");resumedCooperation=value.path("runs").get(0);cooperativeRun=UUID.fromString(resumedCooperation.path("id").asText());require(resumedCooperation.path("status").asText().equals("PAUSED"),"RESUME_SOURCE_NOT_PAUSED");
             for(var step:resumedCooperation.path("steps")){
@@ -1144,6 +1145,39 @@ public final class PersistentSkillSmokeClient {
             p.teleportTo(p.level(),15.5,110,23.5,Set.of(),180,28,true);return Map.of("actualChestContents",contents,"chests",chests,"stoneBlocks",stone,"glassBlocks",glass,"planksBlocks",planks,"peerThreads",peers,"modelEvidence","real-provider-audit and real-cooperation-tools.jsonl");
         }catch(Exception error){throw new CompletionException(error);}}));
         action("real-model-room-screenshot",()->{screen("deepseek-cooperative-room");return CompletableFuture.completedFuture(true);});
+    }
+    private static double travelMinY,travelMaxY;
+    private static void nativeTravel(){
+        for(int scene=0;scene<4;scene++){
+            final int kind=scene;final String label=switch(scene){case 0->"wide-floor-sprint";case 1->"narrow-edge-crouch";case 2->"one-cell-gap";default->"two-cell-gap";};
+            action(label+"-fixture",()->server(p->{
+                p.teleportTo(p.level(),18.5,120,28.5,Set.of(),130,30,true);p.getAbilities().flying=true;p.onUpdateAbilities();
+                var b=body(p);b.movementController().stop();b.setGameMode(GameType.SURVIVAL);b.getFoodData().setFoodLevel(20);
+                for(int x=-2;x<=14;x++)for(int z=19;z<=25;z++)for(int y=110;y<=115;y++)p.level().setBlock(new BlockPos(x,y,z),y==110&&(kind!=1||z==22)?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),3);
+                if(kind>=2)for(int x=4;x<=(kind==2?4:5);x++)for(int z=21;z<=23;z++)p.level().setBlock(new BlockPos(x,110,z),Blocks.AIR.defaultBlockState(),3);
+                b.teleportTo(p.level(),.5,111,22.5,Set.of(),-90,0,true);b.setDeltaMovement(Vec3.ZERO);travelMinY=travelMaxY=111;
+                return Map.of("fixtureOnly",true,"scene",label,"baseY",111,"gapWidth",Math.max(0,kind-1));
+            }));
+            waitFor(label+"-standing",100,()->server(p->body(p).onGround()));
+            action(label+"-native-navigation",()->server(p->{var b=body(p);var nav=b.movementController();nav.movePreciselyTo(new Vec3(12.5,111,22.5));nav.setEdgeSafeNavigation(b,true);return Map.of("nativeSpeed",b.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED));}));
+            waitFor(label+"-arrival",1000,()->server(p->{var b=body(p);travelMinY=Math.min(travelMinY,b.getY());travelMaxY=Math.max(travelMaxY,b.getY());lastObservation=JSON.valueToTree(Map.of("position",b.position().toString(),"navigation",b.movementController().evidence()));return b.movementController().outcome().equals("ARRIVED")&&b.onGround();}));
+            action(label+"-actual-motion-proof",()->server(p->{var nav=body(p).movementController();var proof=nav.evidence();
+                require(travelMinY>=110.98,"TRAVEL_FELL_OFF_PATH_"+label+"_"+travelMinY);
+                if(kind==0)require(((Number)proof.get("sprintingSteps")).intValue()>10&&((Number)proof.get("crouchingSteps")).intValue()==0,"WIDE_FLOOR_STILL_CROUCHING_"+proof);
+                if(kind==1)require(((Number)proof.get("crouchingSteps")).intValue()>10,"NARROW_EDGE_NOT_PROTECTED_"+proof);
+                if(kind>=2)require(((Number)proof.get("gapJumps")).intValue()==1&&travelMaxY>111.8,"GAP_NOT_JUMPED_"+proof);
+                return Map.of("scene",label,"movement",proof,"minY",travelMinY,"maxY",travelMaxY,"actualPosition",body(p).position().toString());
+            }));
+        }
+        action("unsafe-gap-rejected",()->server(p->{
+            var b=body(p);var from=new dev.mineagent.runtime.core.task.SurfacePathfinder.Node(3,111*16,22);var to=new dev.mineagent.runtime.core.task.SurfacePathfinder.Node(6,111*16,22);
+            for(int x=3;x<=6;x++)p.level().setBlock(new BlockPos(x,113,22),Blocks.STONE.defaultBlockState(),3);
+            require(new dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator(b).transition(from,to)==null,"LOW_CEILING_GAP_ACCEPTED");
+            for(int x=3;x<=6;x++)p.level().setBlock(new BlockPos(x,113,22),Blocks.AIR.defaultBlockState(),3);
+            p.level().setBlock(new BlockPos(6,110,22),Blocks.AIR.defaultBlockState(),3);
+            require(new dev.mineagent.runtime.neoforge.body.NativeTraversalEvaluator(b).transition(from,to)==null,"MISSING_LANDING_ACCEPTED");
+            return Map.of("lowCeilingRejected",true,"removedLandingRejected",true);
+        }));
     }
     private static void nativeProduction(){
         action("production-raw-input-fixture",()->server(p->{

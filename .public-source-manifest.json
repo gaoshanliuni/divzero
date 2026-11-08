@@ -2899,8 +2899,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SurfacePathfinder.java",
-      "sha256": "eab36c8a2b5a95803c4372737519dfea56a9f2a8252c9e5f463a215c73d87038",
-      "bytes": 4628
+      "resourceId": "6bc428ec-8b3a-4af1-a366-4fdda318511b",
+      "bytes": 4638
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/task/SurfaceReachability.java",
@@ -5069,8 +5069,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentMovementController.java",
-      "resourceId": "db0d18df-c0da-458b-b020-6251345838ec",
-      "bytes": 9932
+      "resourceId": "7f44d033-a97e-4db9-bfde-03d8da9650e1",
+      "bytes": 11250
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentPlayer.java",
@@ -5081,6 +5081,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeDropSafety.java",
       "sha256": "ee847e83bf874cacf8f99ca9cd2b07f37223d663eecdd9998ca9c16a5bdf8bd4",
       "bytes": 2245
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeGapTraversal.java",
+      "resourceId": "56ab4b40-e73b-4817-8632-a5f7c9621979",
+      "bytes": 3254
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeInventorySync.java",
@@ -5099,8 +5104,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeNavigationIntent.java",
-      "sha256": "fd390942f8743dda0d683dd83fd26d900b7b3ddcd77947c5f309cad457e8aba7",
-      "bytes": 11401
+      "resourceId": "6a5c33fa-633a-4d3f-820c-1f9c6f606a5d",
+      "bytes": 11535
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeSprintSteering.java",
@@ -5128,9 +5133,14 @@
       "bytes": 25852
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTravelPolicy.java",
+      "resourceId": "64072040-3a80-4fbc-8d0d-5ce33288081e",
+      "bytes": 3188
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeTraversalEvaluator.java",
-      "sha256": "a155a649e9284ed03dacd1b9e5b8e45fbef8837a6322259d389dceaf8d4dc534",
-      "bytes": 9699
+      "resourceId": "fef0db32-55cd-410d-b3b5-6f2f7d515397",
+      "bytes": 10570
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/NativeUseSync.java",
@@ -5324,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/NativeSkillInput.java",
-      "resourceId": "afd917ce-aae0-46e5-81ec-3df18ffe7c26",
-      "bytes": 12470
+      "resourceId": "606f15cb-f724-4041-9045-26e20ad2614e",
+      "bytes": 13205
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillModelSmokeClient.java",
@@ -5334,8 +5344,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "443ba5ce-8127-49a8-b007-06d985565473",
-      "bytes": 278342
+      "resourceId": "b78f0386-98b4-4bcd-af21-53f03161e3a9",
+      "bytes": 282253
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7184,8 +7194,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "resourceId": "68f02f15-c6f4-4e1f-9095-fb6b71d6e034",
-      "bytes": 15370
+      "resourceId": "e0a4b26f-9ecb-48f0-a9a2-97c24925ba61",
+      "bytes": 15772
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
@@ -9670,5 +9680,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "ebe1a4c571a2673466f3ba76896ff45f9312286d"
+  "sourceCommit": "b60b9e2cad9829eac2c57ee7695e249a342fe55c"
 }

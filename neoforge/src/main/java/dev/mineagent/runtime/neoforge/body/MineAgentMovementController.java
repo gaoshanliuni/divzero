@@ -11,16 +11,17 @@ public final class MineAgentMovementController {
     private final NativeNavigationIntent intent=new NativeNavigationIntent();
     private long commandRevision;private int lastTick=Integer.MIN_VALUE;
     private long pendingJumpRevision=-1;private UUID pendingJumpOwner;private int pendingJumpExpires;
-    private int executedSteps,openedDoors,openedGates,crouchingSteps,climbingSteps,swimmingSteps;
+    private int executedSteps,openedDoors,openedGates,crouchingSteps,climbingSteps,swimmingSteps,sprintingSteps,gapJumps;
+    private dev.mineagent.runtime.core.task.SurfacePathfinder.PathStep gapStep;private boolean gapLaunched;
     private boolean diagonalThisTick;private long diagonalTicks;
     public boolean diagonalThisTick(){return diagonalThisTick;}
     public long diagonalTicks(){return diagonalTicks;}
     private boolean manualSneak,edgeSafeNavigation;private final Set<Double> traversedFloors=new LinkedHashSet<>();
     public void recordOpened(boolean gate){if(gate)openedGates++;else openedDoors++;}
-    public Map<String,Object> evidence(){var out=new LinkedHashMap<String,Object>();out.put("steps",executedSteps);out.put("crouchingSteps",crouchingSteps);out.put("openedDoors",openedDoors);out.put("openedGates",openedGates);out.put("observedGroundHeights",List.copyOf(traversedFloors));out.put("climbingSteps",climbingSteps);out.put("swimmingSteps",swimmingSteps);out.put("search",intent.evidence());return out;}
+    public Map<String,Object> evidence(){var out=new LinkedHashMap<String,Object>();out.put("steps",executedSteps);out.put("crouchingSteps",crouchingSteps);out.put("sprintingSteps",sprintingSteps);out.put("gapJumps",gapJumps);out.put("openedDoors",openedDoors);out.put("openedGates",openedGates);out.put("observedGroundHeights",List.copyOf(traversedFloors));out.put("climbingSteps",climbingSteps);out.put("swimmingSteps",swimmingSteps);out.put("search",intent.evidence());return out;}
     public boolean manualSneak(){return manualSneak;}
     public void setSneaking(MineAgentPlayer p,boolean value){manualSneak=value;p.applySneaking(value||NativeSurfaceNavigation.requiresSneaking(p,p.position()));}
-    public void setEdgeSafeNavigation(MineAgentPlayer p,boolean value){edgeSafeNavigation=value;p.applySneaking(value||manualSneak||NativeSurfaceNavigation.requiresSneaking(p,p.position()));}
+    public void setEdgeSafeNavigation(MineAgentPlayer p,boolean value){edgeSafeNavigation=value;p.applySneaking(manualSneak||value&&NativeTravelPolicy.sneak(p,p.position(),"WALK")||NativeSurfaceNavigation.requiresSneaking(p,p.position()));}
     public double arrivalTolerance(){return intent.tolerance();}
     public long commandRevision(){return commandRevision;}
     public String outcome(){return intent.status();}
@@ -32,7 +33,7 @@ public final class MineAgentMovementController {
     public boolean recovering(){return intent.recovery().active();}
     public boolean recover(MineAgentPlayer p,Vec3 target){if(intent.recovery().active())return true;if(intent.target().isEmpty())start(target,.2);return intent.recovery().request(p,target,"TACTICAL_ROUTE_EXHAUSTED");}
     public void moveTo(Vec3 target){start(target,.8);}
-    private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=0;traversedFloors.clear();}
+    private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=sprintingSteps=gapJumps=0;gapStep=null;gapLaunched=false;traversedFloors.clear();}
     /** Tracking a moving entity does not replace the command or discard a still-useful route. */
     public boolean updateTarget(long command,Vec3 target){if(command!=commandRevision)return false;intent.update(target);return true;}
     public void stop(){manualSneak=edgeSafeNavigation=false;pendingJumpRevision=-1;commandRevision++;intent.stop("CANCELLED");}
@@ -40,7 +41,7 @@ public final class MineAgentMovementController {
     public String backendName(){return "builtin-surface-actions";}
     public void tick(MineAgentPlayer p){
         int tick=p.level().getServer().getTickCount();if(lastTick==tick)return;lastTick=tick;diagonalThisTick=false;
-        p.applySneaking(p.canAct()&&(manualSneak||edgeSafeNavigation||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
+        p.applySneaking(p.canAct()&&(manualSneak||edgeSafeNavigation&&NativeTravelPolicy.sneak(p,p.position(),gapStep!=null&&gapLaunched?"GAP_JUMP":"WALK")||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
         if(!p.canAct()||intent.target().isEmpty())return;
         if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
         var step=intent.tick(p);
@@ -57,14 +58,23 @@ public final class MineAgentMovementController {
             });
             if(recovery.changed())intent.recheckAfterTerrain();step=recovery.move();
         }
-        if(step==null)return;var waypoint=intent.recovery().active()?NativeTraversalEvaluator.point(step.to()):intent.waypoint(step);var offset=waypoint.subtract(p.position());
+        if(step==null){if(edgeSafeNavigation)p.setSprinting(false);gapStep=null;gapLaunched=false;return;}
+        var waypoint=intent.recovery().active()?NativeTraversalEvaluator.point(step.to()):intent.waypoint(step);
+        boolean gap=step.action()==Action.GAP_JUMP;
+        if(gap){
+            if(!step.equals(gapStep)){gapStep=step;gapLaunched=false;}
+            if(!gapLaunched){var launch=NativeGapTraversal.takeoff(step);if(p.position().subtract(launch).horizontalDistanceSqr()>.0144)waypoint=launch;
+                else if(p.onGround()){p.applySneaking(false);p.setSprinting(NativeTravelPolicy.canSprint(p));p.lookAlongPath(p.getEyePosition().add(NativeTraversalEvaluator.point(step.to()).subtract(p.position())));p.jumpFromGround();gapLaunched=true;gapJumps++;}}
+        }else{gapStep=null;gapLaunched=false;}
+        var offset=waypoint.subtract(p.position());
         if(tick>pendingJumpExpires||pendingJumpRevision!=commandRevision||pendingJumpOwner==null||!p.controls().owns(pendingJumpOwner,dev.mineagent.runtime.api.agent.BodyDomain.MOVEMENT)){pendingJumpRevision=-1;pendingJumpOwner=null;}
         else if(p.onGround()){intent.tacticalJump(p);p.jumpFromGround();pendingJumpRevision=-1;pendingJumpOwner=null;}
         if(!NativeSurfaceNavigation.openOnPath(p,waypoint)){intent.stop("INTERACTION_BLOCKED");return;}
         boolean swim=step.action()==Action.SWIM||step.action()==Action.ENTER_WATER;
         boolean climb=step.action()==Action.CLIMB;
         p.setSwimming(swim&&p.isInWater());
-        p.applySneaking(!swim&&!climb&&(manualSneak||edgeSafeNavigation&&step.action()!=Action.DROP||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
+        p.applySneaking(!swim&&!climb&&(manualSneak||edgeSafeNavigation&&NativeTravelPolicy.sneak(p,waypoint,step.action().name())||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
+        if(edgeSafeNavigation||gap)p.setSprinting(!p.isCrouching()&&NativeTravelPolicy.sprint(p,waypoint,intent.target().orElse(null),step.action().name()));
         var travelHeading=new Vec3(offset.x,0,offset.z);if(travelHeading.lengthSqr()>.001)p.lookAlongPath(p.getEyePosition().add(travelHeading.normalize().scale(4)));
         if((step.action()==Action.JUMP||step.action()==Action.LEAVE_WATER)&&offset.y>.65&&p.onGround())p.jumpFromGround();
         if(p.nativePvpMovement()){
@@ -87,7 +97,7 @@ public final class MineAgentMovementController {
         double speed=.98*Math.max(0,p.getAttributeValue(Attributes.MOVEMENT_SPEED))*(p.isInWater()?1+p.getAttributeValue(Attributes.WATER_MOVEMENT_EFFICIENCY):.216/(friction*friction*friction)/Math.max(.05,1-friction*.91))*p.navigationSpeedFactor();
         if(p.isUsingItem()&&!p.isPassenger())speed*=useEffects.speedMultiplier();
         if(p.isCrouching())speed*=p.getAttributeValue(Attributes.SNEAKING_SPEED);
-        var horizontal=new Vec3(offset.x,0,offset.z);if(horizontal.lengthSqr()>.001&&speed>0){p.move(MoverType.SELF,horizontal.normalize().scale(Math.min(speed,horizontal.length())));executedSteps++;if(p.isCrouching())crouchingSteps++;}
+        var horizontal=new Vec3(offset.x,0,offset.z);if(horizontal.lengthSqr()>.001&&speed>0){p.move(MoverType.SELF,horizontal.normalize().scale(Math.min(speed,horizontal.length())));executedSteps++;if(p.isCrouching())crouchingSteps++;if(p.isSprinting())sprintingSteps++;}
         // Native travel integrates vertical velocity once; do not additionally move by the same input.
         if(climb&&p.onClimbable()){p.setDeltaMovement(p.getDeltaMovement().x,offset.y>0?Math.min(.2,Math.max(.12,offset.y)):Math.max(-.15,offset.y),p.getDeltaMovement().z);climbingSteps++;}
         if(swim&&p.isInWater()){p.setDeltaMovement(p.getDeltaMovement().x,Math.max(-.1,Math.min(.1,offset.y)),p.getDeltaMovement().z);swimmingSteps++;}

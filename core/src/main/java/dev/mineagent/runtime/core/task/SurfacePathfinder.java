@@ -3,7 +3,7 @@ import java.util.*;import java.util.function.*;
 /** Resumable search over a shared traversal graph. A slice ending is never proof of no route. */
 public final class SurfacePathfinder {
     public record Node(int x,int y16,int z){public double y(){return y16/16.0;}}
-    public enum Action { WALK, STEP_UP, JUMP, DROP, CROUCH, OPEN_DOOR, CLIMB, ENTER_WATER, SWIM, LEAVE_WATER }
+    public enum Action { WALK, STEP_UP, JUMP, GAP_JUMP, DROP, CROUCH, OPEN_DOOR, CLIMB, ENTER_WATER, SWIM, LEAVE_WATER }
     public enum Posture { STANDING, CROUCHING, SWIMMING }
     public enum Status { FOUND, BUDGET_EXHAUSTED, WAITING_CHUNKS, NO_PATH, INVALID_TARGET, SEARCH_LIMIT }
     public record PathStep(Node from,Node to,Action action,Posture posture,double cost) {
