@@ -79,6 +79,7 @@ public final class MineAgentRuntimeMod {
         MineAgentRuntimeServices.taskExecutor(event.getServer()).reconcileAuthority();
         MineAgentRuntimeServices.bodies(event.getServer()).tickBodies(event.getServer().getTickCount());
         MineAgentRuntimeServices.taskExecutor(event.getServer()).tickWorldActions();
+        MineAgentRuntimeServices.packages(event.getServer()).configure(dev.mineagent.runtime.core.config.ScriptResourceBudget.from(MineAgentRuntimeServices.config(event.getServer()).snapshot().values()));
         MineAgentRuntimeServices.packages(event.getServer()).tick(event.getServer().getTickCount());
         dev.mineagent.runtime.neoforge.content.WorldContentRuntime.tick(event.getServer());
         dev.mineagent.runtime.neoforge.content.NativeDataPackRuntime.tick(event.getServer());

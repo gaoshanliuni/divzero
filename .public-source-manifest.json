@@ -509,8 +509,8 @@
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/packages/RuntimePackageExecutionPlan.java",
-      "sha256": "948cfddb10b617521759312913e91fe5915d56b39ac586d13cfb98e50c9e21bc",
-      "bytes": 1701
+      "resourceId": "2e92da2e-ee95-4192-a110-eaf9d878510b",
+      "bytes": 1678
     },
     {
       "path": "api/src/main/java/dev/mineagent/runtime/api/packages/RuntimePackageType.java",
@@ -1434,8 +1434,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/PermissionGenerations.java",
-      "sha256": "e65c0f2866651960f212d0b6ccb3f5225eced52e5e81d7809a398e8a7e65979a",
-      "bytes": 1501
+      "resourceId": "e4ac8fa6-19b8-4b66-8039-c97d89f1fd26",
+      "bytes": 1632
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ProviderBaseUrls.java",
@@ -2334,8 +2334,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/WorldContentPlan.java",
-      "sha256": "849476b5fbf58bfa61c2a2c5ee0aab9541941e8a990b6e553f1b52479b7afcb3",
-      "bytes": 2215
+      "resourceId": "65ebf541-7057-41fd-95bb-43b280f79112",
+      "bytes": 2196
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/packages/WorldInstanceMoveJournal.java",
@@ -3774,8 +3774,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/permission/PermissionServiceTest.java",
-      "resourceId": "bcc1a92a-5853-46aa-aa2c-c61ad6ced4b1",
-      "bytes": 5087
+      "resourceId": "8d8f332b-e5fe-446f-93a3-b04d6ed2306c",
+      "bytes": 5956
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/permission/WorldActivationTest.java",
@@ -5119,8 +5119,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
-      "resourceId": "bd0e7adf-1f01-48a1-a3c0-78942ab9586d",
-      "bytes": 56438
+      "resourceId": "dd932225-cdef-4e6a-9901-93df57b8010f",
+      "bytes": 56643
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeServices.java",
@@ -5454,8 +5454,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "ec371f3f-18d1-4c81-b069-8a8ab4842ef5",
-      "bytes": 285069
+      "resourceId": "21cc45e6-5aca-4d0e-8a29-e6c5c16f3475",
+      "bytes": 285956
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7479,8 +7479,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/ServerAuthority.java",
-      "resourceId": "56cdf35e-d2bd-4350-9b9b-0b202b62d7e8",
-      "bytes": 1047
+      "resourceId": "2139f0e1-698a-424e-9058-cff1b74ea14f",
+      "bytes": 1765
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/task/ServerGenerationHistory.java",
@@ -7568,6 +7568,11 @@
       "bytes": 11639
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityBudgetSmoke.java",
+      "resourceId": "c6932d1e-b1e7-444a-8840-e3b7fc526057",
+      "bytes": 6244
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
       "resourceId": "70d8a041-bce0-4a04-8a53-b357b77d2336",
       "bytes": 2173
@@ -7634,8 +7639,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "b8faa6d0-cb20-49d9-9659-8fd0f8f4653e",
-      "bytes": 81059
+      "resourceId": "f0d4f7b7-7a95-4aaa-b27c-272a703cf6d0",
+      "bytes": 79797
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7841,6 +7846,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/FullImportSmokeServer.java",
       "sha256": "7db1f03f5763a4313ce181371fed028ae3460b3fb01472600931396ec2a7b3bc",
       "bytes": 5504
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GeneratedContentActivation.java",
+      "resourceId": "80ebb58a-b648-4d33-a529-64a9ed193e06",
+      "bytes": 8967
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GenerationRepairSmokeServer.java",
@@ -8074,13 +8084,13 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEntityInterop.java",
-      "resourceId": "1fa9da8d-8fe4-4785-a987-c53f7dff6a0a",
-      "bytes": 18718
+      "resourceId": "e0556e50-13e9-465e-b3ee-c54db0d61aa3",
+      "bytes": 19708
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerEventAbilities.java",
-      "sha256": "711ff3c58a5a58e2de97f3d77dc8ca99e88a655be7703f4473f4bf3725214de8",
-      "bytes": 11459
+      "resourceId": "0d1b9dac-4525-4fdd-8181-4e1cad49ee69",
+      "bytes": 11385
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerFileTools.java",
@@ -8094,8 +8104,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerInteractionRules.java",
-      "sha256": "0a1ce9baa411a951ad6d79b9012176373bfd5a5a4ae3eb96c124a62dcf27ae0e",
-      "bytes": 21007
+      "resourceId": "c952a0a6-7e90-4224-ae1e-acdf04696f5f",
+      "bytes": 21017
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerJavaDependencies.java",
@@ -8149,8 +8159,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "resourceId": "403bdb23-aa38-4b3a-95f4-e24cccaabe02",
-      "bytes": 73007
+      "resourceId": "c5d44626-6f22-44e4-913f-ba51ab4f7c49",
+      "bytes": 73551
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -8789,8 +8799,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/packagehost/RuntimePackageManager.java",
-      "sha256": "064cc1e6e05081ff8c48973ead22a15c4433ff5443074853b58110568401f4ac",
-      "bytes": 4535
+      "resourceId": "89f84b81-aa5a-42ee-bff5-b6f9dcba939b",
+      "bytes": 4759
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/preflight/BrowserScriptPreflight.java",
@@ -9810,5 +9820,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "3eb169fc42409366ef1a8e67c3f90b7a017eae5e"
+  "sourceCommit": "919385c90c5b6bfda53556211ffa4d3afa712cff"
 }

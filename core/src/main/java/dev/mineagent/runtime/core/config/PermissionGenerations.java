@@ -13,5 +13,5 @@ public final class PermissionGenerations {
             var old=actions(before.get(key));var next=actions(after.get(key));for(var action:PermissionAction.values())if(old.contains(action)!=next.contains(action)){String id=key(player,action);result.put(id,Math.addExact(result.getOrDefault(id,0L),1));}
         }return Collections.unmodifiableMap(result);
     }
-    private static Set<PermissionAction> actions(String value){try{if(value==null)return Set.of();var result=EnumSet.noneOf(PermissionAction.class);for(var part:value.split(","))if(!part.isBlank())result.add(PermissionAction.valueOf(part.strip()));return result;}catch(IllegalArgumentException invalid){return Set.of();}}
+    private static Set<PermissionAction> actions(String value){try{if(value==null)return Set.of();var result=EnumSet.noneOf(PermissionAction.class);for(var part:value.split(","))if(!part.isBlank())result.add(PermissionAction.valueOf(part.strip()));if(result.contains(PermissionAction.RUN_CODE)){result.add(PermissionAction.EDIT_WORLD);result.add(PermissionAction.EDIT_ENTITIES);}return result;}catch(IllegalArgumentException invalid){return Set.of();}}
 }

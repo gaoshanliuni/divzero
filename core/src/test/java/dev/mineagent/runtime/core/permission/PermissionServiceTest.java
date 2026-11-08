@@ -9,6 +9,15 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PermissionServiceTest {
+    @Test void persistedGenerationsTrackLegacyCodeGrantImplications(){
+        var player=UUID.randomUUID();String key="permission.player."+player;
+        var first=dev.mineagent.runtime.core.config.PermissionGenerations.advance(java.util.Map.of(),java.util.Map.of(),java.util.Map.of(key,"RUN_CODE"));
+        String world=dev.mineagent.runtime.core.config.PermissionGenerations.key(player,PermissionAction.EDIT_WORLD);
+        String entity=dev.mineagent.runtime.core.config.PermissionGenerations.key(player,PermissionAction.EDIT_ENTITIES);
+        assertEquals(1L,first.get(world));assertEquals(1L,first.get(entity));
+        var revoked=dev.mineagent.runtime.core.config.PermissionGenerations.advance(first,java.util.Map.of(key,"RUN_CODE"),java.util.Map.of(key,"EDIT_WORLD"));
+        assertEquals(1L,revoked.get(world));assertEquals(2L,revoked.get(entity));
+    }
     @org.junit.jupiter.api.Test void scopedWorldGrantDoesNotGrantCodeOrEntityEdits() {
         var service=new PermissionService();var player=java.util.UUID.randomUUID();
         service.setTrustedActions(player,java.util.Set.of(dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD));

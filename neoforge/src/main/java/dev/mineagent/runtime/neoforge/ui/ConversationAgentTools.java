@@ -39,7 +39,7 @@ public final class ConversationAgentTools {
     private static boolean personalTool(String tool){return Set.of("set_chat_settings","set_chat_messages","remember","forget_memory").contains(tool);}
     private static dev.mineagent.runtime.api.permission.PermissionAction toolPermission(String tool){
         if(personalTool(tool))return dev.mineagent.runtime.api.permission.PermissionAction.CHAT;
-        if(Set.of("plan_world_geometry","apply_world_geometry","plan_building","apply_building","control_building","construct_building","plan_building_import").contains(tool))return dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD;
+        if(Set.of("set_interaction_rule","delete_interaction_rule","define_event_ability","bind_event_ability","control_event_ability","plan_world_geometry","apply_world_geometry","plan_building","apply_building","control_building","construct_building","plan_building_import").contains(tool))return dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD;
         if(Set.of("set_entity_rule","delete_entity_rule","set_entity_state","set_entity_animation","define_native_entity","control_native_entity","replace_entity_part").contains(tool))return dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES;
         return dev.mineagent.runtime.api.permission.PermissionAction.RUN_CODE;
     }
@@ -307,16 +307,10 @@ public final class ConversationAgentTools {
                     if(!job.state().equals("PUBLISHED")){
                         result.complete(Map.ofEntries(Map.entry("status","REJECTED"),Map.entry("error",job.errorCode()),Map.entry("category","CANDIDATE_VALIDATION"),Map.entry("executionState","CANDIDATE_ONLY"),Map.entry("worldModified",false),Map.entry("operation_id",job.operationId()),Map.entry("job_revision",job.revision()),Map.entry("raw_sha256",job.rawOutputSha256()),Map.entry("diagnostic",runtime.generationDiagnostic(p.getUUID(),operation)),Map.entry("nextStep","Read inspect_content_candidate and apply targeted repair_content_package edits. Running content is unchanged; do not regenerate the whole object or repeat UNKNOWN writes.")));return true;
                     }
-                    var pack=runtime.ownedPackage(p.getUUID(),job.packageId(),job.packageRevision()).orElseThrow();
-                    var activations=new ArrayList<Object>();boolean allActive=true;
-                    if(repair==null&&pack.activationMode()==dev.mineagent.runtime.api.packages.ActivationMode.HOT_RUNTIME&&!pack.definitions().isEmpty()){
-                        var nativeRuntime=dev.mineagent.runtime.neoforge.content.WorldContentRuntime.get(server);var anchor=new dev.mineagent.runtime.api.packages.RuntimeInstanceLocation(p.level().dimension().identifier().toString(),p.getX()+2,p.getY(),p.getZ(),0,0);
-                        for(var def:pack.definitions().values()){
-                            var currentPack=runtime.worldLibrary().get(pack.packageId()).orElseThrow();var activationId=UUID.nameUUIDFromBytes((operation+"|auto-activate|"+def.definitionId()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                            var applied=nativeRuntime.activate(p,activationId,currentPack.packageId(),currentPack.revision(),def.definitionId(),anchor,true,false);activations.add(applied);if(!applied.state().equals("ACTIVE")){allActive=false;break;}
-                        }
-                    }else allActive=false;
-                    result.complete(Map.of("status",allActive?"PUBLISHED_AND_ACTIVE":activations.isEmpty()?"PUBLISHED_LIFECYCLE_REQUIRED":"PUBLISHED_ACTIVATION_INCOMPLETE","packageId",pack.packageId(),"name",pack.name(),"revision",runtime.worldLibrary().get(pack.packageId()).orElseThrow().revision(),"activationMode",pack.activationMode(),"activations",activations,"executed",!activations.isEmpty(),"nextStep",allActive?"Inspect actual items/world to verify intended result":"Inspect package/activation result; never regenerate or re-run unknown instance blindly"));return true;
+                    var pack=runtime.worldLibrary().get(job.packageId()).orElseThrow();
+                    var activation=new LinkedHashMap<String,Object>(runtime.generatedActivation(p,job));
+                    activation.put("packageId",pack.packageId());activation.put("name",pack.name());activation.put("revision",pack.revision());activation.put("activationMode",pack.activationMode());
+                    result.complete(activation);return true;
                 }
             });
         }catch(Exception unknown){if(!accepted)result.complete(Map.of("status","REJECTED","error",code(unknown),"diagnostic",Objects.toString(unknown.getMessage(),"候选提交参数无效"),"executionState","NOT_STARTED","worldModified",false));else result.completeExceptionally(new IllegalStateException("AGENT_TOOL_OUTCOME_UNKNOWN",unknown));}

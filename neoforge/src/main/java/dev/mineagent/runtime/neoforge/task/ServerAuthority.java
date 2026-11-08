@@ -13,6 +13,14 @@ public final class ServerAuthority {
                 && MineAgentRuntimeServices.permissions(server).allowed(player.getUUID(),
                 player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER),action);
     }
+    /** Persistent server-side rules keep their owner; disconnect never becomes implicit authorization. */
+    public static boolean allowed(net.minecraft.server.MinecraftServer server,java.util.UUID owner,PermissionAction action) {
+        if(!server.isSameThread()||owner==null)return false;
+        var player=server.getPlayerList().getPlayer(owner);
+        boolean operator=player!=null?player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)
+                :server.getProfilePermissions(new net.minecraft.server.players.NameAndId(owner,"DivZeroOwner")).hasPermission(Permissions.COMMANDS_GAMEMASTER);
+        return MineAgentRuntimeServices.permissions(server).allowed(owner,operator,action);
+    }
     public static void require(ServerPlayer player, PermissionAction action) {
         if(!allowed(player,action))throw new SecurityException("PERMISSION_REQUIRED_"+action.name());
     }

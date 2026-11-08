@@ -54,7 +54,7 @@ public final class ServerEventAbilities {
  }
  private static long revision(JsonNode a){var n=a.path("expected_revision");if(n.isMissingNode())return 0;if(!n.isIntegralNumber()||!n.canConvertToLong()||n.longValue()<0||n.longValue()==Long.MAX_VALUE)throw new IllegalArgumentException("EVENT_ABILITY_REVISION");return n.longValue();}
  private static void check(ServerPlayer p,UUID owner,long actual,long expected){if(owner!=null&&!owner.equals(p.getUUID()))throw new SecurityException("EVENT_ABILITY_NOT_OWNED");if(actual!=expected)throw new IllegalStateException("EVENT_ABILITY_STALE");}
- private static void permission(ServerPlayer p){if(!p.level().getServer().isSameThread()||!p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))throw new SecurityException("INTERACTION_GAMEMASTER_REQUIRED");}
+ private static void permission(ServerPlayer p){dev.mineagent.runtime.neoforge.task.ServerAuthority.require(p,dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD);}
  private static void apply(MinecraftServer s,Map<String,String> edits){var config=MineAgentRuntimeServices.config(s);var result=config.apply(new ConfigPatch(config.snapshot().revision(),edits),true);if(!result.accepted())throw new IllegalStateException(result.errorCode());}
  private ServerEventAbilities(){}
 }

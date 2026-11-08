@@ -15,7 +15,7 @@ public record WorldContentPlan(String entrypoint,Map<String,String> modules,Map<
             var bytes=content.read(ref.sha256());if(bytes.length!=ref.size())throw new IllegalArgumentException("WORLD_RESOURCE_SIZE");
             modules.put(ref.path(),new String(bytes,StandardCharsets.UTF_8));
         }
-        if(!modules.containsKey(entry.path())||modules.size()>64)throw new IllegalArgumentException("WORLD_MODULES_INVALID");
+        if(!modules.containsKey(entry.path()))throw new IllegalArgumentException("WORLD_MODULES_INVALID");
         var restore=new LinkedHashMap<UUID,String>();
         for(var d:p.definitions().values()){
             var e=p.entrypoints().get(d.entrypointId());if(e==null||e.side()==RuntimeResourceSide.CLIENT||!modules.containsKey(e.path()))throw new IllegalArgumentException("WORLD_DEFINITION_ENTRYPOINT");

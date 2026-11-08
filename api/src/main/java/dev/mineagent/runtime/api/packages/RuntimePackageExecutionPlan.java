@@ -21,7 +21,7 @@ public record RuntimePackageExecutionPlan(
         Objects.requireNonNull(activationMode, "activationMode");
         modules = Map.copyOf(Objects.requireNonNull(modules, "modules"));
         resourceHashes = Set.copyOf(Objects.requireNonNull(resourceHashes, "resourceHashes"));
-        if (packageRevision < 1 || taskRevision < 0 || modules.isEmpty() || modules.size() > 64
+        if (packageRevision < 1 || taskRevision < 0 || modules.isEmpty()
                 || entrypoint == null || !modules.containsKey(entrypoint)) {
             throw new IllegalArgumentException("invalid runtime package execution plan");
         }

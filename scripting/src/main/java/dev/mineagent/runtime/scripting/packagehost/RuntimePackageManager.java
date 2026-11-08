@@ -84,6 +84,8 @@ public final class RuntimePackageManager implements AutoCloseable {
         runtime.tick(tick);
         pruneInactive();
     }
+    public synchronized void configure(dev.mineagent.runtime.core.config.ScriptResourceBudget budget){runtime.configure(budget);}
+    public synchronized Map<String,Object> resources(){return runtime.resourceObservation();}
 
     public synchronized boolean unload(UUID packageId) throws Exception {
         try { return runtime.unload(packageId); }

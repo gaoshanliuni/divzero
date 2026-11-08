@@ -23,6 +23,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
     private final dev.mineagent.runtime.core.compile.NativeKnowledgeStore nativeKnowledge;
     private final ContentAddressedStore content;
     private final PackageGenerationService jobs;
+    private final GeneratedContentActivation generatedActivation;
     private final PackageUiPatchService patches;
     private final PackageUiPatchService worldPatches;
     private final java.util.concurrent.ConcurrentHashMap<UUID,java.util.concurrent.atomic.AtomicBoolean> worldPatchPermits=new java.util.concurrent.ConcurrentHashMap<>();
@@ -65,6 +66,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         try{imports=ExplicitPackageImports.open(directory.resolve("runtime.db"),library);}catch(Exception failure){worldPatches.close();patches.close();jobs.close();library.close();throw failure;}
         try{nativeCompatibility=new dev.mineagent.runtime.neoforge.content.NativePackageCompatibility(server);}catch(Exception failure){imports.close();worldPatches.close();patches.close();jobs.close();library.close();throw failure;}
         try{nativeKnowledge=dev.mineagent.runtime.core.compile.NativeKnowledgeStore.open(directory.resolve("runtime.db"),MineAgentRuntimeServices.worldId(server),Clock.systemUTC());}catch(Exception failure){nativeCompatibility.close();imports.close();worldPatches.close();patches.close();jobs.close();library.close();throw failure;}
+        generatedActivation=new GeneratedContentActivation(server,this);
         worldPatchTaskChanges=MineAgentRuntimeServices.tasks(server).onChange(task->{var permit=worldPatchPermits.get(task.taskId());if(permit!=null)permit.set(false);var generation=generationPermits.get(task.taskId());if(generation!=null)generation.set(false);});
     }
     public static synchronized ServerPackageRuntime get(MinecraftServer server) {
@@ -338,6 +340,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         var submitted = sourceOperation==null?jobs.submit(viewer.getUUID(), agent, operation, prompt, true,purpose,budgetParent(operation,"GENERATION"),nativeSelection):jobs.submitRepair(viewer.getUUID(),agent,operation,sourceOperation,sourceRevision,sourceHash,prompt,true,confirmed);
         if (submitted.duplicate()) return submitted;
         var job = submitted.job();var ticket=new java.util.concurrent.atomic.AtomicReference<>(job);
+        generatedActivation.capture(viewer,job);
         var permit=new java.util.concurrent.atomic.AtomicBoolean(true);generationPermits.put(job.taskId(),permit);
         java.util.function.BooleanSupplier dispatch=()->{
             if(!permit.get()||closed)return false;
@@ -376,6 +379,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
         var source=jobs.find(viewer.getUUID(),sourceId).orElseThrow();
         var submitted=jobs.submitRepair(viewer.getUUID(),agent,operation,sourceId,sourceRevision,sourceHash,"根据具体诊断局部修复候选，保留其它内容",true,true);
         if(submitted.duplicate())return submitted;var ticket=submitted.job();
+        generatedActivation.capture(viewer,ticket);
         var patchesToApply=new ArrayList<dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change>();
         for(var edit:edits)patchesToApply.add(new dev.mineagent.runtime.worker.generation.FailedCandidatePatch.Change(edit.path("path").asText(),edit.path("old_text").asText(),edit.path("new_text").asText(),edit.path("replace_all").asBoolean()));
         var permit=new java.util.concurrent.atomic.AtomicBoolean(true);generationPermits.put(ticket.taskId(),permit);var signer=MineAgentRuntimeServices.identity(server);
@@ -416,8 +420,10 @@ public final class ServerPackageRuntime implements AutoCloseable {
                                     if(Set.of(dev.mineagent.runtime.api.packages.ActivationMode.DATA_RELOAD,dev.mineagent.runtime.api.packages.ActivationMode.WORLD_REOPEN).contains(pack.activationMode()))dev.mineagent.runtime.neoforge.content.ManagedDataPackGuard.validateReloadTargets(DataPackPlan.inspect(pack));
                                     else{var plan=WorldContentPlan.resolve(pack,content);for(var definition:plan.restoreEntrypoints().keySet())dev.mineagent.runtime.neoforge.content.WorldContentRuntime.verifyRegistration(plan,definition);}
                                 }
-                                jobs.complete(current, pack, provider, rawHash, allowed(current.ownerPlayerId(), current.agentId())&&parentCurrent(current.operationId()));
+                                var published=jobs.complete(current, pack, provider, rawHash, allowed(current.ownerPlayerId(), current.agentId())&&parentCurrent(current.operationId()));
+                                generatedActivation.published(published,pack);
     }
+    public Map<String,Object> generatedActivation(ServerPlayer viewer,PackageGenerationJob job)throws Exception{requireServerThread();return generatedActivation.inspect(viewer,job);}
     public PackageGenerationJob cancel(UUID owner, UUID operation) throws Exception { requireServerThread(); return jobs.cancel(owner, operation); }
     public Optional<RuntimePackage> ownedPackage(UUID viewer, UUID packageId, long revision) {
         requireServerThread();
@@ -503,7 +509,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
     }
     @Override public void close() throws Exception {
         closed = true; io.shutdownNow();bundleCache.clear(); transfers.clear();resourceTransfers.clear();resourcePreparing.clear();clientScriptTransfers.clear();clientScriptPreparing.clear();clientJavaTransfers.clear();clientJavaPreparing.clear();candidateOffers.clear(); preparing.clear();
-        worldPatchPermits.values().forEach(p->p.set(false));worldPatchPermits.clear();generationPermits.values().forEach(p->p.set(false));generationPermits.clear();worldPatchTaskChanges.close();
+        worldPatchPermits.values().forEach(p->p.set(false));worldPatchPermits.clear();generationPermits.values().forEach(p->p.set(false));generationPermits.clear();worldPatchTaskChanges.close();generatedActivation.close();
         try{nativeKnowledge.close();}finally{try{worldPatches.close();}finally{try {imports.close();}finally{try {patches.close();}finally{try { jobs.close(); } finally { try{nativeCompatibility.close();}finally{library.close();} }}}}}
     }
 }
