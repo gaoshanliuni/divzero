@@ -7654,7 +7654,7 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/BootAutomaticCiSmoke.java",
-      "resourceId": "e9e91d6c-5680-45ee-b071-a56dfa852bec",
+      "resourceId": "e2c2c5c3-116c-4103-912a-556aff7f943d",
       "bytes": 8106
     },
     {
@@ -9955,5 +9955,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "0a424208b313a8730ca907e024976e955f89917f"
+  "sourceCommit": "4cf84386e500bbc27a5d9aa779833d856fb0e93f"
 }

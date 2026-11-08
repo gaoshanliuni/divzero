@@ -42,7 +42,7 @@ public final class BootAutomaticCiSmoke {
                 server.getPlayerList().placeNewPlayer(new dev.mineagent.runtime.neoforge.body.MineAgentConnection(),actor,net.minecraft.server.network.CommonListenerCookie.createInitial(profile,false));actor.connection.markClientLoaded();
                 var permissions=MineAgentRuntimeServices.permissions(server);permissions.setPlayerEnabled(actor.getUUID(),true);var config=MineAgentRuntimeServices.config(server);
                 require(dev.mineagent.runtime.core.config.PermissionConfig.apply(config,permissions,config.revision(),actor.getUUID(),Set.of(PermissionAction.RUN_CODE,PermissionAction.MANAGE_PACKAGES),true).accepted(),"BOOT_CI_GRANT");
-                UUID agent=MineAgentRuntimeServices.bodies(server).createPersistentAt("BOOT CI",actor.getUUID(),actor.level(),actor.position().add(3,0,0)).agentId();publish(actor,agent);
+                UUID agent=MineAgentRuntimeServices.bodies(server).createPersistentAt("BOOT_CI",actor.getUUID(),actor.level(),actor.position().add(3,0,0)).agentId();publish(actor,agent);
             }
             var runtime=ServerPackageRuntime.get(server);var job=runtime.generation(actor.getUUID(),operation).orElseThrow();var receipt=runtime.generatedActivation(actor,job);String status=receipt.get("status").toString();
             if(Set.of("PUBLISHED_BOOT_QUEUED","PUBLISHED_BOOT_BUILD_SUBMITTED","PUBLISHED_BOOT_INSTALL_SUBMITTED").contains(status))return;
