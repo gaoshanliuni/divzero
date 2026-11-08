@@ -28,6 +28,11 @@
       "bytes": 1911
     },
     {
+      "path": ".github/workflows/native-knowledge-compile.yml",
+      "resourceId": "36932ad2-f47d-4bbf-8263-167b3a595ec9",
+      "bytes": 2380
+    },
+    {
       "path": ".gitignore",
       "sha256": "a89e63b495b5cdab9b07e00d199845ac0c26f44785a81ef443b12632c3d19133",
       "bytes": 1092
@@ -1289,8 +1294,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeCoderContext.java",
-      "resourceId": "0a511054-6ae8-45fe-a6ed-75a7f1fdc123",
-      "bytes": 18549
+      "resourceId": "326211ef-f7b2-4d63-b1d8-2ac1bb6c7eed",
+      "bytes": 19646
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeCompilationSnapshot.java",
@@ -1304,13 +1309,13 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeKnowledgeArtifact.java",
-      "sha256": "a1babb456b93579831ec1d2a0b7e42a05b158fbb6a469686295b2d1a9cde24c3",
-      "bytes": 3412
+      "resourceId": "b423dfeb-f0de-4161-be1f-0ecb34ec94e5",
+      "bytes": 3978
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeKnowledgeStore.java",
-      "sha256": "2698d3c33860d84608742d05db655bd3398536628c219be033f98a8d50954cba",
-      "bytes": 14659
+      "resourceId": "6c5e9aff-bf76-4d78-9567-24c8e83d1a69",
+      "bytes": 16036
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/compile/NativeKnowledgeToolRequest.java",
@@ -3218,6 +3223,11 @@
       "bytes": 3373
     },
     {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeCoderContextTest.java",
+      "resourceId": "71b1280b-a698-4bb4-bd26-0d4ca1525345",
+      "bytes": 10590
+    },
+    {
       "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeCompilationIdentityTest.java",
       "resourceId": "e414e418-eda2-494e-b7fc-ec3b3d16491d",
       "bytes": 2785
@@ -3226,6 +3236,26 @@
       "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeGenerationContextTest.java",
       "resourceId": "99cf2d0b-5723-4d28-a053-cc068f4d3a80",
       "bytes": 9269
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeKnowledgeArtifactTest.java",
+      "resourceId": "32f283c2-1740-4c60-bb0e-3d7b23bb74ed",
+      "bytes": 953
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeKnowledgeIdentityTest.java",
+      "resourceId": "a4ec8cbb-17a3-48e9-a75e-e53c76ac9c47",
+      "bytes": 4037
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeKnowledgeStoreTest.java",
+      "resourceId": "884639d2-1665-460c-ade0-57f954a82fdf",
+      "bytes": 5478
+    },
+    {
+      "path": "core/src/test/java/dev/mineagent/runtime/core/compile/NativeKnowledgeToolRequestTest.java",
+      "resourceId": "66bb4e5b-6ecb-42b7-9a44-e37a9462173c",
+      "bytes": 2184
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/config/AgentMentionDisplayTest.java",
@@ -4159,8 +4189,8 @@
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "ecc32ee4-47f6-4807-b95a-a6180b212c9c",
-      "bytes": 36895
+      "resourceId": "a1372803-3b3e-4d0d-9061-ad052378be7b",
+      "bytes": 37570
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -6314,8 +6344,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeApiCatalog.java",
-      "resourceId": "dc4e953a-d5e5-40da-9e42-4d50057fda70",
-      "bytes": 36735
+      "resourceId": "5e37cd30-2ae9-4cd6-b755-31ae0b917ca3",
+      "bytes": 36933
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/compile/NativeApiSmokeServer.java",
@@ -9705,5 +9735,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "4e3c2d254227dcdddfaadb4f51b68e73e8f293f6"
+  "sourceCommit": "8233fdb335c6b5747573247339b98e6516e0bd43"
 }

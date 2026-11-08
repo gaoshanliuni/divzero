@@ -2,7 +2,8 @@ package dev.mineagent.runtime.core.compile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.mineagent.runtime.core.content.ContentAddressedStore;
-import dev.mineagent.runtime.core.packages.RuntimePackageCanonicalizer;
+import dev.mineagent.runtime.api.packages.ResourceIds;
+import dev.mineagent.runtime.core.content.ObservationTokens;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -12,8 +13,9 @@ import java.util.zip.*;
 public record NativeCoderContext(String snapshot,String environment,String physicalSide,String mappingStatus,List<Type> types,
         @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY) List<Method> methods,
         @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY) List<Source> sources,
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY) List<Overlay> overlays) {
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY) List<Overlay> overlays,String identity) {
     public static final int MAX_TYPES=16,MAX_BYTES=512*1024;
+    private static final ObservationTokens SELECTION_IDS=new ObservationTokens(4096,8L*1024*1024);
     private static final ObjectMapper JSON=new ObjectMapper().enable(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
     public record Type(String module,String moduleHash,String className){
         public Type{if(module==null||!module.matches("[A-Za-z0-9_.-]{1,160}")||!hash(moduleHash)||className==null||className.length()>512||className.isBlank()||className.contains("..")||className.contains("/")||className.contains("\\"))throw new IllegalArgumentException("NATIVE_CODER_TYPE");}
@@ -31,6 +33,7 @@ public record NativeCoderContext(String snapshot,String environment,String physi
         public Snapshot(String selectionHash,String sha256,int bytes){this(selectionHash,sha256,bytes,"");}
         public Snapshot{compilationSnapshot=compilationSnapshot==null?"":compilationSnapshot;if(!hash(selectionHash)||!hash(sha256)||bytes<1||bytes>MAX_BYTES||!compilationSnapshot.matches("(?:[a-f0-9]{64})?"))throw new IllegalArgumentException("NATIVE_CODER_CONTEXT_REF");}
     }
+    public NativeCoderContext(String snapshot,String environment,String physicalSide,String mappingStatus,List<Type> types,List<Method> methods,List<Source> sources,List<Overlay> overlays){this(snapshot,environment,physicalSide,mappingStatus,types,methods,sources,overlays,null);}
     public NativeCoderContext(String snapshot,String environment,String physicalSide,String mappingStatus,List<Type> types){this(snapshot,environment,physicalSide,mappingStatus,types,List.of(),List.of(),List.of());}
     public NativeCoderContext(String snapshot,String environment,String physicalSide,String mappingStatus,List<Type> types,List<Method> methods){this(snapshot,environment,physicalSide,mappingStatus,types,methods,List.of(),List.of());}
     public NativeCoderContext(String snapshot,String environment,String physicalSide,String mappingStatus,List<Type> types,List<Method> methods,List<Source> sources){this(snapshot,environment,physicalSide,mappingStatus,types,methods,sources,List.of());}
@@ -43,9 +46,13 @@ public record NativeCoderContext(String snapshot,String environment,String physi
         if(methods.size()>MAX_TYPES||methods.stream().distinct().count()!=methods.size()||methods.stream().anyMatch(m->!typeKeys.contains(m.module()+"\n"+m.className())))throw new IllegalArgumentException("NATIVE_CODER_METHOD_SELECTION");
         sources=sources==null?List.of():sources.stream().sorted(Comparator.comparing(Source::module).thenComparing(Source::className).thenComparing(Source::method).thenComparing(Source::descriptor)).toList();if(sources.size()>MAX_TYPES||sources.stream().distinct().count()!=sources.size()||sources.stream().anyMatch(s->!typeKeys.contains(s.module()+"\n"+s.className())))throw new IllegalArgumentException("NATIVE_CODER_SOURCE_SELECTION");
         overlays=overlays==null?List.of():overlays.stream().sorted(Comparator.comparing(Overlay::className).thenComparing(Overlay::provenance).thenComparing(Overlay::method).thenComparing(Overlay::descriptor)).toList();if(overlays.size()>MAX_TYPES||overlays.stream().distinct().count()!=overlays.size()||types.isEmpty()&&overlays.isEmpty()||types.size()+overlays.size()>MAX_TYPES)throw new IllegalArgumentException("NATIVE_CODER_OVERLAY_SELECTION");
+        if(identity==null||identity.isBlank())try{identity=SELECTION_IDS.token(JSON.writeValueAsString(Map.of("snapshot",snapshot,"environment",environment,"side",physicalSide,"mapping",mappingStatus,"types",types,"methods",methods,"sources",sources,"overlays",overlays)));}catch(Exception invalid){throw new IllegalArgumentException("NATIVE_CODER_SELECTION_ID",invalid);}
+        else ResourceIds.require(identity);
     }
     private static boolean hash(String value){return value!=null&&value.matches("[a-f0-9]{64}");}
-    public String fingerprint(){try{return RuntimePackageCanonicalizer.sha256(JSON.writeValueAsBytes(this));}catch(Exception e){throw new IllegalStateException("NATIVE_CODER_CONTEXT_HASH",e);}}
+    /** Serialized observation identity, not a digest of declarations or code. */
+    public String fingerprint(){return identity;}
+    public NativeCoderContext withIdentity(String id){return new NativeCoderContext(snapshot,environment,physicalSide,mappingStatus,types,methods,sources,overlays,id);}
     public static NativeCoderContext merge(List<NativeCoderContext> values){
         if(values==null||values.isEmpty()||values.size()>MAX_TYPES)throw new IllegalArgumentException("NATIVE_CODER_CONTEXT_MERGE");var first=values.getFirst();var types=new LinkedHashMap<String,Type>();var methods=new LinkedHashMap<String,Method>();
         var sources=new LinkedHashMap<String,Source>();var overlays=new LinkedHashMap<String,Overlay>();for(var value:values){if(value==null||!value.snapshot().equals(first.snapshot())||!value.environment().equals(first.environment())||!value.physicalSide().equals(first.physicalSide())||!value.mappingStatus().equals(first.mappingStatus()))throw new IllegalArgumentException("NATIVE_CODER_CONTEXT_MERGE");for(var type:value.types()){String key=type.module()+"\n"+type.className();var old=types.putIfAbsent(key,type);if(old!=null&&!old.equals(type))throw new IllegalArgumentException("NATIVE_CODER_CONTEXT_MERGE");}for(var method:value.methods())methods.putIfAbsent(method.module()+"\n"+method.className()+"\n"+method.name()+"\n"+method.descriptor(),method);for(var source:value.sources())sources.putIfAbsent(source.module()+"\n"+source.className()+"\n"+source.method()+"\n"+source.descriptor(),source);for(var overlay:value.overlays()){String key=overlay.className()+"\n"+overlay.method()+"\n"+overlay.descriptor();var old=overlays.putIfAbsent(key,overlay);if(old!=null&&!old.equals(overlay))throw new IllegalArgumentException("NATIVE_CODER_CONTEXT_MERGE");}}
@@ -90,7 +97,7 @@ public record NativeCoderContext(String snapshot,String environment,String physi
     public String read(Snapshot reference,ContentAddressedStore content)throws Exception {
         if(reference==null||!reference.selectionHash().equals(fingerprint()))throw new IllegalStateException("NATIVE_CODER_CONTEXT_CHANGED");byte[] bytes;try(var in=Files.newInputStream(content.pathFor(reference.sha256()))){bytes=in.readNBytes(MAX_BYTES+1);}
         if(bytes.length!=reference.bytes())throw new IllegalStateException("NATIVE_CODER_CONTEXT_CHANGED");var value=JSON.readTree(bytes);
-        if(value.path("schema").asInt()!=1||!JSON.treeToValue(value.path("selection"),NativeCoderContext.class).equals(this)||!value.path("kind").asText().equals(contextKind())||methods.isEmpty()!=value.path("methodImplementations").isMissingNode()||sources.isEmpty()!=value.path("sourceMappings").isMissingNode()||overlays.isEmpty()!=value.path("liveClasses").isMissingNode()||overlays.isEmpty()!=reference.compilationSnapshot().isEmpty())throw new IllegalStateException("NATIVE_CODER_CONTEXT_CHANGED");if(!reference.compilationSnapshot().isEmpty()&&!NativeCompilationSnapshot.read(content,reference.compilationSnapshot()).mappingStatus().equals("RAW_MODULE_RESOURCES_WITH_EXPLICIT_LIVE_OVERLAYS"))throw new IllegalStateException("NATIVE_CODER_CONTEXT_CHANGED");
+        if(value.path("schema").asInt()!=1||!JSON.treeToValue(value.path("selection"),NativeCoderContext.class).withIdentity(identity).equals(this)||value.path("selection").has("identity")&&!value.path("selection").path("identity").asText().equals(identity)||!value.path("kind").asText().equals(contextKind())||methods.isEmpty()!=value.path("methodImplementations").isMissingNode()||sources.isEmpty()!=value.path("sourceMappings").isMissingNode()||overlays.isEmpty()!=value.path("liveClasses").isMissingNode()||overlays.isEmpty()!=reference.compilationSnapshot().isEmpty())throw new IllegalStateException("NATIVE_CODER_CONTEXT_CHANGED");if(!reference.compilationSnapshot().isEmpty()&&!NativeCompilationSnapshot.read(content,reference.compilationSnapshot()).mappingStatus().equals("RAW_MODULE_RESOURCES_WITH_EXPLICIT_LIVE_OVERLAYS"))throw new IllegalStateException("NATIVE_CODER_CONTEXT_CHANGED");
         return StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT).decode(java.nio.ByteBuffer.wrap(bytes)).toString();
     }
     private String contextKind(){if(!overlays.isEmpty())return "SELECTED_RAW_AND_EXPLICIT_LIVE_OVERLAY_CONTEXT_NO_EXECUTION";if(!sources.isEmpty())return methods.isEmpty()?"SELECTED_RAW_CLASS_DECLARATIONS_AND_EXACT_SOURCE_MAPPINGS_NO_INITIALIZATION":"SELECTED_RAW_CLASS_DECLARATIONS_METHOD_IMPLEMENTATIONS_AND_EXACT_SOURCE_MAPPINGS_NO_INITIALIZATION";return methods.isEmpty()?"SELECTED_RAW_CLASS_DECLARATIONS_NO_BODIES_OR_INITIALIZATION":"SELECTED_RAW_CLASS_DECLARATIONS_AND_METHOD_IMPLEMENTATIONS_NO_INITIALIZATION";}
