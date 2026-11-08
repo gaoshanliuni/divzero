@@ -424,6 +424,7 @@ public final class ServerPackageRuntime implements AutoCloseable {
                                 generatedActivation.published(published,pack);
     }
     public Map<String,Object> generatedActivation(ServerPlayer viewer,PackageGenerationJob job)throws Exception{requireServerThread();return generatedActivation.inspect(viewer,job);}
+    public Map<String,Object> generatedResources(ServerPlayer viewer,Map<String,String> args)throws Exception{requireServerThread();if(args.isEmpty())return generatedActivation.clientResources(viewer);if(!args.keySet().equals(Set.of("operation","canonical","status","code")))throw new IllegalArgumentException("GENERATED_RESOURCE_ARGUMENTS");return generatedActivation.clientResult(viewer,UUID.fromString(args.get("operation")),args.get("canonical"),args.get("status"),args.get("code"));}
     public PackageGenerationJob cancel(UUID owner, UUID operation) throws Exception { requireServerThread(); return jobs.cancel(owner, operation); }
     public Optional<RuntimePackage> ownedPackage(UUID viewer, UUID packageId, long revision) {
         requireServerThread();

@@ -20,10 +20,14 @@ final class GeneratedContentActivation implements AutoCloseable {
     private final ServerPackageRuntime packages;
     private final SqliteRuntimeRepository db;
     private final UUID world;
+    private static final String CLIENT_QUEUE="generated_resource_pending";
+    record ClientResource(UUID operation,UUID owner,UUID packageId,long revision,String canonical,long runGeneration,long manageGeneration){}
+    private final Map<UUID,ClientResource> clientQueue=new LinkedHashMap<>();
     record Context(UUID owner,UUID agent,RuntimeInstanceLocation anchor,long runGeneration,long manageGeneration){}
     GeneratedContentActivation(MinecraftServer server,ServerPackageRuntime packages)throws Exception {
         this.server=server;this.packages=packages;world=MineAgentRuntimeServices.worldId(server);
         db=new SqliteRuntimeRepository(server.getServerDirectory().resolve("mineagent-runtime-data/runtime.db"));
+        for(var row:db.list(world,CLIENT_QUEUE)){var item=json.readValue(row.payload(),ClientResource.class);clientQueue.put(item.operation(),item);}
     }
     void capture(ServerPlayer player,PackageGenerationJob job)throws Exception {
         if(!job.purpose().equals("WORLD_CONTENT"))return;
@@ -80,7 +84,12 @@ final class GeneratedContentActivation implements AutoCloseable {
                     var result=runtime.submit(player,action,arguments);
                     save(job.operationId(),Map.of("status","PUBLISHED_LIFECYCLE_SUBMITTED","mode",pack.activationMode(),"operationId",action,"receipt",result,"executed",true,"replayAllowed",false));
                 }
-                case RESOURCE_RELOAD -> save(job.operationId(),Map.of("status","PUBLISHED_AWAITING_CLIENT_RESOURCE","mode",pack.activationMode(),"executed",false));
+                case RESOURCE_RELOAD -> {
+                    var item=new ClientResource(job.operationId(),job.ownerPlayerId(),pack.packageId(),pack.revision(),pack.canonicalSha256(),context.runGeneration(),context.manageGeneration());
+                    if(!db.compareAndSet(world,CLIENT_QUEUE,item.operation().toString(),0,json.writeValueAsString(item),System.currentTimeMillis()).accepted())throw new IllegalStateException("GENERATED_RESOURCE_QUEUE_CONFLICT");
+                    clientQueue.put(item.operation(),item);
+                    save(job.operationId(),Map.of("status","PUBLISHED_AWAITING_CLIENT_RESOURCE","mode",pack.activationMode(),"executed",false));
+                }
                 case BOOT_EXTENSION -> save(job.operationId(),Map.of("status","PUBLISHED_AWAITING_BOOT_PIPELINE","mode",pack.activationMode(),"executed",false));
                 default -> save(job.operationId(),Map.of("status","PUBLISHED_LIFECYCLE_REQUIRED","mode",pack.activationMode(),"executed",false));
             }
@@ -98,6 +107,28 @@ final class GeneratedContentActivation implements AutoCloseable {
             result.put("observation",NativeDataPackRuntime.get(server).read(player,Map.of("packageId",head.packageId().toString(),"packageRevision",Long.toString(head.revision()),"offset","0","operationId",result.get("operationId").toString())));
         }
         return Map.copyOf(result);
+    }
+    Map<String,Object> clientResources(ServerPlayer player)throws Exception{
+        var result=new ArrayList<ClientResource>();var config=MineAgentRuntimeServices.config(server);
+        for(var item:List.copyOf(clientQueue.values()))if(item.owner().equals(player.getUUID())){
+            var pack=packages.worldLibrary().get(item.packageId()).orElse(null);
+            if(!ServerAuthority.allowed(player,PermissionAction.RUN_CODE)||!ServerAuthority.allowed(player,PermissionAction.MANAGE_PACKAGES)
+                    ||item.runGeneration()!=config.permissionGeneration(player.getUUID(),PermissionAction.RUN_CODE)||item.manageGeneration()!=config.permissionGeneration(player.getUUID(),PermissionAction.MANAGE_PACKAGES)
+                    ||pack==null||pack.revision()!=item.revision()||!pack.canonicalSha256().equals(item.canonical())){
+                completeClient(item,"FAILED","GENERATED_RESOURCE_AUTHORITY_OR_SOURCE_CHANGED");continue;
+            }
+            result.add(item);if(result.size()==8)break;
+        }
+        return Map.of("requests",result,"scope","CURRENT_PLAYER_GENERATED_RESOURCE_PACKS");
+    }
+    Map<String,Object> clientResult(ServerPlayer player,UUID operation,String canonical,String status,String code)throws Exception{
+        var item=clientQueue.get(operation);if(item==null)return Map.of("status","ALREADY_RECORDED");
+        if(!item.owner().equals(player.getUUID())||!item.canonical().equals(canonical)||!Set.of("APPLIED","FAILED","UNKNOWN").contains(status)||code.length()>128)throw new SecurityException("GENERATED_RESOURCE_RECEIPT_SCOPE");
+        completeClient(item,status,code);return Map.of("status","RECORDED");
+    }
+    private void completeClient(ClientResource item,String status,String code)throws Exception{
+        save(item.operation(),Map.of("status",status.equals("APPLIED")?"PUBLISHED_CLIENT_ACTIVE":"PUBLISHED_CLIENT_"+status,"code",code,"observationSource","OWNER_CLIENT_RESOURCE_LIFECYCLE","executed",status.equals("APPLIED"),"replayAllowed",false));
+        var row=db.get(world,CLIENT_QUEUE,item.operation().toString());if(row.isPresent()&&!db.delete(world,CLIENT_QUEUE,item.operation().toString(),row.get().revision(),System.currentTimeMillis()).accepted())throw new IllegalStateException("GENERATED_RESOURCE_RECEIPT_CONFLICT");clientQueue.remove(item.operation());
     }
     public void close()throws Exception {db.close();}
 }

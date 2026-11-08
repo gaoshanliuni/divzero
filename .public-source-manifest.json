@@ -6239,8 +6239,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ClientResourcePacks.java",
-      "resourceId": "5fc10ede-f593-4df0-a1e5-be93385483e6",
-      "bytes": 19797
+      "resourceId": "e764e5ba-ddf0-4bcf-b508-7652943e4c77",
+      "bytes": 24462
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ClientScriptPackages.java",
@@ -7699,8 +7699,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "73a41a63-9a6f-46a4-917b-a25719bf04d4",
-      "bytes": 83985
+      "resourceId": "6532aec6-a519-427d-98ff-29bc4da0855a",
+      "bytes": 84092
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7909,8 +7909,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GeneratedContentActivation.java",
-      "resourceId": "80ebb58a-b648-4d33-a529-64a9ed193e06",
-      "bytes": 8967
+      "resourceId": "2f580e65-5d95-4551-81c3-d1b9a4048dbe",
+      "bytes": 12274
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GenerationRepairSmokeServer.java",
@@ -8229,8 +8229,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPackageRuntime.java",
-      "resourceId": "c5d44626-6f22-44e4-913f-ba51ab4f7c49",
-      "bytes": 73551
+      "resourceId": "d6650ac8-7f72-4b50-8537-1d4b89487c56",
+      "bytes": 74040
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerPreferences.java",
@@ -8294,8 +8294,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiRuntime.java",
-      "resourceId": "e04abee3-190e-47e0-b67b-05edd77fa3ca",
-      "bytes": 148883
+      "resourceId": "b03a581e-cc98-4178-b12b-fe5d6364b784",
+      "bytes": 149782
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerWorkspaceBackups.java",
@@ -9890,5 +9890,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "a2e4129f8dc5d635cffba88fd976ae8583406674"
+  "sourceCommit": "aedd6f82663f584e2e98eb4f019835c69fb44f21"
 }

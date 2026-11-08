@@ -14,10 +14,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BooleanSupplier;
 
-/** Client-only download and explicit local-machine resource activation. Never accepts an enable command from the server. */
+/** Client-owned resource lifecycle. Own newly generated packs auto-enable; ordinary downloads retain manual approval. */
 public final class ClientResourcePacks {
     private static final ExecutorService IO=Executors.newVirtualThreadPerTaskExecutor();
     private static final Set<Download> downloads=ConcurrentHashMap.newKeySet();private static volatile Download download;private static String downloadOutcome="";private static long downloadGeneration;private static LocalResourcePackStore.Job active;private static AutoCloseable permit;private static Pending finish;private static boolean recoveryHook;
+    private static boolean automaticPolling;private static long automaticAt;private static Object automaticConnection;
+    private record Automatic(UUID operation,UUID packageId,long revision,String canonical){}
     private record Pending(LocalResourcePackStore.Job job,boolean success,String code){}
     private static final class Download {
         final Session session;final Object connection;final UUID id;final long revision;final String canonical,server,fingerprint;final CompletableFuture<Map<String,Object>> future=new CompletableFuture<>();final long expires=System.currentTimeMillis()+120000;
@@ -112,6 +114,52 @@ public final class ClientResourcePacks {
         if(!json.valueToTree(selected).equals(json.readTree(values.getOrDefault("resourcePacks","null")))||!json.valueToTree(incompatible).equals(json.readTree(values.getOrDefault("incompatibleResourcePacks","null"))))throw new IllegalStateException("RESOURCE_PACK_OPTIONS_UNVERIFIED");
     }
     private static void complete(LocalResourcePackStore.Job job,boolean success,String code){try{store().finish(job,success,code);active=null;finish=null;}catch(Exception failure){active=job;finish=new Pending(job,success,code);}finally{if(permit!=null){try{permit.close();}catch(Exception ignored){}permit=null;}}}
-    public static void tick(){thread();for(var d:List.copyOf(downloads))current(d);if(finish!=null){var p=finish;complete(p.job(),p.success(),p.code());}}
+    public static void tick(){thread();for(var d:List.copyOf(downloads))current(d);if(finish!=null){var p=finish;complete(p.job(),p.success(),p.code());}automaticTick();}
+    private static void automaticTick(){
+        Object connection=mc().getConnection();if(connection!=automaticConnection){automaticConnection=connection;automaticPolling=false;automaticAt=0;}
+        if(connection==null||automaticPolling||busy()||!dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceConnection.ready()||System.currentTimeMillis()<automaticAt)return;
+        automaticAt=System.currentTimeMillis()+3000;automaticPolling=true;
+        UiClientSessions.command("package.generatedResources",Map.of(),UUID.randomUUID()).whenComplete((receipt,error)->mc().execute(()->{
+            if(mc().getConnection()!=connection)return;
+            try{
+                if(error!=null||receipt.code()!=Code.OBSERVED)return;
+                var list=com.google.gson.JsonParser.parseString(receipt.values().get("result")).getAsJsonObject().getAsJsonArray("requests");if(list.isEmpty())return;
+                var item=list.get(0).getAsJsonObject();var request=new Automatic(UUID.fromString(item.get("operation").getAsString()),UUID.fromString(item.get("packageId").getAsString()),item.get("revision").getAsLong(),item.get("canonical").getAsString());
+                automatic(request,connection);
+            }catch(Exception failure){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Generated resource observation failed: {}",failure.getClass().getSimpleName());}
+            finally{automaticPolling=false;}
+        }));
+    }
+    private static void automatic(Automatic request,Object connection)throws Exception {
+        var local=store();var previous=local.job(request.operation());
+        if(previous.isPresent()){
+            var job=previous.get();if(Set.of("PREPARING","DISPATCHING").contains(job.phase()))return;
+            if(job.phase().equals("COMPLETED")){
+                var asset=local.get(job.input().filename());
+                if(!selected().contains("file/"+asset.filename())){automaticResult(request,"FAILED","RESOURCE_PACK_SELECTION_CHANGED_AFTER_COMPLETION",connection);return;}
+                ManagedClientResourcePackGuard.trusted(asset);verifyResources(asset);
+            }
+            automaticResult(request,job.phase().equals("COMPLETED")?"APPLIED":job.phase(),job.code(),connection);return;
+        }
+        String server=serverId(),fingerprint=trust().trustedFingerprint(server);
+        var asset=local.list().stream().filter(a->a.serverId().equals(server)&&a.fingerprint().equals(fingerprint)&&a.manifest().packageId().equals(request.packageId())&&a.manifest().revision()==request.revision()&&a.manifest().canonicalSha256().equals(request.canonical())).findFirst();
+        if(asset.isEmpty()){
+            download(request.packageId(),request.revision(),request.canonical()).whenComplete((result,error)->mc().execute(()->{
+                if(mc().getConnection()!=connection)return;
+                if(error!=null||!"DOWNLOADED_NOT_APPROVED".equals(result.get("code"))){automaticResult(request,"FAILED",error==null?Objects.toString(result.get("code"),"RESOURCE_PACK_DOWNLOAD_FAILED"):code(error),connection);return;}
+                try{automatic(request,connection);}catch(Exception failed){automaticResult(request,"FAILED",code(failed),connection);}
+            }));return;
+        }
+        var selected=asset.get();
+        if(selected().contains("file/"+selected.filename())){ManagedClientResourcePackGuard.trusted(selected);verifyResources(selected);automaticResult(request,"APPLIED","RESOURCE_PACK_RELOADED_AND_OPTIONS_OBSERVED",connection);return;}
+        if(busy())return;var scope=webScope();
+        try{change(request.operation(),selected.filename(),"ENABLE",selected.revision(),selection(),ManagedClientResourcePackGuard.environment().fingerprint(),true,"own-generated-content",()->mc().getConnection()==connection&&scope.getAsBoolean());}
+        catch(Exception failure){if(store().job(request.operation()).isEmpty())automaticResult(request,"FAILED",code(failure),connection);}
+    }
+    private static void automaticResult(Automatic request,String status,String code,Object connection){
+        if(mc().getConnection()!=connection)return;
+        String safeCode=code==null?"RESOURCE_PACK_RESULT_UNKNOWN":code.substring(0,Math.min(code.length(),128));
+        UiClientSessions.command("package.generatedResources",Map.of("operation",request.operation().toString(),"canonical",request.canonical(),"status",status,"code",safeCode),UUID.randomUUID());
+    }
     public static String code(Throwable failure){while((failure instanceof CompletionException||failure instanceof ExecutionException)&&failure.getCause()!=null)failure=failure.getCause();String code=Objects.toString(failure.getMessage(),"");if(code.equals("SERVER_IDENTITY_NOT_TRUSTED"))return "RESOURCE_PACK_TRUST_REQUIRED";return code.matches("(?:RESOURCE_PACK|NATIVE_COMPATIBILITY|NATIVE_ENVIRONMENT)_[A-Z0-9_]{1,64}")?code:"RESOURCE_PACK_FAILED";}
 }

@@ -182,6 +182,12 @@ public final class ServerUiRuntime {
                 send(viewer, packet.requestId(), "session", sessions.interrupt(viewer.getUUID(), request.sessionId())); return;
             }
             if (!packet.channel().equals("command")) throw new IllegalArgumentException("UI_CHANNEL");
+            if(request.action().equals("package.generatedResources")){
+                restoreScope(viewer,request);var binding=sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow().binding();
+                if(!binding.ownerPackageId().equals(TRUSTED_SHELL_PACKAGE)||binding.actorKind()!=ActorKind.PLAYER||!binding.actorId().equals(viewer.getUUID()))throw new SecurityException("GENERATED_RESOURCE_TRUSTED_PANEL");
+                var access=sessions.checkRead(viewer.getUUID(),request,"package.preview");if(access!=Code.OK){send(viewer,packet.requestId(),"receipt",Receipt.of(request.operationId(),access));return;}
+                var values=ServerPackageRuntime.get(server).generatedResources(viewer,request.arguments());send(viewer,packet.requestId(),"receipt",new Receipt(request.operationId(),Code.OBSERVED,Map.of("result",json.writeValueAsString(values))));return;
+            }
             if(request.action().equals("files.transfer")){blueprintTransfer(viewer,packet.requestId(),request);return;}
             if(Set.of("workspace.read","workspace.write").contains(request.action())){workspaceModule(viewer,packet.requestId(),request);return;}
             if(Set.of("interface.read","interface.control").contains(request.action())){nativeInterfaces(viewer,packet.requestId(),request);return;}
