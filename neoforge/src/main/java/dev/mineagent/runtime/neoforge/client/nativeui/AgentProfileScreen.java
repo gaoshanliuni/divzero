@@ -42,6 +42,7 @@ public final class AgentProfileScreen extends NativeInputScreen {
     public void smokePeerTab(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");NativeBehaviorPanel.smokeClickElement(root,t("协作对话"),false);NativeBehaviorPanel.smokeClickElement(root,t("协作对话"),true);}
     public boolean smokePeerReady(boolean messages){return current()&&PeerDialoguePanel.smokeReady(agent.toString(),messages);}
     public void smokePeerOpenFirst(){if(!current())throw new IllegalStateException("PEER_UI_SCREEN_CHANGED");PeerDialoguePanel.smokeOpenFirst(agent.toString());}
+    public void smokePeerHeader(String label){if(!current())throw new IllegalStateException("PEER_UI_SCREEN_CHANGED");PeerDialoguePanel.smokeClick(agent.toString(),label);}
     UIElement smokeRoot(){if(!Boolean.getBoolean("mineagent.skillSmoke"))throw new IllegalStateException("SMOKE_DISABLED");return root;}
     private static String t(String text){return ClientLanguage.t(text);}
     private boolean current(){return connection==Minecraft.getInstance().getConnection()&&Minecraft.getInstance().screen==this;}

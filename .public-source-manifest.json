@@ -5334,8 +5334,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "032c4e90-9b8b-44ae-aa37-f1a3d1500812",
-      "bytes": 277318
+      "resourceId": "443ba5ce-8127-49a8-b007-06d985565473",
+      "bytes": 278342
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -5554,8 +5554,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",
-      "resourceId": "1b772cfe-1ca7-4846-a2ca-05e9200c4889",
-      "bytes": 20227
+      "resourceId": "075ba37f-db75-4a4b-bddc-4a48c6afd3c4",
+      "bytes": 20400
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
@@ -5899,8 +5899,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PeerDialoguePanel.java",
-      "resourceId": "f40c87d7-b11a-47b8-983d-e8ffdac3a4f6",
-      "bytes": 7200
+      "resourceId": "dab0b89f-d9c3-405e-bcd6-438bd6241698",
+      "bytes": 7633
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/PersonaLibraryBar.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "6abe84064cd82b78c23fb952f8d784b293d3f637"
+  "sourceCommit": "9f8f50b4e447050e818bccc1466bbaa62f48f515"
 }

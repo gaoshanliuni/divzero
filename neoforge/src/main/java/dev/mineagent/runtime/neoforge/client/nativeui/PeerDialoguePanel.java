@@ -22,6 +22,7 @@ final class PeerDialoguePanel {
     private PeerDialoguePanel(UIElement parent, String agent, BooleanSupplier current) { this.parent=parent;this.agent=agent;this.current=current;if(Boolean.getBoolean("mineagent.skillSmoke"))smoke=this;show(); }
     static boolean smokeReady(String agent,boolean messages){return Boolean.getBoolean("mineagent.skillSmoke")&&smoke!=null&&smoke.agent.equals(agent)&&smoke.current.getAsBoolean()&&(messages?smoke.renderedMessages:smoke.renderedThreads)>0;}
     static void smokeOpenFirst(String agent){if(!smokeReady(agent,false))throw new IllegalStateException("PEER_UI_NOT_READY");NativeBehaviorPanel.smokeClickElement(smoke.parent,t("查看对话"),false);NativeBehaviorPanel.smokeClickElement(smoke.parent,t("查看对话"),true);}
+    static void smokeClick(String agent,String label){if(!Boolean.getBoolean("mineagent.skillSmoke")||smoke==null||!smoke.agent.equals(agent)||!smoke.current.getAsBoolean())throw new IllegalStateException("PEER_UI_NOT_READY");NativeBehaviorPanel.smokeClickElement(smoke.parent,t(label),false);NativeBehaviorPanel.smokeClickElement(smoke.parent,t(label),true);}
     static void attach(UIElement parent, String agent, BooleanSupplier current) { new PeerDialoguePanel(parent,agent,current); }
     static void open(NativeWorkspaceScreen host, String agent) {
         if(agent.isBlank())return;var window=host.window("peer-dialogues-"+agent,t("协作对话"),600,400);window.body.clearAllChildren();
@@ -31,7 +32,7 @@ final class PeerDialoguePanel {
     private void show() {
         if(!current.getAsBoolean())return;long ticket=++epoch;renderedThreads=renderedMessages=0;parent.clearAllChildren();
         var top=WorkspacePanels.row();top.getLayout().height(25).flexShrink(0);parent.addChild(top);
-        top.addChild(NativeUiTheme.text(t("协作对话"),NativeUiTheme.ACCENT,11));
+        var heading=NativeUiTheme.text(t("协作对话"),NativeUiTheme.ACCENT,11);heading.getLayout().widthAuto().minWidth(0).flex(1);top.addChild(heading);
         top.addChild(NativeUiTheme.button(t("刷新"),this::show));
         if(!conversation.isBlank())top.addChild(NativeUiTheme.button(t("返回列表"),()->{conversation="";before=0;pages.clear();show();}));
         var notice=WorkspacePanels.text(t("读取 AI 间的真实消息…"));parent.addChild(notice);
