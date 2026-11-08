@@ -5489,8 +5489,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "432bde89-e8b6-49e6-b2ec-ebfc644efe00",
-      "bytes": 298226
+      "resourceId": "9495cf61-e069-4530-a1d1-6ba11012a9d5",
+      "bytes": 303269
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -6524,8 +6524,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/RuntimeCreatureEntity.java",
-      "resourceId": "4566a1df-6e34-46b7-9d67-9c8a39961d0d",
-      "bytes": 23589
+      "resourceId": "edb70325-214a-480b-aba4-a55fc2df2099",
+      "bytes": 24032
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/content/RuntimeCreatures.java",
@@ -7631,6 +7631,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityBudgetSmoke.java",
       "resourceId": "b629195e-bd21-464a-92b0-39f059f9f77b",
       "bytes": 7745
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityDeliverySmoke.java",
+      "resourceId": "9ef215e6-9fc7-46ba-8b94-feeb61c07933",
+      "bytes": 3644
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
@@ -9890,5 +9895,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "ea3ff88ceb00c62acca3ff224b3e7603a9d5f384"
+  "sourceCommit": "562751dd3ad88c686e2ae6ef51f0972dbce343d9"
 }
