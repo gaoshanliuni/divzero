@@ -67,6 +67,7 @@ public final class CapabilityBudgetSmoke {
         if(!active.state().equals("ACTIVE"))throw new IllegalStateException("CONTENT_FIXTURE_STOPPED_"+active);
         long items=stored.state().keySet().stream().filter(k->k.startsWith("_item.")).count();
         int objects=runtime.verifiedObjects(instance);boolean complete=stored.state().getOrDefault("completed","").equals("true");
+        if(complete)dev.mineagent.runtime.neoforge.body.NativeInventorySync.full(player);
         if(complete&&(items!=140||objects!=140||observedItems.size()!=140))throw new IllegalStateException("CONTENT_COUNT_NOT_VERIFIED_"+items+"_"+objects+"_"+observedItems.size());
         return Map.of("complete",complete,"itemDefinitions",items,"actualItemsObserved",observedItems.size(),"actualObjects",objects,"resources",runtime.resourceObservation());
     }
