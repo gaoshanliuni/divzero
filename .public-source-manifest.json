@@ -4179,8 +4179,8 @@
     },
     {
       "path": "docs/PROVIDER_BASE_URL_PRESETS.md",
-      "resourceId": "448e485f-8bf3-4d1b-b775-a2b955fefbec",
-      "bytes": 2873
+      "resourceId": "80cab691-4668-4c68-a613-fa826184ea3c",
+      "bytes": 3291
     },
     {
       "path": "docs/PUBLISHING.md",
@@ -9755,5 +9755,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "78f6150903aced5114289d860395f7de65359de7"
+  "sourceCommit": "93d0f682d85c0ba18eed3715e4cd8e352b0070c6"
 }
