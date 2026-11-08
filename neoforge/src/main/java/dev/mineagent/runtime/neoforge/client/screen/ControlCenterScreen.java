@@ -798,9 +798,8 @@ public final class ControlCenterScreen extends dev.mineagent.runtime.neoforge.cl
 
     private EditBox inlineProviderKey;private boolean clearInlineKey;private String confirmedProviderAddress="";
     private void addProviderControls(int contentX,int contentWidth){
-        int w=Math.min(400,contentWidth),cell=Math.max(36,(w-12)/4);
-        String[] urls={"https://api.deepseek.com/v1/","https://open.bigmodel.cn/api/paas/v4/","https://api.openai.com/v1/","http://localhost:11434/v1/"},labels={"DeepSeek","GLM","OpenAI","Ollama"};
-        for(int i=0;i<urls.length;i++){final int choice=i;addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{openAiBaseUrlDraft=urls[choice];openAiModelDraft=dev.mineagent.runtime.core.config.ProviderDefaults.model(openAiBaseUrlDraft);rebuildWidgets();}).bounds(contentX+i*(cell+4),108,cell,18).build());}
+        int w=Math.min(400,contentWidth);
+        addRenderableWidget(Button.builder(Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("地址模板")),b->dev.mineagent.runtime.neoforge.client.nativeui.ProviderAddressScreen.open(this,address->{openAiBaseUrlDraft=address;rebuildWidgets();})).bounds(contentX,108,w,18).build());
         addRenderableWidget(new StringWidget(contentX,134,38,18,Component.literal("URL"),font));
         EditBox url=new EditBox(font,contentX+42,134,w-42,20,Component.literal("API URL"));url.setMaxLength(2048);url.setValue(openAiBaseUrlDraft);url.setResponder(v->openAiBaseUrlDraft=v);addRenderableWidget(url);
         addRenderableWidget(new StringWidget(contentX,160,38,18,Component.literal(dev.mineagent.runtime.neoforge.client.language.ClientLanguage.t("模型")),font));

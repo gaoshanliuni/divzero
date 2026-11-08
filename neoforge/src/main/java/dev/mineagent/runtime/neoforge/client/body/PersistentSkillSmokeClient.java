@@ -893,6 +893,7 @@ public final class PersistentSkillSmokeClient {
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(mode.equals("cooperative_deepseek")){cooperativeDeepSeek();return;}
         if(mode.equals("native_travel")){nativeTravel();return;}
+        if(mode.equals("provider_presets")){waitFor("provider-presets-client-enabled",300,()->{if(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled())return CompletableFuture.completedFuture(true);dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.smokeEnable();return CompletableFuture.completedFuture(false);});action("provider-presets-native",()->dev.mineagent.runtime.neoforge.client.nativeui.ModelSettingsSmoke.runPresets(agent));return;}
         if(mode.equals("native_production")){nativeProduction();return;}
         if(mode.equals("cooperative_building")){cooperativeBuilding();return;}
         if(mode.equals("online_replay")){onlineReplay();return;}

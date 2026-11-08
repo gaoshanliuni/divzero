@@ -14,6 +14,13 @@ class ProviderModelCatalogTest {
   assertEquals("https://open.bigmodel.cn/api/paas/v4/models",ProviderModelCatalog.endpoint("https://open.bigmodel.cn/api/paas/v4/").toString());
   for(String base:new String[]{"file:///etc","https://user:password@example.test/v1/","https://example.test/v1/?key=x","https://example.test/#key"})assertThrows(IllegalArgumentException.class,()->ProviderModelCatalog.endpoint(base));
  }
+ @Test void officialPresetPathsAreRetainedForModelsAndChat(){
+  for(var preset:dev.mineagent.runtime.core.config.ProviderBaseUrls.ALL){
+   var base=java.net.URI.create(preset.baseUrl());var provider=new OpenAiCompatibleProvider(base,"fixture-only","custom-model",java.time.Duration.ofSeconds(2));
+   assertEquals(preset.baseUrl()+"models",ProviderModelCatalog.endpoint(preset.baseUrl()).toString());
+   assertEquals(preset.baseUrl()+"chat/completions",provider.baseUri.resolve("chat/completions").toString());
+  }
+ }
  @Test void metadataGetUsesBearerAndNeverRedirectsOrReturnsRawErrors()throws Exception{
   var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);var response=new AtomicReference<>("{\"data\":[{\"id\":\"z\"},{\"id\":\"a\"},{\"id\":\"z\"}]}");var status=new AtomicInteger(200);var calls=new AtomicInteger();var forwarded=new AtomicInteger();
   server.createContext("/v1/models",exchange->{calls.incrementAndGet();assertEquals("GET",exchange.getRequestMethod());assertEquals("Bearer test-private-key",exchange.getRequestHeaders().getFirst("Authorization"));if(status.get()==302)exchange.getResponseHeaders().add("Location","/destination");byte[] body=response.get().getBytes(StandardCharsets.UTF_8);exchange.sendResponseHeaders(status.get(),body.length);try(var out=exchange.getResponseBody()){out.write(body);}});
