@@ -45,7 +45,7 @@ public final class ScriptPreflight {
     // Only public, zero-argument AST data accessors are inspected; parent/target links
     // are excluded by the child's actual parent identity. No script Java is invoked.
     private static final ClassValue<java.util.List<java.lang.reflect.Method>> CHILD_GETTERS=new ClassValue<>() {
-        protected java.util.List<java.lang.reflect.Method> computeValue(Class<?> type){return java.util.Arrays.stream(type.getMethods()).filter(m->m.getParameterCount()==0&&m.getName().startsWith("get")&&(AstNode.class.isAssignableFrom(m.getReturnType())||Iterable.class.isAssignableFrom(m.getReturnType()))).toList();}
+        protected java.util.List<java.lang.reflect.Method> computeValue(Class<?> type){return java.util.Arrays.stream(type.getMethods()).filter(m->m.getDeclaringClass()!=Node.class&&m.getDeclaringClass()!=Jump.class&&m.getParameterCount()==0&&m.getName().startsWith("get")&&(AstNode.class.isAssignableFrom(m.getReturnType())||Iterable.class.isAssignableFrom(m.getReturnType()))).toList();}
     };
     private static void walk(AstNode root,NodeVisitor visitor){
         var pending=new ArrayDeque<AstNode>();var seen=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<AstNode,Boolean>());pending.add(root);

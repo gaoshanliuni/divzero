@@ -8809,8 +8809,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/preflight/ScriptPreflight.java",
-      "resourceId": "dc6ccceb-7e5a-4827-9272-bdf31ff0132b",
-      "bytes": 6318
+      "resourceId": "799e71d9-8282-481d-9264-d8cea148729e",
+      "bytes": 6388
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/studio/CodeDraftResult.java",
@@ -9805,5 +9805,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "1cae1703e938860139bbd50d6a1b2c3f58f31f3a"
+  "sourceCommit": "9170866fa5526d4f9124c0b8b6bf4cf716d267a2"
 }
