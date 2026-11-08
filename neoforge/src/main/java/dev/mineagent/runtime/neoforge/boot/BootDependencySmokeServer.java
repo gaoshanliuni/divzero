@@ -44,7 +44,7 @@ public final class BootDependencySmokeServer {
     private static GeneratedFile text(String path, String value, String media) throws Exception {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         return new GeneratedFile(path, RuntimeResourceSide.CLIENT, media,
-                RuntimePackageCanonicalizer.sha256(bytes), bytes);
+                dev.mineagent.runtime.api.packages.ResourceIds.create(), bytes);
     }
 
     private static RuntimePackage install(net.minecraft.server.MinecraftServer server, ServerPlayer viewer,
@@ -164,7 +164,7 @@ public final class BootDependencySmokeServer {
                                 + consumerPackage.canonicalSha256()), "BOOT_DEPENDENCY_RUNTIME_CALL");
                 Path consumerFile = Path.of(consumerProof.path());
                 var artifact = BootArtifact.inspect(NativeCompilationSnapshot.read(consumerFile,
-                        BootExtensionPlan.MAX_ARCHIVE));
+                        BootExtensionPlan.MAX_ARCHIVE),consumerProof.archiveHash());
                 var graph = artifact.metadata().dependencies();
                 require(graph != null && graph.nodes().size() == 1
                                 && graph.node(dependencyPackage.packageId()).artifact().equals(depProof.archiveHash()),

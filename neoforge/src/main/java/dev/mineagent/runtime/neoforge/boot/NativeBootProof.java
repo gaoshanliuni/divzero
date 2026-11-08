@@ -23,7 +23,7 @@ public final class NativeBootProof {
         if(image.proof()!=null){var receipt=root.resolve("receipts").resolve(image.proof().build()+".json");receipts.add(json.readValue(NativeCompilationSnapshot.read(receipt,1024*1024),BootInstallStore.Build.class));}
         else try(var files=java.nio.file.Files.newDirectoryStream(root.resolve("receipts"),"*.json")){for(var receipt:files){var build=json.readValue(NativeCompilationSnapshot.read(receipt,1024*1024),BootInstallStore.Build.class);if(build.artifact().equals(image.hash()))receipts.add(build);}}
         boolean approved=false;for(var build:receipts)if(build.artifact().equals(image.hash())&&build.modId().equals(modId)&&java.nio.file.Path.of(build.directory()).resolve(BootFiles.filename(build)).toRealPath().equals(file)&&build.manifest().equals(image.metadata().manifest())){
-            image.verify(Base64.getDecoder().decode(build.publicKey()),build.manifest().canonicalSha256(),build.nativeClasspath(),build.environment());approved=true;break;
+            image.verifyBuild(build);approved=true;break;
         }
         if(!approved||!dev.mineagent.runtime.core.packages.NativeCompatibilityPolicy.check(image.metadata().manifest(),dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe(),image.metadata().physicalSide()).allowed())throw new IllegalStateException("BOOT_LOADER_SOURCE_UNVERIFIED");
         return new Source(image.metadata(),file.toString(),image.hash());

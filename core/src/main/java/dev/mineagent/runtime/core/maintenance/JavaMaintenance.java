@@ -35,7 +35,10 @@ public final class JavaMaintenance {
     private static BootUpgradePlan approvedPlan(Path root,UUID operation,String requested)throws Exception{
         BootUpgradePlan approved;
         try(var database=java.sql.DriverManager.getConnection("jdbc:sqlite:"+root.resolve("boot-installs.db"));var query=database.prepareStatement("SELECT payload FROM boot_upgrades_v1 WHERE id=?")){
-            query.setString(1,operation.toString());try(var rows=query.executeQuery()){if(!rows.next())throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_MISSING");approved=JSON.readValue(rows.getString(1),BootInstallStore.Upgrade.class).input();}
+            query.setString(1,operation.toString());try(var rows=query.executeQuery()){
+                if(!rows.next())throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_MISSING");var stored=JSON.readValue(rows.getString(1),BootInstallStore.Upgrade.class);
+                if(!Set.of("WAIT_OFFLINE","APPLIED").contains(stored.phase()))throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_INACTIVE");approved=stored.input();
+            }
         }
         if(!approved.operation().equals(operation)||approved.schema()==2&&!approved.sha256().equals(requested))throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_CHANGED");
         byte[] actual=NativeCompilationSnapshot.read(child(directory(root.resolve("upgrades")),operation+".json"),16384);
@@ -53,8 +56,10 @@ public final class JavaMaintenance {
             if(action.equals("apply")&&Files.exists(child(plans,operation+".rollback.json"),LinkOption.NOFOLLOW_LINKS))throw new IllegalStateException("BOOT_UPGRADE_ALREADY_ROLLED_BACK");
             String wanted=action.equals("apply")?plan.nextArtifact():plan.previousArtifact(),before=action.equals("apply")?plan.previousArtifact():plan.nextArtifact();
             byte[] bytes=checked(child(cache,wanted+".jar"),wanted,BootExtensionPlan.MAX_ARCHIVE,cache);var artifact=BootArtifact.inspect(bytes,wanted);var m=artifact.metadata();
-            var wantedBuild=buildRecord(root,action.equals("apply")?plan.nextBuild():plan.previousBuild());artifact.verify(Base64.getDecoder().decode(wantedBuild.publicKey()),wantedBuild.manifest().canonicalSha256(),wantedBuild.nativeClasspath(),wantedBuild.environment());
-            var beforeBuild=buildRecord(root,action.equals("apply")?plan.previousBuild():plan.nextBuild());BootArtifact.inspect(checked(child(cache,before+".jar"),before,BootExtensionPlan.MAX_ARCHIVE,cache),before).verify(Base64.getDecoder().decode(beforeBuild.publicKey()),beforeBuild.manifest().canonicalSha256(),beforeBuild.nativeClasspath(),beforeBuild.environment());
+            UUID wantedId=action.equals("apply")?plan.nextBuild():plan.previousBuild(),beforeId=action.equals("apply")?plan.previousBuild():plan.nextBuild();
+            var wantedBuild=buildRecord(root,wantedId);var beforeBuild=buildRecord(root,beforeId);
+            if(!wantedBuild.id().equals(wantedId)||!beforeBuild.id().equals(beforeId)||!wantedBuild.directory().equals(plan.directory())||!beforeBuild.directory().equals(plan.directory()))throw new IllegalStateException("BOOT_UPGRADE_APPROVAL_CHANGED");
+            artifact.verifyBuild(wantedBuild);BootArtifact.inspect(checked(child(cache,before+".jar"),before,BootExtensionPlan.MAX_ARCHIVE,cache),before).verifyBuild(beforeBuild);
             if(!m.manifest().packageId().equals(plan.packageId())||!m.modId().equals(plan.modId())||!m.manifest().canonicalSha256().equals(action.equals("apply")?plan.nextCanonical():plan.previousCanonical()))throw new IllegalStateException("BOOT_UPGRADE_ARTIFACT_CHANGED");
             if(action.equals("apply")&&(m.replacement()==null||!m.replacement().build().equals(plan.previousBuild())||!m.replacement().artifact().equals(plan.previousArtifact())))throw new IllegalStateException("BOOT_UPGRADE_PREDECESSOR_CHANGED");
             dependencies(mods,artifact,plan.filename(),cache);Path target=child(mods,plan.filename()),receipt=child(plans,operation+"."+action+".json");String current=BootFiles.identity(target,cache);

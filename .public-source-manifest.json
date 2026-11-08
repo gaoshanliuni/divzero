@@ -19,8 +19,8 @@
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
-      "resourceId": "a2732218-2f72-4e07-b728-10a32aebc201",
-      "bytes": 3787
+      "resourceId": "dbce2b16-76a6-4972-a31c-3ff8148b9081",
+      "bytes": 3818
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -1214,8 +1214,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootArtifact.java",
-      "resourceId": "8f914a53-8928-47c4-9b36-3a09f1b6efb6",
-      "bytes": 10095
+      "resourceId": "5c50a786-7a2c-4fe9-b951-0893a8e3754e",
+      "bytes": 10680
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/boot/BootDependencyGraph.java",
@@ -2034,8 +2034,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/maintenance/JavaMaintenance.java",
-      "resourceId": "a0060910-58da-4458-8d51-2d22889e8bce",
-      "bytes": 16015
+      "resourceId": "fcdf124c-6ae3-416a-8cfd-e60c97b40592",
+      "bytes": 16252
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/media/MediaService.java",
@@ -3684,8 +3684,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/maintenance/JavaMaintenanceTest.java",
-      "sha256": "2fad10e329510ff7a1661be45ffb8719a9b89ca6eaf531bce125b8eeb746e15a",
-      "bytes": 6991
+      "resourceId": "b66010b9-59b9-49e6-961a-fad9a9e90e17",
+      "bytes": 11142
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/memory/DialogueMemoryStoreTest.java",
@@ -4169,8 +4169,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "efd3ca0b-8df4-4062-930e-affe72bcb2e5",
-      "bytes": 14997
+      "resourceId": "6b971745-30f4-44af-ac00-eca69697ab29",
+      "bytes": 15907
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -5314,33 +5314,33 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/BootDependencySmokeServer.java",
-      "sha256": "3f25f7cb6b471add61f808dc0af90ce3c1aa262d6f96cdb398fd22ae8d8cd012",
-      "bytes": 12665
+      "resourceId": "becce605-4f15-4b53-a7b9-4a1e6c792099",
+      "bytes": 12707
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/BootUpgradeSmokeServer.java",
-      "sha256": "ba37b390310be6906e59a546cca9eb850049bcfe77bb952c43255354534be087",
-      "bytes": 11152
+      "resourceId": "5c154b4f-a943-46ae-a59a-9957d9cb6a50",
+      "bytes": 11166
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootDependencies.java",
-      "resourceId": "e069d406-fb3d-48c9-949e-b100681cdf7e",
-      "bytes": 7480
+      "resourceId": "12d998dd-65e6-491d-a519-ea5ff2dfa898",
+      "bytes": 7378
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootProof.java",
-      "resourceId": "a486aa59-8f36-416f-a5b6-339bae377a95",
-      "bytes": 5744
+      "resourceId": "cb33c8d3-fd61-4ef6-9b28-22d113956cbf",
+      "bytes": 5630
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootRuntime.java",
-      "resourceId": "f0f69ca4-7555-4344-a973-360127e108c5",
-      "bytes": 23283
+      "resourceId": "239544e3-69ca-4a1b-b3c7-4d82ee63ad1f",
+      "bytes": 23260
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/boot/NativeBootUpgrades.java",
-      "resourceId": "54414b78-0604-483b-9492-2526806e0ef6",
-      "bytes": 10064
+      "resourceId": "4e04ee61-ec85-45f6-947b-79958279cc73",
+      "bytes": 9973
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/chat/AiChatMessages.java",
@@ -5909,8 +5909,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeLifecyclePanel.java",
-      "sha256": "f237c474ec910acea46a003201e4609b7f84598f1734c4e27c95d9c452aa28a5",
-      "bytes": 19674
+      "resourceId": "8c2fe694-9c5b-4ba7-880b-ccf13e423ee1",
+      "bytes": 19686
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeMigrationModelSmokeClient.java",
@@ -9910,5 +9910,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "88392d8c0d6b2780a4218235f7e4cc0e09d1561d"
+  "sourceCommit": "483787830ff957e8be2ac1f61782f5fef0c0a1c2"
 }

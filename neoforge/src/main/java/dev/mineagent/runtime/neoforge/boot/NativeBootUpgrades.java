@@ -17,7 +17,7 @@ final class NativeBootUpgrades {
     void publish(BootInstallStore.Upgrade upgrade,BooleanSupplier permit)throws Exception {
         var p=upgrade.input();var previous=store.get(p.previousBuild());var next=store.get(p.nextBuild());
         if(!mods.toString().equals(p.directory()))throw new IllegalStateException("BOOT_UPGRADE_DIRECTORY");
-        byte[] oldBytes=BootFiles.archive(mods.resolve(p.filename()),p.previousArtifact());var before=BootArtifact.inspect(oldBytes,p.previousArtifact());before.verify(Base64.getDecoder().decode(previous.publicKey()),p.previousCanonical(),previous.nativeClasspath(),previous.environment());
+        var before=BootFiles.inspect(mods.resolve(p.filename()),cache);before.verifyBuild(previous);byte[] oldBytes=BootFiles.archive(cache.resolve(p.previousArtifact()+".jar"),p.previousArtifact());
         var after=BootArtifact.inspect(BootFiles.archive(cache.resolve(p.nextArtifact()+".jar"),p.nextArtifact()),p.nextArtifact());after.verify(Base64.getDecoder().decode(next.publicKey()),p.nextCanonical(),next.nativeClasspath(),next.environment());
         if(after.metadata().replacement()==null||!after.metadata().replacement().build().equals(previous.id())||!after.metadata().modId().equals(p.modId()))throw new IllegalStateException("BOOT_UPGRADE_PROVENANCE");
         new NativeBootDependencies(store,mods).requireCurrent(next.manifest(),after.metadata().dependencies(),permit);

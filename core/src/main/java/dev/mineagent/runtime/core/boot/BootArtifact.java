@@ -57,6 +57,12 @@ public record BootArtifact(Metadata metadata,String hash,Set<String> classPackag
         verifySource(key,packageHash,snapshotHash,environment);
         if(metadata.schema()==2&&(proof==null||!Arrays.equals(key,Base64.getDecoder().decode(proof.publicKey()))||!IdentitySigner.verify(key,signedBytes,Base64.getDecoder().decode(proof.signature()))))throw new IllegalStateException("BOOT_ARTIFACT_SIGNATURE");
     }
+    /** Bind an archive to the exact persisted build, including its signing identity and operation. */
+    public void verifyBuild(BootInstallStore.Build build)throws Exception {
+        if(!hash.equals(build.artifact())||!metadata.manifest().equals(build.manifest())||!metadata.modId().equals(build.modId())
+                ||proof!=null&&!proof.build().equals(build.id()))throw new IllegalStateException("BOOT_BUILD_CONTEXT_CHANGED");
+        verify(Base64.getDecoder().decode(build.publicKey()),build.manifest().canonicalSha256(),build.nativeClasspath(),build.environment());
+    }
     public void verifySource(byte[] key,String packageHash,String snapshotHash,String environment)throws Exception {
         var pkg=metadata.manifest();if(!pkg.canonicalSha256().equals(packageHash)||!dev.mineagent.runtime.core.packages.PackageSignatures.verifyManifest(pkg,key))throw new IllegalStateException("BOOT_PACKAGE_SIGNATURE");
         if(!metadata.nativeClasspath().equals(snapshotHash)||metadata.schema()==2&&!metadata.environment().fingerprint().equals(environment))throw new IllegalStateException("BOOT_BUILD_CONTEXT_CHANGED");

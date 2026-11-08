@@ -65,8 +65,8 @@ public final class NativeBootRuntime implements AutoCloseable {
             for(var item:all.stream().skip(offset).limit(8).toList()){var b=store.get(item.id());String fileState="NOT_BUILT",loaded="NOT_LOADED";
                 if(!b.artifact().isEmpty()){
                     Path target=mods.resolve(BootFiles.filename(b));fileState=Files.exists(target,LinkOption.NOFOLLOW_LINKS)?"PRESENT_UNVERIFIED":"ABSENT";
-                    if(fileState.equals("PRESENT_UNVERIFIED")){try{BootFiles.archive(target,b.artifact());fileState="HASH_MATCHED";}catch(Exception invalid){fileState="FILE_CHANGED";}}
-                    else{Path disabled=target.resolveSibling(target.getFileName()+".disabled");if(Files.exists(disabled,LinkOption.NOFOLLOW_LINKS)){try{BootFiles.archive(disabled,b.artifact());b=store.observedOfflineRemoval(b.id());fileState="OFFLINE_DISABLED_HASH_MATCHED";}catch(Exception invalid){fileState="OFFLINE_DISABLED_CHANGED";}}}
+                    if(fileState.equals("PRESENT_UNVERIFIED")){try{var inspected=BootFiles.inspect(target,cache);inspected.verifyBuild(b);fileState="APPROVED_CONTENT_MATCHED";}catch(Exception invalid){fileState="FILE_CHANGED";}}
+                    else{Path disabled=target.resolveSibling(target.getFileName()+".disabled");if(Files.exists(disabled,LinkOption.NOFOLLOW_LINKS)){try{var inspected=BootFiles.inspect(disabled,cache);inspected.verifyBuild(b);b=store.observedOfflineRemoval(b.id());fileState="OFFLINE_DISABLED_CONTENT_MATCHED";}catch(Exception invalid){fileState="OFFLINE_DISABLED_CHANGED";}}}
                     var proof=NativeBootProof.get(b.modId());var info=net.neoforged.fml.ModList.get().getModFileById(b.modId());
                     if(info!=null){loaded="LOADER_PRESENT_UNVERIFIED";if(proof.isPresent()&&proof.get().packageId().equals(b.manifest().packageId())&&proof.get().canonical().equals(b.manifest().canonicalSha256())&&proof.get().archiveHash().equals(b.artifact())&&proof.get().path().equals(mods.resolve(BootFiles.filename(b)).toString()))loaded="LOADER_CONSTRUCTOR_RETURNED";}
                 }
@@ -115,7 +115,7 @@ public final class NativeBootRuntime implements AutoCloseable {
         try{io.execute(()->{boolean done=false;String error="";try{
             if(!permit.getAsBoolean())throw new IllegalStateException("BOOT_AUTHORITY_CHANGED");
             if(action.equals("INSTALL")){
-                byte[] bytes=BootFiles.archive(cache.resolve(b.artifact()+".jar"),b.artifact());var artifact=BootArtifact.inspect(bytes,b.artifact());artifact.verify(Base64.getDecoder().decode(b.publicKey()),b.manifest().canonicalSha256(),b.nativeClasspath(),b.environment());
+                byte[] bytes=BootFiles.archive(cache.resolve(b.artifact()+".jar"),b.artifact());var artifact=BootArtifact.inspect(bytes,b.artifact());artifact.verifyBuild(b);
                 dependencies.requireCurrent(b.manifest(),artifact.metadata().dependencies(),permit);upgrades.noOtherConflict(BootFiles.filename(b),artifact);
                 writeRecovery(b);BootFiles.publish(mods,BootFiles.filename(b),bytes,b.artifact(),permit);
             }else{dependencies.requireNotUsed(b.manifest().packageId(),"");BootFiles.remove(b,mods,cache,permit);}

@@ -40,7 +40,7 @@ final class NativeBootDependencies {
         if(candidates.isEmpty())throw new IllegalStateException("BOOT_DEPENDENCY_UNKNOWN_FILE");
         for(var owner:candidates.stream().map(BootInstallStore.Build::owner).distinct().toList())new NativeBootUpgrades(store,mods,store.root().resolve("cache")).reconcile(owner);
         var b=candidates.stream().map(v->store.get(v.id())).filter(v->Set.of("INSTALLED_PENDING_RESTART","UPGRADE_PREDECESSOR","FILE_STATE_UNKNOWN").contains(v.phase())).findFirst().orElseThrow(()->new IllegalStateException("BOOT_DEPENDENCY_NOT_APPROVED"));
-        image.verify(Base64.getDecoder().decode(b.publicKey()),b.manifest().canonicalSha256(),b.nativeClasspath(),b.environment());return new Installed(b,image,file);
+        image.verifyBuild(b);return new Installed(b,image,file);
     }
     void requireCurrent(RuntimePackage root,BootDependencyGraph graph,BooleanSupplier permit)throws Exception {
         var expected=graph==null?BootDependencyGraph.empty():graph;expected.require(root);var current=resolve(root,permit);

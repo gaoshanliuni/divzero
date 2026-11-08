@@ -57,7 +57,7 @@ public final class BootUpgradeSmokeServer {
     private static GeneratedFile file(String path, String value, String media) throws Exception {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         return new GeneratedFile(path, RuntimeResourceSide.CLIENT, media,
-                RuntimePackageCanonicalizer.sha256(bytes), bytes);
+                dev.mineagent.runtime.api.packages.ResourceIds.create(), bytes);
     }
 
     private static RuntimePackage install(net.minecraft.server.MinecraftServer server, ServerPlayer viewer)
