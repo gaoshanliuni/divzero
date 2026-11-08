@@ -47,8 +47,9 @@ public final class WorldGeometry {
         {"op":"mirror","axis":"x|z","pivot":[整数x,y,z]}对应坐标取反，同时翻转楼梯/门等原生BlockState。
         {"op":"array","count":[1..2048,1..2048,1..2048],"step":[整数x,y,z]}包含原件，网格阵列。
         {"op":"path","points":[三维点...],"spacing":正数,"orient":true}沿折线路径按弧长重复，包含起点；复制局部模板以[0,0,0]为锚，orient可按切向将模板+Z朝向旋转到最近90度。
-        连续曲线/曲面栅格化为方块近似，不是任意角度BlockState旋转。坐标局部±4096；最终包围盒每轴最多2048格（包含两端），即最大2048×2048×2048范围。不再设262144体素总量上限；大计划在后台写入磁盘、按分页/分Tick采样和执行，不全部装内存。磁盘不足、取消、未加载区块或世界高度外明确失败，不截断。工具轮数/累计调用数不限。
-        实際世界读取/写入分Tick，仅读写已加载区块且世界边界/高度合法；由 OP 或明确授予 EDIT_WORLD 的玩家编辑；允许创建默认空的原生 BlockEntity，继续禁止覆盖现有容器/机器，不支持通过几何字符串注入 NBT 或箱子物品。
+        连续曲线/曲面栅格化为方块近似，不是任意角度BlockState旋转。坐标局部±4096；最终包围盒每轴最多2048格（包含两端），即最大2048×2048×2048范围。不再设262144体素总量上限；大计划在后台写入磁盘、按分页/分Tick采样和执行，不全部装内存。磁盘不足、取消或世界高度外明确失败，不截断；未加载区块按服务器预算异步加载，资源不足时等待。工具轮数/累计调用数不限。
+        实際世界读取/写入分Tick，世界边界/高度必须合法；已加载区块直接处理，其余区块按任务申请非持久 Ticket、分 Tick 等待原生加载，完成/取消/失权后释放；由 OP 或明确授予 EDIT_WORLD 的玩家编辑；允许创建默认空的原生 BlockEntity，继续禁止覆盖现有容器/机器，不支持通过几何字符串注入 NBT 或箱子物品。
+        plan_world_geometry可在source之外传collision:{mode:SAFE|PLAYER_SAFE|CREATIVE|EXPLICIT,allow_types:[],allow_entities:[UUID],allow_regions:[[minX,minY,minZ,maxX,maxY,maxZ]]}。默认SAFE阻止所有活物重叠；PLAYER_SAFE/CREATIVE允许普通生物重叠，真实玩家仍保护。EXPLICIT允许指定类型、UUID或区域，真实玩家必须逐个UUID指定，不能用区域或类型统配。碰撞选择固定到计划且每次写入重查，不允许apply临时改策略；不会移动实体或授予无敌。
         计划绑定玩家/AI/维度/权限，完成采样后10分钟可启动、一次消费；大计划进行中不按这10分钟中断；包含实际旧状态和新状态计数、bounds、预览。apply重新核对旧状态，过期/变化拒绝；执行中变化/停止可能PARTIAL，绝不自动重放。
         回执包含写入计数及等待物理更新后的实际状态匹配数。放置成功不等于红石/流体机器工作；仍需inspect_blocks等待读回。inspect_world_geometry(plan_id,offset)可分页读取计划所有选中体素，offset为返回的持久游标，不能把分页当截断；旧的已完成计划缓存可能被新计划回收，实际写入回执仍在inspect_operations。
         示例：{"origin":[0,80,0],"parts":[{"kind":"box","min":[0,0,0],"max":[5,3,5],"mode":"walls","material":"minecraft:stone_bricks"},{"kind":"cylinder","center":[8,0,0],"radius":[2,2],"height":5,"material":{"mode":"stripe","states":["minecraft:stone","minecraft:andesite"],"axis":"y"}}]}

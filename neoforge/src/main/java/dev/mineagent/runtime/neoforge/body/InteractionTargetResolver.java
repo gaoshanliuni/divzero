@@ -82,7 +82,7 @@ public final class InteractionTargetResolver {
             if(usable)nodes.add(node);
         }
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
-        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator).searchBudget(NativeNavigationBudget.get(p.level().getServer())::searchNodes),nodes.stream().map(NativeTraversalEvaluator::point).toList());
+        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator).searchBudget(NativeNavigationBudget.get(player.level().getServer())::searchNodes),nodes.stream().map(NativeTraversalEvaluator::point).toList());
     }
     /** A courier clears the recipient's working reach after the actual pickup, using ordinary navigation. */
     public static Query handoffExit(ServerPlayer player,ServerPlayer recipient){
@@ -96,7 +96,7 @@ public final class InteractionTargetResolver {
             if(!player.level().noCollision(player,player.getDimensions(player.getPose()).makeBoundingBox(at).deflate(.0001)))continue;nodes.add(node);
         }}
         if(start==null||nodes.isEmpty())return new Query(evaluator,null,List.of());
-        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator).searchBudget(NativeNavigationBudget.get(p.level().getServer())::searchNodes),nodes.stream().map(NativeTraversalEvaluator::point).toList());
+        return new Query(evaluator,new SurfacePathfinder.Search(start,nodes::contains,n->0,evaluator).searchBudget(NativeNavigationBudget.get(player.level().getServer())::searchNodes),nodes.stream().map(NativeTraversalEvaluator::point).toList());
     }
     public static double handoffClearance(ServerPlayer recipient){return Math.max(2.5,Math.min(5,recipient.blockInteractionRange()+.5));}
     /** Candidate feet positions must allow a real attack; the target's occupied block is not a waypoint. */

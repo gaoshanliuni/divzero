@@ -3628,5 +3628,7 @@
   "高负载时导航时间预算（毫秒）": "Navigation time under high load (ms)",
   "空闲时导航时间预算（毫秒）": "Navigation time under low load (ms)",
   "导航调度目标 Tick 时间（毫秒）": "Target server tick time (ms)",
-  "几何存储磁盘安全余量（MiB）": "Geometry storage disk reserve (MiB)"
+  "几何存储磁盘安全余量（MiB）": "Geometry storage disk reserve (MiB)",
+  "几何任务同时加载区块预算": "Concurrent geometry chunk ticket budget",
+  "每 Tick 几何区块加载数量预算": "Geometry chunk loads per tick"
 }

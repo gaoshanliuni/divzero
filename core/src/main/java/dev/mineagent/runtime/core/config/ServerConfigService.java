@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import dev.mineagent.runtime.core.persistence.SqliteConfigRepository;
 import dev.mineagent.runtime.core.persistence.StoredConfig;
 import java.nio.file.Path;
@@ -182,6 +183,7 @@ public final class ServerConfigService implements AutoCloseable {
             if(ScriptResourceBudget.KEYS.contains(key))try{ScriptResourceBudget.from(Map.of(key,value));}catch(IllegalArgumentException invalid){errors.put(key,"服务器资源预算数值无效");}
             if(NavigationResourceBudget.KEYS.contains(key))validateRange(key,value,0,Integer.MAX_VALUE,"非负整数",errors);
             if(key.equals(dev.mineagent.runtime.core.geometry.GeometryDiskBudget.KEY))try{dev.mineagent.runtime.core.geometry.GeometryDiskBudget.reserve(Map.of(key,value));}catch(IllegalArgumentException invalid){errors.put(key,"服务器资源预算数值无效");}
+            if(Set.of("resources.geometry.chunkTickets","resources.geometry.chunkLoadsPerTick").contains(key))validateRange(key,value,0,Integer.MAX_VALUE,"非负整数",errors);
             switch (key) {
                 case ServiceCallBudget.DAILY, ServiceCallBudget.REQUEST, ServiceCallBudget.PAUSED, ServiceCallBudget.TASK -> {
                     try { ServiceCallBudget.from(Map.of(key,value)); }

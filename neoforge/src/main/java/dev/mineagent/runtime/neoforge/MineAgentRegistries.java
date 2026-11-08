@@ -38,6 +38,7 @@ public final class MineAgentRegistries {
             "agent_runtime",
             () -> new TicketType(0L, 15)
     );
+    public static final DeferredHolder<TicketType,TicketType> GEOMETRY_TICKET=TICKET_TYPES.register("geometry_runtime",()->new TicketType(0L,TicketType.FLAG_LOADING|TicketType.FLAG_SIMULATION));
     public static final DeferredBlock<BasketballHoopBlock> BASKETBALL_HOOP = BLOCKS.registerBlock(
             "basketball_hoop",
             BasketballHoopBlock::new,

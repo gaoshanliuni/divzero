@@ -1019,8 +1019,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "resourceId": "9dceadc3-2851-4c91-92cd-38602089a538",
-      "bytes": 328686
+      "resourceId": "da6694ff-c940-4a93-b92c-b00955b23f9e",
+      "bytes": 328849
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1474,8 +1474,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServerConfigService.java",
-      "resourceId": "94ba1b26-61e2-4453-ba3c-b33cd4748145",
-      "bytes": 18726
+      "resourceId": "85957e60-7a94-4446-919e-f160e74c1046",
+      "bytes": 18926
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServiceCallBudget.java",
@@ -1489,8 +1489,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/WebSettingsCatalog.java",
-      "resourceId": "539cb3e8-8222-4dfa-8dee-9cb6fa49c72b",
-      "bytes": 12023
+      "resourceId": "78603d33-70a9-424b-9a34-057f24054f9b",
+      "bytes": 12364
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
@@ -1609,8 +1609,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationTools.java",
-      "resourceId": "bcb32d49-9de8-4c67-ad8b-3e740e765af9",
-      "bytes": 79846
+      "resourceId": "25de6f18-6dd9-414f-b95f-b512bc44f82f",
+      "bytes": 80409
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/CooperationTools.java",
@@ -1918,6 +1918,11 @@
       "bytes": 2982
     },
     {
+      "path": "core/src/main/java/dev/mineagent/runtime/core/geometry/GeometryCollisionPolicy.java",
+      "resourceId": "e835b9de-6c9d-4053-b78f-c1aa06ab2e51",
+      "bytes": 3420
+    },
+    {
       "path": "core/src/main/java/dev/mineagent/runtime/core/geometry/GeometryDiagnostic.java",
       "sha256": "6e5fd25ad6bcbfcba1a1eab4fec51658238d6b6d32a545d139c8691897dbf308",
       "bytes": 1467
@@ -1939,8 +1944,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/geometry/WorldGeometry.java",
-      "resourceId": "301c4efb-3b59-44ec-af20-e93cfe35e28e",
-      "bytes": 28396
+      "resourceId": "e25671d9-30a6-4949-8615-bc9175ff7202",
+      "bytes": 29097
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/host/HostCommandRequest.java",
@@ -3614,8 +3619,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/geometry/WorldGeometryTest.java",
-      "sha256": "858fc56fee8c34abf5e5365080d0fb56b4bc4f2f25ce327dc147ab0d85b5f9ea",
-      "bytes": 6329
+      "resourceId": "7e1c5351-8640-4a40-a8da-97990003b123",
+      "bytes": 7581
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/host/HostCommandRequestTest.java",
@@ -5129,8 +5134,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRegistries.java",
-      "sha256": "85648af472d02b5697f4d9df33801abe0944263ef0c6644c95cfa345055ddffd",
-      "bytes": 8707
+      "resourceId": "ffce1890-04b9-4e6b-bb6e-94aec3599b01",
+      "bytes": 8902
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/MineAgentRuntimeMod.java",
@@ -5179,8 +5184,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/InteractionTargetResolver.java",
-      "resourceId": "85f48db9-17a5-43a8-af23-7f8d842d9016",
-      "bytes": 11061
+      "resourceId": "8aa35316-37e3-4e9e-a0e4-ff6b830c1305",
+      "bytes": 11071
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
@@ -7764,8 +7769,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationWorldGeometry.java",
-      "resourceId": "b73e67e0-4d01-4195-8cd7-c4a82f5dd5c3",
-      "bytes": 31159
+      "resourceId": "0ce68dfe-ee80-441d-a7ca-c32b2467ec3b",
+      "bytes": 33445
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CreateBlueprintReader.java",
@@ -7876,6 +7881,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GenericUiToolSmokeServer.java",
       "sha256": "b6a8af469dd9d2ff8a77880ffb67fe21b59330de0271b938e51d775b4cc1a540",
       "bytes": 10317
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/GeometryChunkLoading.java",
+      "resourceId": "66fa2587-d735-414d-977b-6dd35caa30b8",
+      "bytes": 3447
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/HudRestoreSmokeServer.java",
@@ -9835,5 +9845,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "5c4329a501cea47353166db451c74f09d367592b"
+  "sourceCommit": "24eff65b731335f0796e135b351ee58b467d0827"
 }

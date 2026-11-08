@@ -3,6 +3,20 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 class WorldGeometryTest {
+ @org.junit.jupiter.api.Test void collisionPolicyProtectsPlayersUnlessTheirUuidWasExplicitlyNamed()throws Exception{
+  var json=new com.fasterxml.jackson.databind.ObjectMapper();var id=java.util.UUID.randomUUID();
+  for(String mode:java.util.List.of("SAFE","PLAYER_SAFE","CREATIVE")){
+   var policy=GeometryCollisionPolicy.parse(json.readTree("{\"mode\":\""+mode+"\"}"));
+   org.junit.jupiter.api.Assertions.assertTrue(policy.blocks(true,"minecraft:player",id,0,0,0));
+   org.junit.jupiter.api.Assertions.assertEquals(mode.equals("SAFE"),policy.blocks(false,"minecraft:pig",id,0,0,0));
+  }
+  var policy=GeometryCollisionPolicy.parse(json.readTree("{\"mode\":\"EXPLICIT\",\"allow_types\":[\"minecraft:pig\"],\"allow_regions\":[[0,0,0,2,2,2]]}"));
+  org.junit.jupiter.api.Assertions.assertFalse(policy.blocks(false,"minecraft:pig",id,10,0,0));
+  org.junit.jupiter.api.Assertions.assertFalse(policy.blocks(false,"minecraft:zombie",id,1,1,1));
+  org.junit.jupiter.api.Assertions.assertTrue(policy.blocks(true,"minecraft:player",id,1,1,1));
+  var named=GeometryCollisionPolicy.parse(json.readTree("{\"mode\":\"EXPLICIT\",\"allow_entities\":[\""+id+"\"]}"));
+  org.junit.jupiter.api.Assertions.assertFalse(named.blocks(true,"minecraft:player",id,1,1,1));
+ }
     private WorldGeometry.Plan plan(String part){return WorldGeometry.parse("{\"origin\":[10,80,20],\"parts\":["+part+"]}");}
     private WorldGeometry.Plan shape(String props){return plan("{\"material\":\"minecraft:stone\","+props+"}");}
     private boolean has(WorldGeometry.Plan p,int x,int y,int z){return p.cells().stream().anyMatch(c->c.pos().equals(new WorldGeometry.Pos(10+x,80+y,20+z)));}
