@@ -38,6 +38,7 @@ public final class CapabilityBudgetSmoke {
         var model=new GeneratedFile("models/tiny.json",RuntimeResourceSide.COMMON,"application/json",ResourceIds.create(),MODEL.replace("\"version\":1","\"version\":1,\"texture\":\"models/checker.png\"").getBytes(StandardCharsets.UTF_8));
         var objectModel=new GeneratedFile("models/object.json",RuntimeResourceSide.COMMON,"application/json",ResourceIds.create(),MODEL.getBytes(StandardCharsets.UTF_8));
         byte[] png;try(var input=CapabilityBudgetSmoke.class.getResourceAsStream("/assets/mineagent_runtime/icon.png")){if(input==null)throw new IllegalStateException("FIXTURE_TEXTURE_MISSING");png=input.readAllBytes();}
+        var decoded=javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(png));if(decoded==null||decoded.getWidth()<1)throw new IllegalStateException("NATIVE_IMAGE_READER_UNAVAILABLE");
         var texture=new GeneratedFile("models/checker.png",RuntimeResourceSide.COMMON,"image/png",ResourceIds.create(),png);
         var definition=new RuntimeDefinition(UUID.randomUUID(),"Budget fixture",RuntimeDefinitionKind.ENTITY,"server",Set.of(model.path(),objectModel.path(),texture.path()),Map.of(),1);
         var environment=dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe();

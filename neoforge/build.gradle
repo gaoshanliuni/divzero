@@ -133,6 +133,12 @@ dependencies {
     jarJar 'org.jcodec:jcodec-javase:[0.2.5]'
     jarJar 'org.htmlunit:htmlunit:[4.13.0]'
     jarJar 'com.twelvemonkeys.imageio:imageio-webp:[3.12.0]'
+    // Jar-in-jar dependencies are explicit; publishing only the WebP SPI breaks ImageIO plugin discovery, including PNG reads.
+    jarJar 'com.twelvemonkeys.imageio:imageio-core:[3.12.0]'
+    jarJar 'com.twelvemonkeys.imageio:imageio-metadata:[3.12.0]'
+    jarJar 'com.twelvemonkeys.common:common-image:[3.12.0]'
+    jarJar 'com.twelvemonkeys.common:common-io:[3.12.0]'
+    jarJar 'com.twelvemonkeys.common:common-lang:[3.12.0]'
 
     if (project.hasProperty('ysmJar')) {
         localRuntime files(project.property('ysmJar'))

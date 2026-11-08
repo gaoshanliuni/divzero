@@ -5139,8 +5139,8 @@
     },
     {
       "path": "neoforge/build.gradle",
-      "resourceId": "84badc05-fd8f-4a87-a5da-3fbf665d9f10",
-      "bytes": 10386
+      "resourceId": "7b7aa43c-5548-4514-bfd0-7c804ec64355",
+      "bytes": 10816
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/CommandBlockLimitRuntime.java",
@@ -7629,8 +7629,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityBudgetSmoke.java",
-      "resourceId": "d242c292-b7bd-4407-9005-7b05bd278d3e",
-      "bytes": 7552
+      "resourceId": "b629195e-bd21-464a-92b0-39f059f9f77b",
+      "bytes": 7745
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
@@ -9890,5 +9890,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "efef719499f74ad00295fa9a244d592d28201ae0"
+  "sourceCommit": "249f46451e339d8e558e8eabcc59367b72dc97a2"
 }
