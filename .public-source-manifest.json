@@ -4054,8 +4054,8 @@
     },
     {
       "path": "docs/CONSTRUCTION_MOBILITY.md",
-      "resourceId": "975607d7-342b-4995-9787-6ebd39e1624f",
-      "bytes": 2688
+      "resourceId": "ed99cce6-5e89-4880-a312-af6916f7e166",
+      "bytes": 3090
     },
     {
       "path": "docs/COUNTERATTACK_UI_FUNCTIONS.md",
@@ -4154,13 +4154,13 @@
     },
     {
       "path": "docs/RECIPE_PEER_PRODUCTION.md",
-      "resourceId": "30b2510b-e43f-4957-a412-b1946ca45238",
-      "bytes": 3248
+      "resourceId": "74fa64b6-8bce-4ea5-a7e1-d8033d68376a",
+      "bytes": 4237
     },
     {
       "path": "docs/RESOURCE_COOPERATION_UPGRADE.md",
-      "resourceId": "41d4bd21-a61d-4e9d-a673-31d224edc120",
-      "bytes": 35842
+      "resourceId": "ecc32ee4-47f6-4807-b95a-a6180b212c9c",
+      "bytes": 36895
     },
     {
       "path": "docs/RESPONSE_LATENCY.md",
@@ -4216,6 +4216,11 @@
       "path": "docs/images/behavior-workspace.png",
       "sha256": "2068376431bf3b4e20c4d901c53a608245315327f5ddfe831005bf80dcd61d7a",
       "bytes": 350065
+    },
+    {
+      "path": "docs/images/deepseek-cooperative-room.png",
+      "resourceId": "f0daaf8f-5ceb-4a5a-9777-6a65df920297",
+      "bytes": 2250778
     },
     {
       "path": "docs/images/native-agent-inventory.png",
@@ -9700,5 +9705,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "b3d755a8e2735fbc2fb05703cf8f09e82d075bc1"
+  "sourceCommit": "4e3c2d254227dcdddfaadb4f51b68e73e8f293f6"
 }

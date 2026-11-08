@@ -211,3 +211,10 @@ A copied-world recovery trial then exposed `CooperationRuntime` starting before 
 The declared-order recovery reached 193 verified native placements, then stalled at an upper vertical corner log after surrounding taller wall panels had already enclosed its usable support face. The builder defended and resumed work several times but eventually died during the prolonged night; that failed world and combat evidence remain retained. No survival or completed-building claim is made from it. Native pre-write scheduling now uses actual resolved block states to build each component bottom-up and place vertical-axis supports before enclosing panels on the same layer. Geometry, materials and design version stay unchanged; schedules with world effects or operation references are not rewritten. The new ordering regression passed Actions 42422458479.
 
 Further production/construction recovery runs explicitly use peaceful difficulty and daytime as recorded fixture conditions. They retain survival inventory consumption, native placement, original AI-generated plans and all actual world checks; they are not combat acceptance tests. The original night failure is preserved. Room completion, final storage and peer-panel visual checks remain pending.
+
+
+### 2026-11-08 本次加工、协作对话与整屋联合验证通过
+
+原生恢复运行 `b030521a`（公开 `2c978437` / Actions `42436355925`）完成原 DeepSeek `partner_cabin` 第 2 版全部 289 次原生放置和真实材料消耗，14 项绑定本次版本与范围的实际检查全部通过，箱内读回完整四件钻石盔甲。19 个协作节点均为 COMPLETED。恢复未新增模型调用、未重放已完成加工；完整原始真实模型运行包含 19 次 DeepSeek 请求。和平难度仅用于隔离生产/施工验证，不宣称战斗中施工已验。
+
+协作聊天 `d798f223` 已在实际 UI4 的 AI 专属面板及 UI2 的 F2 完成真实消息读取、返回、刷新与截图核查。施工宽地面持续潜行和短缺口绕路的追加修复也已通过原生移动专项；完整数字与截图见配方协作指南和施工移动文档。以上是本次追加功能的通过结果，整批剩余主动摘要调用、原生多模态联验、完整双 Python 构建与正式发行仍未完成，主包未替换。
