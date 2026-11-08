@@ -26,6 +26,7 @@ public final class CapabilityBudgetSmoke {
           if(index<280)schedule(2,step);else content.state('completed','true');
         }
         on('instance.create',function(){content.state('automatic','true');schedule(2,step);});
+        on('instance.restore',function(){});
         """;
     private static void guard(){if(!Boolean.getBoolean("mineagent.skillSmoke")||!System.getProperty("mineagent.skillSmokeMode","").equals("capability_foundation"))throw new SecurityException("FIXTURE_DISABLED");}
     public static Map<String,Object> publish(ServerPlayer player,UUID agent)throws Exception {
@@ -42,7 +43,7 @@ public final class CapabilityBudgetSmoke {
         var environment=dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe();
         var compatibility=new NativeCompatibility(1,Map.of("SERVER",new NativeCompatibility.Target(environment.minecraft(),environment.loader(),environment.loaderVersion(),environment.namespace(),environment.javaFeature(),Map.of())));
         var parsed=new ParsedRuntimePackage("Budget fixture","1.0",RuntimePackageType.CONTENT,ActivationMode.HOT_RUNTIME,Map.of(),Set.of("RUN_CODE"),
-                Map.of("server",new RuntimeEntrypoint(code.path(),code.side(),code.sha256())),List.of(definition),List.of(code,model,objectModel,texture),compatibility);
+                Map.of("server",new RuntimeEntrypoint(code.path(),code.side(),code.sha256()),"server.restore",new RuntimeEntrypoint(code.path(),code.side(),code.sha256())),List.of(definition),List.of(code,model,objectModel,texture),compatibility);
         for(var file:parsed.files())runtime.worldContent().put(file.sha256(),file.content());
         var candidate=RuntimePackagePublisher.prepare(parsed,job.packageId(),MineAgentRuntimeServices.identity(server));
         var publish=ServerPackageRuntime.class.getDeclaredMethod("publishGenerated",PackageGenerationJob.class,RuntimePackage.class,String.class,String.class);publish.setAccessible(true);
