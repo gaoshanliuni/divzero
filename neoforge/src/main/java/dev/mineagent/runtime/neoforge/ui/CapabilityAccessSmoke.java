@@ -32,6 +32,9 @@ public final class CapabilityAccessSmoke {
         var entityArgs=JSON.createObjectNode().put("source",entitySource);var blockArgs=JSON.createObjectNode().put("source","{\"position\":[5,101,6],\"events\":[\"block_use\"]}");
         denied(()->ServerInteractionRules.set(player,UUID.randomUUID(),entityArgs,false));
         grant(player,Set.of(PermissionAction.EDIT_ENTITIES));
+        var effect=JSON.createObjectNode().put("action","set").put("effect","minecraft:glowing").put("expected_hash","ABSENT").put("level",1).put("duration_seconds",5);
+        ConversationEffectTools.change(player,effect);require(player.hasEffect(net.minecraft.world.effect.MobEffects.GLOWING),"NARROW_ENTITY_EFFECT_FAILED");
+
         ServerInteractionRules.set(player,UUID.randomUUID(),entityArgs,false);
         require(ServerInteractionRules.denied(player,null,pigs.getFirst(),"entity_use",false),"ENTITY_RULE_NOT_ACTIVE");
         denied(()->ServerInteractionRules.set(player,UUID.randomUUID(),blockArgs,false));

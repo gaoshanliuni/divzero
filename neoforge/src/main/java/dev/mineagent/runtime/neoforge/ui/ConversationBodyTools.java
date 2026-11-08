@@ -16,7 +16,7 @@ public final class ConversationBodyTools {
             if(!Set.of("move","look","sprint","sneak","select","drop","follow","stop","teleport_to_player").contains(action))throw new IllegalArgumentException("AGENT_BODY_ACTION");
             if(action.equals("move")||action.equals("look")){var target=a.path("target");if(!target.isArray()||target.size()!=3)throw new IllegalArgumentException("AGENT_BODY_TARGET");for(var part:target)if(!part.isNumber()||!Double.isFinite(part.doubleValue())||Math.abs(part.doubleValue())>30000000)throw new IllegalArgumentException("AGENT_BODY_TARGET");}
             if(action.equals("follow")&&!p.getUUID().equals(b.ownerPlayerId()))throw new SecurityException("AGENT_FOLLOW_OWNER_REQUIRED");
-            if(action.equals("teleport_to_player")&&!p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))throw new SecurityException("AGENT_TELEPORT_PERMISSION");
+            if(action.equals("teleport_to_player")&&!dev.mineagent.runtime.neoforge.task.ServerAuthority.allowed(p,dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES))throw new SecurityException("AGENT_TELEPORT_PERMISSION");
             if(Set.of("move","follow","stop","teleport_to_player").contains(action))dev.mineagent.runtime.neoforge.skill.SkillRuntime.cancelForBody(p,agent);
             if(b.taskControlOwned()&&!(action.equals("stop")&&(NativeAgentBlockActions.stop(p,agent)||NativeAgentPathBuilder.stop(p,agent))))throw new IllegalStateException("AGENT_BODY_TASK_OWNS_INPUT");
             if(Set.of("move","stop","teleport_to_player").contains(action)||action.equals("follow")){
@@ -30,7 +30,7 @@ public final class ConversationBodyTools {
                 case "drop"->{if(!a.path("whole_stack").isBoolean())throw new IllegalArgumentException("AGENT_BODY_BOOLEAN");if(!b.getMainHandItem().toString().equals(a.path("expected_item").asText()))throw new IllegalStateException("AGENT_BODY_ITEM_CHANGED");b.drop(a.path("whole_stack").booleanValue());}
                 case "stop"->{b.movementController().stop();b.setSprinting(false);}
                 case "follow"->{if(!p.getUUID().equals(b.ownerPlayerId()))throw new SecurityException("AGENT_FOLLOW_OWNER_REQUIRED");if(p.level()==b.level())b.movementController().moveTo(p.position());status="FOLLOWING";}
-                case "teleport_to_player"->{if(!p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))throw new SecurityException("AGENT_TELEPORT_PERMISSION");b.movementController().stop();if(!manager.changeDimension(agent,p.level(),p.position().add(1,0,0)))throw new IllegalStateException("AGENT_TELEPORT_FAILED");}
+                case "teleport_to_player"->{if(!dev.mineagent.runtime.neoforge.task.ServerAuthority.allowed(p,dev.mineagent.runtime.api.permission.PermissionAction.EDIT_ENTITIES))throw new SecurityException("AGENT_TELEPORT_PERMISSION");b.movementController().stop();if(!manager.changeDimension(agent,p.level(),p.position().add(1,0,0)))throw new IllegalStateException("AGENT_TELEPORT_FAILED");}
             }
             b.inventoryMenu.broadcastChanges();
         }

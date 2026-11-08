@@ -4184,8 +4184,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "b7209273-cc21-4cf1-aefb-106fa1de06d8",
-      "bytes": 18724
+      "resourceId": "b3ab54d9-5ebc-4279-a4c8-0a9faec0f0f1",
+      "bytes": 19170
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -7674,8 +7674,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityAccessSmoke.java",
-      "resourceId": "50bc521c-6bc9-4957-9c8f-702d8813b620",
-      "bytes": 6230
+      "resourceId": "be3d0c6e-749f-433c-8e33-a05436e56784",
+      "bytes": 6558
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityAdapterSmoke.java",
@@ -7764,8 +7764,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "a301058b-be99-4bb3-a4d7-b5d0102c077e",
-      "bytes": 84734
+      "resourceId": "3d631d2e-d045-4c9f-b155-49d5eff709fa",
+      "bytes": 84828
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -7779,8 +7779,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationBodyTools.java",
-      "sha256": "726d2abc392b43f1605bc68a04cc1ac776048b2b1b5bbbd3366824fe3fd61ad8",
-      "bytes": 5880
+      "resourceId": "8e16c27b-b190-4439-938e-62a099a49065",
+      "bytes": 5950
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationBuildSmokeServer.java",
@@ -7804,8 +7804,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationEffectTools.java",
-      "resourceId": "217327f0-a2bf-4cd0-bde0-eb00080200b9",
-      "bytes": 3810
+      "resourceId": "78f3f637-e59b-432e-b91a-886ba13bb62e",
+      "bytes": 3946
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationFeedbackSmokeServer.java",
@@ -8014,8 +8014,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeAgentBlockActions.java",
-      "sha256": "d75b8886137ae1901618564064a4866db1f3de241bcc9d54389fa4657c3c4ebc",
-      "bytes": 11567
+      "resourceId": "f9d8c766-ddd1-40c5-9ca7-e95407119fd4",
+      "bytes": 11602
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeAgentPathBuilder.java",
@@ -8174,8 +8174,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBulldozers.java",
-      "sha256": "e8c4870be2a8f68411ccafe396f985087c3a1dd0e381a0683656e059c46653dd",
-      "bytes": 12603
+      "resourceId": "94a67cc6-2717-4e5d-aea2-195de1f74542",
+      "bytes": 13261
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerChatAccess.java",
@@ -9955,5 +9955,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "2b4d126dba7e402873b1f699dec68e61790bad22"
+  "sourceCommit": "0a424208b313a8730ca907e024976e955f89917f"
 }
