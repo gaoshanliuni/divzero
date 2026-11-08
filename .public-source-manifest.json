@@ -7184,8 +7184,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "resourceId": "b22740b2-a375-4bc2-b559-e1b78959ef2f",
-      "bytes": 15299
+      "resourceId": "68f02f15-c6f4-4e1f-9095-fb6b71d6e034",
+      "bytes": 15370
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "accbc732bbf4a9b5e9eb63711e3e4d8b07f2de81"
+  "sourceCommit": "6f759690bf9dd7d6e39b1f3102a0123bae6d7f8c"
 }
