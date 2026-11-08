@@ -33,7 +33,7 @@ public final class ManagedScriptRuntime implements AutoCloseable {
     private final ArrayDeque<Environment> ready = new ArrayDeque<>();
     private final Set<Environment> queued = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
     private int callbacksThisTick;
-    private long nanosThisTick, completedCallbacks, pressureEvents;
+    private long nanosThisTick, completedCallbacks, pressureEvents,completedDeadlineOverruns;
     private long pendingCallbacks;
     private boolean draining;
 
@@ -49,7 +49,7 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         }
         return Map.of("loaded",environments.size(),"pendingCallbacks",pendingCallbacks,"readyScopes",ready.size(),
                 "callbacksThisTick",callbacksThisTick,"millisThisTick",nanosThisTick/1_000_000.0,
-                "completedCallbacks",completedCallbacks,"pressureEvents",pressureEvents,"softBudgetWarnings",warnings,"budget",budget);
+                "completedCallbacks",completedCallbacks,"pressureEvents",pressureEvents,"completedDeadlineOverruns",completedDeadlineOverruns,"softBudgetWarnings",warnings,"budget",budget);
     }
 
     private final Duration executionTimeout;
@@ -505,7 +505,9 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         private Object invoke(Function callback, Object[] values) {
             Context context = contexts.beginExecution();
             var result=invokeIn(context,callback,values);
-            if(System.nanoTime()>=((DeadlineContext)context).deadline)throw new ScriptTimeoutException();
+            // Java/native calls cannot be preempted by Rhino. Once the callback returned successfully,
+            // charge its real duration and defer further work; do not retroactively invalidate committed actions.
+            if(System.nanoTime()>=((DeadlineContext)context).deadline)runtime.completedDeadlineOverruns++;
             return result;
         }
         private Object invokeUntil(Function callback,Object[] values,long deadline){

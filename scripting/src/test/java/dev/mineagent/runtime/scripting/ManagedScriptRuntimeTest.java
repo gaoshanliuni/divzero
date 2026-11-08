@@ -12,6 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ManagedScriptRuntimeTest {
+    @Test void aCompletedNativeCallOverrunIsChargedWithoutDisablingItsScope()throws Exception{
+        var id=UUID.randomUUID();try(var runtime=new ManagedScriptRuntime(java.time.Duration.ofMillis(25))){
+            runtime.load(id,1,Map.of("main","on('native',function(){host.persist();});"),"main",Map.of("host",new SlowInitialization()));
+            runtime.fire("native",0);assertTrue(runtime.isLoaded(id));assertEquals(1L,runtime.resourceObservation().get("completedDeadlineOverruns"));
+        }
+    }
     @Test void aPartiallyDispatchedTickKeepsItsObservationAndCoalescesOnlyTheNextTick()throws Exception{
         var values=new ArrayList<Integer>();var id=UUID.randomUUID();try(var runtime=new ManagedScriptRuntime(java.time.Duration.ofSeconds(1))){
             runtime.configure(budget(1,20));runtime.load(id,1,Map.of("main","on('tick',function(v){host.accept(v);});on('tick',function(v){host.accept(v);});"),"main",Map.of("host",new Host(values,new TrackedResource())));

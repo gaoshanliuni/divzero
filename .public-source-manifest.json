@@ -5489,8 +5489,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "0ec562fb-7016-4229-9fb3-edd5bbb8f90f",
-      "bytes": 304392
+      "resourceId": "94ae0e2c-5e3a-49b1-8120-9d68c612afdf",
+      "bytes": 306659
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -7634,8 +7634,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityDeliverySmoke.java",
-      "resourceId": "9ef215e6-9fc7-46ba-8b94-feeb61c07933",
-      "bytes": 3644
+      "resourceId": "0036b60d-62b9-42cd-a975-61f4b46cf26a",
+      "bytes": 5172
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
@@ -8809,8 +8809,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/ManagedScriptRuntime.java",
-      "resourceId": "0138682c-2037-44b7-a801-f6cbf7428f74",
-      "bytes": 40836
+      "resourceId": "9670b4cd-11fa-4c46-bd8c-6388c7ea1068",
+      "bytes": 41136
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/RhinoScriptRuntime.java",
@@ -8994,8 +8994,8 @@
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/ManagedScriptRuntimeTest.java",
-      "resourceId": "cc8509ba-e320-4933-a882-f4b93fdbd841",
-      "bytes": 17445
+      "resourceId": "a6752e1a-c341-4aa2-a4f9-9fe12bb6125a",
+      "bytes": 17954
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/preflight/BrowserScriptPreflightTest.java",
@@ -9895,5 +9895,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "8f94a5d960021ba03ef569c7a2dbf3e6f8c79fbd"
+  "sourceCommit": "9a6ec10f1f74226f5647fd289b7b536d13793f5e"
 }
