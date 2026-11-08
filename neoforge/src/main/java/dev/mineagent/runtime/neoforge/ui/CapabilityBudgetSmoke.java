@@ -36,10 +36,8 @@ public final class CapabilityBudgetSmoke {
         var code=new GeneratedFile("server/main.js",RuntimeResourceSide.SERVER,"application/javascript",ResourceIds.create(),SCRIPT.getBytes(StandardCharsets.UTF_8));
         var model=new GeneratedFile("models/tiny.json",RuntimeResourceSide.COMMON,"application/json",ResourceIds.create(),MODEL.replace("\"version\":1","\"version\":1,\"texture\":\"models/checker.png\"").getBytes(StandardCharsets.UTF_8));
         var objectModel=new GeneratedFile("models/object.json",RuntimeResourceSide.COMMON,"application/json",ResourceIds.create(),MODEL.getBytes(StandardCharsets.UTF_8));
-        var image=new java.awt.image.BufferedImage(16,16,java.awt.image.BufferedImage.TYPE_INT_ARGB);
-        for(int x=0;x<16;x++)for(int y=0;y<16;y++)image.setRGB(x,y,(x/4+y/4)%2==0?0xffff3030:0xff3060ff);
-        var bytes=new java.io.ByteArrayOutputStream();javax.imageio.ImageIO.write(image,"png",bytes);
-        var texture=new GeneratedFile("models/checker.png",RuntimeResourceSide.COMMON,"image/png",ResourceIds.create(),bytes.toByteArray());
+        byte[] png;try(var input=CapabilityBudgetSmoke.class.getResourceAsStream("/assets/mineagent_runtime/icon.png")){if(input==null)throw new IllegalStateException("FIXTURE_TEXTURE_MISSING");png=input.readAllBytes();}
+        var texture=new GeneratedFile("models/checker.png",RuntimeResourceSide.COMMON,"image/png",ResourceIds.create(),png);
         var definition=new RuntimeDefinition(UUID.randomUUID(),"Budget fixture",RuntimeDefinitionKind.ENTITY,"server",Set.of(model.path(),objectModel.path(),texture.path()),Map.of(),1);
         var parsed=new ParsedRuntimePackage("Budget fixture","1.0",RuntimePackageType.CONTENT,ActivationMode.HOT_RUNTIME,Map.of(),Set.of("RUN_CODE"),
                 Map.of("server",new RuntimeEntrypoint(code.path(),code.side(),code.sha256())),List.of(definition),List.of(code,model,objectModel,texture));

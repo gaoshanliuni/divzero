@@ -4149,8 +4149,8 @@
     },
     {
       "path": "docs/CAPABILITIES_RESOURCE_BUDGETS.md",
-      "resourceId": "a48b755e-c572-4616-9cce-b51dd3b613e4",
-      "bytes": 5793
+      "resourceId": "8bec6747-4d88-48d7-b806-9b4ee171df87",
+      "bytes": 10213
     },
     {
       "path": "docs/CHAT_PLAYER_COMBAT_REPAIR.md",
@@ -6224,8 +6224,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/BuildingFilesClient.java",
-      "sha256": "b244f77caabc26a4ec97c3da153799c1279ad4d0bfac40fb49259716e6164660",
-      "bytes": 13976
+      "resourceId": "e286f038-c55d-44b0-818f-21f9518499f1",
+      "bytes": 16877
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ClientJavaCompiler.java",
@@ -7619,8 +7619,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityBudgetSmoke.java",
-      "resourceId": "7574d806-e44c-4386-ae65-53ebf124e266",
-      "bytes": 7094
+      "resourceId": "b81eb11f-fb75-4a1d-b76a-d1e8cab72510",
+      "bytes": 6989
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
@@ -7689,8 +7689,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAgentTools.java",
-      "resourceId": "2272749a-d915-428b-a0f0-dc0272929022",
-      "bytes": 83103
+      "resourceId": "d7f60948-0eb2-4c01-9d95-a4f2d04dad08",
+      "bytes": 83879
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationAutonomySmokeServer.java",
@@ -8083,9 +8083,14 @@
       "bytes": 6231
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBlueprintTransfer.java",
+      "resourceId": "1c8443e6-d08c-4379-872c-e8f94e8a8ca4",
+      "bytes": 4718
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildingFiles.java",
-      "resourceId": "d3a6a456-1d2a-4956-8c9f-33d15611a9e4",
-      "bytes": 24341
+      "resourceId": "fef215e3-8d22-477a-8b52-df32a57a71f6",
+      "bytes": 24516
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerBuildings.java",
@@ -8279,8 +8284,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerUiRuntime.java",
-      "resourceId": "ec48862c-bea3-4e06-a443-2b1dabc2fc7d",
-      "bytes": 146754
+      "resourceId": "e04abee3-190e-47e0-b67b-05edd77fa3ca",
+      "bytes": 148883
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerWorkspaceBackups.java",
@@ -9875,5 +9880,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "d1c2267bbff4a79c38eb020280140eb2a83ceb44"
+  "sourceCommit": "27783f12883714acee53c2016f98fd8ecfe22f86"
 }

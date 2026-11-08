@@ -164,7 +164,7 @@ public final class ConversationAgentTools {
         if(tool.equals("scan_blocks"))return scan(p,args,permit).thenApply(result->{ConversationDiamondSmokeServer.observe(result);return result;});
         if(tool.equals("web_search")||tool.equals("read_web_page"))return web(p,tool,args,permit);
         if(tool.equals("inspect_blocks"))return inspectBlocks(p,args,permit);
-        if(tool.equals("inspect_blueprints"))return inspectBlueprints(p,args,permit);
+        if(tool.equals("inspect_blueprints"))return inspectBlueprints(p,agent,args,permit);
         if(tool.equals("inspect_commands")){keys(args,"prefix","offset");if(!args.path("prefix").isTextual()||args.path("prefix").asText().length()>2048)throw new IllegalArgumentException("AGENT_TOOL_ARGUMENTS");return inspectCommands(p,args.path("prefix").asText(),args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0,permit);}
         Map<String,Object> value=switch(tool){
             case "read_command_output"->{keys(args,"output_id","offset");yield commandOutput(p,UUID.fromString(text(args,"output_id",36)),args.has("offset")?number(args,"offset",0,Integer.MAX_VALUE):0);}
@@ -385,9 +385,14 @@ public final class ConversationAgentTools {
             BuildingImportSmokeServer.web(tool,reply.payload());ConversationBuildSmokeServer.observeWeb(tool,reply.payload());future.complete(reply.payload());
         }));return future;
     }
-    private static CompletableFuture<Map<String,Object>> inspectBlueprints(ServerPlayer p,JsonNode a,BooleanSupplier permit){
+    private static CompletableFuture<Map<String,Object>> inspectBlueprints(ServerPlayer p,UUID agent,JsonNode a,BooleanSupplier permit){
         keys(a,"action","blueprint_id","expected_hash","offset","variant");var server=p.level().getServer();
-        if(!server.isSingleplayerOwner(p.nameAndId()))throw new SecurityException("BLUEPRINT_LOCAL_OWNER_REQUIRED");
+        if(!server.isSingleplayerOwner(p.nameAndId())){
+            dev.mineagent.runtime.neoforge.task.ServerAuthority.require(p,dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD);
+            var args=JSON.createObjectNode().put("offset",a.path("offset").asInt(0));boolean listing=a.path("action").asText().equals("list");
+            if(listing)args.put("query","");else{if(!a.path("action").asText().equals("read"))throw new IllegalArgumentException("BLUEPRINT_ACTION");args.put("file_id",text(a,"blueprint_id",36));}
+            return ServerBuildingFiles.read(p,agent,listing?"inspect_building_files":"inspect_building_file",args,permit).thenApply(value->{var result=new LinkedHashMap<String,Object>(value);result.put("scope","AUTHORIZED_UPLOADED_LIBRARY");result.put("nextTool","inspect_building_file / plan_building_import");return result;});
+        }
         String action=text(a,"action",16);int offset=a.has("offset")?number(a,"offset",0,131072):0,variant=a.has("variant")?number(a,"variant",0,63):0;
         String id=action.equals("read")?text(a,"blueprint_id",36):"",hash=a.has("expected_hash")&&!a.path("expected_hash").asText().isEmpty()?text(a,"expected_hash",64):"";var level=p.level();var game=server.getServerDirectory();var future=new CompletableFuture<Map<String,Object>>();
         CompletableFuture.supplyAsync(()->{try{return action.equals("list")?CreateBlueprintReader.list(game,offset):action.equals("read")?CreateBlueprintReader.read(game,id,hash,offset,variant):Map.<String,Object>of("status","REJECTED","error","BLUEPRINT_ACTION");}catch(Exception e){return Map.<String,Object>of("status","REJECTED","error",code(e));}},IO).whenComplete((value,error)->server.execute(()->{

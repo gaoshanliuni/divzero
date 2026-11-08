@@ -182,6 +182,7 @@ public final class ServerUiRuntime {
                 send(viewer, packet.requestId(), "session", sessions.interrupt(viewer.getUUID(), request.sessionId())); return;
             }
             if (!packet.channel().equals("command")) throw new IllegalArgumentException("UI_CHANNEL");
+            if(request.action().equals("files.transfer")){blueprintTransfer(viewer,packet.requestId(),request);return;}
             if(Set.of("workspace.read","workspace.write").contains(request.action())){workspaceModule(viewer,packet.requestId(),request);return;}
             if(Set.of("interface.read","interface.control").contains(request.action())){nativeInterfaces(viewer,packet.requestId(),request);return;}
             if(Set.of("behavior.read","behavior.write").contains(request.action())){behavior(viewer,packet.requestId(),request);return;}
@@ -320,6 +321,20 @@ public final class ServerUiRuntime {
                 send(viewer,packet,"receipt",write?sessions.complete(request,code,values):new Receipt(request.operationId(),code,values));
             }catch(Exception failure){send(viewer,packet,"receipt",new Receipt(request.operationId(),Code.FAILED,Map.of("errorCode","INTERFACE_RESULT_UNAVAILABLE")));}}));
         }catch(Exception error){var values=Map.of("errorCode",Objects.toString(error.getMessage(),"INTERFACE_FAILED"));send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}
+    }
+    private void blueprintTransfer(ServerPlayer viewer,UUID packet,Request request){
+        boolean begun=false;
+        try{
+            restoreScope(viewer,request);var binding=sessions.get(viewer.getUUID(),request.sessionId()).orElseThrow().binding();
+            if(!binding.ownerPackageId().equals(TRUSTED_SHELL_PACKAGE)||binding.actorKind()!=ActorKind.PLAYER||!binding.actorId().equals(viewer.getUUID()))throw new SecurityException("BUILDING_TRUSTED_PANEL_REQUIRED");
+            dev.mineagent.runtime.neoforge.task.ServerAuthority.require(viewer,dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD);
+            var reserved=sessions.begin(viewer.getUUID(),request,"world.inspect",true);if(reserved.code()!=Code.OK){send(viewer,packet,"receipt",reserved);return;}begun=true;
+            long generation=MineAgentRuntimeServices.config(server).permissionGeneration(viewer.getUUID(),dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD);
+            ServerBlueprintTransfer.handle(viewer,request.arguments(),()->sessions.checkRead(viewer.getUUID(),request,"world.inspect")==Code.OK&&generation==MineAgentRuntimeServices.config(server).permissionGeneration(viewer.getUUID(),dev.mineagent.runtime.api.permission.PermissionAction.EDIT_WORLD)).whenComplete((value,error)->server.execute(()->{
+                try{send(viewer,packet,"receipt",sessions.complete(request,error==null?Code.APPLIED:Code.FAILED,error==null?Map.of("result",json.writeValueAsString(value)):Map.of("errorCode",ServerBuildingFiles.error(error))));}
+                catch(Exception failure){send(viewer,packet,"receipt",sessions.complete(request,Code.FAILED,Map.of("errorCode","BUILDING_TRANSFER_RECEIPT_UNKNOWN")));}
+            }));
+        }catch(Exception failure){var values=Map.of("errorCode",Objects.toString(failure.getMessage(),"BUILDING_TRANSFER_FAILED"));send(viewer,packet,"receipt",begun?sessions.complete(request,Code.FAILED,values):new Receipt(request.operationId(),Code.FAILED,values));}
     }
     private void behavior(ServerPlayer viewer,UUID packet,Request request){
         boolean write=request.action().equals("behavior.write");boolean begun=false;
