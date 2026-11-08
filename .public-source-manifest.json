@@ -7629,8 +7629,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CapabilityBudgetSmoke.java",
-      "resourceId": "b81eb11f-fb75-4a1d-b76a-d1e8cab72510",
-      "bytes": 6989
+      "resourceId": "8948da66-c100-4279-97c2-d28b62012a9d",
+      "bytes": 7339
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/CaptureModelSmokeEvidence.java",
@@ -9890,5 +9890,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "3bcd30df5902fd481f1c1d1baada84cc045b45e3"
+  "sourceCommit": "a2e4129f8dc5d635cffba88fd976ae8583406674"
 }

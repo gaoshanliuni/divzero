@@ -39,8 +39,10 @@ public final class CapabilityBudgetSmoke {
         byte[] png;try(var input=CapabilityBudgetSmoke.class.getResourceAsStream("/assets/mineagent_runtime/icon.png")){if(input==null)throw new IllegalStateException("FIXTURE_TEXTURE_MISSING");png=input.readAllBytes();}
         var texture=new GeneratedFile("models/checker.png",RuntimeResourceSide.COMMON,"image/png",ResourceIds.create(),png);
         var definition=new RuntimeDefinition(UUID.randomUUID(),"Budget fixture",RuntimeDefinitionKind.ENTITY,"server",Set.of(model.path(),objectModel.path(),texture.path()),Map.of(),1);
+        var environment=dev.mineagent.runtime.neoforge.content.NativePackageCompatibility.observe();
+        var compatibility=new NativeCompatibility(1,Map.of("SERVER",new NativeCompatibility.Target(environment.minecraft(),environment.loader(),environment.loaderVersion(),environment.namespace(),environment.javaFeature(),Map.of())));
         var parsed=new ParsedRuntimePackage("Budget fixture","1.0",RuntimePackageType.CONTENT,ActivationMode.HOT_RUNTIME,Map.of(),Set.of("RUN_CODE"),
-                Map.of("server",new RuntimeEntrypoint(code.path(),code.side(),code.sha256())),List.of(definition),List.of(code,model,objectModel,texture));
+                Map.of("server",new RuntimeEntrypoint(code.path(),code.side(),code.sha256())),List.of(definition),List.of(code,model,objectModel,texture),compatibility);
         for(var file:parsed.files())runtime.worldContent().put(file.sha256(),file.content());
         var candidate=RuntimePackagePublisher.prepare(parsed,job.packageId(),MineAgentRuntimeServices.identity(server));
         var publish=ServerPackageRuntime.class.getDeclaredMethod("publishGenerated",PackageGenerationJob.class,RuntimePackage.class,String.class,String.class);publish.setAccessible(true);
