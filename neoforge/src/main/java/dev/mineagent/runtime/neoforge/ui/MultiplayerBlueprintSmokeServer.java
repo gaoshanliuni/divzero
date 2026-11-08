@@ -22,7 +22,7 @@ public final class MultiplayerBlueprintSmokeServer {
             if(++ticks>24000)throw new IllegalStateException("BLUEPRINT_MULTIPLAYER_TIMEOUT");
             if(finishAt>0){if(ticks>=finishAt){done=true;server.halt(false);}return;}
             if(!WorldIdentityRuntime.ready(server)){if(initialization==null)initialization=WorldIdentityRuntime.accept(server.createCommandSourceStack());if(initialization.isCompletedExceptionally())initialization.join();return;}
-            for(var player:server.getPlayerList().getPlayers()){
+            for(var player:List.copyOf(server.getPlayerList().getPlayers())){
                 String name=player.getGameProfile().name();if(!Set.of("BlueprintA","BlueprintB").contains(name))continue;
                 if(WorldActivationRuntime.state(player)!=dev.mineagent.runtime.core.permission.WorldActivation.State.ENABLED)continue;
                 if(player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))throw new IllegalStateException("BLUEPRINT_FIXTURE_PLAYER_IS_OP");

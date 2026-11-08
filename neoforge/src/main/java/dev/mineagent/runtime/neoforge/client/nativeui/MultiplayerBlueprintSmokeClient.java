@@ -19,6 +19,7 @@ public final class MultiplayerBlueprintSmokeClient {
     @SubscribeEvent public static void tick(ClientTickEvent.Post event){
         if(!Boolean.getBoolean("mineagent.multiplayerBlueprintSmoke")||done)return;
         try{
+            if(Files.exists(root().resolve("server-failure.json")))throw new IllegalStateException("DEDICATED_FIXTURE_FAILED");
             if(++ticks>12000)throw new IllegalStateException("BLUEPRINT_CLIENT_TIMEOUT_"+stage);
             if(Files.exists(root().resolve(name()+"-verified.json"))){Files.writeString(root().resolve(name()+"-client-result.json"),JSON.writeValueAsString(Map.of("status","PASS","actualGameConnection",true,"modelCalls",0)));done=true;mc().stop();return;}
             if(mc().player==null||mc().getConnection()==null)return;

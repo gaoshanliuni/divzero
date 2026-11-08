@@ -5794,8 +5794,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/MultiplayerBlueprintSmokeClient.java",
-      "resourceId": "a2be6bd1-57b8-454b-983f-6144db10c84f",
-      "bytes": 5834
+      "resourceId": "29befb9b-d9c7-4bcb-998c-db0c707112ec",
+      "bytes": 5962
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeApiPanel.java",
@@ -8014,8 +8014,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/MultiplayerBlueprintSmokeServer.java",
-      "resourceId": "b594a94b-c502-43b3-ab13-55495522dd08",
-      "bytes": 5694
+      "resourceId": "8501baa5-9ae8-4ff2-9769-3c79fa095913",
+      "bytes": 5707
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/NativeAcceptanceSmoke.java",
@@ -9965,5 +9965,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "8d32459d471326fc576540b89a796929edc8e9cb"
+  "sourceCommit": "b544986f5294271b7dca4a1c5dcb09958915bea1"
 }
