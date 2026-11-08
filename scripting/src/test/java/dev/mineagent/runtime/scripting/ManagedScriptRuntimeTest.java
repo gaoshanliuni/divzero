@@ -12,6 +12,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ManagedScriptRuntimeTest {
+    @Test void aPartiallyDispatchedTickKeepsItsObservationAndCoalescesOnlyTheNextTick()throws Exception{
+        var values=new ArrayList<Integer>();var id=UUID.randomUUID();try(var runtime=new ManagedScriptRuntime(java.time.Duration.ofSeconds(1))){
+            runtime.configure(budget(1,20));runtime.load(id,1,Map.of("main","on('tick',function(v){host.accept(v);});on('tick',function(v){host.accept(v);});"),"main",Map.of("host",new Host(values,new TrackedResource())));
+            runtime.fire("tick",1);runtime.fire("tick",2);runtime.fire("tick",3);
+            runtime.tick(1);runtime.tick(2);runtime.tick(3);assertEquals(List.of(1,1,3,3),values);
+            runtime.configure(budget(0,1));org.junit.jupiter.api.Assertions.assertDoesNotThrow(()->runtime.fire("tick",4));assertTrue(runtime.isLoaded(id));
+        }
+    }
     @Test void creationHandlerDiscoveryDoesNotRequireARestoreSubscription()throws Exception{
         var id=UUID.randomUUID();var values=new ArrayList<Integer>();try(var runtime=new ManagedScriptRuntime()){
             runtime.load(id,1,Map.of("main","on('instance.create',function(){host.accept(1);});"),"main",Map.of("host",new Host(values,new TrackedResource())));

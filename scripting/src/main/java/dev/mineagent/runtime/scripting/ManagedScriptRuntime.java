@@ -169,11 +169,11 @@ public final class ManagedScriptRuntime implements AutoCloseable {
         // Tick observations may coalesce; ordinary events retain each accepted callback exactly once.
         boolean coalesce=Set.of("tick","server.tick","client.tick").contains(event);
         var targets=environments.values().stream().filter(e->!e.suspended).toList();
-        long added=targets.stream().mapToLong(e->coalesce&&e.pendingTicks.containsKey(event)?0:e.handlers.getOrDefault(event,List.of()).size()).sum();
-        if(pendingCallbacks+added>budget.pendingCallbacks()) {pressureEvents++;throw new IllegalStateException("SCRIPT_QUEUE_PRESSURE_NOT_ENQUEUED");}
+        long added=targets.stream().mapToLong(e->coalesce&&e.pendingTicks.containsKey(event)&&e.pendingTicks.get(event).index==0?0:e.handlers.getOrDefault(event,List.of()).size()).sum();
+        if(pendingCallbacks+added>budget.pendingCallbacks()) {pressureEvents++;if(coalesce)return;throw new IllegalStateException("SCRIPT_QUEUE_PRESSURE_NOT_ENQUEUED");}
         for(var e:targets) {
             var existing=coalesce?e.pendingTicks.get(event):null;
-            if(existing!=null) {existing.values[0]=payload;continue;}
+            if(existing!=null&&existing.index==0) {existing.values[0]=payload;continue;}
             var callbacks=List.copyOf(e.handlers.getOrDefault(event,List.of()));
             if(callbacks.isEmpty())continue;
             var dispatch=new Dispatch(event,callbacks,new Object[]{payload});

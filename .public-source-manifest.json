@@ -8809,8 +8809,8 @@
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/ManagedScriptRuntime.java",
-      "resourceId": "75c11093-8917-4177-8d1a-3f61a1fea36a",
-      "bytes": 40762
+      "resourceId": "0138682c-2037-44b7-a801-f6cbf7428f74",
+      "bytes": 40836
     },
     {
       "path": "scripting/src/main/java/dev/mineagent/runtime/scripting/RhinoScriptRuntime.java",
@@ -8994,8 +8994,8 @@
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/ManagedScriptRuntimeTest.java",
-      "resourceId": "a690e98d-a280-43a6-9472-d5c448031d63",
-      "bytes": 16618
+      "resourceId": "cc8509ba-e320-4933-a882-f4b93fdbd841",
+      "bytes": 17445
     },
     {
       "path": "scripting/src/test/java/dev/mineagent/runtime/scripting/preflight/BrowserScriptPreflightTest.java",
@@ -9895,5 +9895,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "713cfd2cfe57d9b6e05ccfba698ceb76d937bdb6"
+  "sourceCommit": "8f94a5d960021ba03ef569c7a2dbf3e6f8c79fbd"
 }
