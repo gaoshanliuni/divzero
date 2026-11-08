@@ -68,7 +68,12 @@ public final class ClientResourcePacks {
     private static void fail(Download d,Throwable failure){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.warn("Client resource-pack download failed code={} type={}",code(failure),failure.getClass().getSimpleName(),failure);fail(d,code(failure));}
     private static void fail(Download d,String code){if(!downloads.contains(d))return;release(d);removed(d);d.future.complete(Map.of("code",code));}
     public static void cancelDownload(){thread();var d=download;if(d!=null)fail(d,"RESOURCE_PACK_DOWNLOAD_CANCELLED");}
-    private static List<String> selected(){return mc().getResourceManager().listPacks().map(PackResources::packId).toList();}
+    private static List<String> selected(){
+        // KubeJS/NeoForge inject virtual and hidden child resources into the running manager.
+        // Only repository roots can be selected, persisted to options, and compared after reload.
+        var repository=mc().getResourcePackRepository();var roots=repository.getSelectedPacks().stream().filter(pack->!pack.isHidden()).map(net.minecraft.server.packs.repository.Pack::getId).collect(java.util.stream.Collectors.toSet());
+        return mc().getResourceManager().listPacks().map(PackResources::packId).filter(roots::contains).distinct().toList();
+    }
     private static final dev.mineagent.runtime.core.content.ObservationTokens SELECTION_IDS=new dev.mineagent.runtime.core.content.ObservationTokens(256,1024*1024);
     private static String selection()throws Exception{return SELECTION_IDS.token(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(selected()));}
     private static boolean busy(){return active!=null||download!=null||mc().getOverlay()!=null||((dev.mineagent.runtime.neoforge.mixin.client.ResourceReloadAccess)mc()).mineagent$pendingReload()!=null;}

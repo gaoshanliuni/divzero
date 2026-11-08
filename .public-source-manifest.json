@@ -6239,8 +6239,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ClientResourcePacks.java",
-      "resourceId": "5022f18b-866b-4d15-bde0-497be5c5e24e",
-      "bytes": 25198
+      "resourceId": "8634c997-ef1b-4832-a4ef-a5a046dbf30b",
+      "bytes": 25678
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/webui/ClientScriptPackages.java",
@@ -9895,5 +9895,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "d39023e0c320516f0035a0a6382177bf8c8159f4"
+  "sourceCommit": "d27be81c3a1cf882186588d134fc46d16be743e9"
 }
