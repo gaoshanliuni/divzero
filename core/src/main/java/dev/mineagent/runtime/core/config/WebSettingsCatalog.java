@@ -8,6 +8,11 @@ public final class WebSettingsCatalog {
     private WebSettingsCatalog(){}
     public record Field(String key,String label,String group,String type,String fallback,PermissionAction permission){}
     public static final List<Field> FIELDS=List.of(
+        new Field(ContentResourceBudget.PREFIX+"physicsSlices","每 Tick 对象模拟数量预算","服务器资源预算","number","256",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ContentResourceBudget.PREFIX+"physicsMillis","每 Tick 对象模拟时间预算（毫秒）","服务器资源预算","number","2",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ContentResourceBudget.PREFIX+"activeRadius","对象活跃距离（格）","服务器资源预算","number","128",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ContentResourceBudget.PREFIX+"modelCacheMiB","模型资源缓存预算（MiB）","服务器资源预算","number","64",PermissionAction.MANAGE_PERMISSIONS),
+        new Field(ContentResourceBudget.PREFIX+"instanceCacheMiB","实例状态缓存预算（MiB）","服务器资源预算","number","64",PermissionAction.MANAGE_PERMISSIONS),
         new Field("provider.openai.role.chat","对话模型（留空沿用 AI 当前模型）","任务模型","text","",PermissionAction.MANAGE_PROVIDERS),
         new Field("provider.openai.role.research","资料分析模型（留空沿用 AI 当前模型）","任务模型","text","",PermissionAction.MANAGE_PROVIDERS),
         new Field("provider.openai.role.code","代码生成模型（留空沿用 AI 当前模型）","任务模型","text","",PermissionAction.MANAGE_PROVIDERS),

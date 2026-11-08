@@ -26,19 +26,11 @@ public record RuntimeInstance(
         if (definitionRevision < 1 || stateSchemaVersion < 1 || revision < 1) {
             throw new IllegalArgumentException("invalid instance revision");
         }
-        if (state.size() > 256) {
-            throw new IllegalArgumentException("runtime instance state exceeds entry limit");
-        }
-        long stateBytes = 0;
         for (var entry : state.entrySet()) {
             if (entry.getKey() == null || entry.getKey().isBlank() || entry.getKey().length() > 128
                     || entry.getValue() == null || entry.getValue().length() > 65_536) {
                 throw new IllegalArgumentException("invalid runtime instance state");
             }
-            stateBytes += entry.getKey().length() + entry.getValue().length();
-        }
-        if (stateBytes > 1_048_576) {
-            throw new IllegalArgumentException("runtime instance state exceeds size limit");
         }
     }
 }

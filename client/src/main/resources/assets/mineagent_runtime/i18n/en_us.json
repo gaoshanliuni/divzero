@@ -3616,5 +3616,11 @@
   "SiliconFlow 硅基流动": "SiliconFlow",
   "选择模板只填入地址；保存后选择或填写对应平台的模型。": "A preset fills the address. Save, then select or enter a model from that provider.",
   "编辑世界": "Edit world",
-  "编辑实体": "Edit entities"
+  "编辑实体": "Edit entities",
+  "服务器资源预算": "Server resource budgets",
+  "每 Tick 对象模拟数量预算": "Object simulation slices per tick",
+  "每 Tick 对象模拟时间预算（毫秒）": "Object simulation time per tick (ms)",
+  "对象活跃距离（格）": "Object active distance (blocks)",
+  "模型资源缓存预算（MiB）": "Model resource cache budget (MiB)",
+  "实例状态缓存预算（MiB）": "Instance state cache budget (MiB)"
 }

@@ -25,8 +25,15 @@ public final class WorldContentRuntime implements AutoCloseable {
     private final WorldInstanceMoveJournal moves;
     private dev.mineagent.runtime.core.shared.SharedStateStore sharedState;
     private final Map<UUID,InstanceHost> hosts=new LinkedHashMap<>();
+    private final dev.mineagent.runtime.core.task.FairTickBudget objectWork=new dev.mineagent.runtime.core.task.FairTickBudget();
+    private long contentBudgetRevision=-1;private dev.mineagent.runtime.core.config.ContentResourceBudget contentSettings=dev.mineagent.runtime.core.config.ContentResourceBudget.from(Map.of());
+    private dev.mineagent.runtime.core.config.ContentResourceBudget contentBudget(){var config=MineAgentRuntimeServices.config(server);if(config.revision()!=contentBudgetRevision){var snapshot=config.snapshot();contentSettings=dev.mineagent.runtime.core.config.ContentResourceBudget.from(snapshot.values());contentBudgetRevision=snapshot.revision();}return contentSettings;}
+    public final class ObjectTickPermit implements AutoCloseable {private final boolean granted;private final long started;private ObjectTickPermit(boolean granted){this.granted=granted;started=System.nanoTime();}public boolean granted(){return granted;}public void close(){if(granted)objectWork.charge(System.nanoTime()-started);}}
+    public ObjectTickPermit objectTick(RuntimeObjectEntity entity){requireThread();var budget=contentBudget();boolean nearby=entity.level().getNearestPlayer(entity.getX(),entity.getY(),entity.getZ(),budget.activeRadius(),false)!=null;return new ObjectTickPermit(nearby&&objectWork.acquire(entity.getUUID(),server.getTickCount(),budget.physicsSlices(),budget.physicsNanos()));}
+    public Map<String,Object> resourceObservation(){requireThread();var budget=contentBudget();return Map.of("objectWork",objectWork.view(),"modelCacheBytes",objectAssets.values().stream().mapToLong(dev.mineagent.runtime.core.objects.RuntimeModelBundle::size).sum(),"modelCacheBudgetBytes",budget.modelCacheBytes(),"instanceCache",instances.cacheObservation(),"activeRadius",budget.activeRadius(),"physicsSlices",budget.physicsSlices(),"physicsMillis",budget.physicsNanos()/1_000_000.0,"creationCountLimit",false);}
+
     private final ObjectMapper json=new ObjectMapper();private boolean closed;
-    private final Map<String,dev.mineagent.runtime.core.objects.RuntimeModelBundle> objectAssets=new LinkedHashMap<>();
+    private final Map<String,dev.mineagent.runtime.core.objects.RuntimeModelBundle> objectAssets=new LinkedHashMap<>(16,.75f,true);
     // addFreshEntity may defer query visibility until the end of the current entity tick.
     // Keep real carrier references for collision admission only, never for object()/verifiedObjects().
     private final Map<UUID,RuntimeObjectEntity> pendingObjectSpawns=new LinkedHashMap<>();
@@ -110,7 +117,7 @@ public final class WorldContentRuntime implements AutoCloseable {
             var part=part(value,key.substring(8));if(part==null)throw new IllegalStateException("OBJECT_EVENT_RECORD_MISSING");
             var target=new dev.mineagent.runtime.core.events.ObjectInteractionFilter.Target(activation.packageId(),instance,activation.packageRevision(),activation.canonicalSha256(),part.entity(),key.substring(8),part.hash());
             RuntimeObjectEntity object=null;if(host!=null&&host.phase==Phase.ACTIVE&&host.level.getEntity(part.entity()) instanceof RuntimeObjectEntity loaded&&objectActive(loaded))object=loaded;
-            result.add(new ObjectEventDescriptor(target,owner,activation.operationId(),object));if(result.size()>32)throw new IllegalStateException("OBJECT_EVENT_PART_BUDGET");
+            result.add(new ObjectEventDescriptor(target,owner,activation.operationId(),object));
         }
         return List.copyOf(result);
     }
@@ -270,7 +277,7 @@ public final class WorldContentRuntime implements AutoCloseable {
     private dev.mineagent.runtime.core.objects.RuntimeModelBundle model(RuntimePackage pack,RuntimeDefinition definition,String path,String persistedId)throws Exception{
         String key=pack.canonicalSha256()+"|"+definition.definitionId()+"|"+path+"|"+Objects.toString(persistedId,"");var bundle=objectAssets.get(key);if(bundle!=null)return bundle;
         bundle=dev.mineagent.runtime.core.objects.RuntimeModelBundle.load(pack,definition,path,packages.worldContent(),persistedId);
-        if(objectAssets.size()>=128||objectAssets.values().stream().mapToLong(dev.mineagent.runtime.core.objects.RuntimeModelBundle::size).sum()+bundle.size()>64L*1024*1024)throw new IllegalStateException("OBJECT_ASSET_BUDGET");objectAssets.put(key,bundle);return bundle;
+        long budget=contentBudget().modelCacheBytes();long used=objectAssets.values().stream().mapToLong(dev.mineagent.runtime.core.objects.RuntimeModelBundle::size).sum();var oldest=objectAssets.entrySet().iterator();while(used+bundle.size()>budget&&oldest.hasNext()){used-=oldest.next().getValue().size();oldest.remove();}if(bundle.size()<=budget)objectAssets.put(key,bundle);return bundle;
     }
     public dev.mineagent.runtime.core.objects.RuntimeModelBundle objectBundle(RuntimeObjectEntity entity)throws Exception{
         requireThread();if(entity.header()==null)throw new IllegalStateException("OBJECT_UNBOUND");var instance=instances.get(entity.header().instance()).orElseThrow();
@@ -474,7 +481,7 @@ public final class WorldContentRuntime implements AutoCloseable {
         }
     }
     private void tick(){
-        requireThread();
+        requireThread();instances.cacheBudget(()->contentBudget().instanceCacheBytes());
         pendingObjectSpawns.values().removeIf(e->e.isRemoved()||((ServerLevel)e.level()).getEntity(e.getUUID())==e);
         for(var h:List.copyOf(hosts.values())){String error=h.currentError();if(!error.isEmpty())try{removeSharedHost(h.activation.instanceId());scripts.unload(h.activation.instanceId());if(NativeCompatibilityPolicy.ERROR_CODES.contains(error))ledger.interruptRestorable(h.activation.operationId(),error,"COMPATIBILITY_UNLOADED");else ledger.finish(h.activation.operationId(),"INTERRUPTED",error);}catch(Exception e){throw new IllegalStateException("WORLD_CONTENT_RECONCILE",e);}}
         scripts.tick(server.getTickCount());
@@ -569,7 +576,7 @@ public final class WorldContentRuntime implements AutoCloseable {
             String key="_block."+part;String value=json.writeValueAsString(Map.of("x",pos.getX(),"y",pos.getY(),"z",pos.getZ(),"block",blockId));var old=current.state().get(key);
             if(old!=null){if(!json.readTree(old).equals(json.readTree(value)))throw new IllegalArgumentException("WORLD_PART_REUSED");if(!net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock()).toString().equals(blockId))throw new IllegalStateException("WORLD_PART_CHANGED");return false;}
             if(phase==Phase.RESTORING)throw new IllegalStateException("RESTORE_CANNOT_CREATE_PART");
-            if(current.state().keySet().stream().filter(k->k.startsWith("_block.")).count()>=128)throw new IllegalStateException("WORLD_PART_BUDGET");
+
             if(!level.getBlockState(pos).isAir())throw new IllegalStateException("WORLD_POSITION_OCCUPIED");
             if(!mutation.placeBlock(current.location().dimension(),pos.getX(),pos.getY(),pos.getZ(),blockId))throw new IllegalStateException("WORLD_BLOCK_NOT_PLACED");
             var state=new LinkedHashMap<>(current.state());state.put(key,value);save(current,state);return true;
@@ -588,7 +595,7 @@ public final class WorldContentRuntime implements AutoCloseable {
             var current=currentInstance();writable();itemName(name);if(count<1||count>64)throw new IllegalArgumentException("RUNTIME_ITEM_COUNT");var binding=itemBinding(part,modelPath,chargeTicks);
             var prior=current.state().get("_item."+part);if(prior!=null){var old=json.readValue(prior,ItemPart.class);if(!old.model().equals(modelPath)||!old.name().equals(name)||old.requested()!=count||old.chargeTicks()!=chargeTicks)throw new IllegalStateException("RUNTIME_ITEM_PART_REUSED");if(!old.state().equals("ACTIVE"))throw new IllegalStateException("RUNTIME_ITEM_OUTCOME_UNKNOWN");return old.inserted();}
             if(phase==Phase.RESTORING)throw new IllegalStateException("RESTORE_CANNOT_GIVE_ITEM");
-            if(current.state().keySet().stream().filter(k->k.startsWith("_item.")).count()>=32||instances.all().stream().flatMap(i->i.state().keySet().stream()).filter(k->k.startsWith("_item.")).count()>=128)throw new IllegalStateException("RUNTIME_ITEM_BUDGET");
+
             var owner=server.getPlayerList().getPlayer(activation.owner());if(owner==null||!owner.isAlive()||owner.level()!=level)throw new IllegalStateException("RUNTIME_ITEM_OWNER_UNAVAILABLE");
             var stack=new net.minecraft.world.item.ItemStack(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_ITEM.get(),count);stack.set(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_ITEM_BINDING.get(),binding.encode());stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,net.minecraft.network.chat.Component.literal(name));
             var state=new LinkedHashMap<>(current.state());state.put("_item."+part,json.writeValueAsString(new ItemPart(modelPath,name,count,0,"PREPARING",chargeTicks)));save(current,state);
@@ -602,10 +609,10 @@ public final class WorldContentRuntime implements AutoCloseable {
         /** Unique native objective per instance/key. Unknown creation is not replayed. */
         public String createScoreboard(String key,String title)throws Exception{
             var current=currentInstance();writable();stateKey(key);scoreText(title);String marker="_score."+key;
-            String name="ma_"+UUID.nameUUIDFromBytes((current.instanceId()+"|"+key).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString().replace("-","");
-            var board=server.getScoreboard();String prior=current.state().get(marker);
-            if(prior!=null){if(!prior.equals(name))throw new IllegalStateException("SCORE_OUTCOME_UNKNOWN");var objective=board.getObjective(name);if(objective==null||objective.getCriteria()!=net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY||!objective.getDisplayName().getString().equals(title))throw new IllegalStateException("SCORE_OBJECTIVE_CHANGED");projectScores(key,objective);return name;}
-            if(phase==Phase.RESTORING||current.state().keySet().stream().filter(k->k.startsWith("_score.")).count()>=4||board.getObjective(name)!=null)throw new IllegalStateException("SCORE_CREATE_REJECTED");
+            String prior=current.state().get(marker);String name=prior==null?"ma_"+UUID.randomUUID().toString().replace("-",""):prior;
+            var board=server.getScoreboard();
+            if(prior!=null){if(prior.equals("PREPARING"))throw new IllegalStateException("SCORE_OUTCOME_UNKNOWN");var objective=board.getObjective(name);if(objective==null||objective.getCriteria()!=net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY||!objective.getDisplayName().getString().equals(title))throw new IllegalStateException("SCORE_OBJECTIVE_CHANGED");projectScores(key,objective);return name;}
+            if(phase==Phase.RESTORING||board.getObjective(name)!=null)throw new IllegalStateException("SCORE_CREATE_REJECTED");
             var state=new LinkedHashMap<>(current.state());state.put(marker,"PREPARING");save(current,state);
             board.addObjective(name,net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY,net.minecraft.network.chat.Component.literal(title),net.minecraft.world.scores.criteria.ObjectiveCriteria.RenderType.INTEGER,false,null);
             current=currentInstance();state=new LinkedHashMap<>(current.state());state.put(marker,name);save(current,state);return name;
@@ -626,9 +633,9 @@ public final class WorldContentRuntime implements AutoCloseable {
             var pack=packages.worldLibrary().get(instance.packageId()).orElseThrow();var old=part(instance,partKey);var bundle=model(pack,pack.definitions().get(instance.definitionId()),modelPath,old==null?null:old.hash());
             if(old!=null){if(!old.model().equals(modelPath)||!old.hash().equals(bundle.sha256())||old.dx()!=dx||old.dy()!=dy||old.dz()!=dz)throw new IllegalStateException("OBJECT_PART_REUSED");if(!old.state().equals("ACTIVE"))throw new IllegalStateException("OBJECT_OUTCOME_UNKNOWN");var e=level.getEntity(old.entity());if(!(e instanceof RuntimeObjectEntity object)||!matches(object,old))throw new IllegalStateException("OBJECT_NOT_LOADED");object.bind(instance.instanceId(),partKey,modelPath,bundle);return object;}
             if(phase==Phase.RESTORING)throw new IllegalStateException("RESTORE_CANNOT_CREATE_PART");
-            if(instance.state().keySet().stream().filter(k->k.startsWith("_object.")).count()>=32)throw new IllegalStateException("OBJECT_PART_BUDGET");
-            if(instances.all().stream().flatMap(i->i.state().keySet().stream()).filter(k->k.startsWith("_object.")).count()>=128)throw new IllegalStateException("OBJECT_WORLD_BUDGET");
-            var entity=new RuntimeObjectEntity(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_OBJECT.get(),level);var id=UUID.nameUUIDFromBytes((instance.instanceId()+"|object|"+partKey).getBytes(java.nio.charset.StandardCharsets.UTF_8));entity.setUUID(id);entity.bind(instance.instanceId(),partKey,modelPath,bundle);entity.setPos(instance.location().x()+dx,instance.location().y()+dy,instance.location().z()+dz);
+
+
+            var entity=new RuntimeObjectEntity(dev.mineagent.runtime.neoforge.MineAgentRegistries.RUNTIME_OBJECT.get(),level);var id=UUID.randomUUID();entity.setUUID(id);entity.bind(instance.instanceId(),partKey,modelPath,bundle);entity.setPos(instance.location().x()+dx,instance.location().y()+dy,instance.location().z()+dz);
             // Ignore sub-voxel roundoff at shared faces, not meaningful penetrations.
             var bounds=entity.getBoundingBox();var admissionBounds=bounds.deflate(1.0e-7);checkPosition(level,BlockPos.containing(bounds.minX,bounds.minY,bounds.minZ));checkPosition(level,BlockPos.containing(bounds.maxX,bounds.maxY,bounds.maxZ));
             if((!bundle.mesh().collision().nonSolid()&&(!level.noCollision(entity,admissionBounds)||pendingObjectSpawns.values().stream().anyMatch(e->!e.isRemoved()&&e.header()!=null&&!e.header().collision().nonSolid()&&e.level()==level&&e.getBoundingBox().intersects(admissionBounds))))||level.getEntity(id)!=null||pendingObjectSpawns.containsKey(id)){var nearby=new ArrayList<Map<String,Object>>();for(var other:level.getEntities(entity,bounds.inflate(.01)))nearby.add(Map.of("type",other.getType().toString(),"bounds",other.getBoundingBox().toString(),"id",other.getUUID()));for(var other:pendingObjectSpawns.values())if(other.level()==level&&other.getBoundingBox().inflate(.01).intersects(bounds))nearby.add(Map.of("pending",true,"bounds",other.getBoundingBox().toString(),"id",other.getUUID()));MineAgentRuntimeServices.audit(server).record(activation.owner().toString(),"OBJECT_ADMISSION_REJECTED",partKey,json.writeValueAsString(Map.of("bounds",bounds.toString(),"nativeCollisionFree",level.noCollision(entity),"nearby",nearby)));throw new IllegalStateException("OBJECT_POSITION_OCCUPIED");}

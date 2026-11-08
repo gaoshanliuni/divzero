@@ -29,7 +29,7 @@ public final class ScriptPreflight {
             return new PreflightResult(false, diagnostics);
         }
 
-        root.visit(node -> {
+        walk(root,node -> {
             AstNode body = null;
             if (node instanceof WhileLoop loop && literalTrue(loop.getCondition())) body = loop.getBody();
             else if (node instanceof ForLoop loop && (loop.getCondition() == null || loop.getCondition() instanceof EmptyExpression
@@ -39,6 +39,25 @@ public final class ScriptPreflight {
             return true;
         });
         return new PreflightResult(diagnostics.isEmpty(), diagnostics);
+    }
+
+    // The pinned KubeJS Rhino fork retains typed AST getters but removes AstNode.visit.
+    // Only public, zero-argument AST data accessors are inspected; parent/target links
+    // are excluded by the child's actual parent identity. No script Java is invoked.
+    private static final ClassValue<java.util.List<java.lang.reflect.Method>> CHILD_GETTERS=new ClassValue<>() {
+        protected java.util.List<java.lang.reflect.Method> computeValue(Class<?> type){return java.util.Arrays.stream(type.getMethods()).filter(m->m.getParameterCount()==0&&m.getName().startsWith("get")&&(AstNode.class.isAssignableFrom(m.getReturnType())||Iterable.class.isAssignableFrom(m.getReturnType()))).toList();}
+    };
+    private static void walk(AstNode root,NodeVisitor visitor){
+        var pending=new ArrayDeque<AstNode>();var seen=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<AstNode,Boolean>());pending.add(root);
+        while(!pending.isEmpty()){
+            var node=pending.removeFirst();if(!seen.add(node)||!visitor.visit(node))continue;
+            for(Node child=node.getFirstChild();child!=null;child=child.getNext())if(child instanceof AstNode ast)pending.add(ast);
+            for(var getter:CHILD_GETTERS.get(node.getClass()))try{
+                Object value=getter.invoke(node);
+                if(value instanceof AstNode ast&&ast.getParent()==node)pending.add(ast);
+                else if(value instanceof Iterable<?> children)for(var child:children)if(child instanceof AstNode ast&&ast.getParent()==node)pending.add(ast);
+            }catch(ReflectiveOperationException error){throw new IllegalStateException("SCRIPT_AST_TRAVERSAL",error);}
+        }
     }
 
     private static AstNode unparenthesized(AstNode node) {
@@ -61,11 +80,11 @@ public final class ScriptPreflight {
                     int condition=unparenthesized(branch.getCondition()).getType();
                     if (condition==Token.TRUE || condition==Token.FALSE) {
                         var reachable=condition==Token.TRUE?branch.getThenPart():branch.getElsePart();
-                        if (reachable!=null) reachable.visit(this);
+                        if (reachable!=null) walk(reachable,this);
                         return false;
                     }
                 }
-                if (node instanceof BreakStatement stop && encloses(stop.getBreakTarget(),loop)) found[0]=true;
+                if (node instanceof BreakStatement stop) {var target=stop.getBreakTarget();if(encloses(target instanceof Label?target.getParent():target,loop))found[0]=true;}
                 if (node instanceof ReturnStatement) found[0]=true;
                 if (node instanceof ThrowStatement) {
                     boolean caught=false;
@@ -76,7 +95,7 @@ public final class ScriptPreflight {
                 return !found[0];
             }
         };
-        body.visit(exits);return found[0];
+        walk(body,exits);return found[0];
     }
 
     private static PreflightDiagnostic infiniteLoop(AstNode loop) {

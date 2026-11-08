@@ -42,6 +42,9 @@ public final class RuntimeObjectEntity extends Entity {
     void translateManaged(Vec3 delta){if(level().isClientSide()||!Double.isFinite(delta.lengthSqr()))throw new IllegalStateException("INSTANCE_MOVE_NATIVE_CONTEXT");setPos(getX()+delta.x,getY()+delta.y,getZ()+delta.z);if(springAnchor!=null)springAnchor=springAnchor.add(delta);needsSync=true;}
     @Override public void tick(){
         super.tick();if(level().isClientSide()){interpolation.interpolate();bounds();return;}
+        if(!dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(level().getServer()))return;
+        try(var permit=WorldContentRuntime.get(level().getServer()).objectTick(this)){
+        if(!permit.granted()){runtimeActive=false;return;}
         runtimeActive=header!=null&&dev.mineagent.runtime.neoforge.WorldIdentityRuntime.ready(level().getServer())&&WorldContentRuntime.get(level().getServer()).objectActive(this);
         if(!runtimeActive||!header.physics().dynamic())return;
         if(!level().getChunkSource().hasChunk(blockPosition().getX()>>4,blockPosition().getZ()>>4))return;
@@ -55,6 +58,7 @@ public final class RuntimeObjectEntity extends Entity {
             if(x||y||z){collisions++;double incomingY=motion.y();motion=ObjectPhysics.bounce(motion,x,y,z,new RuntimeMesh.Physics(true,p.mass(),p.gravity(),p.restitution(),1));motion=new ObjectPhysics.Motion(motion.x(),ObjectPhysics.settleVertical(motion.y(),incomingY,y,p),motion.z());}
         }
         motion=ObjectPhysics.bounce(motion,false,false,false,p);setDeltaMovement(motion.x(),motion.y(),motion.z());needsSync=true;bounds();
+        }
     }
     @Override public InteractionResult interact(Player player,InteractionHand hand,Vec3 point){
         if(header==null||hand!=InteractionHand.MAIN_HAND)return InteractionResult.PASS;
