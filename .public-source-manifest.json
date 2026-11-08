@@ -5069,8 +5069,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentMovementController.java",
-      "sha256": "6b06d2bff67d29d09690bd023f06f934fbdd3814336f735cd64e04275f17511f",
-      "bytes": 9634
+      "resourceId": "db0d18df-c0da-458b-b020-6251345838ec",
+      "bytes": 9932
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentPlayer.java",
@@ -7009,8 +7009,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/AiSkillActor.java",
-      "resourceId": "01492382-39a5-4f82-9087-91fe3b2f96a3",
-      "bytes": 9418
+      "resourceId": "49d5919a-91db-4e13-b1cb-242c37e7cad5",
+      "bytes": 9438
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/BehaviorAuthority.java",
@@ -7184,8 +7184,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PlayerSkillActor.java",
-      "resourceId": "f9e0534d-21b1-43a3-a4ef-adb41ee4c46f",
-      "bytes": 15076
+      "resourceId": "b22740b2-a375-4bc2-b559-e1b78959ef2f",
+      "bytes": 15299
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/skill/PortalRouteObservations.java",
@@ -9670,5 +9670,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "2ebf8a87ee0068b9593eb7ccd9e3e6043f1fe995"
+  "sourceCommit": "accbc732bbf4a9b5e9eb63711e3e4d8b07f2de81"
 }

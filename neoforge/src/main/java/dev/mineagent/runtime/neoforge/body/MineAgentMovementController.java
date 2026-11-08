@@ -15,11 +15,12 @@ public final class MineAgentMovementController {
     private boolean diagonalThisTick;private long diagonalTicks;
     public boolean diagonalThisTick(){return diagonalThisTick;}
     public long diagonalTicks(){return diagonalTicks;}
-    private boolean manualSneak;private final Set<Double> traversedFloors=new LinkedHashSet<>();
+    private boolean manualSneak,edgeSafeNavigation;private final Set<Double> traversedFloors=new LinkedHashSet<>();
     public void recordOpened(boolean gate){if(gate)openedGates++;else openedDoors++;}
     public Map<String,Object> evidence(){var out=new LinkedHashMap<String,Object>();out.put("steps",executedSteps);out.put("crouchingSteps",crouchingSteps);out.put("openedDoors",openedDoors);out.put("openedGates",openedGates);out.put("observedGroundHeights",List.copyOf(traversedFloors));out.put("climbingSteps",climbingSteps);out.put("swimmingSteps",swimmingSteps);out.put("search",intent.evidence());return out;}
     public boolean manualSneak(){return manualSneak;}
     public void setSneaking(MineAgentPlayer p,boolean value){manualSneak=value;p.applySneaking(value||NativeSurfaceNavigation.requiresSneaking(p,p.position()));}
+    public void setEdgeSafeNavigation(MineAgentPlayer p,boolean value){edgeSafeNavigation=value;p.applySneaking(value||manualSneak||NativeSurfaceNavigation.requiresSneaking(p,p.position()));}
     public double arrivalTolerance(){return intent.tolerance();}
     public long commandRevision(){return commandRevision;}
     public String outcome(){return intent.status();}
@@ -34,12 +35,12 @@ public final class MineAgentMovementController {
     private void start(Vec3 target,double tolerance){intent.start(target,tolerance);commandRevision++;executedSteps=openedDoors=openedGates=crouchingSteps=climbingSteps=swimmingSteps=0;traversedFloors.clear();}
     /** Tracking a moving entity does not replace the command or discard a still-useful route. */
     public boolean updateTarget(long command,Vec3 target){if(command!=commandRevision)return false;intent.update(target);return true;}
-    public void stop(){manualSneak=false;pendingJumpRevision=-1;commandRevision++;intent.stop("CANCELLED");}
+    public void stop(){manualSneak=edgeSafeNavigation=false;pendingJumpRevision=-1;commandRevision++;intent.stop("CANCELLED");}
     public Optional<Vec3> target(){return intent.target();}
     public String backendName(){return "builtin-surface-actions";}
     public void tick(MineAgentPlayer p){
         int tick=p.level().getServer().getTickCount();if(lastTick==tick)return;lastTick=tick;diagonalThisTick=false;
-        p.applySneaking(p.canAct()&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
+        p.applySneaking(p.canAct()&&(manualSneak||edgeSafeNavigation||NativeSurfaceNavigation.requiresSneaking(p,p.position())));
         if(!p.canAct()||intent.target().isEmpty())return;
         if(p.onGround()&&traversedFloors.size()<128)traversedFloors.add(Math.rint(p.getY()*16)/16);
         var step=intent.tick(p);
@@ -63,7 +64,7 @@ public final class MineAgentMovementController {
         boolean swim=step.action()==Action.SWIM||step.action()==Action.ENTER_WATER;
         boolean climb=step.action()==Action.CLIMB;
         p.setSwimming(swim&&p.isInWater());
-        p.applySneaking(!swim&&!climb&&(manualSneak||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
+        p.applySneaking(!swim&&!climb&&(manualSneak||edgeSafeNavigation&&step.action()!=Action.DROP||NativeSurfaceNavigation.requiresSneaking(p,waypoint)));
         var travelHeading=new Vec3(offset.x,0,offset.z);if(travelHeading.lengthSqr()>.001)p.lookAlongPath(p.getEyePosition().add(travelHeading.normalize().scale(4)));
         if((step.action()==Action.JUMP||step.action()==Action.LEAVE_WATER)&&offset.y>.65&&p.onGround())p.jumpFromGround();
         if(p.nativePvpMovement()){
