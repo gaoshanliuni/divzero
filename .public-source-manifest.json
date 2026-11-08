@@ -94,8 +94,8 @@
     },
     {
       "path": "agent/src/main/java/dev/mineagent/runtime/agent/chunk/ChunkTicketLedger.java",
-      "resourceId": "1548a7e3-eaae-4774-a677-31d0db5facef",
-      "bytes": 7274
+      "resourceId": "ac539f74-ace7-4336-9711-59e0d1607354",
+      "bytes": 9254
     },
     {
       "path": "agent/src/main/java/dev/mineagent/runtime/agent/chunk/TicketDelta.java",
@@ -184,8 +184,8 @@
     },
     {
       "path": "agent/src/test/java/dev/mineagent/runtime/agent/chunk/ChunkTicketLedgerTest.java",
-      "resourceId": "d6807fb0-6d61-40b5-9e39-05acd503dae9",
-      "bytes": 2437
+      "resourceId": "680744ce-fc3a-4772-a7ca-1e4230e4b5f7",
+      "bytes": 3268
     },
     {
       "path": "agent/src/test/java/dev/mineagent/runtime/agent/ui/UiAgentControllerTest.java",
@@ -1024,8 +1024,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "resourceId": "da6694ff-c940-4a93-b92c-b00955b23f9e",
-      "bytes": 328849
+      "resourceId": "c3621428-6188-42a2-871a-6497311f74a1",
+      "bytes": 328947
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -1479,8 +1479,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServerConfigService.java",
-      "resourceId": "85957e60-7a94-4446-919e-f160e74c1046",
-      "bytes": 18926
+      "resourceId": "7ca4d9d6-b52a-4ab5-910a-ccf715842e90",
+      "bytes": 19043
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ServiceCallBudget.java",
@@ -1494,8 +1494,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/WebSettingsCatalog.java",
-      "resourceId": "78603d33-70a9-424b-9a34-057f24054f9b",
-      "bytes": 12364
+      "resourceId": "f52caf6b-669d-4896-af8a-6ff2f750960f",
+      "bytes": 12529
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/content/ContentAddressedStore.java",
@@ -5204,8 +5204,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentBodyManager.java",
-      "sha256": "b548c21a52238e14b480875d0858365eaa0114aa2346752b7bf33efb6e2083f0",
-      "bytes": 41034
+      "resourceId": "ea1b73c7-037c-4211-b051-b4a16953bd88",
+      "bytes": 41861
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/body/MineAgentConnection.java",
@@ -9890,5 +9890,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "89e50745f9e912462df9ea234200d19572cd2052"
+  "sourceCommit": "ea3ff88ceb00c62acca3ff224b3e7603a9d5f384"
 }

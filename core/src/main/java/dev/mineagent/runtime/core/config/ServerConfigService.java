@@ -190,6 +190,7 @@ public final class ServerConfigService implements AutoCloseable {
                     catch(IllegalArgumentException invalid) { errors.put(key, key.equals(ServiceCallBudget.PAUSED)?"应为 true 或 false":(key.equals(ServiceCallBudget.DAILY)||key.equals(ServiceCallBudget.TASK))?"0–1000000 整数；0 不额外限制":"0–10000 整数；0 不额外限制"); }
                 }
                 case "runtime.maxAgents" -> validateRange(key, value, 1, Integer.MAX_VALUE, "正整数", errors);
+                case "runtime.chunkMemoryMiB" -> validateRange(key,value,0,Integer.MAX_VALUE,"非负整数",errors);
                 case "runtime.maxChunkTickets" -> validateRange(key, value, 0, Integer.MAX_VALUE, "非负整数", errors);
                 case "runtime.agentTicketRadius" -> validateRange(key, value, 0, 1875000, "0–1875000 区块（受总票预算约束）", errors);
                 case "conversation.contextTokenBudget" -> validateRange(key, value, 1024, 131072, "1024–131072", errors);

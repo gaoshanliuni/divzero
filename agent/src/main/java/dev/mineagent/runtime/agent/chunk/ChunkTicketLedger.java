@@ -58,6 +58,28 @@ public final class ChunkTicketLedger {
     }
 
     public synchronized Set<ChunkCoordinate> coordinates() { return Set.copyOf(referenceCounts.keySet()); }
+    /** Center-first allocation; pressure reduces active radius instead of refusing a whole footprint. */
+    public synchronized TicketDelta reconcileFair(Map<UUID,ChunkCoordinate> centers,int radius,int budget,int round){
+        if(radius<0||radius>1_875_000||budget<0)throw new IllegalArgumentException("invalid ticket ledger limits");
+        var order=new java.util.ArrayList<>(centers.keySet().stream().sorted().toList());
+        if(!order.isEmpty())java.util.Collections.rotate(order,-Math.floorMod(round,order.size()));
+        var agents=new LinkedHashMap<UUID,Set<ChunkCoordinate>>();var counts=new LinkedHashMap<ChunkCoordinate,Integer>();
+        for(var id:order)agents.put(id,new LinkedHashSet<>());
+        outer:for(int ring=0;ring<=radius;ring++){
+            // Enumerate one offset at a time across every AI, avoiding volume-sized intermediate squares.
+            for(int dx=-ring;dx<=ring;dx++)for(int dz=-ring;dz<=ring;dz++){
+                if(ring>0&&Math.max(Math.abs(dx),Math.abs(dz))!=ring)continue;
+                for(var id:order){var center=centers.get(id);var coordinate=new ChunkCoordinate(center.dimension(),Math.addExact(center.x(),dx),Math.addExact(center.z(),dz));
+                    if(counts.containsKey(coordinate)||counts.size()<budget){agents.get(id).add(coordinate);counts.merge(coordinate,1,Integer::sum);}
+                }
+            }
+            if(counts.size()>=budget||order.isEmpty())break outer;
+        }
+        var removed=new LinkedHashSet<>(referenceCounts.keySet());removed.removeAll(counts.keySet());var added=new LinkedHashSet<>(counts.keySet());added.removeAll(referenceCounts.keySet());
+        this.radius=radius;maximumUniqueTickets=budget;byAgent.clear();referenceCounts.clear();referenceCounts.putAll(counts);deniedAgents.clear();
+        agents.forEach((id,chunks)->{byAgent.put(id,Set.copyOf(chunks));if(chunks.isEmpty())deniedAgents.add(id);});
+        return new TicketDelta(true,"",added,removed);
+    }
     public synchronized boolean denied(UUID agentId) { return deniedAgents.contains(agentId); }
     public synchronized int deniedAgentCount() { return deniedAgents.size(); }
 

@@ -7,6 +7,14 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ChunkTicketLedgerTest {
+    @Test void fairPressureGivesCentersBeforeRadiusAndRotatesOverflow(){
+        var ledger=new ChunkTicketLedger(2,100);var a=new UUID(0,1);var b=new UUID(0,2);var c=new UUID(0,3);
+        var centers=java.util.Map.of(a,new ChunkCoordinate("overworld",0,0),b,new ChunkCoordinate("overworld",20,0),c,new ChunkCoordinate("overworld",40,0));
+        ledger.reconcileFair(centers,2,3,0);for(var id:centers.keySet())assertEquals(java.util.Set.of(centers.get(id)),ledger.chunksFor(id));
+        ledger.reconcileFair(centers,2,1,0);assertTrue(ledger.chunksFor(a).contains(centers.get(a)));
+        ledger.reconcileFair(centers,2,1,1);assertTrue(ledger.chunksFor(b).contains(centers.get(b)));assertEquals(1,ledger.uniqueTicketCount());
+        ledger.reconcileFair(centers,1_875_000,0,0);assertEquals(0,ledger.uniqueTicketCount());
+    }
     @Test void configurableRadiusAndBudgetCanExceedPreviousLimits(){
         var ledger=new ChunkTicketLedger(4,200);
         assertTrue(ledger.update(UUID.randomUUID(),"overworld",0,0).accepted());

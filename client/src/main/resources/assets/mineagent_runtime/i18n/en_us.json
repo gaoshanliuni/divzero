@@ -3630,5 +3630,6 @@
   "导航调度目标 Tick 时间（毫秒）": "Target server tick time (ms)",
   "几何存储磁盘安全余量（MiB）": "Geometry storage disk reserve (MiB)",
   "几何任务同时加载区块预算": "Concurrent geometry chunk ticket budget",
-  "每 Tick 几何区块加载数量预算": "Geometry chunk loads per tick"
+  "每 Tick 几何区块加载数量预算": "Geometry chunk loads per tick",
+  "AI 附加区块估算内存预算（MiB）": "Estimated managed AI chunk memory budget (MiB)"
 }

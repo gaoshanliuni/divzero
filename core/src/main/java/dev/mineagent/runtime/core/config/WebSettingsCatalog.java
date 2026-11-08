@@ -8,6 +8,7 @@ public final class WebSettingsCatalog {
     private WebSettingsCatalog(){}
     public record Field(String key,String label,String group,String type,String fallback,PermissionAction permission){}
     public static final List<Field> FIELDS=List.of(
+        new Field("runtime.chunkMemoryMiB","AI 附加区块估算内存预算（MiB）","服务器资源预算","number","256",PermissionAction.MANAGE_PERMISSIONS),
         new Field("resources.geometry.chunkTickets","几何任务同时加载区块预算","服务器资源预算","number","16",PermissionAction.MANAGE_PERMISSIONS),
         new Field("resources.geometry.chunkLoadsPerTick","每 Tick 几何区块加载数量预算","服务器资源预算","number","2",PermissionAction.MANAGE_PERMISSIONS),
         new Field(dev.mineagent.runtime.core.geometry.GeometryDiskBudget.KEY,"几何存储磁盘安全余量（MiB）","服务器资源预算","number","16",PermissionAction.MANAGE_PERMISSIONS),

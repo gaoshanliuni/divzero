@@ -49,6 +49,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
     private final java.util.Set<ChunkCoordinate> installedTickets = new java.util.LinkedHashSet<>();
     private Map<UUID, ChunkCoordinate> ticketCenters = Map.of();
     private RuntimeResourceLimits appliedLimits;
+    private int effectiveTicketBudget;
     private String ticketError = "";
     private final Map<UUID,String> identityProblems=new LinkedHashMap<>();
     private void requirePlayerName(String name,UUID self){
@@ -500,8 +501,12 @@ public final class MineAgentBodyManager implements AutoCloseable {
             var center = body.chunkPosition();
             centers.put(body.agentId(), new ChunkCoordinate(dimension, center.x(), center.z()));
         }
-        if (!limits.equals(appliedLimits) || !centers.equals(ticketCenters)) {
-            ticketLedger.reconcile(centers, limits.agentTicketRadius(), limits.maxChunkTickets());
+        if (!limits.equals(appliedLimits) || !centers.equals(ticketCenters) || server.getTickCount()%20==0) {
+            var values=config.snapshot().values();long configuredMiB=Long.parseLong(values.getOrDefault("runtime.chunkMemoryMiB","256"));
+            var memory=Runtime.getRuntime();long spare=Math.max(0,memory.maxMemory()-(memory.totalMemory()-memory.freeMemory())-memory.maxMemory()/4);
+            long available=Math.min(configuredMiB*1024*1024,spare);double load=Math.min(1.0,45_000_000.0/Math.max(1,server.getAverageTickTimeNanos()));
+            int effective=(int)Math.min(limits.maxChunkTickets(),Math.max(0,(long)(available/1048576.0*load)));
+            effectiveTicketBudget=effective;ticketLedger.reconcileFair(centers, limits.agentTicketRadius(), effective,server.getTickCount()/20);
             ticketCenters = Map.copyOf(centers);
             appliedLimits = limits;
         }
@@ -556,7 +561,7 @@ public final class MineAgentBodyManager implements AutoCloseable {
         var limits = config.resourceLimits();
         var result = new LinkedHashMap<String, Object>();
         result.put("maxAgents", limits.maxAgents()); result.put("agentCount", registry.all().size());
-        result.put("maxChunkTickets", limits.maxChunkTickets()); result.put("agentTicketRadius", limits.agentTicketRadius());
+        result.put("effectiveTicketBudget",effectiveTicketBudget);result.put("ticketMemoryEstimateBytes",1048576);result.put("allocation","CENTER_FIRST_ROUND_ROBIN");result.put("maxChunkTickets", limits.maxChunkTickets()); result.put("agentTicketRadius", limits.agentTicketRadius());
         result.put("ticketsPerAgent", limits.ticketsPerAgent()); result.put("requestedTickets", ticketLedger.uniqueTicketCount());
         result.put("activeTickets", installedTickets.size()); result.put("limitedAgents", ticketLedger.deniedAgentCount());
         result.put("overAgentLimit", registry.all().size() > limits.maxAgents());
