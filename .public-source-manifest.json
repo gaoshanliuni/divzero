@@ -10008,6 +10008,11 @@
       "bytes": 4632
     },
     {
+      "path": "worker/src/test/java/dev/mineagent/runtime/worker/tts/EdgeTtsLiveProbe.java",
+      "resourceId": "f66fcaa3-a05f-47f9-816d-936d6a684169",
+      "bytes": 884
+    },
+    {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/tts/EdgeTtsProtocolTest.java",
       "resourceId": "57ae011d-89ec-4292-8b42-c40ddc9e8982",
       "bytes": 2942
@@ -10035,5 +10040,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "279f179fefa9013a8469c0eafca24257f5dae70a"
+  "sourceCommit": "4b0e67083733dfd7b244a0f930585c608e773c49"
 }
