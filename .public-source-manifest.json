@@ -34,8 +34,8 @@
     },
     {
       "path": ".github/workflows/conversation-feedback-compile.yml",
-      "resourceId": "22e7c16d-26de-48c9-bc1e-a46abfdcc694",
-      "bytes": 4173
+      "resourceId": "8d040a53-a088-4039-aaa5-4c91f9fbe170",
+      "bytes": 4540
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -1434,8 +1434,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ConversationBudget.java",
-      "resourceId": "361aa22b-e873-4827-a6e9-69bef9403951",
-      "bytes": 3109
+      "resourceId": "ed0a99b2-2d5e-4aeb-a94d-5aa969db4b6e",
+      "bytes": 3125
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/config/ExplicitModelRoles.java",
@@ -4234,8 +4234,8 @@
     },
     {
       "path": "docs/CONVERSATION_FEEDBACK_RELEASE.md",
-      "resourceId": "e3391bff-bcaf-4a1d-9bbe-269ac6115a96",
-      "bytes": 1655
+      "resourceId": "d3fe0d0a-fbab-49c9-9bad-39260d76d0dd",
+      "bytes": 2000
     },
     {
       "path": "docs/COUNTERATTACK_UI_FUNCTIONS.md",
@@ -4374,8 +4374,8 @@
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
-      "resourceId": "45a546a1-1d42-4cd6-8a57-32c42fd86e53",
-      "bytes": 4416
+      "resourceId": "438103e1-9f89-46ea-8b51-11f496f09941",
+      "bytes": 5277
     },
     {
       "path": "docs/WORLD_ACTIVATION_CHAT.md",
@@ -5489,8 +5489,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/audio/ConversationVoicePlayback.java",
-      "sha256": "7fb8d9e3508d6493ecc76160af95fc56a766aad7cbd0151466e025861a813d8c",
-      "bytes": 6370
+      "resourceId": "5ba65317-7700-4847-bd74-5d2d27e3ac53",
+      "bytes": 6846
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/audio/MineAgentVoicePlayback.java",
@@ -6119,8 +6119,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "resourceId": "3fe6878d-a20f-4215-be2a-dd33fc958ac4",
-      "bytes": 60501
+      "resourceId": "8ac1547c-9159-439d-af05-3042dbc6c590",
+      "bytes": 60979
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/OctoberFeedbackSmoke.java",
@@ -9224,8 +9224,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/WorkerRequestHandler.java",
-      "resourceId": "00717736-e7e2-4d90-8186-1a3496a04d50",
-      "bytes": 111827
+      "resourceId": "091181e9-850a-4105-9874-aed4cc4d3527",
+      "bytes": 111965
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/compile/BootDependencyClasspath.java",
@@ -9803,14 +9803,19 @@
       "bytes": 6114
     },
     {
+      "path": "worker/src/main/java/dev/mineagent/runtime/worker/tts/EdgeReadAloudAuthentication.java",
+      "resourceId": "12098043-1800-4670-8cc5-fd42c63791f6",
+      "bytes": 6546
+    },
+    {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/tts/EdgeTtsProtocol.java",
-      "sha256": "51eeb09f0609296501f5c30a7f4fe24f0dcbca35ca95d097d489f62ba96972f5",
-      "bytes": 3546
+      "resourceId": "298cd42c-69de-487a-b738-b3b7f869e5c3",
+      "bytes": 2962
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/tts/EdgeTtsSpeechSynthesizer.java",
-      "sha256": "5bab00e706780c9c5bb4788a9e6f75b975e15cc30a8c00fafd29bbe508ab7e5f",
-      "bytes": 6743
+      "resourceId": "ce6d3030-23f4-4cba-a879-76e446c928c1",
+      "bytes": 8974
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/tts/SpeechSynthesisException.java",
@@ -9856,6 +9861,26 @@
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/web/WebResearchService.java",
       "resourceId": "3e632477-633b-49e2-bef9-e1e6903c47d9",
       "bytes": 7326
+    },
+    {
+      "path": "worker/src/main/resources/META-INF/licenses/edge-tts/GPL-3.0.txt",
+      "resourceId": "7e3ffc83-7bdf-490e-bf52-0c06e9117303",
+      "bytes": 35149
+    },
+    {
+      "path": "worker/src/main/resources/META-INF/licenses/edge-tts/LICENSE",
+      "resourceId": "33f1a8c9-9e6c-4ef0-8e7a-7eff1719d9df",
+      "bytes": 9041
+    },
+    {
+      "path": "worker/src/main/resources/META-INF/licenses/edge-tts/NOTICE.txt",
+      "resourceId": "d48ab0b1-8ba9-4db0-9c57-ef023e2d66d7",
+      "bytes": 674
+    },
+    {
+      "path": "worker/src/main/resources/META-INF/licenses/edge-tts/upstream-drm.py.txt",
+      "resourceId": "76c3de13-8bf6-41ce-ae95-4d8427b1301d",
+      "bytes": 18490
     },
     {
       "path": "worker/src/main/resources/dev/mineagent/runtime/worker/generation/jsoup-LICENSE.txt",
@@ -9983,6 +10008,11 @@
       "bytes": 4632
     },
     {
+      "path": "worker/src/test/java/dev/mineagent/runtime/worker/tts/EdgeTtsProtocolTest.java",
+      "resourceId": "57ae011d-89ec-4292-8b42-c40ddc9e8982",
+      "bytes": 2942
+    },
+    {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/web/ImageTextureTest.java",
       "sha256": "825d2c05e6cf6244c8e8b7ff1e8aa4b378cf8200aca70a7830f6c667c5ab3a9b",
       "bytes": 1155
@@ -10005,5 +10035,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "0d1252b78f86666a60527c99fa906ed3bc293d8e"
+  "sourceCommit": "279f179fefa9013a8469c0eafca24257f5dae70a"
 }

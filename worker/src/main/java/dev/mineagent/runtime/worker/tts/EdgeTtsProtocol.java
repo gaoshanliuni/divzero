@@ -51,19 +51,8 @@ public final class EdgeTtsProtocol {
         return audio;
     }
 
-    public static String secMsGec(java.time.Instant instant) {
-        try {
-            long windowsEpochSeconds = instant.getEpochSecond() + 11_644_473_600L;
-            long roundedSeconds = windowsEpochSeconds - Math.floorMod(windowsEpochSeconds, 300L);
-            long fileTimeTicks = Math.multiplyExact(roundedSeconds, 10_000_000L);
-            byte[] value = (Long.toString(fileTimeTicks) + TRUSTED_CLIENT_TOKEN)
-                    .getBytes(StandardCharsets.US_ASCII);
-            return java.util.HexFormat.of().withUpperCase().formatHex(
-                    java.security.MessageDigest.getInstance("SHA-256").digest(value));
-        } catch (java.security.GeneralSecurityException impossible) {
-            throw new IllegalStateException("SHA-256 is unavailable", impossible);
-        }
-    }
+    /** Microsoft read-aloud authentication only; never used to identify application files or content. */
+    public static String secMsGec(java.time.Instant instant) { return EdgeReadAloudAuthentication.token(instant); }
 
     private static String escapeXml(String value) {
         return value.replace("&", "&amp;")

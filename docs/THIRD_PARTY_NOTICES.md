@@ -47,3 +47,10 @@ Release 以独立附件提供原始依赖 JAR，保留上游许可，不修改�
 解压保留上游 CPython 及依赖的许可与 notice 文件。随后安装的 Python 包各自遵循其许可证。固定库版本、上游资源 ID 与文件大小见 `META-INF/divzero/python/bundle-lock.json`；许可证随运行时与 wheel 一起捆绑。
 
 项目界面与基础资源随源码提供；用户选择的建筑、皮肤和运行数据由用户管理。
+
+
+## Microsoft Edge 免费云端朗读协议适配
+
+`EdgeReadAloudAuthentication.java` 的 Sec-MS-GEC v2 算法由 [rany2/edge-tts 的 drm.py](https://github.com/rany2/edge-tts/blob/master/src/edge_tts/drm.py) 翻译为 Java，原项目及该派生文件使用 LGPL-3.0-only；著作权归 rany 和 edge-tts 贡献者。修改为固定微软朗读认证输入的 Java 接口，不提供通用文件/内容摘要能力。
+
+Worker 中 `META-INF/licenses/edge-tts/` 包含原始协议源文件、上游版本说明、LGPL 与 GPL 文本。对应修改后的 Java 源码随同版本 GitHub 源码标签提供；可修改该文件后用项目公开 Gradle 构建重新链接 Worker 或 Mod，无需应用签名私钥。应用其它部分仍遵循各自声明的许可证。朗读通过 Java HTTP/WebSocket 直接访问微软云端，不运行上游 Python 文件。

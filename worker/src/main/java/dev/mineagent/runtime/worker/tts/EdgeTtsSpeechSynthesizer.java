@@ -34,35 +34,18 @@ public final class EdgeTtsSpeechSynthesizer implements SpeechSynthesizer {
 
     @Override
     public SpeechSynthesisResult synthesize(SpeechSynthesisRequest request) {
-        String connectionId = id();
         String requestId = id();
-        URI uri = URI.create(ENDPOINT + "?TrustedClientToken=" + EdgeTtsProtocol.TRUSTED_CLIENT_TOKEN
-                + "&Sec-MS-GEC=" + EdgeTtsProtocol.secMsGec(java.time.Instant.now())
-                + "&Sec-MS-GEC-Version=1-" + CHROMIUM_VERSION
-                + "&ConnectionId=" + connectionId);
-        var listener = new Listener();
         WebSocket socket = null;
         try {
-            WebSocket connected = client.newWebSocketBuilder()
-                    .connectTimeout(timeout)
-                    .header("Origin", "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold")
-                    .header("Pragma", "no-cache")
-                    .header("Cache-Control", "no-cache")
-                    .header("User-Agent", USER_AGENT)
-                    .header("Accept-Encoding", "gzip, deflate, br, zstd")
-                    .header("Accept-Language", "en-US,en;q=0.9")
-                    .header("Cookie", "muid=" + id().toUpperCase(java.util.Locale.ROOT) + ";")
-                    .buildAsync(uri, listener)
-                    .get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-            socket = connected;
-            String timestamp = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(java.time.ZoneOffset.UTC));
+            var session = connect();var listener=session.listener();WebSocket connected=session.socket();socket=connected;
+            String timestamp = DateTimeFormatter.ofPattern("EEE MMM dd yyyy HH:mm:ss 'GMT+0000 (Coordinated Universal Time)'",java.util.Locale.US).format(java.time.Instant.now().plusMillis(clockOffset.get()).atZone(java.time.ZoneOffset.UTC));
             String config = "X-Timestamp:" + timestamp + "\r\n"
                     + "Content-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n"
                     + "{\"context\":{\"synthesis\":{\"audio\":{\"metadataoptions\":{"
                     + "\"sentenceBoundaryEnabled\":\"false\",\"wordBoundaryEnabled\":\"false\"},"
                     + "\"outputFormat\":\"audio-24khz-48kbitrate-mono-mp3\"}}}}";
             String ssml = "X-RequestId:" + requestId + "\r\nContent-Type:application/ssml+xml\r\n"
-                    + "X-Timestamp:" + timestamp + "\r\nPath:ssml\r\n\r\n" + EdgeTtsProtocol.ssml(request);
+                    + "X-Timestamp:" + timestamp + "Z\r\nPath:ssml\r\n\r\n" + EdgeTtsProtocol.ssml(request);
             connected.sendText(config, true).thenCompose(ignored -> connected.sendText(ssml, true))
                     .get(timeout.toMillis(), TimeUnit.MILLISECONDS);
             byte[] audio = listener.result.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -71,13 +54,28 @@ public final class EdgeTtsSpeechSynthesizer implements SpeechSynthesizer {
             Thread.currentThread().interrupt();
             throw new SpeechSynthesisException("Edge TTS request interrupted", interrupted);
         } catch (Exception failure) {
-            throw new SpeechSynthesisException("Edge TTS synthesis failed", failure);
+            throw new SpeechSynthesisException(diagnostic(failure), failure);
         } finally {
             if (socket != null) {
                 socket.sendClose(WebSocket.NORMAL_CLOSURE, "done");
             }
         }
     }
+
+    private final java.util.concurrent.atomic.AtomicLong clockOffset=new java.util.concurrent.atomic.AtomicLong();
+    private record Connected(WebSocket socket,Listener listener){}
+    private Connected connect()throws Exception{
+        for(int attempt=0;attempt<2;attempt++){
+            var listener=new Listener();URI uri=URI.create(ENDPOINT+"?TrustedClientToken="+EdgeTtsProtocol.TRUSTED_CLIENT_TOKEN+"&Sec-MS-GEC="+EdgeTtsProtocol.secMsGec(java.time.Instant.now().plusMillis(clockOffset.get()))+"&Sec-MS-GEC-Version=2-"+CHROMIUM_VERSION+"&ConnectionId="+id());
+            try{return new Connected(client.newWebSocketBuilder().connectTimeout(timeout).header("Origin","chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold").header("Pragma","no-cache").header("Cache-Control","no-cache").header("User-Agent",USER_AGENT).header("Accept-Encoding","gzip, deflate, br, zstd").header("Accept-Language","en-US,en;q=0.9").header("Cookie","muid="+id().toUpperCase(java.util.Locale.ROOT)+";").buildAsync(uri,listener).get(timeout.toMillis(),TimeUnit.MILLISECONDS),listener);}
+            catch(java.util.concurrent.ExecutionException failure){
+                Throwable cause=failure.getCause();if(attempt==0&&cause instanceof java.net.http.WebSocketHandshakeException handshake&&handshake.getResponse().statusCode()==403){
+                    var date=handshake.getResponse().headers().firstValue("Date");if(date.isPresent()){try{clockOffset.set(java.time.Duration.between(java.time.Instant.now(),ZonedDateTime.parse(date.get(),DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()).toMillis());continue;}catch(java.time.format.DateTimeParseException invalid){/* Report the original handshake error. */}}
+                }throw failure;
+            }
+        }throw new SpeechSynthesisException("EDGE_TTS_HANDSHAKE_FAILED");
+    }
+    private static String diagnostic(Throwable failure){for(Throwable next=failure;next!=null;next=next.getCause()){if(next instanceof SpeechSynthesisException&&java.util.Objects.toString(next.getMessage(),"").matches("EDGE_TTS_[A-Z0-9_]{1,80}"))return next.getMessage();if(next instanceof java.net.http.WebSocketHandshakeException handshake)return "EDGE_TTS_HTTP_"+handshake.getResponse().statusCode();if(next instanceof java.util.concurrent.TimeoutException||next instanceof java.net.http.HttpTimeoutException)return "EDGE_TTS_TIMEOUT";}return "EDGE_TTS_SYNTHESIS_FAILED";}
 
     private static String id() {
         ByteBuffer bytes = ByteBuffer.allocate(16)
@@ -99,6 +97,7 @@ public final class EdgeTtsSpeechSynthesizer implements SpeechSynthesizer {
 
         @Override
         public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+            if(textFrame.length()+data.length()>262144){result.completeExceptionally(new SpeechSynthesisException("EDGE_TTS_TEXT_FRAME_LIMIT"));webSocket.abort();return CompletableFuture.completedFuture(null);}
             textFrame.append(data);
             if (last) {
                 String message = textFrame.toString();
@@ -118,6 +117,7 @@ public final class EdgeTtsSpeechSynthesizer implements SpeechSynthesizer {
 
         @Override
         public CompletionStage<?> onBinary(WebSocket webSocket, ByteBuffer data, boolean last) {
+            if(binaryFrame.size()+data.remaining()>1024*1024||audio.size()>8*1024*1024){result.completeExceptionally(new SpeechSynthesisException("EDGE_TTS_AUDIO_LIMIT"));webSocket.abort();return CompletableFuture.completedFuture(null);}
             byte[] part = new byte[data.remaining()];
             data.get(part);
             binaryFrame.writeBytes(part);
@@ -133,6 +133,8 @@ public final class EdgeTtsSpeechSynthesizer implements SpeechSynthesizer {
             webSocket.request(1);
             return CompletableFuture.completedFuture(null);
         }
+
+        @Override public CompletionStage<?> onClose(WebSocket socket,int status,String reason){if(!result.isDone())result.completeExceptionally(new SpeechSynthesisException("EDGE_TTS_CLOSED_BEFORE_AUDIO_"+status));return CompletableFuture.completedFuture(null);}
 
         @Override
         public void onError(WebSocket webSocket, Throwable error) {

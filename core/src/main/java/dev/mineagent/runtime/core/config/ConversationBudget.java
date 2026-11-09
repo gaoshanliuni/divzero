@@ -18,7 +18,7 @@ public record ConversationBudget(long configRevision, int contextTokenBudget, in
         }
     }
 
-    public int effectiveSummaryOutputBudget(){return Math.min(summaryOutputBudget,summaryInputBudget/2);}
+    public int effectiveSummaryOutputBudget(){return Math.min(summaryOutputBudget,Math.max(64,summaryInputBudget-2048));}
     public static ConversationBudget from(PanelSnapshot snapshot) {
         try {
             var values = snapshot.values();

@@ -50,6 +50,10 @@ public final class ConversationVoicePlayback {
         }
         return Map.of("contextId",context,"entries",entries.values().stream().map(e->Map.of("operationId",e.operation,"state",e.state,"errorCode",e.error,"cached",e.audio!=null)).toList());
     }
+    public static synchronized void serverStatus(UUID expected,UUID operation,String state,String error){
+        if(context==null||!context.equals(expected))return;var entry=entries.get(operation);if(entry==null||!entry.current.getAsBoolean())return;
+        if(Set.of("FAILED","UNKNOWN","INTERRUPTED","CANCELLED").contains(state)&&(entry.audio==null||state.equals("CANCELLED"))){stop(entry);entry.state=state.equals("CANCELLED")?"STOPPED":"FAILED";entry.error=error;}
+    }
     private static void prune(){
         long now=System.currentTimeMillis();for(var e:entries.values())if(Set.of("REQUESTED","RECEIVING").contains(e.state)&&now>e.deadline){stop(e);e.state="FAILED";e.error="AUDIO_TRANSFER_EXPIRED";}
     }

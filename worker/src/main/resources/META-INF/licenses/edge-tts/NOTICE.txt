@@ -1,0 +1,7 @@
+Edge read-aloud protocol v2: Java adaptation of rany2/edge-tts src/edge_tts/drm.py.
+Upstream: https://github.com/rany2/edge-tts
+Revision: bd44c1d1aaebdc1db7f47456ee12431b42ec7cac
+License: LGPL-3.0-only. Copyright rany and edge-tts contributors.
+Modified: arithmetic helpers translated to Java; API restricted to Microsoft read-aloud authentication.
+Corresponding Java source: worker/src/main/java/dev/mineagent/runtime/worker/tts/EdgeReadAloudAuthentication.java in the matching DivZero source tag.
+Rebuild/relink: ./gradlew :worker:jar or :neoforge:jar with the documented Java toolchain. Modified source can be rebuilt; no signing key is required for the application JAR.

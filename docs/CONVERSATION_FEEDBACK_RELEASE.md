@@ -12,3 +12,6 @@
 - 批量几何方块实体创建已在上一批实现，本批须补验告示牌及既有容器/机器保护。
 
 所有 Java 编译在公开 main 的 Actions 中进行，两个受保护 PackageAssetSmoke 文件不提交。
+
+
+2026-11-09：首轮源码 public1582d0e6 / Actions42487752947 编译与摘要/协作/手势契约通过。已接入 Edge Sec-MS-GEC v2 Java 认证，并以 edge-tts 固定时间向量对照；上游 LGPL/GPL 和源代码许可随 Worker 附带。正在验证真实微软服务返回和客户端声卡播放，未宣称朗读已完整验收。

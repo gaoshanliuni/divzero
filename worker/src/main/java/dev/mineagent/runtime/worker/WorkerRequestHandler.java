@@ -367,7 +367,7 @@ public final class WorkerRequestHandler implements AutoCloseable {
                     "contentType", speech.contentType()
             ));
         } catch (Exception failure) {
-            return error(request, "TTS_SYNTHESIS_FAILED", failure.getMessage());
+            String diagnostic=java.util.Objects.toString(failure.getMessage(),"TTS_SYNTHESIS_FAILED");return error(request, diagnostic.matches("EDGE_TTS_[A-Z0-9_]{1,80}")?diagnostic:"TTS_SYNTHESIS_FAILED", diagnostic);
         }
     }
 
