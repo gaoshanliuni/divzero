@@ -1039,8 +1039,8 @@
     },
     {
       "path": "client/src/main/resources/assets/mineagent_runtime/i18n/en_us.json",
-      "resourceId": "904665af-18ba-4f17-a455-f3c0281512dc",
-      "bytes": 329396
+      "resourceId": "5998d9ed-155b-4bc4-9500-633700b1c930",
+      "bytes": 329841
     },
     {
       "path": "client/src/test/java/dev/mineagent/runtime/client/control/ChatMessagePreferencesTest.java",
@@ -5784,8 +5784,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AgentProfileScreen.java",
-      "resourceId": "9b1b8877-1781-4196-85e5-4a55b795192e",
-      "bytes": 20541
+      "resourceId": "aa468c75-b1c5-4814-a01c-972ae5fb8323",
+      "bytes": 20547
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/AutonomyControlPanel.java",
@@ -6124,8 +6124,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "resourceId": "0429c4ce-9609-4e66-aab4-faeff6a5c113",
-      "bytes": 62991
+      "resourceId": "6917e485-72b3-4a88-8526-77930fe4b791",
+      "bytes": 63021
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/OctoberFeedbackSmoke.java",
@@ -8464,8 +8464,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/SocialGreetingSmokeServer.java",
-      "resourceId": "ef072f6f-a622-42b6-a9e0-3798fbd032f3",
-      "bytes": 4882
+      "resourceId": "6fcda6bd-e6c3-4e38-9916-1035f677ab38",
+      "bytes": 6010
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/StudioScriptRuntime.java",
@@ -10055,5 +10055,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "1c9f41354cd64b960cacaa235e2cfbec612c5ce2"
+  "sourceCommit": "faf6e8eafd46085ec7255031a8ab1b30ea7fbf20"
 }

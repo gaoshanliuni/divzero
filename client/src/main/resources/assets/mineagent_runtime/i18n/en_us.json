@@ -3641,5 +3641,13 @@
   "安排定时任务": "Schedule tasks",
   "提供内容": "Offer content",
   "编辑世界与方块": "Edit world and blocks",
-  "编辑实体与状态": "Edit entities and state"
+  "编辑实体与状态": "Edit entities and state",
+  "后台摘要并发预算（1–64）": "Background summary concurrency (1–64)",
+  "摘要正文预算（256–65536，UTF-8 字节）": "Summary text budget (256–65536 UTF-8 bytes)",
+  "正在朗读": "Reading aloud",
+  "朗读完成": "Read-aloud complete",
+  "朗读已停止": "Read-aloud stopped",
+  "正在处理朗读音频…": "Preparing read-aloud audio…",
+  "朗读失败": "Read-aloud failed",
+  "[协作]": "[Cooperation]"
 }
