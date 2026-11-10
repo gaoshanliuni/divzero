@@ -27,23 +27,23 @@ public final class BundledMediaTools {
     public static BundledMediaTools windowsX64(Path installRoot) {
         var hashes = java.util.Map.ofEntries(
                 java.util.Map.entry("LICENSE.txt", 7651L),
-                java.util.Map.entry("bin/avcodec-62.dll", 90992128L),
-                java.util.Map.entry("bin/avdevice-62.dll", 4947456L),
-                java.util.Map.entry("bin/avfilter-11.dll", 31212544L),
-                java.util.Map.entry("bin/avformat-62.dll", 22722560L),
-                java.util.Map.entry("bin/avutil-60.dll", 3014144L),
-                java.util.Map.entry("bin/ffmpeg.exe", 540672L),
-                java.util.Map.entry("bin/ffprobe.exe", 226816L),
-                java.util.Map.entry("bin/swresample-6.dll", 734720L),
-                java.util.Map.entry("bin/swscale-9.dll", 12900864L)
+                java.util.Map.entry("bin/avcodec-62.dll", 91486208L),
+                java.util.Map.entry("bin/avdevice-62.dll", 5008384L),
+                java.util.Map.entry("bin/avfilter-11.dll", 31893504L),
+                java.util.Map.entry("bin/avformat-62.dll", 19846144L),
+                java.util.Map.entry("bin/avutil-60.dll", 3021824L),
+                java.util.Map.entry("bin/ffmpeg.exe", 552960L),
+                java.util.Map.entry("bin/ffprobe.exe", 265216L),
+                java.util.Map.entry("bin/swresample-6.dll", 747008L),
+                java.util.Map.entry("bin/swscale-9.dll", 12972544L)
         );
         var manifest = new MediaToolBundleManifest(
-                "windows-x64-ffmpeg-8.1.3-yt-dlp-2026.08.19",
+                "windows-x64-ffmpeg-8.1.3-34-20261109-yt-dlp-2026.08.19",
                 "META-INF/mineagent/tools/yt-dlp-2026.08.19.exe",
                 17840399L,
-                "META-INF/mineagent/tools/ffmpeg-n8.1.3-6-gff48edd8b2-win64-lgpl-shared-8.1.zip",
-                80732208L,
-                "ffmpeg-n8.1.3-6-gff48edd8b2-win64-lgpl-shared-8.1", hashes);
+                "META-INF/mineagent/tools/ffmpeg-n8.1.3-34-ga35157abb9-win64-lgpl-shared-8.1.zip",
+                80313154L,
+                "ffmpeg-n8.1.3-34-ga35157abb9-win64-lgpl-shared-8.1", hashes);
         return new BundledMediaTools(installRoot, BundledMediaTools.class.getClassLoader(), manifest,
                 System.getProperty("os.name", ""), System.getProperty("os.arch", ""));
     }

@@ -24,8 +24,8 @@
     },
     {
       "path": ".github/workflows/build-jar.yml",
-      "resourceId": "936e78f8-0d7f-42e0-ae22-443cc4207893",
-      "bytes": 6278
+      "resourceId": "8289cc32-f186-4fff-a4e5-d58a927a8c71",
+      "bytes": 6290
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
@@ -34,8 +34,8 @@
     },
     {
       "path": ".github/workflows/conversation-feedback-compile.yml",
-      "resourceId": "8d040a53-a088-4039-aaa5-4c91f9fbe170",
-      "bytes": 4540
+      "resourceId": "21387c2a-a9a9-4e73-9d65-8558f214ca9d",
+      "bytes": 4578
     },
     {
       "path": ".github/workflows/development-compile.yml",
@@ -4374,8 +4374,8 @@
     },
     {
       "path": "docs/THIRD_PARTY_NOTICES.md",
-      "resourceId": "438103e1-9f89-46ea-8b51-11f496f09941",
-      "bytes": 5277
+      "resourceId": "040d407c-b990-47a4-9c40-35cf25ccdea0",
+      "bytes": 5287
     },
     {
       "path": "docs/WORLD_ACTIVATION_CHAT.md",
@@ -8269,8 +8269,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "resourceId": "7fc806d9-2c51-4f12-97a4-ac6bde550606",
-      "bytes": 112919
+      "resourceId": "b3dfc999-a318-456f-8d5a-15db46af9dd1",
+      "bytes": 113122
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -9184,8 +9184,8 @@
     },
     {
       "path": "scripts/prepare-media-tools.ps1",
-      "resourceId": "ad7f0223-e5f6-4566-9a90-ad0391eb91cb",
-      "bytes": 1899
+      "resourceId": "1b079041-e9c7-4692-9db2-4ea04464451f",
+      "bytes": 1910
     },
     {
       "path": "scripts/publish-ci-release.ps1",
@@ -9449,8 +9449,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/media/BundledMediaTools.java",
-      "resourceId": "03138f11-d298-4c9c-b893-9423419e239b",
-      "bytes": 10642
+      "resourceId": "4921da67-5062-4521-9c46-f45b199073b3",
+      "bytes": 10656
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/media/CommandRunner.java",
@@ -9549,8 +9549,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/AbstractHttpModelProvider.java",
-      "sha256": "06c7a48c7095c991fdc935f3b197caa957683fe0e691a2cf7a110b6b54b02252",
-      "bytes": 3641
+      "resourceId": "9a024069-2b76-420b-b551-c15cb54fb5a3",
+      "bytes": 4426
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/AudienceToolSchemas.java",
@@ -9639,8 +9639,8 @@
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/RealProviderSmokeAudit.java",
-      "resourceId": "1a88a8fa-4e7d-43cf-855c-faf562391a0c",
-      "bytes": 6785
+      "resourceId": "b07a7569-82f5-4b24-8683-297765c85f70",
+      "bytes": 6878
     },
     {
       "path": "worker/src/main/java/dev/mineagent/runtime/worker/provider/ScheduleDeliverySchemas.java",
@@ -10009,8 +10009,8 @@
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/RealProviderSmokeAuditTest.java",
-      "resourceId": "7fe806d9-54d9-4a65-84a4-720786887fcf",
-      "bytes": 7221
+      "resourceId": "f1a69ea5-b85a-4fe6-8686-b3a0876e4020",
+      "bytes": 7966
     },
     {
       "path": "worker/src/test/java/dev/mineagent/runtime/worker/provider/StreamingToolCallsTest.java",
@@ -10055,5 +10055,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "faf6e8eafd46085ec7255031a8ab1b30ea7fbf20"
+  "sourceCommit": "c8b4b9db65a7f9c64c8a00820f4078bb8cdcb215"
 }

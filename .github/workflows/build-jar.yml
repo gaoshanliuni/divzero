@@ -77,7 +77,7 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: worker/src/main/resources/META-INF/mineagent/tools
-          key: media-windows-ffmpeg-8.1.3-ytdlp-2026.08.19-layout-v2
+          key: media-windows-ffmpeg-8.1.3-34-20261109-ytdlp-2026.08.19-layout-v3
 
       - name: Prepare bundled media tools
         run: ./scripts/prepare-media-tools.ps1

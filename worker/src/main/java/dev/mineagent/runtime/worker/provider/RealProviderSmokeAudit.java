@@ -39,7 +39,7 @@ final class RealProviderSmokeAudit {
     static synchronized RealProviderSmokeAudit begin(Path directory,URI uri,ObjectNode body,int maximum,boolean agentModels,boolean parallel) throws Exception {
         if(maximum != -1 && (maximum<1||maximum>MAX_CALLS))throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_CALL_LIMIT");
         if (!uri.equals(URI.create("https://api.deepseek.com/v1/chat/completions"))
-                || !(agentModels?Set.of("deepseek-flash","deepseek-v4-pro"):Set.of("deepseek-flash")).contains(body.path("model").asText()) || !body.path("stream").asBoolean())
+                || !(agentModels?Set.of("deepseek-flash","deepseek-v4-pro"):Set.of("deepseek-flash")).contains(body.path("model").asText()) || !body.path("stream").isBoolean())
             throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_ENDPOINT_OR_MODE");
         if (!Files.isDirectory(directory)) throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_DIRECTORY");
         int index = 1;
@@ -51,14 +51,14 @@ final class RealProviderSmokeAudit {
         }
         if (maximum != -1 && index > maximum) throw new IllegalStateException("REAL_PROVIDER_SMOKE_CALL_BUDGET");
         // The user explicitly disabled assistant-imposed output token caps. Provider limits still apply.
-        body.putObject("stream_options").put("include_usage", true);
+        if(body.path("stream").asBoolean())body.putObject("stream_options").put("include_usage", true);
         byte[] request = JSON.writeValueAsBytes(body);
         var evidence = new LinkedHashMap<String, Object>();
         evidence.put("call", index);evidence.put("independentParallelAudit",parallel);
         evidence.put("callBudget", maximum == -1 ? "USER_AUTHORIZED_UNLIMITED" : maximum);
         evidence.put("endpoint", uri.toString());
         evidence.put("requestedModel", body.path("model").asText());
-        evidence.put("requestBytes", request.length);
+        evidence.put("requestBytes", request.length);evidence.put("streaming",body.path("stream").asBoolean());
         evidence.put("requestId", UUID.randomUUID().toString());
         evidence.put("outputLimitMode", "PROVIDER_DEFAULT_NOT_SET");
         evidence.put("thinkingEnabled", "enabled".equals(body.path("thinking").path("type").asText()));

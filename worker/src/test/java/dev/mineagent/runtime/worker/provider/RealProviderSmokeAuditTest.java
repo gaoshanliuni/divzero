@@ -50,10 +50,16 @@ class RealProviderSmokeAuditTest {
         assertThrows(IllegalStateException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body()));
         assertFalse(Files.exists(directory.resolve("2-started.json")));
     }
-    @Test void cannotAcceptMockAlternateModelOrNonstream(@TempDir Path directory){
+    @Test void cannotAcceptMockAlternateModelOrInvalidStream(@TempDir Path directory){
         assertThrows(IllegalArgumentException.class,()->RealProviderSmokeAudit.begin(directory,URI.create("http://127.0.0.1/v1/chat/completions"),body()));
         assertThrows(IllegalArgumentException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body().put("model","other")));
-        assertThrows(IllegalArgumentException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body().put("stream",false)));
+        assertThrows(IllegalArgumentException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,body().put("stream","false")));
+    }
+    @Test void nonstreamSummaryIsAuditedWithoutChangingItsTransport(@TempDir Path directory)throws Exception{
+        var request=body().put("stream",false);var audit=RealProviderSmokeAudit.begin(directory,URI_REAL,request,1);
+        assertFalse(request.has("stream_options"));audit.complete("deepseek-flash",JSON.readTree("{\"total_tokens\":42}"),List.of(),"summary");
+        var record=JSON.readTree(directory.resolve("1-completed.json").toFile());assertFalse(record.path("streaming").asBoolean());assertTrue(record.path("completed").asBoolean());assertEquals(42,record.path("usage").path("total_tokens").asInt());
+        assertThrows(IllegalStateException.class,()->RealProviderSmokeAudit.begin(directory,URI_REAL,request,1));
     }
     @Test void followupRunCanUseOnlyRemainingBudget(@TempDir Path directory)throws Exception{
         var first=RealProviderSmokeAudit.begin(directory,URI_REAL,body(),1);first.complete("deepseek-flash",null,List.of(),"done");

@@ -446,7 +446,7 @@ public final class ServerConversations implements AutoCloseable {
                 if(closed)return;
                 try{
                     if(!historyCurrent(f)){summaries.fail(job.summaryId(),"INTERRUPTED","SUMMARY_CONTEXT_CHANGED");summaryBacklog.defer(work.viewer(),work.agent(),work.conversation(),30000,false);finishHistory(f);return;}
-                    if(error!=null||response==null||!response.type().equals("model.result"))throw new IllegalStateException("SUMMARY_PROVIDER_FAILED",error);
+                    if(error!=null||response==null||!response.type().equals("model.result")){String detail=response==null?"":Objects.toString(response.payload().get("message"),"");if(!detail.matches("(?:HTTP_[45][0-9]{2}|PROVIDER_[A-Z_]{1,60}|SERVICE_BUDGET_[A-Z_]{1,60})"))detail="PROVIDER_FAILED";throw new IllegalStateException("SUMMARY_"+detail,error);}
                     var completed=summaries.complete(store,job.summaryId(),String.valueOf(response.payload().getOrDefault("text","")),ConversationModelReceipt.from(response.payload()));f.summaryJob=null;
                     MineAgentRuntimeServices.audit(server).record(work.viewer().toString(),"CONVERSATION_SUMMARY_READY",job.summaryId().toString(),json.writeValueAsString(Map.of("conversationId",work.conversation(),"requestId",f.op,"background",true)));
                     backgroundHistory(f,work,completed);
@@ -475,7 +475,7 @@ public final class ServerConversations implements AutoCloseable {
             }
         }catch(Exception unavailable){dev.mineagent.runtime.neoforge.MineAgentRuntimeMod.LOGGER.debug("Summary background queue deferred: {}",summaryError(unavailable));}
     }
-    private static String summaryError(Throwable error){String code=error.getMessage();return code!=null&&code.matches("SUMMARY_[A-Z_]{1,60}")?code:"SUMMARY_GENERATION_FAILED";}
+    private static String summaryError(Throwable error){String code=error.getMessage();return code!=null&&code.matches("SUMMARY_[A-Z0-9_]{1,80}")?code:"SUMMARY_GENERATION_FAILED";}
     private void retire(Flight f){finishPeer(f.op,f.viewer);ToolLifecycleEvents.session(f.viewer.getUUID(),f.agent,f.op,"RETIRED","");f.permit.set(false);flights.remove(f.op,f);}
     private void failGeneration(Flight f,String code){if(!f.modelFailure.isEmpty()){var reply=nativeReplies.get(f.op);if(reply!=null)reply.failureDetail=ToolFailure.safe(Objects.toString(f.modelFailure.get("diagnostic"),Objects.toString(f.modelFailure.get("message"),code)));try{MineAgentRuntimeServices.audit(server).record(f.viewer.getUUID().toString(),"CONVERSATION_PROVIDER_FAILURE",f.op.toString(),json.writeValueAsString(f.modelFailure));}catch(Exception ignored){}}ToolLifecycleEvents.session(f.viewer.getUUID(),f.agent,f.op,"FAILED",code);synchronized(f.buffer){f.permit.set(false);}try{flush(f);store.finish(f.op,"FAILED",null,code);}catch(Exception ignored){}retire(f);}
     private boolean live(Flight f){return !closed&&f.permit.get()&&(!peerRequests.containsKey(f.op)||peerRequests.get(f.op).permit().getAsBoolean())&&ServerChatAccess.canContinue(f.viewer,f.agent)&&server.getPlayerList().getPlayer(f.viewer.getUUID())==f.viewer&&(f.preferences==null||MineAgentRuntimeServices.preferences(server).current(f.preferences));}

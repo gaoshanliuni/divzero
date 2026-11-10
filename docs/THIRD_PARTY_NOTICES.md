@@ -24,7 +24,7 @@ Release 以独立附件提供原始依赖 JAR，保留上游许可，不修改�
 1.0.35 构建将固定版本的媒体工具捆绑在两种 Python 版本中。Java 本地提取并使用固定解码参数调用，检查版本、大小和目录结构，不重新计算文件摘要。公开 Git 管理源码和准备脚本。
 
 - **yt-dlp 2026.08.19**：[源码](https://github.com/yt-dlp/yt-dlp/tree/2026.08.19)，The Unlicense。供已有媒体下载功能使用；新资源读取与 FFmpeg 解码不要求 AI 编写 Python。
-- **FFmpeg n8.1.3-6-gff48edd8b2**：[BtbN 工件、对应源代码和构建脚本](https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-09-29-13-10)，LGPL 2.1 或更新版本，共享库构建。归档内 `LICENSE.txt` 与所需 DLL 保留，使用上游原始二进制。
+- **FFmpeg n8.1.3-34-ga35157abb9**：[BtbN 工件、对应源代码和构建脚本](https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases/tag/autobuild-2026-11-09-12-42)，LGPL 2.1 或更新版本，共享库构建。归档内 `LICENSE.txt` 与所需 DLL 保留，使用上游原始二进制。
 
 ## Java 资源解析器
 

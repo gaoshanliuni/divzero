@@ -38,8 +38,9 @@ abstract class AbstractHttpModelProvider implements ModelProvider {
     }
 
     protected JsonNode post(URI uri, JsonNode body, String bearerToken) {
+        RealProviderSmokeAudit audit=null;
         try {
-            if(RealProviderSmokeAudit.configuredDirectory()!=null) throw new IllegalStateException("REAL_PROVIDER_SMOKE_STREAM_ONLY");
+            if(RealProviderSmokeAudit.configuredDirectory()!=null){if(!(body instanceof com.fasterxml.jackson.databind.node.ObjectNode object))throw new IllegalArgumentException("REAL_PROVIDER_SMOKE_BODY");audit=RealProviderSmokeAudit.begin(uri,object);}
             var request = HttpRequest.newBuilder(uri)
                     .timeout(timeout)
                     .header("Content-Type", "application/json")
@@ -62,14 +63,16 @@ abstract class AbstractHttpModelProvider implements ModelProvider {
                 throw new ProviderRequestException(response.statusCode(),
                         id() + " HTTP " + response.statusCode() + ": " + code);
             }
-            return mapper.readTree(response.body());
+            var parsed=mapper.readTree(response.body());
+            if(audit!=null){var message=parsed.path("choices").path(0).path("message");var calls=new java.util.ArrayList<ToolCall>();for(var call:message.path("tool_calls"))calls.add(new ToolCall(call.path("id").asText(),call.path("function").path("name").asText(),call.path("function").path("arguments").asText()));audit.complete(parsed.path("model").asText(),parsed.path("usage"),calls,message.path("content").asText(),message.path("reasoning_content").asText().length());}
+            return parsed;
         } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
+            if(audit!=null)audit.failed(interrupted);Thread.currentThread().interrupt();
             throw new ProviderRequestException(id() + " 请求被中断", interrupted);
         } catch (ProviderRequestException failure) {
-            throw failure;
+            if(audit!=null)audit.failed(failure);throw failure;
         } catch (Exception failure) {
-            throw new ProviderRequestException(id() + " 请求失败", failure);
+            if(audit!=null)audit.failed(failure);throw new ProviderRequestException(id() + " 请求失败", failure);
         }
     }
 

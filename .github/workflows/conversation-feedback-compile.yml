@@ -35,7 +35,7 @@ jobs:
           exit $LASTEXITCODE
       - name: Verify Microsoft read-aloud protocol and actual free-service audio
         run: |
-          & ./gradlew.bat -PpythonRuntime=none :worker:test --tests '*EdgeTtsProtocolTest' :worker:runEdgeTtsLiveProbe --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/edge-tts.log
+          & ./gradlew.bat -PpythonRuntime=none :worker:test --tests '*EdgeTtsProtocolTest' --tests '*RealProviderSmokeAuditTest' :worker:runEdgeTtsLiveProbe --no-daemon --no-configuration-cache --max-workers=1 --console=plain 2>&1 | Tee-Object build/development-logs/edge-tts.log
           exit $LASTEXITCODE
       - name: Package isolated test candidate after selected contracts pass
         run: |
