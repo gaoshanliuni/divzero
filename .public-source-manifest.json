@@ -1629,8 +1629,8 @@
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationSummaryBacklog.java",
-      "resourceId": "138cb5fc-58f8-4599-823c-1f939d5d10cf",
-      "bytes": 3755
+      "resourceId": "3016c4d5-7fad-43b5-92bc-6fba057247d5",
+      "bytes": 4995
     },
     {
       "path": "core/src/main/java/dev/mineagent/runtime/core/conversation/ConversationSummaryStore.java",
@@ -3494,8 +3494,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationSummaryBacklogTest.java",
-      "resourceId": "a6f725d5-d26d-422d-b5a0-401824aa3f9a",
-      "bytes": 1450
+      "resourceId": "7b02f4a9-052a-4a42-9c94-a0b6d1f31d9f",
+      "bytes": 2658
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/conversation/ConversationSummaryContextTest.java",
@@ -5559,8 +5559,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "0b43e165-1f82-4081-9360-65a841e7c91a",
-      "bytes": 310252
+      "resourceId": "def5ed0d-e433-44ba-9bc1-f40292f8c1af",
+      "bytes": 316921
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -6119,8 +6119,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/NativeWorkspaceScreen.java",
-      "resourceId": "8ac1547c-9159-439d-af05-3042dbc6c590",
-      "bytes": 60979
+      "resourceId": "0429c4ce-9609-4e66-aab4-faeff6a5c113",
+      "bytes": 62991
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/nativeui/OctoberFeedbackSmoke.java",
@@ -7913,6 +7913,11 @@
       "bytes": 7180
     },
     {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationUxSmokeServer.java",
+      "resourceId": "54f65fd6-bbd4-4fda-8a51-a180b2be3467",
+      "bytes": 7797
+    },
+    {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ConversationWatchSmokeServer.java",
       "sha256": "856c370b85735ea980b06995165c7b4c04b4a23009a096dd33c44f706f6def5e",
       "bytes": 5676
@@ -8259,8 +8264,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerConversations.java",
-      "resourceId": "96662dd0-7229-4516-bfe5-a1a51c63a479",
-      "bytes": 112664
+      "resourceId": "7fc806d9-2c51-4f12-97a4-ac6bde550606",
+      "bytes": 112919
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/ServerCreatedContents.java",
@@ -8451,6 +8456,11 @@
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/SharedStateSmokeSupport.java",
       "sha256": "51aadd22a8695e3afd43ced3b2132f396f271ad2a834361f8acf38af37840d0b",
       "bytes": 5919
+    },
+    {
+      "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/SocialGreetingSmokeServer.java",
+      "resourceId": "ef072f6f-a622-42b6-a9e0-3798fbd032f3",
+      "bytes": 4882
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/ui/StudioScriptRuntime.java",
@@ -10040,5 +10050,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "4b0e67083733dfd7b244a0f930585c608e773c49"
+  "sourceCommit": "5413c6508983312cc8e1c51ee9dd6c1a8c8482e5"
 }

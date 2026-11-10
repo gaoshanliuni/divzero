@@ -883,6 +883,7 @@ public final class PersistentSkillSmokeClient {
     }
     private static boolean requestHover(net.minecraft.network.chat.Component component,String text){if(component.getString().equals("请求")&&component.getStyle().getHoverEvent() instanceof net.minecraft.network.chat.HoverEvent.ShowText hover&&hover.value().getString().equals(text))return true;return component.getSiblings().stream().anyMatch(c->requestHover(c,text));}
     private static void prepare(){
+        if(System.getProperty("mineagent.skillSmokeMode","").equals("conversation_summary_resume")){conversationSummaryResume();return;}
         if(System.getProperty("mineagent.skillSmokeMode","").equals("cooperative_resume")){cooperativeResume();return;}
         if(System.getProperty("mineagent.skillSmokeMode","").equals("peer_history_review")){peerHistoryReview();return;}
         if(Boolean.getBoolean("mineagent.skillSmokeResume")){if(System.getProperty("mineagent.skillSmokeMode","").equals("bundled_python")){bundledPython(true);return;}if(System.getProperty("mineagent.skillSmokeMode","").equals("resume_ai")){resumeAi(true);return;}if(System.getProperty("mineagent.skillSmokeMode","").equals("combat_october"))restoreOctoberMode();else if(System.getProperty("mineagent.skillSmokeMode","").equals("policy_checkpoint"))policyCheckpoint(true);else restoreLifecycle();return;}
@@ -894,6 +895,9 @@ public final class PersistentSkillSmokeClient {
         String mode=System.getProperty("mineagent.skillSmokeMode","work");
         if(mode.equals("cooperative_deepseek")){cooperativeDeepSeek();return;}
         if(mode.equals("native_travel")){nativeTravel();return;}
+        if(mode.equals("social_greeting")){socialGreeting();return;}
+        if(mode.equals("conversation_feedback")){conversationFeedback();return;}
+        if(mode.equals("conversation_summary_seed")){action("seed-pending-summary-without-provider-call",()->server(p->{try{return dev.mineagent.runtime.neoforge.ui.ConversationUxSmokeServer.seedSummary(p,agent);}catch(Exception error){throw new CompletionException(error);}}));return;}
         if(mode.equals("capability_foundation")){capabilityFoundation();return;}
         if(mode.equals("capability_geometry")){capabilityGeometry();return;}
         if(mode.equals("capability_entities")){capabilityEntities();return;}
@@ -1271,13 +1275,42 @@ public final class PersistentSkillSmokeClient {
         action("apply-mob-collision-exception",()->tool("apply_world_geometry",JSON.createObjectNode().put("plan_id",collisionGeometryPlan)).thenApply(value->{require(value.path("status").asText().equals("APPLIED"),"MOB_COLLISION_EXCEPTION_FAILED_"+value);return value;}));
         action("player-safe-still-protects-real-player",()->server(p->{var at=p.blockPosition();var args=geometrySource(at.getX(),at.getY(),at.getZ(),1);args.putObject("collision").put("mode","PLAYER_SAFE");return args;}).thenCompose(args->observedToolResult("plan_world_geometry",args)).thenApply(value->{require(value.path("status").asText().equals("REJECTED")&&value.path("error").asText().contains("LIVING_ENTITY_COLLISION"),"REAL_PLAYER_NOT_PROTECTED_"+value);return value;}));
     }
+    private static void socialGreeting(){
+        action("two-native-players-facing-ai",()->server(p->dev.mineagent.runtime.neoforge.ui.SocialGreetingSmokeServer.prepare(p,agent)));
+        waitFor("ai-returns-three-crouches-to-nearest-player",400,()->server(p->{var result=dev.mineagent.runtime.neoforge.ui.SocialGreetingSmokeServer.wave(p);lastObservation=JSON.valueToTree(result);if(Boolean.TRUE.equals(result.get("complete"))){EVIDENCE.add(result);baseline=p.level().getServer().getTickCount();return true;}return false;}));
+        waitFor("greeting-cooldown",220,()->server(p->p.level().getServer().getTickCount()-baseline>140));
+        action("start-second-native-greeting",()->server(dev.mineagent.runtime.neoforge.ui.SocialGreetingSmokeServer::prepareDanger));
+        waitFor("hostile-threat-interrupts-social-posture",400,()->server(p->{var result=dev.mineagent.runtime.neoforge.ui.SocialGreetingSmokeServer.interruptWithDanger(p);lastObservation=JSON.valueToTree(result);if(Boolean.TRUE.equals(result.get("complete"))){EVIDENCE.add(result);return true;}return false;}));
+    }
+    private static String feedbackConversation,feedbackMessage;
+    private static dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen feedbackScreen(){return mc().screen instanceof dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen screen?screen:null;}
+    private static void conversationFeedback(){
+        action("accept-native-chat-and-voice",()->CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.acceptAll()));
+        waitFor("native-client-enabled",400,()->CompletableFuture.completedFuture(dev.mineagent.runtime.neoforge.client.MineAgentClientTrustPrompt.enabled()));
+        action("seed-real-cooperation-records",()->server(p->{try{var data=dev.mineagent.runtime.neoforge.ui.ConversationUxSmokeServer.prepare(p,agent);feedbackConversation=data.get("conversation").toString();feedbackMessage=data.get("message").toString();return data;}catch(Exception error){throw new CompletionException(error);}}));
+        action("open-normal-f2-chat-list",()->{dev.mineagent.runtime.neoforge.client.nativeui.NativeWorkspaceScreen.openForAgent(agent.toString(),"持续技能搭档");return CompletableFuture.completedFuture(true);});
+        waitFor("cooperation-in-normal-list",400,()->CompletableFuture.completedFuture(feedbackScreen()!=null&&Boolean.TRUE.equals(feedbackScreen().smokeFeedback(feedbackMessage).get("cooperationListed"))));
+        action("select-cooperation-through-native-button",()->{feedbackScreen().smokeOpenListedConversation(feedbackConversation);return CompletableFuture.completedFuture(true);});
+        waitFor("cooperation-body-and-focus-ready",400,()->{if(feedbackScreen()==null)return CompletableFuture.completedFuture(false);var observed=feedbackScreen().smokeFeedback(feedbackMessage);lastObservation=JSON.valueToTree(observed);return CompletableFuture.completedFuture(Boolean.TRUE.equals(observed.get("focusReady"))&&observed.get("body").toString().contains("云端朗读"));});
+        action("native-thinking-button",()->{feedbackScreen().smokeMessageButton(feedbackMessage,"思考");return CompletableFuture.completedFuture(true);});
+        waitFor("actual-thinking-expanded",300,()->{var observed=feedbackScreen().smokeFeedback(feedbackMessage);boolean okay=Boolean.TRUE.equals(observed.get("thoughtExpanded"))&&observed.get("thought").equals(dev.mineagent.runtime.neoforge.ui.ConversationUxSmokeServer.THOUGHT);if(okay)EVIDENCE.add(observed);return CompletableFuture.completedFuture(okay);});
+        action("native-free-cloud-read-aloud-button",()->{feedbackScreen().smokeMessageButton(feedbackMessage,"朗读");return CompletableFuture.completedFuture(true);});
+        waitFor("actual-private-audio-device-finished",2400,()->{var observed=JSON.valueToTree(feedbackScreen().smokeFeedback(feedbackMessage));lastObservation=observed;for(var audio:observed.path("audio").path("entries")){if(audio.path("state").asText().equals("FAILED"))throw new IllegalStateException("VOICE_NATIVE_FAILED_"+audio);if(audio.path("state").asText().equals("FINISHED")){require(audio.path("cached").asBoolean(),"AUDIO_NOT_ASSEMBLED");EVIDENCE.add(Map.of("actualMicrosoftAudioPlayed",true,"audio",audio));return CompletableFuture.completedFuture(true);}}return CompletableFuture.completedFuture(false);});
+        action("player-types-in-cooperation-thread",()->{feedbackScreen().smokeSendFeedback(dev.mineagent.runtime.neoforge.ui.ConversationUxSmokeServer.MANUAL);return CompletableFuture.completedFuture(true);});
+        waitFor("real-model-replies-to-player-in-cooperation",5000,()->server(p->{try{var result=dev.mineagent.runtime.neoforge.ui.ConversationUxSmokeServer.manualReply(p);if(Boolean.TRUE.equals(result.get("complete"))){EVIDENCE.add(result);return true;}return false;}catch(Exception error){throw new CompletionException(error);}}));
+        action("cooperation-ui-proof",()->{screen("unified-cooperation-thinking");return CompletableFuture.completedFuture(feedbackScreen().smokeFeedback(feedbackMessage));});
+    }
+    private static void conversationSummaryResume(){
+        action("resume-existing-world-without-a-chat-request",()->server(p->{try{agent=dev.mineagent.runtime.neoforge.ui.ConversationUxSmokeServer.summaryAgent(p);return Map.of("agent",agent,"newMainChatSent",false);}catch(Exception error){throw new CompletionException(error);}}));
+        waitFor("interrupted-summary-recovers-with-real-provider",6000,()->server(p->{try{var result=dev.mineagent.runtime.neoforge.ui.ConversationUxSmokeServer.recoveredSummary(p);lastObservation=JSON.valueToTree(result);if(Boolean.TRUE.equals(result.get("complete"))){EVIDENCE.add(result);return true;}return false;}catch(Exception error){throw new CompletionException(error);}}));
+    }
     private static void capabilityFoundation(){
-        action("plan-normal-geometry-block-entities",()->tool("plan_world_geometry",JSON.createObjectNode().put("source","{\"origin\":[5,101,6],\"parts\":[{\"kind\":\"box\",\"min\":[0,0,0],\"max\":[0,0,0],\"material\":\"minecraft:chest\"},{\"kind\":\"box\",\"min\":[1,0,0],\"max\":[1,0,0],\"material\":\"minecraft:furnace\"}]}")).thenApply(value->{require(value.path("status").asText().equals("PLANNED"),"BLOCK_ENTITY_PLAN_REJECTED_"+value);foundationPlan=value.path("planId").asText();return value;}));
-        action("apply-normal-geometry-block-entities",()->tool("apply_world_geometry",JSON.createObjectNode().put("plan_id",foundationPlan)).thenApply(value->{require(value.path("status").asText().equals("APPLIED")&&value.path("written").asInt()==2,"BLOCK_ENTITY_WRITE_FAILED_"+value);return value;}));
+        action("plan-normal-geometry-block-entities",()->tool("plan_world_geometry",JSON.createObjectNode().put("source","{\"origin\":[5,101,6],\"parts\":[{\"kind\":\"box\",\"min\":[0,0,0],\"max\":[0,0,0],\"material\":\"minecraft:chest\"},{\"kind\":\"box\",\"min\":[1,0,0],\"max\":[1,0,0],\"material\":\"minecraft:furnace\"},{\"kind\":\"box\",\"min\":[2,0,0],\"max\":[2,0,0],\"material\":\"minecraft:oak_sign[rotation=0]\"}]}")).thenApply(value->{require(value.path("status").asText().equals("PLANNED"),"BLOCK_ENTITY_PLAN_REJECTED_"+value);foundationPlan=value.path("planId").asText();return value;}));
+        action("apply-normal-geometry-block-entities",()->tool("apply_world_geometry",JSON.createObjectNode().put("plan_id",foundationPlan)).thenApply(value->{require(value.path("status").asText().equals("APPLIED")&&value.path("written").asInt()==3,"BLOCK_ENTITY_WRITE_FAILED_"+value);return value;}));
         action("check-actual-block-entities",()->server(p->{
-            var chest=p.level().getBlockEntity(new BlockPos(5,101,6));var furnace=p.level().getBlockEntity(new BlockPos(6,101,6));
-            require(chest instanceof net.minecraft.world.level.block.entity.ChestBlockEntity&&furnace instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity,"DEFAULT_BLOCK_ENTITY_MISSING");
-            ((net.minecraft.world.Container)chest).setItem(0,new ItemStack(Items.DIAMOND,3));return Map.of("nativeChest",true,"nativeFurnace",true,"preservationFixtureItems",3);
+            var chest=p.level().getBlockEntity(new BlockPos(5,101,6));var furnace=p.level().getBlockEntity(new BlockPos(6,101,6));var sign=p.level().getBlockEntity(new BlockPos(7,101,6));
+            require(chest instanceof net.minecraft.world.level.block.entity.ChestBlockEntity&&furnace instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity&&sign instanceof net.minecraft.world.level.block.entity.SignBlockEntity,"DEFAULT_BLOCK_ENTITY_MISSING");
+            ((net.minecraft.world.Container)chest).setItem(0,new ItemStack(Items.DIAMOND,3));return Map.of("nativeChest",true,"nativeFurnace",true,"nativeSign",true,"preservationFixtureItems",3);
         }));
         action("reject-overwriting-existing-container",()->observedToolResult("plan_world_geometry",JSON.createObjectNode().put("source","{\"origin\":[5,101,6],\"parts\":[{\"kind\":\"box\",\"min\":[0,0,0],\"max\":[0,0,0],\"material\":\"minecraft:stone\"}]}")).thenApply(value->{require(value.path("status").asText().equals("REJECTED")&&value.path("error").asText().contains("EXISTING_BLOCK_ENTITY"),"EXISTING_CONTAINER_NOT_PROTECTED_"+value);return value;}));
         action("container-items-remain",()->server(p->{var chest=(net.minecraft.world.Container)p.level().getBlockEntity(new BlockPos(5,101,6));require(chest.getItem(0).is(Items.DIAMOND)&&chest.getItem(0).getCount()==3,"EXISTING_ITEMS_CHANGED");return Map.of("existingContainerPreserved",true,"itemsPreserved",3);}));
