@@ -24,8 +24,8 @@
     },
     {
       "path": ".github/workflows/build-jar.yml",
-      "resourceId": "8289cc32-f186-4fff-a4e5-d58a927a8c71",
-      "bytes": 6290
+      "resourceId": "b138d318-37a0-4528-8438-0af844c2189b",
+      "bytes": 6396
     },
     {
       "path": ".github/workflows/capability-budget-compile.yml",
@@ -3749,8 +3749,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/BasicMeshesTest.java",
-      "sha256": "4e3fbd5ac3b0667cc6e89015e218aa6b06838a8bbee1497d81d6a2988000dd13",
-      "bytes": 3581
+      "resourceId": "69d86f08-1a3b-43f7-866e-b96748a4b9ca",
+      "bytes": 3582
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/InstanceScoreLedgerTest.java",
@@ -3774,8 +3774,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/ParametricMeshesTest.java",
-      "sha256": "f2779043eb8c9649142b04d1a1bad8f3fcf200a8a4fbb30f9dae8a2776749076",
-      "bytes": 5287
+      "resourceId": "ff577d8f-a9e0-4a47-9604-c3609e5d3a83",
+      "bytes": 5423
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeItemBindingTest.java",
@@ -3794,13 +3794,13 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/RuntimeModelBundleTest.java",
-      "sha256": "68ea9145abee733c975f13f8c332bb833fda9a121f1d45b9109ea1aaec4d9e99",
-      "bytes": 1471
+      "resourceId": "1bc8af62-ee5e-4b3f-9fab-0a56dd730e92",
+      "bytes": 1635
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/objects/TrajectoryTriggersTest.java",
-      "sha256": "172353fac8e0ff2a7b55e13d05cba31cfbdbfb06e527b3e01ca0bbc5295b3375",
-      "bytes": 2479
+      "resourceId": "a1c9c950-dc01-4ef5-8cc2-6c39ca936acb",
+      "bytes": 2492
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/ClientDependencyGraphTest.java",
@@ -3854,8 +3854,8 @@
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/RuntimePackageLibraryTest.java",
-      "resourceId": "731fa978-dc7d-4f51-82f8-74db26b5b738",
-      "bytes": 26612
+      "resourceId": "9a992b06-ffc5-4869-902c-3887b3b1af81",
+      "bytes": 25440
     },
     {
       "path": "core/src/test/java/dev/mineagent/runtime/core/packages/ScriptDependencySourcesTest.java",
@@ -4234,8 +4234,8 @@
     },
     {
       "path": "docs/CONVERSATION_FEEDBACK_RELEASE.md",
-      "resourceId": "d3fe0d0a-fbab-49c9-9bad-39260d76d0dd",
-      "bytes": 2000
+      "resourceId": "0602c1d4-7ee3-4684-8180-391321805303",
+      "bytes": 4098
     },
     {
       "path": "docs/COUNTERATTACK_UI_FUNCTIONS.md",
@@ -10055,5 +10055,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "c8b4b9db65a7f9c64c8a00820f4078bb8cdcb215"
+  "sourceCommit": "659fd59f42d99feda985947010187bfd5f516ec8"
 }

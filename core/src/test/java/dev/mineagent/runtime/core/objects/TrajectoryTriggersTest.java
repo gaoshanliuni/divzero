@@ -23,7 +23,7 @@ class TrajectoryTriggersTest {
         String visual=s.replace("\"version\":2","\"version\":2,\"collisionMode\":\"none\"");
         assertTrue(RuntimeMesh.parse(visual).collision().nonSolid());
         assertThrows(IllegalArgumentException.class,()->RuntimeMesh.parse(visual.replace("\"version\":2","\"version\":2,\"physics\":{\"dynamic\":true,\"mass\":1,\"gravity\":0.04,\"restitution\":0.5,\"drag\":0.99}")));
-        assertThrows(IllegalArgumentException.class,()->ModelGeometryTools.inspect(visual,"item"));
+        assertEquals("GEOMETRY_VALIDATED_NOT_EXECUTED",ModelGeometryTools.inspect(visual,"item").get("status"));
         assertThrows(IllegalArgumentException.class,()->RuntimeMesh.parse(visual.replace("\"none\"","\"mesh\"")));
         assertThrows(IllegalArgumentException.class,()->RuntimeMesh.parse(visual.replace("\"version\":2","\"version\":1")));
         var legacy=new com.fasterxml.jackson.databind.ObjectMapper().readValue("{\"width\":1,\"height\":2,\"depth\":1}",RuntimeMesh.Collision.class);assertFalse(legacy.nonSolid());

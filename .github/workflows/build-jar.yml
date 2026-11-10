@@ -126,7 +126,9 @@ jobs:
           name: build-failure-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             build/ci-logs/*.log
+            build/editions/**/test-results/test/*.xml
             **/build/test-results/test/*.xml
+            build/editions/**/reports/tests/test/**
             **/build/reports/tests/test/**
           if-no-files-found: ignore
           retention-days: 7

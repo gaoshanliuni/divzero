@@ -63,8 +63,7 @@ class RuntimePackageLibraryTest {
                 if(mode==ActivationMode.HOT_RUNTIME)continue;
                 UUID id=UUID.randomUUID(),world=UUID.randomUUID(),owner=UUID.randomUUID();var base=signed(signer,id,"1.0.0",false);
                 var unsigned=new RuntimePackage(id,base.type(),base.name(),base.version(),mode,base.dependencies(),base.permissions(),base.entrypoints(),base.definitions(),base.resources(),base.origin(),false,1,"0".repeat(64),"",0);
-                String hash=RuntimePackageCanonicalizer.sha256(unsigned);
-                var first=new RuntimePackage(id,unsigned.type(),unsigned.name(),unsigned.version(),mode,unsigned.dependencies(),unsigned.permissions(),unsigned.entrypoints(),unsigned.definitions(),unsigned.resources(),unsigned.origin(),false,1,hash,Base64.getEncoder().encodeToString(signer.sign(hash.getBytes(StandardCharsets.US_ASCII))),0);
+                var first=PackageSignatures.signNew(unsigned,key->new byte[12],signer);String hash=first.canonicalSha256();
                 assertTrue(library.install(first).accepted());assertTrue(library.setEnabled(id,1,true).accepted());assertTrue(library.setEnabled(id,2,false).accepted());
                 var source=library.versionByCanonical(id,1,hash);var input=new PackageAssetMetadata.Input(UUID.randomUUID(),world,owner,"COPY_VERSION",id,1,hash,"历史重载副本",null,3);
                 var copy=RuntimePackageAssetCopy.prepare(source,library.assetCopyTarget(input),input.name(),signer);var receipt=library.installAssetCopy(input,copy);var stored=library.get(receipt.target()).orElseThrow();
@@ -109,7 +108,7 @@ class RuntimePackageLibraryTest {
                     signed.entrypoints(), signed.definitions(), signed.resources(), signed.origin(), signed.enabled(),
                     signed.revision(), signed.canonicalSha256(), signed.signature(), signed.updatedAtEpochMillis());
 
-            assertEquals("HASH_MISMATCH", library.install(tampered).errorCode());
+            assertEquals("SIGNATURE_INVALID", library.install(tampered).errorCode());
         }
     }
 
@@ -159,7 +158,7 @@ class RuntimePackageLibraryTest {
             }
             try (var reopened = RuntimePackageLibrary.open(database, clock, signer.publicKeyEncoded())) {
                 assertTrue(reopened.get(packageId).isEmpty());
-                assertEquals("HASH_MISMATCH", reopened.quarantined().get(packageId));
+                assertEquals("SIGNATURE_INVALID", reopened.quarantined().get(packageId));
             }
 
             Path missingDatabase = temporaryDirectory.resolve("missing-content.db");
@@ -194,12 +193,12 @@ class RuntimePackageLibraryTest {
         var content = new ContentAddressedStore(temporaryDirectory.resolve("client-studio-content"));
         UUID world = UUID.randomUUID(), owner = UUID.randomUUID();
         try (var signer = IdentitySigner.open(temporaryDirectory.resolve("client-studio-identity"))) {
-            var rhino = clientStudioFixture(signer, world, owner, false,
+            var rhino = clientStudioFixture(signer, content, world, owner, false,
                     "client.status('RHINO_MANUAL');");
-            var javaFixture = clientStudioFixture(signer, world, owner, true,
+            var javaFixture = clientStudioFixture(signer, content, world, owner, true,
                     "package sample; public final class Entry {}");
-            content.put(rhino.draft().source().getBytes(StandardCharsets.UTF_8));
-            content.put(javaFixture.draft().source().getBytes(StandardCharsets.UTF_8));
+            CodeDraftSources.bind(rhino.draft(),content);
+            CodeDraftSources.bind(javaFixture.draft(),content);
             try (var repository = new SqliteRuntimeRepository(database)) {
                 var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                 assertTrue(repository.compareAndSet(world, "code_drafts", rhino.draft().draftId().toString(),
@@ -229,8 +228,8 @@ class RuntimePackageLibraryTest {
         String serverPath = "server/sample/Entry.java", clientPath = "client/main.js";
         byte[] serverSource = "package sample; public final class Entry {}".getBytes(StandardCharsets.UTF_8);
         byte[] clientSource = "client.status('READY');".getBytes(StandardCharsets.UTF_8);
-        String serverHash = RuntimePackageCanonicalizer.sha256(serverSource);
-        String clientHash = RuntimePackageCanonicalizer.sha256(clientSource);
+        String serverHash = dev.mineagent.runtime.api.packages.ResourceIds.create();
+        String clientHash = dev.mineagent.runtime.api.packages.ResourceIds.create();
         var serverRef = new dev.mineagent.runtime.api.packages.RuntimeResourceRef(serverPath, serverHash,
                 RuntimeResourceSide.SERVER, "text/x-java-source", serverSource.length);
         var clientRef = new dev.mineagent.runtime.api.packages.RuntimeResourceRef(clientPath, clientHash,
@@ -252,17 +251,16 @@ class RuntimePackageLibraryTest {
     }
 
     @Test
-    void serverStudioPublicationKeepsTheLegacySourceFingerprintContract() throws Exception {
+    void serverStudioPublicationPreservesAssignedSourceVersionAndExactDraft() throws Exception {
         Path database = temporaryDirectory.resolve("server-studio.db");
         var content = new ContentAddressedStore(temporaryDirectory.resolve("server-studio-content"));
         UUID world = UUID.randomUUID(), owner = UUID.randomUUID(), packageId = UUID.randomUUID();
         String path = "server/studio.js", source = "host.value();";
         byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
-        String sourceHash = RuntimePackageCanonicalizer.sha256(bytes);
         var draft = new CodeDraft(UUID.randomUUID(), world, owner, UUID.randomUUID(), packageId, 1, 1, 1,
                 path, source, CodeDraftStatus.DRAFT, java.util.List.of(), clock.millis());
-        assertEquals(sourceHash, CodeDraftSources.fingerprint(draft));
-        content.put(bytes);
+        String sourceHash=draft.primarySource().sha256();CodeDraftSources.bind(draft,content);
+        assertEquals(draft.sourceVersion(),CodeDraftSources.fingerprint(draft));
         try (var repository = new SqliteRuntimeRepository(database)) {
             assertTrue(repository.compareAndSet(world, "code_drafts", draft.draftId().toString(), 0,
                     new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(draft),
@@ -275,33 +273,28 @@ class RuntimePackageLibraryTest {
                     "26.1.2", "neoforge", "26.1.2.106", "official", 25, Map.of())));
             var unsigned = new RuntimePackage(packageId, RuntimePackageType.EXTENSION, "server studio", "1.0.0",
                     ActivationMode.HOT_RUNTIME, Map.of(), Set.of("RUN_CODE"), Map.of("studio_script",
-                    new RuntimeEntrypoint(path, RuntimeResourceSide.SERVER, sourceHash)), Map.of(), Map.of(path, ref),
+                    new RuntimeEntrypoint(path, RuntimeResourceSide.SERVER, sourceHash)), Map.of(), sourceResources(draft,ref,content),
                     PackageOrigin.LOCAL_STUDIO, false, 1, "0".repeat(64), "", clock.millis(), compatibility);
-            String canonical = RuntimePackageCanonicalizer.sha256(unsigned);
-            var manifest = new RuntimePackage(unsigned.packageId(), unsigned.type(), unsigned.name(),
-                    unsigned.version(), unsigned.activationMode(), unsigned.dependencies(), unsigned.permissions(),
-                    unsigned.entrypoints(), unsigned.definitions(), unsigned.resources(), unsigned.origin(), false,
-                    1, canonical, Base64.getEncoder().encodeToString(signer.sign(
-                    canonical.getBytes(StandardCharsets.US_ASCII))), unsigned.updatedAtEpochMillis(), compatibility);
+            var manifest=PackageSignatures.signNew(unsigned,content::read,signer);
             try (var library = RuntimePackageLibrary.open(database, clock, signer.publicKeyEncoded(), content)) {
                 var receipt = library.publishStudio(new JavaStudioMetadata.Input(UUID.randomUUID(), world, owner,
-                        draft.draftId(), 1, packageId, 0, sourceHash, manifest.name()), manifest);
+                        draft.draftId(), 1, packageId, 0, draft.sourceVersion(), manifest.name()), manifest);
                 assertEquals("SOURCE_PUBLISHED_NOT_EXECUTED", receipt.outcome());
-                assertEquals(sourceHash, RuntimeStudioPlan.fingerprint(library.get(packageId).orElseThrow()));
+                assertEquals(draft.sourceVersion(), RuntimeStudioPlan.fingerprint(library.get(packageId).orElseThrow()));
             }
         }
     }
 
     private record ClientStudioFixture(CodeDraft draft, RuntimePackage manifest, boolean java) {}
 
-    private ClientStudioFixture clientStudioFixture(IdentitySigner signer, UUID world, UUID owner,
+    private ClientStudioFixture clientStudioFixture(IdentitySigner signer, ContentAddressedStore content, UUID world, UUID owner,
                                                     boolean javaSource, String source) throws Exception {
         UUID packageId = UUID.randomUUID(), draftId = UUID.randomUUID();
         String path = javaSource ? "client/sample/Entry.java" : "client/main.js";
         byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
-        String resourceHash = RuntimePackageCanonicalizer.sha256(bytes);
         var draft = new CodeDraft(draftId, world, owner, UUID.randomUUID(), packageId, 1, 1, 1,
                 path, source, CodeDraftStatus.DRAFT, java.util.List.of(), clock.millis());
+        CodeDraftSources.bind(draft,content);String resourceHash=draft.primarySource().sha256();
         var ref = new dev.mineagent.runtime.api.packages.RuntimeResourceRef(path, resourceHash,
                 RuntimeResourceSide.CLIENT, javaSource ? "text/x-java-source" : "application/javascript",
                 bytes.length);
@@ -312,17 +305,15 @@ class RuntimePackageLibraryTest {
                 javaSource ? "manual client java" : "manual client rhino", "1.0.0",
                 ActivationMode.HOT_RUNTIME, Map.of(), Set.of(), Map.of(entryId,
                 new RuntimeEntrypoint(path, RuntimeResourceSide.CLIENT, resourceHash)), Map.of(),
-                Map.of(path, ref), PackageOrigin.LOCAL_STUDIO, false, 1, "0".repeat(64), "",
+                sourceResources(draft,ref,content), PackageOrigin.LOCAL_STUDIO, false, 1, "0".repeat(64), "",
                 clock.millis(), compatibility);
-        String canonical = RuntimePackageCanonicalizer.sha256(unsigned);
-        var manifest = new RuntimePackage(unsigned.packageId(), unsigned.type(), unsigned.name(),
-                unsigned.version(), unsigned.activationMode(), unsigned.dependencies(), unsigned.permissions(),
-                unsigned.entrypoints(), unsigned.definitions(), unsigned.resources(), unsigned.origin(), false,
-                1, canonical, Base64.getEncoder().encodeToString(signer.sign(
-                canonical.getBytes(StandardCharsets.US_ASCII))), unsigned.updatedAtEpochMillis(), compatibility);
+        var manifest=PackageSignatures.signNew(unsigned,content::read,signer);
         return new ClientStudioFixture(draft, manifest, javaSource);
     }
 
+    private static Map<String,dev.mineagent.runtime.api.packages.RuntimeResourceRef> sourceResources(CodeDraft draft,dev.mineagent.runtime.api.packages.RuntimeResourceRef ref,ContentAddressedStore content)throws Exception{
+        return Map.of(ref.path(),ref,CodeDraftSources.MANIFEST_PATH,new dev.mineagent.runtime.api.packages.RuntimeResourceRef(CodeDraftSources.MANIFEST_PATH,draft.sourceVersion(),RuntimeResourceSide.SERVER,"application/json",content.read(draft.sourceVersion()).length));
+    }
     static RuntimePackage signed(IdentitySigner signer, UUID packageId, String version, boolean enabled)
             throws Exception {
         return signed(signer, packageId, "wind-chime", version, enabled, Map.of());
@@ -336,7 +327,7 @@ class RuntimePackageLibraryTest {
             boolean enabled,
             Map<UUID, String> dependencies
     ) throws Exception {
-        UUID definitionId = UUID.nameUUIDFromBytes((packageId + ":definition").getBytes(StandardCharsets.UTF_8));
+        UUID definitionId = new UUID(packageId.getMostSignificantBits(),packageId.getLeastSignificantBits()^1L);
         var sourceResource = new dev.mineagent.runtime.api.packages.RuntimeResourceRef(
                 "server/main.js", "d".repeat(64), RuntimeResourceSide.SERVER,
                 "application/javascript", 12);
@@ -348,11 +339,6 @@ class RuntimePackageLibraryTest {
                         "server", Set.of(), Map.of(), 1)),
                 Map.of(sourceResource.path(), sourceResource), PackageOrigin.GENERATED, enabled, 1,
                 "0".repeat(64), "", 0);
-        String hash = RuntimePackageCanonicalizer.sha256(unsigned);
-        String signature = Base64.getEncoder().encodeToString(
-                signer.sign(hash.getBytes(StandardCharsets.US_ASCII)));
-        return new RuntimePackage(packageId, unsigned.type(), unsigned.name(), unsigned.version(),
-                unsigned.activationMode(), unsigned.dependencies(), unsigned.permissions(), unsigned.entrypoints(),
-                unsigned.definitions(), unsigned.resources(), unsigned.origin(), enabled, 1, hash, signature, 0);
+        return PackageSignatures.signNew(unsigned,key->new byte[12],signer);
     }
 }
