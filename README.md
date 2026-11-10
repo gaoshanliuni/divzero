@@ -10,9 +10,15 @@
 
 **把大模型变成真正存在于 Minecraft 世界里的玩家、建造者与运行时创作者。**
 
+**多人联机实时创造：** 和朋友在同一个 Minecraft 服务器或联机世界游玩时，直接通过自然语言让 AI 现场创造新的物品、生物与玩法，大家可以在游戏中共同看到、使用和互动。
+
+**这是原生 Minecraft AI Mod，不依赖 MCP（Model Context Protocol）。** 无需部署 MCP 服务器或 MCP 桥接工具；DivZero 通过 Mod 直接与 Minecraft 世界交互，并连接你配置的 AI 模型。
+
 DivZero AI Runtime 不是一个只会在聊天框回答问题的 AI Mod。它让 AI 拥有世界感知、身体、背包、行动能力、长期记忆和动态创造能力，可以理解你的自然语言目标，观察当前世界，然后实际移动、建造、战斗、操作物品、创建内容并持续完成任务。
 
 你可以把它当作 AI 队友、自动化玩家、世界编辑助手，也可以让它现场创造新的物品、生物、交互规则和原生界面，把一句自然语言需求逐步变成真正存在于游戏中的玩法。
+
+**关键词：** Minecraft AI Mod、Minecraft 多人联机 AI、实时生成物品与生物、自然语言创造玩法、AI 玩家、游戏内动态内容。
 
 **[下载](https://github.com/gaoshanliuni/divzero/releases) · [全部功能](docs/FEATURES.md) · [安装说明](docs/BUILD_JAR.md) · [问题反馈](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
@@ -27,11 +33,32 @@ DivZero AI Runtime 不是一个只会在聊天框回答问题的 AI Mod。它让
 | **世界理解** | 读取玩家、实体、方块、容器、装备、状态效果、命令与可发现的 Mod 内容，根据当前环境规划下一步。 |
 | **建筑与导入** | 用几何规划建造道路、墙体、曲面和结构，也可导入蓝图、投影、Schematic 或世界选区并调整方向、旋转和镜像。 |
 | **动态创造** | 通过自然语言创建物品、生物、行为、交互规则和运行时内容包，让新玩法直接进入世界。 |
+| **多人联机实时共创** | 在与朋友联机游玩时现场生成新物品、新生物和可交互玩法，让同一世界的玩家共同使用和体验。 |
 | **原生动态界面** | 内置 F2 原生工作区；AI 还可以创建和持续修改原生界面与 HUD，而不是依赖网页 GUI。 |
 | **多 AI 协作** | 多个 AI 可以同时处理各自的对话、移动和任务，并保持会话与取消操作相互隔离。 |
 | **长期记忆** | AI 可以保存事实与偏好，在后续会话中继续使用；玩家可管理人设、会话、记忆和响应权限。 |
 | **真人托管** | 玩家明确要求后，AI 可以接管真人角色执行任务；你可以观察、暂停、追加命令或随时退出。 |
 | **脚本与扩展** | 使用 JavaScript、运行时内容包以及受确认控制的本机 Python 任务扩展能力，并与已安装 Mod 的可发现内容配合。 |
+
+## 和朋友联机，实时创造新物品与新生物
+
+**多人游戏不必局限于进入服务器前就准备好的内容。** 在 Minecraft 多人服务器或与朋友共享的世界里，你可以边玩边向 DivZero 的 AI 提出想法，让它通过自然语言在运行时创建物品、生物、行为和交互规则，将新玩法直接加入当前联机世界。
+
+比如，在大家一起冒险或建设基地时，你可以说：
+
+> `@星河 给我们做一个篮球和篮球架，可以蓄力投篮，进球后自动加分。`
+
+> `@星河 在营地创建一只友好的新生物，能跟随玩家、接受喂食，还能让大家骑乘。`
+
+新内容不是只停留在 AI 的回答里。AI 生成的运行时内容会进入游戏世界，朋友们可以在同一个世界中看到新生物、获得和使用新物品、体验新的互动机制。生成后还可以继续修改已有定义，而不是每次都从零制作。
+
+这些能力通过 **Minecraft Mod 内的运行时内容系统** 实现；无需为了每次创建新玩法而退出当前联机游戏、重新编译并安装另一套独立 Mod。创建权限、使用权限和联机部署仍遵循服务器配置及当前发布版本的要求。
+
+## 原生 Minecraft AI Mod：无需 MCP
+
+**DivZero 是安装在 Minecraft 环境中的 Mod，不是一个通过 MCP 远程操作游戏的外部代理。** 它通过 Mod 的原生游戏集成、世界状态感知、AI 玩家执行层与运行时内容包直接完成操作，不要求 MCP（Model Context Protocol）服务器、MCP 客户端或额外桥接服务。
+
+你仍可以自行配置兼容的 AI 模型服务、API 地址与密钥；**连接 AI 模型不等于依赖 MCP**。具体的 Minecraft 版本、Mod Loader、客户端/服务端安装和其他依赖，请查看 [Releases](https://github.com/gaoshanliuni/divzero/releases) 与 [安装说明](docs/BUILD_JAR.md)。
 
 ## 一个真正会行动的 AI 玩家
 
@@ -164,9 +191,15 @@ Copyright 2026 gaoshanliuni and DivZero contributors。项目版权与许可声�
 
 **Turn an LLM into a real Minecraft player, builder, and runtime creator.**
 
+**Create together in live multiplayer:** While playing Minecraft with friends on the same server or shared world, ask an AI to generate new items, creatures, and interactive gameplay in real time—then see and use the creations together.
+
+**A native Minecraft AI mod, with no MCP required.** DivZero integrates with Minecraft directly as a mod. It does not require a Model Context Protocol (MCP) server, MCP client, or external MCP bridge; connect your preferred AI model provider instead.
+
 DivZero AI Runtime is not just an AI chatbot inside Minecraft. It gives AI agents world awareness, a body, inventory, actions, persistent memory, and runtime creation tools so they can understand natural-language goals, inspect the current world, move, build, fight, use items, create content, and continue multi-step tasks.
 
 Use it as an AI companion, autonomous player, world-building assistant, or runtime creator that can turn a sentence into new items, creatures, interaction rules, interfaces, and gameplay inside the world.
+
+Discoverable topics: Minecraft AI mod, AI agents for Minecraft, real-time item creation, AI-generated creatures, Minecraft multiplayer creation, natural-language game modding, and runtime-generated gameplay.
 
 **[Download](https://github.com/gaoshanliuni/divzero/releases) · [All features](docs/FEATURES.md#english) · [Installation](docs/BUILD_JAR.md) · [Report an issue](https://github.com/gaoshanliuni/divzero/issues/new/choose)**
 
@@ -181,11 +214,32 @@ Use it as an AI companion, autonomous player, world-building assistant, or runti
 | **World understanding** | Read players, entities, blocks, containers, equipment, effects, commands, and discoverable mod content, then plan from the current state. |
 | **Building and importing** | Build roads, walls, surfaces, and structures from geometry, or import blueprints, schematics, and world selections with orientation controls. |
 | **Runtime creation** | Create items, creatures, behaviors, interaction rules, and reusable content packages through natural language. |
+| **Live multiplayer co-creation** | Create new items, creatures, and interactive gameplay while playing with friends, so players in the same world can experience the results together. |
 | **Native dynamic UI** | Use the built-in F2 native workspace, while AI-created interfaces and HUDs can also be generated and modified at runtime. |
 | **Multi-agent work** | Run multiple AIs with independent conversations, movement, tasks, and cancellation boundaries in the same world. |
 | **Persistent memory** | Store facts and preferences across conversations, with player controls for persona, memory, sessions, and response permissions. |
 | **Player takeover** | Explicitly hand your own player to the AI, then watch, pause, add instructions, change perspective, or exit. |
 | **Scripting and extensions** | Extend the runtime with JavaScript, content packages, and confirmation-gated local Python tasks, while integrating discoverable mod content. |
+
+## Create new items and creatures live with friends in multiplayer
+
+**Minecraft multiplayer no longer has to be limited to content prepared before joining a server.** During a shared multiplayer session, players can describe what they want in natural language. DivZero's AI creates runtime items, creatures, behaviors, and interactions that become part of the current game world.
+
+For example, while exploring or building with friends, ask:
+
+> `@Nova Create a basketball and hoop for us, with charged throws and automatic scoring.`
+
+> `@Nova Create a friendly creature at our base that can follow players, be fed, and be ridden.`
+
+These are **in-game creations, not just chat responses**. Players in the same multiplayer world can see newly created creatures, obtain and use generated items, and experience the interactions together. Existing creations can also be refined later without starting over.
+
+DivZero uses its **native Minecraft mod runtime-content system** to enable these experiences as you play; creating new gameplay does not require leaving the active multiplayer session to compile and install another standalone mod. Server permissions, player access, and installation requirements still apply.
+
+## A native Minecraft AI mod — no MCP required
+
+**DivZero is an actual Minecraft mod, not an external agent controlling the game through MCP.** The mod directly integrates world awareness, AI player execution, and runtime content creation into Minecraft. You do **not** need a Model Context Protocol (MCP) server, MCP client, or MCP bridge.
+
+You can configure a compatible LLM provider, API endpoint, and key as needed. **Using an AI model API is not the same as depending on MCP.** For Minecraft versions, mod loaders, multiplayer client/server deployment, and other dependencies, see [Releases](https://github.com/gaoshanliuni/divzero/releases) and the [installation guide](docs/BUILD_JAR.md).
 
 ## An AI player that actually acts
 
