@@ -4618,6 +4618,11 @@
       "bytes": 1298
     },
     {
+      "path": "docs/releases/1.0.35.md",
+      "resourceId": "dfdd5acd-29a5-4506-bf8b-ba89f1c7f606",
+      "bytes": 2472
+    },
+    {
       "path": "gradle.properties",
       "resourceId": "885bd866-6b28-49c2-9de6-4d49fe2008b6",
       "bytes": 496
@@ -5559,8 +5564,8 @@
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PersistentSkillSmokeClient.java",
-      "resourceId": "def5ed0d-e433-44ba-9bc1-f40292f8c1af",
-      "bytes": 316921
+      "resourceId": "560ca6f9-fba5-4486-a4cf-21ed8ed230f1",
+      "bytes": 316975
     },
     {
       "path": "neoforge/src/main/java/dev/mineagent/runtime/neoforge/client/body/PlayerBodyControlClient.java",
@@ -10050,5 +10055,5 @@
     "worlds/runtime state",
     "optional media binaries"
   ],
-  "sourceCommit": "5413c6508983312cc8e1c51ee9dd6c1a8c8482e5"
+  "sourceCommit": "1c9f41354cd64b960cacaa235e2cfbec612c5ce2"
 }
