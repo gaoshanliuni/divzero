@@ -255,7 +255,7 @@ Java直接管理固定校验的 `python-build-standalone install_only_stripped`�
 
 界面截图已更新为 LDLib2 实机验收画面，世界建造和生物截图保留对应历史场景；模型生成与 Native 动作分别保留验证记录，验证覆盖列出的具体场景。
 
-多人创建者审批已用独立 ServerPlayer 身份验证，双真实客户端联验列入后续验证。事件队列 BACKPRESSURE 状态与测试断言的统一列入维护项。
+多人创建者审批已用独立 ServerPlayer 身份验证；运行时内容创建与协同体验已完成实际多人联机测试。事件队列 BACKPRESSURE 状态与测试断言的统一列入维护项。
 
 ## 许可证与免责声明
 
@@ -510,7 +510,7 @@ Complete stdout/stderr is saved and paginated. Timeouts or cancellations may lea
 
 UI screenshots now show tested LDLib2 game captures; world construction and creature images retain their historical scenario context. Model generation and native actions have separate records covering the specific listed scenarios.
 
-Creator approval was checked using separate ServerPlayer identities. Testing with two real clients remains pending. Aligning event-queue BACKPRESSURE states and test assertions remains a maintenance item.
+Creator approval was checked using separate ServerPlayer identities; runtime content creation and shared gameplay have also been tested in an actual multiplayer session. Aligning event-queue BACKPRESSURE states and test assertions remains a maintenance item.
 
 ## License and Disclaimer
 
